@@ -1,0 +1,12 @@
+node_modules/
+dist/
+src-tauri/target/
+src-tauri/gen/
+*.coedit
+*.coedit-backup
+*.tmp
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+.tooling/
+artifacts/

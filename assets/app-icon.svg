@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Coedit Local">
+  <rect width="512" height="512" rx="116" fill="#365d4d"/>
+  <path d="M153 132h206a24 24 0 0 1 24 24v200a24 24 0 0 1-24 24H153a24 24 0 0 1-24-24V156a24 24 0 0 1 24-24Z" fill="#fffefa"/>
+  <path d="M202 202h108M202 256h108M202 310h69" fill="none" stroke="#365d4d" stroke-width="26" stroke-linecap="round"/>
+  <circle cx="165" cy="202" r="10" fill="#8eaa9c"/>
+  <circle cx="165" cy="256" r="10" fill="#8eaa9c"/>
+  <circle cx="165" cy="310" r="10" fill="#8eaa9c"/>
+</svg>
