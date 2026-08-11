@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { newId } from "./domain/ids";
 import type { Contribution, ContributionContext, Contributor, DocumentOperation, DocumentView } from "./domain/types";
-import { documentGateway } from "./persistence";
-import { chooseBackupPath, chooseDocumentToCreate, chooseDocumentToOpen, chooseExportPath } from "./persistence/files";
+import type { DocumentFileDialogs } from "./persistence/fileDialogs";
+import type { DocumentGateway } from "./persistence/gateway";
 import { Outline } from "./components/Outline";
 import { NodeEditor } from "./components/NodeEditor";
 import { HistoryPanel } from "./components/HistoryPanel";
@@ -19,7 +19,12 @@ function loadContributor(): Contributor {
   return { id: newId(), displayName: "Local author", kind: "human", createdAt: new Date().toISOString() };
 }
 
-export function App() {
+interface AppProps {
+  documentGateway: DocumentGateway;
+  fileDialogs?: DocumentFileDialogs;
+}
+
+export function App({ documentGateway, fileDialogs }: AppProps) {
   const [view, setView] = useState<DocumentView | null>(null);
   const [contributions, setContributions] = useState<Contribution[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -35,7 +40,12 @@ export function App() {
   const selectedNode = view?.nodes.find((node) => node.id === selectedId && node.deletedAt === null) ?? null;
 
   useEffect(() => {
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    try {
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    } catch {
+      // Some browsers restrict local storage for file:// documents. The editor
+      // remains usable because contributor state also lives in React memory.
+    }
   }, [profile]);
 
   useEffect(() => {
@@ -69,15 +79,19 @@ export function App() {
   };
 
   const createDocument = async () => {
-    const path = documentGateway.mode === "desktop" ? await chooseDocumentToCreate(newTitle) : null;
-    if (documentGateway.mode === "desktop" && !path) return;
+    let path: string | null = null;
+    if (documentGateway.mode === "desktop") {
+      if (!fileDialogs) throw new Error("Desktop file dialogs are not configured.");
+      path = await fileDialogs.chooseDocumentToCreate(newTitle);
+      if (!path) return;
+    }
     const created = await run(() => documentGateway.createDocument(path, newTitle, profile), "Document created");
     if (created) { setView(created); await refreshHistory(); }
   };
 
   const openDocument = async () => {
-    if (documentGateway.mode !== "desktop") return;
-    const path = await chooseDocumentToOpen();
+    if (documentGateway.mode !== "desktop" || !fileDialogs) return;
+    const path = await fileDialogs.chooseDocumentToOpen();
     if (!path) return;
     const opened = await run(() => documentGateway.openDocument(path), "Document opened");
     if (opened) { setView(opened); await refreshHistory(); }
@@ -108,14 +122,18 @@ export function App() {
 
   const exportFile = async (format: "json" | "markdown") => {
     if (!view) return;
-    const path = documentGateway.mode === "desktop" ? await chooseExportPath(format, view.document.title) : null;
-    if (documentGateway.mode === "desktop" && !path) return;
+    let path: string | null = null;
+    if (documentGateway.mode === "desktop") {
+      if (!fileDialogs) throw new Error("Desktop file dialogs are not configured.");
+      path = await fileDialogs.chooseExportPath(format, view.document.title);
+      if (!path) return;
+    }
     await run(() => documentGateway.exportDocument(format, path), `Exported ${format}`);
   };
 
   const backup = async () => {
-    if (!view || documentGateway.mode !== "desktop") return;
-    const path = await chooseBackupPath(view.document.title);
+    if (!view || documentGateway.mode !== "desktop" || !fileDialogs) return;
+    const path = await fileDialogs.chooseBackupPath(view.document.title);
     if (path) await run(() => documentGateway.backupDocument(path), "Backup created");
   };
 
@@ -132,7 +150,7 @@ export function App() {
           <span className="eyebrow">Local-first writing</span>
           <h1>Ideas become structure.<br />Structure becomes text.</h1>
           <p>Create a private hierarchical document whose edits remain attributable and replayable. Nothing leaves this computer.</p>
-          {documentGateway.mode === "browser-preview" && <div className="preview-notice">Browser preview: documents are kept in memory and disappear when this tab closes. The desktop build stores portable SQLite files.</div>}
+          {documentGateway.mode === "standalone" && <div className="preview-notice">Standalone HTML mode: documents are kept in memory and disappear when this page closes. JSON and Markdown exports remain available.</div>}
           <label><span>Your contributor name</span><input value={profile.displayName} onChange={(event) => setProfile({ ...profile, displayName: event.target.value || "Local author" })} /></label>
           <label><span>Document title</span><input value={newTitle} onChange={(event) => setNewTitle(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void createDocument()} /></label>
           <div className="welcome-actions">
@@ -186,4 +204,3 @@ export function App() {
     </div>
   );
 }
-

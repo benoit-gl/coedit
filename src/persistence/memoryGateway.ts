@@ -43,7 +43,7 @@ function markdownFor(state: DocumentState): string {
 }
 
 export class MemoryDocumentGateway implements DocumentGateway {
-  readonly mode = "browser-preview" as const;
+  readonly mode = "standalone" as const;
   private current: DocumentView | null = null;
   private contributions: Contribution[] = [];
   private revisions = new Map<number, DocumentState>();
@@ -170,4 +170,3 @@ export class MemoryDocumentGateway implements DocumentGateway {
     return { path: name, bytesWritten: blob.size };
   }
 }
-

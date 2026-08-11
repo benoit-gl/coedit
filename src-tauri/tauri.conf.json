@@ -6,13 +6,14 @@
   "build": {
     "beforeDevCommand": "corepack pnpm dev",
     "devUrl": "http://127.0.0.1:1420",
-    "beforeBuildCommand": "corepack pnpm build",
+    "beforeBuildCommand": "corepack pnpm build:tauri",
     "frontendDist": "../dist"
   },
   "app": {
     "windows": [
       {
         "title": "Coedit Local",
+        "url": "tauri.html",
         "width": 1360,
         "height": 900,
         "minWidth": 820,

@@ -1,5 +1,7 @@
 # Local-First Hierarchical Editor Reimplementation
 
+> **Artifact status:** This is the original product/phase plan. For the current implementation, RUP use cases, 4+1 architecture, design models, sequences, traceability, tests, and known limitations, start with the [engineering documentation index](./docs/README.md). Where this roadmap differs from executable code, the current engineering documentation and code describe the baseline.
+
 ## Summary
 
 Build a new portable, local-first desktop editor inspired by TreeWriter's hierarchy and node-editing concepts. Do not reuse its server, authentication, database, proxy, email, or deployment infrastructure.
@@ -56,4 +58,3 @@ Structural edits, text edits, metadata changes, automated corrections, and accep
 - A portable document is one `.coedit` file. A portable application is a normal cross-platform package plus an optional no-install Windows build.
 - Undo/redo may use an in-memory editor stack; permanent restoration creates a new contribution rather than deleting history.
 - No TreeWriter backend service, Supabase project, MongoDB route, remote script, arbitrary proxy, or SMTP feature is carried over.
-

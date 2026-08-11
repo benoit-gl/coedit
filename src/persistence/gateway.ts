@@ -9,7 +9,7 @@ import type {
 } from "../domain/types";
 
 export interface DocumentGateway {
-  readonly mode: "desktop" | "browser-preview";
+  readonly mode: "desktop" | "standalone";
   createDocument(path: string | null, title: string, contributor: Contributor): Promise<DocumentView>;
   openDocument(path: string): Promise<DocumentView>;
   closeDocument(): Promise<void>;
@@ -20,4 +20,3 @@ export interface DocumentGateway {
   backupDocument(path: string): Promise<ExportResult>;
   exportDocument(format: "json" | "markdown", path: string | null): Promise<ExportResult>;
 }
-

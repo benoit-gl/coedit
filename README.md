@@ -1,6 +1,6 @@
 # Coedit Local
 
-Coedit Local is a portable, local-first hierarchical writing application. It turns ideas into nested structure and final text while preserving an immutable, attributable contribution history.
+Coedit Local is a portable, local-first hierarchical writing application. It turns ideas into nested structure and final text while preserving an append-only, attributable contribution history through application workflows.
 
 This is a new implementation inspired by TreeWriter's interaction model. It does not use TreeWriter's backend, Supabase project, MongoDB services, proxy, email integration, or remote scripts.
 
@@ -12,9 +12,9 @@ This is a new implementation inspired by TreeWriter's interaction model. It does
 - Contributor, writing-session, revision, operation, and state-hash attribution
 - Searchable history and restoration through compensating contributions
 - Portable `.coedit` SQLite document files
-- JSON recovery, Markdown export, and SQLite backup
+- JSON/Markdown export and desktop SQLite backup
 - Strict offline content-security policy and sanitization in both UI and persistence layers
-- Browser-only in-memory preview for UI development
+- Self-contained, double-clickable HTML5 build with an in-memory document backend
 
 AI and real-time synchronization are intentionally not connected. The provider interface exists so they can be added later without bypassing contribution history.
 
@@ -30,20 +30,41 @@ The repository pins pnpm and Rust versions. JavaScript install scripts are disab
 ```powershell
 corepack pnpm install --frozen-lockfile
 corepack pnpm test
-corepack pnpm build
-corepack pnpm tauri:dev
 ```
+
+For the standalone HTML application:
+
+```powershell
+corepack pnpm build
+```
+
+Then double-click `dist/index.html`. The generated file contains the UI, editor, styles, CSP, and in-memory gateway; it does not require Tauri or a local server. Its working document disappears when the page closes, so export JSON or Markdown before leaving.
+
+For the persistent desktop application:
+
+```powershell
+corepack pnpm tauri:dev
+corepack pnpm tauri:build
+```
+
+The Tauri build embeds a separate frontend entry and uses the Rust/SQLite backend. Use `tauri:build`, not a raw `cargo build --release`, for a distributable application.
 
 Do not use `--no-frozen-lockfile` for routine development. Review changes to `pnpm-lock.yaml` and `src-tauri/Cargo.lock` before accepting dependency updates.
 
 ## Offline guarantee
 
-The base application registers no HTTP client or synchronization provider. The production CSP permits Tauri IPC but denies ordinary network connections, frames, remote images, and remote scripts. File dialogs are the only enabled Tauri plugin capability.
+The base application registers no HTTP client or synchronization provider. The standalone CSP denies all connections. The desktop production CSP permits Tauri IPC but denies ordinary network connections, frames, remote images, and remote scripts. File dialogs are the only enabled Tauri plugin capability.
 
-The Vite development server binds only to `127.0.0.1`. The browser preview stores documents only in memory and is clearly labeled as non-persistent.
+The Vite development server binds only to `127.0.0.1`; production artifacts do not start or require it. The standalone application stores documents only in memory and is clearly labeled as non-persistent.
 
 ## Documentation
 
-- [Architecture plan](./LOCAL_FIRST_TREE_EDITOR_PLAN.md)
-- [Document format and recovery](./docs/DOCUMENT_FORMAT.md)
-- [Security model](./docs/SECURITY.md)
+Start with the [engineering documentation index](./docs/README.md). It routes contributors through:
+
+- RUP vision, actors, user stories, use cases, and supplementary requirements;
+- 4+1 architecture, frontend and persistence design, class/component/data diagrams, and sequence realizations;
+- UI/UX states and wireframes;
+- feature-to-file traceability, extension recipes, tests, build/release portability, and known limitations;
+- the `.coedit` format/recovery and security specifications.
+
+The [original architecture plan](./LOCAL_FIRST_TREE_EDITOR_PLAN.md) remains a roadmap artifact. Where it differs from the current engineering documentation or executable code, the latter describe the current implementation.

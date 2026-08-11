@@ -1,4 +1,5 @@
 import { open, save } from "@tauri-apps/plugin-dialog";
+import type { DocumentFileDialogs } from "./fileDialogs";
 
 export async function chooseDocumentToOpen(): Promise<string | null> {
   const result = await open({
@@ -30,3 +31,10 @@ export async function chooseBackupPath(title: string): Promise<string | null> {
     filters: [{ name: "Coedit backup", extensions: ["coedit-backup"] }],
   });
 }
+
+export const tauriFileDialogs: DocumentFileDialogs = {
+  chooseDocumentToOpen,
+  chooseDocumentToCreate,
+  chooseExportPath,
+  chooseBackupPath,
+};
