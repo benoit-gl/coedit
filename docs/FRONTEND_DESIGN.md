@@ -141,7 +141,8 @@ IPC --> SQLite
 |---|---|---|
 | `src/components/Outline.tsx` | `Outline` | Builds and presents the active node tree; selection, expansion, keyboard traversal, sibling reorder, drag-to-reparent, add, and delete. |
 | `src/components/Outline.tsx` | Private `OutlineRow` | Recursive row rendering and row-level commands. |
-| `src/components/NodeEditor.tsx` | `NodeEditor` | Owns dirty node title/kind/summary drafts, drains them with the nested rich editor through one registered participant, and renders `RichTextEditor`. |
+| `src/components/NodeEditor.tsx` | `NodeEditor` | Owns dirty node title/tags/summary drafts and composes the nested tag and rich-text participants into one controller-visible participant. |
+| `src/components/TagEditor.tsx` | `TagEditor` | Editable ARIA combobox, reusable document suggestions, freeform tag creation, removable chips, keyboard/touch interaction, and pending-input flushing. |
 | `src/editor/RichTextEditor.tsx` | `RichTextEditor` | Tiptap/Yjs lifecycle, toolbar, grouping, retry-preserving commit drain, and participant registration with `NodeEditor`. |
 | `src/editor/sanitizeRichText.ts` | `sanitizeRichText`, `RICH_TEXT_POLICY`, allowlists | Central browser sanitization contract used for paste, fallback load, and commit. |
 | `src/editor/yjsEncoding.ts` | `bytesToBase64`, private `base64ToBytes`, `createYDoc` | Converts Yjs binary state to/from the string representation carried by the domain model. |
@@ -155,6 +156,7 @@ IPC --> SQLite
 | `src/domain/types.ts` | `DocumentState`, `DocumentView`, `DocumentNode`, `DocumentOperation`, `ContributionPage`, `RecoveryExport`, `ExportFormat`, related interfaces and unions | Shared serialized model, paging/recovery shapes, and operation contract. |
 | `src/domain/tree.ts` | `TreeNode`, `buildTree`, private `descendantIds`, `assertValidTree`, `affectedNodeIds`, `applyOperation` | Hierarchy projection, validation, mutation, and attribution support. |
 | `src/domain/json.ts` | `cloneJson`, `cloneJsonObject`, `canonicalJson`, `compareJsonStrings` | Validates/detaches JSON-only data (including strict array/property rules) and serializes it with explicit UTF-16 key ordering. |
+| `src/domain/tags.ts` | `normalizeTag`, `normalizeTags`, `collectActiveTags` | Defines tag limits, canonicalization/deduplication, and the active document-local suggestion vocabulary. |
 | `src/domain/hash.ts` | `DOCUMENT_HASH_ALGORITHM`, `toDocumentState`, `canonicalDocumentJson`, `hashDocument` | Explicit host-field projection, versioned canonical JSON, and browser SHA-256 hashing. |
 | `src/domain/ids.ts` | `newId` | Browser-safe UUID generation. |
 | `src/ai/provider.ts` | `AiRequest`, `AiProvider` | Unwired extension contract for an explicitly invoked AI proposal provider. No implementation is registered. |
@@ -426,12 +428,12 @@ Native dialogs are separate from document persistence. `TauriDocumentGateway.sto
 6. Add domain, memory-gateway, Rust-store, and appropriate component tests.
 7. Update [Traceability](TRACEABILITY.md), persisted-format documentation if applicable, and use-case/sequence documentation.
 
-### Add a node kind
+### Change node tags
 
-1. Extend `NodeKind` in `src/domain/types.ts`.
-2. Add the label to `kinds` in `src/components/NodeEditor.tsx`.
-3. Update Rust serialization/validation and any kind-sensitive exporters.
-4. Add round-trip, UI, and invalid-input tests.
+1. Change normalization and limits in `src/domain/tags.ts` and its tests.
+2. Keep `TagEditor` keyboard, IME, touch, error, and screen-reader behavior aligned with the editable combobox pattern.
+3. Update Rust tag validation/serialization and SQLite `tags_json` handling.
+4. Add domain, component, recovery/hash, and round-trip tests, then update the format and UX documentation.
 
 ### Add editor formatting
 
@@ -462,7 +464,7 @@ Extend the centralized `ExportFormat` union in `src/domain/types.ts`, update the
 These are observations, not recommended behavior. The consolidated risk list and remediation status belong in [Known limitations](KNOWN_LIMITATIONS.md).
 
 - Authoritative create/open/restore responses increment `editorGeneration`, and `App` keys `NodeEditor` by node ID plus that generation. This deliberately remounts the editor/Yjs state after same-node restore; a controller test covers the generation change, but no full Tiptap DOM regression test exists.
-- Controlled controller actions freeze and drain document-title, node-metadata, and rich-text drafts. Unexpected page/process exit, forced host suspension, and arbitrary React teardown remain unawaitable.
+- Controlled controller actions freeze and drain document-title, pending tag-input, node-metadata, and rich-text drafts. Unexpected page/process exit, forced host suspension, and arbitrary React teardown remain unawaitable.
 - `busy` disables outline mutations, but `NodeEditor` receives only `view.readOnly`, so typing can continue during an outstanding commit.
 - History errors are isolated from successful mutations, but automatic refreshes are fire-and-forget and there is no total count. The desktop store still pre-windows the newest 100,000 rows before applying filters.
 - If a local profile is not present in an opened document, `App` falls back to its first contributor for new contribution context.

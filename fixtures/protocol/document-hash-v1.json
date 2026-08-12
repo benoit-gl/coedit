@@ -47,7 +47,7 @@
         "id": "node-z",
         "parentId": "node-a",
         "position": 0,
-        "kind": "text",
+        "tags": ["final", "research"],
         "title": "Child",
         "summary": "Second",
         "contentHtml": "<p>Child</p>",
@@ -67,7 +67,7 @@
         "id": "node-a",
         "parentId": null,
         "position": 0,
-        "kind": "section",
+        "tags": ["section"],
         "title": "Root",
         "summary": "First",
         "contentHtml": "<h2>Root</h2>",
@@ -82,8 +82,8 @@
       }
     ]
   },
-  "canonicalJson": "{\"contributors\":[{\"createdAt\":\"2025-12-31T00:00:00.000Z\",\"displayName\":\"Author A\",\"id\":\"author-a\",\"kind\":\"imported\"},{\"createdAt\":\"2026-01-01T00:00:00.000Z\",\"displayName\":\"Writer Z\",\"id\":\"writer-z\",\"kind\":\"human\"}],\"document\":{\"createdAt\":\"2026-01-01T00:00:00.000Z\",\"formatVersion\":1,\"id\":\"document\",\"revision\":7,\"title\":\"Café & notes\",\"updatedAt\":\"2026-01-02T03:04:05.006Z\"},\"nodes\":[{\"contentHtml\":\"<h2>Root</h2>\",\"createdAt\":\"2026-01-01T00:00:00.000Z\",\"deletedAt\":null,\"id\":\"node-a\",\"kind\":\"section\",\"metadata\":{\"a\":1,\"tags\":[\"one\",\"two\"]},\"parentId\":null,\"position\":0,\"summary\":\"First\",\"title\":\"Root\",\"updatedAt\":\"2026-01-02T03:04:05.006Z\",\"yjsState\":\"\"},{\"contentHtml\":\"<p>Child</p>\",\"createdAt\":\"2026-01-02T00:00:00.000Z\",\"deletedAt\":null,\"id\":\"node-z\",\"kind\":\"text\",\"metadata\":{\"nested\":{\"a\":null,\"b\":true},\"z\":2},\"parentId\":\"node-a\",\"position\":0,\"summary\":\"Second\",\"title\":\"Child\",\"updatedAt\":\"2026-01-02T03:04:05.006Z\",\"yjsState\":\"AQI=\"}],\"sessions\":[{\"contributorId\":\"author-a\",\"description\":\"Imported draft\",\"endedAt\":\"2026-01-01T01:00:00.000Z\",\"id\":\"session-a\",\"startedAt\":\"2026-01-01T00:00:00.000Z\"},{\"contributorId\":\"writer-z\",\"description\":null,\"endedAt\":null,\"id\":\"session-z\",\"startedAt\":\"2026-01-02T00:00:00.000Z\"}]}",
-  "sha256": "61950cf9c099f9ab9d3bd1d8cc47ea6ee270586a55710ec49be1c4707bc3f604",
+  "canonicalJson": "{\"contributors\":[{\"createdAt\":\"2025-12-31T00:00:00.000Z\",\"displayName\":\"Author A\",\"id\":\"author-a\",\"kind\":\"imported\"},{\"createdAt\":\"2026-01-01T00:00:00.000Z\",\"displayName\":\"Writer Z\",\"id\":\"writer-z\",\"kind\":\"human\"}],\"document\":{\"createdAt\":\"2026-01-01T00:00:00.000Z\",\"formatVersion\":1,\"id\":\"document\",\"revision\":7,\"title\":\"Café & notes\",\"updatedAt\":\"2026-01-02T03:04:05.006Z\"},\"nodes\":[{\"contentHtml\":\"<h2>Root</h2>\",\"createdAt\":\"2026-01-01T00:00:00.000Z\",\"deletedAt\":null,\"id\":\"node-a\",\"metadata\":{\"a\":1,\"tags\":[\"one\",\"two\"]},\"parentId\":null,\"position\":0,\"summary\":\"First\",\"tags\":[\"section\"],\"title\":\"Root\",\"updatedAt\":\"2026-01-02T03:04:05.006Z\",\"yjsState\":\"\"},{\"contentHtml\":\"<p>Child</p>\",\"createdAt\":\"2026-01-02T00:00:00.000Z\",\"deletedAt\":null,\"id\":\"node-z\",\"metadata\":{\"nested\":{\"a\":null,\"b\":true},\"z\":2},\"parentId\":\"node-a\",\"position\":0,\"summary\":\"Second\",\"tags\":[\"final\",\"research\"],\"title\":\"Child\",\"updatedAt\":\"2026-01-02T03:04:05.006Z\",\"yjsState\":\"AQI=\"}],\"sessions\":[{\"contributorId\":\"author-a\",\"description\":\"Imported draft\",\"endedAt\":\"2026-01-01T01:00:00.000Z\",\"id\":\"session-a\",\"startedAt\":\"2026-01-01T00:00:00.000Z\"},{\"contributorId\":\"writer-z\",\"description\":null,\"endedAt\":null,\"id\":\"session-z\",\"startedAt\":\"2026-01-02T00:00:00.000Z\"}]}",
+  "sha256": "a47c0c07dc41f9bdace77faf35b3ede4f4b4aa31670de06a6ed944e69eeae545",
   "canonicalCases": [
     {
       "name": "integer-like and Unicode object keys",

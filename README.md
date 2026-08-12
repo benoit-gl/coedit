@@ -7,6 +7,7 @@ This is a new implementation inspired by TreeWriter's interaction model. It does
 ## Current MVP
 
 - Typed idea hierarchy with root and child nodes
+- Optional freeform node tags with document-local reusable suggestions
 - Keyboard navigation, sibling reordering, drag-to-reparent, and soft deletion
 - Tiptap rich-text editing backed by Yjs updates
 - Contributor, writing-session, revision, operation, and state-hash attribution

@@ -188,7 +188,7 @@ Keep these labeled **Reserved** or **Proposed** in contributor-facing material.
 
 ## Verification and delivery gaps
 
-The current source inventory is thirty-three TypeScript cases and three Rust cases. New TypeScript coverage includes the draft coordinator, controller transition ordering/generation, serialized-queue behavior, contributor-storage validation, node-editor normalization, JSON detachment/validation, cursor paging/filtering, recovery-envelope shape, filename normalization, and versioned hash/sanitizer fixtures. There is still no:
+The current source inventory is forty TypeScript cases and three Rust cases. New TypeScript coverage includes the draft coordinator, controller transition ordering/generation, serialized-queue behavior, contributor-storage validation, node-editor normalization, tag normalization/combobox behavior, JSON detachment/validation, cursor paging/filtering, recovery-envelope shape, filename normalization, and versioned hash/sanitizer fixtures. There is still no:
 
 - full-App React/editor integration or end-to-end browser suite;
 - fake-timer editor debounce/lifecycle suite;

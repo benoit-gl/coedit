@@ -183,7 +183,7 @@ The Rust store is not imported into the TypeScript build. `TauriDocumentGateway`
 ### Principal domain concepts
 
 - A `DocumentView` is the complete materialized document state plus host path/read-only/recovery fields.
-- A `DocumentNode` is a stable-ID tree node with metadata, sanitized rendered HTML, a complete Base64 Yjs state, and a soft-deletion timestamp.
+- A `DocumentNode` is a stable-ID tree node with document-local freeform tags, metadata, sanitized rendered HTML, a complete Base64 Yjs state, and a soft-deletion timestamp.
 - A `DocumentOperation` is a discriminated mutation command.
 - A `Contribution` attributes one committed revision to a contributor and optional session/group/message, and records a resulting state hash.
 - A snapshot stores a complete `DocumentState` at a revision. Restoration materializes an old snapshot into a new revision rather than removing later history.

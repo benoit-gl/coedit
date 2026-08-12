@@ -14,6 +14,8 @@ A native Coedit document is a SQLite database normally named with the `.coedit` 
 
 The format does not currently define encryption, signatures, an import format, network synchronization, or a migration mechanism. SQLite portability does not imply that arbitrary simultaneous editors can safely collaborate through the file.
 
+The current source now creates fresh version-1 files with `nodes.tags_json` rather than the retired closed `nodes.kind` column. This intentionally breaks compatibility with prototype `.coedit` files created before the tag change: the project has no user documents requiring recovery, and no migration or version bump was requested. Add a migration and advance the format before treating either shape as a distributed compatibility contract.
+
 ## Identification
 
 The application uses three identifiers:
@@ -99,7 +101,7 @@ A mutation whose context has a session ID uses `INSERT OR IGNORE` to create a se
 | `id` | `TEXT` | primary key, not null |
 | `parent_id` | `TEXT` | nullable foreign key to `nodes.id` |
 | `position` | `INTEGER` | not null |
-| `kind` | `TEXT` | one of `idea`, `section`, `scene`, `beat`, `text` |
+| `tags_json` | `TEXT` | not null; JSON array of normalized tag strings |
 | `title` | `TEXT` | not null |
 | `summary` | `TEXT` | not null |
 | `content_html` | `TEXT` | not null |
@@ -110,6 +112,8 @@ A mutation whose context has a session ID uses `INSERT OR IGNORE` to create a se
 | `deleted_at` | `TEXT` | nullable |
 
 `parent_id = NULL` denotes a root. `deleted_at = NULL` denotes an active node. Soft-deleted nodes remain materialized for history and restoration behavior.
+
+`tags_json` is an ordered JSON array used as a set. The application trims and Unicode-normalizes tags, collapses whitespace, matches duplicates case-insensitively while preserving the first display spelling, and permits at most 20 tags of at most 64 code points/256 UTF-8 bytes each. The editor's reusable vocabulary is not stored separately; it is derived from tags on active nodes, so it grows and shrinks with current document use.
 
 `yjs_state` stores the decoded binary complete Yjs update. The API representation is base64 text. `content_html` is a separately materialized rendering; the backend does not prove that it and the Yjs state are equivalent.
 
@@ -188,7 +192,7 @@ Opening and post-mutation loading require:
 - unique node IDs;
 - every non-null parent ID to identify a node;
 - no parent cycle;
-- known node and contributor kinds;
+- valid contributor kinds and normalized node tag arrays;
 - parseable metadata, node metadata JSON, and stored values;
 - metadata format version equal to SQLite `user_version`.
 

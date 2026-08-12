@@ -263,7 +263,7 @@ OpenState .. UC10
 1. The author creates a root or child node, or selects an existing active node.
 2. `Outline` emits the requested identifier, parent, and sibling index.
 3. `App` asks `useDocumentController` to apply a typed `DocumentOperation` and message.
-4. The controller synchronously freezes and drains registered document-title, node-metadata, and rich-text drafts, creates contribution context, and serializes the gateway call.
+4. The controller synchronously freezes and drains registered document-title, pending tag-input, node-metadata, and rich-text drafts, creates contribution context, and serializes the gateway call.
 5. The active gateway checks identity and tree constraints, applies the operation, normalizes active sibling positions, advances the revision, and records the contribution/snapshot.
 6. The controller accepts the current-epoch/non-older view and refreshes the first history page under the active filters only when History is open; otherwise it marks History stale for its next open.
 
@@ -286,23 +286,24 @@ OpenState .. UC10
 
 **Primary actor:** Author.
 
-**Goal:** Describe and classify the selected idea independently of its developed text.
+**Goal:** Describe and tag the selected idea independently of its developed text.
 
 **Preconditions:** A writable document and active node are selected.
 
-**Trigger:** The author edits the title or summary and leaves the field, or changes the kind selector.
+**Trigger:** The author edits the title/summary, adds or reuses a freeform tag, or removes a selected tag.
 
 **Main success scenario:**
 
-1. `NodeEditor` keeps title, summary, and kind draft values plus a dirty-field set in component state/refs.
-2. Blur starts an eager drain for title/summary; kind selection changes the draft and drains immediately.
-3. `NodeEditor` composes its metadata drain with the nested rich-text participant and registers one participant with the controller.
-4. A controlled transition freezes the participant synchronously, drains metadata then rich text, and creates queued `updateNode`/`updateContent` operations as needed.
+1. `NodeEditor` keeps title, summary, and tag drafts plus a dirty-field set in component state/refs.
+2. `TagEditor` filters document-local suggestions, creates arbitrary normalized tags, and removes tag chips; blur/Enter/selection drains the tag array.
+3. `NodeEditor` composes its metadata drain with nested tag and rich-text participants and registers one participant with the controller.
+4. A controlled transition freezes the participant synchronously, drains pending tag input, metadata, then rich text, and creates queued `updateNode`/`updateContent` operations as needed.
 5. Each serialized gateway command applies the update and records a new revision; successfully persisted fields are removed from the dirty set, while failed ones remain retryable.
 
 **Alternate and exception flows:**
 
 - A blank title becomes `Untitled idea`.
+- Empty tag text is ignored; duplicates are matched case-insensitively; invalid or over-limit tag input blocks the transition and remains editable.
 - Desktop persistence enforces title, summary, and metadata size limits.
 - Read-only controls are disabled.
 - An operation for a missing node is rejected.
@@ -540,7 +541,7 @@ OpenState .. UC10
 |---|---|---|
 | US-01 | As an author, I can create a titled document and begin without an account. | UC-01 succeeds in either composition root. |
 | US-02 | As an author, I can arrange stable ideas into an ordered hierarchy. | Create, move, reparent, expand/collapse, and cycle rejection work. |
-| US-03 | As an author, I can classify nodes as idea, section, scene, beat, or final text. | `NodeEditor` emits a persisted `updateNode` operation. |
+| US-03 | As an author, I can add, reuse, and remove multiple freeform tags on a node. | `TagEditor` derives active-document suggestions and `NodeEditor` persists the normalized tag array through `updateNode`. |
 | US-04 | As an author, I can develop formatted prose for each node. | Tiptap/Yjs editor commits sanitized content. |
 | US-05 | As an author, I can identify recent changes by revision and contributor. | History presents contribution metadata and hash prefix. |
 | US-06 | As an author, I can make a stored revision current without deleting later history. | Restore appends a new `restoreRevision` contribution. |
@@ -590,7 +591,7 @@ These requirements complement the use cases. “Current satisfaction” describe
 | FR-02 | UI orchestration shall depend on `DocumentGateway`, not invoke Tauri directly. | Satisfied through `useDocumentController`; native APIs stay in adapters and optional capabilities. |
 | FR-03 | A desktop document shall use `.coedit`, a fixed application ID, and a versioned schema. | Satisfied for format `1` in `models.rs` and `store.rs`. |
 | FR-04 | The application shall permit at most one active document per instance. | Satisfied by React state and `Mutex<Option<DocumentStore>>`. |
-| FR-05 | Every node shall have a stable ID, optional parent, sibling position, kind, metadata, Yjs state, timestamps, and deletion marker. | Satisfied by TypeScript/Rust models and SQLite `nodes`. |
+| FR-05 | Every node shall have a stable ID, optional parent, sibling position, freeform tag set, metadata, Yjs state, timestamps, and deletion marker. | Satisfied by TypeScript/Rust models and SQLite `nodes`. |
 | FR-06 | A hierarchy shall reject duplicate IDs, missing parents, self-parenting/cycles, and moves into descendants. | Satisfied in both domain implementations; test depth differs. |
 | FR-07 | Deletion shall be soft and cover the subtree. | Satisfied; current UI has no direct deleted-node browser. |
 | FR-08 | A persisted visible mutation shall be represented by a typed operation and attributed contribution. | Mostly satisfied; controlled actions drain and serialize rich text, while uncontrolled host exit and metadata drafts retain limitations. |

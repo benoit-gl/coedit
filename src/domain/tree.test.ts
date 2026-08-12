@@ -8,8 +8,8 @@ const state = (): DocumentState => ({
   contributors: [],
   sessions: [],
   nodes: [
-    { id: "root", parentId: null, position: 0, kind: "section", title: "Root", summary: "", contentHtml: "", yjsState: "", metadata: {}, createdAt: now, updatedAt: now, deletedAt: null },
-    { id: "child", parentId: "root", position: 0, kind: "idea", title: "Child", summary: "", contentHtml: "", yjsState: "", metadata: {}, createdAt: now, updatedAt: now, deletedAt: null },
+    { id: "root", parentId: null, position: 0, tags: ["section"], title: "Root", summary: "", contentHtml: "", yjsState: "", metadata: {}, createdAt: now, updatedAt: now, deletedAt: null },
+    { id: "child", parentId: "root", position: 0, tags: [], title: "Child", summary: "", contentHtml: "", yjsState: "", metadata: {}, createdAt: now, updatedAt: now, deletedAt: null },
   ],
 });
 
@@ -33,4 +33,3 @@ describe("tree operations", () => {
     expect(() => assertValidTree(invalid)).toThrow(/cycle/);
   });
 });
-

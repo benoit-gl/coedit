@@ -20,7 +20,7 @@ const initialNode: DocumentNode = {
   id: "node",
   parentId: null,
   position: 0,
-  kind: "idea",
+  tags: [],
   title: "Draft",
   summary: "",
   contentHtml: "",
@@ -54,6 +54,7 @@ describe("NodeEditor metadata drafts", () => {
       return (
         <NodeEditor
           node={node}
+          tagSuggestions={[]}
           readOnly={false}
           registerDraftParticipant={register}
           onContentChange={async () => undefined}

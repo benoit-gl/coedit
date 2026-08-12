@@ -9,6 +9,7 @@ import { HistoryPanel } from "./components/HistoryPanel";
 import { NodeEditor } from "./components/NodeEditor";
 import { Outline } from "./components/Outline";
 import { newId } from "./domain/ids";
+import { collectActiveTags } from "./domain/tags";
 import type { DocumentFileDialogs } from "./persistence/fileDialogs";
 import type { DocumentGateway } from "./persistence/gateway";
 
@@ -104,6 +105,7 @@ export function App({ documentGateway, fileDialogs }: AppProps) {
   const [profile, setProfile] = useState(loadLocalContributor);
   const controller = useDocumentController({ documentGateway, fileDialogs, profile });
   const { view, selectedNode } = controller;
+  const tagSuggestions = useMemo(() => collectActiveTags(view?.nodes ?? []), [view?.nodes]);
 
   useEffect(() => {
     try {
@@ -116,7 +118,7 @@ export function App({ documentGateway, fileDialogs }: AppProps) {
   const addNode = async (parentId: string | null) => {
     const id = newId();
     const added = await controller.applyOperation(
-      { type: "createNode", node: { id, parentId, kind: "idea", title: "New idea" } },
+      { type: "createNode", node: { id, parentId, title: "New idea" } },
       parentId ? "Added sub-idea" : "Added root idea",
     );
     if (added) await controller.selectNode(id);
@@ -204,6 +206,7 @@ export function App({ documentGateway, fileDialogs }: AppProps) {
             <NodeEditor
               key={`${selectedNode.id}:${controller.editorGeneration}`}
               node={selectedNode}
+              tagSuggestions={tagSuggestions}
               readOnly={controlsLocked}
               registerDraftParticipant={controller.registerDraftParticipant}
               onMetadataChange={(changes) => controller.commitNodeMetadata(selectedNode.id, changes)}

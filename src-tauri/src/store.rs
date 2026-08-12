@@ -18,10 +18,13 @@ use uuid::Uuid;
 use crate::models::{
     Contribution, ContributionContext, ContributionQuery, Contributor, ContributorKind,
     DocumentMetadata, DocumentNode, DocumentOperation, DocumentState, DocumentView, ExportResult,
-    NodeKind, WritingSession, APPLICATION_ID, FORMAT_VERSION,
+    WritingSession, APPLICATION_ID, FORMAT_VERSION,
 };
 
 const MAGIC: &str = "coedit-local-document";
+const MAX_TAGS_PER_NODE: usize = 20;
+const MAX_TAG_CHARACTERS: usize = 64;
+const MAX_TAG_BYTES: usize = 256;
 const MAX_TITLE_BYTES: usize = 4_096;
 const MAX_SUMMARY_BYTES: usize = 1_048_576;
 const MAX_CONTENT_BYTES: usize = 16_777_216;
@@ -73,6 +76,41 @@ fn check_size(label: &str, value: &str, limit: usize) -> Result<()> {
     }
 }
 
+fn clean_tags(values: &[String]) -> Result<Vec<String>> {
+    let mut result = Vec::new();
+    let mut identities = HashSet::new();
+    for value in values {
+        let tag = value.split_whitespace().collect::<Vec<_>>().join(" ");
+        if tag.is_empty() {
+            continue;
+        }
+        if tag.chars().any(char::is_control) {
+            return Err(StoreError::Invalid(
+                "Tags cannot contain control characters.".into(),
+            ));
+        }
+        if tag.chars().count() > MAX_TAG_CHARACTERS {
+            return Err(StoreError::Invalid(format!(
+                "A tag cannot exceed {MAX_TAG_CHARACTERS} characters."
+            )));
+        }
+        if tag.len() > MAX_TAG_BYTES {
+            return Err(StoreError::Invalid(format!(
+                "A tag cannot exceed {MAX_TAG_BYTES} UTF-8 bytes."
+            )));
+        }
+        if identities.insert(tag.to_lowercase()) {
+            result.push(tag);
+        }
+    }
+    if result.len() > MAX_TAGS_PER_NODE {
+        return Err(StoreError::Invalid(format!(
+            "A node cannot have more than {MAX_TAGS_PER_NODE} tags."
+        )));
+    }
+    Ok(result)
+}
+
 fn meta(connection: &Connection, key: &str) -> Result<String> {
     connection
         .query_row("SELECT value FROM metadata WHERE key = ?1", [key], |row| {
@@ -115,7 +153,7 @@ fn initialize_schema(connection: &Connection) -> Result<()> {
             id TEXT PRIMARY KEY NOT NULL,
             parent_id TEXT REFERENCES nodes(id),
             position INTEGER NOT NULL,
-            kind TEXT NOT NULL CHECK (kind IN ('idea', 'section', 'scene', 'beat', 'text')),
+            tags_json TEXT NOT NULL,
             title TEXT NOT NULL,
             summary TEXT NOT NULL,
             content_html TEXT NOT NULL,
@@ -214,7 +252,7 @@ fn load_state(connection: &Connection) -> Result<DocumentState> {
         .collect::<std::result::Result<Vec<_>, _>>()?;
 
     let mut node_statement = connection.prepare(
-        "SELECT id, parent_id, position, kind, title, summary, content_html, yjs_state, metadata_json, created_at, updated_at, deleted_at FROM nodes ORDER BY id",
+        "SELECT id, parent_id, position, tags_json, title, summary, content_html, yjs_state, metadata_json, created_at, updated_at, deleted_at FROM nodes ORDER BY id",
     )?;
     let node_rows = node_statement.query_map([], |row| {
         Ok((
@@ -238,7 +276,7 @@ fn load_state(connection: &Connection) -> Result<DocumentState> {
             id,
             parent_id,
             position,
-            kind,
+            tags_json,
             title,
             summary,
             content_html,
@@ -248,11 +286,12 @@ fn load_state(connection: &Connection) -> Result<DocumentState> {
             updated_at,
             deleted_at,
         ) = row?;
+        let tags: Vec<String> = serde_json::from_str(&tags_json)?;
         nodes.push(DocumentNode {
             id,
             parent_id,
             position,
-            kind: NodeKind::try_from(kind.as_str()).map_err(StoreError::Invalid)?,
+            tags: clean_tags(&tags)?,
             title,
             summary,
             content_html,
@@ -569,8 +608,8 @@ impl DocumentStore {
                     return Err(StoreError::Invalid("Yjs state is too large.".into()));
                 }
                 transaction.execute(
-                    "INSERT INTO nodes(id, parent_id, position, kind, title, summary, content_html, yjs_state, metadata_json, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)",
-                    params![node.id, node.parent_id, position, node.kind.as_str(), title, summary, content, yjs, serde_json::to_string(node.metadata.as_ref().unwrap_or(&json!({})))?, timestamp],
+                    "INSERT INTO nodes(id, parent_id, position, tags_json, title, summary, content_html, yjs_state, metadata_json, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)",
+                    params![node.id, node.parent_id, position, serde_json::to_string(&clean_tags(node.tags.as_deref().unwrap_or_default())?)?, title, summary, content, yjs, serde_json::to_string(node.metadata.as_ref().unwrap_or(&json!({})))?, timestamp],
                 )?;
                 normalize_positions(transaction, node.parent_id.as_deref())?;
             }
@@ -591,10 +630,10 @@ impl DocumentStore {
                         params![summary, node_id],
                     )?;
                 }
-                if let Some(kind) = &changes.kind {
+                if let Some(tags) = &changes.tags {
                     transaction.execute(
-                        "UPDATE nodes SET kind = ?1 WHERE id = ?2",
-                        params![kind.as_str(), node_id],
+                        "UPDATE nodes SET tags_json = ?1 WHERE id = ?2",
+                        params![serde_json::to_string(&clean_tags(tags)?)?, node_id],
                     )?;
                 }
                 if let Some(metadata) = &changes.metadata {
@@ -841,8 +880,8 @@ impl DocumentStore {
         transaction.execute("DELETE FROM nodes", [])?;
         for node in &target.nodes {
             transaction.execute(
-                "INSERT INTO nodes(id, parent_id, position, kind, title, summary, content_html, yjs_state, metadata_json, created_at, updated_at, deleted_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
-                params![node.id, node.parent_id, node.position, node.kind.as_str(), node.title, node.summary, ammonia::clean(&node.content_html), BASE64.decode(&node.yjs_state).map_err(|_| StoreError::Invalid("Snapshot contains invalid Yjs state.".into()))?, serde_json::to_string(&node.metadata)?, node.created_at, node.updated_at, node.deleted_at],
+                "INSERT INTO nodes(id, parent_id, position, tags_json, title, summary, content_html, yjs_state, metadata_json, created_at, updated_at, deleted_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
+                params![node.id, node.parent_id, node.position, serde_json::to_string(&clean_tags(&node.tags)?)?, node.title, node.summary, ammonia::clean(&node.content_html), BASE64.decode(&node.yjs_state).map_err(|_| StoreError::Invalid("Snapshot contains invalid Yjs state.".into()))?, serde_json::to_string(&node.metadata)?, node.created_at, node.updated_at, node.deleted_at],
             )?;
         }
         transaction.execute(
@@ -1054,7 +1093,7 @@ mod tests {
                 id: "a".into(),
                 parent_id: Some("b".into()),
                 position: 0,
-                kind: NodeKind::Idea,
+                tags: vec![],
                 title: "A".into(),
                 summary: "".into(),
                 content_html: "".into(),
@@ -1068,7 +1107,7 @@ mod tests {
                 id: "b".into(),
                 parent_id: Some("a".into()),
                 position: 0,
-                kind: NodeKind::Idea,
+                tags: vec![],
                 title: "B".into(),
                 summary: "".into(),
                 content_html: "".into(),
@@ -1107,7 +1146,7 @@ mod tests {
                     node: crate::models::NewNode {
                         id: "introduction".into(),
                         parent_id: None,
-                        kind: NodeKind::Section,
+                        tags: Some(vec!["section".into()]),
                         title: "Introduction".into(),
                         summary: None,
                         content_html: None,

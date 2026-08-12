@@ -1,32 +1,27 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { DraftParticipant, RegisterDraftParticipant } from "../application/draftTransition";
-import type { DocumentNode, NodeKind } from "../domain/types";
+import type { DocumentNode } from "../domain/types";
+import { normalizeTags } from "../domain/tags";
 import { RichTextEditor } from "../editor/RichTextEditor";
+import { TagEditor } from "./TagEditor";
 
-type NodeMetadataDraft = Pick<DocumentNode, "title" | "summary" | "kind">;
+type NodeMetadataDraft = Pick<DocumentNode, "title" | "summary" | "tags">;
 type MetadataChanges = Partial<NodeMetadataDraft>;
 
 interface NodeEditorProps {
   node: DocumentNode;
+  tagSuggestions: string[];
   readOnly: boolean;
   onMetadataChange: (changes: MetadataChanges) => Promise<void>;
   onContentChange: (contentHtml: string, yjsUpdate: string, yjsState: string) => Promise<void>;
   registerDraftParticipant: RegisterDraftParticipant;
 }
 
-const kinds: Array<{ value: NodeKind; label: string }> = [
-  { value: "idea", label: "Idea" },
-  { value: "section", label: "Section" },
-  { value: "scene", label: "Scene" },
-  { value: "beat", label: "Story beat" },
-  { value: "text", label: "Final text" },
-];
-
 function metadataOf(node: DocumentNode): NodeMetadataDraft {
-  return { title: node.title, summary: node.summary, kind: node.kind };
+  return { title: node.title, summary: node.summary, tags: node.tags };
 }
 
-export function NodeEditor({ node, readOnly, onMetadataChange, onContentChange, registerDraftParticipant }: NodeEditorProps) {
+export function NodeEditor({ node, tagSuggestions, readOnly, onMetadataChange, onContentChange, registerDraftParticipant }: NodeEditorProps) {
   const [draft, setDraft] = useState<NodeMetadataDraft>(() => metadataOf(node));
   const [frozen, setFrozen] = useState(false);
   const draftRef = useRef(draft);
@@ -34,6 +29,7 @@ export function NodeEditor({ node, readOnly, onMetadataChange, onContentChange, 
   const commitRef = useRef(onMetadataChange);
   const dirty = useRef(new Set<keyof NodeMetadataDraft>());
   const metadataDrain = useRef<Promise<void> | null>(null);
+  const tagParticipant = useRef<DraftParticipant | null>(null);
   const richTextParticipant = useRef<DraftParticipant | null>(null);
   const mounted = useRef(false);
 
@@ -50,7 +46,7 @@ export function NodeEditor({ node, readOnly, onMetadataChange, onContentChange, 
       const next = { ...current };
       if (!dirty.current.has("title")) next.title = node.title;
       if (!dirty.current.has("summary")) next.summary = node.summary;
-      if (!dirty.current.has("kind")) next.kind = node.kind;
+      if (!dirty.current.has("tags")) next.tags = node.tags;
       draftRef.current = next;
       return next;
     });
@@ -72,10 +68,10 @@ export function NodeEditor({ node, readOnly, onMetadataChange, onContentChange, 
         const baseline = nodeRef.current;
         const fields = [...dirty.current];
         const changes: MetadataChanges = {};
-        for (const field of fields) {
-          if (captured[field] !== baseline[field]) {
-            (changes as Record<keyof NodeMetadataDraft, string>)[field] = captured[field];
-          }
+        if (fields.includes("title") && captured.title !== baseline.title) changes.title = captured.title;
+        if (fields.includes("summary") && captured.summary !== baseline.summary) changes.summary = captured.summary;
+        if (fields.includes("tags") && (captured.tags.length !== baseline.tags.length || captured.tags.some((tag, index) => tag !== baseline.tags[index]))) {
+          changes.tags = captured.tags;
         }
 
         if (Object.keys(changes).length > 0) {
@@ -85,6 +81,7 @@ export function NodeEditor({ node, readOnly, onMetadataChange, onContentChange, 
             ...(changes.title !== undefined
               ? { title: changes.title.trim() || "Untitled idea" }
               : {}),
+            ...(changes.tags !== undefined ? { tags: normalizeTags(changes.tags) } : {}),
           };
           nodeRef.current = { ...nodeRef.current, ...accepted };
           if (draftRef.current.title === captured.title && accepted.title !== undefined) {
@@ -92,6 +89,11 @@ export function NodeEditor({ node, readOnly, onMetadataChange, onContentChange, 
             draftRef.current = next;
             // Keep React's state synchronized even if persistence synchronously
             // rendered the accepted prop while this field was still marked dirty.
+            setDraft(next);
+          }
+          if (draftRef.current.tags === captured.tags && accepted.tags !== undefined) {
+            const next = { ...draftRef.current, tags: accepted.tags };
+            draftRef.current = next;
             setDraft(next);
           }
         }
@@ -117,17 +119,27 @@ export function NodeEditor({ node, readOnly, onMetadataChange, onContentChange, 
     };
   }, []);
 
+  const registerTagParticipant = useCallback((participant: DraftParticipant): (() => void) => {
+    tagParticipant.current = participant;
+    return () => {
+      if (tagParticipant.current === participant) tagParticipant.current = null;
+    };
+  }, []);
+
   const participant = useMemo<DraftParticipant>(() => ({
     freeze: () => {
       if (mounted.current) setFrozen(true);
+      tagParticipant.current?.freeze();
       richTextParticipant.current?.freeze();
     },
     flush: async () => {
+      await tagParticipant.current?.flush();
       await flushMetadata();
       await richTextParticipant.current?.flush();
     },
     unfreeze: () => {
       richTextParticipant.current?.unfreeze();
+      tagParticipant.current?.unfreeze();
       if (mounted.current) setFrozen(false);
     },
   }), [flushMetadata]);
@@ -151,20 +163,17 @@ export function NodeEditor({ node, readOnly, onMetadataChange, onContentChange, 
             onBlur={() => { void flushMetadata().catch(() => undefined); }}
           />
         </label>
-        <label className="kind-select">
-          <span className="eyebrow">Kind</span>
-          <select
-            value={draft.kind}
-            disabled={disabled}
-            onChange={(event) => {
-              changeDraft("kind", event.target.value as NodeKind);
-              void flushMetadata().catch(() => undefined);
-            }}
-          >
-            {kinds.map((kind) => <option key={kind.value} value={kind.value}>{kind.label}</option>)}
-          </select>
-        </label>
       </div>
+      <TagEditor
+        tags={draft.tags}
+        suggestions={tagSuggestions}
+        disabled={disabled}
+        registerDraftParticipant={registerTagParticipant}
+        onChange={(tags) => {
+          changeDraft("tags", tags);
+          void flushMetadata().catch(() => undefined);
+        }}
+      />
       <label className="summary-field">
         <span className="eyebrow">Working summary</span>
         <textarea

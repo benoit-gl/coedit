@@ -17,7 +17,7 @@ export function toDocumentState(state: DocumentState): DocumentState {
       id: node.id,
       parentId: node.parentId,
       position: node.position,
-      kind: node.kind,
+      tags: node.tags,
       title: node.title,
       summary: node.summary,
       contentHtml: node.contentHtml,

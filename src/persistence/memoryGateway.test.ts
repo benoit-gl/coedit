@@ -15,7 +15,7 @@ describe("memory document gateway", () => {
   it("attributes, hashes, and restores changes without deleting history", async () => {
     const gateway = new MemoryDocumentGateway();
     await gateway.createDocument("Report", contributor);
-    await gateway.applyOperation({ type: "createNode", node: { id: "intro", kind: "section", title: "Introduction" } }, context);
+    await gateway.applyOperation({ type: "createNode", node: { id: "intro", tags: ["section"], title: "Introduction" } }, context);
     await gateway.applyOperation({ type: "updateNode", nodeId: "intro", changes: { summary: "Context" } }, context);
 
     const restored = await gateway.restoreRevision(1, context);
@@ -32,7 +32,7 @@ describe("memory document gateway", () => {
     const gateway = new MemoryDocumentGateway();
     await gateway.createDocument("Report", contributor);
     await gateway.applyOperation(
-      { type: "createNode", node: { id: "intro", kind: "section", title: "Introduction" } },
+      { type: "createNode", node: { id: "intro", tags: ["section"], title: "Introduction" } },
       { ...context, message: "Add introduction" },
     );
     await gateway.applyOperation(
@@ -40,7 +40,7 @@ describe("memory document gateway", () => {
       { ...context, message: "Alpha revision" },
     );
     await gateway.applyOperation(
-      { type: "createNode", node: { id: "ending", kind: "section", title: "Ending" } },
+      { type: "createNode", node: { id: "ending", tags: ["section"], title: "Ending" } },
       { ...context, message: "Add ending" },
     );
     await gateway.applyOperation(
@@ -72,7 +72,7 @@ describe("memory document gateway", () => {
     const gateway = new MemoryDocumentGateway();
     await gateway.createDocument("Résumé / Final?", contributor);
     await gateway.applyOperation(
-      { type: "createNode", node: { id: "intro", kind: "section", title: "Introduction" } },
+      { type: "createNode", node: { id: "intro", tags: ["section"], title: "Introduction" } },
       context,
     );
 
@@ -135,7 +135,7 @@ describe("memory document gateway", () => {
       type: "createNode" as const,
       node: {
         id: "intro",
-        kind: "section" as const,
+        tags: ["section"],
         title: "Introduction",
         contentHtml: '<p onclick="evil()">Safe<script>evil()</script></p>',
         metadata,

@@ -40,7 +40,7 @@ src/**/*.test.ts
 src/**/*.test.tsx
 ```
 
-There are currently thirty-three TypeScript test cases. This is a source inventory, not a claim that they were executed for every documentation edit.
+There are currently forty TypeScript test cases. This is a source inventory, not a claim that they were executed for every documentation edit.
 
 | File | Suite / test | Layer | What it proves | Important omissions |
 |---|---|---|---|---|
@@ -53,6 +53,8 @@ There are currently thirty-three TypeScript test cases. This is a source invento
 | `src/application/useDocumentController.test.tsx` (3) | selection/Close transition; failed flush; restore generation | React controller | Drafts freeze before await, controlled actions drain in order, failure preserves selection, and restore advances authoritative editor generation | Full `App`/Tiptap DOM, export/backup, native E2E |
 | `src/application/localContributor.test.ts` (9) | stored-profile validation and fallback cases | Application boundary | Valid contributor preferences load; malformed JSON, invalid shapes/kinds/dates, and unavailable storage fall back safely | Browser-specific storage policy and contributor registration |
 | `src/components/NodeEditor.test.tsx` (1) | normalized title acknowledgement | React component | A whitespace title adopts the persisted `Untitled idea` normalization after a successful draft flush | Other metadata fields, focus behavior, and full Tiptap composition |
+| `src/components/TagEditor.test.tsx` (2) | tag create/reuse/remove; pending-input drain | React component | Freeform and suggested tags become chips, removal works, and controlled transitions flush unfinished tag text | Full screen-reader/IME/touch/browser interoperability |
+| `src/domain/tags.test.ts` (5) | normalization; deduplication; limits; active vocabulary | Pure domain | Unicode/whitespace rules, first-spelling case-insensitive set behavior, validation, active-node growing/shrinking suggestions, and no document-wide 20-tag ceiling | Rust normalization parity and property/fuzz coverage |
 | `src/domain/hash.test.ts` (4) | canonical fixture; host-field exclusion/order immutability; Unicode/integer-like ordering; invalid JSON rejection | Protocol/domain | `coedit-document-state-v1` canonical JSON/SHA-256, explicit `DocumentView` projection, engine-independent key order, and representative undefined/non-finite/non-plain/cyclic/sparse rejection | Rust equality, replay/open verification; symbol/accessor/extra-array-property branches |
 | `src/editor/sanitizeRichText.test.ts` (2) | versioned cases; idempotence | Browser security contract | `coedit-rich-text-v1` expected output and repeat sanitization | Rust Ammonia parity, full editor paste integration |
 | `src/persistence/memoryGateway.test.ts` (3) | attribution/restore; filtered cursor paging; recovery export | Adapter integration | Revision/history preservation, filter-before-page semantics, exclusive cursors, full runtime ledger envelope | Snapshot export/import, Rust parity |
@@ -75,7 +77,7 @@ The round-trip test creates a unique folder under the operating-system temporary
 
 ### Current total and absent levels
 
-The repository contains thirty-six automated test cases: thirty-three TypeScript and three Rust. It currently contains no automated:
+The repository contains forty-three automated test cases: forty TypeScript and three Rust. It currently contains no automated:
 
 - full-App React/accessibility tests;
 - Tiptap/Yjs timing/lifecycle tests;
@@ -185,7 +187,7 @@ P0 means required before trusting the affected data-integrity behavior. P1 means
 | UC-01 Create | Memory gateway create path; Rust round trip | Standalone create; desktop create and file existence | App/dialog cancel/error cases; temporary-create failure cleanup |
 | UC-02 Open | Rust round trip reopens valid v1 | Desktop valid/invalid/open-cancel; read-only warning | Corrupt/future/journal fixtures and Tauri IPC path |
 | UC-03 Organize hierarchy | Four TS tree cases; one Rust cycle case | Keyboard, reordering, drag/reparent, delete confirmation | Full operation parity/property suite and component keyboard tests |
-| UC-04 Edit metadata | Indirect memory/Rust update summary | Blur title/summary; change each kind; reopen | `NodeEditor` component tests, limits/errors, TS/Rust parity |
+| UC-04 Edit metadata | Tag domain/component tests; title acknowledgement; indirect memory/Rust update summary | Blur title/summary; add/reuse/remove tags; reopen | Full NodeEditor/tag integration, native limits/errors, TS/Rust parity |
 | UC-05 Edit developed text | Browser sanitizer fixtures; Rust sanitizer smoke; queue ordering | Formatting, paste, idle save, rapid switch/close | Controlled-timer editor/controller flush lifecycle suite |
 | UC-06 Inspect history | Memory filter-before-page/cursor test; Rust length | Search, node filter, Load older, hash display, empty/error results | Controller paging/race test and 100,001+ desktop behavior |
 | UC-07 Restore | Memory and Rust happy paths | Restore and reopen; edit after restore | Same-node Yjs regression; missing/read-only snapshot cases |
@@ -237,7 +239,7 @@ Maintain small, reviewable fixtures for:
 - inconsistent `user_version` and metadata format version;
 - future version with compatible core tables;
 - failed `PRAGMA integrity_check` or truncated database;
-- missing parent, cycle, unknown node/contributor kind;
+- missing parent, cycle, invalid tag array, unknown contributor kind;
 - invalid metadata JSON;
 - invalid or over-limit Yjs base64;
 - malicious/malformed HTML and dangerous URL schemes;
@@ -290,7 +292,7 @@ Expected: stable titles/selection, acyclic hierarchy, normalized order, and a co
 ### ST-04 - Metadata and rich text
 
 1. Change a node title and leave the field.
-2. Change summary and kind through all five options.
+2. Change the summary; create two tags, reuse one on another node, remove its last active use, and confirm the suggestion list grows and shrinks.
 3. Enter formatted paragraphs using bold, italic, heading, both list types, quote, undo, and redo.
 4. Paste HTML containing a script or inline event handler and inspect the result/console.
 5. Stop typing for more than 1.2 seconds.

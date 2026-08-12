@@ -271,7 +271,7 @@ Component -> App : callback(operation)
 App -> Controller : applyOperation(operation, message, group)
 Controller -> Drafts : begin()
 Drafts -> Participants : freeze() synchronously
-Controller -> Participants : flush title/metadata/rich text
+Controller -> Participants : flush title/tag input/metadata/rich text
 Participants --> Controller : resolved (or abort action with visible error)
 Controller -> Controller : context(contributor, session, message, group)
 Controller -> Queue : enqueue mutation
@@ -398,7 +398,7 @@ end
 @enduml
 ```
 
-`RichTextEditor` exposes a participant to `NodeEditor`; `NodeEditor` combines its metadata drain with the rich-text drain and registers that aggregate with the controller. The document title registers separately. Controlled selection, operations, restore, export, backup, and Close synchronously freeze these drafts and await them rather than depending on unmount cleanup. In the desktop branch, Rust decodes both Base64 values, enforces content/Yjs size limits, independently sanitizes HTML with Ammonia, and writes the complete Yjs state. Rust sanitizer-fixture parity remains second-pass work.
+`TagEditor` and `RichTextEditor` each expose a participant to `NodeEditor`; `NodeEditor` combines pending tag input, its metadata drain, and the rich-text drain and registers that aggregate with the controller. The document title registers separately. Controlled selection, operations, restore, export, backup, and Close synchronously freeze these drafts and await them rather than depending on unmount cleanup. In the desktop branch, Rust decodes both Base64 values, enforces content/Yjs size limits, independently sanitizes HTML with Ammonia, and writes the complete Yjs state. Rust sanitizer-fixture parity remains second-pass work.
 
 ## Load, filter, and page history
 
@@ -484,7 +484,7 @@ alt user cancels
 else user confirms
   App -> Controller : restoreRevision(R)
   Controller -> Drafts : begin(); freeze participants synchronously
-  Controller -> Participants : flush title/metadata/rich text
+  Controller -> Participants : flush title/tag input/metadata/rich text
   Participants --> Controller : resolved (or cancel restore on error)
   Controller -> Queue : enqueue restoreRevision(R, context)
   Queue -> Gateway : restoreRevision(R, context)
@@ -553,7 +553,7 @@ participant "File system" as FS
 User -> App : Export -> JSON or Markdown
 App -> Controller : exportDocument(format)
 Controller -> Drafts : begin(); freeze participants synchronously
-Controller -> Participants : flush title/metadata/rich text
+Controller -> Participants : flush title/tag input/metadata/rich text
 Participants --> Controller : resolved (or cancel export on error)
 
 alt standalone mode
@@ -625,7 +625,7 @@ participant "File system" as FS
 User -> App : Export -> SQLite backup
 App -> Controller : backupDocument()
 Controller -> Drafts : begin(); freeze participants synchronously
-Controller -> Participants : flush title/metadata/rich text
+Controller -> Participants : flush title/tag input/metadata/rich text
 Participants --> Controller : resolved (or cancel backup on error)
 Controller -> Dialogs : chooseBackupPath(document.title)
 Dialogs -> User : native Save dialog (.coedit-backup)
@@ -654,7 +654,7 @@ The backup is a file copy while `DocumentStore` owns the connection and command 
 
 ## Close with an explicit draft-transition barrier
 
-**Implemented for controlled in-app Close.** The controller synchronously freezes all registered draft participants, awaits document-title, node-metadata, and rich-text drains, then enqueues `closeDocument`. Since draft commits and close use the same `SerializedTaskQueue`, the backend cannot be discarded before an accepted pending edit finishes.
+**Implemented for controlled in-app Close.** The controller synchronously freezes all registered draft participants, awaits document-title, pending tag-input, node-metadata, and rich-text drains, then enqueues `closeDocument`. Since draft commits and close use the same `SerializedTaskQueue`, the backend cannot be discarded before an accepted pending edit finishes.
 
 ```plantuml
 @startuml

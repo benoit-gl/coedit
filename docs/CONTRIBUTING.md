@@ -126,19 +126,18 @@ For a persisted typed field:
 
 **Current hard constraint:** there is no migration framework. A schema change is not safe merely because a fresh database works. Design and land migration infrastructure or keep the persisted version unchanged.
 
-## Add a node kind
+## Change node-tag behavior
 
 Change all of these together:
 
-- `NodeKind` in [`src/domain/types.ts`](../src/domain/types.ts);
-- the `kinds` UI list in [`src/components/NodeEditor.tsx`](../src/components/NodeEditor.tsx);
-- `NodeKind`, `as_str`, and `TryFrom<&str>` in [`src-tauri/src/models.rs`](../src-tauri/src/models.rs);
-- the SQLite `nodes.kind` `CHECK` constraint in `initialize_schema`;
-- format/migration behavior for existing databases;
-- exporters and terminology where the kind affects output;
+- normalization and vocabulary collection in [`src/domain/tags.ts`](../src/domain/tags.ts);
+- token/combobox interaction in [`src/components/TagEditor.tsx`](../src/components/TagEditor.tsx);
+- `NodeEditor` draft composition and transition flushing;
+- the mirrored Rust `Vec<String>` validation and SQLite `tags_json` paths;
+- hashes, snapshots, recovery fixtures, and format/migration behavior;
 - TypeScript/Rust/UI tests and documentation.
 
-Because the allowed values are embedded in a version-1 SQLite constraint, adding a kind is a format change.
+Tags are document-local freeform values. Do not add a hard-coded global vocabulary: suggestions are derived from distinct tags on active nodes. Preserve the difference between an empty tag list and unrelated metadata, keep matching/limits consistent across adapters, and retain accessible combobox/chip keyboard behavior.
 
 ## Change the rich-text schema or toolbar
 
@@ -258,7 +257,7 @@ Do not attach a synchronization provider only to `RichTextEditor`; that would sy
 - Avoid `any`, hidden host globals, and unhandled promise rejections.
 - Keep user-visible async actions inside a consistent error/busy lifecycle.
 - Route document commands through `SerializedTaskQueue`; keep history reads independently guarded by request/workspace epochs.
-- Route controlled workspace changes through `runTransition()` so `DraftTransitionCoordinator` freezes and awaits document-title, node-metadata, and rich-text participants before state can be invalidated or externalized.
+- Route controlled workspace changes through `runTransition()` so `DraftTransitionCoordinator` freezes and awaits document-title, pending tag-input, node-metadata, and rich-text participants before state can be invalidated or externalized.
 - Preserve immutable React state boundaries; gateways return clones/complete views today.
 - Add `.test.tsx` for components and `.test.ts` for domain/adapter behavior.
 - Use browser APIs available under the documented standalone target or update the portability contract.

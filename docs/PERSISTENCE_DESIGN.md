@@ -216,7 +216,7 @@ class DocumentNode {
   id: string
   parentId: string?
   position: number
-  kind: NodeKind
+  tags: string[]
   title: string
   summary: string
   contentHtml: string
@@ -323,7 +323,7 @@ entity nodes {
   --
   parent_id: TEXT? <<FK>>
   position: INTEGER
-  kind: TEXT
+  tags_json: TEXT
   title: TEXT
   summary: TEXT
   content_html: TEXT
@@ -485,7 +485,7 @@ The state read used to calculate `baseRevision` occurs before the SQL transactio
 | Operation | Durable-store behavior |
 |---|---|
 | `createNode` | Requires a new ID and existing parent; clamps insertion index; shifts siblings; cleans title; limits summary/content/Yjs; sanitizes HTML; decodes complete Yjs state; inserts; normalizes active sibling positions. |
-| `updateNode` | Requires the node; cleans title; limits summary and serialized metadata; changes kind/metadata as supplied; updates timestamp. |
+| `updateNode` | Requires the node; cleans title; validates/normalizes tags; limits summary and serialized metadata; changes tags/metadata as supplied; updates timestamp. |
 | `updateContent` | Requires the node; checks HTML and encoded-update size; decodes update and state; limits decoded complete state; sanitizes HTML; persists HTML and complete Yjs state. |
 | `moveNode` | Requires node and target parent; rejects a descendant target; moves and normalizes both sibling groups. Final state loading also rejects cycles. |
 | `softDeleteNode` | Uses a recursive CTE to timestamp the node and all descendants, then normalizes the former active sibling group. |
@@ -603,7 +603,7 @@ The JSON envelope contains `exportVersion`, `exportedAt`, the complete current `
 
 ### Desktop Markdown export
 
-Markdown visits active nodes depth-first, using document/node titles as headings, summaries as italic paragraphs, and a simple HTML-to-plain-text conversion. It omits deleted nodes, structured rich-text markup, Yjs state, metadata, contributors, sessions, revisions, history, and attachments.
+Markdown visits active nodes depth-first, using document/node titles as headings, summaries as italic paragraphs, and a simple HTML-to-plain-text conversion. It omits tags, deleted nodes, structured rich-text markup, Yjs state, metadata, contributors, sessions, revisions, history, and attachments.
 
 ### Output replacement
 

@@ -1,5 +1,4 @@
 export type ContributorKind = "human" | "automation" | "ai" | "imported";
-export type NodeKind = "idea" | "section" | "scene" | "beat" | "text";
 export type ExportFormat = "json" | "markdown";
 export type JsonPrimitive = null | boolean | number | string;
 export type JsonValue = JsonPrimitive | JsonValue[] | JsonObject;
@@ -33,7 +32,7 @@ export interface DocumentNode {
   id: string;
   parentId: string | null;
   position: number;
-  kind: NodeKind;
+  tags: string[];
   title: string;
   summary: string;
   contentHtml: string;
@@ -60,14 +59,14 @@ export interface DocumentView extends DocumentState {
 export type DocumentOperation =
   | {
       type: "createNode";
-      node: Pick<DocumentNode, "id" | "kind" | "title"> &
-        Partial<Pick<DocumentNode, "parentId" | "summary" | "contentHtml" | "yjsState" | "metadata">>;
+      node: Pick<DocumentNode, "id" | "title"> &
+        Partial<Pick<DocumentNode, "parentId" | "tags" | "summary" | "contentHtml" | "yjsState" | "metadata">>;
       index?: number;
     }
   | {
       type: "updateNode";
       nodeId: string;
-      changes: Partial<Pick<DocumentNode, "title" | "summary" | "kind" | "metadata">>;
+      changes: Partial<Pick<DocumentNode, "title" | "summary" | "tags" | "metadata">>;
     }
   | {
       type: "updateContent";

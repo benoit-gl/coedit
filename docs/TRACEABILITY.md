@@ -22,7 +22,8 @@ Status terms are defined in [the documentation index](./README.md#status-languag
 | Outline hierarchy presentation | [`src/components/Outline.tsx`](../src/components/Outline.tsx) | `Outline`, `OutlineRow`, `buildTree` |
 | Outline keyboard navigation | [`src/components/Outline.tsx`](../src/components/Outline.tsx) | `visible`, `onKeyDown`, `expanded` |
 | Drag-to-reparent / reorder | [`src/components/Outline.tsx`](../src/components/Outline.tsx) | `onDrop`, row move buttons; dispatches through controller callbacks supplied by `App` |
-| Document/node title-summary-kind drafts | [`src/App.tsx`](../src/App.tsx), [`src/components/NodeEditor.tsx`](../src/components/NodeEditor.tsx) | `DocumentTitleInput`, `NodeEditor`, dirty sets, eager blur/kind drains, registered participants |
+| Document/node title-summary-tag drafts | [`src/App.tsx`](../src/App.tsx), [`src/components/NodeEditor.tsx`](../src/components/NodeEditor.tsx), [`src/components/TagEditor.tsx`](../src/components/TagEditor.tsx) | `DocumentTitleInput`, `NodeEditor`, `TagEditor`, dirty sets, eager drains, composed registered participants |
+| Tag normalization/suggestions | [`src/domain/tags.ts`](../src/domain/tags.ts) | `normalizeTag`, `normalizeTags`, `collectActiveTags`; active-node document vocabulary |
 | Rich-text toolbar/editor | [`src/editor/RichTextEditor.tsx`](../src/editor/RichTextEditor.tsx) | `RichTextEditor`, Tiptap extensions, `DraftParticipant`, drain/retry logic |
 | Controlled draft transitions | [`src/application/draftTransition.ts`](../src/application/draftTransition.ts), [`src/App.tsx`](../src/App.tsx), [`src/components/NodeEditor.tsx`](../src/components/NodeEditor.tsx) | `DraftTransitionCoordinator`, `DocumentTitleInput`, composed node-metadata/rich-text participant |
 | Browser rich-text policy | [`src/editor/sanitizeRichText.ts`](../src/editor/sanitizeRichText.ts) | `RICH_TEXT_POLICY`, centralized allowlists, `sanitizeRichText` |
@@ -93,7 +94,7 @@ Use-case definitions and acceptance flows are in [Vision and use cases](./RUP_VI
 | Delete subtree | confirm in `App.deleteNode` | `softDeleteNode` | node and descendants get `deletedAt`; history retains them |
 | Edit idea title | controlled dirty draft; eager blur or transition drain | `updateNode({title})` | normalized nonempty title and new revision |
 | Edit summary | controlled dirty draft; eager blur or transition drain | `updateNode({summary})` | summary and new revision |
-| Change kind | controlled draft plus immediate drain | `updateNode({kind})` | validated enum and new revision |
+| Add/reuse/remove tag | editable combobox and removable chips; pending text drains before transitions | `updateNode({tags})` | normalized/deduplicated tag array and new revision; active-node suggestions adapt |
 | Type/format developed text | Tiptap/Yjs; group after 1.2 seconds or explicit drain; failed delta retained | queued `updateContent` with centralized sanitized HTML/update/state | new revision; desktop re-sanitizes HTML and stores full Yjs state |
 | Undo/redo text | Yjs collaboration history through Tiptap | eventually part of next `updateContent` | no operation until flush |
 | Open/close History | toggles `historyOpen` | none | no revision |
@@ -111,7 +112,7 @@ The serialized operation tag is camel case in both languages.
 | Operation | TypeScript definition | Memory semantics | Desktop model/semantics | UI caller | Direct tests |
 |---|---|---|---|---|---|
 | `createNode` | `domain/types.ts::DocumentOperation` | `tree.ts::applyOperation` creates, shifts, normalizes | `models.rs::CreateNode`; `store.rs::apply_sql` validates/inserts/normalizes | `App.addNode` from `Outline`/empty editor | Rust round trip; no dedicated TS creation assertion |
-| `updateNode` | same union | updates title/summary/kind/metadata | `UpdateNode`; field checks and SQL updates | `NodeEditor` | Rust round trip summary only |
+| `updateNode` | same union | updates title/summary/tags/metadata | `UpdateNode`; tag/field checks and SQL updates | `NodeEditor`/`TagEditor` | tag domain/component tests; Rust round trip summary only |
 | `updateContent` | same union | stores HTML/full state; incremental update only in payload | `UpdateContent`; bounds/Base64 checks, Ammonia, stores full state | `RichTextEditor` → `NodeEditor` → `App` | sanitizer only |
 | `moveNode` | same union | validates target/descendants; shifts/normalizes | `MoveNode`; same intended invariants in SQL | `Outline` drag/up/down | TS rejects descendant; no Rust operation-specific test |
 | `softDeleteNode` | same union | timestamps node and descendants | `SoftDeleteNode`; recursive CTE | `App.deleteNode` | TS subtree test |
@@ -143,7 +144,7 @@ Command strings, TypeScript payload property names, Rust parameter names, and se
 |---|---|---|---|
 | Document identity/title/version/revision/time | `DocumentMetadata` | `DocumentMetadata` | rows in `metadata` keyed by `document_id`, `title`, `format_version`, `revision`, `created_at`, `updated_at`; `magic` is storage-only |
 | Hierarchical node | `DocumentNode` | `DocumentNode` | `nodes`; self-reference through `parent_id`; active sibling ordering through `position` |
-| Node kind | `NodeKind` union | `NodeKind` enum/converters | `nodes.kind` with `CHECK` constraint |
+| Node tags | `DocumentNode.tags` | `Vec<String>` | `nodes.tags_json`; validated JSON array, suggestion vocabulary derived at runtime |
 | Rich content | `contentHtml`, Base64 `yjsState` | String forms at IPC boundary | sanitized `content_html` TEXT; decoded `yjs_state` BLOB |
 | Contributor | `Contributor`/`ContributorKind` | matching struct/enum | `contributors` |
 | Writing session | `WritingSession` | matching struct | `writing_sessions`; lazily inserted by desktop mutation |
@@ -163,6 +164,8 @@ The complete column/constraint description is in [Persistence design](./PERSISTE
 | [`src/application/serializedTaskQueue.test.ts`](../src/application/serializedTaskQueue.test.ts) | strict task ordering and continuation after rejection | React/controller integration, cancellation, teardown |
 | [`src/application/draftTransition.test.ts`](../src/application/draftTransition.test.ts) | synchronous freeze, all-participant drain, failure/retry, safe participant replacement | full component/editor and host-exit behavior |
 | [`src/application/useDocumentController.test.tsx`](../src/application/useDocumentController.test.tsx) | selection/Close draft ordering, failed-flush blocking, restore generation | full `App`/Tiptap rendering and native parity |
+| [`src/domain/tags.test.ts`](../src/domain/tags.test.ts) | tag normalization, deduplication, limits, and active-node vocabulary | Rust normalization parity and full UI behavior |
+| [`src/components/TagEditor.test.tsx`](../src/components/TagEditor.test.tsx) | freeform create, suggestion reuse, chip removal, transition flush | real-browser IME, touch, and assistive-technology behavior |
 | [`src/application/localContributor.test.ts`](../src/application/localContributor.test.ts) | stored contributor validation and safe fallback | contributor registration/selection and browser-specific storage behavior |
 | [`src/components/NodeEditor.test.tsx`](../src/components/NodeEditor.test.tsx) | normalized title adoption after a successful metadata flush | remaining metadata/focus behavior and full Tiptap composition |
 | [`src/domain/hash.test.ts`](../src/domain/hash.test.ts) + hash fixture | canonical JSON/digest, host-field exclusion, input-order preservation, Unicode/integer-like key order, invalid-JSON rejection | Rust parity, replay/open verification |
@@ -191,7 +194,7 @@ The target coverage and manual suites are in [Testing](./TESTING.md).
 | Change | Minimum files/layers to inspect |
 |---|---|
 | New document operation | `domain/types.ts`, `domain/tree.ts`, both TS tests/gateway, `models.rs`, `store.rs`, initiating UI, traceability/sequences |
-| New node kind | TS type, `NodeEditor.kinds`, Rust enum/converters, SQLite `CHECK`/migration, exporters/tests/docs |
+| Tag behavior/limits | `domain/tags.ts`, `TagEditor`, `NodeEditor`, Rust validation, SQLite `tags_json`, hash/recovery fixtures, tests/docs |
 | New persisted field | TS/Rust models, schema/load/all writes/restore/hash/export, version/migration, format tests/docs |
 | New rich-text format | Tiptap extension/toolbar, `sanitizeRichText.ts`, versioned fixture/policy decision, Ammonia policy, Yjs/reload/restore/export/security tests |
 | New shared gateway capability | smallest owning port, memory behavior, controller/UI, Tauri adapter, Rust command/registration/store where native, contract tests |

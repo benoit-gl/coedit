@@ -320,7 +320,7 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
 
   const commitNodeMetadata = useCallback((
     nodeId: string,
-    changes: Partial<Pick<DocumentNode, "title" | "summary" | "kind">>,
+    changes: Partial<Pick<DocumentNode, "title" | "summary" | "tags">>,
   ): Promise<void> => commitRawOperation(
     { type: "updateNode", nodeId, changes },
     "Refined idea",

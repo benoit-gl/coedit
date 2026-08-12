@@ -51,7 +51,7 @@ Coedit Local
     │   └── delete subtree
     ├── Editor
     │   ├── title
-    │   ├── kind
+    │   ├── freeform tags
     │   ├── summary
     │   └── developed rich text
     └── History                            optional panel
@@ -162,9 +162,9 @@ Implementation: both actions call `DocumentFileDialogs` before invoking the desk
 │            │                              │ [History 12] [Export ▾] [Close] │
 ├────────────┴──────────────────────────────┴──────────────────────────────────┤
 │ OUTLINE              │                                                       │
-│          [+ Root idea]│ IDEA TITLE                           KIND              │
-│ ▾ Chapter one    ↑↓+× │ The opening                          [Section ▾]       │
-│   · Arrival      ↑↓+× │                                                       │
+│          [+ Root idea]│ IDEA TITLE                                             │
+│ ▾ Chapter one    ↑↓+× │ The opening                                            │
+│   · Arrival      ↑↓+× │ TAGS [scene ×] [draft ×] [Add or select a tag…]       │
 │   ▸ Discovery    ↑↓+× │ WORKING SUMMARY                                      │
 │ ▸ Chapter two    ↑↓+× │ [ Establish place and conflict…                    ] │
 │                       │                                                       │
@@ -182,6 +182,7 @@ Implementation ownership:
 - Workspace/use-case state, sequencing, paging, and status: `src/application/useDocumentController.ts`.
 - Outline and recursive rows: `src/components/Outline.tsx`.
 - Metadata fields: `src/components/NodeEditor.tsx`.
+- Tag tokens, suggestions, and freeform entry: `src/components/TagEditor.tsx` and `src/domain/tags.ts`.
 - Developed text and toolbar: `src/editor/RichTextEditor.tsx`.
 - Layout and visual styling: `src/styles.css`.
 
@@ -234,7 +235,7 @@ Implementation: at `max-width: 900px`, the brand text and save-status text are h
 | Edit initial title | Input change | Updates `newTitle`. | `src/App.tsx` |
 | Create | Button click or Enter in document-title input | Standalone creates immediately; native-file hosts first ask for a `.coedit` path. Successful creation opens the workspace; History fetches its first page only when opened. | `controller.createDocument`, `src/App.tsx` |
 | Open | Native-files button | Native `.coedit` selection followed by narrowed `storage.openDocument`; success opens workspace and marks history ready to load when opened. | `controller.openDocument`, `src/persistence/tauriFiles.ts` |
-| Close | Header button | Synchronously freezes and awaits registered document-title, node-metadata, and rich-text drafts; then queues gateway close and returns to welcome. A failed drain/close retains the workspace and dirty drafts and shows an error. | `controller.closeDocument`, `DraftTransitionCoordinator` |
+| Close | Header button | Synchronously freezes and awaits registered document-title, pending tag-input, node-metadata, and rich-text drafts; then queues gateway close and returns to welcome. A failed drain/close retains the workspace and dirty drafts and shows an error. | `controller.closeDocument`, `DraftTransitionCoordinator` |
 
 ### Header
 
@@ -253,7 +254,7 @@ Implementation: at `max-width: 900px`, the brand text and save-status text are h
 |---|---|---|
 | Select | Click node title | Sets `selectedId`; editor displays that active node. |
 | Expand/collapse | Disclosure button or left/right keyboard handling | Changes local `expanded` set only. |
-| Add root | Outline header or empty-outline button | Dispatches `createNode` with `parentId: null`, kind `idea`, title `New idea`. |
+| Add root | Outline header or empty-outline button | Dispatches `createNode` with `parentId: null`, empty `tags`, and title `New idea`. |
 | Add child | Row plus button | Dispatches `createNode` under the row node. |
 | Reorder | Up/down row buttons | Dispatches `moveNode` with same parent and adjacent sibling index. |
 | Reparent | Drag one row and drop it onto another | Makes the dragged node the last child of the drop target. |
@@ -266,10 +267,12 @@ Deleted nodes do not appear in `buildTree()`. There is no current trash view or 
 | Field | Local behavior | Persistence trigger |
 |---|---|---|
 | Title | Controlled local `title` state | Blur, when different from `node.title`. |
-| Kind | Directly reflects `node.kind` | Select change. |
+| Tags | Removable chips plus editable combobox; suggestions are distinct tags on active nodes | Enter, suggestion selection, removal, blur, or controlled-transition flush. |
 | Working summary | Controlled local `summary` state | Blur, when different from `node.summary`. |
 
-When `node.id`, `node.title`, or `node.summary` changes, the metadata component synchronizes its local drafts from props.
+Tags are optional and freeform. Input is Unicode-normalized, whitespace-collapsed, case-insensitively deduplicated, and limited to 20 tags per node and 64 code points/256 UTF-8 bytes per tag. New values grow the reusable document vocabulary; a value shrinks away when its last active-node use is removed or deleted. Selected tags are excluded from suggestions. Arrow keys navigate suggestions, Enter adds, Escape closes, and Backspace in an empty input removes the last tag. Each chip exposes an explicitly named removal button, and additions/removals are announced through a polite live region.
+
+When the selected node or accepted metadata changes, the metadata component synchronizes clean local drafts from props.
 
 ### Developed text
 
@@ -386,6 +389,7 @@ Important CSS ownership:
 | Main layout | `.workspace`, `.workspace.with-history` |
 | Outline | `.outline`, `.outline-row`, `.disclosure`, `.row-actions` |
 | Node metadata | `.node-editor`, `.node-meta`, `.title-input`, `.summary-field` |
+| Node tags | `.tags-field`, `.tag-editor`, `.tag-chip`, `.tag-options` |
 | Rich text | `.rich-editor`, `.editor-toolbar`, `.editor-surface` |
 | History | `.history-panel`, `.history-list`, `.history-copy` |
 | Feedback | `.warning-banner`, `.error-banner`, `.saving` |
@@ -438,7 +442,7 @@ Before describing iPadOS or phone support as complete, add a touch-first outline
 
 ### Change save behavior
 
-The current save boundary is eager blur/kind drains plus the 1.2-second Yjs quiet period, all backed by an explicit controller-visible draft registry. Controlled node switching, operations, revision restoration, document close, export, and backup freeze and await document-title, node-metadata, and rich-text participants; page/process exit and forced suspension remain unawaitable. Changes must cover failure/retry, updates arriving during a drain, authoritative editor remount, status feedback, and both gateway implementations. See [Sequence diagrams](SEQUENCE_DIAGRAMS.md).
+The current save boundary is eager title/summary/tag drains plus the 1.2-second Yjs quiet period, all backed by an explicit controller-visible draft registry. Controlled node switching, operations, revision restoration, document close, export, and backup freeze and await document-title, tag-input, node-metadata, and rich-text participants; page/process exit and forced suspension remain unawaitable. Changes must cover failure/retry, updates arriving during a drain, authoritative editor remount, status feedback, and both gateway implementations. See [Sequence diagrams](SEQUENCE_DIAGRAMS.md).
 
 ## UX acceptance checklist
 

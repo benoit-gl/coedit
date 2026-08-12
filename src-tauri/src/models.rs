@@ -74,7 +74,7 @@ pub struct DocumentNode {
     pub id: String,
     pub parent_id: Option<String>,
     pub position: i64,
-    pub kind: NodeKind,
+    pub tags: Vec<String>,
     pub title: String,
     pub summary: String,
     pub content_html: String,
@@ -83,43 +83,6 @@ pub struct DocumentNode {
     pub created_at: String,
     pub updated_at: String,
     pub deleted_at: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum NodeKind {
-    Idea,
-    Section,
-    Scene,
-    Beat,
-    Text,
-}
-
-impl NodeKind {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Idea => "idea",
-            Self::Section => "section",
-            Self::Scene => "scene",
-            Self::Beat => "beat",
-            Self::Text => "text",
-        }
-    }
-}
-
-impl TryFrom<&str> for NodeKind {
-    type Error = String;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value {
-            "idea" => Ok(Self::Idea),
-            "section" => Ok(Self::Section),
-            "scene" => Ok(Self::Scene),
-            "beat" => Ok(Self::Beat),
-            "text" => Ok(Self::Text),
-            _ => Err(format!("Unknown node kind: {value}")),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -146,7 +109,7 @@ pub struct DocumentView {
 pub struct NewNode {
     pub id: String,
     pub parent_id: Option<String>,
-    pub kind: NodeKind,
+    pub tags: Option<Vec<String>>,
     pub title: String,
     pub summary: Option<String>,
     pub content_html: Option<String>,
@@ -159,7 +122,7 @@ pub struct NewNode {
 pub struct NodeChanges {
     pub title: Option<String>,
     pub summary: Option<String>,
-    pub kind: Option<NodeKind>,
+    pub tags: Option<Vec<String>>,
     pub metadata: Option<Value>,
 }
 

@@ -1,4 +1,5 @@
 import type { DocumentNode, DocumentOperation, DocumentState } from "./types";
+import { normalizeTags } from "./tags";
 import { cloneJson } from "./json";
 
 export interface TreeNode extends DocumentNode {
@@ -99,7 +100,7 @@ export function applyOperation(state: DocumentState, operation: DocumentOperatio
         id: operation.node.id,
         parentId: operation.node.parentId ?? null,
         position: index,
-        kind: operation.node.kind,
+        tags: normalizeTags(operation.node.tags ?? []),
         title: operation.node.title.trim() || "Untitled idea",
         summary: operation.node.summary ?? "",
         contentHtml: operation.node.contentHtml ?? "",
@@ -116,7 +117,7 @@ export function applyOperation(state: DocumentState, operation: DocumentOperatio
       const node = findNode(operation.nodeId);
       if (operation.changes.title !== undefined) node.title = operation.changes.title.trim() || "Untitled idea";
       if (operation.changes.summary !== undefined) node.summary = operation.changes.summary;
-      if (operation.changes.kind !== undefined) node.kind = operation.changes.kind;
+      if (operation.changes.tags !== undefined) node.tags = normalizeTags(operation.changes.tags);
       if (operation.changes.metadata !== undefined) node.metadata = operation.changes.metadata;
       node.updatedAt = now;
       break;

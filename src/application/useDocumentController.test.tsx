@@ -53,13 +53,13 @@ async function createTwoNodes(getController: () => Controller): Promise<void> {
   await act(async () => { expect(await getController().createDocument("Draft")).toBe(true); });
   await act(async () => {
     expect(await getController().applyOperation(
-      { type: "createNode", node: { id: "first", kind: "idea", title: "First" } },
+      { type: "createNode", node: { id: "first", tags: [], title: "First" } },
       "First node",
     )).toBe(true);
   });
   await act(async () => {
     expect(await getController().applyOperation(
-      { type: "createNode", node: { id: "second", kind: "idea", title: "Second" } },
+      { type: "createNode", node: { id: "second", tags: [], title: "Second" } },
       "Second node",
     )).toBe(true);
   });
