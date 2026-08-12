@@ -1,20 +1,28 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
   Contribution,
+  ContributionPage,
   ContributionContext,
   ContributionQuery,
   Contributor,
   DocumentOperation,
   DocumentView,
+  ExportFormat,
   ExportResult,
 } from "../domain/types";
-import type { DocumentGateway } from "./gateway";
+import {
+  contributionPage,
+  contributionPageSize,
+  contributionCursor,
+  type DocumentGateway,
+  type NativeDocumentStorage,
+} from "./gateway";
 
-export class TauriDocumentGateway implements DocumentGateway {
-  readonly mode = "desktop" as const;
+export class TauriDocumentGateway implements DocumentGateway, NativeDocumentStorage {
+  readonly kind = "native-file" as const;
+  readonly storage: NativeDocumentStorage = this;
 
-  createDocument(path: string | null, title: string, contributor: Contributor): Promise<DocumentView> {
-    if (!path) throw new Error("A file path is required in the desktop application.");
+  createDocument(path: string, title: string, contributor: Contributor): Promise<DocumentView> {
     return invoke("create_document", { path, title, contributor });
   }
 
@@ -30,8 +38,13 @@ export class TauriDocumentGateway implements DocumentGateway {
     return invoke("apply_operation", { operation, context });
   }
 
-  listContributions(query: ContributionQuery = {}): Promise<Contribution[]> {
-    return invoke("list_contributions", { query });
+  async listContributions(query: ContributionQuery = {}): Promise<ContributionPage> {
+    const limit = contributionPageSize(query.limit);
+    const beforeRevision = contributionCursor(query.beforeRevision);
+    const items = await invoke<Contribution[]>("list_contributions", {
+      query: { ...query, beforeRevision, limit: limit + 1 },
+    });
+    return contributionPage(items, limit);
   }
 
   restoreRevision(revision: number, context: ContributionContext): Promise<DocumentView> {
@@ -42,8 +55,7 @@ export class TauriDocumentGateway implements DocumentGateway {
     return invoke("backup_document", { path });
   }
 
-  exportDocument(format: "json" | "markdown", path: string | null): Promise<ExportResult> {
-    if (!path) throw new Error("An export path is required in the desktop application.");
+  exportDocument(format: ExportFormat, path: string): Promise<ExportResult> {
     return invoke("export_document", { format, path });
   }
 }

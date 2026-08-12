@@ -1,22 +1,97 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useDocumentController,
+  type DraftParticipant,
+  type RegisterDraftParticipant,
+} from "./application/useDocumentController";
+import { loadLocalContributor, LOCAL_CONTRIBUTOR_KEY } from "./application/localContributor";
+import { HistoryPanel } from "./components/HistoryPanel";
+import { NodeEditor } from "./components/NodeEditor";
+import { Outline } from "./components/Outline";
 import { newId } from "./domain/ids";
-import type { Contribution, ContributionContext, Contributor, DocumentOperation, DocumentView } from "./domain/types";
 import type { DocumentFileDialogs } from "./persistence/fileDialogs";
 import type { DocumentGateway } from "./persistence/gateway";
-import { Outline } from "./components/Outline";
-import { NodeEditor } from "./components/NodeEditor";
-import { HistoryPanel } from "./components/HistoryPanel";
 
-const PROFILE_KEY = "coedit-local-contributor";
+interface DocumentTitleInputProps {
+  title: string;
+  readOnly: boolean;
+  onCommit: (title: string) => Promise<void>;
+  registerDraftParticipant: RegisterDraftParticipant;
+}
 
-function loadContributor(): Contributor {
-  try {
-    const stored = localStorage.getItem(PROFILE_KEY);
-    if (stored) return JSON.parse(stored) as Contributor;
-  } catch {
-    // A corrupt non-secret preference should not prevent the application opening.
-  }
-  return { id: newId(), displayName: "Local author", kind: "human", createdAt: new Date().toISOString() };
+function DocumentTitleInput({ title, readOnly, onCommit, registerDraftParticipant }: DocumentTitleInputProps) {
+  const [draft, setDraft] = useState(title);
+  const [frozen, setFrozen] = useState(false);
+  const draftRef = useRef(title);
+  const persistedRef = useRef(title);
+  const dirtyRef = useRef(false);
+  const drain = useRef<Promise<void> | null>(null);
+  const commitRef = useRef(onCommit);
+  const mounted = useRef(false);
+
+  useLayoutEffect(() => {
+    mounted.current = true;
+    return () => { mounted.current = false; };
+  }, []);
+  useLayoutEffect(() => { commitRef.current = onCommit; }, [onCommit]);
+  useLayoutEffect(() => {
+    persistedRef.current = title;
+    if (!dirtyRef.current) {
+      draftRef.current = title;
+      setDraft(title);
+    }
+  }, [title]);
+
+  const flush = useCallback((): Promise<void> => {
+    if (drain.current) return drain.current;
+    const run = async () => {
+      while (dirtyRef.current) {
+        const captured = draftRef.current;
+        if (captured !== persistedRef.current) {
+          await commitRef.current(captured);
+          const accepted = captured.trim() || "Untitled document";
+          persistedRef.current = accepted;
+          if (draftRef.current === captured && accepted !== captured) {
+            draftRef.current = accepted;
+            if (mounted.current) setDraft(accepted);
+          }
+        }
+        if (draftRef.current === captured) dirtyRef.current = false;
+      }
+    };
+    const pending = run();
+    drain.current = pending;
+    pending.then(
+      () => { if (drain.current === pending) drain.current = null; },
+      () => { if (drain.current === pending) drain.current = null; },
+    );
+    return pending;
+  }, []);
+
+  const participant = useMemo<DraftParticipant>(() => ({
+    freeze: () => { if (mounted.current) setFrozen(true); },
+    flush,
+    unfreeze: () => { if (mounted.current) setFrozen(false); },
+  }), [flush]);
+  useLayoutEffect(
+    () => registerDraftParticipant("document-title", participant),
+    [participant, registerDraftParticipant],
+  );
+
+  return (
+    <input
+      className="document-title"
+      aria-label="Document title"
+      value={draft}
+      disabled={readOnly || frozen}
+      onChange={(event) => {
+        draftRef.current = event.target.value;
+        dirtyRef.current = true;
+        setDraft(event.target.value);
+      }}
+      onBlur={() => { void flush().catch(() => undefined); }}
+    />
+  );
 }
 
 interface AppProps {
@@ -25,121 +100,39 @@ interface AppProps {
 }
 
 export function App({ documentGateway, fileDialogs }: AppProps) {
-  const [view, setView] = useState<DocumentView | null>(null);
-  const [contributions, setContributions] = useState<Contribution[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [status, setStatus] = useState("Offline and ready");
   const [newTitle, setNewTitle] = useState("Untitled document");
-  const [profile, setProfile] = useState(loadContributor);
-  const sessionId = useRef(newId());
-
-  const contributor = useMemo(() => view?.contributors.find((item) => item.id === profile.id) ?? view?.contributors[0] ?? profile, [profile, view]);
-  const selectedNode = view?.nodes.find((node) => node.id === selectedId && node.deletedAt === null) ?? null;
+  const [profile, setProfile] = useState(loadLocalContributor);
+  const controller = useDocumentController({ documentGateway, fileDialogs, profile });
+  const { view, selectedNode } = controller;
 
   useEffect(() => {
     try {
-      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+      localStorage.setItem(LOCAL_CONTRIBUTOR_KEY, JSON.stringify(profile));
     } catch {
-      // Some browsers restrict local storage for file:// documents. The editor
-      // remains usable because contributor state also lives in React memory.
+      // Some file:// browsers restrict local storage. The in-memory profile remains usable.
     }
   }, [profile]);
 
-  useEffect(() => {
-    if (view && (!selectedId || !view.nodes.some((node) => node.id === selectedId && node.deletedAt === null))) {
-      setSelectedId(view.nodes.find((node) => node.deletedAt === null)?.id ?? null);
-    }
-  }, [selectedId, view]);
-
-  const context = (message: string, groupId: string | null = null): ContributionContext => ({
-    contributorId: contributor.id,
-    sessionId: sessionId.current,
-    groupId,
-    message,
-  });
-
-  const refreshHistory = async () => setContributions(await documentGateway.listContributions({ limit: 500 }));
-
-  const run = async <T,>(action: () => Promise<T>, success?: string): Promise<T | undefined> => {
-    setBusy(true);
-    setError(null);
-    try {
-      const result = await action();
-      if (success) setStatus(success);
-      return result;
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
-      return undefined;
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const createDocument = async () => {
-    let path: string | null = null;
-    if (documentGateway.mode === "desktop") {
-      if (!fileDialogs) throw new Error("Desktop file dialogs are not configured.");
-      path = await fileDialogs.chooseDocumentToCreate(newTitle);
-      if (!path) return;
-    }
-    const created = await run(() => documentGateway.createDocument(path, newTitle, profile), "Document created");
-    if (created) { setView(created); await refreshHistory(); }
-  };
-
-  const openDocument = async () => {
-    if (documentGateway.mode !== "desktop" || !fileDialogs) return;
-    const path = await fileDialogs.chooseDocumentToOpen();
-    if (!path) return;
-    const opened = await run(() => documentGateway.openDocument(path), "Document opened");
-    if (opened) { setView(opened); await refreshHistory(); }
-  };
-
-  const apply = async (operation: DocumentOperation, message: string, groupId: string | null = null) => {
-    const updated = await run(() => documentGateway.applyOperation(operation, context(message, groupId)), "All changes saved locally");
-    if (updated) { setView(updated); await refreshHistory(); }
-  };
-
-  const addNode = (parentId: string | null) => {
+  const addNode = async (parentId: string | null) => {
     const id = newId();
-    void apply({ type: "createNode", node: { id, parentId, kind: "idea", title: "New idea" } }, parentId ? "Added sub-idea" : "Added root idea").then(() => setSelectedId(id));
+    const added = await controller.applyOperation(
+      { type: "createNode", node: { id, parentId, kind: "idea", title: "New idea" } },
+      parentId ? "Added sub-idea" : "Added root idea",
+    );
+    if (added) await controller.selectNode(id);
   };
 
   const deleteNode = (nodeId: string) => {
     const node = view?.nodes.find((item) => item.id === nodeId);
     if (node && window.confirm(`Move “${node.title}” and its sub-ideas to the document history?`)) {
-      void apply({ type: "softDeleteNode", nodeId }, `Deleted ${node.title}`);
+      void controller.applyOperation({ type: "softDeleteNode", nodeId }, `Deleted ${node.title}`);
     }
   };
 
-  const restore = async (revision: number) => {
-    if (!window.confirm(`Restore the document to revision ${revision}? The current state remains in history.`)) return;
-    const restored = await run(() => documentGateway.restoreRevision(revision, context(`Restored revision ${revision}`)), `Restored revision ${revision}`);
-    if (restored) { setView(restored); await refreshHistory(); }
-  };
-
-  const exportFile = async (format: "json" | "markdown") => {
-    if (!view) return;
-    let path: string | null = null;
-    if (documentGateway.mode === "desktop") {
-      if (!fileDialogs) throw new Error("Desktop file dialogs are not configured.");
-      path = await fileDialogs.chooseExportPath(format, view.document.title);
-      if (!path) return;
+  const restoreRevision = (revision: number) => {
+    if (window.confirm(`Restore the document to revision ${revision}? The current state remains in history.`)) {
+      void controller.restoreRevision(revision);
     }
-    await run(() => documentGateway.exportDocument(format, path), `Exported ${format}`);
-  };
-
-  const backup = async () => {
-    if (!view || documentGateway.mode !== "desktop" || !fileDialogs) return;
-    const path = await fileDialogs.chooseBackupPath(view.document.title);
-    if (path) await run(() => documentGateway.backupDocument(path), "Backup created");
-  };
-
-  const close = async () => {
-    await run(() => documentGateway.closeDocument());
-    setView(null); setContributions([]); setSelectedId(null); setHistoryOpen(false);
   };
 
   if (!view) {
@@ -150,56 +143,97 @@ export function App({ documentGateway, fileDialogs }: AppProps) {
           <span className="eyebrow">Local-first writing</span>
           <h1>Ideas become structure.<br />Structure becomes text.</h1>
           <p>Create a private hierarchical document whose edits remain attributable and replayable. Nothing leaves this computer.</p>
-          {documentGateway.mode === "standalone" && <div className="standalone-notice">Standalone HTML mode: documents are kept in memory and disappear when this page closes. JSON and Markdown exports remain available.</div>}
+          {!controller.nativeFilesAvailable && <div className="standalone-notice">Standalone HTML mode: documents are kept in memory and disappear when this page closes. JSON and Markdown exports remain available.</div>}
           <label><span>Your contributor name</span><input value={profile.displayName} onChange={(event) => setProfile({ ...profile, displayName: event.target.value || "Local author" })} /></label>
-          <label><span>Document title</span><input value={newTitle} onChange={(event) => setNewTitle(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void createDocument()} /></label>
+          <label><span>Document title</span><input value={newTitle} onChange={(event) => setNewTitle(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void controller.createDocument(newTitle)} /></label>
           <div className="welcome-actions">
-            <button className="primary" type="button" disabled={busy} onClick={() => void createDocument()}>Create document</button>
-            {documentGateway.mode === "desktop" && <button type="button" disabled={busy} onClick={() => void openDocument()}>Open .coedit file</button>}
+            <button className="primary" type="button" disabled={controller.transitioning} onClick={() => void controller.createDocument(newTitle)}>Create document</button>
+            {controller.nativeFilesAvailable && <button type="button" disabled={controller.transitioning} onClick={() => void controller.openDocument()}>Open .coedit file</button>}
           </div>
-          {error && <div className="error-banner">{error}</div>}
+          {controller.error && <div className="error-banner">{controller.error}</div>}
         </section>
       </main>
     );
   }
 
+  const controlsLocked = view.readOnly || controller.transitioning;
   return (
-    <div className="app-shell">
+    <div className="app-shell" aria-busy={controller.transitioning}>
       <header className="topbar">
         <div className="brand"><span className="brand-mark small">C</span><span>Coedit</span></div>
-        <input className="document-title" aria-label="Document title" defaultValue={view.document.title} key={view.document.title} disabled={view.readOnly} onBlur={(event) => event.target.value !== view.document.title && void apply({ type: "renameDocument", title: event.target.value }, "Renamed document")} />
+        <DocumentTitleInput
+          title={view.document.title}
+          readOnly={controlsLocked}
+          onCommit={controller.commitDocumentTitle}
+          registerDraftParticipant={controller.registerDraftParticipant}
+        />
         <div className="top-actions">
-          <span className="status"><i className={busy ? "saving" : ""} />{busy ? "Saving…" : status}</span>
-          <button type="button" onClick={() => setHistoryOpen((open) => !open)}>History <span className="count">{contributions.length}</span></button>
-          <details className="menu"><summary>Export</summary><div><button type="button" onClick={() => void exportFile("markdown")}>Markdown</button><button type="button" onClick={() => void exportFile("json")}>JSON recovery file</button>{documentGateway.mode === "desktop" && <button type="button" onClick={() => void backup()}>SQLite backup</button>}</div></details>
-          <button type="button" onClick={() => void close()}>Close</button>
+          <span className="status">
+            <i className={controller.busy ? "saving" : ""} />
+            {controller.transitioning ? "Finishing changes…" : controller.busy ? "Saving…" : controller.status}
+          </span>
+          <button type="button" disabled={controller.transitioning} onClick={() => controller.setHistoryOpen(!controller.historyOpen)}>
+            History{controller.historyOpen && <span className="count">{controller.contributions.length}{controller.historyHasMore ? "+" : ""} loaded</span>}
+          </button>
+          <details className="menu">
+            <summary aria-disabled={controller.transitioning}>Export</summary>
+            <div>
+              <button type="button" disabled={controller.transitioning} onClick={() => void controller.exportDocument("markdown")}>Markdown</button>
+              <button type="button" disabled={controller.transitioning} onClick={() => void controller.exportDocument("json")}>JSON recovery file</button>
+              {controller.nativeFilesAvailable && <button type="button" disabled={controller.transitioning} onClick={() => void controller.backupDocument()}>SQLite backup</button>}
+            </div>
+          </details>
+          <button type="button" disabled={controller.transitioning} onClick={() => void controller.closeDocument()}>Close</button>
         </div>
       </header>
       {view.readOnly && <div className="warning-banner">This document uses a newer format and is open read-only.</div>}
       {view.recoveryWarning && <div className="warning-banner">{view.recoveryWarning}</div>}
-      {error && <div className="error-banner global">{error}<button onClick={() => setError(null)}>×</button></div>}
-      <div className={`workspace ${historyOpen ? "with-history" : ""}`}>
+      {controller.error && <div className="error-banner global">{controller.error}<button onClick={controller.clearError}>×</button></div>}
+      <div className={`workspace ${controller.historyOpen ? "with-history" : ""}`}>
         <Outline
           nodes={view.nodes}
-          selectedId={selectedId}
-          readOnly={view.readOnly || busy}
-          onSelect={setSelectedId}
-          onAdd={addNode}
-          onMove={(nodeId, parentId, index) => void apply({ type: "moveNode", nodeId, parentId, index }, "Moved idea")}
+          selectedId={controller.selectedId}
+          readOnly={controlsLocked}
+          onSelect={(nodeId) => void controller.selectNode(nodeId)}
+          onAdd={(parentId) => void addNode(parentId)}
+          onMove={(nodeId, parentId, index) => void controller.applyOperation({ type: "moveNode", nodeId, parentId, index }, "Moved idea")}
           onDelete={deleteNode}
         />
         <main className="editor-pane">
           {selectedNode ? (
             <NodeEditor
-              key={selectedNode.id}
+              key={`${selectedNode.id}:${controller.editorGeneration}`}
               node={selectedNode}
-              readOnly={view.readOnly}
-              onMetadataChange={(changes) => apply({ type: "updateNode", nodeId: selectedNode.id, changes }, "Refined idea")}
-              onContentChange={(contentHtml, yjsUpdate, yjsState) => apply({ type: "updateContent", nodeId: selectedNode.id, contentHtml, yjsUpdate, yjsState }, "Writing contribution", newId())}
+              readOnly={controlsLocked}
+              registerDraftParticipant={controller.registerDraftParticipant}
+              onMetadataChange={(changes) => controller.commitNodeMetadata(selectedNode.id, changes)}
+              onContentChange={(contentHtml, yjsUpdate, yjsState) => controller.commitContent(selectedNode.id, contentHtml, yjsUpdate, yjsState)}
             />
-          ) : <div className="empty-editor"><h2>Start with an idea</h2><p>Add a root idea in the outline, then refine it here.</p><button className="primary" onClick={() => addNode(null)}>Create the first idea</button></div>}
+          ) : (
+            <div className="empty-editor">
+              <h2>Start with an idea</h2>
+              <p>Add a root idea in the outline, then refine it here.</p>
+              <button className="primary" disabled={controlsLocked} onClick={() => void addNode(null)}>Create the first idea</button>
+            </div>
+          )}
         </main>
-        {historyOpen && <HistoryPanel contributions={contributions} selectedNodeId={selectedId} readOnly={view.readOnly || busy} onRestore={(revision) => void restore(revision)} onClose={() => setHistoryOpen(false)} />}
+        {controller.historyOpen && (
+          <HistoryPanel
+            contributions={controller.contributions}
+            query={controller.historyQuery}
+            selectedNodeId={controller.selectedId}
+            currentRevision={view.document.revision}
+            readOnly={controlsLocked}
+            hasMore={controller.historyHasMore}
+            loading={controller.historyLoading}
+            stale={controller.historyStale}
+            loadError={controller.historyError}
+            onQueryChange={controller.updateHistoryQuery}
+            onLoadOlder={controller.loadOlderHistory}
+            onRestore={restoreRevision}
+            onClose={() => controller.setHistoryOpen(false)}
+          />
+        )}
       </div>
     </div>
   );

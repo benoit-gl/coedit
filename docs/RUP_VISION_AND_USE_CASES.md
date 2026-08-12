@@ -62,11 +62,11 @@ Verification responsibilities and current coverage are described in [Testing str
 | Create a document | Implemented | In memory in standalone mode; new `.coedit` file in desktop mode |
 | Open an existing `.coedit` document | Implemented | Desktop mode only |
 | Add, select, expand, collapse, reorder, reparent, and soft-delete nodes | Implemented | Active nodes in one document |
-| Edit node title, summary, kind, and rich text | Implemented | Rich text commits after a 1.2-second idle period |
+| Edit document/node metadata and rich text | Implemented | Idle/blur commits plus explicit registered-draft drain for controlled transitions |
 | Attribute operations to a contributor and writing session | Partial | Creator/session records exist; contributor management does not |
-| Search/filter recent contribution history | Partial | UI loads at most 500 contributions and filters that set locally |
-| Restore a stored revision | Partial | Compensating history is written; editor-state refresh has a known same-node risk |
-| Export Markdown and JSON | Partial | Markdown is lossy; standalone JSON does not include the contribution ledger; desktop JSON is capped |
+| Search/filter contribution history | Partial | Shared UI uses filtered cursor pages; desktop still pre-windows the newest 100,000 rows |
+| Restore a stored revision | Implemented in shared/standalone flow | Compensating history plus authoritative editor generation/remount; native parity remains pass-2 evidence |
+| Export Markdown and JSON | Partial | Markdown is lossy; standalone JSON includes its full runtime ledger; desktop JSON is capped; neither imports |
 | Create a SQLite backup | Implemented | Desktop mode only |
 | Open newer formats read-only | Partial | Version gate exists; no migration framework or compatibility suite exists |
 | Run a self-contained HTML application | Implemented | Generated `dist/index.html`, memory-only, no reopen/import workflow |
@@ -194,10 +194,10 @@ OpenState .. UC10
 
 1. The author enters a contributor display name and document title.
 2. In desktop mode, the application asks for a new `.coedit` path. In standalone mode, no path is requested.
-3. `App` calls `DocumentGateway.createDocument` with the title, current profile, and optional path.
+3. `App` delegates to `useDocumentController`, which narrows `documentGateway.storage`: the volatile variant creates with title/profile, while the native-file variant first obtains a path and then creates with path/title/profile. Either command enters the serialized queue.
 4. The selected adapter constructs revision `0`, records the creator, calculates a state hash, and creates a `createDocument` contribution.
 5. Desktop mode also initializes the SQLite schema and revision-0 snapshot, then atomically renames the temporary database to the chosen path.
-6. The returned `DocumentView` becomes the active UI state and history is loaded.
+6. The returned `DocumentView` becomes the active UI state, advances the authoritative editor generation, and marks History stale; the first page is fetched when History is opened.
 
 **Alternate and exception flows:**
 
@@ -231,7 +231,7 @@ OpenState .. UC10
 4. It selects read/write or read-only flags according to the format version.
 5. It enables foreign keys, runs `PRAGMA integrity_check`, validates the Coedit magic metadata, loads typed rows, decodes JSON/Yjs data, and validates the hierarchy.
 6. It returns a `DocumentView`, including any read-only or interrupted-journal warning.
-7. The UI selects the first active node and loads recent history.
+7. The controller selects the first active node, advances the authoritative editor generation, and marks History stale; the first cursor page is fetched when History is opened.
 
 **Alternate and exception flows:**
 
@@ -244,7 +244,7 @@ OpenState .. UC10
 
 **Postconditions:** On success, exactly one desktop `DocumentStore` is active. The UI is writable only when the format is supported.
 
-**Realization:** `App.openDocument`, `src/persistence/tauriFiles.ts`, `src/persistence/tauriGateway.ts`, `open_document` in `src-tauri/src/lib.rs`, and `DocumentStore::open`, `load_state`, and `validate_tree` in `src-tauri/src/store.rs`.
+**Realization:** `useDocumentController.openDocument`, `NativeDocumentStorage`, `src/persistence/tauriFiles.ts`, `src/persistence/tauriGateway.ts`, `open_document` in `src-tauri/src/lib.rs`, and `DocumentStore::open`, `load_state`, and `validate_tree` in `src-tauri/src/store.rs`.
 
 ### UC-03 - Organize the hierarchy
 
@@ -262,9 +262,10 @@ OpenState .. UC10
 
 1. The author creates a root or child node, or selects an existing active node.
 2. `Outline` emits the requested identifier, parent, and sibling index.
-3. `App` constructs a typed `DocumentOperation` and contribution context.
-4. The active gateway checks identity and tree constraints, applies the operation, normalizes active sibling positions, advances the revision, and records the contribution/snapshot.
-5. `App` replaces its view and reloads history.
+3. `App` asks `useDocumentController` to apply a typed `DocumentOperation` and message.
+4. The controller synchronously freezes and drains registered document-title, node-metadata, and rich-text drafts, creates contribution context, and serializes the gateway call.
+5. The active gateway checks identity and tree constraints, applies the operation, normalizes active sibling positions, advances the revision, and records the contribution/snapshot.
+6. The controller accepts the current-epoch/non-older view and refreshes the first history page under the active filters only when History is open; otherwise it marks History stale for its next open.
 
 **Alternate and exception flows:**
 
@@ -293,10 +294,11 @@ OpenState .. UC10
 
 **Main success scenario:**
 
-1. `NodeEditor` keeps title and summary draft values in component state.
-2. Blur emits changed title/summary values; kind selection emits immediately.
-3. `App` creates an `updateNode` operation with message `Refined idea`.
-4. The gateway applies the update and records a new revision.
+1. `NodeEditor` keeps title, summary, and kind draft values plus a dirty-field set in component state/refs.
+2. Blur starts an eager drain for title/summary; kind selection changes the draft and drains immediately.
+3. `NodeEditor` composes its metadata drain with the nested rich-text participant and registers one participant with the controller.
+4. A controlled transition freezes the participant synchronously, drains metadata then rich text, and creates queued `updateNode`/`updateContent` operations as needed.
+5. Each serialized gateway command applies the update and records a new revision; successfully persisted fields are removed from the dirty set, while failed ones remain retryable.
 
 **Alternate and exception flows:**
 
@@ -307,11 +309,11 @@ OpenState .. UC10
 
 **Postconditions:** Updated metadata and attribution are visible in the current view and history.
 
-**Realization:** `src/components/NodeEditor.tsx`, `App.apply`, `src/domain/tree.ts`, and `DocumentStore::apply_sql`.
+**Realization:** `src/components/NodeEditor.tsx`, `useDocumentController.applyOperation`, `src/domain/tree.ts`, and `DocumentStore::apply_sql`.
 
 ### UC-05 - Edit developed text
 
-**Status:** Partial because close/restore lifecycle races can affect pending or displayed state.
+**Status:** Partial because uncontrolled page/process exit cannot await browser work and the complete Tiptap/native lifecycle lacks end-to-end evidence.
 
 **Primary actor:** Author.
 
@@ -326,8 +328,8 @@ OpenState .. UC10
 1. `RichTextEditor` creates a Yjs document from the node's stored base64 state.
 2. Tiptap Collaboration maps the editor field to that Yjs document.
 3. Yjs updates are accumulated in memory.
-4. After 1.2 seconds without another update, the editor merges updates, sanitizes rendered HTML, encodes the incremental update and complete Yjs state, and calls `onCommit`.
-5. `App` emits `updateContent` with a new group ID and message `Writing contribution`.
+4. After 1.2 seconds without another update—or when the controller explicitly requests a flush—the editor merges updates, sanitizes rendered HTML through `coedit-rich-text-v1`, encodes the incremental update and complete Yjs state, and calls `onCommit`.
+5. The controller queues `updateContent` with a new group ID and message `Writing contribution`.
 6. Desktop persistence checks sizes and base64, sanitizes HTML again with Ammonia, and commits state plus history; the memory adapter applies the equivalent domain operation.
 
 **Alternate and exception flows:**
@@ -335,8 +337,9 @@ OpenState .. UC10
 - Pasted HTML is restricted to the editor's allow-list; Rust independently sanitizes desktop persistence.
 - Initial legacy HTML is sanitized and loaded when no Yjs state exists.
 - A gateway failure is shown in the global error banner.
-- Component cleanup attempts to flush pending updates, but closing the document can clear the gateway before that asynchronous flush completes.
-- A whole-revision restore that retains the selected node ID can leave the memoized editor Yjs document based on the old state.
+- Controlled node changes, operations, restore, export, backup, and Close synchronously freeze and await the registered document-title/node-editor participants. A rejected commit retains its dirty metadata value or merged rich-text update for retry and cancels the controlled action.
+- Browser tab close/reload or process termination cannot await React cleanup; standalone state is volatile regardless.
+- An authoritative create/open/restore increments `editorGeneration`; `App` keys `NodeEditor` by node ID plus generation, so a whole-revision restore recreates the selected node's `Y.Doc` even when its ID is unchanged.
 
 **Postconditions:** After a successful commit, the node stores sanitized HTML and full Yjs state, and history contains the operation payload including its incremental Yjs update.
 
@@ -344,7 +347,7 @@ OpenState .. UC10
 
 ### UC-06 - Inspect contribution history
 
-**Status:** Partial because the UI view is bounded.
+**Status:** Partial because shared cursor paging is implemented, but the current Rust query cannot reach matches beyond its newest 100,000-row pre-window.
 
 **Primary actor:** Author or document custodian.
 
@@ -356,26 +359,27 @@ OpenState .. UC10
 
 **Main success scenario:**
 
-1. After create/open/operation/restore, `App` asks the gateway for up to 500 contributions.
-2. The adapter returns newest-first records.
+1. Opening History asks the gateway for the first 100-entry `ContributionPage` under the active filters. While the panel remains open, accepted operations/restores refresh that first page; while closed, they only mark history stale for the next open.
+2. The adapter filters before pagination and returns newest-first records, an exclusive `nextBeforeRevision` cursor, and `hasMore`.
 3. `HistoryPanel` displays revision, message or operation type, contributor name, local timestamp, and a 12-character hash prefix.
-4. Search matches operation type, contributor name, and message in the loaded array.
-5. The optional node filter keeps contributions whose affected-node list contains the selected node.
+4. Search matches operation type, contributor name, and message at the adapter boundary; the optional node filter uses affected-node IDs.
+5. **Load older contributions** requests the same filters with the exclusive cursor and appends unseen IDs.
 
 **Alternate and exception flows:**
 
 - No match displays an empty result message.
 - The selected-node filter is disabled when no node is selected.
-- The Rust query API supports search, node, contributor, before-revision, and limit filters, but `App` currently requests only a limit and performs visible filtering in React.
-- The displayed history count is the loaded count, not a database-wide total when more than 500 contributions exist.
+- Search input is debounced 250 ms; a superseded request/workspace response is ignored.
+- The displayed history count is the loaded count; a `+` suffix indicates another known page, not a database-wide total.
+- Rust still reads only the newest 100,000 rows before applying query filters.
 
 **Postconditions:** No document state is changed.
 
-**Realization:** `App.refreshHistory`, `src/components/HistoryPanel.tsx`, `DocumentGateway.listContributions`, `MemoryDocumentGateway.listContributions`, and `DocumentStore::contributions`.
+**Realization:** `useDocumentController.requestHistory`, `src/components/HistoryPanel.tsx`, `ContributionPage`, `MemoryDocumentGateway.listContributions`, `TauriDocumentGateway.listContributions`, and `DocumentStore::contributions`.
 
 ### UC-07 - Restore a revision
 
-**Status:** Partial because of the same-selected-node editor refresh risk.
+**Status:** Implemented in the shared/standalone application flow; desktop parity and full editor integration remain second-pass verification.
 
 **Primary actor:** Author.
 
@@ -387,12 +391,12 @@ OpenState .. UC10
 
 **Main success scenario:**
 
-1. `App` asks the gateway to restore the selected revision with the current contribution context.
+1. The controller synchronously freezes and awaits registered title, metadata, and rich-text drafts, then serializes a restore command with the current contribution context.
 2. The adapter loads the snapshot for that revision.
 3. It preserves the current contributor set and assigns current revision plus one.
 4. Desktop mode replaces materialized nodes and title inside a transaction.
 5. The adapter computes the restored-state hash and appends a `restoreRevision` contribution and snapshot.
-6. The UI replaces its view and reloads history.
+6. The controller accepts the returned view under epoch/revision guards as an authoritative reset, increments `editorGeneration`, remounts `NodeEditor`/`RichTextEditor`, and reloads the first history page when History remains open.
 
 **Alternate and exception flows:**
 
@@ -400,11 +404,11 @@ OpenState .. UC10
 - A missing snapshot, unregistered contributor, or read-only document is rejected.
 - Desktop restoration validates stored Yjs base64 and sanitizes restored HTML.
 - Current history remains present; restore never deletes contribution rows.
-- The selected node's React key is based on node ID, so restoring different content for the same ID may not recreate the Yjs document.
+- The current controller test proves flush-before-restore and the generation increment, but there is not yet a full Tiptap DOM/edit/reopen regression test or native restore-parity run.
 
 **Postconditions:** The restored materialized state is the newest revision and a compensating audit record identifies the source revision.
 
-**Realization:** `HistoryPanel`, `App.restore`, both gateway `restoreRevision` implementations, and `DocumentStore::restore`.
+**Realization:** `HistoryPanel`, `useDocumentController.restoreRevision`, both gateway `restoreRevision` implementations, and `DocumentStore::restore`.
 
 ### UC-08 - Export a document
 
@@ -420,10 +424,10 @@ OpenState .. UC10
 
 **Main success scenario:**
 
-1. Desktop mode asks for a destination; standalone mode derives a download name.
-2. `App` calls `DocumentGateway.exportDocument`.
+1. The controller begins a draft transition, synchronously freezes document-title/node-editor inputs, and drains title, metadata, and rich text.
+2. It narrows `documentGateway.storage`: the native-file variant asks for a destination and exports there, while the volatile variant exports a safe-named browser download without a path. The export command enters the serialized queue.
 3. Markdown walks active nodes in hierarchy order and emits headings, summaries, and plain text.
-4. JSON serializes the current state; desktop mode additionally wraps export metadata and a newest-first contribution list.
+4. Standalone JSON uses `format: "coedit-recovery"` and `RecoveryExport` version 2: export metadata, algorithm/state hash, portable `DocumentState`, explicit history order/completeness, and the complete current-runtime contribution list. Desktop retains its legacy version-1 shape with export metadata, state, and a Rust-query-bounded contribution list.
 5. Desktop mode writes through a temporary file and replacement step. Standalone mode creates a Blob URL and activates a download anchor.
 6. The UI reports export success.
 
@@ -432,12 +436,12 @@ OpenState .. UC10
 - Canceling a desktop save dialog makes no change.
 - Unsupported formats or invalid destinations are rejected.
 - Markdown is lossy: rich formatting, deleted nodes, snapshots, and full history are not represented.
-- Standalone JSON currently contains only `DocumentView`, not the contribution ledger, despite the UI's recovery label.
+- Standalone JSON omits the internal revision snapshot map and has no importer, despite including the complete current-runtime contribution ledger.
 - Desktop JSON asks `contributions` for 100,000 records and therefore silently omits older entries beyond that bound.
 
 **Postconditions:** The active document is unchanged; a file or browser download exists on success.
 
-**Realization:** `App.exportFile`, file-dialog and gateway adapters, `MemoryDocumentGateway.download`, and `DocumentStore::export`, `markdown`, and `atomic_write`.
+**Realization:** `useDocumentController.exportDocument`, file-dialog and gateway adapters, `MemoryDocumentGateway.download`, and `DocumentStore::export`, `markdown`, and `atomic_write`.
 
 ### UC-09 - Create a SQLite backup
 
@@ -466,11 +470,11 @@ OpenState .. UC10
 
 **Postconditions:** The active document is unchanged and a byte-copy backup exists on success.
 
-**Realization:** `App.backup`, `src/persistence/tauriFiles.ts`, `TauriDocumentGateway.backupDocument`, `backup_document`, and `DocumentStore::backup`/`atomic_copy`.
+**Realization:** `useDocumentController.backupDocument`, `src/persistence/tauriFiles.ts`, `TauriDocumentGateway.storage`, `backup_document`, and `DocumentStore::backup`/`atomic_copy`.
 
 ### UC-10 - Close a document
 
-**Status:** Partial because pending editor work is not synchronously drained before backend close.
+**Status:** Implemented for controlled in-app Close; page/process termination remains outside the awaitable browser lifecycle.
 
 **Primary actor:** Author.
 
@@ -482,19 +486,20 @@ OpenState .. UC10
 
 **Main success scenario:**
 
-1. `App` asks the gateway to close the current document.
-2. The memory adapter clears state/history/snapshots, or the Tauri command drops the active `DocumentStore` from its mutex.
-3. `App` clears the view, loaded history, selection, and history-panel state.
-4. The welcome screen appears.
+1. `useDocumentController` begins a draft transition, freezing the document-title and current node-editor participants synchronously.
+2. It awaits title, metadata, and rich-text drains, then serializes `closeDocument` after their queued commands.
+3. The memory adapter clears state/history/snapshots, or the Tauri command drops the active `DocumentStore` from its mutex.
+4. After success, the controller advances the workspace epoch and clears the view, loaded history, selection, cursor/query, and history-panel state.
+5. The welcome screen appears.
 
 **Alternate and exception flows:**
 
-- A gateway error appears in the banner, but `App.close` currently clears its UI state after `run` returns even when `run` caught that error; backend and UI state could therefore disagree on an exceptional close.
-- `RichTextEditor` cleanup asynchronously attempts to flush pending updates after unmount, but the gateway may already have been closed. The UI currently has no explicit flush barrier or unsaved-change confirmation.
+- A flush or gateway error leaves the workspace active and appears in the banner; failed metadata values and merged rich-text deltas are retained for retry.
+- Browser tab close/reload, operating-system termination, and arbitrary React teardown cannot await the Promise-based barrier.
 
-**Postconditions:** On the normal path, no document is active. Committed desktop state remains on disk; standalone state is discarded. Exceptional close consistency is not currently guaranteed.
+**Postconditions:** On success, no document is active. Committed desktop state remains on disk; standalone state is discarded. On a controlled failure, the workspace remains active.
 
-**Realization:** `App.close`, both `closeDocument` adapters, and `close_document` in `src-tauri/src/lib.rs`.
+**Realization:** `useDocumentController.closeDocument`, `RichTextEditor.flushPendingEdits`, `SerializedTaskQueue`, both `closeDocument` adapters, and `close_document` in `src-tauri/src/lib.rs`.
 
 ### UC-11 - Run the standalone artifact
 
@@ -548,9 +553,9 @@ OpenState .. UC10
 
 | ID | Story | Current limitation |
 |---|---|---|
-| US-11 | As an author, I do not lose accepted typing when I close or restore. | Pending-close ordering and same-node restore editor state require fixes/tests. |
-| US-12 | As a custodian, I can rely on JSON as complete recovery evidence. | Standalone omits history; desktop caps it at 100,000 records. |
-| US-13 | As an author, I can search the complete ledger. | The UI only loads 500 newest records. |
+| US-11 | As an author, I do not lose accepted drafts when I close or restore. | Controlled actions freeze/drain title, metadata, and rich text and remount restored editor state; page/process exit and full editor/native evidence remain. |
+| US-12 | As a custodian, I can rely on JSON as complete recovery evidence. | Standalone includes its runtime ledger, but neither host imports it and desktop caps history at 100,000. |
+| US-13 | As an author, I can search the complete ledger. | Standalone pages its complete runtime ledger; desktop cannot reach matches beyond its 100,000-row pre-window. |
 | US-14 | As a contributor, my local identity follows me to an existing document. | No registration/reconciliation flow exists. |
 | US-15 | As a custodian, I can open future formats safely. | Read-only gating exists, but migrations/compatibility tests do not. |
 | US-16 | As a mobile/tablet user, I can use all editing interactions. | Current layout is only partly responsive and drag/drop is not touch-oriented. |
@@ -582,13 +587,13 @@ These requirements complement the use cases. “Current satisfaction” describe
 | ID | Requirement | Current satisfaction and evidence |
 |---|---|---|
 | FR-01 | The host shall select persistence explicitly at a composition root. | Satisfied: `main.tsx` constructs memory; `main-tauri.tsx` constructs Tauri and dialogs. |
-| FR-02 | UI orchestration shall depend on `DocumentGateway`, not invoke Tauri directly. | Satisfied in `App.tsx`; native APIs stay in adapters. |
+| FR-02 | UI orchestration shall depend on `DocumentGateway`, not invoke Tauri directly. | Satisfied through `useDocumentController`; native APIs stay in adapters and optional capabilities. |
 | FR-03 | A desktop document shall use `.coedit`, a fixed application ID, and a versioned schema. | Satisfied for format `1` in `models.rs` and `store.rs`. |
 | FR-04 | The application shall permit at most one active document per instance. | Satisfied by React state and `Mutex<Option<DocumentStore>>`. |
 | FR-05 | Every node shall have a stable ID, optional parent, sibling position, kind, metadata, Yjs state, timestamps, and deletion marker. | Satisfied by TypeScript/Rust models and SQLite `nodes`. |
 | FR-06 | A hierarchy shall reject duplicate IDs, missing parents, self-parenting/cycles, and moves into descendants. | Satisfied in both domain implementations; test depth differs. |
 | FR-07 | Deletion shall be soft and cover the subtree. | Satisfied; current UI has no direct deleted-node browser. |
-| FR-08 | A persisted visible mutation shall be represented by a typed operation and attributed contribution. | Mostly satisfied; lifecycle races can prevent a final editor commit. |
+| FR-08 | A persisted visible mutation shall be represented by a typed operation and attributed contribution. | Mostly satisfied; controlled actions drain and serialize rich text, while uncontrolled host exit and metadata drafts retain limitations. |
 | FR-09 | A mutation shall advance revision from its base revision and record affected nodes, payload, hash, contributor context, and message. | Satisfied by both gateways. |
 | FR-10 | Desktop state, contribution, hash, and snapshot shall commit atomically. | Satisfied by the current Rust transaction path. |
 | FR-11 | Text typing shall be grouped rather than committed per keystroke. | Satisfied with a fixed 1.2-second idle timer. |
@@ -596,7 +601,7 @@ These requirements complement the use cases. “Current satisfaction” describe
 | FR-13 | Restore shall append a compensating revision instead of removing history. | Satisfied at persistence level. |
 | FR-14 | Desktop opening shall validate identity, version consistency, SQLite integrity, typed values, and tree structure. | Satisfied for the current schema; no migration behavior exists. |
 | FR-15 | Newer supported-core documents shall be exposed read-only. | Partially satisfied; compatibility is assumed rather than migration-tested. |
-| FR-16 | Markdown shall be presented as lossy interchange, and JSON/SQLite as recovery-oriented outputs. | Partially satisfied; JSON completeness differs by adapter. |
+| FR-16 | Markdown shall be presented as lossy interchange, and JSON/SQLite as recovery-oriented outputs. | Partially satisfied; JSON shares an envelope but desktop is capped and no importer exists. |
 | FR-17 | A standalone production build shall contain no required external JS/CSS assets. | Satisfied by the `standaloneHtml` build plug-in, with manual verification today. |
 | FR-18 | The base application shall not register an AI or synchronization provider. | Satisfied. |
 
@@ -619,7 +624,7 @@ These requirements complement the use cases. “Current satisfaction” describe
 | NFR-DATA-01 | A committed desktop mutation shall be all-or-nothing. | SQLite transaction; new files explicitly select `synchronous = FULL` and delete journal. Reopen does not explicitly reissue `synchronous`. |
 | NFR-DATA-02 | Creation/export/backup shall avoid exposing a partially written destination. | Temporary sibling plus rename/replacement. Crash behavior between replacement renames still needs fault testing. |
 | NFR-DATA-03 | A current document shall have a materialized snapshot for every revision. | Satisfied in the MVP; future compaction is only a comment/roadmap idea. |
-| NFR-DATA-04 | State hashes shall be deterministic and verifiable. | Partial: hashes are written, but no replay/open verification exists and browser/Rust canonicalization is not a shared formal contract. |
+| NFR-DATA-04 | State hashes shall be deterministic and verifiable. | Partial: browser canonical bytes/digest are versioned and fixture-tested; Rust parity and replay/open verification do not exist. |
 | NFR-DATA-05 | Desktop input shall have explicit size bounds. | Title 4,096 bytes; summary/metadata 1 MiB; sanitized HTML 16 MiB; decoded full Yjs state 32 MiB; update input has a string-size guard. |
 | NFR-DATA-06 | A locked SQLite file shall fail promptly rather than hang indefinitely. | Connection busy timeout is 5 seconds. |
 | NFR-DATA-07 | Recovery procedures and format semantics shall be documented. | See [Document format](./DOCUMENT_FORMAT.md); backup discoverability and export limits remain. |
@@ -637,7 +642,7 @@ These requirements complement the use cases. “Current satisfaction” describe
 
 | ID | Requirement | Current mechanism / qualification |
 |---|---|---|
-| NFR-UX-01 | The UI shall make standalone volatility, read-only mode, recovery warnings, busy state, and errors visible. | Implemented banners/statuses; pending-edit risk is not visible. |
+| NFR-UX-01 | The UI shall make standalone volatility, read-only mode, recovery warnings, busy state, and errors visible. | Implemented banners/statuses plus separate history errors; uncontrolled host-exit and metadata-draft risks are not fully surfaced. |
 | NFR-UX-02 | Core hierarchy navigation shall be keyboard accessible. | Arrow navigation and focus-visible styling exist; no automated accessibility audit. |
 | NFR-UX-03 | The workspace shall remain usable at the desktop window minimum and narrower browser widths. | One `900px` breakpoint exists; touch/small-tablet behavior is incomplete. |
 | NFR-MAINT-01 | Shared UI code shall remain independent of native APIs. | Satisfied through gateway/dialog ports and two entry points. |
@@ -670,15 +675,14 @@ These requirements complement the use cases. “Current satisfaction” describe
 
 | ID | Risk | Probability / impact | Current response | Recommended next evidence |
 |---|---|---|---|---|
-| RK-01 | Pending Yjs updates can race document close. | Medium / critical data loss | Known and documented | Explicit async flush barrier plus close-before-idle integration test |
-| RK-02 | Restore can leave same-ID editor state stale and later overwrite restored content. | Medium / critical integrity | Known and documented | Key editor/Y.Doc by state generation and add restore-edit regression test |
+| RK-01 | The implemented draft-transition barrier can regress or be bypassed by uncontrolled host exit. | Low-medium / high | Draft/queue/controller tests; no full editor/native E2E | Controlled-timer close/retry tests and host-exit policy |
 | RK-03 | A profile opening another author's document is not registered. | High / high usability/attribution | Falls back to first contributor | Explicit register/select contributor use case and tests |
-| RK-04 | Recorded hashes are not replay-verified and adapters use separately implemented canonicalization. | Medium / high trust | Hash is displayed/stored only | Specify canonical form, golden fixtures, replay verifier |
+| RK-04 | Recorded hashes are not replay-verified and Rust does not implement the browser's versioned canonical fixture. | Medium / high trust | TS golden vector exists; hash is displayed/stored only | Rust fixture conformance and replay verifier |
 | RK-05 | Format versioning has no migration framework. | Certain with first schema change / high | Newer version becomes read-only | Versioned migrations, old/new fixtures, interruption recovery tests |
-| RK-06 | Recovery exports are incomplete at different bounds. | Medium / high recovery | Limitations documented | Versioned complete streaming export and round-trip import tests |
+| RK-06 | Recovery export remains capped on desktop and unimportable in both hosts. | Medium / high recovery | Standalone versioned envelope/full-runtime ledger test | Desktop completeness decision and round-trip import tests |
 | RK-07 | TypeScript/Rust operation models can drift. | Medium / high | Manual review | Generated contract or shared JSON fixture suite |
 | RK-08 | Native behavior is not continuously tested on Windows, macOS, and Linux. | High / medium-high | Source portability only | CI build matrix and platform smoke checklist |
-| RK-09 | History UI silently represents only the latest 500 entries. | High in long documents / medium | Fixed request limit | Paginated server-side query and total/loaded indication |
+| RK-09 | Desktop history silently pre-windows the newest 100,000 rows before filtering. | Medium in very long documents / medium | Shared cursor UI and memory paging implemented | Indexed SQL cursor/filter query and boundary tests |
 | RK-10 | Replacement and interrupted-journal recovery paths lack fault-injection coverage. | Low-medium / high | Atomic-style helpers and warning | Filesystem failure tests and recovery rehearsal |
 
 The prioritized verification work is in [Testing strategy](./TESTING.md). Ownership and suggested fixes are maintained in [Known limitations](./KNOWN_LIMITATIONS.md).
@@ -696,7 +700,7 @@ The prioritized verification work is in [Testing strategy](./TESTING.md). Owners
 | Contributor | Stable identity with a display name and kind: human, automation, AI, or imported. |
 | CRDT | Conflict-free replicated data type. Yjs supplies the text-state/update representation even though synchronization is not connected. |
 | Document gateway | UI-facing persistence port defined in `src/persistence/gateway.ts`. |
-| Document state | Document metadata, nodes, contributors, and sessions. Rust hashes this shape; the memory adapter currently has a documented hash-scope discrepancy when it passes a `DocumentView`. |
+| Document state | Document metadata, nodes, contributors, and sessions. The browser explicitly projects this shape for hashing/export; Rust hashes its separately serialized equivalent. |
 | Document view | Document state plus path, read-only flag, and recovery warning returned to the UI. |
 | Format version | Version of the `.coedit` schema/contract; currently `1`. |
 | Group ID | Optional contribution field used to associate a logical burst, currently generated per rich-text commit. |

@@ -81,7 +81,7 @@ The standalone build contains UI, domain logic, and `MemoryDocumentGateway` in o
 
 ### Desktop boundary
 
-The OS WebView contains the shared UI and thin Tauri adapters. The Rust process holds the SQLite connection. TypeScript can call only registered Tauri commands and enabled plugin capabilities. The command layer maps typed payloads to `DocumentStore`; it does not expose arbitrary SQL or arbitrary file-read commands.
+The OS WebView contains the shared UI and thin Tauri adapters. The Rust process holds the SQLite connection. TypeScript can call only registered Tauri commands and enabled plugin capabilities. The command layer maps typed payloads to `DocumentStore`; it does not expose arbitrary SQL or a generic file-read command. `NativeDocumentStorage` is an application capability boundary used to hide native workflows from the standalone host; it is not itself a security authorization primitive.
 
 ## Network and content-security policy
 
@@ -114,6 +114,8 @@ Registered document commands in [`src-tauri/src/lib.rs`](../src-tauri/src/lib.rs
 
 Adding a plugin, command, filesystem scope, shell access, network origin, updater, or second window is a security-model change and requires threat/permission review.
 
+Current second-pass boundary: native command paths are still strings supplied by the renderer after the normal UI opens a dialog. A compromised renderer could attempt a registered command without following that visible picker flow. The Tauri hardening pass should move dialog selection and file authorization into Rust, or issue opaque short-lived grants that Rust validates, and should re-evaluate whether `core:default` can be narrowed. The current code does **not** claim this is already fixed.
+
 ## `.coedit` validation
 
 `DocumentStore::open` currently performs:
@@ -137,11 +139,15 @@ Current validation does **not** authenticate the file, verify contribution/snaps
 
 ### Frontend boundary
 
-[`RichTextEditor`](../src/editor/RichTextEditor.tsx) uses DOMPurify when:
+[`RichTextEditor`](../src/editor/RichTextEditor.tsx) calls the centralized [`sanitizeRichText`](../src/editor/sanitizeRichText.ts) DOMPurify policy when:
 
 - transforming pasted HTML;
 - obtaining HTML for a debounced commit;
 - loading legacy/fallback `contentHtml` when no Yjs state exists.
+
+The browser policy is named `coedit-rich-text-v1`; its tags/attributes live in one module and `fixtures/protocol/rich-text-v1.json` supplies executable expected outputs and idempotence cases. This is standalone evidence only until Rust consumes or deliberately versions an equivalent fixture contract.
+
+`MemoryDocumentGateway` applies the same sanitizer again to direct `createNode.contentHtml` and `updateContent.contentHtml` operations, so callers that bypass the editor do not bypass the standalone persistence boundary. Its `cloneJson` boundary detaches accepted inputs and rejects non-finite/non-JSON values, circular references, non-plain objects, symbol/accessor/non-enumerable properties, and sparse or extra-property arrays. This does not provide Rust's byte-size quotas.
 
 Its explicit allowed tags are paragraphs/breaks, basic emphasis, code/pre, blockquote, lists/items, headings 1-4, anchors, and horizontal rules. Allowed attributes are `href` and `title`.
 
@@ -149,7 +155,7 @@ Its explicit allowed tags are paragraphs/breaks, basic emphasis, code/pre, block
 
 Rust uses Ammonia when creating/updating node HTML and when restoring snapshot HTML. This protects the native store even if a caller bypasses the normal paste UI. A Rust test checks removal of scripts and event-handler content.
 
-The two sanitizer policies are not specified as identical. Changing Tiptap extensions/tags/attributes requires review and tests at both boundaries, including URL schemes and export behavior.
+The Rust and browser sanitizer policies are not yet specified as identical. Changing Tiptap extensions/tags/attributes requires a browser policy-version/fixture decision and tests at both boundaries, including URL schemes and export behavior. Rust fixture parity is a second-pass task.
 
 ### Yjs boundary
 
@@ -177,7 +183,7 @@ These are mutation-boundary limits, not comprehensive quotas. File size, node co
 - Parent directories are not explicitly fsynced; direct filesystem/symlink/race hardening has not been audited.
 - Export destinations come from explicit native dialogs in the current UI.
 
-The standalone download path uses filenames derived from document titles without native path access. Browser download policy still depends on the host browser.
+The standalone download path uses centralized `safeFilenameStem()` normalization without native path access. It retains normalized Unicode letters/numbers, replaces unsafe runs, bounds length by code point, and rejects reserved Windows device stems. Browser download policy still depends on the host browser; filename normalization is not a filesystem sandbox.
 
 ## Threat/control matrix
 
@@ -187,11 +193,11 @@ The standalone download path uses filenames derived from document titles without
 | Script/event HTML injection | DOMPurify, Ammonia, ProseMirror rendering boundary | policy drift, stored/tampered data validation, URL-scheme cases |
 | Wrong/corrupt SQLite opened | application ID, magic, version agreement, integrity/tree/type checks | hash/ledger/snapshot validation and migration fixtures absent |
 | Oversized mutation payload | Rust byte limits and Base64 decode | standalone parity, document/node/count quotas, hostile snapshot load |
-| Partial state/history commit | one SQLite transaction per mutation | editor lifecycle can fail before mutation reaches transaction |
+| Partial state/history commit | one SQLite transaction per mutation; frontend serialized queue and controlled-action title/metadata/rich-text drains | page/process exit and forced suspension remain outside the awaitable draft protocol |
 | Export overwrite/failure | temporary file, sync, rename/rollback attempt | parent-dir durability, filesystem races, platform fault testing |
 | Contributor impersonation | store rejects unknown contributor IDs | UI silently falls back to first document contributor |
 | History tampering | hashes recorded | no authentication, chain, replay, or verification |
-| Unexpected native access | narrow commands and dialog-only capability | future plugins/commands require explicit review |
+| Unexpected native access | narrow commands, optional application capability, dialog plugin | renderer-supplied paths are not Rust-authorized grants; second pass must harden and minimize permissions |
 | Development server exposed | loopback host and strict port | dev machine/browser threat remains; never a release topology |
 
 ## Future network features

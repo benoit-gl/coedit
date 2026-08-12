@@ -1,26 +1,56 @@
 import type { DocumentState } from "./types";
+import { canonicalJson, cloneJsonObject, compareJsonStrings } from "./json";
 
-function stable(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(stable);
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>)
-        .sort(([left], [right]) => left.localeCompare(right))
-        .map(([key, child]) => [key, stable(child)]),
-    );
-  }
-  return value;
+export const DOCUMENT_HASH_ALGORITHM = "coedit-document-state-v1" as const;
+
+export function toDocumentState(state: DocumentState): DocumentState {
+  return {
+    document: {
+      id: state.document.id,
+      title: state.document.title,
+      formatVersion: state.document.formatVersion,
+      revision: state.document.revision,
+      createdAt: state.document.createdAt,
+      updatedAt: state.document.updatedAt,
+    },
+    nodes: state.nodes.map((node) => ({
+      id: node.id,
+      parentId: node.parentId,
+      position: node.position,
+      kind: node.kind,
+      title: node.title,
+      summary: node.summary,
+      contentHtml: node.contentHtml,
+      yjsState: node.yjsState,
+      metadata: cloneJsonObject(node.metadata),
+      createdAt: node.createdAt,
+      updatedAt: node.updatedAt,
+      deletedAt: node.deletedAt,
+    })),
+    contributors: state.contributors.map((contributor) => ({
+      id: contributor.id,
+      displayName: contributor.displayName,
+      kind: contributor.kind,
+      createdAt: contributor.createdAt,
+    })),
+    sessions: state.sessions.map((session) => ({
+      id: session.id,
+      contributorId: session.contributorId,
+      startedAt: session.startedAt,
+      endedAt: session.endedAt,
+      description: session.description,
+    })),
+  };
 }
 
-function canonicalDocumentJson(state: DocumentState): string {
-  return JSON.stringify(
-    stable({
-      ...state,
-      nodes: [...state.nodes].sort((left, right) => left.id.localeCompare(right.id)),
-      contributors: [...state.contributors].sort((left, right) => left.id.localeCompare(right.id)),
-      sessions: [...state.sessions].sort((left, right) => left.id.localeCompare(right.id)),
-    }),
-  );
+export function canonicalDocumentJson(state: DocumentState): string {
+  const projected = toDocumentState(state);
+  return canonicalJson({
+    ...projected,
+    nodes: [...projected.nodes].sort((left, right) => compareJsonStrings(left.id, right.id)),
+    contributors: [...projected.contributors].sort((left, right) => compareJsonStrings(left.id, right.id)),
+    sessions: [...projected.sessions].sort((left, right) => compareJsonStrings(left.id, right.id)),
+  });
 }
 
 export async function hashDocument(state: DocumentState): Promise<string> {

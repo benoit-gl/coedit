@@ -1,0 +1,29 @@
+{
+  "policy": "coedit-rich-text-v1",
+  "cases": [
+    {
+      "name": "preserves supported structure",
+      "input": "<h2>Heading</h2><p>Hello <strong>world</strong>.</p><a href=\"https://example.test\" title=\"Example\">link</a>",
+      "expected": "<h2>Heading</h2><p>Hello <strong>world</strong>.</p><a href=\"https://example.test\" title=\"Example\">link</a>",
+      "forbidden": ["<script", "javascript:", "onerror", "<iframe", "style="]
+    },
+    {
+      "name": "removes executable elements and attributes",
+      "input": "<p onclick=\"alert(1)\">Safe<script>alert(2)</script><img src=x onerror=\"alert(3)\"></p><iframe src=\"https://example.test\"></iframe>",
+      "expected": "<p>Safe</p>",
+      "forbidden": ["<script", "alert(", "onclick", "onerror", "<img", "<iframe"]
+    },
+    {
+      "name": "removes dangerous link protocols",
+      "input": "<p><a href=\"javascript:alert(1)\" title=\"Unsafe\">click</a></p>",
+      "expected": "<p><a title=\"Unsafe\">click</a></p>",
+      "forbidden": ["javascript:", "alert("]
+    },
+    {
+      "name": "removes style and unsupported containers but keeps text",
+      "input": "<div style=\"color:red\"><span>Plain</span><object>hidden</object></div>",
+      "expected": "Plain",
+      "forbidden": ["style=", "<div", "<span", "<object"]
+    }
+  ]
+}

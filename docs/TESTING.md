@@ -40,7 +40,7 @@ src/**/*.test.ts
 src/**/*.test.tsx
 ```
 
-There are currently five TypeScript test cases.
+There are currently thirty-three TypeScript test cases. This is a source inventory, not a claim that they were executed for every documentation edit.
 
 | File | Suite / test | Layer | What it proves | Important omissions |
 |---|---|---|---|---|
@@ -48,9 +48,18 @@ There are currently five TypeScript test cases.
 | `src/domain/tree.test.ts` | `rejects moving a node into its descendant` | Pure domain | One cycle-producing move is rejected | Self-parent, missing target, deeper/generated trees |
 | `src/domain/tree.test.ts` | `soft-deletes a complete subtree` | Pure domain | Root and descendant deletion timestamps are applied | Sibling normalization, restore behavior, partial deleted trees |
 | `src/domain/tree.test.ts` | `detects cyclic imported state` | Pure domain | `assertValidTree` catches a two-node cycle | Duplicate IDs, missing parent, self-cycle, large/deep graphs |
-| `src/persistence/memoryGateway.test.ts` | `attributes, hashes, and restores changes without deleting history` | Adapter integration | Create, two operations, restore, revision increase, history preservation, nonempty hashes | Export, queries, close, errors, browser download, parity with Rust |
+| `src/application/serializedTaskQueue.test.ts` (2) | ordering; recovery after failure | Application control | A later task starts only after the prior task settles, and rejection does not poison the queue | React/controller integration, cancellation, teardown |
+| `src/application/draftTransition.test.ts` (3) | freeze/drain order; failed flush/retry; safe replacement cleanup | Application control | Freeze occurs synchronously, every participant drains before transition work, failure blocks, and stale unregister cannot remove a replacement | Full component/editor timing, host-exit hooks |
+| `src/application/useDocumentController.test.tsx` (3) | selection/Close transition; failed flush; restore generation | React controller | Drafts freeze before await, controlled actions drain in order, failure preserves selection, and restore advances authoritative editor generation | Full `App`/Tiptap DOM, export/backup, native E2E |
+| `src/application/localContributor.test.ts` (9) | stored-profile validation and fallback cases | Application boundary | Valid contributor preferences load; malformed JSON, invalid shapes/kinds/dates, and unavailable storage fall back safely | Browser-specific storage policy and contributor registration |
+| `src/components/NodeEditor.test.tsx` (1) | normalized title acknowledgement | React component | A whitespace title adopts the persisted `Untitled idea` normalization after a successful draft flush | Other metadata fields, focus behavior, and full Tiptap composition |
+| `src/domain/hash.test.ts` (4) | canonical fixture; host-field exclusion/order immutability; Unicode/integer-like ordering; invalid JSON rejection | Protocol/domain | `coedit-document-state-v1` canonical JSON/SHA-256, explicit `DocumentView` projection, engine-independent key order, and representative undefined/non-finite/non-plain/cyclic/sparse rejection | Rust equality, replay/open verification; symbol/accessor/extra-array-property branches |
+| `src/editor/sanitizeRichText.test.ts` (2) | versioned cases; idempotence | Browser security contract | `coedit-rich-text-v1` expected output and repeat sanitization | Rust Ammonia parity, full editor paste integration |
+| `src/persistence/memoryGateway.test.ts` (3) | attribution/restore; filtered cursor paging; recovery export | Adapter integration | Revision/history preservation, filter-before-page semantics, exclusive cursors, full runtime ledger envelope | Snapshot export/import, Rust parity |
+| `src/persistence/memoryGateway.test.ts` boundary case (1) | detachment, metadata validation, direct-operation sanitization | Adapter/domain boundary | Inputs are detached, non-JSON metadata is rejected, and bypassing the editor still sanitizes rich text | Rust parity, exhaustive hostile values/limits |
+| `src/persistence/memoryGateway.test.ts` filename case (1) | portable filenames | Shared output helper | diacritics, retained non-Latin letters, unsafe/reserved/empty names, and code-point length normalization | browser/native end-to-end filename behavior |
 
-No `.test.tsx` file currently exists, so React component behavior, editor timing, focus/keyboard handling, and `App` orchestration are not automated.
+One `.test.tsx` suite exercises the hook through a minimal harness. Full `App`, `NodeEditor`, Tiptap/Yjs timing, focus/keyboard behavior, and end-to-end UI are not automated.
 
 ### Rust persistence tests
 
@@ -66,16 +75,16 @@ The round-trip test creates a unique folder under the operating-system temporary
 
 ### Current total and absent levels
 
-The repository contains eight automated test cases: five TypeScript and three Rust. It currently contains no automated:
+The repository contains thirty-six automated test cases: thirty-three TypeScript and three Rust. It currently contains no automated:
 
-- React component or accessibility tests;
+- full-App React/accessibility tests;
 - Tiptap/Yjs timing/lifecycle tests;
 - browser end-to-end tests;
 - generated standalone-artifact test;
 - Tauri IPC contract or native end-to-end test;
 - TypeScript/Rust serialization compatibility test;
 - migration or old-format fixture test;
-- deterministic cross-language hash test;
+- Rust conformance test for the versioned TypeScript hash/sanitizer fixtures;
 - fault-injection or interrupted-write test;
 - macOS/Linux/Windows CI matrix; or
 - performance, property-based, fuzz, or long-history test.
@@ -141,7 +150,7 @@ Do not describe source portability as platform testing.
 | Pure unit | Exhaust domain edge cases quickly | `src/domain/tree.ts`, hash/encoding helpers, Rust validation/helpers | Tree invariants, canonical order, base64 failures, Markdown traversal |
 | Adapter contract | Prove gateway semantics independent of UI | Reusable suite against `MemoryDocumentGateway`; Rust/Tauri bridge equivalent | Revision rules, attribution, queries, restore, close, export |
 | Component integration | Prove React behavior and asynchronous coordination | Components with injected callbacks/fake gateway in jsdom | Blur commits, outline keys, busy/read-only states, close flush |
-| Editor integration | Prove Tiptap/Yjs lifecycle | `RichTextEditor` with controlled timers and Yjs state | Debounce, unmount flush, node switch, restore same ID, paste sanitation |
+| Editor integration | Prove Tiptap/Yjs lifecycle | `RichTextEditor` with controlled timers and Yjs state | Debounce, explicit drain/retry, cleanup without late save, node switch, restore same ID, paste sanitation |
 | Store integration | Prove SQLite/filesystem semantics | Temporary `.coedit` fixtures and `DocumentStore` | Transactions, snapshots, locks, backup, corrupt/future documents |
 | IPC contract | Prove camel-case payload compatibility | Tauri command boundary or shared serialized fixtures | Every `DocumentOperation`, query/result/error shape |
 | Artifact end-to-end | Prove what users actually launch | Generated standalone HTML and native Tauri package | `file://`, CSP, persistence after restart, correct composition root |
@@ -153,16 +162,16 @@ Keep pure operation tests broad and fast. Reserve full UI/native tests for behav
 
 | Risk ID | Failure mode | Severity | Current detection | Required next tests | Priority |
 |---|---|---:|---|---|---:|
-| RK-01 | Pending rich-text update is lost when Close wins the race | Critical | None | Fake-gateway component test with controlled timers; desktop close/reopen E2E | P0 |
-| RK-02 | Restore leaves the selected Yjs document stale and a later edit overwrites restored text | Critical | None | Restore same node ID, assert editor content/state, then edit and reopen | P0 |
-| RK-04 | State hash cannot be reproduced/replayed across layers | High | Only checks nonempty strings | Golden canonical-state fixtures in TS/Rust; replay and tamper tests | P0 |
+| RK-01 | The implemented draft-transition barrier regresses or is bypassed by uncontrolled page/process exit | High | Draft coordinator and controller Close/selection/failure tests | Full editor controlled-timer test; close/retry and host-exit E2E | P0 |
+| Restore | Authoritative editor generation/remount wiring regresses or native restored state diverges | High | Controller restore-generation test plus `App` composite key | Full same-node Tiptap edit/reopen and native parity test | P0 |
+| RK-04 | State hash cannot be reproduced/replayed across layers | High | TS canonical fixture and host-field test; Rust only checks stored values | Make Rust consume the same fixture; add replay and tamper tests | P0 |
 | RK-07 | TS and Rust discriminated unions drift | High | Compilation within each language only | JSON fixture/contract tests for every operation and result type | P0 |
 | RK-05 | Schema change strands or rewrites old documents | High | Version gate only | Version-1 fixtures, future-version read-only fixture, migration interruption suite | P0 before format 2 |
-| RK-06 | Recovery JSON silently omits history | High | None | >100,000 contribution or streamed-boundary test; standalone schema assertion; import/round-trip when added | P1 |
+| RK-06 | Recovery JSON is capped on desktop and cannot be imported in either host | High | Standalone envelope/full-runtime-ledger test | >100,000 desktop boundary test; validation/import round trip when added | P1 |
 | RK-03 | Foreign local profile cannot contribute under its identity | High | None | Open document with unmatched profile and exercise proposed register/select flow | P1 |
 | RK-10 | Copy/write replacement failure leaves confusing artifacts or loses destination | High | Happy-path Rust test | Fault-injected create/export/backup replacement stages and recovery assertions | P1 |
-| RK-09 | History search/count appears complete but covers 500 rows | Medium | None | 501+ contribution UI/query/pagination test | P1 |
-| Security | HTML or crafted SQLite data crosses a trust boundary | High | One Ammonia smoke test | Malformed HTML corpus, URL schemes, DOMPurify/Ammonia expected-output cases, corrupt file fixtures | P1 |
+| RK-09 | History pagination/search regresses, or desktop hides matches beyond its 100,000-row pre-window | Medium | Memory cursor/filter test | Controller Load-older/query tests; 100,001+ Rust SQL redesign case | P1 |
+| Security | HTML or crafted SQLite data crosses a trust boundary | High | Versioned DOMPurify fixture plus one Ammonia smoke test | Make Rust consume shared cases; malformed/corrupt file fixtures | P1 |
 | Portability | A release compiles but does not launch/persist on a claimed OS | High | Developer-specific manual runs | Per-OS package build, launch, create/reopen/export smoke | P1 |
 | Accessibility | Keyboard/touch/assistive users cannot reach core actions | Medium-high | Source inspection only | Component accessibility checks and manual keyboard/screen-reader/touch suite | P2 |
 | Performance | Snapshot-per-revision or full-array history becomes unusable | Medium | None | Large document/history benchmarks with explicit budgets | P2 |
@@ -177,32 +186,32 @@ P0 means required before trusting the affected data-integrity behavior. P1 means
 | UC-02 Open | Rust round trip reopens valid v1 | Desktop valid/invalid/open-cancel; read-only warning | Corrupt/future/journal fixtures and Tauri IPC path |
 | UC-03 Organize hierarchy | Four TS tree cases; one Rust cycle case | Keyboard, reordering, drag/reparent, delete confirmation | Full operation parity/property suite and component keyboard tests |
 | UC-04 Edit metadata | Indirect memory/Rust update summary | Blur title/summary; change each kind; reopen | `NodeEditor` component tests, limits/errors, TS/Rust parity |
-| UC-05 Edit developed text | Rust sanitizer smoke only | Formatting, paste, idle save, rapid switch/close | Controlled-timer editor lifecycle suite |
-| UC-06 Inspect history | Memory history length; Rust length | Search, node filter, hash display, empty results | Query filters/limits and 500+ UI behavior |
+| UC-05 Edit developed text | Browser sanitizer fixtures; Rust sanitizer smoke; queue ordering | Formatting, paste, idle save, rapid switch/close | Controlled-timer editor/controller flush lifecycle suite |
+| UC-06 Inspect history | Memory filter-before-page/cursor test; Rust length | Search, node filter, Load older, hash display, empty/error results | Controller paging/race test and 100,001+ desktop behavior |
 | UC-07 Restore | Memory and Rust happy paths | Restore and reopen; edit after restore | Same-node Yjs regression; missing/read-only snapshot cases |
-| UC-08 Export | Rust happy-path file checks | Open Markdown/JSON; standalone downloads | Exact schemas, escaping, large history, failure atomicity |
+| UC-08 Export | Standalone recovery-envelope/filename tests; Rust happy-path file checks | Open Markdown/JSON; standalone downloads | Import/round trip, desktop cap, escaping, failure atomicity |
 | UC-09 Backup | Rust happy-path copy | Desktop backup, byte size, renamed backup reopen | Locked/failure replacement and open-backup UX |
-| UC-10 Close | None | Desktop close/reopen; standalone clears | Pending editor flush and command failure tests |
+| UC-10 Close | Queue ordering/rejection recovery only | Close before debounce; failure/retry; standalone clears | Controller/editor flush-barrier component test and native reopen E2E |
 | UC-11 Standalone | Build-time inline syntax checks, when build runs | Double-click generated HTML in target browsers | Automated `file://` E2E and CSP/external-request assertion |
 
 ## Test data and invariants
 
-### Minimal canonical fixture
+### Versioned protocol fixtures
 
-A shared fixture should include:
+`fixtures/protocol/document-hash-v1.json` currently includes:
 
 - one document at a known revision;
 - two contributors of different kinds;
-- one writing session;
-- two roots with deliberately unsorted IDs;
-- nested nodes with position ties;
-- one soft-deleted subtree;
-- sanitized rich HTML;
-- nonempty Yjs state and incremental update;
+- two writing sessions with different lifecycle fields;
+- a parent/child pair supplied in deliberately unsorted ID order;
+- host-only `DocumentView` fields that must be excluded;
+- representative rich HTML and Base64 Yjs state;
 - nested metadata objects with deliberately reordered keys; and
-- contributions covering every operation variant.
+- a fixed canonical JSON string and SHA-256 digest.
 
-Serialize the same fixture through TypeScript and Rust. It should become the oracle for camel-case field names, enum tags, canonical hashing, affected-node IDs, snapshot state, and JSON export versioning.
+`fixtures/protocol/rich-text-v1.json` contains supported-structure, executable-content, unsafe-URL, and unsupported-container cases for `coedit-rich-text-v1`.
+
+TypeScript consumes both fixtures. Rust does not yet consume either one. The second pass should make the document-hash fixture a cross-language byte/digest oracle and should decide whether Ammonia must match the rich-text fixture byte-for-byte or satisfy a separately versioned safe-equivalence contract. Contributions covering every operation variant and full IPC shapes still need an additional shared fixture.
 
 ### Domain invariants to assert after every operation
 
@@ -286,29 +295,32 @@ Expected: stable titles/selection, acyclic hierarchy, normalized order, and a co
 4. Paste HTML containing a script or inline event handler and inspect the result/console.
 5. Stop typing for more than 1.2 seconds.
 6. Open history and confirm a writing contribution appears and the status returns from saving to saved.
-7. Switch nodes immediately after typing and verify the committed content when returning.
+7. Switch nodes immediately after typing and verify the controller drains the pending batch before selection changes.
+8. Type another unique marker and click **Close** in less than 1.2 seconds; the marker cannot be reopened in volatile standalone mode, so instead confirm the save status completes before the welcome state appears and no late `No document is open` error reaches the console/banner.
 
-Expected: only allowed content remains; metadata and text changes appear in history. Record rapid-switch anomalies as data-integrity defects.
+Expected: only allowed content remains; metadata and text changes appear in history; controlled selection/Close freezes and drains title, metadata, and rich text. This does not test tab close/reload, which discards the entire standalone document by design.
 
 ### ST-05 - History and restore
 
 1. Make distinguishable changes to two nodes.
 2. Search by message/operation and contributor.
 3. Enable **Selected idea only** and verify unrelated contributions disappear.
-4. Restore an older revision after confirming the dialog.
-5. Verify a new, higher revision records `restoreRevision` and prior entries remain.
-6. Restore a revision in which the currently selected node has different text; verify the editor immediately shows the restored text, then edit it again.
+4. Where a prepared long-history fixture is available, verify the first page shows a `+` count and **Load older contributions**, then load successive pages without duplicates.
+5. Restore an older revision after confirming the dialog.
+6. Verify a new, higher revision records `restoreRevision` and prior entries remain.
+7. Restore a revision in which the currently selected node has different text; verify the editor immediately shows the restored text, then edit it again.
 
-Expected: history is append-only through the UI. The last step specifically probes RK-02 and may expose the documented defect until fixed.
+Expected: history is append-only through the UI. The last step verifies the authoritative editor-generation remount; any stale pre-restore content is a regression.
 
 ### ST-06 - Exports and volatility
 
 1. Export Markdown and inspect its hierarchy/headings/plain text.
-2. Export JSON and inspect its top-level shape.
-3. Confirm current standalone JSON contains the document view but not contribution history; treat this as a known limitation, not a passed complete-recovery claim.
-4. Reload or close/reopen the HTML.
+2. Export JSON and confirm `format` is `coedit-recovery`, `exportVersion` is `2`, and `exportedAt`, `hashAlgorithm`, `stateHash`, `state`, `history`, and `contributions` exist.
+3. Confirm contributions are newest first and include revision 0 plus every contribution visible/loaded or not yet loaded in History. Confirm `state` omits `path`, `readOnly`, and `recoveryWarning`.
+4. Confirm accents are normalized, safe non-Latin letters are retained, unsafe/reserved/empty titles produce a safe normalized/fallback filename, and long names do not split Unicode code points.
+5. Reload or close/reopen the HTML.
 
-Expected: downloads complete; working document state is gone after reload and the volatility warning was accurate.
+Expected: downloads complete; the JSON envelope is complete for the current in-memory session but has no importer; working document state is gone after reload and the volatility warning was accurate.
 
 ### ST-07 - Browser coverage
 
@@ -345,7 +357,7 @@ Expected: all committed state survives both document close and process restart.
 3. Reopen immediately and search for the marker.
 4. Repeat while switching nodes immediately before close.
 
-Expected target behavior: the marker is persisted or the UI explicitly prevents/warns about close. Current code has a known race, so a missing marker is a confirmed RK-01 reproduction, not acceptable release behavior.
+Expected target behavior: the controller flushes and queues the marker contribution before native close. A missing marker is a regression in the new barrier. This desktop outcome is not claimed verified until the second-pass Tauri suite is run.
 
 ### DT-04 - History and restore persistence
 
@@ -355,12 +367,12 @@ Expected target behavior: the marker is persisted or the UI explicitly prevents/
 4. Close/reopen and verify restored state/history.
 5. Restore different content for the selected node ID, edit it, close/reopen, and verify the intended restored-plus-new content.
 
-Expected target behavior: snapshot state and editor state agree through reopen. The last path probes RK-02.
+Expected target behavior: snapshot state and editor state agree through reopen. The last path supplies full editor/native evidence beyond the controller generation test.
 
 ### DT-05 - Export and backup
 
 1. Export Markdown and confirm active hierarchy order, headings, summaries, and text.
-2. Export JSON and confirm `exportVersion`, `exportedAt`, `state`, and `contributions` are present.
+2. Export JSON and confirm the desktop legacy fields `exportVersion: 1`, `exportedAt`, `state`, and `contributions` are present; do not expect the standalone version-2 format/hash/history fields in pass 1.
 3. Create a `.coedit-backup` and compare its reported byte count with the filesystem size.
 4. Preserve the original, rename a copy of the backup to `.coedit`, and open that copy.
 5. Verify document state and history.
@@ -472,7 +484,7 @@ Place tests beside the implementation as `src/domain/<name>.test.ts` when they r
 Extract a reusable behavioral suite that can be instantiated with a gateway fixture. Require common semantics for create, apply, revision, attribution, queries, restore, and close. Capability differences must be explicit:
 
 - memory create accepts `null` path; desktop requires a path;
-- memory cannot open SQLite;
+- memory exposes `VolatileDocumentStorage`, not `NativeDocumentStorage`, and therefore cannot open or back up SQLite;
 - standalone exports download through the browser; desktop exports to selected paths;
 - SQLite backup is a desktop user workflow.
 
@@ -488,8 +500,8 @@ Use injected fake gateways/dialogs rather than mocking Tauri imports in shared U
 - outline keyboard navigation and disabled states;
 - confirmation accepted/canceled;
 - busy/error/read-only banners;
-- history filters and restore-disabled latest revision;
-- async refresh ordering; and
+- history query debounce, exclusive cursor, Load older, errors, and restore-disabled current revision;
+- stale request/workspace ordering; and
 - flush before node switch/close/restore.
 
 ### Rust store tests
@@ -534,9 +546,9 @@ Keep Tauri and standalone builds separate in tests so the wrong composition root
 
 ### P0 - Data-integrity gates
 
-1. Rich-editor flush barrier on Close and node switch, including rejection/error handling.
-2. Same-node-ID revision restore followed by editing and reopen.
-3. Shared TS/Rust serialization and canonical-hash golden fixtures.
+1. Full editor/component proof extending the controller tests for the draft-transition barrier on Close, node switch, restore, export, and rejection/retry.
+2. Same-node-ID revision restore followed by editing and reopen, including native parity.
+3. Make Rust consume the existing canonical-hash fixture; add shared operation/IPC serialization fixtures.
 4. Full operation invariant/rollback suite for memory and SQLite implementations.
 5. Version-1 format fixture retained before any schema change; migration gate required for format `2`.
 6. Generated standalone `file://` syntax/CSP/render smoke.
@@ -546,11 +558,11 @@ Keep Tauri and standalone builds separate in tests so the wrong composition root
 1. React integration tests for create/edit/tree/history/restore/error/read-only states.
 2. Tauri command contract tests.
 3. Invalid/corrupt/future/journal/locked-file fixtures.
-4. Backup/export replacement-failure and completeness tests.
-5. 501+ and 100,001+ contribution boundary tests or redesigned streaming/pagination behavior.
+4. Backup/export replacement-failure and desktop completeness tests.
+5. Controller Load-older/filter/race tests plus a Rust SQL redesign and 100,001+ contribution boundary case.
 6. Contributor-profile mismatch workflow tests after product behavior is specified.
 7. Windows/macOS/Linux build and packaged-runtime matrix.
-8. DOMPurify/Ammonia adversarial corpus and protocol checks.
+8. Make Ammonia consume or deliberately version expectations against the existing DOMPurify adversarial fixture.
 
 ### P2 - Quality and scale
 

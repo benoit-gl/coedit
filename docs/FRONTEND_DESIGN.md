@@ -14,7 +14,7 @@ Related documents:
 
 ## Purpose and design boundary
 
-The frontend owns interaction state, presentation, hierarchy commands, rich-text editing, and the browser implementation of the domain rules. It does not know how a desktop document is stored. `App` receives that behavior through the `DocumentGateway` port and receives native paths through the optional `DocumentFileDialogs` port.
+The frontend owns interaction state, presentation, hierarchy commands, rich-text editing, application-use-case sequencing, and the browser implementation of the domain rules. It does not know how a desktop document is stored. `App` passes injected host services to `useDocumentController`; that controller consumes `DocumentGateway`, optional `DocumentFileDialogs`, and the gateway's discriminated `DocumentStorage` capability.
 
 There are two explicit composition roots. There is no runtime test for Tauri inside the shared UI:
 
@@ -30,7 +30,7 @@ The default production web build is transformed by `standaloneHtml()` in `vite.c
 In RUP terms, the frontend contains boundary, control, and entity/domain elements:
 
 - **Boundary:** HTML entry points and the components in `src/components/` and `src/editor/`.
-- **Control:** `App`, gateway implementations, and the rich-text commit coordinator inside `RichTextEditor`.
+- **Control:** `useDocumentController`, `SerializedTaskQueue`, gateway implementations, and the rich-text commit coordinator inside `RichTextEditor`.
 - **Entity/domain:** the interfaces in `src/domain/types.ts` and tree operations in `src/domain/tree.ts`.
 - **External boundary:** Tauri IPC and native dialogs, isolated behind adapters in `src/persistence/`.
 
@@ -48,11 +48,16 @@ package "Composition roots" {
 }
 
 package "React boundary" {
-  [App\n<<control>>] as App
+  [App\n<<boundary/composition>>] as App
   [Outline] as Outline
   [NodeEditor] as NodeEditor
   [RichTextEditor] as RichTextEditor
   [HistoryPanel] as HistoryPanel
+}
+
+package "Application control" {
+  [useDocumentController\n<<control>>] as Controller
+  [SerializedTaskQueue] as Queue
 }
 
 package "Domain" {
@@ -64,6 +69,11 @@ package "Domain" {
 
 package "Persistence ports and adapters" {
   interface DocumentGateway
+  interface DocumentSession
+  interface ContributionHistory
+  interface DocumentStorage
+  interface VolatileDocumentStorage
+  interface NativeDocumentStorage
   interface DocumentFileDialogs
   [MemoryDocumentGateway] as Memory
   [TauriDocumentGateway] as TauriGateway
@@ -86,9 +96,16 @@ App --> Outline
 App --> NodeEditor
 NodeEditor --> RichTextEditor
 App --> HistoryPanel
-App --> DocumentGateway
-App --> DocumentFileDialogs
-App --> Types
+App --> Controller
+Controller --> Queue
+Controller --> DocumentGateway
+Controller --> DocumentFileDialogs
+Controller --> Types
+DocumentGateway --|> DocumentSession
+DocumentGateway --|> ContributionHistory
+DocumentGateway o-- DocumentStorage : storage capability
+DocumentStorage <|-- VolatileDocumentStorage
+DocumentStorage <|-- NativeDocumentStorage
 Outline --> Tree
 Memory ..|> DocumentGateway
 Memory --> Tree
@@ -112,7 +129,10 @@ IPC --> SQLite
 | `tauri.html` | Loads `/src/main-tauri.tsx` | Source entry used by the Tauri build. |
 | `src/main.tsx` | Entry module | Mounts `App` under `StrictMode` with a new `MemoryDocumentGateway`. |
 | `src/main-tauri.tsx` | Entry module | Mounts `App` under `StrictMode` with a new `TauriDocumentGateway` and `tauriFileDialogs`. |
-| `src/App.tsx` | `App` | Owns application state and coordinates all user-visible document use cases. |
+| `src/App.tsx` | `App` | Owns welcome/profile presentation, renders controller state, and translates UI events into controller calls. |
+| `src/application/useDocumentController.ts` | `useDocumentController`, `HistoryQuery` | Owns the active workspace, authoritative editor generation, contribution paging, capability dispatch, error/status state, contributor context, stale-response guards, queue, and draft-transition barrier. |
+| `src/application/serializedTaskQueue.ts` | `SerializedTaskQueue` | Runs document commands sequentially and keeps the queue usable after a rejection. |
+| `src/application/draftTransition.ts` | `DraftParticipant`, `DraftTransitionCoordinator`, `DraftTransition` | Freezes registered drafts synchronously, drains them before a controlled transition, then unfreezes in reverse order. |
 | `vite.config.ts` | Default Vite configuration; private `standaloneHtml()` plugin | Selects the composition root and creates the self-contained standalone artifact. |
 
 ### Components and editor
@@ -121,19 +141,21 @@ IPC --> SQLite
 |---|---|---|
 | `src/components/Outline.tsx` | `Outline` | Builds and presents the active node tree; selection, expansion, keyboard traversal, sibling reorder, drag-to-reparent, add, and delete. |
 | `src/components/Outline.tsx` | Private `OutlineRow` | Recursive row rendering and row-level commands. |
-| `src/components/NodeEditor.tsx` | `NodeEditor` | Edits node title, kind, summary, and embeds `RichTextEditor`. |
-| `src/editor/RichTextEditor.tsx` | `RichTextEditor` | Tiptap/Yjs lifecycle, toolbar, sanitization, grouping, and persistence callback. |
+| `src/components/NodeEditor.tsx` | `NodeEditor` | Owns dirty node title/kind/summary drafts, drains them with the nested rich editor through one registered participant, and renders `RichTextEditor`. |
+| `src/editor/RichTextEditor.tsx` | `RichTextEditor` | Tiptap/Yjs lifecycle, toolbar, grouping, retry-preserving commit drain, and participant registration with `NodeEditor`. |
+| `src/editor/sanitizeRichText.ts` | `sanitizeRichText`, `RICH_TEXT_POLICY`, allowlists | Central browser sanitization contract used for paste, fallback load, and commit. |
 | `src/editor/yjsEncoding.ts` | `bytesToBase64`, private `base64ToBytes`, `createYDoc` | Converts Yjs binary state to/from the string representation carried by the domain model. |
-| `src/components/HistoryPanel.tsx` | `HistoryPanel` | Filters the fetched contribution list and requests revision restoration. |
+| `src/components/HistoryPanel.tsx` | `HistoryPanel` | Debounces history filters, presents page/loading/error state, requests older pages, and requests revision restoration. |
 | `src/styles.css` | Global style sheet | Layout, visual states, design tokens, focus indication, and the current responsive breakpoint. |
 
 ### Domain and extension contracts
 
 | File | Key symbols | Responsibility |
 |---|---|---|
-| `src/domain/types.ts` | `DocumentState`, `DocumentView`, `DocumentNode`, `DocumentOperation`, `Contribution`, related interfaces and unions | Shared serialized model and operation contract. |
+| `src/domain/types.ts` | `DocumentState`, `DocumentView`, `DocumentNode`, `DocumentOperation`, `ContributionPage`, `RecoveryExport`, `ExportFormat`, related interfaces and unions | Shared serialized model, paging/recovery shapes, and operation contract. |
 | `src/domain/tree.ts` | `TreeNode`, `buildTree`, private `descendantIds`, `assertValidTree`, `affectedNodeIds`, `applyOperation` | Hierarchy projection, validation, mutation, and attribution support. |
-| `src/domain/hash.ts` | Private `canonicalDocumentJson`, `hashDocument` | Canonical JSON construction and browser SHA-256 hashing. |
+| `src/domain/json.ts` | `cloneJson`, `cloneJsonObject`, `canonicalJson`, `compareJsonStrings` | Validates/detaches JSON-only data (including strict array/property rules) and serializes it with explicit UTF-16 key ordering. |
+| `src/domain/hash.ts` | `DOCUMENT_HASH_ALGORITHM`, `toDocumentState`, `canonicalDocumentJson`, `hashDocument` | Explicit host-field projection, versioned canonical JSON, and browser SHA-256 hashing. |
 | `src/domain/ids.ts` | `newId` | Browser-safe UUID generation. |
 | `src/ai/provider.ts` | `AiRequest`, `AiProvider` | Unwired extension contract for an explicitly invoked AI proposal provider. No implementation is registered. |
 
@@ -141,8 +163,8 @@ IPC --> SQLite
 
 | File | Key symbols | Responsibility |
 |---|---|---|
-| `src/persistence/gateway.ts` | `DocumentGateway` | Host-neutral document lifecycle, mutation, history, restore, backup, and export port. |
-| `src/persistence/fileDialogs.ts` | `DocumentFileDialogs` | Host-neutral port for choosing native paths. |
+| `src/persistence/gateway.ts` | `DocumentSession`, `ContributionHistory`, `DocumentStorage`, `VolatileDocumentStorage`, `NativeDocumentStorage`, `DocumentGateway`, page helpers | Host-neutral session/history ports, discriminated storage capabilities, and bounded cursor-page construction. |
+| `src/persistence/fileDialogs.ts` | `DocumentFileDialogs`, `safeFilenameStem` | Host-neutral native-path port and one portable filename-normalization rule shared by browser/native adapters. |
 | `src/persistence/memoryGateway.ts` | `MemoryDocumentGateway` | Volatile browser implementation with an in-memory ledger and revision snapshots. |
 | `src/persistence/tauriGateway.ts` | `TauriDocumentGateway` | Thin adapter from `DocumentGateway` methods to Tauri command names. |
 | `src/persistence/tauriFiles.ts` | Four private dialog functions and `tauriFileDialogs` | Tauri dialog-plugin adapter for create, open, export, and backup destinations. |
@@ -166,7 +188,7 @@ createRoot
             └── HistoryPanel                  historyOpen === true
 ```
 
-Components are controlled through props and callbacks. There is no router, React context, external state store, or application event bus. `App` is the single application-level controller.
+Components are controlled through props and callbacks. There is no router, React context, external state store, or application event bus. `useDocumentController` is the single application-level controller; `App` is the rendering/composition boundary above it.
 
 ## Type relationships
 
@@ -178,13 +200,25 @@ title Frontend type and adapter relationships
 hide empty members
 
 interface DocumentGateway {
-  +mode: "desktop" | "standalone"
-  +createDocument(path, title, contributor): Promise<DocumentView>
-  +openDocument(path): Promise<DocumentView>
+  +storage: DocumentStorage
   +closeDocument(): Promise<void>
   +applyOperation(operation, context): Promise<DocumentView>
-  +listContributions(query): Promise<Contribution[]>
+  +listContributions(query): Promise<ContributionPage>
   +restoreRevision(revision, context): Promise<DocumentView>
+}
+
+interface DocumentStorage
+
+interface VolatileDocumentStorage {
+  +kind: "volatile"
+  +createDocument(title, contributor): Promise<DocumentView>
+  +exportDocument(format): Promise<ExportResult>
+}
+
+interface NativeDocumentStorage {
+  +kind: "native-file"
+  +createDocument(path, title, contributor): Promise<DocumentView>
+  +openDocument(path): Promise<DocumentView>
   +backupDocument(path): Promise<ExportResult>
   +exportDocument(format, path): Promise<ExportResult>
 }
@@ -203,7 +237,10 @@ class MemoryDocumentGateway {
 }
 
 class TauriDocumentGateway
-class App <<React control>>
+class useDocumentController <<React control>>
+class SerializedTaskQueue
+class DraftTransitionCoordinator
+class App <<React boundary>>
 class Outline <<React boundary>>
 class NodeEditor <<React boundary>>
 class RichTextEditor <<React boundary>>
@@ -212,42 +249,56 @@ class DocumentView <<entity>>
 class DocumentState <<entity>>
 class DocumentNode <<entity>>
 class Contribution <<entity>>
+class ContributionPage <<value object>>
 class DocumentOperation <<discriminated union>>
 class ContributionContext <<value object>>
 
 MemoryDocumentGateway ..|> DocumentGateway
+MemoryDocumentGateway ..|> VolatileDocumentStorage
 TauriDocumentGateway ..|> DocumentGateway
-App --> DocumentGateway : injected
-App --> DocumentFileDialogs : optional/injected
+TauriDocumentGateway ..|> NativeDocumentStorage
+DocumentGateway o-- DocumentStorage
+DocumentStorage <|-- VolatileDocumentStorage
+DocumentStorage <|-- NativeDocumentStorage
+App --> useDocumentController
+useDocumentController --> SerializedTaskQueue
+useDocumentController --> DraftTransitionCoordinator
+useDocumentController --> DocumentGateway : injected
+useDocumentController --> DocumentFileDialogs : optional/injected
 App --> Outline
 App --> NodeEditor
 App --> HistoryPanel
 NodeEditor --> RichTextEditor
-App --> DocumentView : owns current
-App --> "0..*" Contribution : owns fetched slice
+useDocumentController --> DocumentView : owns current
+useDocumentController --> "0..*" Contribution : owns loaded pages
+useDocumentController --> ContributionPage
 DocumentView --|> DocumentState
 DocumentState o-- "0..*" DocumentNode
-App --> DocumentOperation : dispatches
-App --> ContributionContext : creates
+useDocumentController --> DocumentOperation : dispatches
+useDocumentController --> ContributionContext : creates
 @enduml
 ```
 
-## `App` state and control flow
+## Application state and control flow
 
-`App` owns the following state:
+`App` owns only the welcome title and locally persisted contributor profile. `useDocumentController` owns the document use-case state:
 
 | State | Meaning | Primary writers |
 |---|---|---|
 | `view: DocumentView | null` | Complete current materialized document, or welcome state when `null`. | Create, open, apply, restore, close. |
-| `contributions: Contribution[]` | Latest fetched contribution slice. | `refreshHistory`; cleared on close. |
-| `selectedId: string | null` | Active non-deleted node. | Outline selection, add, selection-repair effect, close. |
+| `contributions: Contribution[]` | Loaded newest-first pages for the active filters. | first-page refresh, `loadOlderHistory`, close/query reset. |
+| `selectedId: string | null` | Active non-deleted node. | controlled selection, add, accepted-view repair, close. |
+| `editorGeneration: number` | Authoritative editor-instance generation included in `NodeEditor`'s React key. | create, open, restore, close. |
 | `historyOpen: boolean` | Whether the history panel is rendered. | History and close buttons. |
-| `busy: boolean` | A gateway action wrapped by `run()` is active. | `run()`. |
-| `error: string | null` | Last error caught by `run()`. | `run()` and banner close. |
-| `status: string` | Last successful lifecycle/mutation/export message. | `run()` success labels. |
-| `newTitle: string` | Welcome-screen document title draft. | Welcome input. |
-| `profile: Contributor` | Local contributor preference. | Initial local storage read and welcome input. |
-| `sessionId` ref | One generated identifier for this mounted `App`. | Initialized once with `newId()`. |
+| `historyLoading`, `historyHasMore`, `historyStale`, `historyError` | Independent contribution-page request state. | guarded history requests and accepted-view invalidation. |
+| `busyCount` / returned `busy` | Number/boolean for queued or running document commands. | `enqueue()`. |
+| `transitioning: boolean` | A controlled draft freeze/drain/workspace transition is active. | `runTransition()`. |
+| `error: string | null` | Last command/draft-flush error. | `executeMutation()`, `runTransition()`, and banner close. |
+| `status: string` | Last successful lifecycle/mutation/export message. | mutation/transition success labels. |
+| `sessionId` ref | One generated identifier for this mounted controller. | Initialized once with `newId()`. |
+| `workspaceEpoch`, `historyRequest` refs | Reject responses belonging to an old workspace or superseded query. | create/open/close/query/history requests. |
+| `historyQuery`, `historyCursor` refs | Current normalized server-side filters and exclusive revision cursor. | query change, accepted view, load older. |
+| `DraftTransitionCoordinator` | Registry for the document-title and current node-editor participants. | participant effects; `runTransition()`. |
 
 The contributor used for an operation is selected in this order:
 
@@ -257,7 +308,9 @@ The contributor used for an operation is selected in this order:
 
 The profile uses the local-storage key `coedit-local-contributor`. Read, parse, and write failures are deliberately non-fatal so the standalone `file://` artifact remains usable in restrictive browsers.
 
-An effect repairs selection whenever the document changes: if the selected ID is absent or deleted, it selects the first active node, or `null` if none exists.
+`acceptView()` repairs selection whenever a returned document is accepted: it preserves the current ID only for the same document when the node remains active; otherwise it selects the first active node or `null`. It rejects an older revision for the same document and ignores a response from an obsolete workspace epoch. Create, open, and restore mark the response as an authoritative reset and increment `editorGeneration`, so even a restored selection with the same node ID gets a new `NodeEditor` and `Y.Doc`.
+
+`DocumentTitleInput` and `NodeEditor` are controlled draft owners. Each keeps its dirty values across ordinary view replacements, registers a `DraftParticipant`, disables editing when frozen, and removes only successfully persisted fields from its dirty set. `NodeEditor` composes its metadata drain with the nested rich-text participant. `runTransition()` freezes all currently registered participants synchronously before its first `await`, drains them sequentially, runs the requested action, and always unfreezes in reverse order. A drain failure cancels the action and preserves the dirty state for retry; a second overlapping transition is declined.
 
 ## Operation dispatch
 
@@ -265,16 +318,21 @@ Normal mutations follow one path:
 
 ```text
 component callback
-  -> App.apply(operation, message, optional groupId)
-  -> App.context(message, groupId)
+  -> controller.applyOperation(operation, message, optional groupId)
+  -> synchronously freeze registered title/node-editor drafts
+  -> await metadata and rich-text drains
+  -> controller.context(message, groupId)
+  -> SerializedTaskQueue.enqueue(...)
   -> DocumentGateway.applyOperation(operation, context)
   -> complete updated DocumentView
-  -> setView(updated)
-  -> DocumentGateway.listContributions({ limit: 500 })
-  -> setContributions(...)
+  -> acceptView(updated) with epoch/revision guard
+  -> if History is open: request/accept its first page with request/epoch guards
+     else: mark loaded History stale until the panel opens
 ```
 
-`context()` includes the selected contributor, the per-mount session ID, an optional group ID, and a human-readable message. `addNode()` creates the node ID before dispatch so it can select that node when the operation resolves. Content commits create a fresh group ID for each debounced editor batch.
+`context()` includes the selected contributor, the per-mount session ID, an optional group ID, and a human-readable message. `addNode()` creates the node ID before dispatch so it can select that node when the operation resolves. Content commits create a fresh group ID for each debounced editor batch and enter the same serialized queue. A rejected task does not poison later queue entries.
+
+History reads are not serialized with document commands. The controller instead gives each request a monotonically increasing request number and workspace epoch. A superseded request cannot overwrite the active page. Search/node filters run in the adapter before pagination; the panel debounces query changes by 250 ms. Pages contain 100 items by default, advertise `hasMore`, and use `nextBeforeRevision` as an exclusive cursor for **Load older contributions**. The header suffixes the loaded count with `+` when more entries are reachable; it is not a total-count query.
 
 The operation union in `src/domain/types.ts` currently contains:
 
@@ -294,7 +352,7 @@ The persisted model is a flat `DocumentNode[]` with `parentId` and `position`. `
 
 `applyOperation()` in `src/domain/tree.ts` is the in-browser reference implementation for the memory gateway. It:
 
-- clones the state with `structuredClone`;
+- validates and detaches the state with `cloneJson`;
 - rejects duplicate IDs and missing referenced nodes;
 - inserts and normalizes sibling positions;
 - rejects moving a node under one of its descendants;
@@ -315,14 +373,15 @@ The desktop persistence layer has its own Rust implementation. Changes to operat
 4. If there is legacy/materialized HTML but no Yjs state, a sanitized version is loaded into Tiptap.
 5. Every Yjs update except `persistence-load` is accumulated in `pendingUpdates`.
 6. A new update resets a 1.2-second timer.
-7. On flush, updates are merged with `Y.mergeUpdates`.
-8. Current editor HTML is sanitized with DOMPurify.
+7. On flush, the quiet-period timer is canceled and updates are merged with `Y.mergeUpdates`.
+8. Current editor HTML is sanitized through `sanitizeRichText()`.
 9. Both the merged incremental update and `Y.encodeStateAsUpdate(document)` are Base64 encoded.
-10. `onCommit(contentHtml, yjsUpdate, yjsState)` dispatches `updateContent` through `App`.
+10. `onCommit(contentHtml, yjsUpdate, yjsState)` dispatches `updateContent` through the controller queue.
+11. If updates arrive while a commit is awaiting persistence, the drain loop commits them before resolving. If persistence rejects, the merged delta is restored to the pending queue for a later explicit retry.
 
-The component also attempts to flush on unmount. The toolbar currently exposes bold, italic, level-two heading, bullet list, ordered list, blockquote, undo, and redo.
+The component exposes its `DraftParticipant` to `NodeEditor`; the node editor combines that drain with its metadata drain and registers the aggregate with the controller. Together with the document-title participant, controlled node selection, document operations, restore, export, backup, and Close freeze new edits and await all dirty state before proceeding. `RichTextEditor` cleanup intentionally clears its timer and does not start unawaitable persistence work; browser unload/process termination therefore remains outside the guarantee. The toolbar currently exposes bold, italic, level-two heading, bullet list, ordered list, blockquote, undo, and redo.
 
-`SAFE_TAGS` and `ALLOWED_ATTR` in `src/editor/RichTextEditor.tsx` define the browser-side rich-text allowlist. Paste and commit are sanitized. Desktop persistence sanitizes independently; see [Architecture](ARCHITECTURE.md) and [Known limitations](KNOWN_LIMITATIONS.md).
+`RICH_TEXT_POLICY`, `RICH_TEXT_ALLOWED_TAGS`, and `RICH_TEXT_ALLOWED_ATTRIBUTES` in `src/editor/sanitizeRichText.ts` define the versioned browser policy. Paste, legacy/fallback load, and commit all use the same helper. `fixtures/protocol/rich-text-v1.json` and its Vitest suite provide standalone expected outputs and idempotence evidence. Desktop persistence sanitizes independently; Rust fixture parity is deferred to the second pass.
 
 ## Gateway behavior
 
@@ -331,10 +390,12 @@ The component also attempts to flush on unmount. The toolbar currently exposes b
 `MemoryDocumentGateway` maintains:
 
 - one current `DocumentView`;
-- an in-memory newest/oldest contribution ledger;
+- an in-memory oldest-first append ledger, projected newest-first for queries/exports;
 - a `Map` of full state snapshots by revision.
 
 It uses `applyOperation()` for mutation and `hashDocument()` for SHA-256 state hashes. `listContributions()` reverses the ledger to newest-first and supports node, contributor, revision, search, and limit filters. Export uses `Blob`, `URL.createObjectURL`, and a temporary download anchor. It cannot open SQLite files, and all document state disappears when the page closes.
+
+History filters are applied to the complete in-memory ledger before page construction. The gateway returns `ContributionPage` with an exclusive revision cursor. Standalone JSON is explicitly marked `format: "coedit-recovery"`, `RecoveryExport` version 2: portable `DocumentState` plus every newest-first contribution accumulated during the current session. It intentionally excludes host-only view fields and runtime snapshot objects, and there is no importer yet. Browser filenames use the shared `safeFilenameStem()` rule.
 
 ### Tauri adapter
 
@@ -343,15 +404,15 @@ It uses `applyOperation()` for mutation and `hashDocument()` for SHA-256 state h
 | Gateway method | Tauri command |
 |---|---|
 | `createDocument` | `create_document` |
-| `openDocument` | `open_document` |
+| `storage.openDocument` (`native-file`) | `open_document` |
 | `closeDocument` | `close_document` |
 | `applyOperation` | `apply_operation` |
 | `listContributions` | `list_contributions` |
 | `restoreRevision` | `restore_revision` |
-| `backupDocument` | `backup_document` |
+| `storage.backupDocument` (`native-file`) | `backup_document` |
 | `exportDocument` | `export_document` |
 
-Native dialogs are separate from document persistence. `App` calls `DocumentFileDialogs` only when `documentGateway.mode === "desktop"`.
+Native dialogs are separate from document persistence. `TauriDocumentGateway.storage` has kind `native-file`; `MemoryDocumentGateway.storage` has kind `volatile`. The controller narrows that union to derive method signatures and visible actions rather than requiring standalone methods that can only reject. The Tauri adapter now wraps the Rust contribution array as a `ContributionPage`, but Rust filtering/hash/sanitizer parity and native verification remain second-pass work.
 
 ## Adding or changing frontend functionality
 
@@ -360,7 +421,7 @@ Native dialogs are separate from document persistence. `App` calls `DocumentFile
 1. Add a discriminant and payload to `DocumentOperation` in `src/domain/types.ts`.
 2. Implement browser semantics in `applyOperation()` in `src/domain/tree.ts`.
 3. Update `affectedNodeIds()` so history filtering and attribution are correct.
-4. Add the initiating callback/control to `App` or a child component.
+4. Add the initiating callback/control to `App` or a child component and route orchestration through `useDocumentController`.
 5. Mirror the operation in `src-tauri/src/models.rs` and `src-tauri/src/store.rs`.
 6. Add domain, memory-gateway, Rust-store, and appropriate component tests.
 7. Update [Traceability](TRACEABILITY.md), persisted-format documentation if applicable, and use-case/sequence documentation.
@@ -376,21 +437,21 @@ Native dialogs are separate from document persistence. `App` calls `DocumentFile
 
 1. Register/configure the Tiptap extension in `RichTextEditor.tsx`.
 2. Add a toolbar command and active/disabled state.
-3. Extend `SAFE_TAGS` and/or allowed attributes only as narrowly as required.
+3. Extend the versioned allowlist in `sanitizeRichText.ts` only as narrowly as required, update `fixtures/protocol/rich-text-v1.json`, and decide whether the policy identifier must advance.
 4. Make the matching Rust Ammonia policy accept the same safe representation.
 5. Verify paste sanitization, persisted HTML, Yjs reload, Markdown export, and read-only display.
 
 ### Add another runtime or persistence adapter
 
-1. Implement `DocumentGateway` without importing it into UI components.
-2. Implement `DocumentFileDialogs` if that runtime can choose native paths.
+1. Implement the shared `DocumentSession` and `ContributionHistory` behavior through `DocumentGateway` without importing the adapter into UI components.
+2. Implement the applicable `VolatileDocumentStorage` or `NativeDocumentStorage` shape; implement `DocumentFileDialogs` separately when the host can choose paths.
 3. Add a composition root analogous to `src/main.tsx` or `src/main-tauri.tsx`.
 4. Give the runtime an explicit HTML/build entry rather than adding host detection to `App`.
 5. Run the shared gateway contract tests plus adapter-specific failure tests.
 
 ### Add an export format
 
-The current format type is repeated in `DocumentGateway`, `DocumentFileDialogs`, `App`, `MemoryDocumentGateway`, and `TauriDocumentGateway`. Extend all of them, add the menu action, add the Tauri command/store behavior, and document whether the format is lossless recovery or presentation-only.
+Extend the centralized `ExportFormat` union in `src/domain/types.ts`, update the controller/menu and relevant adapters/dialogs, add the Tauri command/store behavior when supported, and document whether the format is recovery, interchange, or presentation-only. Keep filename derivation in `safeFilenameStem()` rather than copying slug logic.
 
 ### Add an AI provider
 
@@ -400,17 +461,16 @@ The current format type is repeated in `DocumentGateway`, `DocumentFileDialogs`,
 
 These are observations, not recommended behavior. The consolidated risk list and remediation status belong in [Known limitations](KNOWN_LIMITATIONS.md).
 
-- Closing the document calls `closeDocument()` before the editor unmounts, while pending rich text is flushed during unmount. A pending debounced batch can therefore reach a closed gateway.
-- The editor's Y.Doc is memoized on `node.id`, not `node.yjsState`. Restoring a revision of the selected node can leave the mounted editor on its pre-restore state.
-- Node and document metadata commit on blur; blur-triggered persistence can race a close action.
+- Authoritative create/open/restore responses increment `editorGeneration`, and `App` keys `NodeEditor` by node ID plus that generation. This deliberately remounts the editor/Yjs state after same-node restore; a controller test covers the generation change, but no full Tiptap DOM regression test exists.
+- Controlled controller actions freeze and drain document-title, node-metadata, and rich-text drafts. Unexpected page/process exit, forced host suspension, and arbitrary React teardown remain unawaitable.
 - `busy` disables outline mutations, but `NodeEditor` receives only `view.readOnly`, so typing can continue during an outstanding commit.
-- `refreshHistory()` runs after `run()` and is not itself wrapped by its error handling. The UI fetches at most 500 contributions and filters that slice locally.
+- History errors are isolated from successful mutations, but automatic refreshes are fire-and-forget and there is no total count. The desktop store still pre-windows the newest 100,000 rows before applying filters.
 - If a local profile is not present in an opened document, `App` falls back to its first contributor for new contribution context.
-- Standalone JSON export serializes the current view, not the in-memory contribution ledger or snapshot map.
+- Standalone JSON includes current state and complete runtime contributions but has no importer and does not include the revision snapshot map.
 - The memory adapter records session IDs in contributions but does not populate `DocumentState.sessions`.
-- `hashDocument()` is typed for `DocumentState` but spreads its runtime input. Passing a `DocumentView` also includes view-only fields in the standalone hash.
+- The standalone `coedit-document-state-v1` hash now has a golden fixture and excludes view-only fields. Rust has not yet adopted/proved that canonical byte representation.
 - `Outline` initializes expansion state only on mount. IDs added later are not automatically expanded.
-- There are currently no React component or end-to-end tests. Existing frontend tests cover tree rules and one memory-gateway attribution/restore path.
+- There is a hook-level React controller suite but no full component/editor or end-to-end suite. Current TypeScript tests cover tree rules, queue and draft-transition ordering/recovery, controller selection/Close/restore generation, JSON/hash and sanitizer fixtures, memory boundary validation/history paging/recovery export, and filename normalization.
 
 ## Review checklist for frontend changes
 

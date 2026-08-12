@@ -1,0 +1,94 @@
+{
+  "algorithm": "coedit-document-state-v1",
+  "input": {
+    "path": "C:/host-only/document.coedit",
+    "readOnly": true,
+    "recoveryWarning": "host-only warning",
+    "document": {
+      "id": "document",
+      "title": "Café & notes",
+      "formatVersion": 1,
+      "revision": 7,
+      "createdAt": "2026-01-01T00:00:00.000Z",
+      "updatedAt": "2026-01-02T03:04:05.006Z"
+    },
+    "contributors": [
+      {
+        "id": "writer-z",
+        "displayName": "Writer Z",
+        "kind": "human",
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      {
+        "id": "author-a",
+        "displayName": "Author A",
+        "kind": "imported",
+        "createdAt": "2025-12-31T00:00:00.000Z"
+      }
+    ],
+    "sessions": [
+      {
+        "id": "session-z",
+        "contributorId": "writer-z",
+        "startedAt": "2026-01-02T00:00:00.000Z",
+        "endedAt": null,
+        "description": null
+      },
+      {
+        "id": "session-a",
+        "contributorId": "author-a",
+        "startedAt": "2026-01-01T00:00:00.000Z",
+        "endedAt": "2026-01-01T01:00:00.000Z",
+        "description": "Imported draft"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "node-z",
+        "parentId": "node-a",
+        "position": 0,
+        "kind": "text",
+        "title": "Child",
+        "summary": "Second",
+        "contentHtml": "<p>Child</p>",
+        "yjsState": "AQI=",
+        "metadata": {
+          "z": 2,
+          "nested": {
+            "b": true,
+            "a": null
+          }
+        },
+        "createdAt": "2026-01-02T00:00:00.000Z",
+        "updatedAt": "2026-01-02T03:04:05.006Z",
+        "deletedAt": null
+      },
+      {
+        "id": "node-a",
+        "parentId": null,
+        "position": 0,
+        "kind": "section",
+        "title": "Root",
+        "summary": "First",
+        "contentHtml": "<h2>Root</h2>",
+        "yjsState": "",
+        "metadata": {
+          "tags": ["one", "two"],
+          "a": 1
+        },
+        "createdAt": "2026-01-01T00:00:00.000Z",
+        "updatedAt": "2026-01-02T03:04:05.006Z",
+        "deletedAt": null
+      }
+    ]
+  },
+  "canonicalJson": "{\"contributors\":[{\"createdAt\":\"2025-12-31T00:00:00.000Z\",\"displayName\":\"Author A\",\"id\":\"author-a\",\"kind\":\"imported\"},{\"createdAt\":\"2026-01-01T00:00:00.000Z\",\"displayName\":\"Writer Z\",\"id\":\"writer-z\",\"kind\":\"human\"}],\"document\":{\"createdAt\":\"2026-01-01T00:00:00.000Z\",\"formatVersion\":1,\"id\":\"document\",\"revision\":7,\"title\":\"Café & notes\",\"updatedAt\":\"2026-01-02T03:04:05.006Z\"},\"nodes\":[{\"contentHtml\":\"<h2>Root</h2>\",\"createdAt\":\"2026-01-01T00:00:00.000Z\",\"deletedAt\":null,\"id\":\"node-a\",\"kind\":\"section\",\"metadata\":{\"a\":1,\"tags\":[\"one\",\"two\"]},\"parentId\":null,\"position\":0,\"summary\":\"First\",\"title\":\"Root\",\"updatedAt\":\"2026-01-02T03:04:05.006Z\",\"yjsState\":\"\"},{\"contentHtml\":\"<p>Child</p>\",\"createdAt\":\"2026-01-02T00:00:00.000Z\",\"deletedAt\":null,\"id\":\"node-z\",\"kind\":\"text\",\"metadata\":{\"nested\":{\"a\":null,\"b\":true},\"z\":2},\"parentId\":\"node-a\",\"position\":0,\"summary\":\"Second\",\"title\":\"Child\",\"updatedAt\":\"2026-01-02T03:04:05.006Z\",\"yjsState\":\"AQI=\"}],\"sessions\":[{\"contributorId\":\"author-a\",\"description\":\"Imported draft\",\"endedAt\":\"2026-01-01T01:00:00.000Z\",\"id\":\"session-a\",\"startedAt\":\"2026-01-01T00:00:00.000Z\"},{\"contributorId\":\"writer-z\",\"description\":null,\"endedAt\":null,\"id\":\"session-z\",\"startedAt\":\"2026-01-02T00:00:00.000Z\"}]}",
+  "sha256": "61950cf9c099f9ab9d3bd1d8cc47ea6ee270586a55710ec49be1c4707bc3f604",
+  "canonicalCases": [
+    {
+      "name": "integer-like and Unicode object keys",
+      "input": { "10": "ten", "2": "two", "e": 2, "\u00e9": 1, "\ud83d\ude00": 3 },
+      "expected": "{\"10\":\"ten\",\"2\":\"two\",\"e\":2,\"\u00e9\":1,\"\ud83d\ude00\":3}"
+    }
+  ]
+}

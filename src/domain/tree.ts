@@ -1,4 +1,5 @@
 import type { DocumentNode, DocumentOperation, DocumentState } from "./types";
+import { cloneJson } from "./json";
 
 export interface TreeNode extends DocumentNode {
   children: TreeNode[];
@@ -78,7 +79,7 @@ export function affectedNodeIds(operation: DocumentOperation): string[] {
 }
 
 export function applyOperation(state: DocumentState, operation: DocumentOperation, now: string): DocumentState {
-  const next = structuredClone(state);
+  const next = cloneJson(state);
   const findNode = (id: string) => {
     const node = next.nodes.find((candidate) => candidate.id === id);
     if (!node) throw new Error(`Node ${id} does not exist.`);

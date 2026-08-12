@@ -15,25 +15,30 @@ Status terms are defined in [the documentation index](./README.md#status-languag
 | Standalone one-file build | [`vite.config.ts`](../vite.config.ts) | `standaloneHtml`, mode-dependent Rollup input/CSP |
 | Desktop build/window/CSP | [`src-tauri/tauri.conf.json`](../src-tauri/tauri.conf.json) | `beforeBuildCommand`, window `url`, security `csp` |
 | Native permissions | [`src-tauri/capabilities/default.json`](../src-tauri/capabilities/default.json) | core defaults, dialog open/save |
-| Application UI state/orchestration | [`src/App.tsx`](../src/App.tsx) | `App`, `run`, `apply`, `refreshHistory`, lifecycle callbacks |
-| Contributor preference/fallback | [`src/App.tsx`](../src/App.tsx) | `PROFILE_KEY`, `loadContributor`, `contributor` memo |
+| Application UI composition | [`src/App.tsx`](../src/App.tsx) | `App`, welcome/profile state, event translation, controller rendering |
+| Application use cases/state | [`src/application/useDocumentController.ts`](../src/application/useDocumentController.ts) | `useDocumentController`, `executeMutation`, `runTransition`, `acceptView`, `requestHistory`, lifecycle/capability callbacks |
+| Document-command serialization | [`src/application/serializedTaskQueue.ts`](../src/application/serializedTaskQueue.ts) | `SerializedTaskQueue.enqueue` |
+| Contributor preference/fallback | [`src/App.tsx`](../src/App.tsx), [`src/application/useDocumentController.ts`](../src/application/useDocumentController.ts) | `PROFILE_KEY`, `loadContributor`, `contributor` memo |
 | Outline hierarchy presentation | [`src/components/Outline.tsx`](../src/components/Outline.tsx) | `Outline`, `OutlineRow`, `buildTree` |
 | Outline keyboard navigation | [`src/components/Outline.tsx`](../src/components/Outline.tsx) | `visible`, `onKeyDown`, `expanded` |
-| Drag-to-reparent / reorder | [`src/components/Outline.tsx`](../src/components/Outline.tsx) | `onDrop`, row move buttons; dispatches through `App` |
-| Node title/summary/kind form | [`src/components/NodeEditor.tsx`](../src/components/NodeEditor.tsx) | `NodeEditor`, `kinds`, blur commits |
-| Rich-text toolbar/editor | [`src/editor/RichTextEditor.tsx`](../src/editor/RichTextEditor.tsx) | `RichTextEditor`, Tiptap extensions, `SAFE_TAGS` |
+| Drag-to-reparent / reorder | [`src/components/Outline.tsx`](../src/components/Outline.tsx) | `onDrop`, row move buttons; dispatches through controller callbacks supplied by `App` |
+| Document/node title-summary-kind drafts | [`src/App.tsx`](../src/App.tsx), [`src/components/NodeEditor.tsx`](../src/components/NodeEditor.tsx) | `DocumentTitleInput`, `NodeEditor`, dirty sets, eager blur/kind drains, registered participants |
+| Rich-text toolbar/editor | [`src/editor/RichTextEditor.tsx`](../src/editor/RichTextEditor.tsx) | `RichTextEditor`, Tiptap extensions, `DraftParticipant`, drain/retry logic |
+| Controlled draft transitions | [`src/application/draftTransition.ts`](../src/application/draftTransition.ts), [`src/App.tsx`](../src/App.tsx), [`src/components/NodeEditor.tsx`](../src/components/NodeEditor.tsx) | `DraftTransitionCoordinator`, `DocumentTitleInput`, composed node-metadata/rich-text participant |
+| Browser rich-text policy | [`src/editor/sanitizeRichText.ts`](../src/editor/sanitizeRichText.ts) | `RICH_TEXT_POLICY`, centralized allowlists, `sanitizeRichText` |
 | Yjs loading/Base64 | [`src/editor/yjsEncoding.ts`](../src/editor/yjsEncoding.ts) | `createYDoc`, `bytesToBase64`, `base64ToBytes` |
-| 1.2-second typing grouping | [`src/editor/RichTextEditor.tsx`](../src/editor/RichTextEditor.tsx) | `pendingUpdates`, `timer`, `flush`, `handleUpdate` |
-| History search/filter/restore UI | [`src/components/HistoryPanel.tsx`](../src/components/HistoryPanel.tsx) | `HistoryPanel`, `filtered` |
+| 1.2-second typing grouping / explicit drain | [`src/editor/RichTextEditor.tsx`](../src/editor/RichTextEditor.tsx) | `pendingUpdates`, `timer`, `drain`, `flushPendingEdits`, `handleUpdate` |
+| History search/page/restore UI | [`src/components/HistoryPanel.tsx`](../src/components/HistoryPanel.tsx) | `HistoryPanel`, debounced `onQueryChange`, `onLoadOlder` |
 | Layout, colors, responsive behavior | [`src/styles.css`](../src/styles.css) | `workspace`, `outline`, `node-editor`, `history-panel`, `@media` |
 | Shared TypeScript data model | [`src/domain/types.ts`](../src/domain/types.ts) | all document/contribution/AI interfaces |
 | Operation tagged union | [`src/domain/types.ts`](../src/domain/types.ts) | `DocumentOperation` |
 | Pure tree mutation rules | [`src/domain/tree.ts`](../src/domain/tree.ts) | `applyOperation`, `assertValidTree`, `descendantIds` |
 | Tree display projection | [`src/domain/tree.ts`](../src/domain/tree.ts) | `buildTree`, `TreeNode` |
-| Browser state hash | [`src/domain/hash.ts`](../src/domain/hash.ts) | `canonicalDocumentJson`, `hashDocument` |
+| JSON-compatible metadata / canonical encoding | [`src/domain/json.ts`](../src/domain/json.ts) | `cloneJson`, `cloneJsonObject`, `canonicalJson`, `compareJsonStrings` |
+| Browser state hash/projection | [`src/domain/hash.ts`](../src/domain/hash.ts) | `DOCUMENT_HASH_ALGORITHM`, `toDocumentState`, `canonicalDocumentJson`, `hashDocument` |
 | ID generation | [`src/domain/ids.ts`](../src/domain/ids.ts) | `newId` and Web Crypto fallback |
-| Persistence abstraction | [`src/persistence/gateway.ts`](../src/persistence/gateway.ts) | `DocumentGateway` |
-| File-dialog abstraction | [`src/persistence/fileDialogs.ts`](../src/persistence/fileDialogs.ts) | `DocumentFileDialogs` |
+| Persistence abstractions/paging | [`src/persistence/gateway.ts`](../src/persistence/gateway.ts) | `DocumentSession`, `ContributionHistory`, `DocumentStorage`, volatile/native variants, `DocumentGateway`, page/cursor helpers |
+| File-dialog/filename abstraction | [`src/persistence/fileDialogs.ts`](../src/persistence/fileDialogs.ts) | `DocumentFileDialogs`, `safeFilenameStem` |
 | Standalone state/history/export | [`src/persistence/memoryGateway.ts`](../src/persistence/memoryGateway.ts) | `MemoryDocumentGateway`, `markdownFor`, `download` |
 | TypeScript Tauri IPC calls | [`src/persistence/tauriGateway.ts`](../src/persistence/tauriGateway.ts) | `TauriDocumentGateway` |
 | Native path dialogs/filters | [`src/persistence/tauriFiles.ts`](../src/persistence/tauriFiles.ts) | `choose*`, `tauriFileDialogs` |
@@ -50,6 +55,7 @@ Status terms are defined in [the documentation index](./README.md#status-languag
 | `.coedit` specification/recovery | [`docs/DOCUMENT_FORMAT.md`](./DOCUMENT_FORMAT.md) | format version 1 and output distinctions |
 | Security/trust boundaries | [`docs/SECURITY.md`](./SECURITY.md) | CSP, capabilities, sanitization, future network rules |
 | Known defects/debt | [`docs/KNOWN_LIMITATIONS.md`](./KNOWN_LIMITATIONS.md) | prioritized risk register |
+| Versioned browser protocol fixtures | [`fixtures/protocol`](../fixtures/protocol) | `document-hash-v1.json`, `rich-text-v1.json` |
 
 ## Use-case traceability
 
@@ -57,16 +63,16 @@ Use-case definitions and acceptance flows are in [Vision and use cases](./RUP_VI
 
 | UC | User-facing owner | Application/domain path | Host/persistence path | Current automated evidence | Status |
 |---|---|---|---|---|---|
-| UC-01 Create document | `App.createDocument`, welcome screen | `DocumentGateway.createDocument` | Memory `createDocument`; Tauri `create_document` → `DocumentStore::create` | Memory gateway history/restore test; Rust portable round trip | Implemented |
-| UC-02 Open portable document | `App.openDocument` | `DocumentFileDialogs.chooseDocumentToOpen`, `DocumentGateway.openDocument` | Tauri dialog/gateway; `open_document` → `DocumentStore::open`/`load_state`/`validate_tree` | Rust round trip covers a valid reopen only | Partial |
+| UC-01 Create document | welcome screen; `controller.createDocument` | narrowed `storage.createDocument` through serialized queue | Memory volatile create; Tauri native-file create → `DocumentStore::create` | Memory gateway tests; queue tests; Rust portable round trip | Implemented |
+| UC-02 Open portable document | `controller.openDocument` | `DocumentFileDialogs.chooseDocumentToOpen`, narrowed `NativeDocumentStorage.openDocument` | Tauri dialog/gateway; `open_document` → `DocumentStore::open`/`load_state`/`validate_tree` | Rust round trip covers a valid reopen only | Partial |
 | UC-03 Maintain hierarchy | `Outline`, `App.addNode`, `App.deleteNode` | `buildTree`; operations `createNode`, `moveNode`, `softDeleteNode` | memory `applyOperation`; Rust `apply_sql` | 4 tree tests; Rust cycle and round-trip cases | Implemented with UX gaps |
-| UC-04 Edit node metadata | `NodeEditor`; `App.apply` | `updateNode` | both operation engines | Rust round trip covers summary; no UI/direct boundary suite | Partial test coverage |
-| UC-05 Edit developed text | `RichTextEditor`; `NodeEditor`; `App.apply` | Yjs encoding; `updateContent` | memory stores strings; Rust validates/sanitizes/stores state | Rust sanitizer test only; no editor/Yjs integration test | Partial / known lifecycle defects |
-| UC-06 Inspect history | `App.refreshHistory`; `HistoryPanel` | `listContributions({limit:500})`; client filters | memory query; Rust `contributions` | gateway/Rust round-trip counts only | Partial (500-entry UI slice) |
-| UC-07 Restore revision | `HistoryPanel`; `App.restore` | `DocumentGateway.restoreRevision` | memory revision Map; Tauri `restore_revision` → `DocumentStore::restore` | Memory test and Rust round trip | Partial / stale-editor defect |
-| UC-08 Export | App Export menu | `DocumentGateway.exportDocument` | memory Blob download; Tauri dialog → Rust `export`/`atomic_write` | Rust round trip only | Partial; formats differ and JSON cap exists |
-| UC-09 Back up desktop document | App Export menu | `backupDocument`; backup dialog | Tauri `backup_document` → `DocumentStore::backup`/`atomic_copy` | Rust round trip creates file | Partial; UI cannot open backup extension directly |
-| UC-10 Close document | `App.close` | `DocumentGateway.closeDocument` | memory clear; Tauri `close_document` drops store | none | Known defect for unflushed input |
+| UC-04 Edit node metadata | `NodeEditor`; controller commit callbacks | registered metadata/rich-text participant; queued `updateNode` | both operation engines | draft/controller ordering tests; Rust round trip covers summary; no full UI suite | Partial test coverage |
+| UC-05 Edit developed text | `RichTextEditor`; `NodeEditor`; controller | composed draft participant; centralized sanitizer; queued `updateContent`; authoritative editor generation | memory sanitizes/detaches; Rust validates/sanitizes/stores state | sanitizer, draft, and controller transition tests; no full Tiptap/native integration | Partial / host-exit and cross-adapter evidence |
+| UC-06 Inspect history | controller; `HistoryPanel` | filtered `ContributionPage`, exclusive cursor, Load older | memory complete-ledger paging; Tauri page wrapper over Rust `contributions` | memory filter/page test; no controller/Rust boundary suite | Partial (desktop 100,000 pre-window) |
+| UC-07 Restore revision | `HistoryPanel`; controller | draft drain, queue, `restoreRevision`, authoritative editor generation | memory revision Map; Tauri `restore_revision` → `DocumentStore::restore` | controller generation, memory restore, Rust round trip | Shared/standalone implemented; full editor/native parity pending |
+| UC-08 Export | App Export menu; controller | drain, narrowed storage `exportDocument`, centralized `ExportFormat`/filename | volatile Blob recovery envelope; native dialog → Rust `export`/`atomic_write` | standalone envelope/filename tests; Rust round trip | Partial; no importer and desktop JSON cap |
+| UC-09 Back up desktop document | App Export menu; controller | drain, narrowed `NativeDocumentStorage.backupDocument`; backup dialog | Tauri `backup_document` → `DocumentStore::backup`/`atomic_copy` | Rust round trip creates file | Partial; UI cannot open backup extension directly |
+| UC-10 Close document | `controller.closeDocument` | freeze/await registered drafts → serialized `DocumentGateway.closeDocument` | memory clear; Tauri `close_document` drops store | draft + controller Close tests | Implemented in-app; full editor/native evidence pending |
 | UC-11 Run standalone | welcome/workspace | `main.tsx` + memory gateway | single-file Vite build | build-time bundle assertions; manual double-click | Implemented, volatile by design |
 
 ## UI action-to-implementation map
@@ -75,27 +81,28 @@ Use-case definitions and acceptance flows are in [Vision and use cases](./RUP_VI
 |---|---|---|---|
 | Edit contributor name on welcome | updates `profile`; effect writes `coedit-local-contributor` when allowed | none | browser preference only; contributor is stored when a new document is created |
 | Edit new-document title | updates `newTitle`; Enter invokes creation | `createDocument` | revision-0 document/contribution/snapshot |
-| Open `.coedit` | desktop-only native dialog | `openDocument(path)` | validated SQLite connection becomes current store |
-| Edit top-bar document title | uncontrolled input; commit on blur if changed | `renameDocument` | metadata title, revision, contribution, snapshot |
+| Open `.coedit` | rendered when `storage.kind === "native-file"`; native dialog | `storage.openDocument(path)` after narrowing | validated SQLite connection becomes current store |
+| Edit top-bar document title | controlled dirty draft; eager blur drain and transition participant | queued `renameDocument` | metadata title, revision, contribution, snapshot |
 | Add root idea | `Outline.onAdd(null)` → `App.addNode` | `createNode` | new root at end of active siblings |
 | Add child | row `+` → `App.addNode(parentId)` | `createNode` | new child at end of active siblings |
-| Select node | updates `selectedId` | none | no document revision |
+| Select node | freezes/drains document title plus current node metadata/rich text, then updates `selectedId` | `controller.selectNode`; no gateway call when all drafts are clean | no document revision unless a pending draft commits first |
 | Expand/collapse node | updates `Outline.expanded` | none | presentation state only |
 | Arrow navigation | selects visible previous/next/parent or expands/collapses | none | presentation state only |
 | Move up/down | row button supplies sibling index | `moveNode` | parent/position changes; sibling positions normalized |
 | Drag a row onto another | HTML drag data; drop target becomes parent, append index | `moveNode` | reparent and normalize; no between-row/root drop target |
 | Delete subtree | confirm in `App.deleteNode` | `softDeleteNode` | node and descendants get `deletedAt`; history retains them |
-| Edit idea title | local `title` draft; commit on blur | `updateNode({title})` | normalized nonempty title and new revision |
-| Edit summary | local `summary` draft; commit on blur | `updateNode({summary})` | summary and new revision |
-| Change kind | immediate select callback | `updateNode({kind})` | validated enum and new revision |
-| Type/format developed text | Tiptap/Yjs; group after 1.2 seconds | `updateContent` with HTML/update/state | new revision; desktop re-sanitizes HTML and stores full Yjs state |
+| Edit idea title | controlled dirty draft; eager blur or transition drain | `updateNode({title})` | normalized nonempty title and new revision |
+| Edit summary | controlled dirty draft; eager blur or transition drain | `updateNode({summary})` | summary and new revision |
+| Change kind | controlled draft plus immediate drain | `updateNode({kind})` | validated enum and new revision |
+| Type/format developed text | Tiptap/Yjs; group after 1.2 seconds or explicit drain; failed delta retained | queued `updateContent` with centralized sanitized HTML/update/state | new revision; desktop re-sanitizes HTML and stores full Yjs state |
 | Undo/redo text | Yjs collaboration history through Tiptap | eventually part of next `updateContent` | no operation until flush |
 | Open/close History | toggles `historyOpen` | none | no revision |
-| Search/filter History | `HistoryPanel.filtered` over props | none after initial fetch | filters latest loaded 500 only |
-| Restore history item | confirm in `App.restore` | `restoreRevision` | snapshot state becomes a new compensating revision |
-| Export Markdown/JSON | menu and optional desktop save dialog | `exportDocument` | standalone download or atomic desktop output |
-| Create SQLite backup | desktop-only save dialog | `backupDocument` | atomic byte copy of open SQLite file |
-| Close | call gateway, then clear React view | `closeDocument` | memory cleared or current Rust store dropped; current ordering races pending drafts |
+| Search/filter History | 250 ms debounce; reset loaded items/cursor | `listContributions(filters, limit:100)` | adapter filters before page construction |
+| Load older History | shown when `hasMore`; append unseen IDs | `listContributions(filters, beforeRevision:cursor, limit:100)` | exclusive-cursor next page |
+| Restore history item | confirm in `App`; controller drains/queues | `restoreRevision` | snapshot state becomes a new compensating revision |
+| Export Markdown/JSON | controller freezes/drains registered drafts; native save dialog only after narrowing | `storage.exportDocument` | standalone safe-named download or atomic desktop output |
+| Create SQLite backup | controller drains; native-storage-gated save dialog | `storage.backupDocument` after narrowing | atomic byte copy of open SQLite file |
+| Close | controller freezes/awaits all registered drafts and queued work; clears state only after success | `closeDocument` | memory cleared or current Rust store dropped; controlled failure retains workspace/drafts |
 
 ## Document operation cross-layer matrix
 
@@ -120,12 +127,12 @@ For every operation, `tree.ts::affectedNodeIds` and Rust `DocumentOperation::aff
 | `DocumentGateway` method | Tauri adapter invocation | Rust command in `lib.rs` | Store call |
 |---|---|---|---|
 | `createDocument(path,title,contributor)` | `create_document` | `create_document` | `DocumentStore::create`, then `view` |
-| `openDocument(path)` | `open_document` | `open_document` | `DocumentStore::open`, then `view` |
+| native `storage.openDocument(path)` | `open_document` | `open_document` | `DocumentStore::open`, then `view` |
 | `closeDocument()` | `close_document` | `close_document` | replace `AppState.document` with `None` |
 | `applyOperation(operation,context)` | `apply_operation` | `apply_operation` | `apply` → `apply_sql` |
-| `listContributions(query)` | `list_contributions` | `list_contributions` | `contributions` |
+| `listContributions(query)` | `list_contributions`, request `limit + 1`, wrap `ContributionPage` | `list_contributions` | `contributions` (still pre-windows 100,000 rows) |
 | `restoreRevision(revision,context)` | `restore_revision` | `restore_revision` | `restore` |
-| `backupDocument(path)` | `backup_document` | `backup_document` | `backup` |
+| native `storage.backupDocument(path)` | `backup_document` | `backup_document` | `backup` |
 | `exportDocument(format,path)` | `export_document` | `export_document` | `export` |
 
 Command strings, TypeScript payload property names, Rust parameter names, and serde field/tag naming form one manual contract. There is no generated binding or IPC contract test.
@@ -153,7 +160,14 @@ The complete column/constraint description is in [Persistence design](./PERSISTE
 | Test file/location | Current coverage | Features it does not prove |
 |---|---|---|
 | [`src/domain/tree.test.ts`](../src/domain/tree.test.ts) | ordered tree projection, descendant-move rejection, subtree soft delete, cyclic-state rejection | UI behavior, all other operations, Rust parity, persistence |
-| [`src/persistence/memoryGateway.test.ts`](../src/persistence/memoryGateway.test.ts) | create/update/restore attribution, revision progression, nonempty hashes | export ledger parity, sessions, UI lifecycle, desktop semantics |
+| [`src/application/serializedTaskQueue.test.ts`](../src/application/serializedTaskQueue.test.ts) | strict task ordering and continuation after rejection | React/controller integration, cancellation, teardown |
+| [`src/application/draftTransition.test.ts`](../src/application/draftTransition.test.ts) | synchronous freeze, all-participant drain, failure/retry, safe participant replacement | full component/editor and host-exit behavior |
+| [`src/application/useDocumentController.test.tsx`](../src/application/useDocumentController.test.tsx) | selection/Close draft ordering, failed-flush blocking, restore generation | full `App`/Tiptap rendering and native parity |
+| [`src/application/localContributor.test.ts`](../src/application/localContributor.test.ts) | stored contributor validation and safe fallback | contributor registration/selection and browser-specific storage behavior |
+| [`src/components/NodeEditor.test.tsx`](../src/components/NodeEditor.test.tsx) | normalized title adoption after a successful metadata flush | remaining metadata/focus behavior and full Tiptap composition |
+| [`src/domain/hash.test.ts`](../src/domain/hash.test.ts) + hash fixture | canonical JSON/digest, host-field exclusion, input-order preservation, Unicode/integer-like key order, invalid-JSON rejection | Rust parity, replay/open verification |
+| [`src/editor/sanitizeRichText.test.ts`](../src/editor/sanitizeRichText.test.ts) + rich-text fixture | supported/hostile cases and idempotence | Rust parity and full editor paste/commit integration |
+| [`src/persistence/memoryGateway.test.ts`](../src/persistence/memoryGateway.test.ts) | attribution/restore, revision progression, cursor paging/filtering, complete runtime recovery envelope, input detachment/metadata validation/direct sanitization, safe filenames | sessions, import, desktop semantics |
 | `src-tauri/src/store.rs` `tests` module | cycle rejection, Ammonia executable HTML removal, portable create/update/restore/backup/export/reopen round trip | migration, most error/limit/rollback paths, hash verification, UI/IPC contract |
 | Vite build assertions in [`vite.config.ts`](../vite.config.ts) | standalone has one inline chunk, no unexpected assets, CSP hash generation, inline syntax parse | actual browser/UI behavior on each platform |
 
@@ -170,7 +184,7 @@ The target coverage and manual suites are in [Testing](./TESTING.md).
 | Session management | types/table and lazy desktop insert | explicit start/end/description, memory parity, UI, integrity policy |
 | Direct deleted-node restore | `restoreNode` operation in both engines | deleted-item UI/history affordance and tests |
 | Schema evolution | format/user version fields | migration registry/transactions, compatibility matrix, fixtures/tests |
-| Standalone recovery/import | JSON/Markdown downloads | durable browser storage or import parser, format validation, fidelity tests |
+| Standalone recovery/import | marked `coedit-recovery` version-2 state + complete runtime-ledger JSON; Markdown downloads | durable browser storage or import parser, format validation, snapshot/replay semantics, fidelity tests |
 
 ## Change-impact quick reference
 
@@ -179,11 +193,12 @@ The target coverage and manual suites are in [Testing](./TESTING.md).
 | New document operation | `domain/types.ts`, `domain/tree.ts`, both TS tests/gateway, `models.rs`, `store.rs`, initiating UI, traceability/sequences |
 | New node kind | TS type, `NodeEditor.kinds`, Rust enum/converters, SQLite `CHECK`/migration, exporters/tests/docs |
 | New persisted field | TS/Rust models, schema/load/all writes/restore/hash/export, version/migration, format tests/docs |
-| New rich-text format | Tiptap extension/toolbar, DOMPurify allowlist, Ammonia policy, Yjs/reload/restore/export/security tests |
-| New gateway method | interface, memory implementation, Tauri adapter, Rust command/registration/store, contract tests, UI |
+| New rich-text format | Tiptap extension/toolbar, `sanitizeRichText.ts`, versioned fixture/policy decision, Ammonia policy, Yjs/reload/restore/export/security tests |
+| New shared gateway capability | smallest owning port, memory behavior, controller/UI, Tauri adapter, Rust command/registration/store where native, contract tests |
+| New native-only capability | `NativeDocumentStorage` or a new discriminated capability, dialog port, Tauri command/security review; no rejecting memory stub |
 | New native dialog | dialog port, Tauri adapter, capability/plugin review, composition/use-case/platform tests |
 | New host | dedicated entry/composition, gateway/dialog adapters, Vite/package entry, CSP/capabilities, deployment/portability/tests |
-| New export | gateway/dialog literal types, both adapters, Rust command/store, filename/atomic behavior, fidelity/security tests |
+| New export | centralized `ExportFormat`, controller/menu, relevant adapters/dialogs, Rust command/store, `safeFilenameStem`, fidelity/security tests |
 | AI/sync/network | provider/transport outside offline root, consent and operation acceptance, new capability/CSP profile, threat model/tests |
 | UI layout/interaction | owning component, `styles.css`, UI state/wireframes, keyboard/touch/a11y/component tests |
 

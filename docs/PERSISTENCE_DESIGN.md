@@ -6,7 +6,7 @@ For unresolved defects and constraints, see [Known limitations](./KNOWN_LIMITATI
 
 ## Responsibilities and boundary
 
-The shared React UI does not know whether a document lives in browser memory or SQLite. It calls a TypeScript port, `DocumentGateway`. Native file selection is a second port, `DocumentFileDialogs`, so path selection is not part of document storage.
+The shared React UI does not know whether a document lives in browser memory or SQLite. `useDocumentController` calls the capability-oriented TypeScript ports assembled as `DocumentGateway`. Native file selection is a separate `DocumentFileDialogs` port. Host storage behavior is a discriminated `DocumentStorage` union: `VolatileDocumentStorage` creates/exports without paths, while `NativeDocumentStorage` creates/opens/backs up/exports with paths.
 
 There are two explicit compositions:
 
@@ -22,7 +22,11 @@ left to right direction
 
 package "Shared React application" {
   component App
+  component useDocumentController as Controller
   interface DocumentGateway
+  interface DocumentStorage
+  interface VolatileDocumentStorage
+  interface NativeDocumentStorage
   interface DocumentFileDialogs
 }
 
@@ -48,8 +52,12 @@ StandaloneMain --> Memory
 TauriMain --> App
 TauriMain --> TauriGateway
 TauriMain --> FileDialogs
-App --> DocumentGateway
-App --> DocumentFileDialogs
+App --> Controller
+Controller --> DocumentGateway
+Controller --> DocumentFileDialogs
+DocumentGateway o-- DocumentStorage
+DocumentStorage <|-- VolatileDocumentStorage
+DocumentStorage <|-- NativeDocumentStorage
 Memory ..|> DocumentGateway
 TauriGateway ..|> DocumentGateway
 FileDialogs ..|> DocumentFileDialogs
@@ -66,16 +74,17 @@ FileDialogs --> NativeDialogs
 
 ### `DocumentGateway`
 
-`src/persistence/gateway.ts` is the persistence port. Its `mode` discriminant is either `standalone` or `desktop`. The methods cover:
+`src/persistence/gateway.ts` separates shared behavior into small ports and composes them as `DocumentGateway`:
 
-- create, open, close, and get current document;
-- apply one attributed `DocumentOperation`;
-- query contributions;
-- restore a prior revision as a new revision;
-- create a backup;
-- export JSON or Markdown.
+- `DocumentSession`: close, apply one attributed operation, and restore a revision;
+- `ContributionHistory`: return cursor-addressable `ContributionPage` values;
+- `DocumentStorage`: a discriminated union held in `DocumentGateway.storage`;
+- `VolatileDocumentStorage`: create/export with no filesystem path;
+- `NativeDocumentStorage`: create/open/backup/export with required filesystem paths.
 
-The port returns complete `DocumentView` values after mutations. It has no event stream, optimistic expected-revision argument, partial-load API, contributor-registration API, attachment API, or import API.
+The controller narrows `storage.kind` (`volatile` or `native-file`) before calling its shape-specific methods. The memory adapter no longer implements rejecting native open/backup stubs, and method signatures no longer accept meaningless nullable paths.
+
+The port returns complete `DocumentView` values after mutations and bounded `ContributionPage` values for history. It has no event stream, optimistic expected-revision argument, partial-document API, total-history-count API, contributor-registration API, attachment API, or import API.
 
 ### `DocumentFileDialogs`
 
@@ -91,9 +100,13 @@ The port returns complete `DocumentView` values after mutations. It has no event
 
 It uses `src/domain/tree.ts` for operations and `src/domain/hash.ts` for SHA-256 hashes. It can create, edit, query history, restore, and download exports. It cannot open SQLite files, and closing or reloading destroys the document.
 
+Memory history filters the complete newest-first runtime ledger before applying an exclusive `beforeRevision` cursor and page limit. JSON export writes an explicitly marked `coedit-recovery` `RecoveryExport` version-2 envelope containing algorithm/state hash, an explicit `DocumentState` projection, history order/completeness, and every contribution accumulated in that runtime, newest first. It does not serialize the internal revision-snapshot `Map`, and no importer exists.
+
 ### `TauriDocumentGateway`
 
 `src/persistence/tauriGateway.ts` is intentionally thin. Each method validates only path presence where required and delegates to a named Tauri command with `invoke`. Rust owns durable validation, transactions, recovery metadata, sanitization, and file output.
+
+The adapter implements both `DocumentGateway` and `NativeDocumentStorage`, exposing itself through `storage` with kind `native-file`. For history it requests one extra row, then converts the returned Rust array to `ContributionPage`. This makes the shared UI shape compatible, but does not remove Rust's existing 100,000-row pre-window; store-side SQL paging/filtering is second-pass work.
 
 ### Rust command and store layers
 
@@ -106,13 +119,23 @@ It uses `src/domain/tree.ts` for operations and `src/domain/hash.ts` for SHA-256
 hide empty members
 
 interface DocumentGateway {
-  + mode: GatewayMode
-  + createDocument(path, title, contributor): DocumentView
-  + openDocument(path): DocumentView
+  + storage: DocumentStorage
   + closeDocument()
   + applyOperation(operation, context): DocumentView
-  + listContributions(query): Contribution[]
+  + listContributions(query): ContributionPage
   + restoreRevision(revision, context): DocumentView
+}
+
+interface VolatileDocumentStorage {
+  + kind: "volatile"
+  + createDocument(title, contributor): DocumentView
+  + exportDocument(format): ExportResult
+}
+
+interface NativeDocumentStorage {
+  + kind: "native-file"
+  + createDocument(path, title, contributor): DocumentView
+  + openDocument(path): DocumentView
   + backupDocument(path): ExportResult
   + exportDocument(format, path): ExportResult
 }
@@ -122,11 +145,6 @@ interface DocumentFileDialogs {
   + chooseDocumentToCreate(suggestedName)
   + chooseExportPath(format, title)
   + chooseBackupPath(title)
-}
-
-enum GatewayMode {
-  desktop
-  standalone
 }
 
 class MemoryDocumentGateway {
@@ -159,7 +177,12 @@ class DocumentStore {
 }
 
 MemoryDocumentGateway ..|> DocumentGateway
+MemoryDocumentGateway ..|> VolatileDocumentStorage
 TauriDocumentGateway ..|> DocumentGateway
+TauriDocumentGateway ..|> NativeDocumentStorage
+DocumentGateway o-- DocumentStorage
+DocumentStorage <|-- VolatileDocumentStorage
+DocumentStorage <|-- NativeDocumentStorage
 TauriFileDialogs ..|> DocumentFileDialogs
 DocumentGateway --> GatewayMode : mode
 TauriDocumentGateway ..> AppState : Tauri commands
@@ -232,9 +255,12 @@ The seven implemented operation variants are `createNode`, `updateNode`, `update
 |---|---|
 | Frontend domain and wire types | `src/domain/types.ts` |
 | In-memory tree rules | `src/domain/tree.ts`: `applyOperation`, `assertValidTree`, `affectedNodeIds` |
-| Browser canonicalization and hashing | `src/domain/hash.ts`: `canonicalDocumentJson`, `hashDocument` |
-| Persistence port | `src/persistence/gateway.ts`: `DocumentGateway` |
-| File-dialog port | `src/persistence/fileDialogs.ts`: `DocumentFileDialogs` |
+| JSON validation/canonical encoding | `src/domain/json.ts`: `cloneJsonObject`, `canonicalJson`, `compareJsonStrings` |
+| Browser canonicalization and hashing | `src/domain/hash.ts`: `DOCUMENT_HASH_ALGORITHM`, `toDocumentState`, `canonicalDocumentJson`, `hashDocument` |
+| Persistence ports/page helpers | `src/persistence/gateway.ts`: `DocumentSession`, `ContributionHistory`, `DocumentStorage`, volatile/native variants, `DocumentGateway`, page/cursor helpers |
+| File-dialog/filename contract | `src/persistence/fileDialogs.ts`: `DocumentFileDialogs`, `safeFilenameStem` |
+| Application sequencing | `src/application/useDocumentController.ts`, `src/application/serializedTaskQueue.ts` |
+| Browser sanitizer contract | `src/editor/sanitizeRichText.ts`, `fixtures/protocol/rich-text-v1.json` |
 | Standalone adapter | `src/persistence/memoryGateway.ts`: `MemoryDocumentGateway` |
 | Desktop adapter | `src/persistence/tauriGateway.ts`: `TauriDocumentGateway` |
 | Native file dialogs | `src/persistence/tauriFiles.ts` |
@@ -253,12 +279,12 @@ The seven implemented operation variants are `createNode`, `updateNode`, `update
 | Gateway method | Tauri command | Store operation |
 |---|---|---|
 | `createDocument` | `create_document` | `DocumentStore::create`, then `view` |
-| `openDocument` | `open_document` | `DocumentStore::open`, then `view` |
+| `storage.openDocument` after `native-file` narrowing | `open_document` | `DocumentStore::open`, then `view` |
 | `closeDocument` | `close_document` | Drop the store from `AppState` |
 | `applyOperation` | `apply_operation` | `apply` |
 | `listContributions` | `list_contributions` | `contributions` |
 | `restoreRevision` | `restore_revision` | `restore` |
-| `backupDocument` | `backup_document` | `backup` |
+| `storage.backupDocument` after `native-file` narrowing | `backup_document` | `backup` |
 | `exportDocument` | `export_document` | `export` |
 
 ## SQLite data model
@@ -506,19 +532,21 @@ Each contribution records:
 - base revision;
 - SHA-256 hash of the resulting state.
 
-The desktop hash is SHA-256 over Serde's JSON encoding of `DocumentState`. It covers document metadata, nodes, contributors, and sessions. It does not cover the contribution ledger, snapshots table, attachments, view path, read-only state, or recovery warning.
+The desktop hash remains SHA-256 over Serde's JSON encoding of `DocumentState`. It covers document metadata, nodes, contributors, and sessions. It does not cover the contribution ledger, snapshots table, attachments, view path, read-only state, or recovery warning.
 
 The current implementation writes but never verifies `contributions.resulting_hash` or `snapshots.state_hash`. Opening does not replay the contribution ledger, and restore does not compare a snapshot with its stored hash. These are useful recorded checksums, not a tamper-evidence or authenticity guarantee.
 
-The standalone adapter uses `src/domain/hash.ts`, whose canonicalization differs from Rust. It recursively sorts keys and, at runtime, currently also receives `DocumentView` fields. Hash values are therefore not portable across adapters.
+The standalone adapter now names its algorithm `coedit-document-state-v1`. It explicitly projects a `DocumentState` (excluding `path`, `readOnly`, and `recoveryWarning`), sorts node/contributor/session collections by ID, recursively sorts object keys, UTF-8 encodes the compact JSON, and calculates SHA-256 with Web Crypto. `fixtures/protocol/document-hash-v1.json` fixes the canonical bytes and digest for TypeScript tests. Rust has not yet implemented or been tested against that fixture, so cross-adapter hash equality remains unproven second-pass work.
 
 Every revision currently stores a full `DocumentState` JSON snapshot. This makes restore direct but can cause substantial database growth. There is no compactor.
 
 ### History queries
 
-The Rust store reads at most the newest 100,000 contributions, then applies `beforeRevision`, contributor, node, and text filters in Rust. It returns at most the requested limit, defaulting to 200 and capped at 100,000. Consequently, filters cannot find a matching entry older than the initial 100,000-row window.
+The shared contract returns `ContributionPage { items, nextBeforeRevision, hasMore }`. The default page is 100 and callers are capped at 500. Adapters fetch or retain one extra matching record to determine `hasMore`; when more exists, the last returned revision becomes the exclusive cursor for the next request. Search, node, and contributor filters are part of the gateway query, not a client-side pass over already loaded rows.
 
-The memory adapter reverses its complete runtime array, filters it, and returns 200 by default.
+The memory adapter reverses and filters its complete runtime array before page construction, so every in-memory contribution remains reachable through **Load older contributions**.
+
+The current Rust store still reads at most the newest 100,000 contributions, then applies `beforeRevision`, contributor, node, and text filters in Rust. `TauriDocumentGateway` asks it for `page size + 1` and wraps the array. Consequently, the desktop shape supports paging but a match older than the database pre-window remains unreachable. Moving cursor/filter predicates and `LIMIT` into indexed SQL belongs to the Tauri second pass.
 
 ## Revision restore
 
@@ -589,23 +617,23 @@ Desktop exports and backups write or copy a temporary file in the destination di
 | Open `.coedit` | Rejected | Validated SQLite open |
 | Lifetime | Until close/reload/tab loss | Durable file |
 | Tree operations | TypeScript domain rules | Rust validation and SQL |
-| Sanitization/limits at gateway boundary | No independent enforcement | Ammonia, base64, tree, and size validation |
+| Sanitization/limits at gateway boundary | JSON-only detachment/validation plus centralized rich-text sanitization; no Rust-equivalent byte limits | Ammonia, base64, tree, and byte-size validation |
 | Contributions | Runtime array | SQLite ledger |
 | Sessions | Never populated | Lazily inserted when context supplies an ID |
 | Restore | Runtime revision map | SQLite full snapshots |
 | Hash | Browser Web Crypto, JS canonicalization | Rust SHA-256 over Serde JSON |
-| Backup | `coedit-backup.json` containing current view only | Byte copy of SQLite, normally `.coedit-backup` |
-| JSON export | Current `DocumentView` only | Recovery envelope plus capped ledger |
+| Storage capability | `VolatileDocumentStorage`: pathless create/export | `NativeDocumentStorage`: path-required create/open/export/backup |
+| JSON export | Marked `coedit-recovery` version-2 envelope: algorithm/hash, portable state, explicit complete runtime ledger | Legacy version-1 state/contributions envelope capped by the current store query |
 | Markdown export | DOM parser to text | Rust tag stripping to text |
 | Path selection | Browser download behavior | Native dialogs |
 
-The two adapters share a port and user-facing concepts, not a byte-compatible storage/export contract. Cross-adapter contract tests do not yet exist.
+The adapters now share the cursor-page shape, centralized `ExportFormat`, and portable filename helper. They still do not share a recovery-envelope schema, byte-compatible storage contract, canonical hash implementation, sanitizer oracle, limits, session semantics, Markdown conversion, or import path. Rust conformance/schema work is explicitly deferred to the second pass.
 
 ## Concurrency, durability, and trust boundaries
 
 - `AppState` permits one open desktop document and serializes its commands with a mutex.
 - SQLite has a five-second busy timeout. Multiple application processes editing one file are not a supported collaboration mechanism.
-- Operations do not carry a caller-supplied expected revision. The store determines `baseRevision` from its current load.
+- Frontend document commands are serialized by `SerializedTaskQueue`; the Tauri command mutex independently serializes native store access. Operations still do not carry a caller-supplied expected revision. The store determines `baseRevision` from its current load.
 - Schema creation selects SQLite `DELETE` journal mode so a closed document normally consists of one portable file.
 - Desktop writes use transactions; create and exported outputs also use same-directory temporary files and rename.
 - `.coedit` files, snapshot JSON, stored metadata, and HTML are untrusted input. Open performs structural checks; frontend and Rust mutation paths provide separate HTML-sanitization boundaries. See [Security](./SECURITY.md).
@@ -621,7 +649,7 @@ The two adapters share a port and user-facing concepts, not a byte-compatible st
 3. Add the matching Serde variant in `src-tauri/src/models.rs`.
 4. Update Rust `operation_type` and `affected_node_ids`.
 5. Implement validation and mutation in `DocumentStore::apply_sql`.
-6. Dispatch it from the owning UI component through `App`.
+6. Initiate it from the owning UI component and dispatch/orchestrate it through `useDocumentController`.
 7. Add TypeScript domain/memory tests and Rust success, rollback, history, and restore tests.
 8. Update [Traceability](./TRACEABILITY.md), [Sequence diagrams](./SEQUENCE_DIAGRAMS.md), and this operation table.
 
@@ -636,14 +664,15 @@ The two adapters share a port and user-facing concepts, not a byte-compatible st
 
 ### Add a persistence adapter
 
-1. Implement every `DocumentGateway` method and declare its durability semantics.
-2. Wire it in a dedicated composition root; do not add environment probing to shared UI code.
-3. Define attribution, sanitization, tree validation, history, restore, backup, and export behavior.
-4. Reuse or extract gateway contract tests so parity is intentional.
+1. Implement the shared session/history/export ports and declare durability semantics.
+2. Implement only the applicable `VolatileDocumentStorage` or `NativeDocumentStorage` variant; do not add methods that merely reject in hosts without native access.
+3. Wire it in a dedicated composition root; do not add environment probing to shared UI code.
+4. Define attribution, sanitization, tree validation, paging, restore, backup, and export behavior.
+5. Reuse or extract gateway contract tests so parity is intentional.
 
 ### Add an export format
 
-1. Extend the format union in the gateway and dialog contracts.
+1. Extend `ExportFormat` in `src/domain/types.ts` and let gateway/dialog/controller references consume it.
 2. Implement both adapters or explicitly mark one unsupported.
 3. Extend the Tauri command/store dispatch and file filter.
 4. Define whether the format is lossless, attributable, and importable.
@@ -663,8 +692,8 @@ Define a domain model and gateway first. Then add store commands, checksum valid
 
 ## Verification and known gaps
 
-Current persistence tests are listed in [Testing strategy](./TESTING.md). The memory gateway has one attribution/hash/restore test. Rust tests cover cycle rejection, HTML sanitization, and a create-edit-restore-backup-export-reopen path.
+Current persistence tests are listed in [Testing strategy](./TESTING.md). Memory tests cover attribution/restore, boundary sanitization and JSON detachment/validation, cursor paging and filter-before-page semantics, complete runtime recovery export, and filename normalization. Separate TypeScript fixtures cover canonical hash and browser sanitization. Rust tests still cover cycle rejection, HTML sanitization, and a create-edit-restore-backup-export-reopen path; they do not yet consume the new protocol fixtures.
 
 Priority missing coverage includes format migration, corrupt snapshots, hash verification, adapter parity, transaction failure injection, size boundaries, read-only behavior, history beyond 100,000 entries, contributor/session integrity, overwrite failures, and simultaneous access.
 
-The definitive triage list, including pending-editor-save and stale-editor-after-restore risks that cross the persistence/UI boundary, is [Known limitations](./KNOWN_LIMITATIONS.md).
+The definitive triage list, including uncontrolled host-exit lifecycle and cross-adapter/native parity risks, is [Known limitations](./KNOWN_LIMITATIONS.md).

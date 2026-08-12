@@ -10,11 +10,13 @@ This is a new implementation inspired by TreeWriter's interaction model. It does
 - Keyboard navigation, sibling reordering, drag-to-reparent, and soft deletion
 - Tiptap rich-text editing backed by Yjs updates
 - Contributor, writing-session, revision, operation, and state-hash attribution
-- Searchable history and restoration through compensating contributions
+- Cursor-paged, adapter-filtered history and restoration through compensating contributions
 - Portable `.coedit` SQLite document files
-- JSON/Markdown export and desktop SQLite backup
+- Versioned standalone JSON recovery envelopes, Markdown export, and desktop SQLite backup
 - Strict offline content-security policy and sanitization in both UI and persistence layers
 - Self-contained, double-clickable HTML5 build with an in-memory document backend
+
+The shared UI delegates use-case orchestration to `useDocumentController`. It serializes document commands, synchronously freezes and drains registered title/metadata/rich-text drafts before controlled lifecycle transitions, remounts editor state after authoritative restores, rejects stale view/history responses, and narrows a discriminated storage capability without putting Tauri checks in components.
 
 AI and real-time synchronization are intentionally not connected. The provider interface exists so they can be added later without bypassing contribution history.
 
@@ -38,7 +40,7 @@ For the standalone HTML application:
 corepack pnpm build
 ```
 
-Then double-click `dist/index.html`. The generated file contains the UI, editor, styles, CSP, and in-memory gateway; it does not require Tauri or a local server. Its working document disappears when the page closes, so export JSON or Markdown before leaving.
+Then double-click `dist/index.html`. The generated file contains the UI, editor, styles, CSP, and in-memory gateway; it does not require Tauri or a local server. Its working document disappears when the page closes, so export the marked `coedit-recovery` version-2 JSON envelope or Markdown before leaving. JSON includes the current portable state and the complete contribution ledger accumulated during that in-memory session, but there is not yet a JSON import workflow.
 
 For the persistent desktop application:
 

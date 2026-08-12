@@ -2,6 +2,8 @@
 
 > **Artifact status:** This is the original product/phase plan. For the current implementation, RUP use cases, 4+1 architecture, design models, sequences, traceability, tests, and known limitations, start with the [engineering documentation index](./docs/README.md). Where this roadmap differs from executable code, the current engineering documentation and code describe the baseline.
 
+> **Current hardening sequence:** the active first pass future-proofs the standalone HTML host and its shared application boundary. A second pass is reserved for Rust/Tauri parity, security, and native verification. A third pass will decide the fate of dormant feature seams. See the [documentation index](./docs/README.md#current-hardening-passes) for the exact boundary.
+
 ## Summary
 
 Build a new portable, local-first desktop editor inspired by TreeWriter's hierarchy and node-editing concepts. Do not reuse its server, authentication, database, proxy, email, or deployment infrastructure.

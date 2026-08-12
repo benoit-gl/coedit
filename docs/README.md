@@ -52,7 +52,11 @@ left to right direction
 component "Standalone index.html\nself-contained file:// artifact" as Standalone
 component "Tauri desktop window" as Desktop
 component "Shared React UI\nApp and components" as UI
+component "useDocumentController\nuse cases + queue + draft transitions" as Controller
 interface "DocumentGateway" as Gateway
+interface "DocumentStorage\ndiscriminated capability" as Storage
+interface "VolatileDocumentStorage" as Volatile
+interface "NativeDocumentStorage" as Native
 component "MemoryDocumentGateway" as Memory
 component "TauriDocumentGateway" as TauriAdapter
 component "Rust DocumentStore" as Store
@@ -60,9 +64,15 @@ database ".coedit SQLite file" as SQLite
 
 Standalone --> UI : main.tsx
 Desktop --> UI : main-tauri.tsx
-UI --> Gateway
+UI --> Controller
+Controller --> Gateway
 Gateway <|.. Memory
 Gateway <|.. TauriAdapter
+Gateway o-- Storage
+Storage <|-- Volatile
+Storage <|-- Native
+Memory ..|> Volatile
+TauriAdapter ..|> Native
 TauriAdapter --> Store : Tauri IPC commands
 Store --> SQLite
 @enduml
@@ -72,6 +82,16 @@ Store --> SQLite
 - `corepack pnpm tauri:dev` runs the desktop host for development.
 - `corepack pnpm tauri:build` packages the desktop host. It uses Rust and SQLite for persistent `.coedit` documents.
 - Production code does not start or require a local HTTP backend. Vite serves loopback HTTP only during development.
+
+## Current hardening passes
+
+The current branch is intentionally staged:
+
+1. **Standalone-first architecture (implemented in the current worktree):** application controller and serialized command queue; synchronous freeze plus awaitable title, metadata, and rich-text drains; authoritative editor remount after restore; discriminated volatile/native-file storage; cursor-paged history; a complete in-memory recovery envelope; centralized filename/sanitization contracts; and versioned TypeScript fixtures.
+2. **Tauri parity and hardening (second pass):** align Rust hashing and sanitizer expectations with the versioned fixtures; push indexed filtering/pagination into SQLite without the 100,000-row pre-window; move file authorization/path ownership behind a defensible Rust boundary; minimize native permissions; define versioned schema migration and measured snapshot compaction; and run the full native verification matrix. The current TypeScript Tauri adapter is shaped for the new ports, but this documentation does not claim native parity has been proven.
+3. **Dormant-feature decisions (third pass):** explicitly retain, finish, migrate, or remove AI, attachments, `restoreNode`, contributor/session lifecycle, contribution grouping, and generic node metadata.
+
+These pass boundaries are scope statements, not release promises. [Known limitations](./KNOWN_LIMITATIONS.md) remains the authoritative risk register.
 
 ## Status language
 

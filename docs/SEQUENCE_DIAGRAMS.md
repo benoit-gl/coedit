@@ -2,7 +2,7 @@
 
 This document is the RUP interaction view for Coedit Local. It traces important use cases through the current implementation and names the files that own each step.
 
-Except for the section explicitly titled **Proposed safe close sequence**, every diagram describes current code. Notes labeled **Current limitation** identify observed behavior rather than intended behavior.
+Every diagram below describes current code unless a note explicitly marks deferred second-pass Tauri work. Notes labeled **Current limitation** identify observed behavior rather than intended behavior.
 
 Related documents:
 
@@ -19,7 +19,9 @@ Related documents:
 
 | Diagram name | Implementation |
 |---|---|
-| `App` | `App` in `src/App.tsx` |
+| `App` | Presentation boundary in `src/App.tsx` |
+| `Controller` | `useDocumentController` in `src/application/useDocumentController.ts` |
+| `Queue` | `SerializedTaskQueue` in `src/application/serializedTaskQueue.ts` |
 | `MemoryGateway` | `MemoryDocumentGateway` in `src/persistence/memoryGateway.ts` |
 | `TauriGateway` | `TauriDocumentGateway` in `src/persistence/tauriGateway.ts` |
 | `Dialogs` | `tauriFileDialogs` in `src/persistence/tauriFiles.ts` |
@@ -80,26 +82,28 @@ The repository-source `index.html` still references `/src/main.tsx` and normally
 title Create document in standalone mode (implemented)
 actor User
 participant "App\nsrc/App.tsx" as App
+participant "useDocumentController" as Controller
+participant "SerializedTaskQueue" as Queue
 participant "MemoryDocumentGateway" as Memory
 participant "newId()" as Ids
 participant "hashDocument()" as Hash
 
 User -> App : enter contributor/title
 User -> App : Create document
-App -> App : run(); busy = true; error = null
-App -> Memory : createDocument(null, newTitle, profile)
+App -> Controller : createDocument(newTitle)
+Controller -> Queue : enqueue create command; busyCount++
+Queue -> Memory : createDocument(null, newTitle, profile)
 Memory -> Ids : document and contribution IDs
 Memory -> Memory : create revision-0 DocumentView\nwith contributor and empty nodes/sessions
 Memory -> Hash : SHA-256 of initial state
 Hash --> Memory : resultingHash
 Memory -> Memory : append createDocument contribution
 Memory -> Memory : revisions.set(0, cloned state)
-Memory --> App : structured clone of DocumentView
-App -> App : setView(created); status = "Document created"
-App -> Memory : listContributions({ limit: 500 })
-Memory -> Memory : newest-first; apply query; clone
-Memory --> App : Contribution[1]
-App -> App : setContributions; busy = false
+Memory --> Queue : detached DocumentView
+Queue --> Controller : created view
+Controller -> Controller : acceptView(epoch/revision, authoritative reset)
+Controller -> Controller : increment editorGeneration; mark History stale until opened; status
+Controller -> App : view + history state; busyCount--
 App --> User : render empty Workspace
 @enduml
 ```
@@ -115,6 +119,8 @@ The initial contribution has revision `0`, base revision `-1`, operation type `c
 title Create .coedit document in Tauri (implemented)
 actor User
 participant "App" as App
+participant "useDocumentController" as Controller
+participant "SerializedTaskQueue" as Queue
 participant "tauriFileDialogs" as Dialogs
 participant "TauriDocumentGateway" as Gateway
 participant "Tauri invoke" as IPC
@@ -125,16 +131,18 @@ participant "File system" as FS
 collections "AppState.document\nMutex of optional DocumentStore" as State
 
 User -> App : Create document
-App -> Dialogs : chooseDocumentToCreate(newTitle)
+App -> Controller : createDocument(newTitle)
+Controller -> Dialogs : chooseDocumentToCreate(newTitle)
 Dialogs -> User : native Save dialog (.coedit)
 alt user cancels
   User --> Dialogs : null
-  Dialogs --> App : null
+  Dialogs --> Controller : null
   App --> User : remain on Welcome
 else path selected
   User --> Dialogs : destination path
-  Dialogs --> App : path
-  App -> Gateway : createDocument(path, title, profile)
+  Dialogs --> Controller : path
+  Controller -> Queue : enqueue create command
+  Queue -> Gateway : createDocument(path, title, profile)
   Gateway -> IPC : invoke("create_document", payload)
   IPC -> Command : create_document(...)
   Command -> Store : DocumentStore::create(path, title, contributor)
@@ -152,15 +160,17 @@ else path selected
   Command -> State : replace current store
   Command --> IPC : DocumentView
   IPC --> Gateway : Promise<DocumentView>
-  Gateway --> App : DocumentView
-  App -> Gateway : listContributions({ limit: 500 })
-  Gateway --> App : newest-first contributions
+  Gateway --> Queue : DocumentView
+  Queue --> Controller : DocumentView
+  Controller -> Controller : acceptView(workspace epoch, authoritative reset)
+  Controller -> Controller : increment editorGeneration; mark History stale until opened
+  Controller --> App : render state
   App --> User : render Workspace
 end
 @enduml
 ```
 
-If creation fails before the final rename, `DocumentStore::create` attempts to remove the temporary file and returns an error. `App.run()` presents gateway errors in the error banner.
+If creation fails before the final rename, `DocumentStore::create` attempts to remove the temporary file and returns an error. The controller's `executeMutation()` path presents gateway errors in the error banner and leaves later queue tasks runnable.
 
 ## Open and validate a desktop document
 
@@ -171,6 +181,8 @@ If creation fails before the final rename, `DocumentStore::create` attempts to r
 title Open and validate .coedit document (implemented)
 actor User
 participant "App" as App
+participant "useDocumentController" as Controller
+participant "SerializedTaskQueue" as Queue
 participant "tauriFileDialogs" as Dialogs
 participant "TauriDocumentGateway" as Gateway
 participant "open_document command" as Command
@@ -179,14 +191,16 @@ database ".coedit SQLite" as SQLite
 collections "AppState.document" as State
 
 User -> App : Open .coedit file
-App -> Dialogs : chooseDocumentToOpen()
+App -> Controller : openDocument()
+Controller -> Dialogs : chooseDocumentToOpen()
 Dialogs -> User : native Open dialog (coedit filter)
 alt cancel
-  User --> App : no path; remain on Welcome
+  User --> Controller : no path; remain on Welcome
 else selected path
   User --> Dialogs : path
-  Dialogs --> App : path
-  App -> Gateway : openDocument(path)
+  Dialogs --> Controller : path
+  Controller -> Queue : enqueue open command
+  Queue -> Gateway : storage.openDocument(path)\n(after native-file narrowing)
   Gateway -> Command : invoke("open_document", { path })
   Command -> Store : DocumentStore::open(path)
   Store -> Store : require path.is_file()
@@ -209,16 +223,20 @@ else selected path
   Store --> Command : DocumentView
   Command -> State : replace current store
   Command --> Gateway : DocumentView
-  Gateway --> App : DocumentView
-  App -> Gateway : listContributions({ limit: 500 })
-  Gateway --> App : Contribution[]
+  Gateway --> Queue : DocumentView
+  Queue --> Controller : DocumentView
+  Controller -> Controller : acceptView(new workspace epoch, authoritative reset)
+  Controller -> Controller : increment editorGeneration; mark History stale until opened
+  Controller --> App : view + history state
   App --> User : Workspace + optional read-only/recovery banner
 end
 
 alt any validation or I/O error
   Store --> Command : StoreError
   Command --> Gateway : rejected invoke with message
-  Gateway --> App : rejected Promise
+  Gateway --> Queue : rejected Promise
+  Queue --> Controller : rejection; queue tail recovers
+  Controller --> App : error state
   App --> User : error banner; view remains null
 end
 @enduml
@@ -236,6 +254,10 @@ title Apply DocumentOperation across adapters (implemented)
 actor User
 participant "Outline / NodeEditor / Header" as Component
 participant "App" as App
+participant "useDocumentController" as Controller
+participant "DraftTransitionCoordinator" as Drafts
+participant "title + node-editor participants" as Participants
+participant "SerializedTaskQueue" as Queue
 participant "DocumentGateway" as Gateway
 participant "MemoryDocumentGateway" as Memory
 participant "domain/tree.ts" as Tree
@@ -246,8 +268,14 @@ database "SQLite" as SQLite
 
 User -> Component : add/edit/move/delete/rename
 Component -> App : callback(operation)
-App -> App : context(contributor, session, message, group)
-App -> Gateway : applyOperation(operation, context)
+App -> Controller : applyOperation(operation, message, group)
+Controller -> Drafts : begin()
+Drafts -> Participants : freeze() synchronously
+Controller -> Participants : flush title/metadata/rich text
+Participants --> Controller : resolved (or abort action with visible error)
+Controller -> Controller : context(contributor, session, message, group)
+Controller -> Queue : enqueue mutation
+Queue -> Gateway : applyOperation(operation, context)
 
 alt standalone adapter
   Gateway -> Memory : applyOperation(...)
@@ -277,10 +305,17 @@ else Tauri adapter
   Tauri --> Gateway : DocumentView
 end
 
-Gateway --> App : complete updated DocumentView
-App -> App : setView(updated)
-App -> Gateway : listContributions({ limit: 500 })
-Gateway --> App : Contribution[]
+Gateway --> Queue : complete updated DocumentView
+Queue --> Controller : updated view
+Controller -> Controller : accept only current epoch/non-older revision
+opt History is open
+  Controller -> Gateway : listContributions(active filters, limit: 100)
+  Gateway --> Controller : ContributionPage
+else History is closed
+  Controller -> Controller : mark History stale for next open
+end
+Controller -> Participants : unfreeze() in reverse order
+Controller --> App : current view/history/status
 App --> Component : rerender from returned state
 @enduml
 ```
@@ -302,6 +337,8 @@ participant "window timer" as Timer
 participant "DOMPurify" as Purify
 participant "NodeEditor" as NodeEditor
 participant "App" as App
+participant "useDocumentController" as Controller
+participant "SerializedTaskQueue" as Queue
 participant "DocumentGateway" as Gateway
 
 note over Rich,YDoc
@@ -323,70 +360,102 @@ end
 
 ... 1.2 seconds with no new Yjs update ...
 Timer -> Rich : flush()
+Rich -> Rich : cancel timer; start one drain Promise
 Rich -> Rich : Y.mergeUpdates(pendingUpdates); clear queue
 Rich -> Tiptap : getHTML()
 Tiptap --> Rich : materialized HTML
-Rich -> Purify : sanitize HTML with SAFE_TAGS/attributes
+Rich -> Purify : sanitizeRichText() using coedit-rich-text-v1
 Purify --> Rich : clean HTML
 Rich -> YDoc : Y.encodeStateAsUpdate(document)
 YDoc --> Rich : complete binary state
 Rich -> Rich : Base64 merged update + complete state
 Rich -> NodeEditor : onCommit(html, update, state)
 NodeEditor -> App : onContentChange(...)
-App -> App : newId() for this contribution group
-App -> Gateway : applyOperation(updateContent, context)
-Gateway --> App : updated DocumentView
-App -> Gateway : listContributions({ limit: 500 })
-Gateway --> App : refreshed history
+App -> Controller : commitContent(...)
+Controller -> Controller : newId() for this contribution group
+Controller -> Queue : enqueue updateContent
+Queue -> Gateway : applyOperation(updateContent, context)
+Gateway --> Queue : updated DocumentView
+Queue --> Controller : updated view
+loop updates arrived while persistence was pending
+  Rich -> Rich : merge/sanitize/encode next pending batch
+  Rich -> Controller : commitContent(next batch)
+  Controller -> Queue : enqueue next updateContent
+end
+opt History is open
+  Controller -> Gateway : refresh first history page
+  Gateway --> Controller : ContributionPage
+else History is closed
+  Controller -> Controller : mark History stale for next open
+end
 App --> User : saved status and rerender
+
+alt commit rejects
+  Gateway --> Rich : rejection through controller/callback
+  Rich -> Rich : prepend merged delta to pendingUpdates
+  Rich --> Controller : rejected flush; controlled action is canceled
+end
 @enduml
 ```
 
-In the desktop branch, Rust decodes both Base64 values, enforces content/Yjs size limits, independently sanitizes HTML with Ammonia, and writes the complete Yjs state. The incremental `yjsUpdate` is validated and retained in the immutable operation payload, not applied separately to the materialized `nodes` row.
+`RichTextEditor` exposes a participant to `NodeEditor`; `NodeEditor` combines its metadata drain with the rich-text drain and registers that aggregate with the controller. The document title registers separately. Controlled selection, operations, restore, export, backup, and Close synchronously freeze these drafts and await them rather than depending on unmount cleanup. In the desktop branch, Rust decodes both Base64 values, enforces content/Yjs size limits, independently sanitizes HTML with Ammonia, and writes the complete Yjs state. Rust sanitizer-fixture parity remains second-pass work.
 
-## Load and filter history
+## Load, filter, and page history
 
-**Implemented.** `App` requests an unfiltered slice after create, open, every successful operation, and restore. `HistoryPanel` then filters that in-memory slice as the user types.
+**Implemented for the standalone adapter and shared UI.** Filtering is part of the gateway query and occurs before page construction. The controller requests 100 entries at a time and the panel exposes **Load older contributions** while `hasMore` is true.
 
 ```plantuml
 @startuml
-title History load and client-side filtering (implemented)
-participant "App.refreshHistory" as App
-participant "DocumentGateway" as Gateway
-participant "MemoryDocumentGateway" as Memory
-participant "TauriDocumentGateway" as Tauri
+title Cursor-paged contribution history (implemented)
+actor User
+participant HistoryPanel as Panel
+participant useDocumentController as Controller
+participant DocumentGateway as Gateway
+participant MemoryDocumentGateway as Memory
+participant TauriDocumentGateway as Tauri
 participant "DocumentStore::contributions" as Store
 database "SQLite contributions" as SQLite
-participant "HistoryPanel" as Panel
-actor User
 
-App -> Gateway : listContributions({ limit: 500 })
+User -> Panel : open History
+Panel -> Controller : setHistoryOpen(true)
+Controller -> Gateway : listContributions(filters, limit=100)
 alt standalone
   Gateway -> Memory : listContributions(query)
-  Memory -> Memory : reverse to newest-first
-  Memory -> Memory : apply node/contributor/before/search filters
-  Memory -> Memory : slice to 500; structuredClone
-  Memory --> Gateway : Contribution[]
-else desktop
+  Memory -> Memory : newest-first complete ledger
+  Memory -> Memory : filter search/node/contributor/beforeRevision
+  Memory -> Memory : take limit+1; build ContributionPage
+  Memory --> Controller : items, exclusive nextBeforeRevision, hasMore
+else desktop adapter (pass-2 store limitation remains)
   Gateway -> Tauri : listContributions(query)
-  Tauri -> Store : invoke list_contributions under mutex
-  Store -> SQLite : SELECT newest-first LIMIT 100000\nJOIN contributors
+  Tauri -> Store : invoke with limit=101
+  Store -> SQLite : SELECT newest 100000 rows
   SQLite --> Store : rows
-  Store -> Store : deserialize payload/affected IDs;\napply query filters; stop at 500
-  Store --> Gateway : Contribution[]
+  Store -> Store : apply query filters; stop at 101
+  Store --> Tauri : Contribution[]
+  Tauri -> Tauri : expose first 100 as ContributionPage
+  Tauri --> Controller : page
 end
-Gateway --> App : fetched slice
-App -> Panel : contributions, selectedNodeId
+Controller -> Controller : accept only current request + workspace epoch
+Controller -> Panel : items, loading, error, hasMore
 
-loop UI search/filter changes
-  User -> Panel : change search or "Selected idea only"
-  Panel -> Panel : useMemo filter over fetched slice
-  Panel --> User : render matching entries
+loop debounced query change
+  User -> Panel : type search / toggle selected idea
+  Panel -> Panel : wait 250 ms
+  Panel -> Controller : updateHistoryQuery(filters)
+  Controller -> Gateway : first page for normalized filters
+end
+
+opt hasMore
+  User -> Panel : Load older contributions
+  Panel -> Controller : loadOlderHistory()
+  Controller -> Gateway : same filters, beforeRevision=cursor, limit=100
+  Gateway --> Controller : next page
+  Controller -> Controller : append unseen contribution IDs
 end
 @enduml
 ```
 
-The header count is `contributions.length`. It is therefore the size of the fetched slice, not a separately queried total. The panel does not call the gateway when its search controls change.
+The header count is the number of loaded entries and appends `+` while another page is known to exist; it is not a ledger total. A superseded search/page response is ignored. History failures appear independently from a mutation that already succeeded. In standalone mode the entire runtime ledger is reachable; desktop matching entries older than Rust's 100,000-row pre-window remain a documented second-pass limitation.
 
 ## Restore a revision as a compensating contribution
 
@@ -398,6 +467,10 @@ title Compensating revision restore (implemented)
 actor User
 participant "HistoryPanel" as Panel
 participant "App" as App
+participant "useDocumentController" as Controller
+participant "DraftTransitionCoordinator" as Drafts
+participant "title + node-editor participants" as Participants
+participant "SerializedTaskQueue" as Queue
 participant "DocumentGateway" as Gateway
 participant "MemoryDocumentGateway" as Memory
 participant "Tauri DocumentStore" as Store
@@ -409,7 +482,12 @@ App -> User : confirm restore; current state remains in history
 alt user cancels
   User --> App : cancel
 else user confirms
-  App -> Gateway : restoreRevision(R, context)
+  App -> Controller : restoreRevision(R)
+  Controller -> Drafts : begin(); freeze participants synchronously
+  Controller -> Participants : flush title/metadata/rich text
+  Participants --> Controller : resolved (or cancel restore on error)
+  Controller -> Queue : enqueue restoreRevision(R, context)
+  Queue -> Gateway : restoreRevision(R, context)
   alt standalone
     Gateway -> Memory : restoreRevision(R, context)
     Memory -> Memory : require current/contributor; revisions.get(R)
@@ -433,32 +511,37 @@ else user confirms
     Store -> SQLite : commit
     Store --> Gateway : restored DocumentView
   end
-  Gateway --> App : restored view at a new revision
-  App -> App : setView(restored)
-  App -> Gateway : listContributions({ limit: 500 })
-  Gateway --> App : ledger including new restore contribution
+  Gateway --> Queue : restored view at a new revision
+  Queue --> Controller : restored view
+  Controller -> Controller : acceptView(epoch/revision guard, authoritative reset)
+  Controller -> Controller : editorGeneration++
+  opt History remains open
+    Controller -> Gateway : first history page under active filters
+    Gateway --> Controller : page including new restore contribution when it matches
+  end
+  Controller --> App : current state
+  App -> App : key NodeEditor by node ID + editorGeneration
+  App -> App : remount RichTextEditor with restored Yjs state
+  Controller -> Participants : release/unfreeze old participants
   App --> User : rerender restored document
 end
-
-note over App
-  Current limitation: if the selected node keeps the same ID,
-  RichTextEditor memoizes its Y.Doc by node.id and may not load
-  the restored yjsState. See KNOWN_LIMITATIONS.md.
-end note
 @enduml
 ```
 
-The desktop restore contribution payload records `restoredRevision`; the memory adapter additionally places the restored state in its in-memory contribution payload.
+Both adapters record only `restoredRevision` in the compensating contribution payload. The controller test covers flush-before-restore and the authoritative generation change; `App` uses that generation in the editor key, so a same-node restore constructs a new `Y.Doc`. Full Tiptap DOM/reopen coverage and native restore parity remain verification work.
 
 ## Export JSON or Markdown
 
-**Implemented.** The two runtime adapters expose the same `DocumentGateway.exportDocument` method but produce different JSON shapes and use different delivery mechanisms.
+**Implemented.** Both storage capabilities expose export operations, but their JSON schemas still differ. Standalone emits the extended TypeScript `RecoveryExport`; Rust emits the older state/contributions envelope. Schema parity is second-pass work.
 
 ```plantuml
 @startuml
 title JSON / Markdown export across runtimes (implemented)
 actor User
 participant "App" as App
+participant "useDocumentController" as Controller
+participant "DraftTransitionCoordinator" as Drafts
+participant "title + node-editor participants" as Participants
 participant "tauriFileDialogs" as Dialogs
 participant "MemoryDocumentGateway" as Memory
 participant "Browser DOM" as Browser
@@ -468,15 +551,20 @@ database "SQLite" as SQLite
 participant "File system" as FS
 
 User -> App : Export -> JSON or Markdown
+App -> Controller : exportDocument(format)
+Controller -> Drafts : begin(); freeze participants synchronously
+Controller -> Participants : flush title/metadata/rich text
+Participants --> Controller : resolved (or cancel export on error)
 
 alt standalone mode
-  App -> Memory : exportDocument(format, null)
+  Controller -> Memory : exportDocument(format, null)
   Memory -> Memory : read current in-memory view
   alt JSON
-    Memory -> Memory : JSON.stringify(current DocumentView)
+    Memory -> Memory : toDocumentState(view)
+    Memory -> Memory : coedit-recovery RecoveryExport v2 with algorithm/hash\n+ history order/complete + complete runtime contributions
     note right of Memory
-      Current standalone JSON omits the
-      in-memory contribution/snapshot collections.
+      Host-only path/readOnly/recoveryWarning and
+      internal revision snapshots are excluded.
     end note
   else Markdown
     Memory -> Memory : walk active hierarchy; DOMParser HTML;\nremove script/style/iframe/object/embed; textContent
@@ -484,16 +572,16 @@ alt standalone mode
   Memory -> Browser : Blob + object URL + download anchor.click()
   Browser --> User : browser-managed download
   Memory -> Browser : revoke object URL
-  Memory --> App : filename and byte count
+  Memory --> Controller : safe filename and byte count
 else desktop mode
-  App -> Dialogs : chooseExportPath(format, title)
+  Controller -> Dialogs : chooseExportPath(format, title)
   Dialogs -> User : native Save dialog (.json or .md)
   alt cancel
     User --> App : no export
   else destination selected
     User --> Dialogs : path
-    Dialogs --> App : path
-    App -> Tauri : exportDocument(format, path)
+    Dialogs --> Controller : path
+    Controller -> Tauri : exportDocument(format, path)
     Tauri -> Store : invoke export_document
     Store -> SQLite : load current state
     alt JSON
@@ -506,14 +594,14 @@ else desktop mode
     Store -> FS : atomic_write to unique temporary; sync_all; replace
     FS --> Store : completed
     Store --> Tauri : path and bytesWritten
-    Tauri --> App : ExportResult
-    App --> User : success status
+    Tauri --> Controller : ExportResult
+    Controller --> App : success status
   end
 end
 @enduml
 ```
 
-Markdown is presentation/interchange output, not lossless recovery. Desktop JSON is designed as recovery output but silently requests at most 100,000 contributions. The standalone JSON limitation is tracked in [Known limitations](KNOWN_LIMITATIONS.md).
+Markdown is presentation/interchange output, not lossless recovery. Standalone JSON contains the full state, canonical state hash, and complete contribution history for the current volatile runtime, but no revision snapshot map and no importer. Desktop JSON still silently requests at most 100,000 contributions and does not emit the standalone `hashAlgorithm`, `stateHash`, or `history` fields. Both filename paths share the centralized `ExportFormat` and `safeFilenameStem()` contracts; schema/semantic parity is part of the second pass.
 
 ## Create a desktop SQLite backup
 
@@ -524,6 +612,9 @@ Markdown is presentation/interchange output, not lossless recovery. Desktop JSON
 title Desktop SQLite backup (implemented)
 actor User
 participant "App" as App
+participant "useDocumentController" as Controller
+participant "DraftTransitionCoordinator" as Drafts
+participant "title + node-editor participants" as Participants
 participant "tauriFileDialogs" as Dialogs
 participant "TauriDocumentGateway" as Gateway
 participant "backup_document command" as Command
@@ -532,14 +623,18 @@ database "open .coedit" as Source
 participant "File system" as FS
 
 User -> App : Export -> SQLite backup
-App -> Dialogs : chooseBackupPath(document.title)
+App -> Controller : backupDocument()
+Controller -> Drafts : begin(); freeze participants synchronously
+Controller -> Participants : flush title/metadata/rich text
+Participants --> Controller : resolved (or cancel backup on error)
+Controller -> Dialogs : chooseBackupPath(document.title)
 Dialogs -> User : native Save dialog (.coedit-backup)
 alt cancel
   User --> App : no backup
 else destination selected
   User --> Dialogs : destination
-  Dialogs --> App : path
-  App -> Gateway : backupDocument(path)
+  Dialogs --> Controller : path
+  Controller -> Gateway : storage.backupDocument(path)\n(after native-file narrowing)
   Gateway -> Command : invoke("backup_document", { path })
   Command -> Store : backup(destination) under document mutex
   opt document is writable
@@ -549,111 +644,58 @@ else destination selected
   Store -> FS : sync_all temporary; atomic replace destination
   FS --> Store : destination metadata length
   Store --> Gateway : ExportResult
-  Gateway --> App : ExportResult
-  App --> User : "Backup created"
+  Gateway --> Controller : ExportResult
+  Controller --> App : "Backup created"
 end
 @enduml
 ```
 
 The backup is a file copy while `DocumentStore` owns the connection and command mutex. The desktop Open dialog currently filters only `.coedit`, not `.coedit-backup`.
 
-## Close ordering and pending-edit race
+## Close with an explicit draft-transition barrier
 
-### Current sequence
-
-**Implemented, with known race/data-loss behavior.** `App.close()` awaits the gateway close first and only then sets `view` to `null`. The view change unmounts `RichTextEditor`, whose cleanup attempts to flush pending Yjs updates after the gateway has already closed.
-
-Metadata fields also commit on blur. Clicking Close while such a field is focused can start a metadata operation independently just before the close click handler.
+**Implemented for controlled in-app Close.** The controller synchronously freezes all registered draft participants, awaits document-title, node-metadata, and rich-text drains, then enqueues `closeDocument`. Since draft commits and close use the same `SerializedTaskQueue`, the backend cannot be discarded before an accepted pending edit finishes.
 
 ```plantuml
 @startuml
-title Current Close ordering (implemented; unsafe for pending edits)
+title Controlled Close ordering (implemented)
 actor User
-participant "Focused metadata input" as Input
-participant "App" as App
-participant "DocumentGateway" as Gateway
-participant "NodeEditor" as Node
-participant "RichTextEditor" as Rich
-participant "Y.Doc" as YDoc
-
-note over Rich
-  A 1.2-second timer may be active and
-  pendingUpdates may be non-empty.
-end note
-
-User -> Input : pointer action moves focus toward Close
-opt title/summary/document title is dirty
-  Input -> App : onBlur -> apply(updateNode/renameDocument)
-  App -> Gateway : applyOperation(...) (not awaited by click handler)
-  note right of Gateway
-    This request can race the close request.
-  end note
-end
+participant App
+participant useDocumentController as Controller
+participant DraftTransitionCoordinator as Drafts
+participant "DocumentTitleInput + NodeEditor" as Participants
+participant SerializedTaskQueue as Queue
+participant DocumentGateway as Gateway
 
 User -> App : click Close
-App -> App : close(); run(); busy = true
-App -> Gateway : closeDocument()
-Gateway -> Gateway : discard/close current document
-Gateway --> App : resolved
-App -> App : setView(null); clear history/selection
-App -> Node : React unmount
-Node -> Rich : unmount
-Rich -> Rich : clear pending timer
-Rich -> Rich : void flush()
-Rich -> YDoc : merge pending updates; encode full state
-Rich -> App : onCommit -> apply(updateContent)
-App -> Gateway : applyOperation(updateContent, context)
-Gateway --> App : reject "No document is open"
-Rich -> YDoc : destroy()
-App --> User : Welcome; possible late error/rerender race
+App -> Controller : closeDocument()
+Controller -> Drafts : begin()
+Drafts -> Participants : freeze() synchronously
+Controller -> Participants : flush()
+loop each dirty draft in participant order
+  Participants -> Queue : enqueue rename/updateNode/updateContent
+  Queue -> Gateway : applyOperation(...)
+  Gateway --> Queue : accepted view
+  Queue --> Participants : commit resolved
+end
+Participants --> Controller : drain resolved
+Controller -> Queue : enqueue closeDocument
+Queue -> Gateway : closeDocument()
+Gateway --> Queue : resolved
+Queue --> Controller : resolved
+Controller -> Controller : advance workspace epoch; clear view/history/selection
+Controller --> App : Welcome state
+Controller -> Participants : release/unfreeze (then unmount)
 
-note over App,Gateway
-  The pending content commit begins after close has resolved.
-  The blur mutation began before close and can complete in either order.
-end note
-@enduml
-```
-
-The memory adapter has an additional interleaving risk: `applyOperation()` awaits Web Crypto hashing before assigning `this.current = updated`, while `closeDocument()` can clear `current` during that await. A blur-started memory mutation can therefore finish after close and repopulate adapter state even though the UI intended to close it.
-
-### Proposed safe close sequence
-
-**Proposal only; not implemented.** This sequence requires an explicit save coordinator or imperative flush contract. It is included to make the intended correction reviewable, not to imply that current code already behaves this way.
-
-```plantuml
-@startuml
-title Proposed safe Close ordering (not implemented)
-actor User
-participant "App / SaveCoordinator" as App
-participant "NodeEditor" as Node
-participant "RichTextEditor" as Rich
-participant "DocumentGateway" as Gateway
-
-User -> App : Close
-App -> App : set closing = true; disable new mutations
-App -> Node : commitDirtyMetadata()
-Node --> App : metadata operation promises
-App -> Rich : flushPending()
-Rich -> Rich : cancel timer; merge/sanitize/encode pending content
-Rich -> Gateway : applyOperation(updateContent, context), if dirty
-Gateway --> Rich : updated DocumentView
-Rich --> App : flush result
-App -> App : await metadata + content + all in-flight mutations
-
-alt every required commit succeeds
-  App -> Gateway : closeDocument()
-  Gateway --> App : resolved
-  App -> App : setView(null); clear state
-  App -> Rich : unmount cleanup (nothing pending)
-  App --> User : Welcome
-else a commit fails
-  App -> App : cancel close; closing = false
-  App --> User : remain in Workspace and show actionable error
+alt draft flush or queued mutation rejects
+  Participants --> Controller : rejection; dirty value retained
+  Controller -> Participants : release/unfreeze
+  Controller --> App : remain in Workspace; show error
 end
 @enduml
 ```
 
-**Recommendation:** the implementation should serialize lifecycle and mutation commands, make editor flush awaitable, and define whether Close may proceed after a failed save. A `beforeunload` strategy for the standalone artifact is a separate browser-lifecycle concern and cannot replace explicit in-app ordering.
+The queue tail recovers after rejection, so one failed command does not prevent a later retry. This barrier covers actions routed through the controller, including node selection, other operations, restore, export, backup, and Close. Blur still triggers an eager drain, but correctness for these transitions no longer relies on blur ordering. The barrier does **not** make browser tab close/reload, operating-system process termination, forced host suspension, or arbitrary React-root teardown awaitable; `RichTextEditor` cleanup clears its timer and deliberately does not launch an unawaitable save.
 
 ## Standalone build pipeline
 

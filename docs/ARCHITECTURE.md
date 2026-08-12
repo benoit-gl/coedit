@@ -21,8 +21,9 @@ Tauri is an application shell, not a web backend. It packages web UI assets into
 | Debuggable UI without native tooling | Explicit browser composition root and a single-file `file://` build |
 | Cross-platform desktop source | React UI plus Tauri/Rust/rusqlite with bundled SQLite |
 | Safe rich text | DOMPurify at the editor boundary and Ammonia at the desktop persistence boundary |
-| Future hosts/features | Injected gateway and file-dialog ports; provider-neutral AI interface |
+| Future hosts/features | Injected capability-oriented gateway/dialog ports; provider-neutral AI interface |
 | Recoverable failure | SQLite full-synchronous transactions, snapshots, atomic export/copy helpers, recovery warning |
+| Predictable UI lifecycle | Host-neutral application controller, serialized command queue, revision/epoch guards, and an awaitable draft-transition contract |
 
 ### System constraints
 
@@ -31,6 +32,18 @@ Tauri is an application shell, not a web backend. It packages web UI assets into
 - Standalone storage lasts only for the page lifetime.
 - TypeScript and Rust contracts are manually mirrored; no generated IPC schema exists.
 - AI, remote synchronization, attachment workflows, and contributor management are not active features.
+
+### Staged architecture boundary
+
+The current hardening program is intentionally divided so current claims remain auditable:
+
+| Pass | Scope | Status |
+|---|---|---|
+| 1 — standalone-first | Application controller/queue, synchronous draft freeze plus awaitable metadata/rich-text drains, discriminated storage capabilities, cursor-paged memory history, complete runtime recovery envelope, centralized export/filename/sanitizer contracts, browser hash/sanitizer fixtures | Implemented in the current worktree; standalone verification is the focus |
+| 2 — Rust/Tauri parity and hardening | Rust conformance to versioned fixtures, indexed store-side cursor filtering, Rust-owned file authorization/path security, minimized permissions, versioned migrations, measured snapshot compaction, native/platform tests | Deferred; existing Tauri adapter compatibility is not proof of completion |
+| 3 — dormant-feature decisions | AI, attachments, `restoreNode`, session lifecycle, contribution grouping, and generic metadata: finish, reserve, migrate, or remove explicitly | Deferred product/format decision |
+
+No pass-2 or pass-3 item should be inferred as implemented from a type, schema table, Tauri icon, or compatibility shim.
 
 ## 2. System context
 
@@ -83,11 +96,22 @@ package "Presentation" {
   [HistoryPanel] as HistoryPanel
 }
 
+package "Application control" {
+  [useDocumentController] as Controller
+  [SerializedTaskQueue] as Queue
+  [DraftTransitionCoordinator] as Drafts
+}
+
 package "Shared domain and ports" {
   [Domain types] as Types
   [Tree operations and invariants] as Tree
   [ID and hash services] as Services
   interface DocumentGateway as Gateway
+  interface DocumentSession as Session
+  interface ContributionHistory as History
+  interface DocumentStorage as Storage
+  interface VolatileDocumentStorage as VolatileStorage
+  interface NativeDocumentStorage as NativeStorage
   interface DocumentFileDialogs as DialogPort
   interface AiProvider as AiPort
 }
@@ -109,9 +133,19 @@ App --> Outline
 App --> NodeEditor
 NodeEditor --> RichTextEditor
 App --> HistoryPanel
-App --> Types
-App --> Gateway
-App --> DialogPort
+App --> Controller
+Controller --> Queue
+Controller --> Drafts
+Drafts --> App : document-title participant
+Drafts --> NodeEditor : metadata + rich-text participant
+Controller --> Types
+Controller --> Gateway
+Controller --> DialogPort
+Gateway --|> Session
+Gateway --|> History
+Gateway o-- Storage : storage capability
+Storage <|-- VolatileStorage
+Storage <|-- NativeStorage
 Outline --> Tree
 Memory ..|> Gateway
 Memory --> Tree
@@ -157,12 +191,14 @@ The Rust store is not imported into the TypeScript build. `TauriDocumentGateway`
 ### Principle of operation
 
 1. The selected entry point constructs `App` with a host-specific `DocumentGateway` and, on desktop, a `DocumentFileDialogs` adapter.
-2. `App` renders either the no-document welcome state or a workspace from one complete `DocumentView`.
-3. A user interaction becomes a typed `DocumentOperation`; `App` adds contributor, application-lifetime session, grouping, and message context.
+2. `App` delegates document use cases and state ownership to `useDocumentController`, then renders either the no-document welcome state or a workspace from the controller's complete `DocumentView`.
+3. A user interaction becomes a typed `DocumentOperation`; the controller adds contributor, application-lifetime session, grouping, and message context. Before a controlled transition can change or externalize the workspace, `DraftTransitionCoordinator` synchronously freezes the registered document-title and node-editor participants, then awaits their metadata and rich-text drains.
 4. In standalone mode, the memory adapter applies the pure TypeScript mutation, hashes it, and appends in-memory contribution/snapshot records. In desktop mode, the Tauri adapter invokes a Rust command and `DocumentStore` performs the equivalent validated SQLite transaction.
-5. The gateway returns a complete new view. `App` replaces its view, fetches the newest 500 contributions, and re-renders the outline, editor, and optional History panel.
-6. Rich text is the special high-frequency path: Tiptap changes a Yjs document; the editor waits for 1.2 seconds of inactivity, sanitizes HTML, and emits one grouped `updateContent` operation with incremental and complete Yjs encodings.
-7. Restore loads a stored revision but writes it as a new current revision. Export is host-specific: browser downloads in standalone mode, atomic native file output in desktop mode.
+5. `SerializedTaskQueue` executes document commands one at a time and continues after a rejected task. Workspace epochs, monotonically numbered history requests, and revision checks prevent late responses from replacing a newer workspace/view.
+6. The gateway returns a complete new view. The controller accepts it and re-renders the outline/editor. If History is open it refreshes the first 100-entry page under the active filters; otherwise it marks history stale and fetches when the panel is next opened. `ContributionPage.nextBeforeRevision` drives exclusive-cursor loading of older entries.
+7. Rich text is the special high-frequency path: Tiptap changes a Yjs document; the editor waits for 1.2 seconds of inactivity, sanitizes HTML through the centralized `coedit-rich-text-v1` policy, and emits one grouped `updateContent` operation with incremental and complete Yjs encodings. An explicit flush cancels the timer, drains updates (including updates arriving during the drain), and preserves a failed delta for retry.
+8. Restore loads a stored revision but writes it as a new current revision. An accepted create/open/restore advances `editorGeneration`; `App` includes that generation in `NodeEditor`'s React key so an authoritative state replacement constructs a fresh `Y.Doc` even when the selected node ID is unchanged.
+9. Export is host-specific: the browser produces safe-named downloads, including a versioned state-plus-complete-runtime-ledger recovery envelope; desktop output remains the Rust/Tauri responsibility.
 
 This is a request/complete-view-response architecture. There is no runtime state stream, remote synchronization loop, or server-side session.
 
@@ -170,9 +206,9 @@ This is a request/complete-view-response architecture. There is no runtime state
 
 ### Browser/WebView process
 
-React owns one current `DocumentView`, a selected node, up to 500 loaded contributions, contributor preference, a session ID, status/error state, and the optional history panel. There is no router, global store, worker, event bus, background synchronization loop, or service container.
+`useDocumentController` owns one current `DocumentView`, the selected node, the authoritative editor generation, accumulated history pages, cursor/filter/loading/error state, contributor/session context, command status/error state, workspace/request epochs, the serialized mutation queue, and the draft-transition registry. `App` retains welcome-form/profile persistence and renders the controller state. There is no router, global store, worker, event bus, background synchronization loop, or service container.
 
-Tiptap and Yjs run in the UI process. Yjs updates are accumulated for a 1.2-second quiet period. A flush sends sanitized HTML, the merged incremental update, and the complete Yjs state as one `updateContent` operation. The gateway responds with a complete replacement `DocumentView`.
+Tiptap and Yjs run in the UI process. Yjs updates are accumulated for a 1.2-second quiet period. A flush sends sanitized HTML, the merged incremental update, and the complete Yjs state as one queued `updateContent` operation. The gateway responds with a complete replacement `DocumentView`. History requests are intentionally outside the mutation queue; request/epoch guards discard stale responses and history failures have their own visible error state.
 
 ### Standalone execution
 
@@ -195,7 +231,7 @@ A failure before commit rolls the entire unit back. There is no optimistic expec
 
 ### Concurrency and lifecycle caveats
 
-The UI's `busy` flag reduces overlapping structural commands, but it is not a full command queue. Editor input and blur commits can overlap another request. Pending editor cleanup can also race Close. These verified hazards are tracked in [Known limitations](./KNOWN_LIMITATIONS.md) and illustrated in [Sequence diagrams](./SEQUENCE_DIAGRAMS.md).
+The controller serializes gateway commands. `DraftTransitionCoordinator.begin()` freezes all registered drafts synchronously, then flushes the document title, node metadata, and rich text before controlled selection, mutation, restore, export, backup, or Close; a failed flush cancels the action and leaves the workspace mounted for retry. This closes the previously documented in-app close-before-debounce and blur-only metadata races. Accepted authoritative resets also advance the editor generation, so same-node restore remounts the editor/Yjs document. Browser `beforeunload`, process termination, forced host suspension, and arbitrary React-root teardown still cannot await JavaScript promises; those residual lifecycle and verification limits are tracked in [Known limitations](./KNOWN_LIMITATIONS.md).
 
 ## 5. Development view
 
@@ -205,6 +241,7 @@ skinparam packageStyle rectangle
 
 package "Repository root" {
   package "src" {
+    package "application" as Application
     package "components" as Components
     package "editor" as Editor
     package "domain" as Domain
@@ -227,6 +264,9 @@ package "Repository root" {
 Main --> AppFile
 MainTauri --> AppFile
 AppFile --> Components
+AppFile --> Application
+Application --> Persistence
+Application --> Domain
 Components --> Editor
 Components --> Domain
 AppFile --> Persistence
@@ -243,7 +283,8 @@ Docs ..> Rust
 
 | Package/file | Responsibility | Detailed artifact |
 |---|---|---|
-| `src/App.tsx` | Application coordinator and use-case callbacks | [Frontend design](./FRONTEND_DESIGN.md) |
+| `src/App.tsx` | Presentation composition, welcome/profile UI, and user-event translation | [Frontend design](./FRONTEND_DESIGN.md) |
+| `src/application/` | `useDocumentController`, serialized command queue, history paging/guards, and draft-transition coordination | [Frontend design](./FRONTEND_DESIGN.md) |
 | `src/components/` | Outline, metadata editor, history presentation | [UI and UX](./UI_UX.md) |
 | `src/editor/` | Tiptap/Yjs lifecycle and encoding | [Frontend design](./FRONTEND_DESIGN.md) |
 | `src/domain/` | Shared TypeScript data contracts, pure tree rules, browser hashing/IDs | [Frontend design](./FRONTEND_DESIGN.md) |
@@ -317,7 +358,7 @@ The architecturally significant use cases are:
 | UC-05 Edit developed text | Coordinates Tiptap, Yjs, sanitization, debounce, and persistence | [Text commit](./SEQUENCE_DIAGRAMS.md#rich-textyjs-commit-after-12-seconds) |
 | UC-07 Restore revision | Demonstrates append-only history and snapshot materialization | [Restore sequence](./SEQUENCE_DIAGRAMS.md#restore-a-revision-as-a-compensating-contribution) |
 | UC-08/09 Export/backup | Splits browser downloads from atomic desktop output | [Output sequences](./SEQUENCE_DIAGRAMS.md#export-json-or-markdown) |
-| UC-10 Close | Exposes UI/backend lifecycle ordering | [Close sequence](./SEQUENCE_DIAGRAMS.md#close-ordering-and-pending-edit-race) |
+| UC-10 Close | Exercises explicit draft drain and serialized backend lifecycle ordering | [Close sequence](./SEQUENCE_DIAGRAMS.md#close-with-an-explicit-draft-transition-barrier) |
 | UC-11 Run standalone | Demonstrates absence of native/server dependencies | [Standalone bootstrap](./SEQUENCE_DIAGRAMS.md#standalone-bootstrap) |
 
 Full use-case specifications are in [Vision and use cases](./RUP_VISION_AND_USE_CASES.md).
@@ -335,9 +376,13 @@ These are descriptive decision records, not proposals.
 | AD-05 | Model mutations as tagged operations | Attribution and parity have a stable seam; adding an operation is cross-language work | `domain/types.ts`, `models.rs` |
 | AD-06 | Store Yjs state plus sanitized HTML | Exact editor state and convenient export/render materialization; consistency is currently trusted, not verified | `RichTextEditor.tsx`, `store.rs::apply_sql` |
 | AD-07 | Restore by compensation | Later history remains visible; restore is a new revision, not a revision-counter rewind | both gateway `restoreRevision` implementations |
-| AD-08 | Sanitize at UI and desktop persistence boundaries | Defense in depth; standalone gateway does not independently enforce Rust limits | DOMPurify and Ammonia calls |
+| AD-08 | Sanitize at UI and persistence boundaries | The memory gateway re-sanitizes direct rich-text operations and validates JSON-compatible payloads; Rust independently applies Ammonia and byte limits | `sanitizeRichText`, memory gateway, Rust store |
 | AD-09 | Deny network in base configuration | Strong offline default; AI/collaboration need explicit alternate permissions/configuration | CSPs, capabilities, empty AI composition |
 | AD-10 | Manually mirror TypeScript/Rust types | Simple toolchain; contract drift must be caught by review/tests | `domain/types.ts`, `models.rs` |
+| AD-11 | Put use-case state and sequencing in `useDocumentController` | Components stay declarative; mutations are serialized and stale history/view responses are rejected | `application/useDocumentController.ts`, `serializedTaskQueue.ts` |
+| AD-12 | Model host storage as a discriminated capability | Standalone implements only meaningful volatile operations; UI narrows `storage.kind` instead of calling rejecting native stubs | `gateway.ts::DocumentStorage`, `VolatileDocumentStorage`, `NativeDocumentStorage` |
+| AD-13 | Page history with an exclusive revision cursor | Long in-memory ledgers are incrementally reachable and filters run before pagination; no total-count query is implied | `ContributionPage`, `HistoryPanel`, memory gateway |
+| AD-14 | Version browser-side protocol algorithms and fixtures | Standalone hashing/sanitization become reviewable contracts; Rust conformance remains explicit second-pass work | `fixtures/protocol/`, `hash.ts`, `sanitizeRichText.ts` |
 
 ## 9. Quality-attribute tactics
 
@@ -345,21 +390,23 @@ These are descriptive decision records, not proposals.
 |---|---|---|
 | Privacy | No provider, restrictive CSP/capability set, local storage only | Future network builds need an explicit threat model |
 | Integrity | Transactions, tree validation, fixed file identity/version, integrity check | Stored hashes are not replayed or verified; direct SQLite edits are possible |
-| Recoverability | Every-revision snapshots, compensating restore, backup, recovery warning | Editor lifecycle races can lose unflushed input |
+| Recoverability | Every-revision snapshots, compensating restore, backup, recovery warning, controlled-action draft drains, authoritative editor remount | Page/process exit remains unawaitable; no JSON importer or controller/editor end-to-end suite |
 | Portability | Browser UI, host ports, bundled SQLite, portable document | Native macOS/Linux/iPadOS release paths are unverified/incomplete |
-| Modifiability | Discriminated operations and gateway interfaces | Mirrored implementations can drift; `App` is a growing coordinator |
+| Modifiability | Discriminated operations, capability-oriented gateway ports, and an application controller | Mirrored Rust behavior can drift until second-pass conformance work is complete |
 | Usability | Outline/editor/history layout, keyboard navigation, visible status | Touch and accessibility coverage are partial |
-| Performance | Incremental Yjs grouping, indexed sibling lookup, single connection | Complete view/history refresh and full snapshot per revision do not scale indefinitely |
-| Testability | Pure tree functions and in-memory gateway | UI, IPC contract, migration, failure, and multi-platform tests are sparse |
+| Performance | Incremental Yjs grouping, cursor-paged history, indexed sibling lookup, single connection | Complete view replacement and full snapshot per revision do not scale indefinitely; Rust history still pre-windows 100,000 rows |
+| Testability | Pure tree functions, in-memory gateway, queue/draft/controller tests, and versioned hash/sanitizer fixtures | Full editor UI, Rust fixture parity, IPC, migration, failure, and multi-platform tests are sparse |
 
 ## 10. Architectural rules for new work
 
 1. Put host selection in a composition root; keep shared UI free of Tauri globals/imports.
 2. Route every accepted visible mutation through `DocumentOperation` and `ContributionContext`.
-3. Keep memory and Rust semantics intentionally aligned, and test both when an operation changes.
-4. Treat TypeScript/Rust model edits as one contract change.
-5. Treat schema edits as a document-format change requiring a version/migration decision.
-6. Keep AI or synchronization proposals separate from accepted mutations and out of the offline build until explicitly enabled.
-7. Update the related use case, sequence, tests, traceability row, security considerations, and known-limitations entry with the code.
+3. Put cross-component use-case sequencing, history paging, busy/error state, and lifecycle flush policy in the application controller rather than leaf components.
+4. Add host-only behavior to the appropriate discriminated storage capability; do not add rejecting standalone stubs or mode checks throughout the UI.
+5. Keep memory and Rust semantics intentionally aligned, and test both when an operation changes.
+6. Treat TypeScript/Rust model edits as one contract change.
+7. Treat schema edits as a document-format change requiring a version/migration decision.
+8. Keep AI or synchronization proposals separate from accepted mutations and out of the offline build until explicitly enabled.
+9. Update the related use case, sequence, tests, traceability row, security considerations, and known-limitations entry with the code.
 
 Implementation recipes and the definition of done are in [Contributing](./CONTRIBUTING.md).

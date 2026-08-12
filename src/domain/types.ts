@@ -1,5 +1,9 @@
 export type ContributorKind = "human" | "automation" | "ai" | "imported";
 export type NodeKind = "idea" | "section" | "scene" | "beat" | "text";
+export type ExportFormat = "json" | "markdown";
+export type JsonPrimitive = null | boolean | number | string;
+export type JsonValue = JsonPrimitive | JsonValue[] | JsonObject;
+export interface JsonObject { [key: string]: JsonValue }
 
 export interface Contributor {
   id: string;
@@ -34,7 +38,7 @@ export interface DocumentNode {
   summary: string;
   contentHtml: string;
   yjsState: string;
-  metadata: Record<string, unknown>;
+  metadata: JsonObject;
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
@@ -100,7 +104,7 @@ export interface Contribution {
   timestamp: string;
   operationType: DocumentOperation["type"] | "createDocument" | "restoreRevision";
   affectedNodeIds: string[];
-  payload: unknown;
+  payload: JsonValue;
   baseRevision: number;
   resultingHash: string;
   message: string | null;
@@ -112,6 +116,26 @@ export interface ContributionQuery {
   contributorId?: string;
   beforeRevision?: number;
   limit?: number;
+}
+
+export interface ContributionPage {
+  items: Contribution[];
+  nextBeforeRevision: number | null;
+  hasMore: boolean;
+}
+
+export interface RecoveryExport {
+  format: "coedit-recovery";
+  exportVersion: 2;
+  exportedAt: string;
+  hashAlgorithm: "coedit-document-state-v1";
+  stateHash: string;
+  state: DocumentState;
+  history: {
+    order: "revision-descending";
+    complete: boolean;
+  };
+  contributions: Contribution[];
 }
 
 export interface ExportResult {
@@ -132,4 +156,3 @@ export interface AiProposal {
   proposedHtml: string;
   metadata: AiProviderMetadata;
 }
-

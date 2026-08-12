@@ -33,10 +33,11 @@ coedit/
 ├── src/
 │   ├── main.tsx                  standalone composition root
 │   ├── main-tauri.tsx            Tauri composition root
-│   ├── App.tsx                   use-case coordinator/UI state
+│   ├── App.tsx                   presentation composition and event translation
+│   ├── application/              use-case controller and serialized task queue
 │   ├── components/               outline, node metadata, history
-│   ├── editor/                   Tiptap/Yjs editor and encoding
-│   ├── domain/                   TS contracts, tree rules, hash, IDs
+│   ├── editor/                   Tiptap/Yjs editor, encoding, sanitizer contract
+│   ├── domain/                   TS contracts, tree rules, JSON/hash, IDs
 │   ├── persistence/              ports and memory/Tauri adapters
 │   ├── ai/                       reserved provider contract
 │   └── styles.css                all current layout/presentation
@@ -74,7 +75,9 @@ Small refactors may not need a new use case, but they still must preserve the do
 ## Architectural contribution rules
 
 - Keep [`App`](../src/App.tsx) and shared components free of Tauri imports. Supply host services in a composition root.
+- Keep cross-component use-case state, command serialization, history paging/guards, and editor-flush policy in [`useDocumentController`](../src/application/useDocumentController.ts).
 - Route every accepted visible document mutation through `DocumentOperation` plus `ContributionContext`.
+- Add host-specific behavior to the applicable discriminated storage capability (`VolatileDocumentStorage` or `NativeDocumentStorage`); do not force adapters to provide rejecting stubs.
 - Keep TypeScript and Rust operation names/serialized shapes aligned.
 - Keep standalone and desktop semantics explicitly comparable; differences must be intentional and documented.
 - Preserve stable node IDs through moves, soft deletion, and revision restoration.
@@ -96,7 +99,7 @@ This is the most important cross-layer recipe. For a new persisted mutation such
 6. Update Rust `operation_type()` and `affected_node_ids()`.
 7. Add validation and transactional SQL in `DocumentStore::apply_sql` in [`src-tauri/src/store.rs`](../src-tauri/src/store.rs).
 8. Add Rust tests for success, rollback/error, contribution payload/type, affected nodes, hash/snapshot, and reopen behavior.
-9. Dispatch the operation from [`App.tsx`](../src/App.tsx) or the owning component; use `App.apply` so context/history/status behavior remains consistent.
+9. Initiate the operation from [`App.tsx`](../src/App.tsx) or the owning component; use `useDocumentController.applyOperation` so flushing, context, queue, accepted-view guards, history, and status remain consistent.
 10. Add a memory-gateway contract/integration case if generic dispatch is insufficient.
 11. Update [Traceability](./TRACEABILITY.md), applicable sequence/class diagrams, the use case, and document-format/security text if persisted or security-relevant.
 
@@ -143,7 +146,7 @@ Formatting crosses the editor, sanitizers, stored HTML, Yjs state, export, and s
 
 1. Add/configure the Tiptap extension in [`src/editor/RichTextEditor.tsx`](../src/editor/RichTextEditor.tsx).
 2. Add the toolbar command and correct pressed/disabled accessibility state.
-3. Update `SAFE_TAGS` and `ALLOWED_ATTR` for paste/commit sanitization.
+3. Update the centralized allowlist in [`src/editor/sanitizeRichText.ts`](../src/editor/sanitizeRichText.ts), its version identifier, and [`fixtures/protocol/rich-text-v1.json`](../fixtures/protocol/rich-text-v1.json) as appropriate.
 4. Configure or validate the Rust Ammonia policy in [`src-tauri/src/store.rs`](../src-tauri/src/store.rs); do not assume a frontend-only allowlist protects tampered IPC/input.
 5. Define the Markdown behavior; it is currently deliberately lossy plain text.
 6. Test paste, reload, restore, standalone/desktop parity, malicious attributes/URLs, undo/redo, and export.
@@ -153,7 +156,7 @@ The desktop backend currently trusts that supplied HTML, incremental Yjs update,
 
 ## Add a UI component or workflow
 
-- Keep leaf-local draft/visual state in the leaf when possible; keep document/use-case orchestration in `App` until a dedicated application-service layer is introduced coherently.
+- Keep leaf-local draft/visual state in the leaf when possible; keep document/use-case orchestration in `useDocumentController`.
 - Pass data and callbacks downward. The current code has no router, context store, or event bus.
 - Use the gateway rather than importing an adapter.
 - Define welcome/empty/busy/read-only/recovery/error behavior, not only the happy workspace.
@@ -161,27 +164,27 @@ The desktop backend currently trusts that supplied HTML, incremental Yjs update,
 - Add component/integration tests; current UI coverage is absent.
 - Update the current wireframe/state model in [UI and UX](./UI_UX.md).
 
-If `App.tsx` grows substantially, prefer extracting a host-neutral use-case hook/service with an explicit contract over scattering state into unrelated components.
+Do not move controller responsibilities back into `App.tsx`. If `useDocumentController` grows substantially, split it by application concern (session, history, native-files facade, drafts) while preserving one explicit composition seam and queue policy.
 
 ## Add a gateway capability
 
-For a capability such as import or contributor registration:
+For a shared capability such as import or contributor registration:
 
-1. Change `DocumentGateway` in [`src/persistence/gateway.ts`](../src/persistence/gateway.ts).
+1. Change the smallest owning port (`DocumentSession`, `ContributionHistory`, an applicable `DocumentStorage` variant, or a new focused interface) in [`src/persistence/gateway.ts`](../src/persistence/gateway.ts).
 2. Define memory semantics in `MemoryDocumentGateway`.
 3. Map the method in `TauriDocumentGateway`.
 4. Add/register a narrow command in [`src-tauri/src/lib.rs`](../src-tauri/src/lib.rs).
 5. Implement store behavior and validation in [`src-tauri/src/store.rs`](../src-tauri/src/store.rs).
 6. Add adapter-contract tests so both implementations satisfy common expectations.
-7. Expose it through `App`/components and, if it needs native path selection, extend `DocumentFileDialogs` plus `tauriFileDialogs` separately.
+7. Expose orchestration through `useDocumentController` and rendering through `App`/components. If it needs native path selection, extend `DocumentFileDialogs` plus `tauriFileDialogs` separately.
 8. Document parity, permissions, errors, and platform behavior.
 
-Keep file selection separate from document persistence. This allows a host without native dialogs to reuse the main gateway contract.
+Keep file selection separate from document persistence. For native-only behavior, extend `NativeDocumentStorage` or introduce another discriminated capability; the volatile variant should not gain a method that exists only to throw.
 
 ## Add another host or persistence adapter
 
-1. Implement every `DocumentGateway` method or define a deliberate interface split first.
-2. Optionally implement `DocumentFileDialogs`.
+1. Implement the shared session/history/export contracts with explicitly documented semantics.
+2. Expose the correct storage capability and `DocumentFileDialogs` only when that host actually supports them.
 3. Add a dedicated entry/composition root analogous to `main.tsx` or `main-tauri.tsx`.
 4. Define durability, import/open, attribution, sanitization, limits, hash algorithm, snapshot retention, restore, backup, and export semantics.
 5. Add shared adapter contract tests.
@@ -194,14 +197,14 @@ Do not reintroduce automatic runtime probing in shared modules. Explicit composi
 
 For a new export:
 
-- extend the format literal in `DocumentGateway`, both adapters, and `DocumentFileDialogs`;
+- extend the centralized `ExportFormat` in `src/domain/types.ts`, then update the controller/menu and relevant adapters/dialogs;
 - extend native dialog filters and the Rust command/store dispatch;
-- define standalone filename/download semantics;
+- reuse `safeFilenameStem()` for standalone/native suggested names rather than introducing another slug implementation;
 - use safe atomic desktop output and test overwrite/failure behavior;
 - specify whether it is lossless recovery, interchange, or presentation output;
 - test large documents and hostile content.
 
-For import, first define identity and history semantics. The current JSON exports have no importer and standalone/desktop JSON shapes differ. Do not label an import as recovery until round-trip fidelity, ledger validation, and failure recovery are tested.
+For import, first define identity, history, and snapshot/replay semantics. Standalone emits the explicitly marked `coedit-recovery` version-2 envelope with hash/completeness fields and a complete current-runtime ledger; desktop retains its older, capped version-1 shape. Neither has an importer. Do not label import as recovery until validation, round-trip fidelity, ledger validation, and failure recovery are tested.
 
 ## Add contributor/session management
 
@@ -254,11 +257,21 @@ Do not attach a synchronization provider only to `RichTextEditor`; that would sy
 - Prefer pure domain functions for mutation/invariant logic.
 - Avoid `any`, hidden host globals, and unhandled promise rejections.
 - Keep user-visible async actions inside a consistent error/busy lifecycle.
+- Route document commands through `SerializedTaskQueue`; keep history reads independently guarded by request/workspace epochs.
+- Route controlled workspace changes through `runTransition()` so `DraftTransitionCoordinator` freezes and awaits document-title, node-metadata, and rich-text participants before state can be invalidated or externalized.
 - Preserve immutable React state boundaries; gateways return clones/complete views today.
 - Add `.test.tsx` for components and `.test.ts` for domain/adapter behavior.
 - Use browser APIs available under the documented standalone target or update the portability contract.
 
 There is currently no lint script. TypeScript compilation and tests are the enforceable frontend checks until linting is added.
+
+## Current staged scope
+
+1. **Pass 1 — standalone architecture (current):** controller/queue, synchronous draft freeze plus awaitable title/metadata/rich-text drains, authoritative editor remount, discriminated storage capabilities, cursor-paged/filter-before-limit memory history, complete runtime recovery envelope, shared format/filename/sanitizer helpers, and versioned browser fixtures.
+2. **Pass 2 — Rust/Tauri parity and hardening (deferred):** make Rust consume the hash/sanitizer fixtures, implement store-side indexed cursor filtering without a 100,000-row pre-window, move file authorization/path ownership behind a defensible Rust boundary, minimize native permissions, add schema migration and measured snapshot-compaction policy, and run native/platform verification.
+3. **Pass 3 — dormant-feature decisions (deferred):** explicitly finish, retain as reserved, migrate, or remove AI, attachments, `restoreNode`, session lifecycle, contribution grouping, and generic node metadata.
+
+Do not implement a pass-2 or pass-3 item incidentally without updating its design, format/security impact, and tests.
 
 ## Rust and SQLite practices
 

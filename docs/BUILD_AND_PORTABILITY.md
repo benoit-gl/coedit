@@ -62,7 +62,8 @@ dist/
 2. Double-click that file rather than the source-root `index.html`.
 3. Confirm the welcome screen says standalone documents are held in memory.
 4. Create a document and exercise the standalone smoke suite in [Testing](./TESTING.md).
-5. Reload/close only after exporting anything worth keeping; reload is expected to lose the document.
+5. Exercise filtered History and **Load older contributions** where a long fixture is available.
+6. Export JSON and confirm the `coedit-recovery` version-2 state/contributions envelope; reload/close only after exporting anything worth keeping because reload is expected to lose the document.
 
 The source-root [`index.html`](../index.html) contains a Vite source module reference and is not the distributable artifact.
 
@@ -128,6 +129,8 @@ The Tauri CLI invokes `corepack pnpm build:tauri`, which runs TypeScript and Vit
 - enables source maps;
 - supplies `TauriDocumentGateway` and native file dialogs.
 
+The TypeScript Tauri adapter has been reshaped to the shared controller/capability/page contracts, but the present standalone-first pass does not claim a fully verified native build. Rust hash/sanitizer fixtures, indexed history paging, Rust-owned file authorization, minimal permissions, migration/compaction policy, and platform tests remain the explicit second pass.
+
 Tauri then builds the Rust application, embeds `frontendDist`, and produces platform packages for the configured targets. The window explicitly loads `tauri.html`.
 
 ```plantuml
@@ -161,7 +164,7 @@ Tauri supplies four things to the desktop build:
 - native dialog integration;
 - native packaging, icons, and platform metadata.
 
-It does not own the React UI, the domain types, the in-memory gateway, or the standalone artifact. Removing Tauri-specific entry/adapters leaves a working volatile HTML5 editor. Persistent `.coedit` storage currently depends on the Rust/Tauri host.
+It does not own the React UI, application controller, domain types, in-memory gateway, or standalone artifact. Removing Tauri-specific entry/adapters leaves a working volatile HTML5 editor. Persistent `.coedit` storage currently depends on the Rust/Tauri host. Shared UI actions narrow the injected `DocumentStorage` capability to `NativeDocumentStorage` before offering native open/backup; this is application decoupling, not proof that renderer-supplied native paths are securely authorized.
 
 ## Portability matrix
 
@@ -181,7 +184,6 @@ The current bundle assumes support for:
 
 - ES modules and an ES2022-level bundle;
 - `crypto.subtle.digest`, `crypto.getRandomValues`, and preferably `crypto.randomUUID`;
-- `structuredClone`;
 - `TextEncoder`/`TextDecoder`;
 - `DOMParser`, Blob/object URLs, and download anchors;
 - Indexed rich-text features used by React, Tiptap, ProseMirror, and Yjs.
@@ -211,7 +213,7 @@ The shared React UI can render in a browser in principle, but the current produc
 - A browser document cannot reopen `.coedit` SQLite files.
 - Blob download/import and local HTML execution differ across Files/Safari contexts.
 - A native mobile host needs document-picker URI/bookmark handling rather than assuming an ordinary persistent path string.
-- App suspension must explicitly flush pending editor work.
+- Controlled in-app actions now synchronously freeze and await title, metadata, and editor drains, but browser/app suspension and forced termination still need host lifecycle integration because JavaScript cleanup cannot make termination await a Promise.
 
 Treat iPadOS as a new host/use-case project, not a packaging checkbox.
 
@@ -233,7 +235,7 @@ Confirm that you opened the generated `dist/index.html`, not the source-root HTM
 
 ### Standalone opens but Open/SQLite backup is absent
 
-That is by design. The standalone composition root has no native file-dialog port and no SQLite gateway. Export JSON or Markdown before closing, understanding the JSON parity limitation in [Document format](./DOCUMENT_FORMAT.md).
+That is by design. The standalone composition supplies `VolatileDocumentStorage`, not `NativeDocumentStorage` or native dialogs. Export JSON or Markdown before closing. Standalone JSON contains portable current state plus the complete contribution ledger for that page lifetime, but there is no importer; see [Document format](./DOCUMENT_FORMAT.md).
 
 ### Tauri frontend opens in a normal browser but commands fail
 

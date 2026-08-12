@@ -37,7 +37,7 @@ Coedit Local
     ├── Header
     │   ├── document title
     │   ├── persistence status
-    │   ├── history toggle and fetched count
+    │   ├── history toggle and loaded count (+ when more exists)
     │   ├── export menu
     │   │   ├── Markdown
     │   │   ├── JSON recovery file
@@ -58,6 +58,7 @@ Coedit Local
         ├── search
         ├── selected-idea filter
         ├── contribution metadata
+        ├── load older contributions
         └── restore revision
 ```
 
@@ -103,7 +104,7 @@ Workspace --> Welcome : Close
 @enduml
 ```
 
-`App` overlays orthogonal presentation conditions on the workspace:
+`App` renders orthogonal conditions owned by `useDocumentController` and the current view:
 
 - `view.readOnly` shows a newer-format warning and disables mutation controls.
 - `view.recoveryWarning` shows a recovery warning.
@@ -143,7 +144,7 @@ The mockups are schematic. Exact dimensions and colors come from `src/styles.css
 └──────────────────────────────────────────────────────────────────────┘
 ```
 
-Implementation: the standalone notice and absence of Open are selected by `documentGateway.mode === "standalone"` in `src/App.tsx`.
+Implementation: the standalone notice and absence of Open are selected by `controller.nativeFilesAvailable`, which derives from `documentGateway.storage.kind === "native-file"` rather than a Tauri/environment check in the component.
 
 ### Welcome — desktop difference
 
@@ -178,6 +179,7 @@ Implementation: both actions call `DocumentFileDialogs` before invoking the desk
 Implementation ownership:
 
 - Header and workspace switching: `src/App.tsx`.
+- Workspace/use-case state, sequencing, paging, and status: `src/application/useDocumentController.ts`.
 - Outline and recursive rows: `src/components/Outline.tsx`.
 - Metadata fields: `src/components/NodeEditor.tsx`.
 - Developed text and toolbar: `src/editor/RichTextEditor.tsx`.
@@ -200,7 +202,7 @@ Implementation ownership:
 └──────────────────┴──────────────────────────────────┴────────────────────────┘
 ```
 
-Implementation: history is a third 340 px grid column on viewports wider than 900 px. The list is newest-first as returned by the gateway. Search and the selected-node filter operate locally on the fetched contribution slice.
+Implementation: history is a third 340 px grid column on viewports wider than 900 px. The list is newest-first as returned by the gateway. Search and selected-node changes are debounced for 250 ms and sent to the adapter before pagination. A **Load older contributions** button appears when the current page reports `hasMore`.
 
 ### Narrow layout
 
@@ -230,9 +232,9 @@ Implementation: at `max-width: 900px`, the brand text and save-status text are h
 |---|---|---|---|
 | Edit contributor name | Input change | Updates `profile`; an empty value becomes `Local author`; preference is written to local storage. | `loadContributor` and `App` in `src/App.tsx` |
 | Edit initial title | Input change | Updates `newTitle`. | `src/App.tsx` |
-| Create | Button click or Enter in document-title input | Standalone creates immediately; desktop first asks for a `.coedit` path. Successful creation opens the workspace and fetches history. | `createDocument` in `src/App.tsx` |
-| Open | Desktop button | Native `.coedit` selection followed by `openDocument`; success opens workspace and fetches history. | `openDocument`, `src/persistence/tauriFiles.ts` |
-| Close | Header button | Closes the gateway and returns to welcome; selection/history are cleared. | `close` in `src/App.tsx` |
+| Create | Button click or Enter in document-title input | Standalone creates immediately; native-file hosts first ask for a `.coedit` path. Successful creation opens the workspace; History fetches its first page only when opened. | `controller.createDocument`, `src/App.tsx` |
+| Open | Native-files button | Native `.coedit` selection followed by narrowed `storage.openDocument`; success opens workspace and marks history ready to load when opened. | `controller.openDocument`, `src/persistence/tauriFiles.ts` |
+| Close | Header button | Synchronously freezes and awaits registered document-title, node-metadata, and rich-text drafts; then queues gateway close and returns to welcome. A failed drain/close retains the workspace and dirty drafts and shows an error. | `controller.closeDocument`, `DraftTransitionCoordinator` |
 
 ### Header
 
@@ -240,9 +242,9 @@ Implementation: at `max-width: 900px`, the brand text and save-status text are h
 |---|---|---|
 | Document title | `renameDocument` on blur if changed | Disabled when `view.readOnly`. Empty/whitespace is normalized to `Untitled document` by domain logic. |
 | Status | Changes to `Saving…` while `busy`, otherwise shows last success text | The dot pulses in the saving state. |
-| History | Toggles panel | Count is the length of the currently fetched contribution array, not a guaranteed ledger total. |
+| History | Toggles panel | Count is the number currently loaded. A `+` suffix means another page is reachable; no suffix does not claim a separately queried lifetime total. |
 | Export → Markdown | Immediate download in standalone; path dialog then write in desktop | Presentation/interchange export. |
-| Export → JSON recovery file | Immediate download in standalone; path dialog then write in desktop | Recovery semantics differ by adapter; see [Known limitations](KNOWN_LIMITATIONS.md). |
+| Export → JSON recovery file | Flush then immediate download in standalone; flush, path dialog, then write in desktop | Standalone emits the marked `coedit-recovery` version-2 envelope with hash and explicit history completeness. Desktop's legacy version-1 envelope lacks those fields and remains capped. Neither has an importer. |
 | Export → SQLite backup | Desktop only | Uses a `.coedit-backup` save dialog. |
 
 ### Outline
@@ -271,9 +273,9 @@ When `node.id`, `node.title`, or `node.summary` changes, the metadata component 
 
 ### Developed text
 
-Tiptap commands apply immediately to the Yjs-backed editor. Yjs updates are grouped after 1.2 seconds without a new update, then HTML, an incremental Yjs update, and the complete Yjs state are committed together. The save hint explicitly tells the user about this grouping.
+Tiptap commands apply immediately to the Yjs-backed editor. Yjs updates are grouped after 1.2 seconds without a new update, then HTML, an incremental Yjs update, and the complete Yjs state are committed together. Controlled node changes, document operations, restore, export, backup, and Close synchronously freeze and drain document title, node metadata, and the pending rich-text batch first. An authoritative restore increments the editor generation and remounts the selected editor even when its node ID is unchanged. The save hint tells the user about quiet-period grouping.
 
-Pasted HTML and committed HTML are sanitized with the tag/attribute allowlist in `RichTextEditor.tsx`. Read-only mode disables toolbar buttons and makes Tiptap non-editable.
+Pasted, legacy/fallback, and committed HTML use the centralized `coedit-rich-text-v1` tag/attribute policy in `src/editor/sanitizeRichText.ts`. Read-only mode disables toolbar buttons and makes Tiptap non-editable.
 
 ### History
 
@@ -282,9 +284,10 @@ Pasted HTML and committed HTML are sanitized with the tag/attribute allowlist in
 | Search | Case-insensitive substring match over operation type, contributor name, and message. |
 | Selected idea only | Excludes contributions whose `affectedNodeIds` do not contain the current selected ID. Disabled when no node is selected. |
 | Inspect | Shows revision, message/operation, contributor, localized time, and first 12 hash characters; full hash is the code element's title. |
+| Load older contributions | Requests the next page using the exclusive `nextBeforeRevision` cursor and appends unseen entries. Shown only while `hasMore`. |
 | Restore | Confirmation followed by `restoreRevision`; current state remains represented in history through a new compensating revision. |
 
-The latest fetched revision's Restore button is disabled, as are all restore controls in read-only or busy state.
+The current document revision's Restore button is disabled, as are all restore controls in read-only or transitioning state. A history request has independent loading and error presentation, so a committed mutation is not represented as failed solely because a visible-panel refresh failed.
 
 ## Keyboard behavior
 
@@ -341,7 +344,8 @@ Treat accessibility changes as behavior changes: add component tests for names, 
 
 ### Implemented
 
-- `run()` clears the prior error, sets `busy`, catches the gateway exception, and displays its message.
+- Controller `executeMutation()` clears the prior command error, tracks queued/running work with `busyCount`, catches gateway exceptions, and displays their messages; `runTransition()` also catches draft/transition failures.
+- `SerializedTaskQueue` preserves command order and remains usable after a failed task.
 - Successful actions replace the status string with a use-case-specific message.
 - The busy state changes the header to a pulsing amber dot and `Saving…`.
 - Standalone volatility, newer-format read-only state, and recovery warnings use persistent banners.
@@ -354,7 +358,7 @@ Treat accessibility changes as behavior changes: add component tests for names, 
 - Give asynchronous status and error regions appropriate live-region behavior.
 - Distinguish saving document mutations from exporting or opening instead of describing every busy operation as `Saving…`.
 - Replace native confirmations only if a custom dialog also implements correct focus management and keyboard behavior.
-- Surface history-refresh failure independently from an already successful document commit.
+- Add live-region semantics for the already separate history-refresh error and command-status channels.
 
 ## Visual system and CSS ownership
 
@@ -412,7 +416,7 @@ Before describing iPadOS or phone support as complete, add a touch-first outline
 ### Add a workspace panel
 
 1. Decide whether the panel is mutually exclusive, overlay, or another persistent column.
-2. Keep its open/selection state in `App` if it affects sibling components.
+2. Keep document/use-case state in `useDocumentController` when it affects persistence or sibling components; keep purely presentational panel state local when possible.
 3. Add a clear accessible name, focus entry/return behavior, empty/loading/error states, and a narrow-layout behavior.
 4. Update `.workspace` grid rules and the 900 px media query.
 5. Add the corresponding sequence and state transitions to [Sequence diagrams](SEQUENCE_DIAGRAMS.md) and this document.
@@ -420,7 +424,7 @@ Before describing iPadOS or phone support as complete, add a touch-first outline
 ### Add an outline command
 
 1. Add a callback to `OutlineProps` and pass it through `OutlineRow` only if row-scoped.
-2. Dispatch an attributed operation from `App`; do not mutate `view.nodes` in the component.
+2. Dispatch an attributed operation through `useDocumentController`; do not mutate `view.nodes` in the component.
 3. Define mouse, keyboard, and touch triggers together.
 4. Specify selection/focus after success and behavior during `readOnly`/`busy`.
 5. Add domain tests for hierarchy invariants and component tests for interaction semantics.
@@ -434,7 +438,7 @@ Before describing iPadOS or phone support as complete, add a touch-first outline
 
 ### Change save behavior
 
-The current save boundary is the 1.2-second Yjs quiet period plus metadata blur. Changes must account for node switching, revision restoration, document close, page unload, concurrent commits, failure/retry, status feedback, and both gateway implementations. See the exact flows in [Sequence diagrams](SEQUENCE_DIAGRAMS.md).
+The current save boundary is eager blur/kind drains plus the 1.2-second Yjs quiet period, all backed by an explicit controller-visible draft registry. Controlled node switching, operations, revision restoration, document close, export, and backup freeze and await document-title, node-metadata, and rich-text participants; page/process exit and forced suspension remain unawaitable. Changes must cover failure/retry, updates arriving during a drain, authoritative editor remount, status feedback, and both gateway implementations. See [Sequence diagrams](SEQUENCE_DIAGRAMS.md).
 
 ## UX acceptance checklist
 

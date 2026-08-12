@@ -13,17 +13,15 @@ Priority meaning:
 
 | ID | Priority | Area | Current limitation | Primary evidence |
 |---|---|---|---|---|
-| R-01 | P0 | Editor lifecycle | Close can discard a pending debounced rich-text commit | `App.close`; `RichTextEditor` cleanup `flush` |
-| R-02 | P0 | Restore/editor | Restoring the selected node can leave a stale `Y.Doc` that later overwrites restored text | `RichTextEditor` memo depends only on `node.id` |
 | R-03 | P0 | Attribution | Opening another author's file can silently attribute new work to its first contributor | `App` `contributor` fallback; no registration API |
 | R-04 | P1 | Integrity | Contribution/snapshot hashes are stored but never verified or replayed | `DocumentStore::open`/`restore`; both gateways |
 | R-05 | P1 | Compatibility | Format/version fields exist, but there is no migration machinery | `FORMAT_VERSION`; `DocumentStore::open` |
-| R-06 | P1 | Draft lifecycle | Blur metadata commits, Close, selection changes, and async full-view responses can race | `App`, `NodeEditor`, global `busy` behavior |
-| R-07 | P1 | Recovery export | Desktop JSON silently caps history at 100,000; standalone “JSON recovery” omits its ledger | both gateway export implementations |
+| R-06 | P1 | Draft lifecycle | Controlled transitions drain registered drafts, but page/process exit and forced host suspension cannot await them | controller/editor; React/browser lifecycle |
+| R-07 | P1 | Recovery export | Desktop JSON silently caps history at 100,000; neither JSON envelope has an importer | Rust export; both product workflows |
 | R-08 | P1 | CRDT integrity | Desktop decodes but does not reconcile/verify incremental Yjs update, full state, and HTML | `DocumentStore::apply_sql(UpdateContent)` |
-| R-09 | P1 | Adapter parity | Browser/Rust hash, sanitization, limits, sessions, backup, and JSON semantics differ | memory gateway versus Rust store |
+| R-09 | P1 | Adapter parity | Browser/Rust hash, sanitization, limits, sessions, and Markdown semantics differ; new TS fixtures have no Rust conformance yet | protocol fixtures versus Rust store |
 | R-10 | P1 | Backup UX | `.coedit-backup` is produced, but Open filters only `.coedit` | `tauriFiles.ts` filters |
-| R-11 | P2 | History | UI loads only 500 contributions; backend only considers newest 100,000 before filtering | `App.refreshHistory`; `DocumentStore::contributions` |
+| R-11 | P2 | History | Shared UI pages/filter-before-limit correctly, but desktop only considers the newest 100,000 rows | `ContributionPage`; `DocumentStore::contributions` |
 | R-12 | P2 | Storage growth | Every revision stores a complete JSON snapshot | `insert_snapshot` on create/apply/restore |
 | R-13 | P2 | Standalone durability | Page close/reload loses the document; no import or durable browser store exists | `MemoryDocumentGateway` |
 | R-14 | P2 | Multi-document/concurrency | One process-global store/mutex supports one open document and serialized commands | `AppState` in `lib.rs` |
@@ -31,38 +29,13 @@ Priority meaning:
 | R-16 | P2 | Rich-text/export | Markdown conversion is deliberately lossy; browser and Rust converters differ | `markdownFor`; Rust `markdown`/`plain_text` |
 | R-17 | P2 | Platform support | Linux/macOS are unverified; iPadOS native/touch/file lifecycle is unfinished | build config/UI/dialog contracts |
 | R-18 | P2 | UI accessibility/touch | Drag/drop, hover actions, narrow layout, and ARIA coverage are incomplete | `Outline`, `styles.css`, toolbar |
-| R-19 | P2 | Test/release confidence | No component/E2E/IPC/migration/a11y/CI/platform matrix; only eight automated cases | current test files/repository |
-| R-20 | P2 | Error handling | History refresh rejects outside `App.run`, so normal error/status handling can be bypassed | `App.refreshHistory` call ordering |
+| R-19 | P2 | Test/release confidence | No component/E2E/IPC/migration/a11y/CI/platform matrix; Rust does not consume the protocol fixtures | current test files/repository |
 | R-21 | P2 | Tampered-data defense | Open validates structure but does not re-sanitize all stored HTML or validate snapshot hashes/content limits | `load_state`; `restore` |
 | R-22 | P2 | Crash durability | Atomic output syncs the file, not explicitly its parent directory | `atomic_write`, `atomic_copy`, `replace_file` |
 | R-23 | P3 | Reserved features | Attachments, AI, collaboration, contributor management, and direct node restore have no complete workflow | schema/types/interfaces with missing UI/adapters |
 | R-24 | P3 | Outline behavior | New expansion state, drag placement/root drops, and affected-node reporting are limited | `Outline`; both operation models |
 
 ## Data-integrity and attribution risks
-
-### R-01: pending text can be lost on Close
-
-**Current sequence:** `App.close()` awaits `documentGateway.closeDocument()`, then clears `view`. Clearing `view` unmounts `NodeEditor`/`RichTextEditor`. The editor cleanup then calls `flush()`, but the memory state or Rust `DocumentStore` is already gone.
-
-**Impact:** text entered less than 1.2 seconds before Close can fail to create its `updateContent` contribution. The error occurs after the UI has transitioned toward the welcome screen and may not provide a useful recovery path.
-
-**Current workaround:** pause until the UI reports saved before Close, node switches, browser closure, or application exit. This is not a reliable product guarantee.
-
-**Recommended direction:** expose an awaitable editor/draft flush contract; block Close/navigation/application exit until it succeeds or the user explicitly discards; add fake-timer component/E2E tests.
-
-### R-02: same-node revision restore can retain stale CRDT state
-
-`RichTextEditor` constructs its `Y.Doc` with:
-
-```text
-useMemo(() => createYDoc(node.yjsState), [node.id])
-```
-
-A revision restore normally keeps the same node ID but supplies an older `yjsState`. The memoized document is therefore not recreated. The mounted editor can display/retain stale state and a later change can persist it over the restored revision.
-
-**Current workaround:** after restore, select a different node and then return before editing. This is an informal mitigation, not a tested guarantee.
-
-**Recommended direction:** make a restored/content generation part of editor identity or synchronize an external state replacement deliberately; protect unsaved local changes; add restore-while-selected integration tests.
 
 ### R-03: contributor fallback can misattribute work
 
@@ -81,15 +54,21 @@ Desktop contributions and snapshots receive a SHA-256 of serialized `DocumentSta
 - replay the contribution ledger;
 - authenticate the ledger against malicious direct SQLite edits.
 
-Browser and Rust hash algorithms are not a shared formal specification. Browser canonicalization sorts keys/collections and is sometimes passed a runtime `DocumentView`, so host-only fields can enter the hash. Rust hashes serde's `DocumentState` encoding/order.
+The browser now has a named `coedit-document-state-v1` canonical form and golden fixture. It projects only `DocumentState`, sorts entity collections by ID and object keys recursively, and excludes host-only `DocumentView` fields. Rust still hashes Serde's own `DocumentState` encoding/order and has not been run against the shared vector.
 
-**Recommended direction:** specify one cross-language canonical byte representation; add golden vectors; verify snapshot/current hash on open/restore; define replay/tamper guarantees honestly. Cryptographic authentication would require a trust/key model beyond plain hashes.
+**Recommended direction:** adopt the existing versioned canonical fixture in Rust or deliberately version a different cross-language contract; verify snapshot/current hashes on open/restore; define replay/tamper guarantees honestly. Cryptographic authentication would require a trust/key model beyond plain hashes.
 
-### R-06: draft/command races are not serialized end to end
+### R-06: host-exit draft/lifecycle boundaries remain
 
-Node/document titles and summaries persist on blur. Clicking another control can cause a blur operation and another action concurrently. `busy` disables outline structural controls, but `NodeEditor` receives only `view.readOnly`, so typing/metadata work can continue while a request is active. Gateways return complete views; out-of-order completions could replace a newer UI state with an older response.
+`useDocumentController` serializes document commands and rejects older/superseded view/history responses. `DraftTransitionCoordinator` synchronously freezes the registered document-title and node-editor participants and awaits title, metadata, and rich-text drains before controlled selection, operations, restore, export, backup, and Close. Failed commits retain their dirty value/delta for retry and cancel the controlled action. This closes the earlier in-app Close-before-debounce and blur-ordering mechanisms.
 
-**Recommended direction:** introduce an explicit application command queue or revision-aware reducer, await draft commits during lifecycle transitions, and pass precise busy/editability state. Add rapid blur/select/restore/close tests.
+Residual limitations remain:
+
+- tab close/reload, process termination, forced native suspension, and arbitrary React teardown cannot await a Promise;
+- `RichTextEditor` cleanup intentionally does not launch a late unawaitable commit, so pending standalone state is lost if the host bypasses controller actions;
+- controller tests cover freeze/flush ordering, failure blocking, Close/selection, and restore generation, but a full Tiptap DOM/native lifecycle test is absent.
+
+**Recommended direction:** define discard/retry behavior for actual application-exit and suspension hooks in each host and add controlled-timer editor/component/native lifecycle tests.
 
 ### R-08: Yjs payload consistency is trusted
 
@@ -105,13 +84,14 @@ Node/document titles and summaries persist on blur. Clicking another control can
 
 **Rule for contributors:** do not alter a persisted field, enum constraint, or table shape without a version increment, transactional migration design, fixtures, rollback/recovery rules, and compatibility tests. See [Document format](./DOCUMENT_FORMAT.md).
 
-### R-07: recovery JSON has bounded or incomplete history
+### R-07: recovery JSON has desktop bounds and no importer
 
-- Desktop export builds an envelope with state and contributions, but `DocumentStore::contributions` never reads more than the newest 100,000 records.
-- Standalone JSON serializes only the current `DocumentView`, omitting `MemoryDocumentGateway.contributions` and revision snapshots even though the menu label says “JSON recovery file.”
-- Neither JSON shape can be imported by the current application.
+- Standalone export now uses the explicitly marked `coedit-recovery` `RecoveryExport` version 2 with algorithm/state hash, an explicit portable `DocumentState`, history order/completeness metadata, and every newest-first contribution accumulated during the current in-memory session.
+- The standalone envelope deliberately excludes internal revision snapshots; it preserves the ledger but cannot currently be opened by Coedit.
+- Desktop export still uses an older version-1 envelope without `hashAlgorithm`, `stateHash`, or `history`, and `DocumentStore::contributions` never reads more than the newest 100,000 records.
+- Neither host provides JSON validation/import/reconstruction UI.
 
-Documentation and UI must not call either format a complete unlimited round trip. For desktop recovery, preserve the `.coedit`/backup as the primary lossless artifact.
+Documentation and UI must not call either format a tested round trip. For desktop recovery, preserve the `.coedit`/backup as the primary lossless artifact.
 
 ### R-09: standalone and desktop are not behavioral equivalents
 
@@ -121,12 +101,12 @@ Documentation and UI must not call either format a complete unlimited round trip
 | Input limits | no gateway/domain limits | Rust byte limits |
 | Sanitization | editor DOMPurify path | editor plus Rust Ammonia on writes |
 | Sessions | contribution IDs only; state array stays empty | session row inserted lazily |
-| Hash input/algorithm | JS canonicalization, currently view leakage | Rust serialized `DocumentState` |
-| Backup | method downloads current-view JSON, but UI hides it | SQLite byte copy |
-| JSON | current view only | envelope plus bounded ledger |
+| Hash input/algorithm | Versioned canonical `DocumentState` + TS golden vector | Rust serialized `DocumentState`; fixture parity pending |
+| Native open/backup | capability absent | SQLite open/byte-copy capability |
+| JSON | marked `coedit-recovery` version-2 envelope, state hash, explicit complete runtime ledger | legacy version-1 envelope + bounded ledger |
 | Markdown conversion | browser DOM text | Rust tag stripping/entity replacements |
 
-The shared gateway is a structural contract, not a proven semantic contract. Shared adapter-contract tests do not yet exist.
+The shared gateway/page shapes are structural contracts, not proven semantic equivalence; recovery JSON schemas still differ. Shared adapter-contract and Rust protocol-fixture tests do not yet exist.
 
 ### R-10: backup extension cannot be selected by Open
 
@@ -136,11 +116,13 @@ Backup saves `title.coedit-backup`. The Open dialog accepts only extension `coed
 
 **Recommended direction:** include backup files in the dialog, make recovery intent explicit, and test read/recovery behavior.
 
-### R-11: history is windowed twice
+### R-11: desktop history still has a hidden pre-window
 
-The UI always fetches `limit: 500`, then searches/counts/filters that array. Rust first queries at most the newest 100,000 contributions and only afterward applies `ContributionQuery` filters. Older matching entries are unreachable.
+The shared contract now returns `ContributionPage`, filters before page construction, and uses an exclusive revision cursor. The UI loads 100 at a time, exposes **Load older contributions**, displays a loaded count with `+` while more is reachable, and issues search/node filters to the adapter rather than filtering a fixed client slice. Memory history is fully reachable within the page lifetime.
 
-**Recommended direction:** server/store-side indexed pagination with a stable cursor; make total versus loaded counts distinct; add queries/indexes appropriate to affected-node search instead of JSON scanning.
+Rust still selects at most the newest 100,000 rows before applying `beforeRevision`, contributor, node, and search filters. The Tauri adapter can page only within that pre-window, so older matches remain unreachable.
+
+**Recommended direction:** move cursor and scalar filters into indexed SQL, define an affected-node indexing strategy instead of JSON scanning, and add 100,001+ desktop cases in the second pass.
 
 ### R-12: snapshot growth is unbounded
 
@@ -194,12 +176,6 @@ Windows standalone was manually exercised. The architecture is intended for Linu
 
 Current interaction details and proposed accessibility acceptance criteria are in [UI and UX](./UI_UX.md).
 
-### R-20: history refresh errors bypass the standard action wrapper
-
-`App.run` catches the primary mutation, but callers perform `await refreshHistory()` after it. A history failure can reject outside the wrapper, leaving error/status handling inconsistent even when the mutation succeeded.
-
-**Recommended direction:** make “mutation committed, history refresh failed” an explicit partial-success state; catch refresh separately and avoid representing a successful commit as lost.
-
 ## Reserved capabilities, not current features
 
 - `attachments` is a reserved SQLite table with no TypeScript domain type, operation, gateway method, command, exporter, or UI.
@@ -212,12 +188,13 @@ Keep these labeled **Reserved** or **Proposed** in contributor-facing material.
 
 ## Verification and delivery gaps
 
-The current automated inventory is five TypeScript cases and three Rust cases. There is no:
+The current source inventory is thirty-three TypeScript cases and three Rust cases. New TypeScript coverage includes the draft coordinator, controller transition ordering/generation, serialized-queue behavior, contributor-storage validation, node-editor normalization, JSON detachment/validation, cursor paging/filtering, recovery-envelope shape, filename normalization, and versioned hash/sanitizer fixtures. There is still no:
 
-- React component or end-to-end browser suite;
+- full-App React/editor integration or end-to-end browser suite;
 - fake-timer editor debounce/lifecycle suite;
 - shared gateway contract suite;
 - TypeScript/Rust IPC schema compatibility suite;
+- Rust conformance test for the TypeScript hash or sanitizer fixtures;
 - migration/format fixture suite;
 - corruption/fault-injection/atomic-output suite;
 - accessibility/touch automation;
