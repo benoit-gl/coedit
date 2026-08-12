@@ -81,7 +81,7 @@ export class MemoryDocumentGateway implements DocumentGateway {
     this.revisions.clear();
   }
 
-  async getDocument(): Promise<DocumentView> {
+  private requireDocument(): DocumentView {
     if (!this.current) throw new Error("No document is open.");
     return clone(this.current);
   }
@@ -149,11 +149,11 @@ export class MemoryDocumentGateway implements DocumentGateway {
   }
 
   async backupDocument(_path: string): Promise<ExportResult> {
-    return this.download("coedit-backup.json", JSON.stringify(await this.getDocument(), null, 2), "application/json");
+    return this.download("coedit-backup.json", JSON.stringify(this.requireDocument(), null, 2), "application/json");
   }
 
   async exportDocument(format: "json" | "markdown", _path: string | null): Promise<ExportResult> {
-    const state = await this.getDocument();
+    const state = this.requireDocument();
     return format === "json"
       ? this.download(`${state.document.title}.json`, JSON.stringify(state, null, 2), "application/json")
       : this.download(`${state.document.title}.md`, markdownFor(state), "text/markdown");

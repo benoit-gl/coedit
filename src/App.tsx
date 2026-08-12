@@ -150,7 +150,7 @@ export function App({ documentGateway, fileDialogs }: AppProps) {
           <span className="eyebrow">Local-first writing</span>
           <h1>Ideas become structure.<br />Structure becomes text.</h1>
           <p>Create a private hierarchical document whose edits remain attributable and replayable. Nothing leaves this computer.</p>
-          {documentGateway.mode === "standalone" && <div className="preview-notice">Standalone HTML mode: documents are kept in memory and disappear when this page closes. JSON and Markdown exports remain available.</div>}
+          {documentGateway.mode === "standalone" && <div className="standalone-notice">Standalone HTML mode: documents are kept in memory and disappear when this page closes. JSON and Markdown exports remain available.</div>}
           <label><span>Your contributor name</span><input value={profile.displayName} onChange={(event) => setProfile({ ...profile, displayName: event.target.value || "Local author" })} /></label>
           <label><span>Document title</span><input value={newTitle} onChange={(event) => setNewTitle(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void createDocument()} /></label>
           <div className="welcome-actions">
@@ -194,8 +194,8 @@ export function App({ documentGateway, fileDialogs }: AppProps) {
               key={selectedNode.id}
               node={selectedNode}
               readOnly={view.readOnly}
-              onMetadataChange={(changes) => apply({ type: "updateNode", nodeId: selectedNode.id, changes }, "Refined idea") as Promise<void>}
-              onContentChange={(contentHtml, yjsUpdate, yjsState) => apply({ type: "updateContent", nodeId: selectedNode.id, contentHtml, yjsUpdate, yjsState }, "Writing contribution", newId()) as Promise<void>}
+              onMetadataChange={(changes) => apply({ type: "updateNode", nodeId: selectedNode.id, changes }, "Refined idea")}
+              onContentChange={(contentHtml, yjsUpdate, yjsState) => apply({ type: "updateContent", nodeId: selectedNode.id, contentHtml, yjsUpdate, yjsState }, "Writing contribution", newId())}
             />
           ) : <div className="empty-editor"><h2>Start with an idea</h2><p>Add a root idea in the outline, then refine it here.</p><button className="primary" onClick={() => addNode(null)}>Create the first idea</button></div>}
         </main>

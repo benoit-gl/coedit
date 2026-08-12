@@ -13,7 +13,6 @@ export interface DocumentGateway {
   createDocument(path: string | null, title: string, contributor: Contributor): Promise<DocumentView>;
   openDocument(path: string): Promise<DocumentView>;
   closeDocument(): Promise<void>;
-  getDocument(): Promise<DocumentView>;
   applyOperation(operation: DocumentOperation, context: ContributionContext): Promise<DocumentView>;
   listContributions(query?: ContributionQuery): Promise<Contribution[]>;
   restoreRevision(revision: number, context: ContributionContext): Promise<DocumentView>;

@@ -117,35 +117,35 @@ IPC --> SQLite
 
 ### Components and editor
 
-| File | Exported symbol | Responsibility |
+| File | Key symbol | Responsibility |
 |---|---|---|
 | `src/components/Outline.tsx` | `Outline` | Builds and presents the active node tree; selection, expansion, keyboard traversal, sibling reorder, drag-to-reparent, add, and delete. |
 | `src/components/Outline.tsx` | Private `OutlineRow` | Recursive row rendering and row-level commands. |
 | `src/components/NodeEditor.tsx` | `NodeEditor` | Edits node title, kind, summary, and embeds `RichTextEditor`. |
 | `src/editor/RichTextEditor.tsx` | `RichTextEditor` | Tiptap/Yjs lifecycle, toolbar, sanitization, grouping, and persistence callback. |
-| `src/editor/yjsEncoding.ts` | `bytesToBase64`, `base64ToBytes`, `createYDoc` | Converts Yjs binary state to/from the string representation carried by the domain model. |
+| `src/editor/yjsEncoding.ts` | `bytesToBase64`, private `base64ToBytes`, `createYDoc` | Converts Yjs binary state to/from the string representation carried by the domain model. |
 | `src/components/HistoryPanel.tsx` | `HistoryPanel` | Filters the fetched contribution list and requests revision restoration. |
 | `src/styles.css` | Global style sheet | Layout, visual states, design tokens, focus indication, and the current responsive breakpoint. |
 
 ### Domain and extension contracts
 
-| File | Exported symbols | Responsibility |
+| File | Key symbols | Responsibility |
 |---|---|---|
 | `src/domain/types.ts` | `DocumentState`, `DocumentView`, `DocumentNode`, `DocumentOperation`, `Contribution`, related interfaces and unions | Shared serialized model and operation contract. |
-| `src/domain/tree.ts` | `TreeNode`, `activeNodes`, `buildTree`, `descendantIds`, `assertValidTree`, `affectedNodeIds`, `applyOperation` | Hierarchy projection, validation, mutation, and attribution support. |
-| `src/domain/hash.ts` | `canonicalDocumentJson`, `hashDocument` | Canonical JSON construction and browser SHA-256 hashing. |
+| `src/domain/tree.ts` | `TreeNode`, `buildTree`, private `descendantIds`, `assertValidTree`, `affectedNodeIds`, `applyOperation` | Hierarchy projection, validation, mutation, and attribution support. |
+| `src/domain/hash.ts` | Private `canonicalDocumentJson`, `hashDocument` | Canonical JSON construction and browser SHA-256 hashing. |
 | `src/domain/ids.ts` | `newId` | Browser-safe UUID generation. |
 | `src/ai/provider.ts` | `AiRequest`, `AiProvider` | Unwired extension contract for an explicitly invoked AI proposal provider. No implementation is registered. |
 
 ### Persistence ports and adapters
 
-| File | Exported symbols | Responsibility |
+| File | Key symbols | Responsibility |
 |---|---|---|
 | `src/persistence/gateway.ts` | `DocumentGateway` | Host-neutral document lifecycle, mutation, history, restore, backup, and export port. |
 | `src/persistence/fileDialogs.ts` | `DocumentFileDialogs` | Host-neutral port for choosing native paths. |
 | `src/persistence/memoryGateway.ts` | `MemoryDocumentGateway` | Volatile browser implementation with an in-memory ledger and revision snapshots. |
 | `src/persistence/tauriGateway.ts` | `TauriDocumentGateway` | Thin adapter from `DocumentGateway` methods to Tauri command names. |
-| `src/persistence/tauriFiles.ts` | Four dialog functions and `tauriFileDialogs` | Tauri dialog-plugin adapter for create, open, export, and backup destinations. |
+| `src/persistence/tauriFiles.ts` | Four private dialog functions and `tauriFileDialogs` | Tauri dialog-plugin adapter for create, open, export, and backup destinations. |
 
 ## React structure
 
@@ -182,7 +182,6 @@ interface DocumentGateway {
   +createDocument(path, title, contributor): Promise<DocumentView>
   +openDocument(path): Promise<DocumentView>
   +closeDocument(): Promise<void>
-  +getDocument(): Promise<DocumentView>
   +applyOperation(operation, context): Promise<DocumentView>
   +listContributions(query): Promise<Contribution[]>
   +restoreRevision(revision, context): Promise<DocumentView>
@@ -346,7 +345,6 @@ It uses `applyOperation()` for mutation and `hashDocument()` for SHA-256 state h
 | `createDocument` | `create_document` |
 | `openDocument` | `open_document` |
 | `closeDocument` | `close_document` |
-| `getDocument` | `get_document` |
 | `applyOperation` | `apply_operation` |
 | `listContributions` | `list_contributions` |
 | `restoreRevision` | `restore_revision` |

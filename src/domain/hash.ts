@@ -12,7 +12,7 @@ function stable(value: unknown): unknown {
   return value;
 }
 
-export function canonicalDocumentJson(state: DocumentState): string {
+function canonicalDocumentJson(state: DocumentState): string {
   return JSON.stringify(
     stable({
       ...state,
@@ -28,4 +28,3 @@ export async function hashDocument(state: DocumentState): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", bytes);
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
-

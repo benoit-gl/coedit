@@ -4,10 +4,6 @@ export interface TreeNode extends DocumentNode {
   children: TreeNode[];
 }
 
-export function activeNodes(state: DocumentState): DocumentNode[] {
-  return state.nodes.filter((node) => node.deletedAt === null);
-}
-
 export function buildTree(nodes: DocumentNode[]): TreeNode[] {
   const active = nodes.filter((node) => node.deletedAt === null);
   const byId = new Map<string, TreeNode>();
@@ -28,7 +24,7 @@ export function buildTree(nodes: DocumentNode[]): TreeNode[] {
   return roots;
 }
 
-export function descendantIds(nodes: DocumentNode[], nodeId: string): Set<string> {
+function descendantIds(nodes: DocumentNode[], nodeId: string): Set<string> {
   const result = new Set<string>();
   const visit = (parentId: string) => {
     for (const node of nodes) {

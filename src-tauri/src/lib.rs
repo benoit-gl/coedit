@@ -53,15 +53,6 @@ fn close_document(state: State<'_, AppState>) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn get_document(state: State<'_, AppState>) -> Result<DocumentView, String> {
-    lock_document(&state)?
-        .as_ref()
-        .ok_or_else(|| "No document is open.".to_owned())?
-        .view()
-        .map_err(|error| error.to_string())
-}
-
-#[tauri::command]
 fn apply_operation(
     state: State<'_, AppState>,
     operation: DocumentOperation,
@@ -130,7 +121,6 @@ pub fn run() {
             create_document,
             open_document,
             close_document,
-            get_document,
             apply_operation,
             list_contributions,
             restore_revision,

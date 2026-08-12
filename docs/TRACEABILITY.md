@@ -29,7 +29,7 @@ Status terms are defined in [the documentation index](./README.md#status-languag
 | Shared TypeScript data model | [`src/domain/types.ts`](../src/domain/types.ts) | all document/contribution/AI interfaces |
 | Operation tagged union | [`src/domain/types.ts`](../src/domain/types.ts) | `DocumentOperation` |
 | Pure tree mutation rules | [`src/domain/tree.ts`](../src/domain/tree.ts) | `applyOperation`, `assertValidTree`, `descendantIds` |
-| Tree display projection | [`src/domain/tree.ts`](../src/domain/tree.ts) | `buildTree`, `TreeNode`, `activeNodes` |
+| Tree display projection | [`src/domain/tree.ts`](../src/domain/tree.ts) | `buildTree`, `TreeNode` |
 | Browser state hash | [`src/domain/hash.ts`](../src/domain/hash.ts) | `canonicalDocumentJson`, `hashDocument` |
 | ID generation | [`src/domain/ids.ts`](../src/domain/ids.ts) | `newId` and Web Crypto fallback |
 | Persistence abstraction | [`src/persistence/gateway.ts`](../src/persistence/gateway.ts) | `DocumentGateway` |
@@ -122,7 +122,6 @@ For every operation, `tree.ts::affectedNodeIds` and Rust `DocumentOperation::aff
 | `createDocument(path,title,contributor)` | `create_document` | `create_document` | `DocumentStore::create`, then `view` |
 | `openDocument(path)` | `open_document` | `open_document` | `DocumentStore::open`, then `view` |
 | `closeDocument()` | `close_document` | `close_document` | replace `AppState.document` with `None` |
-| `getDocument()` | `get_document` | `get_document` | `view` |
 | `applyOperation(operation,context)` | `apply_operation` | `apply_operation` | `apply` → `apply_sql` |
 | `listContributions(query)` | `list_contributions` | `list_contributions` | `contributions` |
 | `restoreRevision(revision,context)` | `restore_revision` | `restore_revision` | `restore` |

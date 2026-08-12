@@ -370,7 +370,6 @@ Root custom properties:
 | `--line` | `#dcd9cd` | Borders and separators. |
 | `--accent` | `#365d4d` | Brand, primary action, active state. |
 | `--accent-soft` | `#e3ede7` | Selected/count background. |
-| `--danger` | `#9a4539` | Declared danger color; current error classes use additional literal colors. |
 
 Typography uses system sans-serif for application chrome and Georgia for editorial headings/content. The visual structure is a warm paper-like workspace with a green accent, compact outline controls, and a centered maximum-width editor column.
 
@@ -378,7 +377,7 @@ Important CSS ownership:
 
 | Area/state | Selectors |
 |---|---|
-| Welcome | `.welcome-shell`, `.welcome-card`, `.welcome-actions`, `.preview-notice` |
+| Welcome | `.welcome-shell`, `.welcome-card`, `.welcome-actions`, `.standalone-notice` |
 | Header | `.topbar`, `.brand`, `.document-title`, `.top-actions`, `.status`, `.menu` |
 | Main layout | `.workspace`, `.workspace.with-history` |
 | Outline | `.outline`, `.outline-row`, `.disclosure`, `.row-actions` |

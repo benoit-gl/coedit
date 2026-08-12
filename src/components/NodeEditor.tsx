@@ -20,7 +20,7 @@ const kinds: Array<{ value: NodeKind; label: string }> = [
 export function NodeEditor({ node, readOnly, onMetadataChange, onContentChange }: NodeEditorProps) {
   const [title, setTitle] = useState(node.title);
   const [summary, setSummary] = useState(node.summary);
-  useEffect(() => { setTitle(node.title); setSummary(node.summary); }, [node.id, node.summary, node.title]);
+  useEffect(() => { setTitle(node.title); setSummary(node.summary); }, [node.summary, node.title]);
 
   return (
     <article className="node-editor">
@@ -44,8 +44,7 @@ export function NodeEditor({ node, readOnly, onMetadataChange, onContentChange }
         <div><span className="eyebrow">Developed text</span><h2>Write and refine</h2></div>
         <span className="save-hint">Typing is grouped after 1.2 seconds of rest</span>
       </div>
-      <RichTextEditor key={node.id} node={node} readOnly={readOnly} onCommit={onContentChange} />
+      <RichTextEditor node={node} readOnly={readOnly} onCommit={onContentChange} />
     </article>
   );
 }
-

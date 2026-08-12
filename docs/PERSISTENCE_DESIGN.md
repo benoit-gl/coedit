@@ -110,7 +110,6 @@ interface DocumentGateway {
   + createDocument(path, title, contributor): DocumentView
   + openDocument(path): DocumentView
   + closeDocument()
-  + getDocument(): DocumentView
   + applyOperation(operation, context): DocumentView
   + listContributions(query): Contribution[]
   + restoreRevision(revision, context): DocumentView
@@ -256,7 +255,6 @@ The seven implemented operation variants are `createNode`, `updateNode`, `update
 | `createDocument` | `create_document` | `DocumentStore::create`, then `view` |
 | `openDocument` | `open_document` | `DocumentStore::open`, then `view` |
 | `closeDocument` | `close_document` | Drop the store from `AppState` |
-| `getDocument` | `get_document` | `view` |
 | `applyOperation` | `apply_operation` | `apply` |
 | `listContributions` | `list_contributions` | `contributions` |
 | `restoreRevision` | `restore_revision` | `restore` |

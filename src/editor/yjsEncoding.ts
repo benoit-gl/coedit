@@ -9,7 +9,7 @@ export function bytesToBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
-export function base64ToBytes(value: string): Uint8Array {
+function base64ToBytes(value: string): Uint8Array {
   if (!value) return new Uint8Array();
   const binary = atob(value);
   return Uint8Array.from(binary, (character) => character.charCodeAt(0));
@@ -20,4 +20,3 @@ export function createYDoc(encodedState: string): Y.Doc {
   if (encodedState) Y.applyUpdate(document, base64ToBytes(encodedState), "persistence-load");
   return document;
 }
-

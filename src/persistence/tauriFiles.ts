@@ -1,7 +1,7 @@
 import { open, save } from "@tauri-apps/plugin-dialog";
 import type { DocumentFileDialogs } from "./fileDialogs";
 
-export async function chooseDocumentToOpen(): Promise<string | null> {
+async function chooseDocumentToOpen(): Promise<string | null> {
   const result = await open({
     multiple: false,
     directory: false,
@@ -10,14 +10,14 @@ export async function chooseDocumentToOpen(): Promise<string | null> {
   return typeof result === "string" ? result : null;
 }
 
-export async function chooseDocumentToCreate(suggestedName: string): Promise<string | null> {
+async function chooseDocumentToCreate(suggestedName: string): Promise<string | null> {
   return save({
     defaultPath: `${suggestedName.replace(/[^a-z0-9_-]+/gi, "-").toLocaleLowerCase() || "document"}.coedit`,
     filters: [{ name: "Coedit document", extensions: ["coedit"] }],
   });
 }
 
-export async function chooseExportPath(format: "json" | "markdown", title: string): Promise<string | null> {
+async function chooseExportPath(format: "json" | "markdown", title: string): Promise<string | null> {
   const extension = format === "json" ? "json" : "md";
   return save({
     defaultPath: `${title.replace(/[^a-z0-9_-]+/gi, "-").toLocaleLowerCase() || "document"}.${extension}`,
@@ -25,7 +25,7 @@ export async function chooseExportPath(format: "json" | "markdown", title: strin
   });
 }
 
-export async function chooseBackupPath(title: string): Promise<string | null> {
+async function chooseBackupPath(title: string): Promise<string | null> {
   return save({
     defaultPath: `${title.replace(/[^a-z0-9_-]+/gi, "-").toLocaleLowerCase() || "document"}.coedit-backup`,
     filters: [{ name: "Coedit backup", extensions: ["coedit-backup"] }],

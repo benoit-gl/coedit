@@ -26,10 +26,6 @@ export class TauriDocumentGateway implements DocumentGateway {
     return invoke("close_document");
   }
 
-  getDocument(): Promise<DocumentView> {
-    return invoke("get_document");
-  }
-
   applyOperation(operation: DocumentOperation, context: ContributionContext): Promise<DocumentView> {
     return invoke("apply_operation", { operation, context });
   }
@@ -51,4 +47,3 @@ export class TauriDocumentGateway implements DocumentGateway {
     return invoke("export_document", { format, path });
   }
 }
-

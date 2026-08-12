@@ -100,7 +100,6 @@ Registered document commands in [`src-tauri/src/lib.rs`](../src-tauri/src/lib.rs
 - `create_document`
 - `open_document`
 - `close_document`
-- `get_document`
 - `apply_operation`
 - `list_contributions`
 - `restore_revision`

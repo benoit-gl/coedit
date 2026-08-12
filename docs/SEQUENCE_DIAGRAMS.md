@@ -471,7 +471,7 @@ User -> App : Export -> JSON or Markdown
 
 alt standalone mode
   App -> Memory : exportDocument(format, null)
-  Memory -> Memory : getDocument()
+  Memory -> Memory : read current in-memory view
   alt JSON
     Memory -> Memory : JSON.stringify(current DocumentView)
     note right of Memory
