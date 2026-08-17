@@ -777,6 +777,21 @@ end note
 
 For development, `tauri dev` runs `corepack pnpm dev`, points the webview at `http://127.0.0.1:1420`, and still uses `tauri.html` as the desktop window URL. A raw `cargo build --release` does not execute the configured frontend build/bundling pipeline and is not the documented release command.
 
+## Proposed interaction sequences — not implemented
+
+The implemented sequences above deliberately retain the current master/detail workspace, restore-only historical action, and 1.2-second rich-text quiet-period flow. Target sequences are embedded in the resumable proposal package:
+
+| Proposed sequence | Design source |
+|---|---|
+| Create/focus a sibling in the continuous canvas after draining the active block | [Continuous block-outline](proposals/CONTINUOUS_BLOCK_OUTLINE.md#adding-a-node-seamlessly) |
+| Transfer the single active Tiptap editor between blocks | [Continuous block-outline](proposals/CONTINUOUS_BLOCK_OUTLINE.md#active-editor-ownership) |
+| Flush live drafts, query a snapshot, and display a read-only revision | [Query-first history](proposals/QUERY_FIRST_HISTORY.md#entering-historical-mode) |
+| Explicitly restore a viewed snapshot as one compensating revision | [Query-first history](proposals/QUERY_FIRST_HISTORY.md#restoration-from-historical-mode) |
+| Threshold, insertion/deletion, cursor/focus, idle, and tree-operation checkpoint boundaries | [Body checkpoint strategy](proposals/BODY_CHECKPOINT_STRATEGY.md#state-machine) |
+| Checkpoint failure, ordered retention, and retry | [Body checkpoint strategy](proposals/BODY_CHECKPOINT_STRATEGY.md#failure-and-retry) |
+
+When these flows are implemented, replace the corresponding implemented diagrams rather than leaving contradictory current and proposed sequences in the main interaction view.
+
 ## Maintaining these diagrams
 
 **Recommendation:** update this interaction view whenever a contribution changes:

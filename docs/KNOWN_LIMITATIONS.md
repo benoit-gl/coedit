@@ -34,6 +34,9 @@ Priority meaning:
 | R-22 | P2 | Crash durability | Atomic output syncs the file, not explicitly its parent directory | `atomic_write`, `atomic_copy`, `replace_file` |
 | R-23 | P3 | Reserved features | Attachments, AI, collaboration, contributor management, and direct node restore have no complete workflow | schema/types/interfaces with missing UI/adapters |
 | R-24 | P3 | Outline behavior | New expansion state, drag placement/root drops, and affected-node reporting are limited | `Outline`; both operation models |
+| R-25 | P2 | Writing flow | Separate outline and selected-node editor force master/detail context switching for ordinary writing and node insertion | `App` workspace composition; `Outline`; `NodeEditor` |
+| R-26 | P2 | Historical inspection | History offers mutating restoration but no read-only materialized revision view | `HistoryPanel`; `DocumentGateway.restoreRevision` only |
+| R-27 | P2 | Edit history/noise | Fixed 1.2-second quiet-period checkpoints and one new group ID per body commit create indiscriminate revisions and noisy History | `RichTextEditor`; `controller.commitBody`; full snapshots |
 
 ## Data-integrity and attribution risks
 
@@ -128,7 +131,7 @@ Rust still selects at most the newest 100,000 rows before applying `beforeRevisi
 
 Every revision stores a full JSON `DocumentState`, including Base64 Yjs states, in addition to materialized node data and operation payloads. Long writing sessions can create a snapshot after each 1.2-second typing group.
 
-**Recommended direction:** measure real files first, then define retention/checkpoint/replay/compaction that preserves recovery and verifiability. Never delete historical material without a format/backup policy.
+**Recommended direction:** measure real files first, then define retention/checkpoint/replay/compaction that preserves recovery and verifiability. Never delete historical material without a format/backup policy. The proposed [body checkpoint strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md) improves semantic boundaries and collapsed presentation but can still create frequent physical revisions at the character threshold; it does not by itself solve snapshot growth.
 
 ### R-21: open/restore validation is incomplete for hostile database edits
 
@@ -176,6 +179,24 @@ Windows standalone was manually exercised. The architecture is intended for Linu
 
 Current interaction details and proposed accessibility acceptance criteria are in [UI and UX](./UI_UX.md).
 
+### R-25: master/detail interrupts the writing flow
+
+The workspace renders a separate hierarchy navigator and only one selected node's editor. Creating or developing adjacent nodes repeatedly moves attention between structural controls and a detail pane, so hierarchy does not read or edit as one continuous document.
+
+**Recommended direction:** implement the proposed [continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md): a flattened pre-order projection, separate focused-block/editor-owner state, one active Tiptap editor, drain-before-hide collapse behavior, sanitized inactive previews, inline structural controls, and complete keyboard/touch alternatives. This is a component/application redesign, not a CSS-only change.
+
+### R-26: historical inspection is restore-only
+
+Both adapters retain per-revision materializations, but the shared gateway exposes no read-only revision query. The only History action copies an old snapshot into a new current revision, appends a contribution, and stores another snapshot. That is appropriate for resuming work, not merely inspecting the past.
+
+**Recommended direction:** implement [query-first historical views](./proposals/QUERY_FIRST_HISTORY.md). An advertised query capability must return detached, validated, host-hash-verified state while leaving live state, revision, contribution count, and snapshots unchanged; loading retains its live/historical origin, historical mode rejects commands, and restoration remains separately confirmed.
+
+### R-27: body checkpoints are temporally arbitrary and visually noisy
+
+Every Yjs update resets a 1.2-second timer. Expiry emits a body operation, and the controller assigns a new group ID to every operation. Short pauses therefore become unrelated History rows even when they form one editing episode, while every resulting revision also receives a full snapshot.
+
+**Recommended direction:** use the proposed [body checkpoint and commit strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md): semantic edit-mode/focus/tree boundaries, threshold safety checkpoints that reuse a group ID, a two-checkpoint backpressure bound, page-aware exact group expansion, and a single injectable policy containing easily modifiable `batchCharacterThreshold` and `idleTimeoutMs` defaults. Physical snapshot compaction remains separate R-12 work.
+
 ## Reserved capabilities, not current features
 
 - `attachments` is a reserved SQLite table with no TypeScript domain type, operation, gateway method, command, exporter, or UI.
@@ -188,7 +209,7 @@ Keep these labeled **Reserved** or **Proposed** in contributor-facing material.
 
 ## Verification and delivery gaps
 
-The current source inventory is forty TypeScript cases and three Rust cases. New TypeScript coverage includes the draft coordinator, controller transition ordering/generation, serialized-queue behavior, contributor-storage validation, node-editor normalization, tag normalization/combobox behavior, JSON detachment/validation, cursor paging/filtering, recovery-envelope shape, filename normalization, and versioned hash/sanitizer fixtures. There is still no:
+The current source inventory is forty-two TypeScript cases and three Rust cases. New TypeScript coverage includes the draft coordinator, controller transition ordering/generation, serialized-queue behavior, contributor-storage validation, node-editor normalization, tag normalization/combobox behavior, JSON detachment/validation, cursor paging/filtering, recovery-envelope shape, filename normalization, and versioned hash/sanitizer fixtures. There is still no:
 
 - full-App React/editor integration or end-to-end browser suite;
 - fake-timer editor debounce/lifecycle suite;

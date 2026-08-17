@@ -175,6 +175,18 @@ The complete column/constraint description is in [Persistence design](./PERSISTE
 
 The target coverage and manual suites are in [Testing](./TESTING.md).
 
+## Proposed continuous-workspace traceability
+
+The rows below are design-time traceability only. Proposed source names are ownership targets, not evidence that the feature exists. The authoritative package is [Proposed continuous workspace](./proposals/README.md).
+
+| Proposed use case / requirement | Design artifact | Intended ownership | Required verification | Current status |
+|---|---|---|---|---|
+| UC-12, FR-PW-01/02/11 - continuous block outline | [Continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md) | pure visible-node projection; `DocumentCanvas`; `NodeBlock`; separate focus/editor ownership; shared styles | projection units; focus/drain/collapse integration; keyboard, pointer, touch, IME, a11y, browser, and scale cases | Proposed; current `Outline` + selected `NodeEditor` remain active |
+| UC-13, FR-PW-03/04/05 - query-first history | [Query-first historical views](./proposals/QUERY_FIRST_HISTORY.md) | revision-query port; memory/Tauri query adapters; explicit workspace projection; History **View** action; canvas read-only path | adapter non-mutation contract; stale-query and command-guard tests; hostile snapshot rendering; restore separation | Proposed; current History exposes restore but no revision materialization query |
+| UC-14, FR-PW-06/07/08/09/10 - checkpoint/group policy | [Body checkpoint strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md) | exported injectable policy; pure body-edit coordinator; bounded FIFO/backpressure; controller transition integration; page-aware grouped History projection | fake-time/configurable-threshold units; transaction/IME classification; slow/failure retry; tree-operation ordering; page-spanning grouped/exact History | Proposed; current `RichTextEditor` uses a fixed 1.2-second quiet timer |
+
+The proposal intentionally reuses the existing `DocumentOperation`, contribution, snapshot, and draft-transition boundaries. It does not authorize inserting not-yet-existing symbols into the as-built ownership tables above.
+
 ## Reserved and proposed extension seams
 
 | Seam | Existing code/schema | Missing for an implemented feature |
@@ -203,5 +215,8 @@ The target coverage and manual suites are in [Testing](./TESTING.md).
 | New export | centralized `ExportFormat`, controller/menu, relevant adapters/dialogs, Rust command/store, `safeFilenameStem`, fidelity/security tests |
 | AI/sync/network | provider/transport outside offline root, consent and operation acceptance, new capability/CSP profile, threat model/tests |
 | UI layout/interaction | owning component, `styles.css`, UI state/wireframes, keyboard/touch/a11y/component tests |
+| Continuous block-outline implementation | `proposals/CONTINUOUS_BLOCK_OUTLINE.md`, visible-node projection, canvas/block ownership, active-editor drain/focus transfer, live/historical rendering, interaction/a11y/performance tests |
+| Historical materialization query | `proposals/QUERY_FIRST_HISTORY.md`, query port and both adapters, explicit workspace mode, History/canvas controls, non-mutation/security/stale-response/restore tests |
+| Body checkpoint policy | `proposals/BODY_CHECKPOINT_STRATEGY.md`, centralized injectable `batchCharacterThreshold`/`idleTimeoutMs`, coordinator/classifier, controller queue, group projection, deterministic timer/IME/failure tests |
 
 Detailed recipes and the definition of done are in [Contributing](./CONTRIBUTING.md).

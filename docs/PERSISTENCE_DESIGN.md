@@ -2,7 +2,7 @@
 
 This artifact describes the persistence subsystem that exists in Coedit Local `0.1.0`. It is the analysis-and-design/data-model companion to the [architecture](./ARCHITECTURE.md), [document-format specification](./DOCUMENT_FORMAT.md), and [security model](./SECURITY.md). It deliberately distinguishes the durable Tauri implementation from the in-memory standalone implementation.
 
-For unresolved defects and constraints, see [Known limitations](./KNOWN_LIMITATIONS.md). For end-to-end use-case realizations, see [Sequence diagrams](./SEQUENCE_DIAGRAMS.md).
+For unresolved defects and constraints, see [Known limitations](./KNOWN_LIMITATIONS.md). For end-to-end use-case realizations, see [Sequence diagrams](./SEQUENCE_DIAGRAMS.md). Future snapshot-query and checkpoint/grouping changes are specified separately in the [proposed continuous-workspace package](./proposals/README.md).
 
 ## Responsibilities and boundary
 
@@ -84,7 +84,7 @@ FileDialogs --> NativeDialogs
 
 The controller narrows `storage.kind` (`volatile` or `native-file`) before calling its shape-specific methods. The memory adapter no longer implements rejecting native open/backup stubs, and method signatures no longer accept meaningless nullable paths.
 
-The port returns complete `DocumentView` values after mutations and bounded `ContributionPage` values for history. It has no event stream, optimistic expected-revision argument, partial-document API, total-history-count API, contributor-registration API, attachment API, or import API.
+The port returns complete `DocumentView` values after mutations and bounded `ContributionPage` values for history. It has no event stream, optimistic expected-revision argument, partial-document API, non-mutating revision-materialization API, total-history-count API, contributor-registration API, attachment API, or import API.
 
 ### `DocumentFileDialogs`
 
@@ -537,6 +537,8 @@ The standalone adapter now names its algorithm `coedit-document-state-v1`. It ex
 
 Every revision currently stores a full `DocumentState` JSON snapshot. This makes restore direct but can cause substantial database growth. There is no compactor.
 
+The proposed checkpoint strategy continues to use ordinary physical `updateBody` revisions and full snapshots, but assigns one `groupId` across threshold checkpoints in the same semantic edit episode and collapses them in History. That improves history presentation; it does not solve physical snapshot growth. See [Body checkpoint strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md) and risk R-12.
+
 ### History queries
 
 The shared contract returns `ContributionPage { items, nextBeforeRevision, hasMore }`. The default page is 100 and callers are capped at 500. Adapters fetch or retain one extra matching record to determine `hasMore`; when more exists, the last returned revision becomes the exclusive cursor for the next request. Search, node, and contributor filters are part of the gateway query, not a client-side pass over already loaded rows.
@@ -544,6 +546,8 @@ The shared contract returns `ContributionPage { items, nextBeforeRevision, hasMo
 The memory adapter reverses and filters its complete runtime array before page construction, so every in-memory contribution remains reachable through **Load older contributions**.
 
 The current Rust store still reads at most the newest 100,000 contributions, then applies `beforeRevision`, contributor, node, and text filters in Rust. `TauriDocumentGateway` asks it for `page size + 1` and wraps the array. Consequently, the desktop shape supports paging but a match older than the database pre-window remains unreachable. Moving cursor/filter predicates and `LIMIT` into indexed SQL belongs to the Tauri second pass.
+
+The proposed grouped History projection does not assume one raw page contains an entire edit group. It coalesces matching boundary rows while pages accumulate, marks an oldest loaded group partial when `hasMore` leaves its beginning unknown, keeps loaded raw-contribution and visible-row counts distinct, and uses an exact paged `groupId` query to expand all checkpoints. The memory adapter supplies that query for the standalone milestone; native SQL parity belongs to the proposal's WP-10. See [Groups that cross history pages](./proposals/BODY_CHECKPOINT_STRATEGY.md#groups-that-cross-history-pages).
 
 ## Revision restore
 
@@ -584,7 +588,17 @@ Gateway --> App : replace view
 @enduml
 ```
 
-Snapshot hashes are not verified, and restore does not reapply every normal mutation size limit. Tree validation during the transactional reload still rejects missing parents and cycles.
+## Proposed revision-query port — not implemented
+
+The target [query-first historical-view design](./proposals/QUERY_FIRST_HISTORY.md) adds a discriminated `RevisionQueryCapability` containing `DocumentRevisionQueries.materializeRevision(revision)`. It reads the memory revision map or SQLite `snapshots.state_json/state_hash`, validates state, recomputes and compares the host/schema-appropriate hash, and returns a detached verified `MaterializedRevision` without replacing current state, appending a contribution, incrementing revision, or writing another snapshot.
+
+For the standalone milestone, memory advertises the capability as available while Tauri may advertise it unavailable and omit **View**; the native composition must still compile and must not supply a throwing stub. WP-10 adds the read-only Rust query/IPC and makes Tauri advertise availability only after shared contract tests pass.
+
+`restoreRevision` remains the mutating command described above. Viewing and restoration must not share an implementation that temporarily changes the live store. The proposed port includes validation, missing/tampered snapshot behavior, request/epoch guards, memory/Tauri contract tests, and explicit live/historical controller modes.
+
+No document-schema change is required merely to read and verify existing snapshots under their host/schema algorithm. Cross-adapter canonical hash alignment and future compaction remain separate format/version decisions.
+
+In the current as-built open/restore paths, snapshot hashes are not verified and restore does not reapply every normal mutation size limit. Tree validation during the transactional reload still rejects missing parents and cycles. Those current limitations do not weaken the proposed query contract's verify-before-return requirement.
 
 ## Backup and export
 
@@ -600,7 +614,7 @@ The JSON envelope contains `exportVersion`, `exportedAt`, the complete current `
 
 ### Desktop Markdown export
 
-Markdown visits active nodes depth-first, using document/node titles as headings, summaries as italic paragraphs, and a simple HTML-to-plain-text conversion. It omits tags, deleted nodes, structured rich-text markup, Yjs state, metadata, contributors, sessions, revisions, history, and attachments.
+Markdown visits active nodes depth-first, using document/node titles as headings and a simple body-HTML-to-plain-text conversion. It omits tags, deleted nodes, structured rich-text markup, Yjs state, metadata, contributors, sessions, revisions, history, and attachments.
 
 ### Output replacement
 

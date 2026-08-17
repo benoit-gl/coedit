@@ -11,6 +11,7 @@ Related documents:
 - [Sequence diagrams](SEQUENCE_DIAGRAMS.md)
 - [Feature-to-code traceability](TRACEABILITY.md)
 - [Known limitations](KNOWN_LIMITATIONS.md)
+- [Proposed continuous-workspace change package](proposals/README.md)
 
 ## UX intent
 
@@ -411,6 +412,16 @@ Important CSS ownership:
 
 Before describing iPadOS or phone support as complete, add a touch-first outline reordering design, pane navigation for narrow widths, safe-area handling, and manual coverage for software keyboard, selection, paste, download, and browser tab lifecycle.
 
+## Proposed workspace UX — not implemented
+
+The current information architecture, mockups, and interaction tables above describe the executable master/detail interface. The agreed product direction is specified in a separate resumable package:
+
+- [Continuous block-outline](proposals/CONTINUOUS_BLOCK_OUTLINE.md): one scrolling projection, indented blocks, contextual controls, separate focused-block/editor-owner state, drain-before-hide collapse, one Tiptap editor, normal Tab navigation, handle-scoped structural shortcuts, and live/historical reuse.
+- [Query-first historical views](proposals/QUERY_FIRST_HISTORY.md): History **View** as the primary action, verified detached snapshots, origin-aware loading, persistent read-only revision banner, **Back to current**, and separately confirmed **Restore as new revision**.
+- [Body checkpoint strategy](proposals/BODY_CHECKPOINT_STRATEGY.md): semantic insertion/deletion/cursor/focus/tree boundaries, bounded FIFO backpressure, page-aware grouped checkpoints, and centralized configurable `batchCharacterThreshold`/`idleTimeoutMs` defaults.
+
+The proposal documents contain target wireframes, state/sequence diagrams, interaction contracts, accessibility requirements, failure behavior, rollout steps, and acceptance criteria. Do not replace the current mockups in this as-built document until the corresponding UI is reachable and tested.
+
 ## UX extension guide
 
 ### Add a workspace panel
@@ -439,6 +450,8 @@ Before describing iPadOS or phone support as complete, add a touch-first outline
 ### Change save behavior
 
 The current save boundary is eager title/tag drains plus the 1.2-second Yjs body quiet period, all backed by an explicit controller-visible draft registry. Controlled node switching, operations, revision restoration, document close, export, and backup freeze and await document-title, tag-input, node-metadata, and rich-text participants; page/process exit and forced suspension remain unawaitable. Changes must cover failure/retry, updates arriving during a drain, authoritative editor remount, status feedback, and both gateway implementations. See [Sequence diagrams](SEQUENCE_DIAGRAMS.md).
+
+The intended replacement is the proposed [body checkpoint and commit strategy](proposals/BODY_CHECKPOINT_STRATEGY.md). Its policy requires both `batchCharacterThreshold` and `idleTimeoutMs` to be easily modifiable in one injectable code module; implementation must retain the existing controlled-transition safety while replacing the timer behavior.
 
 ## UX acceptance checklist
 

@@ -199,6 +199,21 @@ The standalone download path uses centralized `safeFilenameStem()` normalization
 | Unexpected native access | narrow commands, optional application capability, dialog plugin | renderer-supplied paths are not Rust-authorized grants; second pass must harden and minimize permissions |
 | Development server exposed | loopback host and strict port | dev machine/browser threat remains; never a release topology |
 
+## Proposed continuous-workspace security requirements
+
+The [continuous-workspace package](./proposals/README.md) is not implemented, but its implementation must preserve these trust boundaries:
+
+- A materialized historical snapshot is untrusted document input, not safe merely because it came from the application's own history table. Every adapter advertising the query capability must validate its shape/tree/limits, recompute/compare its stored host-schema hash, and pass every historical body through the same render-time sanitization policy as live content. This check is integrity evidence, not authentication.
+- `WorkspaceProjection.kind === "historical"` must be enforced at the controller/command boundary. Hiding or disabling buttons is defense in depth, not authorization; stale callbacks, keyboard commands, editor extensions, and tests that call commands directly must all be rejected.
+- A revision query must return a detached value. Components must not receive mutable aliases to the live adapter state or snapshot cache.
+- Request/workspace epochs must discard a response that belongs to a closed, restored, or replaced document. Snapshot data from one workspace must never be rendered into another.
+- Returning to live mode must not trust selection, expansion, or node IDs from the snapshot without resolving them against current live state.
+- The continuous canvas must render inactive bodies as sanitized previews and must not create alternate raw-HTML paths for performance.
+- The checkpoint coordinator must retain FIFO ordering and enforce the proposed two-checkpoint pending high-water mark for both slow and failed persistence, freezing further body changes before work can grow unbounded. Configurable values must be validated as positive safe integers, and the timeout must respect the portable browser-timer ceiling. Deliberate non-default values require volume/failure tests so an extremely eager or lax policy is not shipped accidentally.
+- Expanding grouped History entries may reveal exact revisions but must not change the immutable contribution records or accept group labels/payloads as executable markup.
+
+The detailed controls and hostile cases are in [Query-first historical views](./proposals/QUERY_FIRST_HISTORY.md), [Continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md), and the [proposed verification plan](./TESTING.md#proposed-continuous-workspace-verification-plan).
+
 ## Future network features
 
 AI and collaboration must remain opt-in. A future provider must:
@@ -224,6 +239,9 @@ Yjs in the editor is not itself a secure collaboration implementation. A transpo
 - Does failure preserve the primary document, contribution ledger, and recoverable output?
 - Does standalone behavior bypass a control present only in Rust?
 - Does a schema/model change require a migration and hostile fixture?
+- Does historical mode reject mutation in the controller as well as the rendered controls?
+- Are materialized snapshots detached, validated, bounded, and sanitized exactly like live/opened content?
+- Can configurable checkpoint values or accumulated failed work exhaust memory, CPU, or history storage?
 - Are CSP/capability changes minimal and documented?
 - Are accepted AI/automation changes attributable and user-approved?
 - Are success and malicious/failure cases covered by tests in [Testing](./TESTING.md)?

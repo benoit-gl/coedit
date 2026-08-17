@@ -427,7 +427,7 @@ OpenState .. UC10
 
 1. The controller begins a draft transition, synchronously freezes document-title/node-editor inputs, and drains title, metadata, and rich text.
 2. It narrows `documentGateway.storage`: the native-file variant asks for a destination and exports there, while the volatile variant exports a safe-named browser download without a path. The export command enters the serialized queue.
-3. Markdown walks active nodes in hierarchy order and emits headings, summaries, and plain text.
+3. Markdown walks active nodes in hierarchy order and emits headings plus plain text flattened from each node's sole rich-text body.
 4. Standalone JSON uses `format: "coedit-recovery"` and `RecoveryExport` version 2: export metadata, algorithm/state hash, portable `DocumentState`, explicit history order/completeness, and the complete current-runtime contribution list. Desktop retains its legacy version-1 shape with export metadata, state, and a Rust-query-bounded contribution list.
 5. Desktop mode writes through a temporary file and replacement step. Standalone mode creates a Blob URL and activates a download anchor.
 6. The UI reports export success.
@@ -533,6 +533,84 @@ OpenState .. UC10
 
 **Realization:** `index.html`, `src/main.tsx`, `vite.config.ts`, `MemoryDocumentGateway`, and the shared React UI. Build details are in [Build, release, and portability](./BUILD_AND_PORTABILITY.md).
 
+## Proposed next-iteration use cases
+
+The following use cases are approved design targets but are **not implemented**. They are specified together in the [proposed continuous-workspace change package](./proposals/README.md). Current UC-03 through UC-07 remain the executable baseline until the corresponding delivery slice is complete.
+
+### UC-12 - Edit through a continuous block outline
+
+**Status:** Proposed.
+
+**Primary actor:** Author.
+
+**Goal:** Read, create, edit, and restructure the hierarchy without switching between a navigator and a separate detail pane.
+
+**Trigger:** The author creates or opens a document in live mode.
+
+**Main success scenario:**
+
+1. The workspace projects active nodes into one depth-indented, pre-order canvas.
+2. Each visible node appears as a block containing structural context, title, tags, and body.
+3. The focused live block owns the single active Tiptap/Yjs editor; other blocks render sanitized previews.
+4. The author creates a sibling or child at the current position and can type immediately.
+5. Focus transfer checkpoints the previous body before editor ownership moves.
+6. Pointer, touch, and keyboard actions expose selection, collapse, indent, outdent, reorder, and delete without requiring drag-and-drop.
+
+**Alternate and exception flows:** Focused-block identity and editor ownership are separate. A cross-block activation or ancestor collapse that would remove the editor freezes/checkpoints first; failure cancels the action and keeps the old owner/focus. A successful collapse focuses its parent and omits descendants from the projection without deleting them. Historical mode uses the same canvas with no editor owner and all mutating controls rejected.
+
+**Postconditions:** The persisted hierarchy still uses stable node IDs, `parentId`, and sibling `position`; the canvas is a projection and introduces no document-format change by itself.
+
+**Design:** [Continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md).
+
+### UC-13 - View a materialized historical revision
+
+**Status:** Proposed.
+
+**Primary actor:** Author or custodian.
+
+**Goal:** Inspect a stored revision faithfully without changing live state or adding history.
+
+**Trigger:** The actor chooses **View** on a History entry.
+
+**Main success scenario:**
+
+1. The controller freezes and drains live drafts so the return point is unambiguous.
+2. A revision-query port reads the selected snapshot without invoking a mutation command.
+3. The workspace enters an explicit historical projection containing detached state, revision, hash, and materialization metadata.
+4. The continuous canvas renders that projection with a persistent read-only banner.
+5. The actor navigates nodes and may return to the unchanged live projection.
+
+**Alternate and exception flows:** Missing, invalid, or stale responses leave live mode unchanged and report an error. Command guards reject mutations even if a UI control is invoked indirectly. An actor who chooses **Restore as new revision** enters UC-07 through a separately confirmed command.
+
+**Postconditions:** Viewing and returning leave the live state, current revision, ledger length, and snapshot set unchanged.
+
+**Design:** [Query-first historical views](./proposals/QUERY_FIRST_HISTORY.md).
+
+### UC-14 - Checkpoint and group a body-edit episode
+
+**Status:** Proposed.
+
+**Primary actor:** Author; the editor/controller act as supporting actors.
+
+**Goal:** Preserve meaningful recovery points without producing an indiscriminate contribution every 1.2 seconds.
+
+**Trigger:** The author inserts, deletes, formats, pastes, cuts, composes, moves the selection, changes focus, or initiates a structural operation after changing a body.
+
+**Main success scenario:**
+
+1. A body-edit coordinator classifies accepted ProseMirror/input transactions rather than raw key presses or Yjs byte counts.
+2. Insertion and deletion episodes remain in one semantic edit group until a specified boundary closes it.
+3. Before the configured twentieth inserted grapheme, the coordinator captures a safety checkpoint for the preceding nineteen graphemes and continues with the same group ID; repeated deletion is grouped by its semantic boundaries rather than by this insertion threshold.
+4. The first cursor/focus transition after an edit, the first deletion after insertion, the first insertion after deletion, and every controlled tree operation flush pending body state in deterministic FIFO order.
+5. A configurable idle timer checkpoints any dirty body edit after 30 seconds without accepted content change.
+6. History collapses physical checkpoints sharing one group ID while retaining exact revisions for expansion/recovery and fetching a complete group when it crosses raw history pages.
+
+**Alternate and exception flows:** IME composition is counted only when committed; navigation without a dirty edit does not checkpoint. A slow or failed checkpoint remains ordered in a queue bounded to two detached checkpoints; reaching the high-water mark visibly freezes further body changes until progress/retry, and an unsafe transition remains blocked.
+
+**Postconditions:** Each physical checkpoint remains an ordinary attributed `updateBody` revision, while the human-visible edit episode can span several such revisions.
+
+**Design:** [Body checkpoint and commit strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md). The defaults `batchCharacterThreshold = 20` and `idleTimeoutMs = 30_000` must live in one exported, injectable code policy and must not be duplicated in components or adapters.
+
 ## User-story catalog
 
 ### Implemented stories
@@ -581,6 +659,17 @@ OpenState .. UC10
 | US-33 | As a release maintainer, I can verify Windows, macOS, and Linux packages automatically. | CI matrix and platform smoke evidence |
 | US-34 | As an author, I can import a standalone recovery export into a fresh session. | Versioned import use case, validation, attribution, and UI |
 
+### Proposed continuous-workspace stories
+
+| ID | Story | Completion condition |
+|---|---|---|
+| US-35 | As an author, I can read and edit my hierarchy as one continuous indented document. | UC-12 acceptance criteria and keyboard/pointer/touch tests pass. |
+| US-36 | As an author, I can create a sibling or child in context and type immediately. | Creation/focus sequence has no navigator-to-detail round trip and preserves pending edits. |
+| US-37 | As an author, I can inspect a historical revision without changing the current document or ledger. | UC-13 non-mutation contract passes for both adapters. |
+| US-38 | As an author, I can clearly distinguish a historical view from the live workspace. | Persistent revision banner, command guards, and **Back to current** behavior pass accessibility tests. |
+| US-39 | As an author, my body edits are checkpointed at meaningful boundaries and configurable safety intervals. | UC-14 deterministic state-machine/timer tests pass. |
+| US-40 | As an author, History summarizes one editing episode without hiding its exact checkpoint revisions. | Shared-group collapse/expand behavior and revision restoration tests pass. |
+
 ## Supplementary functional requirements
 
 These requirements complement the use cases. “Current satisfaction” describes the repository, not a promised future release.
@@ -605,6 +694,24 @@ These requirements complement the use cases. “Current satisfaction” describe
 | FR-16 | Markdown shall be presented as lossy interchange, and JSON/SQLite as recovery-oriented outputs. | Partially satisfied; JSON shares an envelope but desktop is capped and no importer exists. |
 | FR-17 | A standalone production build shall contain no required external JS/CSS assets. | Satisfied by the `standaloneHtml` build plug-in, with manual verification today. |
 | FR-18 | The base application shall not register an AI or synchronization provider. | Satisfied. |
+
+### Proposed continuous-workspace functional requirements
+
+These requirements describe the target package, not current satisfaction.
+
+| ID | Proposed requirement | Acceptance evidence required before status changes |
+|---|---|---|
+| FR-PW-01 | The live hierarchy shall be rendered as a pure, flattened, active-node pre-order projection with depth and expansion state. | Projection unit tests cover multiple roots, collapse, deletion, ordering, and deep nesting. |
+| FR-PW-02 | The first block-outline implementation shall allow at most one live rich-text editor owner. | Focus-transfer integration tests prove drain-before-unmount and no duplicate Yjs ownership. |
+| FR-PW-03 | Revision materialization shall be a read query with no document, ledger, revision, or snapshot mutation. | Before/after adapter contract tests compare all four observables. |
+| FR-PW-04 | Historical workspace mode shall reject every document mutation independently of control visibility. | Controller command-guard tests exercise direct and stale callbacks. |
+| FR-PW-05 | Restoration from a historical view shall remain a separately confirmed compensating operation. | Restore produces exactly one new current revision and retains intervening history. |
+| FR-PW-06 | Body checkpoints shall occur at the defined edit-mode, selection/focus, structural-operation, character-threshold, and idle boundaries. | Pure coordinator tests use deterministic transactions, grapheme counts, and fake time. |
+| FR-PW-07 | `batchCharacterThreshold` and `idleTimeoutMs` shall be defined once in an exported immutable policy, injected into the coordinator, and independently overrideable in tests. | Source check finds no duplicate policy literals; unit tests inject non-default values. |
+| FR-PW-08 | Threshold checkpoints within one uninterrupted edit episode shall reuse one `groupId`, while semantic boundaries shall close that group. | History tests cover collapsed/expanded representations, raw page-boundary coalescing, partial labels, and exact group paging. |
+| FR-PW-09 | A structural operation shall await a successfully captured pending body checkpoint before changing or removing blocks. | Ordered integration tests cover create, move, collapse, delete, restore, export, and failure/retry. |
+| FR-PW-10 | Slow or failed checkpoint persistence shall retain FIFO order and apply bounded visible backpressure. | A named two-checkpoint high-water mark, size checks, slow/failure tests, and lossless retry are required. |
+| FR-PW-11 | Continuous block interactions shall remain reachable by keyboard, pointer, and touch without overriding normal body editing or Tab focus navigation. | Context-scoped component/accessibility/browser tests cover structural and edit-body activation paths. |
 
 ## Supplementary non-functional requirements
 
@@ -685,6 +792,9 @@ These requirements complement the use cases. “Current satisfaction” describe
 | RK-08 | Native behavior is not continuously tested on Windows, macOS, and Linux. | High / medium-high | Source portability only | CI build matrix and platform smoke checklist |
 | RK-09 | Desktop history silently pre-windows the newest 100,000 rows before filtering. | Medium in very long documents / medium | Shared cursor UI and memory paging implemented | Indexed SQL cursor/filter query and boundary tests |
 | RK-10 | Replacement and interrupted-journal recovery paths lack fault-injection coverage. | Low-medium / high | Atomic-style helpers and warning | Filesystem failure tests and recovery rehearsal |
+| RK-11 | A continuous canvas can create focus loss, editor remount, or keyboard conflicts across blocks. | Medium / high usability and data integrity | Proposed one-active-editor ownership and explicit shortcut scope | Component integration, IME, screen-reader, touch, and browser tests from UC-12 |
+| RK-12 | Historical viewing could accidentally invoke live commands or render untrusted snapshot content unsafely. | Low-medium / high integrity and security | Proposed discriminated mode, controller guards, detached snapshot, ordinary sanitization | Non-mutation/guard contract tests and hostile historical-snapshot cases from UC-13 |
+| RK-13 | Checkpoint classification, off-by-one counting, timers, or slow persistence can lose boundaries, exhaust memory, or create noisy history. | Medium / high integrity and usability | Proposed pure coordinator, injectable policy, two-checkpoint backpressure, FIFO retention, page-aware shared edit groups | Fake-time/property/IME/slow/failure/page-boundary tests from UC-14 plus snapshot-growth measurements |
 
 The prioritized verification work is in [Testing strategy](./TESTING.md). Ownership and suggested fixes are maintained in [Known limitations](./KNOWN_LIMITATIONS.md).
 
@@ -705,7 +815,11 @@ The prioritized verification work is in [Testing strategy](./TESTING.md). Owners
 | Document view | Document state plus path, read-only flag, and recovery warning returned to the UI. |
 | Format version | Version of the `.coedit` schema/contract; currently `1`. |
 | Group ID | Optional contribution field used to associate a logical burst, currently generated per rich-text commit. |
+| Body checkpoint (proposed) | A physical attributed `updateBody` revision captured at a recovery or semantic boundary. It is not necessarily one History row. |
+| Edit group (proposed) | One human-meaningful body-edit episode. Multiple threshold checkpoints can share its `groupId` and be collapsed in History. |
+| Historical projection (proposed) | Detached materialized state for a selected revision, rendered read-only without replacing live state. |
 | Materialized state | Current document and node rows, as opposed to the historical ledger/snapshots. |
+| Visible-node projection (proposed) | Flattened pre-order list of active, expansion-visible nodes plus depth/layout metadata; it does not replace the persisted tree. |
 | Operation | Typed request that mutates document materialized state, such as `moveNode` or `updateBody`. |
 | Port | Interface that separates shared UI policy from a host capability, notably `DocumentGateway` and `DocumentFileDialogs`. |
 | Revision | Monotonically increasing document-state number, beginning at `0` for creation. |

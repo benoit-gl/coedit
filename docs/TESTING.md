@@ -197,6 +197,37 @@ P0 means required before trusting the affected data-integrity behavior. P1 means
 | UC-10 Close | Queue ordering/rejection recovery only | Close before debounce; failure/retry; standalone clears | Controller/editor flush-barrier component test and native reopen E2E |
 | UC-11 Standalone | Build-time inline syntax checks, when build runs | Double-click generated HTML in target browsers | Automated `file://` E2E and CSP/external-request assertion |
 
+## Proposed continuous-workspace verification plan
+
+This section is prospective and does not change the current automated-test inventory or manual instructions above. It is the verification gate for [UC-12 through UC-14](./RUP_VISION_AND_USE_CASES.md#proposed-next-iteration-use-cases) and the [proposed change package](./proposals/README.md).
+
+| Area | Lowest reliable automated seam | Integration/component evidence | Manual/qualification evidence |
+|---|---|---|---|
+| Visible-node projection | Pure projection cases for preorder, depth, multiple roots, collapsed ancestors, soft deletion, stable ordering, and large/deep trees | Canvas renders the same live/historical projection and preserves node identity while expansion changes | Read a realistic document continuously; verify scroll, collapse, and context at narrow/desktop widths |
+| Active editor ownership | Pure focus-transition intent plus draft/coordinator ordering | Separate focused-block/editor-owner state; exactly one Tiptap/Yjs owner; transfer/cross-block title/ancestor collapse drains before unmount; failure cancels and retains focus; StrictMode remount | Rapid pointer/keyboard/touch focus/collapse changes with formatting, paste, IME, and screen reader |
+| Seamless structural editing | Tree domain tests remain authoritative for invariants | Sibling/child creation focuses immediately; Tab remains normal navigation; handle-only structural shortcuts and native **Edit body** activation do not steal rich-body keys | Word-outline-like authoring flow, including non-drag alternatives and 44px touch targets |
+| Historical materialization | Shared available-capability contract snapshots live state, revision, ledger length, and snapshot count before/after query and proves all unchanged/hash-verified | Request origin/epochs handle live-versus-historical failure, Back/Close cancellation, and stale responses; banner persists; direct mutation callbacks are rejected | Repeatedly view several revisions and return without new History rows or lost live focus |
+| Historical rendering security | Malformed/missing revision, invalid tree, oversized state, and hostile HTML query fixtures | Historical preview follows the same sanitization boundary and errors never replace live projection | Inspect crafted recovery/native files in standalone/native qualification when import/open paths exist |
+| Restore separation | Existing restore contract plus queried-revision identity | **View** never restores; separately confirmed **Restore as new revision** appends exactly one contribution and returns to live mode | Compare revision/hash/history before view, after back, and after explicit restore |
+| Checkpoint state machine | Table-driven insertion/deletion/boundary cases using grapheme-aware counts | ProseMirror/input transaction classifier drives coordinator; ordinary selection without dirty content is quiet | Type/delete/cursor/focus/tree-operation scenarios and inspect expanded exact revisions |
+| Configurable checkpoint policy | Inject thresholds such as `3` and idle timeouts such as `50` ms; reject unsafe/fractional/nonpositive values and timeout above `2_147_483_647` | Production composition injects the exported default policy once | Change only `batchCharacterThreshold` and `idleTimeoutMs` in the policy module, rebuild, and observe both behaviors |
+| Timer behavior | Fake timers prove reset/cancel/idle capture and no orphan timer after flush/unmount | Controlled transitions cancel/await pending timer work; queued persistence remains FIFO | Leave dirty text idle beyond default 30 seconds, then type across focus changes and background/foreground where supported |
+| IME and edit classification | Composition commits count committed graphemes, not intermediate events; paste/cut/format/undo/redo classifications are explicit | Browser component tests cover `beforeinput`/ProseMirror transaction differences | Qualify at least Chromium, Firefox, and Safari/WebKit with a real IME |
+| Edit-group presentation | Pure grouping covers thresholds, boundaries, missing group IDs, page joins, partial groups, contributors, nodes, and restore rows | History coalesces across raw pages, distinguishes raw/visible counts, and exact group query expands all checkpoint revisions | Verify a group longer than 100 checkpoints is honest/readable collapsed and complete expanded |
+| Failure, backpressure, and retry | First failed checkpoint stays at FIFO head; slow unresolved persistence reaches the named two-checkpoint high-water; retry preserves order/group identity | Body changes freeze at the bound; node switch/tree/export/restore stays blocked until ordered progress/retry | Simulate slow and failed adapters and confirm visible text/checkpoints are bounded, neither lost nor reordered |
+
+Policy tests must import the production type/default from the proposed `src/editor/bodyCheckpointPolicy.ts`; they must not reproduce `20` or `30_000` as hidden production constants. Tests may inject deliberately small values so the default can be changed in one code location without rewriting state-machine expectations.
+
+Suggested deterministic acceptance cases:
+
+1. Nineteen inserted graphemes remain dirty; immediately before accepting the twentieth, a checkpoint captures the first nineteen and the twentieth begins the next threshold segment with the same `groupId`.
+2. The first deletion after insertion flushes insertion state before deletion; repeated deletion does not create one checkpoint per key repeat.
+3. The first insertion after deletion flushes deletion state before insertion.
+4. The first selection/cursor move or focus transfer after a dirty edit checkpoints once; further navigation while clean is silent.
+5. Every controlled structural operation first flushes the active body, then applies its tree operation, satisfying the requested post-operation durability without reversing revision order.
+6. Any dirty body change checkpoints after the injected idle timeout; the production default is `idleTimeoutMs = 30_000`.
+7. Threshold safety checkpoints share the edit episode's group ID; a semantic boundary closes it and the next edit receives another group ID.
+
 ## Test data and invariants
 
 ### Versioned protocol fixtures
@@ -374,7 +405,7 @@ Expected target behavior: snapshot state and editor state agree through reopen. 
 
 ### DT-05 - Export and backup
 
-1. Export Markdown and confirm active hierarchy order, headings, summaries, and text.
+1. Export Markdown and confirm active hierarchy order, headings, and plain text from each node body; no removed summary field is emitted.
 2. Export JSON and confirm the desktop legacy fields `exportVersion: 1`, `exportedAt`, `state`, and `contributions` are present; do not expect the standalone version-2 format/hash/history fields in pass 1.
 3. Create a `.coedit-backup` and compare its reported byte count with the filesystem size.
 4. Preserve the original, rename a copy of the backup to `.coedit`, and open that copy.

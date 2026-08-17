@@ -70,4 +70,6 @@ Start with the [engineering documentation index](./docs/README.md). It routes co
 - feature-to-file traceability, extension recipes, tests, build/release portability, and known limitations;
 - the `.coedit` format/recovery and security specifications.
 
+Future work on the continuous block-outline workspace, non-mutating historical views, and configurable body checkpoint grouping starts at the [proposed continuous-workspace change package](./docs/proposals/README.md). It is a design handoff, not a description of current behavior.
+
 The [original architecture plan](./LOCAL_FIRST_TREE_EDITOR_PLAN.md) remains a roadmap artifact. Where it differs from the current engineering documentation or executable code, the latter describe the current implementation.

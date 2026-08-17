@@ -1,10 +1,11 @@
 # Coedit engineering documentation
 
-This directory describes Coedit Local as it exists in the repository at version `0.1.0` and document format version `1`. It is intended to let a contributor answer three questions quickly:
+This directory describes Coedit Local as it exists in the repository at version `0.1.0` and document format version `1`, and separately records implementation-ready proposals that are not yet code. It is intended to let a contributor answer four questions quickly:
 
 1. What behavior exists now?
 2. Where is that behavior implemented?
 3. Which contracts, tests, and documentation must change with it?
+4. Which approved product directions have a resumable design but no implementation yet?
 
 The set follows Rational Unified Process (RUP) ideas without assuming a heavyweight process: requirements are separated from architecture and design; the architecture is described through the 4+1 views; use cases are traceable to implementation and tests; and known gaps are recorded rather than presented as finished features.
 
@@ -19,6 +20,7 @@ The set follows Rational Unified Process (RUP) ideas without assuming a heavywei
 | Build or package the software | [Build, release, and portability](./BUILD_AND_PORTABILITY.md) | [Security model](./SECURITY.md) |
 | Work on the portable file format | [Document format](./DOCUMENT_FORMAT.md) | [Persistence design](./PERSISTENCE_DESIGN.md) |
 | Assess unfinished or risky behavior | [Known limitations](./KNOWN_LIMITATIONS.md) | [Traceability and code map](./TRACEABILITY.md) |
+| Resume the continuous-workspace redesign | [Proposed change package](./proposals/README.md) | [Continuous outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md), [query-first history](./proposals/QUERY_FIRST_HISTORY.md), and [checkpoint strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md) |
 
 ## Artifact register
 
@@ -37,6 +39,7 @@ The set follows Rational Unified Process (RUP) ideas without assuming a heavywei
 | Configuration and change management | [Known limitations](./KNOWN_LIMITATIONS.md) | Verified defects, constraints, workarounds, and recommended ownership |
 | Data / recovery | [Document format](./DOCUMENT_FORMAT.md) | `.coedit` format, schema policy, backup, export, and recovery |
 | Security | [Security model](./SECURITY.md) | Trust boundaries, sanitization, CSP, capabilities, future network rules |
+| Proposed analysis/design | [Continuous workspace change package](./proposals/README.md) | Target design for a continuous block outline, non-mutating historical views, and configurable semantic body checkpoints; explicitly not current behavior |
 
 The earlier [local-first implementation plan](../LOCAL_FIRST_TREE_EDITOR_PLAN.md) records product intent and phased acceptance criteria. Where it differs from the code, this engineering set and the code describe the current state; the plan remains a roadmap artifact.
 
@@ -93,6 +96,16 @@ The current branch is intentionally staged:
 
 These pass boundaries are scope statements, not release promises. [Known limitations](./KNOWN_LIMITATIONS.md) remains the authoritative risk register.
 
+## Proposed next-iteration workspace design
+
+The [continuous workspace change package](./proposals/README.md) records a future UX/application-architecture iteration without changing the current implementation claims above. Its three coordinated designs are:
+
+- a continuous block-outline canvas replacing the master/detail outline-plus-selected-editor workflow;
+- query-first, read-only historical materialization with restoration kept as an explicit compensating command; and
+- an edit-batch checkpoint state machine whose `batchCharacterThreshold` and `idleTimeoutMs` defaults are centralized and injectable.
+
+These documents are the handoff point for resuming that work. They must remain labeled **Proposed** until their code paths and acceptance tests exist.
+
 ## Status language
 
 The documents use these labels consistently:
@@ -108,4 +121,4 @@ PlantUML source is embedded in fenced `plantuml` blocks so it remains reviewable
 
 ## Documentation maintenance rule
 
-A change is not complete when it changes an externally visible use case, an architecture boundary, a persisted shape, a Tauri command, a build output, or a known limitation without updating the corresponding artifact and [traceability row](./TRACEABILITY.md). Keep proposed behavior explicitly separated from implemented behavior.
+A change is not complete when it changes an externally visible use case, an architecture boundary, a persisted shape, a Tauri command, a build output, or a known limitation without updating the corresponding artifact and [traceability row](./TRACEABILITY.md). Keep proposed behavior explicitly separated from implemented behavior. When implementing a proposal, update its work-package status and acceptance evidence in the same change that updates the as-built documents.

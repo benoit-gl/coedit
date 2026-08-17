@@ -11,6 +11,7 @@ Related documents:
 - [Feature-to-code traceability](TRACEABILITY.md)
 - [Known limitations](KNOWN_LIMITATIONS.md)
 - [UI and UX specification](UI_UX.md)
+- [Proposed continuous-workspace change package](proposals/README.md)
 
 ## Purpose and design boundary
 
@@ -287,15 +288,15 @@ useDocumentController --> ContributionContext : creates
 
 | State | Meaning | Primary writers |
 |---|---|---|
-| `view: DocumentView | null` | Complete current materialized document, or welcome state when `null`. | Create, open, apply, restore, close. |
+| `view: DocumentView \| null` | Complete current materialized document, or welcome state when `null`. | Create, open, apply, restore, close. |
 | `contributions: Contribution[]` | Loaded newest-first pages for the active filters. | first-page refresh, `loadOlderHistory`, close/query reset. |
-| `selectedId: string | null` | Active non-deleted node. | controlled selection, add, accepted-view repair, close. |
+| `selectedId: string \| null` | Active non-deleted node. | controlled selection, add, accepted-view repair, close. |
 | `editorGeneration: number` | Authoritative editor-instance generation included in `NodeEditor`'s React key. | create, open, restore, close. |
 | `historyOpen: boolean` | Whether the history panel is rendered. | History and close buttons. |
 | `historyLoading`, `historyHasMore`, `historyStale`, `historyError` | Independent contribution-page request state. | guarded history requests and accepted-view invalidation. |
 | `busyCount` / returned `busy` | Number/boolean for queued or running document commands. | `enqueue()`. |
 | `transitioning: boolean` | A controlled draft freeze/drain/workspace transition is active. | `runTransition()`. |
-| `error: string | null` | Last command/draft-flush error. | `executeMutation()`, `runTransition()`, and banner close. |
+| `error: string \| null` | Last command/draft-flush error. | `executeMutation()`, `runTransition()`, and banner close. |
 | `status: string` | Last successful lifecycle/mutation/export message. | mutation/transition success labels. |
 | `sessionId` ref | One generated identifier for this mounted controller. | Initialized once with `newId()`. |
 | `workspaceEpoch`, `historyRequest` refs | Reject responses belonging to an old workspace or superseded query. | create/open/close/query/history requests. |
@@ -459,6 +460,16 @@ Extend the centralized `ExportFormat` union in `src/domain/types.ts`, update the
 
 `src/ai/provider.ts` is only a contract. An implementation should be injected explicitly, initiated only by a user action, and return a proposal. Accepted changes must become ordinary attributed `DocumentOperation` values; a provider must not mutate a gateway or document directly.
 
+## Proposed workspace replacement — not implemented
+
+The current source map, React tree, class diagram, and control flow above remain the as-built design. A resumable target design is maintained separately:
+
+- [Continuous block-outline](proposals/CONTINUOUS_BLOCK_OUTLINE.md) replaces the `Outline` plus selected `NodeEditor` composition with `DocumentCanvas`, a pure visible-node projection, separate focused-block/editor-owner state, drain-before-hide controls, and one active Tiptap owner.
+- [Query-first historical views](proposals/QUERY_FIRST_HISTORY.md) adds a discriminated revision-query capability, verified materialization, origin-aware loading, and explicit `WorkspaceProjection = live | historical`, while keeping `restoreRevision` mutating and separately confirmed.
+- [Body checkpoint strategy](proposals/BODY_CHECKPOINT_STRATEGY.md) replaces the 1.2-second timer with a transaction-classifying batch coordinator, two-checkpoint FIFO backpressure, and page-aware group projection. It requires one injectable code policy containing easily modifiable `batchCharacterThreshold` and `idleTimeoutMs` values.
+
+Proposed names and interfaces must not be added to the current source-map tables until corresponding files exist. Implementation should follow the delivery slices and acceptance criteria in the proposal index rather than attempting a single document-wide ProseMirror rewrite.
+
 ## Current implementation constraints
 
 These are observations, not recommended behavior. The consolidated risk list and remediation status belong in [Known limitations](KNOWN_LIMITATIONS.md).
@@ -472,6 +483,9 @@ These are observations, not recommended behavior. The consolidated risk list and
 - The memory adapter records session IDs in contributions but does not populate `DocumentState.sessions`.
 - The standalone `coedit-document-state-v1` hash now has a golden fixture and excludes view-only fields. Rust has not yet adopted/proved that canonical byte representation.
 - `Outline` initializes expansion state only on mount. IDs added later are not automatically expanded.
+- `App` composes a separate `Outline` with one selected `NodeEditor`; the current workspace is master/detail rather than a continuous document canvas.
+- History can list and restore revisions but has no non-mutating materialization query or explicit historical workspace mode.
+- `RichTextEditor` uses a fixed 1.2-second quiet-period timer and `commitBody` creates a fresh group ID for every checkpoint; edit episodes are not semantically grouped.
 - There is a hook-level React controller suite but no full component/editor or end-to-end suite. Current TypeScript tests cover tree rules, queue and draft-transition ordering/recovery, controller selection/Close/restore generation, JSON/hash and sanitizer fixtures, memory boundary validation/history paging/recovery export, and filename normalization.
 
 ## Review checklist for frontend changes

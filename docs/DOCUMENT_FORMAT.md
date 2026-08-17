@@ -143,6 +143,8 @@ Normal operation types are `createNode`, `updateNode`, `updateBody`, `moveNode`,
 
 Revision `0` is `createDocument` with base revision `-1`. Each subsequent committed mutation or restore uses the previous current revision as `base_revision` and allocates current revision plus one.
 
+The proposed checkpoint design continues to append these raw rows. Reusing `group_id` across safety checkpoints changes only their semantic presentation, not revision allocation or immutability; see [Proposed historical-view and checkpoint semantics](#proposed-historical-view-and-checkpoint-semantics).
+
 The `contributions_node_time` index contains only `timestamp DESC`; affected node IDs remain JSON and are filtered in application code.
 
 ### `snapshots`
@@ -157,6 +159,8 @@ The `contributions_node_time` index contains only `timestamp DESC`; affected nod
 Version 1 stores a full snapshot for every revision. The matching contribution/snapshot revision is a code-level convention; no foreign key connects the tables.
 
 Snapshots include document metadata, all nodes, contributors, and sessions. They do not include the ledger, other snapshots, attachments, path, read-only flag, or recovery warning.
+
+The proposed historical-view query reads one of these existing snapshots without making it current; it does not itself require another table or snapshot row.
 
 ### `attachments`
 
@@ -270,6 +274,37 @@ The old contribution and snapshot rows remain. Restored HTML is sanitized and Yj
 
 This is distinct from `restoreNode`: that operation undeletes one node and its ancestors, but not deleted descendants.
 
+## Proposed historical-view and checkpoint semantics
+
+This section records the data contract expected by the [proposed continuous-workspace package](./proposals/README.md). It is **not implemented** and does not declare a new schema version.
+
+### Historical materialization is a query
+
+Materializing revision `R` for inspection shall:
+
+1. locate the existing full snapshot for exactly `R`;
+2. parse and validate the snapshot as untrusted `DocumentState`;
+3. recompute the host/schema-appropriate state hash, reject mismatch with the stored snapshot hash, and return detached state together with verified revision/hash metadata needed by the UI; and
+4. perform no insert, update, delete, revision allocation, contribution append, snapshot append, or replacement of live materialized rows.
+
+Repeatedly viewing `R` and returning to live mode must therefore be observationally idempotent: live state, current revision, contribution count, and snapshot count remain unchanged. This is intentionally distinct from the existing restore semantics above. **Restore as new revision** continues to append one compensating contribution and snapshot.
+
+The memory adapter can clone its existing per-revision state. The native implementation can read `snapshots.state_json` and `state_hash` through a read-only store/query method. The exact wire type is an application-port decision, not necessarily a persisted schema addition.
+
+### Checkpoints remain ordinary revisions
+
+The proposed [body checkpoint strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md) does not introduce a hidden mutable autosave record:
+
+- every successful body checkpoint remains an ordinary `updateBody` contribution, monotonically increasing revision, resulting hash, and full snapshot under the current model;
+- multiple safety checkpoints in one semantic edit episode reuse one `groupId`;
+- a semantic boundary closes the episode, so a later edit receives a new `groupId`;
+- collapsed History presentation is a query/projection over immutable raw rows; it does not merge, delete, or rewrite contributions; and
+- expanding a group exposes its exact physical revisions, each of which remains individually materializable/restorable.
+
+The two easy-to-change code-policy values, `batchCharacterThreshold` and `idleTimeoutMs`, control *when* checkpoints are requested; they are not persisted document properties and do not alter file interpretation. The proposed defaults are `20` graphemes and `30_000` milliseconds. Changing them can materially affect ledger/snapshot volume and must be measured, but does not by itself require a format migration.
+
+This grouping design does not solve snapshot-per-revision growth. Retention, compaction, delta snapshots, and replay/checkpoint strategy remain separate format work and must not be inferred from a collapsed History row.
+
 ## Open and version compatibility
 
 ```plantuml
@@ -371,7 +406,6 @@ Browser and native suggested export names use `safeFilenameStem()` in `src/persi
 Markdown is lossy interchange:
 
 - document and active node titles become headings;
-- nonempty summaries become italic paragraphs;
 - rich HTML is flattened to plain text;
 - active children are visited depth-first in sibling order;
 - heading depth is capped at level six.

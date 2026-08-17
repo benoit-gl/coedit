@@ -217,6 +217,8 @@ The shared React UI can render in a browser in principle, but the current produc
 
 Treat iPadOS as a new host/use-case project, not a packaging checkbox.
 
+The proposed [continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md) defines pointer-independent structural commands, explicit touch targets, focus ownership, and historical read-only rendering that improve browser/tablet viability. It is still a design, not iPadOS support evidence. Before claiming support, qualify the canvas, dynamic viewport/keyboard behavior, IME, selection, scrolling, downloads, suspension, and assistive technology in actual Safari/iPadOS hardware.
+
 ## Troubleshooting
 
 ### `127.0.0.1 refused to connect`

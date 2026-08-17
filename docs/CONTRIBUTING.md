@@ -58,6 +58,25 @@ The symbol-level index is [Traceability and code map](./TRACEABILITY.md). The sh
 4. the owning frontend or persistence design section;
 5. existing tests and [known limitations](./KNOWN_LIMITATIONS.md).
 
+## Resuming the proposed continuous-workspace work
+
+The implementation handoff for the next UX iteration is [Proposed continuous workspace](./proposals/README.md). It coordinates three designs that must be read together:
+
+1. [Query-first historical views](./proposals/QUERY_FIRST_HISTORY.md) - add a non-mutating revision query and explicit live/historical workspace modes.
+2. [Body checkpoint and commit strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md) - replace the fixed timer with an injectable event-aware coordinator before inline focus transfer depends on it.
+3. [Continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md) - replace the master/detail composition after the query and checkpoint boundaries exist.
+
+When picking the work up later:
+
+- begin with the proposal [resume checklist](./proposals/README.md#resume-checklist) and confirm the current interfaces have not drifted;
+- implement one delivery slice and its tests at a time, with the standalone host as the first qualification target;
+- keep the Tauri frontend compiling and document intentional native gaps, but do not broaden a slice into unrelated Rust/schema hardening;
+- define the proposed `BodyCheckpointPolicy` once, inject it into the coordinator, and keep `batchCharacterThreshold` and `idleTimeoutMs` free of duplicated production literals;
+- update the proposal decision/status tables and the as-built RUP, traceability, sequences, UI/UX, limitations, security, and testing sections only as behavior becomes reachable; and
+- do not delete the current master/detail or timer documentation before the replacement passes its acceptance criteria.
+
+The proposal documents are the decision record. Conversation history is not required to reconstruct the intended behavior.
+
 ## Change workflow (RUP-lite)
 
 Use the RUP separation of concerns as a checklist, not as ceremony:
@@ -269,6 +288,8 @@ There is currently no lint script. TypeScript compilation and tests are the enfo
 1. **Pass 1 — standalone architecture (current):** controller/queue, synchronous draft freeze plus awaitable title/metadata/rich-text drains, authoritative editor remount, discriminated storage capabilities, cursor-paged/filter-before-limit memory history, complete runtime recovery envelope, shared format/filename/sanitizer helpers, and versioned browser fixtures.
 2. **Pass 2 — Rust/Tauri parity and hardening (deferred):** make Rust consume the hash/sanitizer fixtures, implement store-side indexed cursor filtering without a 100,000-row pre-window, move file authorization/path ownership behind a defensible Rust boundary, minimize native permissions, add schema migration and measured snapshot-compaction policy, and run native/platform verification.
 3. **Pass 3 — dormant-feature decisions (deferred):** explicitly finish, retain as reserved, migrate, or remove AI, attachments, `restoreNode`, session lifecycle, contribution grouping, and generic node metadata.
+
+The continuous-workspace package is a separately scoped UX/application iteration. Its recommended implementation order is revision query, checkpoint coordinator/group projection, then continuous canvas, with standalone qualification first. Do not confuse the proposed use of `groupId` for body-edit presentation with a final pass-3 decision about the broader dormant grouping/session model.
 
 Do not implement a pass-2 or pass-3 item incidentally without updating its design, format/security impact, and tests.
 
