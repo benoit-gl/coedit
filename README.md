@@ -6,10 +6,10 @@ This is a new implementation inspired by TreeWriter's interaction model. It does
 
 ## Current MVP
 
-- Typed idea hierarchy with root and child nodes
+- Tagged idea hierarchy with root and child nodes
 - Optional freeform node tags with document-local reusable suggestions
 - Keyboard navigation, sibling reordering, drag-to-reparent, and soft deletion
-- Tiptap rich-text editing backed by Yjs updates
+- One rich-text body per node, edited with Tiptap and backed by Yjs updates
 - Contributor, writing-session, revision, operation, and state-hash attribution
 - Cursor-paged, adapter-filtered history and restoration through compensating contributions
 - Portable `.coedit` SQLite document files

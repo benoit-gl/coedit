@@ -11,7 +11,7 @@ import { bytesToBase64, createYDoc } from "./yjsEncoding";
 interface RichTextEditorProps {
   node: DocumentNode;
   readOnly: boolean;
-  onCommit: (contentHtml: string, yjsUpdate: string, yjsState: string) => Promise<void>;
+  onCommit: (bodyHtml: string, yjsUpdate: string, yjsState: string) => Promise<void>;
   registerDraftParticipant: (participant: DraftParticipant) => () => void;
 }
 
@@ -32,7 +32,7 @@ export function RichTextEditor({ node, readOnly, onCommit, registerDraftParticip
       Collaboration.configure({ document, field: "content" }),
     ],
     editorProps: {
-      attributes: { class: "editor-surface", "aria-label": "Node text" },
+      attributes: { class: "editor-surface", "aria-label": "Node body" },
       transformPastedHTML: sanitizeRichText,
     },
   }, [document]);
@@ -50,9 +50,9 @@ export function RichTextEditor({ node, readOnly, onCommit, registerDraftParticip
   useEffect(() => { editor?.setEditable(!readOnly); }, [editor, readOnly]);
 
   useEffect(() => {
-    if (!editor || node.yjsState || !node.contentHtml) return;
-    editor.commands.setContent(sanitizeRichText(node.contentHtml));
-  }, [editor, node.contentHtml, node.yjsState]);
+    if (!editor || node.yjsState || !node.bodyHtml) return;
+    editor.commands.setContent(sanitizeRichText(node.bodyHtml));
+  }, [editor, node.bodyHtml, node.yjsState]);
 
   const flushPendingEdits = useCallback((): Promise<void> => {
     if (timer.current !== null) {

@@ -8,8 +8,8 @@ const state = (): DocumentState => ({
   contributors: [],
   sessions: [],
   nodes: [
-    { id: "root", parentId: null, position: 0, tags: ["section"], title: "Root", summary: "", contentHtml: "", yjsState: "", metadata: {}, createdAt: now, updatedAt: now, deletedAt: null },
-    { id: "child", parentId: "root", position: 0, tags: [], title: "Child", summary: "", contentHtml: "", yjsState: "", metadata: {}, createdAt: now, updatedAt: now, deletedAt: null },
+    { id: "root", parentId: null, position: 0, tags: ["section"], title: "Root", bodyHtml: "", yjsState: "", metadata: {}, createdAt: now, updatedAt: now, deletedAt: null },
+    { id: "child", parentId: "root", position: 0, tags: [], title: "Child", bodyHtml: "", yjsState: "", metadata: {}, createdAt: now, updatedAt: now, deletedAt: null },
   ],
 });
 
@@ -25,6 +25,18 @@ describe("tree operations", () => {
   it("soft-deletes a complete subtree", () => {
     const result = applyOperation(state(), { type: "softDeleteNode", nodeId: "root" }, now);
     expect(result.nodes.every((node) => node.deletedAt === now)).toBe(true);
+  });
+
+  it("updates the node body and its complete Yjs state", () => {
+    const result = applyOperation(state(), {
+      type: "updateBody",
+      nodeId: "child",
+      bodyHtml: "<p>Draft</p>",
+      yjsUpdate: "incremental-state",
+      yjsState: "complete-state",
+    }, now);
+    expect(result.nodes[1]).toMatchObject({ bodyHtml: "<p>Draft</p>", yjsState: "complete-state" });
+    expect(result.nodes[1].title).toBe("Child");
   });
 
   it("detects cyclic imported state", () => {

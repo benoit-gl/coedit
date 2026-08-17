@@ -31,10 +31,10 @@ function clone<T>(value: T): T {
 
 function portableOperation(operation: DocumentOperation): DocumentOperation {
   const detached = clone(operation);
-  if (detached.type === "createNode" && detached.node.contentHtml !== undefined) {
-    detached.node.contentHtml = sanitizeRichText(detached.node.contentHtml);
-  } else if (detached.type === "updateContent") {
-    detached.contentHtml = sanitizeRichText(detached.contentHtml);
+  if (detached.type === "createNode" && detached.node.bodyHtml !== undefined) {
+    detached.node.bodyHtml = sanitizeRichText(detached.node.bodyHtml);
+  } else if (detached.type === "updateBody") {
+    detached.bodyHtml = sanitizeRichText(detached.bodyHtml);
   }
   return detached;
 }
@@ -54,9 +54,8 @@ function markdownFor(state: DocumentState): string {
   const visit = (parentId: string | null, depth: number) => {
     for (const node of children(parentId)) {
       lines.push(`${"#".repeat(Math.min(depth + 2, 6))} ${node.title}`, "");
-      if (node.summary) lines.push(`_${node.summary}_`, "");
-      const content = htmlToMarkdown(node.contentHtml);
-      if (content) lines.push(content, "");
+      const body = htmlToMarkdown(node.bodyHtml);
+      if (body) lines.push(body, "");
       visit(node.id, depth + 1);
     }
   };

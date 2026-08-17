@@ -5,7 +5,7 @@ import { normalizeTags } from "../domain/tags";
 import { RichTextEditor } from "../editor/RichTextEditor";
 import { TagEditor } from "./TagEditor";
 
-type NodeMetadataDraft = Pick<DocumentNode, "title" | "summary" | "tags">;
+type NodeMetadataDraft = Pick<DocumentNode, "title" | "tags">;
 type MetadataChanges = Partial<NodeMetadataDraft>;
 
 interface NodeEditorProps {
@@ -13,15 +13,15 @@ interface NodeEditorProps {
   tagSuggestions: string[];
   readOnly: boolean;
   onMetadataChange: (changes: MetadataChanges) => Promise<void>;
-  onContentChange: (contentHtml: string, yjsUpdate: string, yjsState: string) => Promise<void>;
+  onBodyChange: (bodyHtml: string, yjsUpdate: string, yjsState: string) => Promise<void>;
   registerDraftParticipant: RegisterDraftParticipant;
 }
 
 function metadataOf(node: DocumentNode): NodeMetadataDraft {
-  return { title: node.title, summary: node.summary, tags: node.tags };
+  return { title: node.title, tags: node.tags };
 }
 
-export function NodeEditor({ node, tagSuggestions, readOnly, onMetadataChange, onContentChange, registerDraftParticipant }: NodeEditorProps) {
+export function NodeEditor({ node, tagSuggestions, readOnly, onMetadataChange, onBodyChange, registerDraftParticipant }: NodeEditorProps) {
   const [draft, setDraft] = useState<NodeMetadataDraft>(() => metadataOf(node));
   const [frozen, setFrozen] = useState(false);
   const draftRef = useRef(draft);
@@ -45,7 +45,6 @@ export function NodeEditor({ node, tagSuggestions, readOnly, onMetadataChange, o
     setDraft((current) => {
       const next = { ...current };
       if (!dirty.current.has("title")) next.title = node.title;
-      if (!dirty.current.has("summary")) next.summary = node.summary;
       if (!dirty.current.has("tags")) next.tags = node.tags;
       draftRef.current = next;
       return next;
@@ -69,7 +68,6 @@ export function NodeEditor({ node, tagSuggestions, readOnly, onMetadataChange, o
         const fields = [...dirty.current];
         const changes: MetadataChanges = {};
         if (fields.includes("title") && captured.title !== baseline.title) changes.title = captured.title;
-        if (fields.includes("summary") && captured.summary !== baseline.summary) changes.summary = captured.summary;
         if (fields.includes("tags") && (captured.tags.length !== baseline.tags.length || captured.tags.some((tag, index) => tag !== baseline.tags[index]))) {
           changes.tags = captured.tags;
         }
@@ -174,25 +172,14 @@ export function NodeEditor({ node, tagSuggestions, readOnly, onMetadataChange, o
           void flushMetadata().catch(() => undefined);
         }}
       />
-      <label className="summary-field">
-        <span className="eyebrow">Working summary</span>
-        <textarea
-          value={draft.summary}
-          disabled={disabled}
-          rows={3}
-          placeholder="What must this idea accomplish?"
-          onChange={(event) => changeDraft("summary", event.target.value)}
-          onBlur={() => { void flushMetadata().catch(() => undefined); }}
-        />
-      </label>
       <div className="text-heading">
-        <div><span className="eyebrow">Developed text</span><h2>Write and refine</h2></div>
+        <div><span className="eyebrow">Text</span><h2>Write and refine</h2></div>
         <span className="save-hint">Typing is grouped after 1.2 seconds of rest</span>
       </div>
       <RichTextEditor
         node={node}
         readOnly={disabled}
-        onCommit={onContentChange}
+        onCommit={onBodyChange}
         registerDraftParticipant={registerRichTextParticipant}
       />
     </article>

@@ -76,8 +76,7 @@ pub struct DocumentNode {
     pub position: i64,
     pub tags: Vec<String>,
     pub title: String,
-    pub summary: String,
-    pub content_html: String,
+    pub body_html: String,
     pub yjs_state: String,
     pub metadata: Value,
     pub created_at: String,
@@ -111,8 +110,7 @@ pub struct NewNode {
     pub parent_id: Option<String>,
     pub tags: Option<Vec<String>>,
     pub title: String,
-    pub summary: Option<String>,
-    pub content_html: Option<String>,
+    pub body_html: Option<String>,
     pub yjs_state: Option<String>,
     pub metadata: Option<Value>,
 }
@@ -121,7 +119,6 @@ pub struct NewNode {
 #[serde(rename_all = "camelCase")]
 pub struct NodeChanges {
     pub title: Option<String>,
-    pub summary: Option<String>,
     pub tags: Option<Vec<String>>,
     pub metadata: Option<Value>,
 }
@@ -137,9 +134,9 @@ pub enum DocumentOperation {
         node_id: String,
         changes: NodeChanges,
     },
-    UpdateContent {
+    UpdateBody {
         node_id: String,
-        content_html: String,
+        body_html: String,
         yjs_update: String,
         yjs_state: String,
     },
@@ -164,7 +161,7 @@ impl DocumentOperation {
         match self {
             Self::CreateNode { .. } => "createNode",
             Self::UpdateNode { .. } => "updateNode",
-            Self::UpdateContent { .. } => "updateContent",
+            Self::UpdateBody { .. } => "updateBody",
             Self::MoveNode { .. } => "moveNode",
             Self::SoftDeleteNode { .. } => "softDeleteNode",
             Self::RestoreNode { .. } => "restoreNode",
@@ -176,7 +173,7 @@ impl DocumentOperation {
         match self {
             Self::CreateNode { node, .. } => vec![node.id.clone()],
             Self::UpdateNode { node_id, .. }
-            | Self::UpdateContent { node_id, .. }
+            | Self::UpdateBody { node_id, .. }
             | Self::MoveNode { node_id, .. }
             | Self::SoftDeleteNode { node_id }
             | Self::RestoreNode { node_id } => vec![node_id.clone()],

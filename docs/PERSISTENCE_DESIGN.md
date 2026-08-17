@@ -218,8 +218,7 @@ class DocumentNode {
   position: number
   tags: string[]
   title: string
-  summary: string
-  contentHtml: string
+  bodyHtml: string
   yjsState: base64 string
   metadata: object
   deletedAt: string?
@@ -247,7 +246,7 @@ Contribution --> DocumentOperation : payload represents
 @enduml
 ```
 
-The seven implemented operation variants are `createNode`, `updateNode`, `updateContent`, `moveNode`, `softDeleteNode`, `restoreNode`, and `renameDocument`. Contributions additionally use `createDocument` and `restoreRevision` as operation types.
+The seven implemented operation variants are `createNode`, `updateNode`, `updateBody`, `moveNode`, `softDeleteNode`, `restoreNode`, and `renameDocument`. Contributions additionally use `createDocument` and `restoreRevision` as operation types.
 
 ## Implementation map
 
@@ -325,8 +324,7 @@ entity nodes {
   position: INTEGER
   tags_json: TEXT
   title: TEXT
-  summary: TEXT
-  content_html: TEXT
+  body_html: TEXT
   yjs_state: BLOB
   metadata_json: TEXT
   created_at: TEXT
@@ -484,9 +482,9 @@ The state read used to calculate `baseRevision` occurs before the SQL transactio
 
 | Operation | Durable-store behavior |
 |---|---|
-| `createNode` | Requires a new ID and existing parent; clamps insertion index; shifts siblings; cleans title; limits summary/content/Yjs; sanitizes HTML; decodes complete Yjs state; inserts; normalizes active sibling positions. |
-| `updateNode` | Requires the node; cleans title; validates/normalizes tags; limits summary and serialized metadata; changes tags/metadata as supplied; updates timestamp. |
-| `updateContent` | Requires the node; checks HTML and encoded-update size; decodes update and state; limits decoded complete state; sanitizes HTML; persists HTML and complete Yjs state. |
+| `createNode` | Requires a new ID and existing parent; clamps insertion index; shifts siblings; cleans title; limits body/Yjs; sanitizes HTML; decodes complete Yjs state; inserts; normalizes active sibling positions. |
+| `updateNode` | Requires the node; cleans title; validates/normalizes tags; limits serialized metadata; changes tags/metadata as supplied; updates timestamp. |
+| `updateBody` | Requires the node; checks body HTML and encoded-update size; decodes update and state; limits decoded complete state; sanitizes HTML; persists HTML and complete Yjs state. |
 | `moveNode` | Requires node and target parent; rejects a descendant target; moves and normalizes both sibling groups. Final state loading also rejects cycles. |
 | `softDeleteNode` | Uses a recursive CTE to timestamp the node and all descendants, then normalizes the former active sibling group. |
 | `restoreNode` | Clears deletion on the node and its ancestors. It does not restore the node's deleted descendants. |
@@ -512,13 +510,12 @@ Current Rust limits use UTF-8 byte length:
 | Value | Limit |
 |---|---:|
 | Title | 4,096 bytes |
-| Summary | 1 MiB |
 | Serialized metadata JSON | 1 MiB |
-| Content HTML | 16 MiB |
+| Body HTML | 16 MiB |
 | Decoded complete Yjs state | 32 MiB |
 | Encoded Yjs update string | 64 MiB |
 
-The Yjs update is base64-decoded for validity but is not interpreted or applied by Rust. The caller-supplied complete Yjs state is authoritative. The store does not prove that `contentHtml`, `yjsUpdate`, and `yjsState` represent identical content.
+The Yjs update is base64-decoded for validity but is not interpreted or applied by Rust. The caller-supplied complete Yjs state is authoritative. The store does not prove that `bodyHtml`, `yjsUpdate`, and `yjsState` represent identical content.
 
 ## Contributions, hashes, and snapshots
 

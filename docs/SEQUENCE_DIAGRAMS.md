@@ -246,7 +246,7 @@ A file whose SQLite `user_version` is newer than the supported format is reopene
 
 ## Apply a structural or metadata operation
 
-**Implemented.** This covers `createNode`, `updateNode`, `moveNode`, `softDeleteNode`, `restoreNode`, and `renameDocument`. `updateContent` travels through the same gateway operation but has the editor-specific preparation shown in the next diagram.
+**Implemented.** This covers `createNode`, `updateNode`, `moveNode`, `softDeleteNode`, `restoreNode`, and `renameDocument`. `updateBody` travels through the same gateway operation but has the editor-specific preparation shown in the next diagram.
 
 ```plantuml
 @startuml
@@ -370,17 +370,17 @@ Rich -> YDoc : Y.encodeStateAsUpdate(document)
 YDoc --> Rich : complete binary state
 Rich -> Rich : Base64 merged update + complete state
 Rich -> NodeEditor : onCommit(html, update, state)
-NodeEditor -> App : onContentChange(...)
-App -> Controller : commitContent(...)
+NodeEditor -> App : onBodyChange(...)
+App -> Controller : commitBody(...)
 Controller -> Controller : newId() for this contribution group
-Controller -> Queue : enqueue updateContent
-Queue -> Gateway : applyOperation(updateContent, context)
+Controller -> Queue : enqueue updateBody
+Queue -> Gateway : applyOperation(updateBody, context)
 Gateway --> Queue : updated DocumentView
 Queue --> Controller : updated view
 loop updates arrived while persistence was pending
   Rich -> Rich : merge/sanitize/encode next pending batch
-  Rich -> Controller : commitContent(next batch)
-  Controller -> Queue : enqueue next updateContent
+  Rich -> Controller : commitBody(next batch)
+  Controller -> Queue : enqueue next updateBody
 end
 opt History is open
   Controller -> Gateway : refresh first history page
@@ -673,7 +673,7 @@ Controller -> Drafts : begin()
 Drafts -> Participants : freeze() synchronously
 Controller -> Participants : flush()
 loop each dirty draft in participant order
-  Participants -> Queue : enqueue rename/updateNode/updateContent
+  Participants -> Queue : enqueue rename/updateNode/updateBody
   Queue -> Gateway : applyOperation(...)
   Gateway --> Queue : accepted view
   Queue --> Participants : commit resolved

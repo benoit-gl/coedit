@@ -24,7 +24,7 @@ This document describes the security posture of the current offline standalone a
 
 | Asset | Desired property |
 |---|---|
-| Developed text and hierarchy | confidentiality on the local device; integrity and recoverability |
+| Node bodies and hierarchy | confidentiality on the local device; integrity and recoverability |
 | Contributor attribution/history | correct identity association; append-only behavior through the application |
 | `.coedit` and backup files | recognizable format, structurally valid state, safe recovery |
 | Standalone exports | no accidental remote transmission; clear limits/fidelity |
@@ -143,11 +143,11 @@ Current validation does **not** authenticate the file, verify contribution/snaps
 
 - transforming pasted HTML;
 - obtaining HTML for a debounced commit;
-- loading legacy/fallback `contentHtml` when no Yjs state exists.
+- loading fallback `bodyHtml` when no Yjs state exists.
 
 The browser policy is named `coedit-rich-text-v1`; its tags/attributes live in one module and `fixtures/protocol/rich-text-v1.json` supplies executable expected outputs and idempotence cases. This is standalone evidence only until Rust consumes or deliberately versions an equivalent fixture contract.
 
-`MemoryDocumentGateway` applies the same sanitizer again to direct `createNode.contentHtml` and `updateContent.contentHtml` operations, so callers that bypass the editor do not bypass the standalone persistence boundary. Its `cloneJson` boundary detaches accepted inputs and rejects non-finite/non-JSON values, circular references, non-plain objects, symbol/accessor/non-enumerable properties, and sparse or extra-property arrays. This does not provide Rust's byte-size quotas.
+`MemoryDocumentGateway` applies the same sanitizer again to direct `createNode.bodyHtml` and `updateBody.bodyHtml` operations, so callers that bypass the editor do not bypass the standalone persistence boundary. Its `cloneJson` boundary detaches accepted inputs and rejects non-finite/non-JSON values, circular references, non-plain objects, symbol/accessor/non-enumerable properties, and sparse or extra-property arrays. This does not provide Rust's byte-size quotas.
 
 Its explicit allowed tags are paragraphs/breaks, basic emphasis, code/pre, blockquote, lists/items, headings 1-4, anchors, and horizontal rules. Allowed attributes are `href` and `title`.
 
@@ -166,9 +166,8 @@ The backend checks that update/state values are valid Base64 and bounds the stri
 | Value | Current limit |
 |---|---:|
 | Title/display name after trim/fallback | 4,096 bytes |
-| Summary | 1,048,576 bytes |
 | Serialized metadata JSON | 1,048,576 bytes |
-| HTML content input/cleaned creation content | 16,777,216 bytes |
+| Body HTML input/cleaned creation body | 16,777,216 bytes |
 | Encoded incremental Yjs update string | 67,108,864 bytes |
 | Decoded complete Yjs state | 33,554,432 bytes |
 

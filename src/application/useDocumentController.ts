@@ -307,20 +307,20 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
     }, "All changes saved locally");
   }, [acceptView, assertCurrentWorkspace, context, documentGateway, executeMutation]);
 
-  const commitContent = useCallback((
+  const commitBody = useCallback((
     nodeId: string,
-    contentHtml: string,
+    bodyHtml: string,
     yjsUpdate: string,
     yjsState: string,
   ): Promise<void> => commitRawOperation(
-    { type: "updateContent", nodeId, contentHtml, yjsUpdate, yjsState },
+    { type: "updateBody", nodeId, bodyHtml, yjsUpdate, yjsState },
     "Writing contribution",
     newId(),
   ), [commitRawOperation]);
 
   const commitNodeMetadata = useCallback((
     nodeId: string,
-    changes: Partial<Pick<DocumentNode, "title" | "summary" | "tags">>,
+    changes: Partial<Pick<DocumentNode, "title" | "tags">>,
   ): Promise<void> => commitRawOperation(
     { type: "updateNode", nodeId, changes },
     "Refined idea",
@@ -455,7 +455,7 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
     createDocument,
     openDocument,
     applyOperation,
-    commitContent,
+    commitBody,
     commitNodeMetadata,
     commitDocumentTitle,
     selectNode,

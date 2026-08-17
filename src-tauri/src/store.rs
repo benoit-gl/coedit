@@ -26,8 +26,8 @@ const MAX_TAGS_PER_NODE: usize = 20;
 const MAX_TAG_CHARACTERS: usize = 64;
 const MAX_TAG_BYTES: usize = 256;
 const MAX_TITLE_BYTES: usize = 4_096;
-const MAX_SUMMARY_BYTES: usize = 1_048_576;
-const MAX_CONTENT_BYTES: usize = 16_777_216;
+const MAX_METADATA_BYTES: usize = 1_048_576;
+const MAX_BODY_BYTES: usize = 16_777_216;
 const MAX_YJS_BYTES: usize = 33_554_432;
 
 #[derive(Debug, Error)]
@@ -155,8 +155,7 @@ fn initialize_schema(connection: &Connection) -> Result<()> {
             position INTEGER NOT NULL,
             tags_json TEXT NOT NULL,
             title TEXT NOT NULL,
-            summary TEXT NOT NULL,
-            content_html TEXT NOT NULL,
+            body_html TEXT NOT NULL,
             yjs_state BLOB NOT NULL,
             metadata_json TEXT NOT NULL,
             created_at TEXT NOT NULL,
@@ -252,7 +251,7 @@ fn load_state(connection: &Connection) -> Result<DocumentState> {
         .collect::<std::result::Result<Vec<_>, _>>()?;
 
     let mut node_statement = connection.prepare(
-        "SELECT id, parent_id, position, tags_json, title, summary, content_html, yjs_state, metadata_json, created_at, updated_at, deleted_at FROM nodes ORDER BY id",
+        "SELECT id, parent_id, position, tags_json, title, body_html, yjs_state, metadata_json, created_at, updated_at, deleted_at FROM nodes ORDER BY id",
     )?;
     let node_rows = node_statement.query_map([], |row| {
         Ok((
@@ -262,12 +261,11 @@ fn load_state(connection: &Connection) -> Result<DocumentState> {
             row.get::<_, String>(3)?,
             row.get::<_, String>(4)?,
             row.get::<_, String>(5)?,
-            row.get::<_, String>(6)?,
-            row.get::<_, Vec<u8>>(7)?,
+            row.get::<_, Vec<u8>>(6)?,
+            row.get::<_, String>(7)?,
             row.get::<_, String>(8)?,
             row.get::<_, String>(9)?,
-            row.get::<_, String>(10)?,
-            row.get::<_, Option<String>>(11)?,
+            row.get::<_, Option<String>>(10)?,
         ))
     })?;
     let mut nodes = Vec::new();
@@ -278,8 +276,7 @@ fn load_state(connection: &Connection) -> Result<DocumentState> {
             position,
             tags_json,
             title,
-            summary,
-            content_html,
+            body_html,
             yjs_state,
             metadata_json,
             created_at,
@@ -293,8 +290,7 @@ fn load_state(connection: &Connection) -> Result<DocumentState> {
             position,
             tags: clean_tags(&tags)?,
             title,
-            summary,
-            content_html,
+            body_html,
             yjs_state: BASE64.encode(yjs_state),
             metadata: serde_json::from_str(&metadata_json)?,
             created_at,
@@ -597,10 +593,8 @@ impl DocumentStore {
                     params![node.parent_id, position],
                 )?;
                 let title = clean_title(&node.title, "Untitled idea")?;
-                let summary = node.summary.clone().unwrap_or_default();
-                check_size("Summary", &summary, MAX_SUMMARY_BYTES)?;
-                let content = ammonia::clean(node.content_html.as_deref().unwrap_or_default());
-                check_size("Content", &content, MAX_CONTENT_BYTES)?;
+                let body = ammonia::clean(node.body_html.as_deref().unwrap_or_default());
+                check_size("Body", &body, MAX_BODY_BYTES)?;
                 let yjs = BASE64
                     .decode(node.yjs_state.as_deref().unwrap_or_default())
                     .map_err(|_| StoreError::Invalid("Invalid Yjs state.".into()))?;
@@ -608,8 +602,8 @@ impl DocumentStore {
                     return Err(StoreError::Invalid("Yjs state is too large.".into()));
                 }
                 transaction.execute(
-                    "INSERT INTO nodes(id, parent_id, position, tags_json, title, summary, content_html, yjs_state, metadata_json, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?10)",
-                    params![node.id, node.parent_id, position, serde_json::to_string(&clean_tags(node.tags.as_deref().unwrap_or_default())?)?, title, summary, content, yjs, serde_json::to_string(node.metadata.as_ref().unwrap_or(&json!({})))?, timestamp],
+                    "INSERT INTO nodes(id, parent_id, position, tags_json, title, body_html, yjs_state, metadata_json, created_at, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?9)",
+                    params![node.id, node.parent_id, position, serde_json::to_string(&clean_tags(node.tags.as_deref().unwrap_or_default())?)?, title, body, yjs, serde_json::to_string(node.metadata.as_ref().unwrap_or(&json!({})))?, timestamp],
                 )?;
                 normalize_positions(transaction, node.parent_id.as_deref())?;
             }
@@ -623,13 +617,6 @@ impl DocumentStore {
                         params![clean_title(title, "Untitled idea")?, node_id],
                     )?;
                 }
-                if let Some(summary) = &changes.summary {
-                    check_size("Summary", summary, MAX_SUMMARY_BYTES)?;
-                    transaction.execute(
-                        "UPDATE nodes SET summary = ?1 WHERE id = ?2",
-                        params![summary, node_id],
-                    )?;
-                }
                 if let Some(tags) = &changes.tags {
                     transaction.execute(
                         "UPDATE nodes SET tags_json = ?1 WHERE id = ?2",
@@ -638,7 +625,7 @@ impl DocumentStore {
                 }
                 if let Some(metadata) = &changes.metadata {
                     let value = serde_json::to_string(metadata)?;
-                    check_size("Metadata", &value, MAX_SUMMARY_BYTES)?;
+                    check_size("Metadata", &value, MAX_METADATA_BYTES)?;
                     transaction.execute(
                         "UPDATE nodes SET metadata_json = ?1 WHERE id = ?2",
                         params![value, node_id],
@@ -649,16 +636,16 @@ impl DocumentStore {
                     params![timestamp, node_id],
                 )?;
             }
-            DocumentOperation::UpdateContent {
+            DocumentOperation::UpdateBody {
                 node_id,
-                content_html,
+                body_html,
                 yjs_update,
                 yjs_state,
             } => {
                 if !node_exists(state, node_id) {
                     return Err(StoreError::Invalid("The node does not exist.".into()));
                 }
-                check_size("Content", content_html, MAX_CONTENT_BYTES)?;
+                check_size("Body", body_html, MAX_BODY_BYTES)?;
                 check_size("Yjs update", yjs_update, MAX_YJS_BYTES * 2)?;
                 let _update = BASE64
                     .decode(yjs_update)
@@ -669,9 +656,9 @@ impl DocumentStore {
                 if yjs.len() > MAX_YJS_BYTES {
                     return Err(StoreError::Invalid("Yjs state is too large.".into()));
                 }
-                let clean_html = ammonia::clean(content_html);
+                let clean_html = ammonia::clean(body_html);
                 transaction.execute(
-                    "UPDATE nodes SET content_html = ?1, yjs_state = ?2, updated_at = ?3 WHERE id = ?4",
+                    "UPDATE nodes SET body_html = ?1, yjs_state = ?2, updated_at = ?3 WHERE id = ?4",
                     params![clean_html, yjs, timestamp, node_id],
                 )?;
             }
@@ -880,8 +867,8 @@ impl DocumentStore {
         transaction.execute("DELETE FROM nodes", [])?;
         for node in &target.nodes {
             transaction.execute(
-                "INSERT INTO nodes(id, parent_id, position, tags_json, title, summary, content_html, yjs_state, metadata_json, created_at, updated_at, deleted_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)",
-                params![node.id, node.parent_id, node.position, serde_json::to_string(&clean_tags(&node.tags)?)?, node.title, node.summary, ammonia::clean(&node.content_html), BASE64.decode(&node.yjs_state).map_err(|_| StoreError::Invalid("Snapshot contains invalid Yjs state.".into()))?, serde_json::to_string(&node.metadata)?, node.created_at, node.updated_at, node.deleted_at],
+                "INSERT INTO nodes(id, parent_id, position, tags_json, title, body_html, yjs_state, metadata_json, created_at, updated_at, deleted_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11)",
+                params![node.id, node.parent_id, node.position, serde_json::to_string(&clean_tags(&node.tags)?)?, node.title, ammonia::clean(&node.body_html), BASE64.decode(&node.yjs_state).map_err(|_| StoreError::Invalid("Snapshot contains invalid Yjs state.".into()))?, serde_json::to_string(&node.metadata)?, node.created_at, node.updated_at, node.deleted_at],
             )?;
         }
         transaction.execute(
@@ -1047,10 +1034,7 @@ fn markdown(state: &DocumentState) -> String {
                 "#".repeat((depth + 2).min(6)),
                 node.title
             ));
-            if !node.summary.is_empty() {
-                output.push_str(&format!("_{}_\n\n", node.summary.replace('\n', " ")));
-            }
-            let text = plain_text(&node.content_html);
+            let text = plain_text(&node.body_html);
             if !text.is_empty() {
                 output.push_str(&text);
                 output.push_str("\n\n");
@@ -1095,8 +1079,7 @@ mod tests {
                 position: 0,
                 tags: vec![],
                 title: "A".into(),
-                summary: "".into(),
-                content_html: "".into(),
+                body_html: "".into(),
                 yjs_state: "".into(),
                 metadata: json!({}),
                 created_at: timestamp.clone(),
@@ -1109,8 +1092,7 @@ mod tests {
                 position: 0,
                 tags: vec![],
                 title: "B".into(),
-                summary: "".into(),
-                content_html: "".into(),
+                body_html: "".into(),
                 yjs_state: "".into(),
                 metadata: json!({}),
                 created_at: timestamp.clone(),
@@ -1148,8 +1130,7 @@ mod tests {
                         parent_id: None,
                         tags: Some(vec!["section".into()]),
                         title: "Introduction".into(),
-                        summary: None,
-                        content_html: None,
+                        body_html: None,
                         yjs_state: None,
                         metadata: None,
                     },
@@ -1160,19 +1141,19 @@ mod tests {
             .unwrap();
         store
             .apply(
-                DocumentOperation::UpdateNode {
+                DocumentOperation::UpdateBody {
                     node_id: "introduction".into(),
-                    changes: crate::models::NodeChanges {
-                        summary: Some("Temporary summary".into()),
-                        ..Default::default()
-                    },
+                    body_html: "<p>Temporary body</p>".into(),
+                    yjs_update: "".into(),
+                    yjs_state: "".into(),
                 },
-                context("Summarized introduction"),
+                context("Drafted introduction"),
             )
             .unwrap();
         let restored = store.restore(1, context("Restored first draft")).unwrap();
         assert_eq!(restored.state.document.revision, 3);
-        assert_eq!(restored.state.nodes[0].summary, "");
+        assert_eq!(restored.state.nodes[0].title, "Introduction");
+        assert_eq!(restored.state.nodes[0].body_html, "");
         assert_eq!(
             store
                 .contributions(ContributionQuery::default())

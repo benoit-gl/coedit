@@ -22,7 +22,7 @@ Status terms are defined in [the documentation index](./README.md#status-languag
 | Outline hierarchy presentation | [`src/components/Outline.tsx`](../src/components/Outline.tsx) | `Outline`, `OutlineRow`, `buildTree` |
 | Outline keyboard navigation | [`src/components/Outline.tsx`](../src/components/Outline.tsx) | `visible`, `onKeyDown`, `expanded` |
 | Drag-to-reparent / reorder | [`src/components/Outline.tsx`](../src/components/Outline.tsx) | `onDrop`, row move buttons; dispatches through controller callbacks supplied by `App` |
-| Document/node title-summary-tag drafts | [`src/App.tsx`](../src/App.tsx), [`src/components/NodeEditor.tsx`](../src/components/NodeEditor.tsx), [`src/components/TagEditor.tsx`](../src/components/TagEditor.tsx) | `DocumentTitleInput`, `NodeEditor`, `TagEditor`, dirty sets, eager drains, composed registered participants |
+| Document/node title-tag drafts | [`src/App.tsx`](../src/App.tsx), [`src/components/NodeEditor.tsx`](../src/components/NodeEditor.tsx), [`src/components/TagEditor.tsx`](../src/components/TagEditor.tsx) | `DocumentTitleInput`, `NodeEditor`, `TagEditor`, dirty sets, eager drains, composed registered participants |
 | Tag normalization/suggestions | [`src/domain/tags.ts`](../src/domain/tags.ts) | `normalizeTag`, `normalizeTags`, `collectActiveTags`; active-node document vocabulary |
 | Rich-text toolbar/editor | [`src/editor/RichTextEditor.tsx`](../src/editor/RichTextEditor.tsx) | `RichTextEditor`, Tiptap extensions, `DraftParticipant`, drain/retry logic |
 | Controlled draft transitions | [`src/application/draftTransition.ts`](../src/application/draftTransition.ts), [`src/App.tsx`](../src/App.tsx), [`src/components/NodeEditor.tsx`](../src/components/NodeEditor.tsx) | `DraftTransitionCoordinator`, `DocumentTitleInput`, composed node-metadata/rich-text participant |
@@ -66,9 +66,9 @@ Use-case definitions and acceptance flows are in [Vision and use cases](./RUP_VI
 |---|---|---|---|---|---|
 | UC-01 Create document | welcome screen; `controller.createDocument` | narrowed `storage.createDocument` through serialized queue | Memory volatile create; Tauri native-file create → `DocumentStore::create` | Memory gateway tests; queue tests; Rust portable round trip | Implemented |
 | UC-02 Open portable document | `controller.openDocument` | `DocumentFileDialogs.chooseDocumentToOpen`, narrowed `NativeDocumentStorage.openDocument` | Tauri dialog/gateway; `open_document` → `DocumentStore::open`/`load_state`/`validate_tree` | Rust round trip covers a valid reopen only | Partial |
-| UC-03 Maintain hierarchy | `Outline`, `App.addNode`, `App.deleteNode` | `buildTree`; operations `createNode`, `moveNode`, `softDeleteNode` | memory `applyOperation`; Rust `apply_sql` | 4 tree tests; Rust cycle and round-trip cases | Implemented with UX gaps |
-| UC-04 Edit node metadata | `NodeEditor`; controller commit callbacks | registered metadata/rich-text participant; queued `updateNode` | both operation engines | draft/controller ordering tests; Rust round trip covers summary; no full UI suite | Partial test coverage |
-| UC-05 Edit developed text | `RichTextEditor`; `NodeEditor`; controller | composed draft participant; centralized sanitizer; queued `updateContent`; authoritative editor generation | memory sanitizes/detaches; Rust validates/sanitizes/stores state | sanitizer, draft, and controller transition tests; no full Tiptap/native integration | Partial / host-exit and cross-adapter evidence |
+| UC-03 Maintain hierarchy | `Outline`, `App.addNode`, `App.deleteNode` | `buildTree`; operations `createNode`, `moveNode`, `softDeleteNode` | memory `applyOperation`; Rust `apply_sql` | 5 tree tests (including body-operation isolation); Rust cycle and round-trip cases | Implemented with UX gaps |
+| UC-04 Edit node metadata | `NodeEditor`; controller commit callbacks | registered metadata/rich-text participant; queued `updateNode` | both operation engines | tag domain/component and title-acknowledgement tests; no full UI suite | Partial test coverage |
+| UC-05 Edit node body | `RichTextEditor`; `NodeEditor`; controller | composed draft participant; centralized sanitizer; queued `updateBody`; authoritative editor generation | memory sanitizes/detaches; Rust validates/sanitizes/stores state | sanitizer, memory body-operation, draft, and controller transition tests; no full Tiptap/native integration | Partial / host-exit and cross-adapter evidence |
 | UC-06 Inspect history | controller; `HistoryPanel` | filtered `ContributionPage`, exclusive cursor, Load older | memory complete-ledger paging; Tauri page wrapper over Rust `contributions` | memory filter/page test; no controller/Rust boundary suite | Partial (desktop 100,000 pre-window) |
 | UC-07 Restore revision | `HistoryPanel`; controller | draft drain, queue, `restoreRevision`, authoritative editor generation | memory revision Map; Tauri `restore_revision` → `DocumentStore::restore` | controller generation, memory restore, Rust round trip | Shared/standalone implemented; full editor/native parity pending |
 | UC-08 Export | App Export menu; controller | drain, narrowed storage `exportDocument`, centralized `ExportFormat`/filename | volatile Blob recovery envelope; native dialog → Rust `export`/`atomic_write` | standalone envelope/filename tests; Rust round trip | Partial; no importer and desktop JSON cap |
@@ -93,10 +93,9 @@ Use-case definitions and acceptance flows are in [Vision and use cases](./RUP_VI
 | Drag a row onto another | HTML drag data; drop target becomes parent, append index | `moveNode` | reparent and normalize; no between-row/root drop target |
 | Delete subtree | confirm in `App.deleteNode` | `softDeleteNode` | node and descendants get `deletedAt`; history retains them |
 | Edit idea title | controlled dirty draft; eager blur or transition drain | `updateNode({title})` | normalized nonempty title and new revision |
-| Edit summary | controlled dirty draft; eager blur or transition drain | `updateNode({summary})` | summary and new revision |
 | Add/reuse/remove tag | editable combobox and removable chips; pending text drains before transitions | `updateNode({tags})` | normalized/deduplicated tag array and new revision; active-node suggestions adapt |
-| Type/format developed text | Tiptap/Yjs; group after 1.2 seconds or explicit drain; failed delta retained | queued `updateContent` with centralized sanitized HTML/update/state | new revision; desktop re-sanitizes HTML and stores full Yjs state |
-| Undo/redo text | Yjs collaboration history through Tiptap | eventually part of next `updateContent` | no operation until flush |
+| Type/format node body | Tiptap/Yjs; group after 1.2 seconds or explicit drain; failed delta retained | queued `updateBody` with centralized sanitized HTML/update/state | new revision; desktop re-sanitizes HTML and stores full Yjs state |
+| Undo/redo text | Yjs collaboration history through Tiptap | eventually part of next `updateBody` | no operation until flush |
 | Open/close History | toggles `historyOpen` | none | no revision |
 | Search/filter History | 250 ms debounce; reset loaded items/cursor | `listContributions(filters, limit:100)` | adapter filters before page construction |
 | Load older History | shown when `hasMore`; append unseen IDs | `listContributions(filters, beforeRevision:cursor, limit:100)` | exclusive-cursor next page |
@@ -112,8 +111,8 @@ The serialized operation tag is camel case in both languages.
 | Operation | TypeScript definition | Memory semantics | Desktop model/semantics | UI caller | Direct tests |
 |---|---|---|---|---|---|
 | `createNode` | `domain/types.ts::DocumentOperation` | `tree.ts::applyOperation` creates, shifts, normalizes | `models.rs::CreateNode`; `store.rs::apply_sql` validates/inserts/normalizes | `App.addNode` from `Outline`/empty editor | Rust round trip; no dedicated TS creation assertion |
-| `updateNode` | same union | updates title/summary/tags/metadata | `UpdateNode`; tag/field checks and SQL updates | `NodeEditor`/`TagEditor` | tag domain/component tests; Rust round trip summary only |
-| `updateContent` | same union | stores HTML/full state; incremental update only in payload | `UpdateContent`; bounds/Base64 checks, Ammonia, stores full state | `RichTextEditor` → `NodeEditor` → `App` | sanitizer only |
+| `updateNode` | same union | updates title/tags/metadata | `UpdateNode`; tag/field checks and SQL updates | `NodeEditor`/`TagEditor` | tag domain/component tests and title acknowledgement |
+| `updateBody` | same union | stores body HTML/full state; incremental update only in payload | `UpdateBody`; bounds/Base64 checks, Ammonia, stores full state | `RichTextEditor` → `NodeEditor` → `App` | sanitizer and memory gateway operation tests |
 | `moveNode` | same union | validates target/descendants; shifts/normalizes | `MoveNode`; same intended invariants in SQL | `Outline` drag/up/down | TS rejects descendant; no Rust operation-specific test |
 | `softDeleteNode` | same union | timestamps node and descendants | `SoftDeleteNode`; recursive CTE | `App.deleteNode` | TS subtree test |
 | `restoreNode` | same union | restores node and ancestors | `RestoreNode`; restores node and ancestors | no current UI | none |
@@ -145,7 +144,7 @@ Command strings, TypeScript payload property names, Rust parameter names, and se
 | Document identity/title/version/revision/time | `DocumentMetadata` | `DocumentMetadata` | rows in `metadata` keyed by `document_id`, `title`, `format_version`, `revision`, `created_at`, `updated_at`; `magic` is storage-only |
 | Hierarchical node | `DocumentNode` | `DocumentNode` | `nodes`; self-reference through `parent_id`; active sibling ordering through `position` |
 | Node tags | `DocumentNode.tags` | `Vec<String>` | `nodes.tags_json`; validated JSON array, suggestion vocabulary derived at runtime |
-| Rich content | `contentHtml`, Base64 `yjsState` | String forms at IPC boundary | sanitized `content_html` TEXT; decoded `yjs_state` BLOB |
+| Node body | `bodyHtml`, Base64 `yjsState` | String forms at IPC boundary | sanitized `body_html` TEXT; decoded `yjs_state` BLOB |
 | Contributor | `Contributor`/`ContributorKind` | matching struct/enum | `contributors` |
 | Writing session | `WritingSession` | matching struct | `writing_sessions`; lazily inserted by desktop mutation |
 | Current state | `DocumentState` | `DocumentState` | constructed from metadata/contributors/sessions/nodes |
@@ -160,14 +159,14 @@ The complete column/constraint description is in [Persistence design](./PERSISTE
 
 | Test file/location | Current coverage | Features it does not prove |
 |---|---|---|
-| [`src/domain/tree.test.ts`](../src/domain/tree.test.ts) | ordered tree projection, descendant-move rejection, subtree soft delete, cyclic-state rejection | UI behavior, all other operations, Rust parity, persistence |
+| [`src/domain/tree.test.ts`](../src/domain/tree.test.ts) | ordered tree projection, descendant-move rejection, subtree soft delete, body update, cyclic-state rejection | UI behavior, remaining operations, Rust parity, persistence |
 | [`src/application/serializedTaskQueue.test.ts`](../src/application/serializedTaskQueue.test.ts) | strict task ordering and continuation after rejection | React/controller integration, cancellation, teardown |
 | [`src/application/draftTransition.test.ts`](../src/application/draftTransition.test.ts) | synchronous freeze, all-participant drain, failure/retry, safe participant replacement | full component/editor and host-exit behavior |
 | [`src/application/useDocumentController.test.tsx`](../src/application/useDocumentController.test.tsx) | selection/Close draft ordering, failed-flush blocking, restore generation | full `App`/Tiptap rendering and native parity |
 | [`src/domain/tags.test.ts`](../src/domain/tags.test.ts) | tag normalization, deduplication, limits, and active-node vocabulary | Rust normalization parity and full UI behavior |
 | [`src/components/TagEditor.test.tsx`](../src/components/TagEditor.test.tsx) | freeform create, suggestion reuse, chip removal, transition flush | real-browser IME, touch, and assistive-technology behavior |
 | [`src/application/localContributor.test.ts`](../src/application/localContributor.test.ts) | stored contributor validation and safe fallback | contributor registration/selection and browser-specific storage behavior |
-| [`src/components/NodeEditor.test.tsx`](../src/components/NodeEditor.test.tsx) | normalized title adoption after a successful metadata flush | remaining metadata/focus behavior and full Tiptap composition |
+| [`src/components/NodeEditor.test.tsx`](../src/components/NodeEditor.test.tsx) | normalized title adoption and absence of a secondary summary field | remaining metadata/focus behavior and full Tiptap composition |
 | [`src/domain/hash.test.ts`](../src/domain/hash.test.ts) + hash fixture | canonical JSON/digest, host-field exclusion, input-order preservation, Unicode/integer-like key order, invalid-JSON rejection | Rust parity, replay/open verification |
 | [`src/editor/sanitizeRichText.test.ts`](../src/editor/sanitizeRichText.test.ts) + rich-text fixture | supported/hostile cases and idempotence | Rust parity and full editor paste/commit integration |
 | [`src/persistence/memoryGateway.test.ts`](../src/persistence/memoryGateway.test.ts) | attribution/restore, revision progression, cursor paging/filtering, complete runtime recovery envelope, input detachment/metadata validation/direct sanitization, safe filenames | sessions, import, desktop semantics |

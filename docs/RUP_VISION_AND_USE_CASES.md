@@ -19,7 +19,7 @@ Long-form writing often begins as a hierarchy of ideas and only later becomes po
 
 Coedit Local addresses this by combining:
 
-- a movable hierarchy of typed ideas;
+- a movable hierarchy of optionally tagged ideas;
 - rich text attached to each stable node;
 - an attributable contribution ledger and restorable snapshots;
 - an offline desktop document stored as one portable SQLite file; and
@@ -27,7 +27,7 @@ Coedit Local addresses this by combining:
 
 ### Product position
 
-For authors who want to turn nested ideas into developed text while retaining local control, Coedit Local is an offline-first hierarchical editor. Unlike a hosted collaborative writing service, its base application starts no application server, requires no account, and registers no network provider. Unlike the standalone debug artifact, the Tauri desktop application persists the document, history, and snapshots in a `.coedit` file.
+For authors who want to turn nested ideas into structured text while retaining local control, Coedit Local is an offline-first hierarchical editor. Unlike a hosted collaborative writing service, its base application starts no application server, requires no account, and registers no network provider. Unlike the standalone debug artifact, the Tauri desktop application persists the document, history, and snapshots in a `.coedit` file.
 
 ### Product goals
 
@@ -137,7 +137,7 @@ rectangle "Coedit Local" {
   usecase "UC-02\nOpen .coedit document" as UC02
   usecase "UC-03\nOrganize hierarchy" as UC03
   usecase "UC-04\nEdit node metadata" as UC04
-  usecase "UC-05\nEdit developed text" as UC05
+  usecase "UC-05\nEdit node body" as UC05
   usecase "UC-06\nInspect history" as UC06
   usecase "UC-07\nRestore revision" as UC07
   usecase "UC-08\nExport document" as UC08
@@ -286,25 +286,25 @@ OpenState .. UC10
 
 **Primary actor:** Author.
 
-**Goal:** Describe and tag the selected idea independently of its developed text.
+**Goal:** Name and classify the selected idea independently of its rich-text body.
 
 **Preconditions:** A writable document and active node are selected.
 
-**Trigger:** The author edits the title/summary, adds or reuses a freeform tag, or removes a selected tag.
+**Trigger:** The author edits the title, adds or reuses a freeform tag, or removes a selected tag.
 
 **Main success scenario:**
 
-1. `NodeEditor` keeps title, summary, and tag drafts plus a dirty-field set in component state/refs.
+1. `NodeEditor` keeps title and tag drafts plus a dirty-field set in component state/refs.
 2. `TagEditor` filters document-local suggestions, creates arbitrary normalized tags, and removes tag chips; blur/Enter/selection drains the tag array.
 3. `NodeEditor` composes its metadata drain with nested tag and rich-text participants and registers one participant with the controller.
-4. A controlled transition freezes the participant synchronously, drains pending tag input, metadata, then rich text, and creates queued `updateNode`/`updateContent` operations as needed.
+4. A controlled transition freezes the participant synchronously, drains pending tag input, metadata, then the rich-text body, and creates queued `updateNode`/`updateBody` operations as needed.
 5. Each serialized gateway command applies the update and records a new revision; successfully persisted fields are removed from the dirty set, while failed ones remain retryable.
 
 **Alternate and exception flows:**
 
 - A blank title becomes `Untitled idea`.
 - Empty tag text is ignored; duplicates are matched case-insensitively; invalid or over-limit tag input blocks the transition and remains editable.
-- Desktop persistence enforces title, summary, and metadata size limits.
+- Desktop persistence enforces title and metadata size limits.
 - Read-only controls are disabled.
 - An operation for a missing node is rejected.
 
@@ -312,7 +312,7 @@ OpenState .. UC10
 
 **Realization:** `src/components/NodeEditor.tsx`, `useDocumentController.applyOperation`, `src/domain/tree.ts`, and `DocumentStore::apply_sql`.
 
-### UC-05 - Edit developed text
+### UC-05 - Edit node body
 
 **Status:** Partial because uncontrolled page/process exit cannot await browser work and the complete Tiptap/native lifecycle lacks end-to-end evidence.
 
@@ -330,7 +330,7 @@ OpenState .. UC10
 2. Tiptap Collaboration maps the editor field to that Yjs document.
 3. Yjs updates are accumulated in memory.
 4. After 1.2 seconds without another update—or when the controller explicitly requests a flush—the editor merges updates, sanitizes rendered HTML through `coedit-rich-text-v1`, encodes the incremental update and complete Yjs state, and calls `onCommit`.
-5. The controller queues `updateContent` with a new group ID and message `Writing contribution`.
+5. The controller queues `updateBody` with a new group ID and message `Writing contribution`.
 6. Desktop persistence checks sizes and base64, sanitizes HTML again with Ammonia, and commits state plus history; the memory adapter applies the equivalent domain operation.
 
 **Alternate and exception flows:**
@@ -344,7 +344,7 @@ OpenState .. UC10
 
 **Postconditions:** After a successful commit, the node stores sanitized HTML and full Yjs state, and history contains the operation payload including its incremental Yjs update.
 
-**Realization:** `src/editor/RichTextEditor.tsx`, `src/editor/yjsEncoding.ts`, `src/components/NodeEditor.tsx`, `src/App.tsx`, and the `UpdateContent` branches in both persistence implementations.
+**Realization:** `src/editor/RichTextEditor.tsx`, `src/editor/yjsEncoding.ts`, `src/components/NodeEditor.tsx`, `src/App.tsx`, and the `UpdateBody` branches in both persistence implementations.
 
 ### UC-06 - Inspect contribution history
 
@@ -626,7 +626,7 @@ These requirements complement the use cases. “Current satisfaction” describe
 | NFR-DATA-02 | Creation/export/backup shall avoid exposing a partially written destination. | Temporary sibling plus rename/replacement. Crash behavior between replacement renames still needs fault testing. |
 | NFR-DATA-03 | A current document shall have a materialized snapshot for every revision. | Satisfied in the MVP; future compaction is only a comment/roadmap idea. |
 | NFR-DATA-04 | State hashes shall be deterministic and verifiable. | Partial: browser canonical bytes/digest are versioned and fixture-tested; Rust parity and replay/open verification do not exist. |
-| NFR-DATA-05 | Desktop input shall have explicit size bounds. | Title 4,096 bytes; summary/metadata 1 MiB; sanitized HTML 16 MiB; decoded full Yjs state 32 MiB; update input has a string-size guard. |
+| NFR-DATA-05 | Desktop input shall have explicit size bounds. | Title 4,096 bytes; metadata 1 MiB; sanitized body HTML 16 MiB; decoded full Yjs state 32 MiB; update input has a string-size guard. |
 | NFR-DATA-06 | A locked SQLite file shall fail promptly rather than hang indefinitely. | Connection busy timeout is 5 seconds. |
 | NFR-DATA-07 | Recovery procedures and format semantics shall be documented. | See [Document format](./DOCUMENT_FORMAT.md); backup discoverability and export limits remain. |
 
@@ -706,7 +706,7 @@ The prioritized verification work is in [Testing strategy](./TESTING.md). Owners
 | Format version | Version of the `.coedit` schema/contract; currently `1`. |
 | Group ID | Optional contribution field used to associate a logical burst, currently generated per rich-text commit. |
 | Materialized state | Current document and node rows, as opposed to the historical ledger/snapshots. |
-| Operation | Typed request that mutates document materialized state, such as `moveNode` or `updateContent`. |
+| Operation | Typed request that mutates document materialized state, such as `moveNode` or `updateBody`. |
 | Port | Interface that separates shared UI policy from a host capability, notably `DocumentGateway` and `DocumentFileDialogs`. |
 | Revision | Monotonically increasing document-state number, beginning at `0` for creation. |
 | Snapshot | Full serialized document state stored at a revision. The current desktop MVP stores one at every revision. |
@@ -715,7 +715,7 @@ The prioritized verification work is in [Testing strategy](./TESTING.md). Owners
 | Tauri mode | Native desktop host using Tauri IPC, Rust `DocumentStore`, native dialogs, and SQLite. |
 | Writing session | Attribution grouping tied to a contributor and session identifier; lifecycle management is not yet exposed. |
 | Yjs state | Base64 representation of the complete CRDT document for a node's rich text. |
-| Yjs update | Base64 incremental CRDT change included with an `updateContent` operation. |
+| Yjs update | Base64 incremental CRDT change included with an `updateBody` operation. |
 
 ## Maintaining this artifact
 

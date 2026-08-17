@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DraftParticipant, RegisterDraftParticipant } from "../application/draftTransition";
 import type { DocumentNode } from "../domain/types";
 
-vi.mock("../editor/RichTextEditor", () => ({ RichTextEditor: () => null }));
+vi.mock("../editor/RichTextEditor", () => ({ RichTextEditor: () => <div role="textbox" aria-label="Node body" /> }));
 
 import { NodeEditor } from "./NodeEditor";
 
@@ -22,8 +22,7 @@ const initialNode: DocumentNode = {
   position: 0,
   tags: [],
   title: "Draft",
-  summary: "",
-  contentHtml: "",
+  bodyHtml: "",
   yjsState: "",
   metadata: {},
   createdAt: "2026-01-01T00:00:00.000Z",
@@ -57,7 +56,7 @@ describe("NodeEditor metadata drafts", () => {
           tagSuggestions={[]}
           readOnly={false}
           registerDraftParticipant={register}
-          onContentChange={async () => undefined}
+          onBodyChange={async () => undefined}
           onMetadataChange={async (changes) => {
             setNode((current) => ({
               ...current,
@@ -86,5 +85,26 @@ describe("NodeEditor metadata drafts", () => {
     await act(async () => { await participant!.flush(); });
 
     expect(input!.value).toBe("Untitled idea");
+  });
+
+  it("renders one body editor and no secondary freeform summary field", async () => {
+    const register: RegisterDraftParticipant = () => () => undefined;
+    container = document.createElement("div");
+    document.body.append(container);
+    root = createRoot(container);
+    await act(async () => root?.render(
+      <NodeEditor
+        node={initialNode}
+        tagSuggestions={[]}
+        readOnly={false}
+        registerDraftParticipant={register}
+        onBodyChange={async () => undefined}
+        onMetadataChange={async () => undefined}
+      />,
+    ));
+
+    expect(container.querySelectorAll('[role="textbox"][aria-label="Node body"]')).toHaveLength(1);
+    expect(container.querySelector("textarea")).toBeNull();
+    expect(container.textContent).not.toContain("Working summary");
   });
 });

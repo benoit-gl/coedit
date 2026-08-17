@@ -40,28 +40,29 @@ src/**/*.test.ts
 src/**/*.test.tsx
 ```
 
-There are currently forty TypeScript test cases. This is a source inventory, not a claim that they were executed for every documentation edit.
+There are currently forty-two TypeScript test cases. This is a source inventory, not a claim that they were executed for every documentation edit.
 
 | File | Suite / test | Layer | What it proves | Important omissions |
 |---|---|---|---|---|
 | `src/domain/tree.test.ts` | `builds the ordered hierarchy` | Pure domain | Parent/child materialization and simple order | Multiple roots, position ties, deleted nodes, orphans |
 | `src/domain/tree.test.ts` | `rejects moving a node into its descendant` | Pure domain | One cycle-producing move is rejected | Self-parent, missing target, deeper/generated trees |
 | `src/domain/tree.test.ts` | `soft-deletes a complete subtree` | Pure domain | Root and descendant deletion timestamps are applied | Sibling normalization, restore behavior, partial deleted trees |
+| `src/domain/tree.test.ts` | `updates the node body and its complete Yjs state` | Pure domain | `updateBody` replaces body HTML/state without altering node metadata | Incremental-update interpretation and adapter parity |
 | `src/domain/tree.test.ts` | `detects cyclic imported state` | Pure domain | `assertValidTree` catches a two-node cycle | Duplicate IDs, missing parent, self-cycle, large/deep graphs |
 | `src/application/serializedTaskQueue.test.ts` (2) | ordering; recovery after failure | Application control | A later task starts only after the prior task settles, and rejection does not poison the queue | React/controller integration, cancellation, teardown |
 | `src/application/draftTransition.test.ts` (3) | freeze/drain order; failed flush/retry; safe replacement cleanup | Application control | Freeze occurs synchronously, every participant drains before transition work, failure blocks, and stale unregister cannot remove a replacement | Full component/editor timing, host-exit hooks |
 | `src/application/useDocumentController.test.tsx` (3) | selection/Close transition; failed flush; restore generation | React controller | Drafts freeze before await, controlled actions drain in order, failure preserves selection, and restore advances authoritative editor generation | Full `App`/Tiptap DOM, export/backup, native E2E |
 | `src/application/localContributor.test.ts` (9) | stored-profile validation and fallback cases | Application boundary | Valid contributor preferences load; malformed JSON, invalid shapes/kinds/dates, and unavailable storage fall back safely | Browser-specific storage policy and contributor registration |
-| `src/components/NodeEditor.test.tsx` (1) | normalized title acknowledgement | React component | A whitespace title adopts the persisted `Untitled idea` normalization after a successful draft flush | Other metadata fields, focus behavior, and full Tiptap composition |
+| `src/components/NodeEditor.test.tsx` (2) | normalized title acknowledgement; single-body UI | React component | A whitespace title adopts persisted normalization, and the editor exposes no secondary summary textarea | Focus behavior and full Tiptap composition |
 | `src/components/TagEditor.test.tsx` (2) | tag create/reuse/remove; pending-input drain | React component | Freeform and suggested tags become chips, removal works, and controlled transitions flush unfinished tag text | Full screen-reader/IME/touch/browser interoperability |
 | `src/domain/tags.test.ts` (5) | normalization; deduplication; limits; active vocabulary | Pure domain | Unicode/whitespace rules, first-spelling case-insensitive set behavior, validation, active-node growing/shrinking suggestions, and no document-wide 20-tag ceiling | Rust normalization parity and property/fuzz coverage |
 | `src/domain/hash.test.ts` (4) | canonical fixture; host-field exclusion/order immutability; Unicode/integer-like ordering; invalid JSON rejection | Protocol/domain | `coedit-document-state-v1` canonical JSON/SHA-256, explicit `DocumentView` projection, engine-independent key order, and representative undefined/non-finite/non-plain/cyclic/sparse rejection | Rust equality, replay/open verification; symbol/accessor/extra-array-property branches |
 | `src/editor/sanitizeRichText.test.ts` (2) | versioned cases; idempotence | Browser security contract | `coedit-rich-text-v1` expected output and repeat sanitization | Rust Ammonia parity, full editor paste integration |
 | `src/persistence/memoryGateway.test.ts` (3) | attribution/restore; filtered cursor paging; recovery export | Adapter integration | Revision/history preservation, filter-before-page semantics, exclusive cursors, full runtime ledger envelope | Snapshot export/import, Rust parity |
-| `src/persistence/memoryGateway.test.ts` boundary case (1) | detachment, metadata validation, direct-operation sanitization | Adapter/domain boundary | Inputs are detached, non-JSON metadata is rejected, and bypassing the editor still sanitizes rich text | Rust parity, exhaustive hostile values/limits |
+| `src/persistence/memoryGateway.test.ts` boundary case (1) | detachment, metadata validation, direct-operation sanitization | Adapter/domain boundary | Inputs are detached, non-JSON metadata is rejected, and direct `createNode`/`updateBody` callers still receive sanitized rich text | Rust parity, exhaustive hostile values/limits |
 | `src/persistence/memoryGateway.test.ts` filename case (1) | portable filenames | Shared output helper | diacritics, retained non-Latin letters, unsafe/reserved/empty names, and code-point length normalization | browser/native end-to-end filename behavior |
 
-One `.test.tsx` suite exercises the hook through a minimal harness. Full `App`, `NodeEditor`, Tiptap/Yjs timing, focus/keyboard behavior, and end-to-end UI are not automated.
+One `.test.tsx` suite exercises the hook through a minimal harness, and focused component suites cover one NodeEditor path plus core tag interaction. Full `App`, complete NodeEditor/Tiptap/Yjs timing, focus/keyboard behavior, and end-to-end UI are not automated.
 
 ### Rust persistence tests
 
@@ -71,13 +72,13 @@ Three unit/integration-style tests live in the `#[cfg(test)]` module at the end 
 |---|---|---|---|
 | `rejects_tree_cycles` | Pure store validation | A two-node parent cycle is rejected | Other corrupt graph/value cases and open-path fixture validation |
 | `removes_executable_html` | Sanitizer smoke | Ammonia removes a tested event handler and script element | Broader allow-list parity, URI schemes, malformed HTML, DOMPurify parity |
-| `portable_document_round_trip_preserves_history` | Filesystem/SQLite integration | Create, add/update, restore, four history records, backup, JSON export, Markdown export, close/reopen | Content/Yjs updates, failure atomicity, query filters/limits, future versions, locks, migration, complete export round trip |
+| `portable_document_round_trip_preserves_history` | Filesystem/SQLite integration | Create, add/update body, restore, four history records, backup, JSON export, Markdown export, close/reopen | Nonempty Yjs updates, failure atomicity, query filters/limits, future versions, locks, migration, complete export round trip |
 
 The round-trip test creates a unique folder under the operating-system temporary directory and deletes it at the end. It exercises `DocumentStore` directly, not the Tauri command boundary or WebView.
 
 ### Current total and absent levels
 
-The repository contains forty-three automated test cases: forty TypeScript and three Rust. It currently contains no automated:
+The repository contains forty-five automated test cases: forty-two TypeScript and three Rust. It currently contains no automated:
 
 - full-App React/accessibility tests;
 - Tiptap/Yjs timing/lifecycle tests;
@@ -187,8 +188,8 @@ P0 means required before trusting the affected data-integrity behavior. P1 means
 | UC-01 Create | Memory gateway create path; Rust round trip | Standalone create; desktop create and file existence | App/dialog cancel/error cases; temporary-create failure cleanup |
 | UC-02 Open | Rust round trip reopens valid v1 | Desktop valid/invalid/open-cancel; read-only warning | Corrupt/future/journal fixtures and Tauri IPC path |
 | UC-03 Organize hierarchy | Four TS tree cases; one Rust cycle case | Keyboard, reordering, drag/reparent, delete confirmation | Full operation parity/property suite and component keyboard tests |
-| UC-04 Edit metadata | Tag domain/component tests; title acknowledgement; indirect memory/Rust update summary | Blur title/summary; add/reuse/remove tags; reopen | Full NodeEditor/tag integration, native limits/errors, TS/Rust parity |
-| UC-05 Edit developed text | Browser sanitizer fixtures; Rust sanitizer smoke; queue ordering | Formatting, paste, idle save, rapid switch/close | Controlled-timer editor/controller flush lifecycle suite |
+| UC-04 Edit metadata | Tag domain/component tests and title acknowledgement | Blur title; add/reuse/remove tags; reopen | Full NodeEditor/tag integration, native limits/errors, TS/Rust parity |
+| UC-05 Edit node body | Browser sanitizer fixtures; memory `updateBody`; Rust sanitizer/round-trip smoke; queue ordering | Formatting, paste, idle save, rapid switch/close | Controlled-timer editor/controller flush lifecycle suite |
 | UC-06 Inspect history | Memory filter-before-page/cursor test; Rust length | Search, node filter, Load older, hash display, empty/error results | Controller paging/race test and 100,001+ desktop behavior |
 | UC-07 Restore | Memory and Rust happy paths | Restore and reopen; edit after restore | Same-node Yjs regression; missing/read-only snapshot cases |
 | UC-08 Export | Standalone recovery-envelope/filename tests; Rust happy-path file checks | Open Markdown/JSON; standalone downloads | Import/round trip, desktop cap, escaping, failure atomicity |
@@ -292,7 +293,7 @@ Expected: stable titles/selection, acyclic hierarchy, normalized order, and a co
 ### ST-04 - Metadata and rich text
 
 1. Change a node title and leave the field.
-2. Change the summary; create two tags, reuse one on another node, remove its last active use, and confirm the suggestion list grows and shrinks.
+2. Change the title; create two tags, reuse one on another node, remove its last active use, and confirm the suggestion list grows and shrinks.
 3. Enter formatted paragraphs using bold, italic, heading, both list types, quote, undo, and redo.
 4. Paste HTML containing a script or inline event handler and inspect the result/console.
 5. Stop typing for more than 1.2 seconds.

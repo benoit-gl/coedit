@@ -18,7 +18,7 @@ Priority meaning:
 | R-05 | P1 | Compatibility | Format/version fields exist, but there is no migration machinery | `FORMAT_VERSION`; `DocumentStore::open` |
 | R-06 | P1 | Draft lifecycle | Controlled transitions drain registered drafts, but page/process exit and forced host suspension cannot await them | controller/editor; React/browser lifecycle |
 | R-07 | P1 | Recovery export | Desktop JSON silently caps history at 100,000; neither JSON envelope has an importer | Rust export; both product workflows |
-| R-08 | P1 | CRDT integrity | Desktop decodes but does not reconcile/verify incremental Yjs update, full state, and HTML | `DocumentStore::apply_sql(UpdateContent)` |
+| R-08 | P1 | CRDT integrity | Desktop decodes but does not reconcile/verify incremental Yjs update, full state, and HTML | `DocumentStore::apply_sql(UpdateBody)` |
 | R-09 | P1 | Adapter parity | Browser/Rust hash, sanitization, limits, sessions, and Markdown semantics differ; new TS fixtures have no Rust conformance yet | protocol fixtures versus Rust store |
 | R-10 | P1 | Backup UX | `.coedit-backup` is produced, but Open filters only `.coedit` | `tauriFiles.ts` filters |
 | R-11 | P2 | History | Shared UI pages/filter-before-limit correctly, but desktop only considers the newest 100,000 rows | `ContributionPage`; `DocumentStore::contributions` |
@@ -72,7 +72,7 @@ Residual limitations remain:
 
 ### R-08: Yjs payload consistency is trusted
 
-`updateContent` carries sanitized rendered HTML, a merged incremental `yjsUpdate`, and a complete `yjsState`. Rust checks size/Base64 validity and stores the complete state, but it does not apply the update to the prior state or prove that the HTML and state represent the same content. The incremental update remains only in the contribution payload.
+`updateBody` carries sanitized rendered `bodyHtml`, a merged incremental `yjsUpdate`, and a complete `yjsState`. Rust checks size/Base64 validity and stores the complete state, but it does not apply the update to the prior state or prove that the HTML and state represent the same content. The incremental update remains only in the contribution payload.
 
 **Recommended direction:** decide which representation is authoritative; reconstruct/validate state transitions at the persistence boundary; derive sanitized HTML from the accepted editor state where practical; test malformed/mismatched updates.
 
@@ -132,9 +132,9 @@ Every revision stores a full JSON `DocumentState`, including Base64 Yjs states, 
 
 ### R-21: open/restore validation is incomplete for hostile database edits
 
-Open checks application ID, version agreement, SQLite integrity, magic metadata, enum/JSON decoding, parents, and cycles. It does not validate recorded hashes, apply the normal write limits to every loaded field, or re-sanitize all stored `content_html`. Restore re-sanitizes HTML but does not reapply every normal content/metadata limit to a tampered snapshot.
+Open checks application ID, version agreement, SQLite integrity, magic metadata, enum/JSON decoding, parents, and cycles. It does not validate recorded hashes, apply the normal write limits to every loaded field, or re-sanitize all stored `body_html`. Restore re-sanitizes HTML but does not reapply every normal body/metadata limit to a tampered snapshot.
 
-The React fallback path sanitizes `contentHtml` when there is no Yjs state, and ProseMirror does not simply execute stored HTML as application JavaScript, but this does not replace a complete hostile-format validation policy.
+The React fallback path sanitizes `bodyHtml` when there is no Yjs state, and ProseMirror does not simply execute stored HTML as application JavaScript, but this does not replace a complete hostile-format validation policy.
 
 ### R-22: atomic replacement is not maximum crash durability
 
@@ -158,7 +158,7 @@ The application generates one session ID per mounted `App`. Desktop mutation laz
 
 ### R-16: Markdown is interchange, not rich recovery
 
-Both exporters walk active nodes and emit heading structure/summary. Developed text becomes plain text, losing most formatting and semantic details. Browser DOM text extraction and Rust's small tag/entity converter can produce different results. Deleted nodes, Yjs state, contributions, and attachments are absent.
+Both Markdown exporters walk active nodes and emit the heading structure followed by each node body as plain text, losing most formatting and semantic details. Browser DOM text extraction and Rust's small tag/entity converter can produce different results. Deleted nodes, Yjs state, contributions, and attachments are absent.
 
 ### R-17: platform support is not yet evidenced broadly
 

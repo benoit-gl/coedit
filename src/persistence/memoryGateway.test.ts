@@ -16,11 +16,11 @@ describe("memory document gateway", () => {
     const gateway = new MemoryDocumentGateway();
     await gateway.createDocument("Report", contributor);
     await gateway.applyOperation({ type: "createNode", node: { id: "intro", tags: ["section"], title: "Introduction" } }, context);
-    await gateway.applyOperation({ type: "updateNode", nodeId: "intro", changes: { summary: "Context" } }, context);
+    await gateway.applyOperation({ type: "updateNode", nodeId: "intro", changes: { title: "Context" } }, context);
 
     const restored = await gateway.restoreRevision(1, context);
     const history = await gateway.listContributions();
-    expect(restored.nodes[0].summary).toBe("");
+    expect(restored.nodes[0].title).toBe("Introduction");
     expect(restored.document.revision).toBe(3);
     expect(history.items).toHaveLength(4);
     expect(history.hasMore).toBe(false);
@@ -36,7 +36,7 @@ describe("memory document gateway", () => {
       { ...context, message: "Add introduction" },
     );
     await gateway.applyOperation(
-      { type: "updateNode", nodeId: "intro", changes: { summary: "Alpha context" } },
+      { type: "updateNode", nodeId: "intro", changes: { tags: ["alpha"] } },
       { ...context, message: "Alpha revision" },
     );
     await gateway.applyOperation(
@@ -44,7 +44,7 @@ describe("memory document gateway", () => {
       { ...context, message: "Add ending" },
     );
     await gateway.applyOperation(
-      { type: "updateNode", nodeId: "ending", changes: { summary: "Alpha conclusion" } },
+      { type: "updateNode", nodeId: "ending", changes: { tags: ["alpha"] } },
       { ...context, message: "Alpha revision" },
     );
 
@@ -111,6 +111,9 @@ describe("memory document gateway", () => {
       expect(recovery.stateHash).toMatch(/^[0-9a-f]{64}$/);
       expect(recovery.history).toEqual({ order: "revision-descending", complete: true });
       expect(recovery.state.document.title).toBe("Résumé / Final?");
+      expect(recovery.state.nodes[0]).toHaveProperty("bodyHtml", "");
+      expect(recovery.state.nodes[0]).not.toHaveProperty("summary");
+      expect(recovery.state.nodes[0]).not.toHaveProperty("contentHtml");
       expect(recovery.contributions.map((item) => item.revision)).toEqual([1, 0]);
       expect(recovery.state).not.toHaveProperty("path");
       expect(recovery.state).not.toHaveProperty("readOnly");
@@ -137,7 +140,7 @@ describe("memory document gateway", () => {
         id: "intro",
         tags: ["section"],
         title: "Introduction",
-        contentHtml: '<p onclick="evil()">Safe<script>evil()</script></p>',
+        bodyHtml: '<p onclick="evil()">Safe<script>evil()</script></p>',
         metadata,
       },
     };
@@ -146,7 +149,15 @@ describe("memory document gateway", () => {
     operation.node.title = "Mutated outside";
 
     expect(view.contributors[0].displayName).toBe("Author");
-    expect(view.nodes[0].contentHtml).toBe("<p>Safe</p>");
+    expect(view.nodes[0].bodyHtml).toBe("<p>Safe</p>");
+    const updated = await gateway.applyOperation({
+      type: "updateBody",
+      nodeId: "intro",
+      bodyHtml: '<p onmouseover="evil()">Updated<script>evil()</script></p>',
+      yjsUpdate: "",
+      yjsState: "",
+    }, context);
+    expect(updated.nodes[0].bodyHtml).toBe("<p>Updated</p>");
     const exportView = await gateway.restoreRevision(1, context);
     expect(exportView.nodes[0].title).toBe("Introduction");
     expect(exportView.nodes[0].metadata).toEqual({ nested: { label: "original" } });

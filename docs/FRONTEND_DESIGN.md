@@ -141,7 +141,7 @@ IPC --> SQLite
 |---|---|---|
 | `src/components/Outline.tsx` | `Outline` | Builds and presents the active node tree; selection, expansion, keyboard traversal, sibling reorder, drag-to-reparent, add, and delete. |
 | `src/components/Outline.tsx` | Private `OutlineRow` | Recursive row rendering and row-level commands. |
-| `src/components/NodeEditor.tsx` | `NodeEditor` | Owns dirty node title/tags/summary drafts and composes the nested tag and rich-text participants into one controller-visible participant. |
+| `src/components/NodeEditor.tsx` | `NodeEditor` | Owns dirty node title/tag drafts and composes the nested tag and rich-text body participants into one controller-visible participant. |
 | `src/components/TagEditor.tsx` | `TagEditor` | Editable ARIA combobox, reusable document suggestions, freeform tag creation, removable chips, keyboard/touch interaction, and pending-input flushing. |
 | `src/editor/RichTextEditor.tsx` | `RichTextEditor` | Tiptap/Yjs lifecycle, toolbar, grouping, retry-preserving commit drain, and participant registration with `NodeEditor`. |
 | `src/editor/sanitizeRichText.ts` | `sanitizeRichText`, `RICH_TEXT_POLICY`, allowlists | Central browser sanitization contract used for paste, fallback load, and commit. |
@@ -340,7 +340,7 @@ The operation union in `src/domain/types.ts` currently contains:
 
 - `createNode`
 - `updateNode`
-- `updateContent`
+- `updateBody`
 - `moveNode`
 - `softDeleteNode`
 - `restoreNode`
@@ -378,7 +378,7 @@ The desktop persistence layer has its own Rust implementation. Changes to operat
 7. On flush, the quiet-period timer is canceled and updates are merged with `Y.mergeUpdates`.
 8. Current editor HTML is sanitized through `sanitizeRichText()`.
 9. Both the merged incremental update and `Y.encodeStateAsUpdate(document)` are Base64 encoded.
-10. `onCommit(contentHtml, yjsUpdate, yjsState)` dispatches `updateContent` through the controller queue.
+10. `onCommit(bodyHtml, yjsUpdate, yjsState)` dispatches `updateBody` through the controller queue.
 11. If updates arrive while a commit is awaiting persistence, the drain loop commits them before resolving. If persistence rejects, the merged delta is restored to the pending queue for a later explicit retry.
 
 The component exposes its `DraftParticipant` to `NodeEditor`; the node editor combines that drain with its metadata drain and registers the aggregate with the controller. Together with the document-title participant, controlled node selection, document operations, restore, export, backup, and Close freeze new edits and await all dirty state before proceeding. `RichTextEditor` cleanup intentionally clears its timer and does not start unawaitable persistence work; browser unload/process termination therefore remains outside the guarantee. The toolbar currently exposes bold, italic, level-two heading, bullet list, ordered list, blockquote, undo, and redo.

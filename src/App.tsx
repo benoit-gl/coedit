@@ -210,7 +210,7 @@ export function App({ documentGateway, fileDialogs }: AppProps) {
               readOnly={controlsLocked}
               registerDraftParticipant={controller.registerDraftParticipant}
               onMetadataChange={(changes) => controller.commitNodeMetadata(selectedNode.id, changes)}
-              onContentChange={(contentHtml, yjsUpdate, yjsState) => controller.commitContent(selectedNode.id, contentHtml, yjsUpdate, yjsState)}
+              onBodyChange={(bodyHtml, yjsUpdate, yjsState) => controller.commitBody(selectedNode.id, bodyHtml, yjsUpdate, yjsState)}
             />
           ) : (
             <div className="empty-editor">

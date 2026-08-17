@@ -102,8 +102,7 @@ export function applyOperation(state: DocumentState, operation: DocumentOperatio
         position: index,
         tags: normalizeTags(operation.node.tags ?? []),
         title: operation.node.title.trim() || "Untitled idea",
-        summary: operation.node.summary ?? "",
-        contentHtml: operation.node.contentHtml ?? "",
+        bodyHtml: operation.node.bodyHtml ?? "",
         yjsState: operation.node.yjsState ?? "",
         metadata: operation.node.metadata ?? {},
         createdAt: now,
@@ -116,15 +115,14 @@ export function applyOperation(state: DocumentState, operation: DocumentOperatio
     case "updateNode": {
       const node = findNode(operation.nodeId);
       if (operation.changes.title !== undefined) node.title = operation.changes.title.trim() || "Untitled idea";
-      if (operation.changes.summary !== undefined) node.summary = operation.changes.summary;
       if (operation.changes.tags !== undefined) node.tags = normalizeTags(operation.changes.tags);
       if (operation.changes.metadata !== undefined) node.metadata = operation.changes.metadata;
       node.updatedAt = now;
       break;
     }
-    case "updateContent": {
+    case "updateBody": {
       const node = findNode(operation.nodeId);
-      node.contentHtml = operation.contentHtml;
+      node.bodyHtml = operation.bodyHtml;
       node.yjsState = operation.yjsState;
       node.updatedAt = now;
       break;

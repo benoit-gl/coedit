@@ -196,7 +196,7 @@ The Rust store is not imported into the TypeScript build. `TauriDocumentGateway`
 4. In standalone mode, the memory adapter applies the pure TypeScript mutation, hashes it, and appends in-memory contribution/snapshot records. In desktop mode, the Tauri adapter invokes a Rust command and `DocumentStore` performs the equivalent validated SQLite transaction.
 5. `SerializedTaskQueue` executes document commands one at a time and continues after a rejected task. Workspace epochs, monotonically numbered history requests, and revision checks prevent late responses from replacing a newer workspace/view.
 6. The gateway returns a complete new view. The controller accepts it and re-renders the outline/editor. If History is open it refreshes the first 100-entry page under the active filters; otherwise it marks history stale and fetches when the panel is next opened. `ContributionPage.nextBeforeRevision` drives exclusive-cursor loading of older entries.
-7. Rich text is the special high-frequency path: Tiptap changes a Yjs document; the editor waits for 1.2 seconds of inactivity, sanitizes HTML through the centralized `coedit-rich-text-v1` policy, and emits one grouped `updateContent` operation with incremental and complete Yjs encodings. An explicit flush cancels the timer, drains updates (including updates arriving during the drain), and preserves a failed delta for retry.
+7. The node body is the special high-frequency path: Tiptap changes a Yjs document; the editor waits for 1.2 seconds of inactivity, sanitizes HTML through the centralized `coedit-rich-text-v1` policy, and emits one grouped `updateBody` operation with incremental and complete Yjs encodings. An explicit flush cancels the timer, drains updates (including updates arriving during the drain), and preserves a failed delta for retry.
 8. Restore loads a stored revision but writes it as a new current revision. An accepted create/open/restore advances `editorGeneration`; `App` includes that generation in `NodeEditor`'s React key so an authoritative state replacement constructs a fresh `Y.Doc` even when the selected node ID is unchanged.
 9. Export is host-specific: the browser produces safe-named downloads, including a versioned state-plus-complete-runtime-ledger recovery envelope; desktop output remains the Rust/Tauri responsibility.
 
@@ -208,7 +208,7 @@ This is a request/complete-view-response architecture. There is no runtime state
 
 `useDocumentController` owns one current `DocumentView`, the selected node, the authoritative editor generation, accumulated history pages, cursor/filter/loading/error state, contributor/session context, command status/error state, workspace/request epochs, the serialized mutation queue, and the draft-transition registry. `App` retains welcome-form/profile persistence and renders the controller state. There is no router, global store, worker, event bus, background synchronization loop, or service container.
 
-Tiptap and Yjs run in the UI process. Yjs updates are accumulated for a 1.2-second quiet period. A flush sends sanitized HTML, the merged incremental update, and the complete Yjs state as one queued `updateContent` operation. The gateway responds with a complete replacement `DocumentView`. History requests are intentionally outside the mutation queue; request/epoch guards discard stale responses and history failures have their own visible error state.
+Tiptap and Yjs run in the UI process. Yjs updates are accumulated for a 1.2-second quiet period. A flush sends sanitized `bodyHtml`, the merged incremental update, and the complete Yjs state as one queued `updateBody` operation. The gateway responds with a complete replacement `DocumentView`. History requests are intentionally outside the mutation queue; request/epoch guards discard stale responses and history failures have their own visible error state.
 
 ### Standalone execution
 
@@ -355,7 +355,7 @@ The architecturally significant use cases are:
 | UC-01 Create document | Selects memory versus native path/SQLite behavior | [Create sequences](./SEQUENCE_DIAGRAMS.md#create-a-standalone-document) |
 | UC-02 Open portable document | Crosses every validation and compatibility boundary | [Open sequence](./SEQUENCE_DIAGRAMS.md#open-and-validate-a-desktop-document) |
 | UC-03 Maintain hierarchy | Must preserve tree invariants in two implementations | [Structural mutation](./SEQUENCE_DIAGRAMS.md#apply-a-structural-or-metadata-operation) |
-| UC-05 Edit developed text | Coordinates Tiptap, Yjs, sanitization, debounce, and persistence | [Text commit](./SEQUENCE_DIAGRAMS.md#rich-textyjs-commit-after-12-seconds) |
+| UC-05 Edit node body | Coordinates Tiptap, Yjs, sanitization, debounce, and persistence | [Text commit](./SEQUENCE_DIAGRAMS.md#rich-textyjs-commit-after-12-seconds) |
 | UC-07 Restore revision | Demonstrates append-only history and snapshot materialization | [Restore sequence](./SEQUENCE_DIAGRAMS.md#restore-a-revision-as-a-compensating-contribution) |
 | UC-08/09 Export/backup | Splits browser downloads from atomic desktop output | [Output sequences](./SEQUENCE_DIAGRAMS.md#export-json-or-markdown) |
 | UC-10 Close | Exercises explicit draft drain and serialized backend lifecycle ordering | [Close sequence](./SEQUENCE_DIAGRAMS.md#close-with-an-explicit-draft-transition-barrier) |

@@ -34,8 +34,7 @@ export interface DocumentNode {
   position: number;
   tags: string[];
   title: string;
-  summary: string;
-  contentHtml: string;
+  bodyHtml: string;
   yjsState: string;
   metadata: JsonObject;
   createdAt: string;
@@ -60,18 +59,18 @@ export type DocumentOperation =
   | {
       type: "createNode";
       node: Pick<DocumentNode, "id" | "title"> &
-        Partial<Pick<DocumentNode, "parentId" | "tags" | "summary" | "contentHtml" | "yjsState" | "metadata">>;
+        Partial<Pick<DocumentNode, "parentId" | "tags" | "bodyHtml" | "yjsState" | "metadata">>;
       index?: number;
     }
   | {
       type: "updateNode";
       nodeId: string;
-      changes: Partial<Pick<DocumentNode, "title" | "summary" | "tags" | "metadata">>;
+      changes: Partial<Pick<DocumentNode, "title" | "tags" | "metadata">>;
     }
   | {
-      type: "updateContent";
+      type: "updateBody";
       nodeId: string;
-      contentHtml: string;
+      bodyHtml: string;
       yjsUpdate: string;
       yjsState: string;
     }

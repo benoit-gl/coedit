@@ -103,8 +103,7 @@ A mutation whose context has a session ID uses `INSERT OR IGNORE` to create a se
 | `position` | `INTEGER` | not null |
 | `tags_json` | `TEXT` | not null; JSON array of normalized tag strings |
 | `title` | `TEXT` | not null |
-| `summary` | `TEXT` | not null |
-| `content_html` | `TEXT` | not null |
+| `body_html` | `TEXT` | not null |
 | `yjs_state` | `BLOB` | not null |
 | `metadata_json` | `TEXT` | not null, parsed as JSON |
 | `created_at` | `TEXT` | not null |
@@ -113,9 +112,11 @@ A mutation whose context has a session ID uses `INSERT OR IGNORE` to create a se
 
 `parent_id = NULL` denotes a root. `deleted_at = NULL` denotes an active node. Soft-deleted nodes remain materialized for history and restoration behavior.
 
+`bodyHtml` in the TypeScript/wire model and `body_html` in SQLite name the node's sole freeform authored-text field. The term **body** is intentional: **payload** is reserved for serialized operation/contribution data and would be ambiguous in history and recovery code. Nodes do not have a separate summary field.
+
 `tags_json` is an ordered JSON array used as a set. The application trims and Unicode-normalizes tags, collapses whitespace, matches duplicates case-insensitively while preserving the first display spelling, and permits at most 20 tags of at most 64 code points/256 UTF-8 bytes each. The editor's reusable vocabulary is not stored separately; it is derived from tags on active nodes, so it grows and shrinks with current document use.
 
-`yjs_state` stores the decoded binary complete Yjs update. The API representation is base64 text. `content_html` is a separately materialized rendering; the backend does not prove that it and the Yjs state are equivalent.
+`yjs_state` stores the decoded binary complete Yjs update. The API representation is base64 text. `body_html` is a separately materialized rendering of the node body; the backend does not prove that it and the Yjs state are equivalent.
 
 The index `nodes_parent_position(parent_id, position)` supports sibling traversal. Active children are ordered by `position`; code uses ID as a deterministic tie-break where needed.
 
@@ -138,7 +139,7 @@ The index `nodes_parent_position(parent_id, position)` supports sibling traversa
 
 The application appends contributions; the schema itself has no append-only trigger or signature. Direct SQLite modification can alter the ledger.
 
-Normal operation types are `createNode`, `updateNode`, `updateContent`, `moveNode`, `softDeleteNode`, `restoreNode`, and `renameDocument`. Lifecycle entries additionally use `createDocument` and `restoreRevision`.
+Normal operation types are `createNode`, `updateNode`, `updateBody`, `moveNode`, `softDeleteNode`, `restoreNode`, and `renameDocument`. Lifecycle entries additionally use `createDocument` and `restoreRevision`.
 
 Revision `0` is `createDocument` with base revision `-1`. Each subsequent committed mutation or restore uses the previous current revision as `base_revision` and allocates current revision plus one.
 
@@ -205,13 +206,12 @@ The Rust mutation boundary currently applies these UTF-8/encoded limits:
 | Value | Limit |
 |---|---:|
 | Title | 4,096 bytes |
-| Summary | 1,048,576 bytes |
 | Serialized metadata JSON | 1,048,576 bytes |
-| Content HTML | 16,777,216 bytes |
+| Body HTML | 16,777,216 bytes |
 | Decoded complete Yjs state | 33,554,432 bytes |
 | Encoded Yjs update string | 67,108,864 bytes |
 
-Content HTML is sanitized with Ammonia before durable writes. Yjs update and state strings must decode as base64. Rust validates but does not apply the incremental Yjs update; the supplied complete state becomes authoritative.
+Body HTML is sanitized with Ammonia before durable writes. Yjs update and state strings must decode as base64. Rust validates but does not apply the incremental Yjs update; the supplied complete state becomes authoritative.
 
 The browser uses the centralized, versioned `coedit-rich-text-v1` policy in `src/editor/sanitizeRichText.ts` for paste, fallback HTML load, and commit. `fixtures/protocol/rich-text-v1.json` is executable TypeScript evidence for that policy. Rust Ammonia conformance to the same cases is not yet established and is part of the native second pass.
 

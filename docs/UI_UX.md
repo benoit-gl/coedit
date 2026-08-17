@@ -18,7 +18,7 @@ The implemented interface supports one local hierarchical writing document at a 
 
 1. create or open a document;
 2. create and arrange ideas in an outline;
-3. refine one idea's metadata and developed text;
+3. refine one idea's metadata and body text;
 4. inspect attributed history;
 5. restore, export, back up, or close.
 
@@ -52,8 +52,7 @@ Coedit Local
     ├── Editor
     │   ├── title
     │   ├── freeform tags
-    │   ├── summary
-    │   └── developed rich text
+    │   └── rich-text body
     └── History                            optional panel
         ├── search
         ├── selected-idea filter
@@ -165,10 +164,8 @@ Implementation: both actions call `DocumentFileDialogs` before invoking the desk
 │          [+ Root idea]│ IDEA TITLE                                             │
 │ ▾ Chapter one    ↑↓+× │ The opening                                            │
 │   · Arrival      ↑↓+× │ TAGS [scene ×] [draft ×] [Add or select a tag…]       │
-│   ▸ Discovery    ↑↓+× │ WORKING SUMMARY                                      │
-│ ▸ Chapter two    ↑↓+× │ [ Establish place and conflict…                    ] │
-│                       │                                                       │
-│                       │ DEVELOPED TEXT                         grouped 1.2 s   │
+│   ▸ Discovery    ↑↓+× │                                                       │
+│ ▸ Chapter two    ↑↓+× │ TEXT                                   grouped 1.2 s   │
 │ Drag onto an idea…    │ [Bold][Italic][Heading][Bullets][Numbered][Quote]…    │
 │                       │ ────────────────────────────────────────────────────  │
 │                       │ Write and refine here…                                │
@@ -183,7 +180,7 @@ Implementation ownership:
 - Outline and recursive rows: `src/components/Outline.tsx`.
 - Metadata fields: `src/components/NodeEditor.tsx`.
 - Tag tokens, suggestions, and freeform entry: `src/components/TagEditor.tsx` and `src/domain/tags.ts`.
-- Developed text and toolbar: `src/editor/RichTextEditor.tsx`.
+- Node body and toolbar: `src/editor/RichTextEditor.tsx`.
 - Layout and visual styling: `src/styles.css`.
 
 ### Workspace with history
@@ -194,9 +191,9 @@ Implementation ownership:
 │                  │                                  │ History                 │
 │ ▾ Chapter one    │ The opening                      │ [Search contributions] │
 │   · Arrival      │                                  │ [ ] Selected idea only │
-│   ▸ Discovery    │ Working summary                  │ ────────────────────── │
-│                  │                                  │ r12 Writing contribution│
-│                  │ Developed text                   │ Local author · time    │
+│   ▸ Discovery    │                                  │ ────────────────────── │
+│                  │ Text                             │ r12 Writing contribution│
+│                  │                                  │ Local author · time    │
 │                  │                                  │ 62bf…       [Restore]  │
 │                  │                                  │ ────────────────────── │
 │                  │                                  │ r11 Refined idea       │
@@ -215,7 +212,7 @@ Implementation: history is a third 340 px grid column on viewports wider than 90
 │                  │                                       │
 │ ▾ Chapter one    │ The opening                           │
 │   · Arrival      │                                       │
-│                  │ Developed text…                       │
+│                  │ Text…                                 │
 │                  │                                       │
 │                  │              ┌───────────────────────┐│
 │                  │              │ HISTORY OVERLAY      ×││
@@ -268,13 +265,12 @@ Deleted nodes do not appear in `buildTree()`. There is no current trash view or 
 |---|---|---|
 | Title | Controlled local `title` state | Blur, when different from `node.title`. |
 | Tags | Removable chips plus editable combobox; suggestions are distinct tags on active nodes | Enter, suggestion selection, removal, blur, or controlled-transition flush. |
-| Working summary | Controlled local `summary` state | Blur, when different from `node.summary`. |
 
 Tags are optional and freeform. Input is Unicode-normalized, whitespace-collapsed, case-insensitively deduplicated, and limited to 20 tags per node and 64 code points/256 UTF-8 bytes per tag. New values grow the reusable document vocabulary; a value shrinks away when its last active-node use is removed or deleted. Selected tags are excluded from suggestions. Arrow keys navigate suggestions, Enter adds, Escape closes, and Backspace in an empty input removes the last tag. Each chip exposes an explicitly named removal button, and additions/removals are announced through a polite live region.
 
 When the selected node or accepted metadata changes, the metadata component synchronizes clean local drafts from props.
 
-### Developed text
+### Node body
 
 Tiptap commands apply immediately to the Yjs-backed editor. Yjs updates are grouped after 1.2 seconds without a new update, then HTML, an incremental Yjs update, and the complete Yjs state are committed together. Controlled node changes, document operations, restore, export, backup, and Close synchronously freeze and drain document title, node metadata, and the pending rich-text batch first. An authoritative restore increments the editor generation and remounts the selected editor even when its node ID is unchanged. The save hint tells the user about quiet-period grouping.
 
@@ -388,7 +384,7 @@ Important CSS ownership:
 | Header | `.topbar`, `.brand`, `.document-title`, `.top-actions`, `.status`, `.menu` |
 | Main layout | `.workspace`, `.workspace.with-history` |
 | Outline | `.outline`, `.outline-row`, `.disclosure`, `.row-actions` |
-| Node metadata | `.node-editor`, `.node-meta`, `.title-input`, `.summary-field` |
+| Node metadata | `.node-editor`, `.node-meta`, `.title-input` |
 | Node tags | `.tags-field`, `.tag-editor`, `.tag-chip`, `.tag-options` |
 | Rich text | `.rich-editor`, `.editor-toolbar`, `.editor-surface` |
 | History | `.history-panel`, `.history-list`, `.history-copy` |
@@ -442,7 +438,7 @@ Before describing iPadOS or phone support as complete, add a touch-first outline
 
 ### Change save behavior
 
-The current save boundary is eager title/summary/tag drains plus the 1.2-second Yjs quiet period, all backed by an explicit controller-visible draft registry. Controlled node switching, operations, revision restoration, document close, export, and backup freeze and await document-title, tag-input, node-metadata, and rich-text participants; page/process exit and forced suspension remain unawaitable. Changes must cover failure/retry, updates arriving during a drain, authoritative editor remount, status feedback, and both gateway implementations. See [Sequence diagrams](SEQUENCE_DIAGRAMS.md).
+The current save boundary is eager title/tag drains plus the 1.2-second Yjs body quiet period, all backed by an explicit controller-visible draft registry. Controlled node switching, operations, revision restoration, document close, export, and backup freeze and await document-title, tag-input, node-metadata, and rich-text participants; page/process exit and forced suspension remain unawaitable. Changes must cover failure/retry, updates arriving during a drain, authoritative editor remount, status feedback, and both gateway implementations. See [Sequence diagrams](SEQUENCE_DIAGRAMS.md).
 
 ## UX acceptance checklist
 

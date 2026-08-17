@@ -21,7 +21,7 @@ The initial product works entirely offline. AI and real-time collaboration are l
 
 ## Document and Contribution Model
 
-The document consists of typed nodes arranged in a movable hierarchy. A node has a title, summary, rich text, and optional children.
+The document consists of tagged nodes arranged in a movable hierarchy. A node has a title, freeform tags, a rich-text body, and optional children.
 
 - `Document`: ID, title, format version, timestamps, and revision.
 - `Node`: stable ID, parent ID, ordering position, type, title, metadata, Yjs state, rendered HTML, and deletion state.
@@ -36,7 +36,7 @@ Structural edits, text edits, metadata changes, automated corrections, and accep
 ## Implementation Phases
 
 1. **Application foundation**: pinned workspace, SQLite format, creation/opening, validation, migrations, backup, atomic transactions, and recovery.
-2. **Hierarchy and editing**: outline, keyboard navigation, drag/reparent operations, soft deletion, summaries, and safe rich text.
+2. **Hierarchy and editing**: outline, keyboard navigation, drag/reparent operations, soft deletion, freeform tags, and a single safe rich-text body per node.
 3. **Contribution history**: contributor identity, grouped writing sessions, search, node filters, replay, hashes, and compensating restoration.
 4. **Portability and hardening**: packages, sanitized content, safe embeds, content-addressed attachments, offline verification, JSON/Markdown export, and recovery documentation.
 5. **AI integration**: provider-neutral interface and explicit Ollama adapter, preview before acceptance, and attributed AI contributions.
