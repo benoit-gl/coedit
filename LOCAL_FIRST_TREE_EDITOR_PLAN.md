@@ -4,7 +4,7 @@
 
 > **Current hardening sequence:** the active first pass future-proofs the standalone HTML host and its shared application boundary. A second pass is reserved for Rust/Tauri parity, security, and native verification. A third pass will decide the fate of dormant feature seams. See the [documentation index](./docs/README.md#current-hardening-passes) for the exact boundary.
 
-> **Proposed workspace iteration:** the implementation-ready, not-yet-coded design for a continuous block outline, non-mutating historical views, and configurable semantic body checkpoints is preserved in the [continuous-workspace change package](./docs/proposals/README.md). Resume from that package rather than inferring the target UX from this original phase plan.
+> **Proposed workspace iteration:** the implementation-ready, not-yet-coded design for a continuous block outline, an optional navigation-only tree sidebar, non-mutating historical views, and configurable semantic body checkpoints is preserved in the [continuous-workspace change package](./docs/proposals/README.md). The sidebar augments the one continuous editor; it is not a selectable return to this plan's master/detail composition. Resume from that package rather than inferring the target UX from this original phase plan.
 
 ## Summary
 

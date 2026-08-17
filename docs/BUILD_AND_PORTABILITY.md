@@ -217,7 +217,7 @@ The shared React UI can render in a browser in principle, but the current produc
 
 Treat iPadOS as a new host/use-case project, not a packaging checkbox.
 
-The proposed [continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md) defines pointer-independent structural commands, explicit touch targets, focus ownership, and historical read-only rendering that improve browser/tablet viability. It is still a design, not iPadOS support evidence. Before claiming support, qualify the canvas, dynamic viewport/keyboard behavior, IME, selection, scrolling, downloads, suspension, and assistive technology in actual Safari/iPadOS hardware.
+The proposed [continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md) defines pointer-independent structural commands, explicit touch targets, focus ownership, historical read-only rendering, and an optional navigation-only sidebar that becomes an explicitly opened drawer at compact/touch widths. These choices improve browser/tablet viability without creating a second editor. They are still design, not iPadOS support evidence. Before claiming support, qualify the canvas and navigator together: Navigator/History drawer mutual exclusion, focus/Escape/success-and-failure activation behavior, dynamic viewport and safe-area layout, software keyboard, IME, selection, scrolling/reveal, downloads, suspension, and assistive technology on actual Safari/iPadOS hardware. Preferred dock visibility is browser presentation data only; an invalid/unavailable initial Safari storage read defaults closed, a later write failure retains only session memory, compact drawer state is never restored, and none can affect document recovery.
 
 ## Troubleshooting
 

@@ -183,7 +183,7 @@ Current interaction details and proposed accessibility acceptance criteria are i
 
 The workspace renders a separate hierarchy navigator and only one selected node's editor. Creating or developing adjacent nodes repeatedly moves attention between structural controls and a detail pane, so hierarchy does not read or edit as one continuous document.
 
-**Recommended direction:** implement the proposed [continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md): a flattened pre-order projection, separate focused-block/editor-owner state, one active Tiptap editor, drain-before-hide collapse behavior, sanitized inactive previews, inline structural controls, and complete keyboard/touch alternatives. This is a component/application redesign, not a CSS-only change.
+**Recommended direction:** implement the proposed [continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md): a flattened pre-order projection, separate canvas-context/focus-region/editor-owner state, one active Tiptap editor, drain-before-hide collapse behavior, sanitized inactive previews, inline structural controls, and complete keyboard/touch alternatives. Large-document orientation may use the proposed optional navigation-only tree sidebar, docked when space permits and presented as an explicitly opened drawer on compact/touch screens. It must share the canvas's live/historical projection while keeping browsing/expansion state independent; it is not a selectable revival of the current tree-plus-detail editor. This is a component/application redesign, not a CSS-only change.
 
 ### R-26: historical inspection is restore-only
 

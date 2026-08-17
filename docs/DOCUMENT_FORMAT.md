@@ -143,7 +143,7 @@ Normal operation types are `createNode`, `updateNode`, `updateBody`, `moveNode`,
 
 Revision `0` is `createDocument` with base revision `-1`. Each subsequent committed mutation or restore uses the previous current revision as `base_revision` and allocates current revision plus one.
 
-The proposed checkpoint design continues to append these raw rows. Reusing `group_id` across safety checkpoints changes only their semantic presentation, not revision allocation or immutability; see [Proposed historical-view and checkpoint semantics](#proposed-historical-view-and-checkpoint-semantics).
+The proposed checkpoint design continues to append these raw rows. Reusing `group_id` across safety checkpoints changes only their semantic presentation, not revision allocation or immutability; see [Proposed workspace-view and checkpoint semantics](#proposed-workspace-view-and-checkpoint-semantics).
 
 The `contributions_node_time` index contains only `timestamp DESC`; affected node IDs remain JSON and are filtered in application code.
 
@@ -274,7 +274,7 @@ The old contribution and snapshot rows remain. Restored HTML is sanitized and Yj
 
 This is distinct from `restoreNode`: that operation undeletes one node and its ancestors, but not deleted descendants.
 
-## Proposed historical-view and checkpoint semantics
+## Proposed workspace-view and checkpoint semantics
 
 This section records the data contract expected by the [proposed continuous-workspace package](./proposals/README.md). It is **not implemented** and does not declare a new schema version.
 
@@ -304,6 +304,10 @@ The proposed [body checkpoint strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md)
 The two easy-to-change code-policy values, `batchCharacterThreshold` and `idleTimeoutMs`, control *when* checkpoints are requested; they are not persisted document properties and do not alter file interpretation. The proposed defaults are `20` graphemes and `30_000` milliseconds. Changing them can materially affect ledger/snapshot volume and must be measured, but does not by itself require a format migration.
 
 This grouping design does not solve snapshot-per-revision growth. Retention, compaction, delta snapshots, and replay/checkpoint strategy remain separate format work and must not be inferred from a collapsed History row.
+
+### Navigator state is not document data
+
+The proposed optional navigator introduces no format or persistence field. `navigatorDockPreferredOpen`, page-session `historyDockRequestedOpen`, `historyDataGeneration`, `activeCompactAuxiliary`, `lastExplicitAuxiliary`, `navigatorSelectionId`, `navigatorExpandedIds`, canvas context, actual focus region, the one-shot editor-resume candidate, and scroll targets are presentation/application state and shall be excluded from `DocumentState`, `.coedit`, snapshot JSON, canonical hashes, contribution payloads, History, standalone recovery JSON, and Markdown export. Implementations may remember only validated, versioned preferred Navigator dock visibility in browser-local UI storage. A missing, blocked, or invalid initial read defaults closed; a later write failure retains only the in-memory session choice. Neither outcome affects document recovery or interpretation; History dock request/data generation and compact auxiliary state are never restored automatically.
 
 ## Open and version compatibility
 

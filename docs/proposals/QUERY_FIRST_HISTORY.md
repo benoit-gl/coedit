@@ -26,6 +26,7 @@ The missing capability is a read-only query that returns one of those states wit
 5. Preserve restoration as an explicit compensating command.
 6. Support rapid movement between revisions without stale query responses replacing newer choices.
 7. Keep both standalone and Tauri adapters behind a common query contract.
+8. Drive the optional navigation-only hierarchy from the same active live/historical projection as the canvas.
 
 ## Non-goals
 
@@ -34,7 +35,7 @@ The missing capability is a read-only query that returns one of those states wit
 - Reconstructing state through contribution replay.
 - Comparing two revisions side by side in the first slice.
 - Importing/exporting historical revisions in the first slice.
-- Persisting historical-view selection or scroll state in the document file.
+- Persisting historical-view canvas/navigator selection, expansion, scroll, or navigator visibility in the document file.
 
 ## Terminology
 
@@ -103,18 +104,46 @@ Do not encode this only as `DocumentView.readOnly`. A discriminated union makes 
 
 ```ts
 // Proposed shape; not current source.
+interface NavigatorContextState {
+  navigatorSelectionId: string | null;
+  navigatorExpandedIds: ReadonlySet<string>;
+}
+
+interface CanvasContextState {
+  canvasContextNodeId: string | null;
+  canvasExpandedIds: ReadonlySet<string>;
+  scrollAnchor: string | null;
+}
+
+interface LiveWorkspaceContext {
+  view: DocumentView;
+  canvas: CanvasContextState;
+  navigator: NavigatorContextState;
+}
+
+interface RetainedLiveWorkspaceContext {
+  live: LiveWorkspaceContext;
+  resumeEditorNodeId: string | null; // one-shot candidate; never mounted ownership
+}
+
+interface HistoricalWorkspaceContext {
+  materialized: MaterializedRevision;
+  canvas: CanvasContextState;
+  navigator: NavigatorContextState;
+}
+
 type WorkspaceProjection =
   | {
       kind: "live";
-      view: DocumentView;
-      focusedBlockId: string | null;
+      displayed: LiveWorkspaceContext;
       editorOwnerNodeId: string | null;
     }
   | {
       kind: "historical";
-      materialized: MaterializedRevision;
+      displayed: HistoricalWorkspaceContext;
+      retainedLive: RetainedLiveWorkspaceContext;
       currentRevision: number;
-      focusedBlockId: string | null;
+      editorOwnerNodeId: null;
     };
 
 type RevisionRequestState =
@@ -137,6 +166,13 @@ Controller invariants:
 6. Close clears both live and historical projections.
 7. Open/create resets historical mode and any materialization cache/query epoch.
 8. A loading request retains its exact origin projection. Failure/cancel returns to that origin unless a newer request/workspace epoch has superseded it.
+9. Live and historical canvas/navigator contexts are distinct. The historical union member owns a `RetainedLiveWorkspaceContext`, so **Back to current** does not depend on a loading-only origin or reconstruct UI state from historical IDs.
+10. `navigatorSelectionId`/`navigatorExpandedIds` are never aliases for `canvasContextNodeId`/`canvasExpandedIds`; actual DOM `focusRegion` is shell state outside the projection.
+11. Preferred Navigator dock visibility plus transient `historyDockRequestedOpen`, `activeCompactAuxiliary`, and `lastExplicitAuxiliary` are shell state outside this union; changing them alone cannot change the active projection, call `materializeRevision`, or issue a document mutation. `historyVisible` is derived from dock capability plus requested/active state. Only becoming effectively visible may issue its ordinary contribution-list query, and only when no valid page is loaded or the hidden panel became stale.
+12. Before historical mode, construct a fresh retained wrapper by pairing the live context with `resumeEditorNodeId` copied from actual `editorOwnerNodeId`, unmount the editor, and set actual ownership to `null`. **Back to current** or successful Restore validates and consumes that one-shot candidate, discards the wrapper, and returns to an ordinary `LiveWorkspaceContext` with no stored resume target. A later history entry derives a new candidate from then-current ownership.
+13. A monotonic `historyDataGeneration` advances for every accepted change that can affect contribution rows. Every History page request captures the workspace epoch, filter epoch, request ID, and data generation; a response may replace rows or clear stale state only if all still match. Thus a response started before a hidden accepted change is ignored rather than making obsolete rows appear current.
+
+All sets, IDs, and query-generation counters in this UI model are runtime projection/application state. They are excluded from `DocumentState`, snapshot hashes, `.coedit` persistence, recovery/Markdown/JSON exports, and contribution history. Only `navigatorDockPreferredOpen` may be retained separately as a versioned, validated, best-effort browser UI preference; it contains no document or node identity. `historyDockRequestedOpen`, `historyDataGeneration`, compact `activeCompactAuxiliary`, and `lastExplicitAuxiliary` are transient page-session state and never auto-restored.
 
 ```plantuml
 @startuml
@@ -176,12 +212,13 @@ Required sequence:
 1. User requests **View** on revision R.
 2. Controller begins the existing controlled transition and synchronously freezes live draft participants.
 3. Pending title/tag/body changes are checkpointed and awaited. These saves may legitimately create live contributions because they predate the view request.
-4. Controller records the now-current live revision and state.
+4. Controller records the now-current `LiveWorkspaceContext` and copies actual editor ownership into a fresh one-shot resume candidate.
 5. Controller issues `materializeRevision(R)` as a query.
 6. A request token plus workspace epoch guards against stale results.
-7. On success, controller enters historical mode with detached state.
-8. On failure, controller restores the request's origin projection (live for this first request), unfreezes drafts when appropriate, and reports the query error.
-9. The materialization itself adds no contribution.
+7. On success, controller retains that wrapper, unmounts the editor, sets actual ownership to `null`, and enters historical mode with detached state.
+8. On success, controller also initializes historical canvas/navigator state from compatible retained live IDs and prunes every ID missing from R.
+9. On failure, controller restores the request's origin projection (live for this first request), including its exact navigator context, unfreezes drafts when appropriate, and reports the query error.
+10. The materialization itself adds no contribution.
 
 ```plantuml
 @startuml
@@ -262,6 +299,9 @@ Map the shared query to a dedicated IPC command. Do not emulate viewing by calli
 - Grouped body contributions default to viewing the group's final checkpoint; expanded checkpoints can each be viewed exactly.
 - A group crossing the raw cursor-page boundary is labeled partial (`at least N`) until its exact `groupId` query has fetched all checkpoints; loaded contribution count and visible collapsed-row count remain distinct.
 - Loading and failure states are independent of live mutation status.
+- Where available container width preserves the canvas minimum, History is effectively visible when `historyDockRequestedOpen` is true. Otherwise it is visible only when `activeCompactAuxiliary === "history"` and uses that shared slot as a labeled `role="dialog"` with `aria-modal="true"`, traps focus, makes the workspace inert, supports `Escape`, and restores focus to the History invoker on ordinary dismissal.
+- `activeCompactAuxiliary` permits only `none`, `navigator`, or `history`. The first slice requires closing one drawer before its background header toggle is reachable; keyboard/programmatic handoff closes the loser without focus-return and places focus in the winner. Breakpoint collision uses the deterministic focused-panel/`lastExplicitAuxiliary` rule in the continuous-workspace design.
+- Initial contribution loading and accepted-change first-page refresh follow effective `historyVisible`, not `historyDockRequestedOpen` alone. A first reveal with no valid page queries once. Hidden History retains its page, becomes stale after relevant accepted changes, and refreshes exactly once when it next becomes visible. A hide/reveal with an already valid, non-stale page issues no query. Workspace/filter/request guards plus the captured `historyDataGeneration` reject an older in-flight response after a hidden change and prevent it from clearing stale state.
 
 ### Persistent banner
 
@@ -281,12 +321,24 @@ The banner:
 - requires confirmation before restore;
 - reports restore consequences: a new revision will be appended and later history retained.
 
+### Optional navigator
+
+When open, the navigation-only `NavigatorPanel` consumes the historical materialization currently shown by `DocumentCanvas`; it must never keep showing the retained live tree behind a historical canvas. Its title rows are plain text and its only behaviors are independent disclosure, selection/location, and focus of a read-only historical block.
+
+- No editor, title/tag field, insertion affordance, structural menu, drag/drop, or live command is rendered.
+- Opening, closing, browsing, revealing, and focusing a historical row are local UI actions and cannot call `materializeRevision` again unless the user separately chooses another revision in History.
+- Navigator selection/expansion are temporary historical context. They are initialized from compatible live IDs, preserved where valid across historical revision queries, and discarded on **Back to current**.
+- A docked row locate expands necessary historical canvas ancestors and scrolls without claiming canvas focus. **Focus in document** transfers focus to a read-only block handle/heading. Historical mode has no draft drain, but compact-drawer row activation still validates/reveals the target before closing the drawer and focusing it; a stale/invalid target leaves the drawer open on a valid fallback.
+- Navigator and History may both dock only when their container leaves the canvas at or above its named readable minimum. Whenever either uses an overlay/drawer, they are mutually exclusive: opening either closes the other, no nested focus traps are allowed, and ordinary dismissal returns focus to that panel's own invoker. Atomic handoff suppresses the losing panel's return and moves focus directly into the winner.
+- Historical mode retains the same docked/drawer, ARIA tree, focus-return, and storage-fallback behavior specified by [Optional navigator sidebar](./CONTINUOUS_BLOCK_OUTLINE.md#optional-navigator-sidebar).
+
 ### Command availability
 
 Historical mode permits:
 
 - scrolling, text selection, copy;
 - collapse/expand as local view state;
+- optional navigator disclosure, selection, locate, and read-only block focus;
 - History search, paging, and viewing another revision;
 - Back to current;
 - explicit restore;
@@ -299,17 +351,21 @@ Historical mode prohibits:
 - document rename;
 - checkpoint timers and draft participants;
 - any command that implicitly targets the retained live document while the historical state is displayed.
+- any navigator action that invokes title/tag/body editing or structural mutation.
 
 Exporting the historical state is deferred unless explicitly added as a query-side use case. The first implementation should disable Export in historical mode rather than accidentally export the retained live document.
 
 ## Selection, expansion, and scroll
 
-- Preserve the live `focusedBlockId`, `editorOwnerNodeId`, expansion set, and scroll anchor before entering historical mode.
-- In historical mode, prefer the same focused block ID if present and active at that revision; no editor owner exists there.
+- Preserve the complete `LiveWorkspaceContext` (canvas context/expansion/scroll and navigator selection/expansion) inside a `RetainedLiveWorkspaceContext`, alongside a fresh one-shot `resumeEditorNodeId`. Actual `editorOwnerNodeId` becomes `null` before historical rendering.
+- In historical mode, prefer the same canvas-context node ID if present and active at that revision; no editor owner exists there.
 - Otherwise choose its nearest available ancestor if determinable, then the first visible root.
-- Historical expansion is a separate temporary set, initialized from compatible live IDs and pruned to the materialized state.
-- Moving among historical revisions retains the current historical `focusedBlockId` when possible.
-- **Back to current** restores the live `focusedBlockId`, `editorOwnerNodeId`, expansion, and scroll anchor after the live projection renders; editor ownership is remounted only after live state is authoritative.
+- Historical canvas expansion and navigator expansion are separate temporary sets, each initialized from its compatible live counterpart and pruned to the materialized state. Collapsing one never collapses the other.
+- Historical `navigatorSelectionId` is independent of `canvasContextNodeId`. Tree arrowing updates only navigator selection; locate may reveal/scroll, and explicit focus updates `canvasContextNodeId` after the target exists.
+- Moving among historical revisions retains the current historical `canvasContextNodeId` when possible.
+- Moving among historical revisions also retains navigator selection/expansion where IDs remain active; missing IDs fall back by stable hierarchy (ancestor, next, previous, first root), never by array position.
+- **Back to current** restores `retainedLive.live` after the live projection renders; the one-shot `resumeEditorNodeId` is validated against that authoritative live state before it may become actual editor ownership, then the wrapper and candidate are discarded. Shell `focusRegion` changes only when the chosen canvas focus target is ready.
+- Preferred Navigator dock visibility and page-session `historyDockRequestedOpen` are not swapped with revisions. A visible dock stays mounted while its data source changes; History remains completely usable when the navigator is absent. Compact drawer visibility is transient and may close under the one-modal-panel rule when History opens.
 
 ## Restoration from historical mode
 
@@ -332,12 +388,14 @@ Controller -> Commands : restoreRevision(R, context)
 Commands -> Store : compensating transaction
 Store --> Commands : new live DocumentView at revision N
 Commands --> Controller : accepted live view
+Controller -> Controller : build new live context from accepted view
+Controller -> Controller : resolve retained UI intent into new live context;\nprune IDs; reveal active target or clear; consume candidate
 Controller -> Controller : exit historical; reset editor generation
 Controller --> Author : live canvas at N; history retained
 @enduml
 ```
 
-Exactly one restore command is issued. The controller must not first materialize by mutation, restore twice, or append a separate “viewed revision” contribution.
+Exactly one restore command is issued. The controller must not first materialize by mutation, restore twice, or append a separate “viewed revision” contribution. Unlike **Back to current**, Restore does not reinstate the retained live context verbatim: it seeds a new context from `retainedLive.live` UI intent and resolves every canvas/navigator ID and scroll anchor against the accepted compensating view. A one-shot `resumeEditorNodeId` may become initial actual ownership only if it is active and visible in the rebuilt canvas projection. If its stable ID moved beneath different ancestry, expand every required canvas ancestor before mounting it; if that cannot produce a valid visible target, clear it and choose a visible fallback. Then discard the retained wrapper/candidate. Historical selection/expansion/scroll state is never copied into the new live context.
 
 ## Concurrency and stale responses
 
@@ -360,6 +418,9 @@ Exactly one restore command is issued. The controller must not first materialize
 | Stale response | Ignore silently except diagnostic logging. |
 | Restore fails | Remain in historical view; retained live state stays unchanged. |
 | Back to current | Cannot require a gateway mutation and should not fail after retained state exists. |
+| Historical navigator target disappears between query/activation | Prune by stable ID, retain tree focus on a valid fallback, announce unavailable target, and issue no live command. |
+| Navigator preference initial read is missing/malformed/denied | Default the dock preference closed; do not fail materialization or document opening. |
+| Navigator preference write later fails | Retain the user's current in-memory dock choice for the session, report non-blockingly, and do not snap the UI closed. |
 
 ## Proposed tests
 
@@ -384,10 +445,16 @@ For every adapter that advertises `RevisionQueryCapability.kind === "available"`
 - failed/canceled live-origin query returns live; failed/canceled historical-origin query retains the prior historical projection;
 - Back/Close during loading invalidate the request and cannot be overwritten by its eventual response;
 - Back restores retained live projection without gateway call;
+- Back validates and consumes the one-shot resume candidate; after any later live owner transfer, the next historical entry captures that new owner rather than reusing stale state;
 - mutation commands rejected in historical mode;
 - restore calls command exactly once and exits to returned live revision;
 - restore failure retains historical mode;
-- focused-block fallback/restoration and zero editor owner in historical mode.
+- successful restore rebuilds live canvas/navigator/scroll context against the accepted compensating view, expands changed required ancestry for an active resume target or clears it for a visible fallback, consumes the candidate, and imports no historical UI context;
+- restore fixture where the same stable resume ID has different ancestry at the target revision proves required-ancestor expansion before mount; absent/deleted target proves visible fallback and no hidden editor owner;
+- canvas-context fallback and retained-live restoration, deterministic shell focus-region transitions, and zero editor owner in historical mode;
+- separate live/historical navigator contexts survive success/failure/Back correctly and prune missing stable IDs;
+- navigator visibility does not alter query epochs or the retained origin projection.
+- effective History visibility controls initial/refresh contribution queries: first reveal without a valid page queries once; shrink/expand and Navigator handoff with a valid non-stale page issue none; hidden accepted changes advance `historyDataGeneration`, mark stale, invalidate older responses, and reappearance coalesces them into one current guarded refresh.
 
 ### UI/accessibility
 
@@ -397,7 +464,10 @@ For every adapter that advertises `RevisionQueryCapability.kind === "available"`
 - mode change announced;
 - grouped row final revision and expanded checkpoint views;
 - keyboard-only View, Back, and Restore confirmation;
-- same canvas layout for live and historical projections.
+- same canvas layout for live and historical projections;
+- open and closed historical navigator paths render the displayed snapshot, never retained live nodes;
+- navigator row browsing/reveal/focus remains read-only and tree selection stays distinct from canvas focus;
+- docked and modal-drawer focus/keyboard behavior remains correct while switching revisions.
 
 ### Native integration
 
@@ -418,6 +488,11 @@ For every adapter that advertises `RevisionQueryCapability.kind === "available"`
 8. The continuous canvas renders live and historical states through the same node projection/components.
 9. The standalone milestone passes the shared contract against memory; package completion additionally requires the Tauri adapter to pass the same contract.
 10. Documentation and UI consistently use **View** for queries and **Restore** for mutation.
+11. If the optional navigator is open, it renders only the active live or historical projection, exposes no mutation path, and restores the retained live navigator context on Back.
+12. Navigator state changes do not mutate, query, hash, snapshot, export, or enter the document; historical navigator state is temporary and safely pruned by stable ID.
+13. Restore builds a new live canvas/navigator/scroll context against the accepted compensating view, expands required changed ancestry before mounting an active editor-resume target or clears it for a visible fallback, and never copies historical UI context into live state.
+14. Every historical entry derives a fresh one-shot editor-resume candidate from actual live ownership; Back and Restore validate, optionally apply, and discard it, and ordinary live state never retains it.
+15. Initial and refresh contribution queries follow effective History visibility: first reveal without a valid page queries once, visibility-only transitions with a valid non-stale page issue no query, hidden accepted changes advance `historyDataGeneration` and mark the page stale, older in-flight responses cannot clear it, and the next reveal performs exactly one current guarded refresh.
 
 ## Implementation sequence
 
@@ -428,6 +503,7 @@ For every adapter that advertises `RevisionQueryCapability.kind === "available"`
 5. Keep the Tauri composition compiling with the query capability absent and document that temporary host difference.
 6. Add the Rust store query, IPC command, Tauri adapter, and shared contract fixtures/tests in the native parity slice.
 7. Reuse the new `DocumentCanvas` when continuous outline work lands.
-8. Demote direct restore and add explicit historical banner confirmation.
-9. Add grouping/checkpoint expansion integration.
-10. Update current architecture, persistence, sequence, RUP, traceability, testing, security, and limitations documents as each milestone becomes implemented.
+8. Add the optional navigator against the same `WorkspaceProjection`, with separate live/historical UI contexts and no command surface.
+9. Demote direct restore and add explicit historical banner confirmation.
+10. Add grouping/checkpoint expansion integration.
+11. Update current architecture, persistence, sequence, RUP, traceability, testing, security, and limitations documents as each milestone becomes implemented.

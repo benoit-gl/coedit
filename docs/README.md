@@ -20,7 +20,7 @@ The set follows Rational Unified Process (RUP) ideas without assuming a heavywei
 | Build or package the software | [Build, release, and portability](./BUILD_AND_PORTABILITY.md) | [Security model](./SECURITY.md) |
 | Work on the portable file format | [Document format](./DOCUMENT_FORMAT.md) | [Persistence design](./PERSISTENCE_DESIGN.md) |
 | Assess unfinished or risky behavior | [Known limitations](./KNOWN_LIMITATIONS.md) | [Traceability and code map](./TRACEABILITY.md) |
-| Resume the continuous-workspace redesign | [Proposed change package](./proposals/README.md) | [Continuous outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md), [query-first history](./proposals/QUERY_FIRST_HISTORY.md), and [checkpoint strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md) |
+| Resume the continuous-workspace redesign | [Proposed change package](./proposals/README.md) | [Continuous outline and optional navigator](./proposals/CONTINUOUS_BLOCK_OUTLINE.md), [query-first history](./proposals/QUERY_FIRST_HISTORY.md), and [checkpoint strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md) |
 
 ## Artifact register
 
@@ -39,7 +39,7 @@ The set follows Rational Unified Process (RUP) ideas without assuming a heavywei
 | Configuration and change management | [Known limitations](./KNOWN_LIMITATIONS.md) | Verified defects, constraints, workarounds, and recommended ownership |
 | Data / recovery | [Document format](./DOCUMENT_FORMAT.md) | `.coedit` format, schema policy, backup, export, and recovery |
 | Security | [Security model](./SECURITY.md) | Trust boundaries, sanitization, CSP, capabilities, future network rules |
-| Proposed analysis/design | [Continuous workspace change package](./proposals/README.md) | Target design for a continuous block outline, non-mutating historical views, and configurable semantic body checkpoints; explicitly not current behavior |
+| Proposed analysis/design | [Continuous workspace change package](./proposals/README.md) | Target design for a continuous block outline with an optional navigation-only sidebar, non-mutating historical views, and configurable semantic body checkpoints; explicitly not current behavior |
 
 The earlier [local-first implementation plan](../LOCAL_FIRST_TREE_EDITOR_PLAN.md) records product intent and phased acceptance criteria. Where it differs from the code, this engineering set and the code describe the current state; the plan remains a roadmap artifact.
 
@@ -100,7 +100,7 @@ These pass boundaries are scope statements, not release promises. [Known limitat
 
 The [continuous workspace change package](./proposals/README.md) records a future UX/application-architecture iteration without changing the current implementation claims above. Its three coordinated designs are:
 
-- a continuous block-outline canvas replacing the master/detail outline-plus-selected-editor workflow;
+- a continuous block-outline canvas replacing the master/detail outline-plus-selected-editor workflow, with an optional runtime-toggleable tree sidebar that navigates that same canvas but never becomes a second editor;
 - query-first, read-only historical materialization with restoration kept as an explicit compensating command; and
 - an edit-batch checkpoint state machine whose `batchCharacterThreshold` and `idleTimeoutMs` defaults are centralized and injectable.
 

@@ -72,6 +72,8 @@ When picking the work up later:
 - implement one delivery slice and its tests at a time, with the standalone host as the first qualification target;
 - keep the Tauri frontend compiling and document intentional native gaps, but do not broaden a slice into unrelated Rust/schema hardening;
 - define the proposed `BodyCheckpointPolicy` once, inject it into the coordinator, and keep `batchCharacterThreshold` and `idleTimeoutMs` free of duplicated production literals;
+- implement the optional navigator only after the canvas projection is stable; keep it navigation-only, consume the same live/historical projection, and keep Navigator preference, History dock request/effective visibility/query staleness/data generation, compact drawer, selection/expansion, canvas context, actual focus region, actual editor ownership, one-shot retained-live resume candidate, and canvas expansion as the distinct states defined by the proposal; never accept an older History response over a hidden change or mount a restored resume target until its rebuilt canvas ancestry is visible;
+- store at most validated, versioned preferred dock visibility in browser UI storage, default an invalid initial read closed, keep compact drawer state transient, and prove neither enters document state, hashes, snapshots, History, or exports;
 - update the proposal decision/status tables and the as-built RUP, traceability, sequences, UI/UX, limitations, security, and testing sections only as behavior becomes reachable; and
 - do not delete the current master/detail or timer documentation before the replacement passes its acceptance criteria.
 
@@ -289,7 +291,7 @@ There is currently no lint script. TypeScript compilation and tests are the enfo
 2. **Pass 2 — Rust/Tauri parity and hardening (deferred):** make Rust consume the hash/sanitizer fixtures, implement store-side indexed cursor filtering without a 100,000-row pre-window, move file authorization/path ownership behind a defensible Rust boundary, minimize native permissions, add schema migration and measured snapshot-compaction policy, and run native/platform verification.
 3. **Pass 3 — dormant-feature decisions (deferred):** explicitly finish, retain as reserved, migrate, or remove AI, attachments, `restoreNode`, session lifecycle, contribution grouping, and generic node metadata.
 
-The continuous-workspace package is a separately scoped UX/application iteration. Its recommended implementation order is revision query, checkpoint coordinator/group projection, then continuous canvas, with standalone qualification first. Do not confuse the proposed use of `groupId` for body-edit presentation with a final pass-3 decision about the broader dormant grouping/session model.
+The continuous-workspace package is a separately scoped UX/application iteration. Its recommended implementation order is revision query, checkpoint coordinator/group projection, continuous canvas, then the optional navigator over the stable shared projection, with standalone qualification first. The navigator is not a compatibility mode for the current master/detail editor. Do not confuse the proposed use of `groupId` for body-edit presentation with a final pass-3 decision about the broader dormant grouping/session model.
 
 Do not implement a pass-2 or pass-3 item incidentally without updating its design, format/security impact, and tests.
 

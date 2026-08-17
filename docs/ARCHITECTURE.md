@@ -49,11 +49,11 @@ No pass-2 or pass-3 item should be inferred as implemented from a type, schema t
 
 A separate [proposed change package](./proposals/README.md) specifies the next workspace direction without altering the current 4+1/as-built views below:
 
-- [continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md), using a flattened tree projection and one active Tiptap editor;
+- [continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md), using a flattened tree projection, one active Tiptap editor, and an optional navigation-only tree sidebar over the same live or historical projection;
 - [query-first historical views](./proposals/QUERY_FIRST_HISTORY.md), separating non-mutating snapshot materialization from compensating restore commands; and
 - [body checkpoint strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md), using an edit-batch state machine, shared semantic group IDs, and one injectable policy for `batchCharacterThreshold` and `idleTimeoutMs`.
 
-These are proposed decisions, not decisions embodied in code. The existing `Outline`/`NodeEditor`, restore-only History action, and 1.2-second quiet-period paths remain the current architecture until implementation and acceptance evidence land.
+These are proposed decisions, not decisions embodied in code. The navigator is an auxiliary view within the target workspace, not a second editor or selectable legacy layout. The existing `Outline`/`NodeEditor`, restore-only History action, and 1.2-second quiet-period paths remain the current architecture until implementation and acceptance evidence land.
 
 ## 2. System context
 
@@ -373,7 +373,7 @@ The architecturally significant use cases are:
 
 Full use-case specifications are in [Vision and use cases](./RUP_VISION_AND_USE_CASES.md).
 
-Proposed UC-12 through UC-14 cover continuous block editing, non-mutating historical viewing, and semantic checkpoint grouping. Their target realizations and dependency order are in the [continuous-workspace proposal index](./proposals/README.md); they are intentionally excluded from the implemented-use-case table above.
+Proposed UC-12 through UC-14 cover continuous block editing (including its optional navigation-only sidebar), non-mutating historical viewing, and semantic checkpoint grouping. Their target realizations and dependency order are in the [continuous-workspace proposal index](./proposals/README.md); they are intentionally excluded from the implemented-use-case table above.
 
 ## 8. Architecture decisions embodied in code
 
@@ -396,7 +396,7 @@ These are descriptive decision records, not proposals.
 | AD-13 | Page history with an exclusive revision cursor | Long in-memory ledgers are incrementally reachable and filters run before pagination; no total-count query is implied | `ContributionPage`, `HistoryPanel`, memory gateway |
 | AD-14 | Version browser-side protocol algorithms and fixtures | Standalone hashing/sanitization become reviewable contracts; Rust conformance remains explicit second-pass work | `fixtures/protocol/`, `hash.ts`, `sanitizeRichText.ts` |
 
-Proposed decisions PW-01 through PW-20 are recorded separately in the [continuous-workspace change package](./proposals/README.md). Do not move them into this as-built decision table until the corresponding source and tests exist.
+Proposed decisions PW-01 through PW-25 are recorded separately in the [continuous-workspace change package](./proposals/README.md). Do not move them into this as-built decision table until the corresponding source and tests exist.
 
 ## 9. Quality-attribute tactics
 
@@ -422,6 +422,6 @@ Proposed decisions PW-01 through PW-20 are recorded separately in the [continuou
 7. Treat schema edits as a document-format change requiring a version/migration decision.
 8. Keep AI or synchronization proposals separate from accepted mutations and out of the offline build until explicitly enabled.
 9. Update the related use case, sequence, tests, traceability row, security considerations, and known-limitations entry with the code.
-10. When resuming the continuous-workspace redesign, preserve command/query separation, explicit live/historical workspace state, one-active-editor ownership, and the single injectable checkpoint policy defined by the proposal package.
+10. When resuming the continuous-workspace redesign, preserve command/query separation, explicit live/historical workspace state, one-active-editor ownership, the optional navigator as a navigation-only auxiliary view, and the single injectable checkpoint policy defined by the proposal package.
 
 Implementation recipes and the definition of done are in [Contributing](./CONTRIBUTING.md).

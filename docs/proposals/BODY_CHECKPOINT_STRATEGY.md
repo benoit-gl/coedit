@@ -85,6 +85,7 @@ This design deliberately distinguishes durability from presentation:
 - The collapsed row represents the last checkpoint revision and may display a revision range.
 - Expanding the row reveals exact checkpoint revisions for historical viewing.
 - Non-body operations remain independently visible and break body-group contiguity.
+- Navigator visibility, selection, expansion, locate, and scroll are UI-only and never become checkpoint metadata, operations, history rows, snapshots, state hashes, or document/export fields.
 
 No mutable silent working-copy table is introduced in this pass. If measured full-snapshot growth remains unacceptable, compaction or a separate durability layer requires its own persistence design.
 
@@ -121,8 +122,13 @@ Do not use raw `keydown` as the source of truth: it misses paste, drag/drop, spe
 
 ### Focus changes
 
-- Leaving the active body for another block, title, tag control, toolbar command, History, header, or outside the application seals a dirty group.
+- Leaving the active body for another block, title, tag control, toolbar command, History, header, optional navigator, or outside the application seals a dirty group.
 - The body state is captured synchronously; ordinary focus movement need not wait for disk persistence.
+- Opening or closing the navigator is not itself a checkpoint event. If reaching its toggle/tree moves DOM focus out of a dirty body, that focus departure seals exactly once; a shortcut that changes visibility while body focus remains creates no boundary.
+- Arrow/Home/End/Left/Right browsing, selection, navigator disclosure, locate, scroll, and responsive dock/drawer changes after focus has entered the navigator create no further body boundary and never remount the editor.
+- Switching the mutually exclusive compact auxiliary between Navigator and History after focus has already left the body creates no second boundary; only the original dirty-body departure may checkpoint.
+- A responsive collision is not itself a checkpoint event. If resolving it must actually move DOM focus from a dirty body into a now-modal Navigator or History panel, synchronously capture and seal exactly that one ordinary focus-departure boundary during the handoff; subsequent responsive or panel navigation remains silent. If focus is outside the application, resize must not pull it back merely to create a boundary.
+- Explicit navigator **Focus in document** to another block is a controlled editor-ownership transition and must await any required captured checkpoint through the same draft-transition barrier.
 - A controlled operation that may remove/change the editor—node switch, tree operation, historical view, restore, export, backup, or close—must await the captured checkpoint through the draft-transition barrier.
 - Window/page lifecycle events that cannot await remain a separately documented limitation.
 
@@ -346,6 +352,11 @@ For standalone-first work, the memory history capability implements the exact gr
 ## Interaction with continuous outline and history
 
 - Moving active editor ownership between blocks is a focus boundary and seals the old block.
+- Moving focus from a dirty body into the optional navigator seals that group once; subsequent tree browsing and reveal-only scrolling are local UI state and create no checkpoint.
+- `navigatorSelectionId` is independent of canvas context, actual focus region, and editor ownership. A docked locate action may expand canvas ancestors and scroll without invoking the coordinator.
+- Explicit **Focus in document** (and narrow-drawer row activation) uses the normal controlled transfer only when it must remove/change an editor owner. If a queued checkpoint still belongs to that transfer, await it; success may then close the drawer and focus the block, while failure keeps the drawer/selected row available and retains the old owner.
+- Merely opening/closing the navigator, changing navigator disclosure, or crossing the responsive breakpoint is never a document command and never allocates a `groupId`; only an actual dirty-body focus departure forced by collision resolution captures and seals the current group once.
+- Navigator/History compact-panel handoff after the initial focus departure is likewise UI-only and does not allocate another `groupId`.
 - Creating/moving/deleting a tree node uses a controlled transition and awaits the checkpoint first.
 - Entering historical mode flushes/seals the live group, then performs a non-mutating revision query.
 - Historical mode creates no batch coordinator or idle timer.
@@ -381,6 +392,11 @@ Use injected policy values and fake time.
 - selection movement included in a doc-changing typing transaction does not checkpoint;
 - first selection-only move checkpoints once; later clean moves do nothing;
 - focus boundary captures once;
+- dirty-body focus departure to the navigator captures once, while repeated navigator browsing/reveal produces no additional capture;
+- navigator toggle by a shortcut that retains body focus produces no boundary;
+- explicit navigator-to-document transfer awaits an already-required FIFO prefix and does not recapture a clean body;
+- compact Navigator/History handoff after one dirty-body departure produces no second capture;
+- a dirty canvas-focused wide-to-compact collision captures once before focus enters the surviving modal, while a clean, already-panel-focused, or outside-app resize captures nothing;
 - tree transition awaits pending checkpoint before command.
 
 ### Idle and lifecycle
@@ -417,7 +433,7 @@ Use injected policy values and fake time.
 3. Type, move cursor once, continue typing elsewhere: two semantic groups.
 4. Type then hold Backspace: insertion group closes once; deletion is grouped.
 5. Delete then type: deletion closes before new insertion group.
-6. Type then click another node/title/tag/history control: old body captured once.
+6. Type then click another node/title/tag/history/navigator control: old body captured once.
 7. Type then immediately add/move/delete a node: body checkpoint precedes tree contribution.
 8. Leave dirty insertion and deletion idle beyond configured timeout.
 9. Exercise paste, format, cut, undo/redo, emoji, dead keys, CJK IME, touch keyboard, and screen reader input.
@@ -425,6 +441,8 @@ Use injected policy values and fake time.
 11. Confirm collapsed History is readable and expanded exact revisions remain viewable.
 12. Create a group spanning more than one 100-row page; verify partial labeling, exact expansion, deduplication, and separate raw-versus-visible counts.
 13. Hold persistence unresolved while typing across thresholds; verify the two-checkpoint backpressure bound and recovery.
+14. After entering the docked navigator, use tree arrows, disclosure, locate, open/close, and responsive resize; verify no extra group/revision and no editor remount. Separately resize a dual-dock layout while a dirty body has focus and verify exactly one ordinary focus-departure checkpoint before focus enters the surviving modal; repeat clean and with browser/OS focus outside and verify zero captures and no focus theft.
+15. Invoke **Focus in document** for another block with a pending/failed checkpoint; verify ordered wait on success and retained navigator focus/editor owner on failure.
 
 ## Acceptance criteria
 
@@ -441,6 +459,7 @@ Use injected policy values and fake time.
 11. Slow or failed persistence retains at most two detached checkpoints, applies visible backpressure, and resumes without loss or reordering.
 12. Page-spanning groups merge at boundaries, label incomplete counts honestly, and can fetch every exact checkpoint through a group query.
 13. Both standalone and Tauri paths accept the same checkpoint operations; native snapshot-growth impact is measured before release.
+14. Navigator visibility/browsing produces no checkpoint, group, or document mutation; only an actual dirty-body focus departure seals once, and explicit cross-block focus follows the normal controlled-transfer failure contract.
 
 ## Implementation sequence
 
@@ -449,7 +468,7 @@ Use injected policy values and fake time.
 3. Integrate synchronous Yjs checkpoint capture while retaining the old timer behind a temporary feature switch if needed.
 4. Move `groupId` ownership from `commitBody` to the edit-batch coordinator/application request.
 5. Add grouped History projection and exact checkpoint expansion.
-6. Integrate draft-transition/tree/focus/historical boundaries.
+6. Integrate draft-transition/tree/focus/historical boundaries, including the optional navigator's one focus-departure boundary and non-boundary browsing events.
 7. Delete the 1.2-second path after parity/failure tests pass.
 8. Measure standalone memory and native SQLite snapshot/history growth.
 9. Run browser, IME, accessibility, failure, recovery, and platform suites.

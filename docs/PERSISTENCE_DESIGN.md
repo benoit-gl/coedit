@@ -2,7 +2,7 @@
 
 This artifact describes the persistence subsystem that exists in Coedit Local `0.1.0`. It is the analysis-and-design/data-model companion to the [architecture](./ARCHITECTURE.md), [document-format specification](./DOCUMENT_FORMAT.md), and [security model](./SECURITY.md). It deliberately distinguishes the durable Tauri implementation from the in-memory standalone implementation.
 
-For unresolved defects and constraints, see [Known limitations](./KNOWN_LIMITATIONS.md). For end-to-end use-case realizations, see [Sequence diagrams](./SEQUENCE_DIAGRAMS.md). Future snapshot-query and checkpoint/grouping changes are specified separately in the [proposed continuous-workspace package](./proposals/README.md).
+For unresolved defects and constraints, see [Known limitations](./KNOWN_LIMITATIONS.md). For end-to-end use-case realizations, see [Sequence diagrams](./SEQUENCE_DIAGRAMS.md). Future snapshot-query, navigator-presentation-state, and checkpoint/grouping changes are specified separately in the [proposed continuous-workspace package](./proposals/README.md).
 
 ## Responsibilities and boundary
 
@@ -597,6 +597,10 @@ For the standalone milestone, memory advertises the capability as available whil
 `restoreRevision` remains the mutating command described above. Viewing and restoration must not share an implementation that temporarily changes the live store. The proposed port includes validation, missing/tampered snapshot behavior, request/epoch guards, memory/Tauri contract tests, and explicit live/historical controller modes.
 
 No document-schema change is required merely to read and verify existing snapshots under their host/schema algorithm. Cross-adapter canonical hash alignment and future compaction remain separate format/version decisions.
+
+### Proposed navigator persistence boundary — not implemented
+
+The optional navigation-only sidebar consumes the active live or historical workspace projection and adds no gateway, SQLite, snapshot, contribution, or export field. Its selection, expansion, compact-drawer, focus-region, canvas-context, one-shot editor-resume candidate, page-session History dock request/data generation, and scroll state are transient UI/application state. A composition may remember only validated, versioned preferred Navigator dock visibility in browser-local presentation storage: an absent/invalid initial read defaults closed, while a later write failure retains the in-memory session choice. That preference is deliberately outside `DocumentState`, canonical hashing, History, recovery output, and adapter parity. See [Document format](./DOCUMENT_FORMAT.md#navigator-state-is-not-document-data).
 
 In the current as-built open/restore paths, snapshot hashes are not verified and restore does not reapply every normal mutation size limit. Tree validation during the transactional reload still rejects missing parents and cycles. Those current limitations do not weaken the proposed query contract's verify-before-return requirement.
 

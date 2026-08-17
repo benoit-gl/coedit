@@ -785,6 +785,7 @@ The implemented sequences above deliberately retain the current master/detail wo
 |---|---|
 | Create/focus a sibling in the continuous canvas after draining the active block | [Continuous block-outline](proposals/CONTINUOUS_BLOCK_OUTLINE.md#adding-a-node-seamlessly) |
 | Transfer the single active Tiptap editor between blocks | [Continuous block-outline](proposals/CONTINUOUS_BLOCK_OUTLINE.md#active-editor-ownership) |
+| Browse/reveal a block and explicitly transfer focus through the optional navigation-only sidebar | [Continuous block-outline](proposals/CONTINUOUS_BLOCK_OUTLINE.md#optional-navigator-sidebar) |
 | Flush live drafts, query a snapshot, and display a read-only revision | [Query-first history](proposals/QUERY_FIRST_HISTORY.md#entering-historical-mode) |
 | Explicitly restore a viewed snapshot as one compensating revision | [Query-first history](proposals/QUERY_FIRST_HISTORY.md#restoration-from-historical-mode) |
 | Threshold, insertion/deletion, cursor/focus, idle, and tree-operation checkpoint boundaries | [Body checkpoint strategy](proposals/BODY_CHECKPOINT_STRATEGY.md#state-machine) |

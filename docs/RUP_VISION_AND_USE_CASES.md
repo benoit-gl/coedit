@@ -543,7 +543,7 @@ The following use cases are approved design targets but are **not implemented**.
 
 **Primary actor:** Author.
 
-**Goal:** Read, create, edit, and restructure the hierarchy without switching between a navigator and a separate detail pane.
+**Goal:** Read, create, edit, and restructure the hierarchy without requiring a navigator or separate detail editor; optionally use a compact tree to locate distant blocks without changing editing surfaces.
 
 **Trigger:** The author creates or opens a document in live mode.
 
@@ -551,16 +551,23 @@ The following use cases are approved design targets but are **not implemented**.
 
 1. The workspace projects active nodes into one depth-indented, pre-order canvas.
 2. Each visible node appears as a block containing structural context, title, tags, and body.
-3. The focused live block owns the single active Tiptap/Yjs editor; other blocks render sanitized previews.
+3. At most one live block owns the mounted Tiptap/Yjs editor; focusing another body transfers ownership through the checkpoint barrier, while other focus regions do not imply ownership and all other blocks render sanitized previews.
 4. The author creates a sibling or child at the current position and can type immediately.
 5. Focus transfer checkpoints the previous body before editor ownership moves.
 6. Pointer, touch, and keyboard actions expose selection, collapse, indent, outdent, reorder, and delete without requiring drag-and-drop.
 
-**Alternate and exception flows:** Focused-block identity and editor ownership are separate. A cross-block activation or ancestor collapse that would remove the editor freezes/checkpoints first; failure cancels the action and keeps the old owner/focus. A successful collapse focuses its parent and omits descendants from the projection without deleting them. Historical mode uses the same canvas with no editor owner and all mutating controls rejected.
+**Optional navigator subflow:**
 
-**Postconditions:** The persisted hierarchy still uses stable node IDs, `parentId`, and sibling `position`; the canvas is a projection and introduces no document-format change by itself.
+1. The author opens a navigation-only tree sidebar at runtime; it is closed by default and does not replace the canvas.
+2. The navigator reads the same live or historical workspace projection, with selection and expansion independent from canvas context, actual focus region, editor ownership, and canvas expansion.
+3. Arrow-key browsing moves only the navigator tree cursor. Pointer or `Space` location may reveal a block without moving editor ownership. An explicit **Focus in document** action expands required canvas ancestors, scrolls the target into view, and transfers focus through the ordinary draft-safety boundary.
+4. The author closes the navigator. Focus returns to its toggle; the canvas and editor remain mounted and unchanged.
 
-**Design:** [Continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md).
+**Alternate and exception flows:** Canvas-context identity, actual focus region, and editor ownership are separate. A cross-block activation or ancestor collapse that would remove the editor freezes/checkpoints first; failure cancels the action, retains the old owner, and restores focus to the initiating surface. A successful collapse omits descendants without deleting them; it focuses the parent only when actual canvas focus was inside a hidden descendant, otherwise it repairs canvas context while retaining Navigator/History/chrome focus. Leaving a dirty body for the navigator triggers the normal first focus-boundary checkpoint; browsing inside the navigator while clean creates no further checkpoint or contribution. A responsive collision that must move focus from a dirty body into a now-modal auxiliary captures that same boundary exactly once; clean, already-panel-focused, or outside-app resize is silent and never steals outside focus. At narrow/touch widths the navigator is an overlay drawer: validation/drain precedes closure; success closes it and focuses the revealed block, while failure keeps the drawer/row available. Manual dismissal returns focus to the toggle. Navigator and History drawers are mutually exclusive. Historical mode uses the same canvas and navigator projection with no editor owner and all mutating controls rejected; its resume candidate is freshly derived on entry and consumed on Back or Restore.
+
+**Postconditions:** The persisted hierarchy still uses stable node IDs, `parentId`, and sibling `position`; the canvas and optional navigator are projections and introduce no document-format change. Preferred Navigator dock visibility, page-session History dock request, and transient drawer/selection/expansion state are presentation state, not document or History state.
+
+**Design:** [Continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md), especially [Optional navigator sidebar](./proposals/CONTINUOUS_BLOCK_OUTLINE.md#optional-navigator-sidebar).
 
 ### UC-13 - View a materialized historical revision
 
@@ -578,9 +585,9 @@ The following use cases are approved design targets but are **not implemented**.
 2. A revision-query port reads the selected snapshot without invoking a mutation command.
 3. The workspace enters an explicit historical projection containing detached state, revision, hash, and materialization metadata.
 4. The continuous canvas renders that projection with a persistent read-only banner.
-5. The actor navigates nodes and may return to the unchanged live projection.
+5. The actor navigates nodes in the canvas or optional sidebar, both sourced from the historical snapshot, and may return to the unchanged live projection.
 
-**Alternate and exception flows:** Missing, invalid, or stale responses leave live mode unchanged and report an error. Command guards reject mutations even if a UI control is invoked indirectly. An actor who chooses **Restore as new revision** enters UC-07 through a separately confirmed command.
+**Alternate and exception flows:** Missing, invalid, or stale responses leave live mode unchanged and report an error. Command guards reject mutations even if a UI control is invoked indirectly. First effective History reveal without a valid page queries once; responsive or Navigator-driven hide/reveal with a valid non-stale page issues no contribution query. Relevant accepted changes while hidden advance a History data generation, mark its page stale, reject older responses, and make the next effective reveal perform one guarded refresh. An actor who chooses **Restore as new revision** enters UC-07 through a separately confirmed command; a surviving editor-resume ID is mounted only after its possibly changed ancestry is expanded and it is visible, otherwise a visible fallback is chosen.
 
 **Postconditions:** Viewing and returning leave the live state, current revision, ledger length, and snapshot set unchanged.
 
@@ -669,6 +676,7 @@ The following use cases are approved design targets but are **not implemented**.
 | US-38 | As an author, I can clearly distinguish a historical view from the live workspace. | Persistent revision banner, command guards, and **Back to current** behavior pass accessibility tests. |
 | US-39 | As an author, my body edits are checkpointed at meaningful boundaries and configurable safety intervals. | UC-14 deterministic state-machine/timer tests pass. |
 | US-40 | As an author, History summarizes one editing episode without hiding its exact checkpoint revisions. | Shared-group collapse/expand behavior and revision restoration tests pass. |
+| US-41 | As an author, I can optionally navigate a large document in a compact tree without leaving or duplicating the continuous editor. | Navigator toggle, reveal/focus, independent-state, responsive drawer, historical-projection, and accessibility tests pass. |
 
 ## Supplementary functional requirements
 
@@ -712,6 +720,8 @@ These requirements describe the target package, not current satisfaction.
 | FR-PW-09 | A structural operation shall await a successfully captured pending body checkpoint before changing or removing blocks. | Ordered integration tests cover create, move, collapse, delete, restore, export, and failure/retry. |
 | FR-PW-10 | Slow or failed checkpoint persistence shall retain FIFO order and apply bounded visible backpressure. | A named two-checkpoint high-water mark, size checks, slow/failure tests, and lossless retry are required. |
 | FR-PW-11 | Continuous block interactions shall remain reachable by keyboard, pointer, and touch without overriding normal body editing or Tab focus navigation. | Context-scoped component/accessibility/browser tests cover structural and edit-body activation paths. |
+| FR-PW-12 | The workspace shall offer a runtime-toggleable, default-closed navigator that renders a navigation-only tree over the active live or historical projection while the continuous canvas remains the sole editing surface. | Component tests prove there is still at most one Tiptap owner and that navigator browsing exposes no metadata/body editor, structural command, or document mutation. |
+| FR-PW-13 | Navigator selection/expansion shall be modeled independently from canvas context/expansion, actual focus region, and editor ownership; layouts with enough available width shall dock it and compact/touch layouts shall present an explicitly opened accessible drawer with deterministic reveal, explicit focus transfer, focus return, and History coexistence. Its validated, versioned dock preference, page-session History dock request, and transient browsing/drawer state shall remain outside document state, hashes, snapshots, History, and exports. | State, preference, focus, resize-checkpoint, outside-focus, ARIA-tree, keyboard, mutually exclusive drawer, live/historical transition, malformed-storage, and non-persistence tests pass. |
 
 ## Supplementary non-functional requirements
 
@@ -795,6 +805,7 @@ These requirements describe the target package, not current satisfaction.
 | RK-11 | A continuous canvas can create focus loss, editor remount, or keyboard conflicts across blocks. | Medium / high usability and data integrity | Proposed one-active-editor ownership and explicit shortcut scope | Component integration, IME, screen-reader, touch, and browser tests from UC-12 |
 | RK-12 | Historical viewing could accidentally invoke live commands or render untrusted snapshot content unsafely. | Low-medium / high integrity and security | Proposed discriminated mode, controller guards, detached snapshot, ordinary sanitization | Non-mutation/guard contract tests and hostile historical-snapshot cases from UC-13 |
 | RK-13 | Checkpoint classification, off-by-one counting, timers, or slow persistence can lose boundaries, exhaust memory, or create noisy history. | Medium / high integrity and usability | Proposed pure coordinator, injectable policy, two-checkpoint backpressure, FIFO retention, page-aware shared edit groups | Fake-time/property/IME/slow/failure/page-boundary tests from UC-14 plus snapshot-growth measurements |
+| RK-14 | An auxiliary navigator could drift into a second editor, couple its expansion to the canvas, steal focus/editor ownership, or obscure the canvas on touch devices. | Medium / medium-high usability and architectural complexity | Proposed navigation-only boundary, independent state, explicit focus action, and responsive drawer | Ownership/non-mutation tests, ARIA tree and focus tests, live/historical parity, and iPadOS/Safari qualification from UC-12 and UC-13 |
 
 The prioritized verification work is in [Testing strategy](./TESTING.md). Ownership and suggested fixes are maintained in [Known limitations](./KNOWN_LIMITATIONS.md).
 
@@ -819,6 +830,7 @@ The prioritized verification work is in [Testing strategy](./TESTING.md). Owners
 | Edit group (proposed) | One human-meaningful body-edit episode. Multiple threshold checkpoints can share its `groupId` and be collapsed in History. |
 | Historical projection (proposed) | Detached materialized state for a selected revision, rendered read-only without replacing live state. |
 | Materialized state | Current document and node rows, as opposed to the historical ledger/snapshots. |
+| Navigator (proposed) | Optional navigation-only tree over the active workspace projection. It may locate/reveal a block but is not an editor, structural command surface, or alternate workspace mode. |
 | Visible-node projection (proposed) | Flattened pre-order list of active, expansion-visible nodes plus depth/layout metadata; it does not replace the persisted tree. |
 | Operation | Typed request that mutates document materialized state, such as `moveNode` or `updateBody`. |
 | Port | Interface that separates shared UI policy from a host capability, notably `DocumentGateway` and `DocumentFileDialogs`. |
