@@ -2,7 +2,7 @@
 
 **Product decision:** Approved design direction.
 
-**Implementation status:** Proposed; not implemented.
+**Implementation status:** Partial. WP-1 implements the query contracts, verified memory materialization, focused adapter tests, and explicit `available`/`host-deferred` composition wiring. Controller workspace modes, History View/Back UI, and native query parity remain proposed.
 
 **Change package:** [Continuous workspace proposals](./README.md)
 
@@ -12,10 +12,10 @@ The current History UI exposes `restoreRevision` as the way to materialize an ol
 
 Both adapters already retain materialized revisions:
 
-- the memory adapter has an internal revision-to-`DocumentState` map; and
+- the memory adapter has an internal revision-to-hash-bearing-`DocumentState` map; and
 - SQLite stores full `state_json` and `state_hash` rows in `snapshots`.
 
-The missing capability is a read-only query that returns one of those states without changing the live workspace or ledger.
+The standalone adapter now has a read-only query that returns one of those states without changing the live workspace or ledger. The remaining gap is to consume it through an explicit historical workspace mode and UI, then add native parity.
 
 ## Goals
 
@@ -53,7 +53,7 @@ The missing capability is a read-only query that returns one of those states wit
 The gateway should distinguish reads from mutations. Exact naming can evolve, but semantic separation is mandatory.
 
 ```ts
-// Proposed shapes; not current source.
+// The first three shapes are implemented by WP-1; DocumentCommands remains design guidance.
 interface MaterializedRevision {
   revision: number;
   state: DocumentState;
@@ -496,11 +496,11 @@ For every adapter that advertises `RevisionQueryCapability.kind === "available"`
 
 ## Implementation sequence
 
-1. Define verified `MaterializedRevision`, `DocumentRevisionQueries`, and the discriminated `RevisionQueryCapability`.
-2. Implement/test memory query without UI changes.
+1. **Implemented (WP-1):** define verified `MaterializedRevision`, `DocumentRevisionQueries`, and the discriminated `RevisionQueryCapability`.
+2. **Implemented (WP-1):** implement/test the memory query without UI changes.
 3. Add `WorkspaceProjection` and command guard to the controller.
 4. Add View/Back UI using the existing editor layout if necessary and qualify the standalone artifact.
-5. Keep the Tauri composition compiling with the query capability absent and document that temporary host difference.
+5. **Implemented at the capability boundary (WP-1):** keep the Tauri composition compiling with the query capability explicitly unavailable and document that temporary host difference.
 6. Add the Rust store query, IPC command, Tauri adapter, and shared contract fixtures/tests in the native parity slice.
 7. Reuse the new `DocumentCanvas` when continuous outline work lands.
 8. Add the optional navigator against the same `WorkspaceProjection`, with separate live/historical UI contexts and no command surface.

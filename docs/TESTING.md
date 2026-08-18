@@ -40,7 +40,7 @@ src/**/*.test.ts
 src/**/*.test.tsx
 ```
 
-There are currently forty-two TypeScript test cases. This is a source inventory, not a claim that they were executed for every documentation edit.
+There are currently forty-five TypeScript test cases. This is a source inventory, not a claim that they were executed for every documentation edit.
 
 | File | Suite / test | Layer | What it proves | Important omissions |
 |---|---|---|---|---|
@@ -58,9 +58,10 @@ There are currently forty-two TypeScript test cases. This is a source inventory,
 | `src/domain/tags.test.ts` (5) | normalization; deduplication; limits; active vocabulary | Pure domain | Unicode/whitespace rules, first-spelling case-insensitive set behavior, validation, active-node growing/shrinking suggestions, and no document-wide 20-tag ceiling | Rust normalization parity and property/fuzz coverage |
 | `src/domain/hash.test.ts` (4) | canonical fixture; host-field exclusion/order immutability; Unicode/integer-like ordering; invalid JSON rejection | Protocol/domain | `coedit-document-state-v1` canonical JSON/SHA-256, explicit `DocumentView` projection, engine-independent key order, and representative undefined/non-finite/non-plain/cyclic/sparse rejection | Rust equality, replay/open verification; symbol/accessor/extra-array-property branches |
 | `src/editor/sanitizeRichText.test.ts` (2) | versioned cases; idempotence | Browser security contract | `coedit-rich-text-v1` expected output and repeat sanitization | Rust Ammonia parity, full editor paste integration |
-| `src/persistence/memoryGateway.test.ts` (3) | attribution/restore; filtered cursor paging; recovery export | Adapter integration | Revision/history preservation, filter-before-page semantics, exclusive cursors, full runtime ledger envelope | Snapshot export/import, Rust parity |
+| `src/persistence/memoryGateway.test.ts` (5) | attribution/restore; verified revision materialization and corruption rejection; filtered cursor paging; recovery export | Adapter integration | Revision/history preservation, detached and non-mutating materialization, stored-hash/tree validation, invalid/missing revision rejection, filter-before-page semantics, exclusive cursors, full runtime ledger envelope | Snapshot export/import, native materialization/Rust parity |
 | `src/persistence/memoryGateway.test.ts` boundary case (1) | detachment, metadata validation, direct-operation sanitization | Adapter/domain boundary | Inputs are detached, non-JSON metadata is rejected, and direct `createNode`/`updateBody` callers still receive sanitized rich text | Rust parity, exhaustive hostile values/limits |
 | `src/persistence/memoryGateway.test.ts` filename case (1) | portable filenames | Shared output helper | diacritics, retained non-Latin letters, unsafe/reserved/empty names, and code-point length normalization | browser/native end-to-end filename behavior |
+| `src/persistence/tauriGateway.test.ts` (1) | native revision-query advertisement | Adapter capability boundary | Tauri is explicitly `host-deferred` and supplies no throwing materialization stub | Native query/IPC parity in WP-10 |
 
 One `.test.tsx` suite exercises the hook through a minimal harness, and focused component suites cover one NodeEditor path plus core tag interaction. Full `App`, complete NodeEditor/Tiptap/Yjs timing, focus/keyboard behavior, and end-to-end UI are not automated.
 
@@ -78,7 +79,7 @@ The round-trip test creates a unique folder under the operating-system temporary
 
 ### Current total and absent levels
 
-The repository contains forty-five automated test cases: forty-two TypeScript and three Rust. It currently contains no automated:
+The repository contains forty-eight automated test cases: forty-five TypeScript and three Rust. It currently contains no automated:
 
 - full-App React/accessibility tests;
 - Tiptap/Yjs timing/lifecycle tests;

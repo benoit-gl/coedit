@@ -11,7 +11,7 @@ import { Outline } from "./components/Outline";
 import { newId } from "./domain/ids";
 import { collectActiveTags } from "./domain/tags";
 import type { DocumentFileDialogs } from "./persistence/fileDialogs";
-import type { DocumentGateway } from "./persistence/gateway";
+import type { DocumentGateway, RevisionQueryCapability } from "./persistence/gateway";
 
 interface DocumentTitleInputProps {
   title: string;
@@ -97,6 +97,7 @@ function DocumentTitleInput({ title, readOnly, onCommit, registerDraftParticipan
 
 interface AppProps {
   documentGateway: DocumentGateway;
+  revisionQueryCapability: RevisionQueryCapability;
   fileDialogs?: DocumentFileDialogs;
 }
 

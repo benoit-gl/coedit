@@ -14,13 +14,16 @@ import {
   contributionPage,
   contributionPageSize,
   contributionCursor,
+  HOST_DEFERRED_REVISION_QUERIES,
   type DocumentGateway,
   type NativeDocumentStorage,
+  type RevisionQueryCapability,
 } from "./gateway";
 
 export class TauriDocumentGateway implements DocumentGateway, NativeDocumentStorage {
   readonly kind = "native-file" as const;
   readonly storage: NativeDocumentStorage = this;
+  readonly revisionQueryCapability: RevisionQueryCapability = HOST_DEFERRED_REVISION_QUERIES;
 
   createDocument(path: string, title: string, contributor: Contributor): Promise<DocumentView> {
     return invoke("create_document", { path, title, contributor });

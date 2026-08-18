@@ -1,4 +1,4 @@
-import { affectedNodeIds, applyOperation } from "../domain/tree";
+import { affectedNodeIds, applyOperation, assertValidTree } from "../domain/tree";
 import { DOCUMENT_HASH_ALGORITHM, hashDocument, toDocumentState } from "../domain/hash";
 import { newId } from "../domain/ids";
 import { cloneJson } from "../domain/json";
@@ -21,6 +21,11 @@ import {
   contributionPage,
   contributionPageSize,
   type DocumentGateway,
+  type DocumentRevisionQueries,
+  type MaterializedRevision,
+  RevisionIntegrityError,
+  RevisionNotFoundError,
+  type RevisionQueryCapability,
   type VolatileDocumentStorage,
 } from "./gateway";
 import { safeFilenameStem } from "./fileDialogs";
@@ -63,12 +68,25 @@ function markdownFor(state: DocumentState): string {
   return lines.join("\n").trimEnd() + "\n";
 }
 
-export class MemoryDocumentGateway implements DocumentGateway, VolatileDocumentStorage {
+interface StoredRevision {
+  state: DocumentState;
+  stateHash: string;
+}
+
+export class MemoryDocumentGateway implements DocumentGateway, DocumentRevisionQueries, VolatileDocumentStorage {
   readonly kind = "volatile" as const;
   readonly storage: VolatileDocumentStorage = this;
+  readonly revisionQueryCapability: RevisionQueryCapability = { kind: "available", queries: this };
   private current: DocumentView | null = null;
   private contributions: Contribution[] = [];
-  private revisions = new Map<number, DocumentState>();
+  private revisions = new Map<number, StoredRevision>();
+
+  private storeRevision(state: DocumentState, stateHash: string): void {
+    this.revisions.set(state.document.revision, {
+      state: clone(toDocumentState(state)),
+      stateHash,
+    });
+  }
 
   async createDocument(title: string, contributor: Contributor): Promise<DocumentView> {
     const now = new Date().toISOString();
@@ -90,7 +108,8 @@ export class MemoryDocumentGateway implements DocumentGateway, VolatileDocumentS
       operationType: "createDocument", affectedNodeIds: [], payload: { title: state.document.title },
       baseRevision: -1, resultingHash: hash, message: "Created document",
     }];
-    this.revisions = new Map([[0, clone(state)]]);
+    this.revisions.clear();
+    this.storeRevision(state, hash);
     return clone(state);
   }
 
@@ -125,7 +144,7 @@ export class MemoryDocumentGateway implements DocumentGateway, VolatileDocumentS
       baseRevision, resultingHash: hash, message: detachedContext.message,
     });
     this.current = updated;
-    this.revisions.set(updated.document.revision, clone(updated));
+    this.storeRevision(updated, hash);
     return clone(updated);
   }
 
@@ -146,12 +165,12 @@ export class MemoryDocumentGateway implements DocumentGateway, VolatileDocumentS
   async restoreRevision(revision: number, context: ContributionContext): Promise<DocumentView> {
     if (!this.current) throw new Error("No document is open.");
     const target = this.revisions.get(revision);
-    if (!target) throw new Error(`Revision ${revision} is unavailable.`);
+    if (!target) throw new RevisionNotFoundError(revision);
     const currentRevision = this.current.document.revision;
     const detachedContext = clone(context);
     const contributor = this.current.contributors.find((item) => item.id === detachedContext.contributorId);
     if (!contributor) throw new Error("The contributor is not registered in this document.");
-    const restored = clone(target) as DocumentView;
+    const restored = clone(target.state) as DocumentView;
     restored.path = this.current.path;
     restored.readOnly = false;
     restored.recoveryWarning = null;
@@ -168,8 +187,44 @@ export class MemoryDocumentGateway implements DocumentGateway, VolatileDocumentS
       resultingHash: hash, message: detachedContext.message ?? `Restored revision ${revision}`,
     });
     this.current = restored;
-    this.revisions.set(restored.document.revision, clone(restored));
+    this.storeRevision(restored, hash);
     return clone(restored);
+  }
+
+  async materializeRevision(revision: number): Promise<MaterializedRevision> {
+    if (!Number.isSafeInteger(revision) || revision < 0) {
+      throw new TypeError("A revision query requires a non-negative safe integer.");
+    }
+
+    const stored = this.revisions.get(revision);
+    if (!stored) throw new RevisionNotFoundError(revision);
+
+    const state = clone(stored.state);
+    if (state.document.revision !== revision) {
+      throw new RevisionIntegrityError(
+        revision,
+        `snapshot declares revision ${state.document.revision}`,
+      );
+    }
+
+    try {
+      assertValidTree(state.nodes);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      throw new RevisionIntegrityError(revision, reason);
+    }
+
+    const actualHash = await hashDocument(state);
+    if (actualHash !== stored.stateHash) {
+      throw new RevisionIntegrityError(revision, "stored state hash does not match snapshot contents");
+    }
+
+    return {
+      revision,
+      state,
+      stateHash: stored.stateHash,
+      hashVerification: "verified",
+    };
   }
 
   async exportDocument(format: ExportFormat): Promise<ExportResult> {

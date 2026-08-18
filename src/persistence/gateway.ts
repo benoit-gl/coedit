@@ -5,6 +5,7 @@ import type {
   ContributionQuery,
   Contributor,
   DocumentOperation,
+  DocumentState,
   DocumentView,
   ExportFormat,
   ExportResult,
@@ -37,6 +38,46 @@ export function contributionPage(items: Contribution[], limit: number): Contribu
     nextBeforeRevision: hasMore ? pageItems[pageItems.length - 1]?.revision ?? null : null,
     hasMore,
   };
+}
+
+export interface MaterializedRevision {
+  revision: number;
+  state: DocumentState;
+  stateHash: string;
+  hashVerification: "verified";
+}
+
+export interface DocumentRevisionQueries {
+  materializeRevision(revision: number): Promise<MaterializedRevision>;
+}
+
+export type RevisionQueryCapability =
+  | { readonly kind: "available"; readonly queries: DocumentRevisionQueries }
+  | { readonly kind: "unavailable"; readonly reason: "host-deferred" };
+
+export const HOST_DEFERRED_REVISION_QUERIES: RevisionQueryCapability = Object.freeze({
+  kind: "unavailable",
+  reason: "host-deferred",
+});
+
+export class RevisionNotFoundError extends Error {
+  readonly revision: number;
+
+  constructor(revision: number) {
+    super(`Revision ${revision} is unavailable.`);
+    this.name = "RevisionNotFoundError";
+    this.revision = revision;
+  }
+}
+
+export class RevisionIntegrityError extends Error {
+  readonly revision: number;
+
+  constructor(revision: number, reason: string) {
+    super(`Revision ${revision} failed integrity validation: ${reason}`);
+    this.name = "RevisionIntegrityError";
+    this.revision = revision;
+  }
 }
 
 export interface DocumentSession {

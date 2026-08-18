@@ -128,8 +128,8 @@ IPC --> SQLite
 |---|---|---|
 | `index.html` | Loads `/src/main.tsx` | Source entry for standalone/browser builds. The generated `dist/index.html` is the double-clickable artifact. |
 | `tauri.html` | Loads `/src/main-tauri.tsx` | Source entry used by the Tauri build. |
-| `src/main.tsx` | Entry module | Mounts `App` under `StrictMode` with a new `MemoryDocumentGateway`. |
-| `src/main-tauri.tsx` | Entry module | Mounts `App` under `StrictMode` with a new `TauriDocumentGateway` and `tauriFileDialogs`. |
+| `src/main.tsx` | Entry module | Mounts `App` under `StrictMode` with a `MemoryDocumentGateway` and its available revision-query capability. |
+| `src/main-tauri.tsx` | Entry module | Mounts `App` under `StrictMode` with a `TauriDocumentGateway`, its explicitly host-deferred revision-query capability, and `tauriFileDialogs`. |
 | `src/App.tsx` | `App` | Owns welcome/profile presentation, renders controller state, and translates UI events into controller calls. |
 | `src/application/useDocumentController.ts` | `useDocumentController`, `HistoryQuery` | Owns the active workspace, authoritative editor generation, contribution paging, capability dispatch, error/status state, contributor context, stale-response guards, queue, and draft-transition barrier. |
 | `src/application/serializedTaskQueue.ts` | `SerializedTaskQueue` | Runs document commands sequentially and keeps the queue usable after a rejection. |
@@ -166,10 +166,10 @@ IPC --> SQLite
 
 | File | Key symbols | Responsibility |
 |---|---|---|
-| `src/persistence/gateway.ts` | `DocumentSession`, `ContributionHistory`, `DocumentStorage`, `VolatileDocumentStorage`, `NativeDocumentStorage`, `DocumentGateway`, page helpers | Host-neutral session/history ports, discriminated storage capabilities, and bounded cursor-page construction. |
+| `src/persistence/gateway.ts` | `DocumentSession`, `ContributionHistory`, `DocumentRevisionQueries`, `RevisionQueryCapability`, `MaterializedRevision`, storage types, `DocumentGateway`, page helpers | Host-neutral command/history/query ports, discriminated storage and revision-query capabilities, verified-query errors, and bounded cursor-page construction. |
 | `src/persistence/fileDialogs.ts` | `DocumentFileDialogs`, `safeFilenameStem` | Host-neutral native-path port and one portable filename-normalization rule shared by browser/native adapters. |
-| `src/persistence/memoryGateway.ts` | `MemoryDocumentGateway` | Volatile browser implementation with an in-memory ledger and revision snapshots. |
-| `src/persistence/tauriGateway.ts` | `TauriDocumentGateway` | Thin adapter from `DocumentGateway` methods to Tauri command names. |
+| `src/persistence/memoryGateway.ts` | `MemoryDocumentGateway` | Volatile browser implementation with an in-memory ledger, hash-bearing revision snapshots, and verified non-mutating materialization. |
+| `src/persistence/tauriGateway.ts` | `TauriDocumentGateway` | Thin adapter from `DocumentGateway` methods to Tauri command names; advertises native revision queries as host-deferred. |
 | `src/persistence/tauriFiles.ts` | Four private dialog functions and `tauriFileDialogs` | Tauri dialog-plugin adapter for create, open, export, and backup destinations. |
 
 ## React structure
@@ -210,6 +210,12 @@ interface DocumentGateway {
   +restoreRevision(revision, context): Promise<DocumentView>
 }
 
+interface DocumentRevisionQueries {
+  +materializeRevision(revision): Promise<MaterializedRevision>
+}
+
+interface RevisionQueryCapability
+
 interface DocumentStorage
 
 interface VolatileDocumentStorage {
@@ -236,7 +242,7 @@ interface DocumentFileDialogs {
 class MemoryDocumentGateway {
   -current: DocumentView | null
   -contributions: Contribution[]
-  -revisions: Map<number, DocumentState>
+  -revisions: Map<number, StoredRevision>
 }
 
 class TauriDocumentGateway
@@ -257,10 +263,13 @@ class DocumentOperation <<discriminated union>>
 class ContributionContext <<value object>>
 
 MemoryDocumentGateway ..|> DocumentGateway
+MemoryDocumentGateway ..|> DocumentRevisionQueries
 MemoryDocumentGateway ..|> VolatileDocumentStorage
 TauriDocumentGateway ..|> DocumentGateway
 TauriDocumentGateway ..|> NativeDocumentStorage
 DocumentGateway o-- DocumentStorage
+App --> RevisionQueryCapability : injected, not yet consumed
+RevisionQueryCapability o-- DocumentRevisionQueries : when available
 DocumentStorage <|-- VolatileDocumentStorage
 DocumentStorage <|-- NativeDocumentStorage
 App --> useDocumentController
@@ -394,9 +403,9 @@ The component exposes its `DraftParticipant` to `NodeEditor`; the node editor co
 
 - one current `DocumentView`;
 - an in-memory oldest-first append ledger, projected newest-first for queries/exports;
-- a `Map` of full state snapshots by revision.
+- a `Map` of projected state snapshots and their commit-time hashes by revision.
 
-It uses `applyOperation()` for mutation and `hashDocument()` for SHA-256 state hashes. `listContributions()` reverses the ledger to newest-first and supports node, contributor, revision, search, and limit filters. Export uses `Blob`, `URL.createObjectURL`, and a temporary download anchor. It cannot open SQLite files, and all document state disappears when the page closes.
+It uses `applyOperation()` for mutation and `hashDocument()` for SHA-256 state hashes. `materializeRevision()` validates a nonnegative safe-integer key, clones and tree-validates the projected `DocumentState`, recomputes its hash, and returns it only when the stored hash matches. The query does not replace live state or mutate the ledger/snapshot map. `listContributions()` reverses the ledger to newest-first and supports node, contributor, revision, search, and limit filters. Export uses `Blob`, `URL.createObjectURL`, and a temporary download anchor. It cannot open SQLite files, and all document state disappears when the page closes.
 
 History filters are applied to the complete in-memory ledger before page construction. The gateway returns `ContributionPage` with an exclusive revision cursor. Standalone JSON is explicitly marked `format: "coedit-recovery"`, `RecoveryExport` version 2: portable `DocumentState` plus every newest-first contribution accumulated during the current session. It intentionally excludes host-only view fields and runtime snapshot objects, and there is no importer yet. Browser filenames use the shared `safeFilenameStem()` rule.
 
@@ -415,7 +424,7 @@ History filters are applied to the complete in-memory ledger before page constru
 | `storage.backupDocument` (`native-file`) | `backup_document` |
 | `exportDocument` | `export_document` |
 
-Native dialogs are separate from document persistence. `TauriDocumentGateway.storage` has kind `native-file`; `MemoryDocumentGateway.storage` has kind `volatile`. The controller narrows that union to derive method signatures and visible actions rather than requiring standalone methods that can only reject. The Tauri adapter now wraps the Rust contribution array as a `ContributionPage`, but Rust filtering/hash/sanitizer parity and native verification remain second-pass work.
+Native dialogs are separate from document persistence. `TauriDocumentGateway.storage` has kind `native-file`; `MemoryDocumentGateway.storage` has kind `volatile`. The controller narrows that union to derive method signatures and visible actions rather than requiring standalone methods that can only reject. Separately, each composition root passes a discriminated `RevisionQueryCapability`: memory is available, while Tauri is `host-deferred` and exposes no throwing method. `App` accepts this boundary but does not consume it until the workspace-mode slice. The Tauri adapter wraps the Rust contribution array as a `ContributionPage`, but Rust filtering/hash/sanitizer parity and native verification remain second-pass work.
 
 ## Adding or changing frontend functionality
 
@@ -465,7 +474,7 @@ Extend the centralized `ExportFormat` union in `src/domain/types.ts`, update the
 The current source map, React tree, class diagram, and control flow above remain the as-built design. A resumable target design is maintained separately:
 
 - [Continuous block-outline](proposals/CONTINUOUS_BLOCK_OUTLINE.md) replaces the `Outline` plus selected `NodeEditor` composition with `DocumentCanvas`, a pure visible-node projection, separate canvas-context/focus-region/editor-owner state, drain-before-hide controls, and one active Tiptap owner. An optional `NavigatorPanel` may render a navigation-only tree over the same live or historical `WorkspaceProjection`; it is not a second editor or presentation strategy.
-- [Query-first historical views](proposals/QUERY_FIRST_HISTORY.md) adds a discriminated revision-query capability, verified materialization, origin-aware loading, and explicit `WorkspaceProjection = live | historical`, while keeping `restoreRevision` mutating and separately confirmed.
+- [Query-first historical views](proposals/QUERY_FIRST_HISTORY.md) now has its WP-1 discriminated revision-query capability and verified memory materialization. Origin-aware loading, explicit `WorkspaceProjection = live | historical`, View/Back presentation, and native parity remain proposed; `restoreRevision` stays mutating and separately confirmed.
 - [Body checkpoint strategy](proposals/BODY_CHECKPOINT_STRATEGY.md) replaces the 1.2-second timer with a transaction-classifying batch coordinator, two-checkpoint FIFO backpressure, and page-aware group projection. It requires one injectable code policy containing easily modifiable `batchCharacterThreshold` and `idleTimeoutMs` values.
 
 Proposed names and interfaces must not be added to the current source-map tables until corresponding files exist. Target navigator state separates `navigatorDockPreferredOpen`, page-session `historyDockRequestedOpen`, transient/mutually-exclusive `activeCompactAuxiliary`, `lastExplicitAuxiliary`, `navigatorSelectionId`, and `navigatorExpandedIds` from `canvasContextNodeId`, `focusRegion`, actual `editorOwnerNodeId`, the one-shot `resumeEditorNodeId` held only by a retained-live wrapper, and canvas expansion. Effective Navigator/History rendering is derived from layout plus requested/active state; only effective History visibility drives its initial/refresh queries, hidden changes mark the page stale, and a monotonic `historyDataGeneration` prevents an older in-flight response from clearing that state. `NavigatorPanel` may select/reveal a block and explicitly transfer focus through the same controlled draft boundary, but must not mount Tiptap, expose metadata/body editors, dispatch structural mutations, or write its browser preference into document state. Restore must never mount a resumed editor until its required ancestry is expanded and it is visible. Implementation should follow the delivery slices and acceptance criteria in the proposal index rather than attempting a single document-wide ProseMirror rewrite.

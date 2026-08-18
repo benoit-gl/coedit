@@ -274,9 +274,9 @@ The old contribution and snapshot rows remain. Restored HTML is sanitized and Yj
 
 This is distinct from `restoreNode`: that operation undeletes one node and its ancestors, but not deleted descendants.
 
-## Proposed workspace-view and checkpoint semantics
+## Workspace-view and checkpoint semantics
 
-This section records the data contract expected by the [proposed continuous-workspace package](./proposals/README.md). It is **not implemented** and does not declare a new schema version.
+This section records the data contract expected by the [continuous-workspace package](./proposals/README.md) and does not declare a new schema version. The standalone WP-1 query implements the historical-materialization rules below against its in-memory snapshots. The historical workspace/UI, native SQLite query, and checkpoint subsections remain proposed.
 
 ### Historical materialization is a query
 
@@ -288,6 +288,8 @@ Materializing revision `R` for inspection shall:
 4. perform no insert, update, delete, revision allocation, contribution append, snapshot append, or replacement of live materialized rows.
 
 Repeatedly viewing `R` and returning to live mode must therefore be observationally idempotent: live state, current revision, contribution count, and snapshot count remain unchanged. This is intentionally distinct from the existing restore semantics above. **Restore as new revision** continues to append one compensating contribution and snapshot.
+
+The current memory adapter satisfies this query contract and advertises it through an `available` capability. The Tauri adapter advertises `host-deferred`; it does not yet read `snapshots.state_json/state_hash` through IPC. No current UI action invokes either capability.
 
 The memory adapter can clone its existing per-revision state. The native implementation can read `snapshots.state_json` and `state_hash` through a read-only store/query method. The exact wire type is an application-port decision, not necessarily a persisted schema addition.
 

@@ -201,7 +201,7 @@ The standalone download path uses centralized `safeFilenameStem()` normalization
 
 ## Proposed continuous-workspace security requirements
 
-The [continuous-workspace package](./proposals/README.md) is not implemented, but its implementation must preserve these trust boundaries:
+The [continuous-workspace package](./proposals/README.md) is mostly not implemented. WP-1's memory query now returns a detached value only after tree and stored-hash verification; native querying and all rendering/controller requirements below remain incomplete. The package must preserve these trust boundaries:
 
 - A materialized historical snapshot is untrusted document input, not safe merely because it came from the application's own history table. Every adapter advertising the query capability must validate its shape/tree/limits, recompute/compare its stored host-schema hash, and pass every historical body through the same render-time sanitization policy as live content. This check is integrity evidence, not authentication.
 - `WorkspaceProjection.kind === "historical"` must be enforced at the controller/command boundary. Hiding or disabling buttons is defense in depth, not authorization; stale callbacks, keyboard commands, editor extensions, and tests that call commands directly must all be rejected.

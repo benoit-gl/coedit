@@ -21,7 +21,7 @@ Tauri is an application shell, not a web backend. It packages web UI assets into
 | Debuggable UI without native tooling | Explicit browser composition root and a single-file `file://` build |
 | Cross-platform desktop source | React UI plus Tauri/Rust/rusqlite with bundled SQLite |
 | Safe rich text | DOMPurify at the editor boundary and Ammonia at the desktop persistence boundary |
-| Future hosts/features | Injected capability-oriented gateway/dialog ports; provider-neutral AI interface |
+| Future hosts/features | Injected capability-oriented gateway/dialog/revision-query ports; provider-neutral AI interface |
 | Recoverable failure | SQLite full-synchronous transactions, snapshots, atomic export/copy helpers, recovery warning |
 | Predictable UI lifecycle | Host-neutral application controller, serialized command queue, revision/epoch guards, and an awaitable draft-transition contract |
 
@@ -39,7 +39,7 @@ The current hardening program is intentionally divided so current claims remain 
 
 | Pass | Scope | Status |
 |---|---|---|
-| 1 — standalone-first | Application controller/queue, synchronous draft freeze plus awaitable metadata/rich-text drains, discriminated storage capabilities, cursor-paged memory history, complete runtime recovery envelope, centralized export/filename/sanitizer contracts, browser hash/sanitizer fixtures | Implemented in the current worktree; standalone verification is the focus |
+| 1 — standalone-first | Application controller/queue, synchronous draft freeze plus awaitable metadata/rich-text drains, discriminated storage and revision-query capabilities, verified memory materialization, cursor-paged memory history, complete runtime recovery envelope, centralized export/filename/sanitizer contracts, browser hash/sanitizer fixtures | Implemented in the current worktree; standalone verification is the focus |
 | 2 — Rust/Tauri parity and hardening | Rust conformance to versioned fixtures, indexed store-side cursor filtering, Rust-owned file authorization/path security, minimized permissions, versioned migrations, measured snapshot compaction, native/platform tests | Deferred; existing Tauri adapter compatibility is not proof of completion |
 | 3 — dormant-feature decisions | AI, attachments, `restoreNode`, session lifecycle, contribution grouping, and generic metadata: finish, reserve, migrate, or remove explicitly | Deferred product/format decision |
 
@@ -53,7 +53,7 @@ A separate [proposed change package](./proposals/README.md) specifies the next w
 - [query-first historical views](./proposals/QUERY_FIRST_HISTORY.md), separating non-mutating snapshot materialization from compensating restore commands; and
 - [body checkpoint strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md), using an edit-batch state machine, shared semantic group IDs, and one injectable policy for `batchCharacterThreshold` and `idleTimeoutMs`.
 
-These are proposed decisions, not decisions embodied in code. The navigator is an auxiliary view within the target workspace, not a second editor or selectable legacy layout. The existing `Outline`/`NodeEditor`, restore-only History action, and 1.2-second quiet-period paths remain the current architecture until implementation and acceptance evidence land.
+Most of these remain proposed decisions. WP-1 embodies only the discriminated revision-query boundary and verified memory materialization: standalone advertises it available, Tauri advertises it host-deferred, and `App` accepts the capability without consuming it. The navigator is an auxiliary view within the target workspace, not a second editor or selectable legacy layout. The existing `Outline`/`NodeEditor`, restore-only History action, and 1.2-second quiet-period paths remain the current architecture until later implementation and acceptance evidence land.
 
 ## 2. System context
 
@@ -119,6 +119,8 @@ package "Shared domain and ports" {
   interface DocumentGateway as Gateway
   interface DocumentSession as Session
   interface ContributionHistory as History
+  interface RevisionQueryCapability as RevisionCapability
+  interface DocumentRevisionQueries as RevisionQueries
   interface DocumentStorage as Storage
   interface VolatileDocumentStorage as VolatileStorage
   interface NativeDocumentStorage as NativeStorage
@@ -151,6 +153,7 @@ Drafts --> NodeEditor : metadata + rich-text participant
 Controller --> Types
 Controller --> Gateway
 Controller --> DialogPort
+App --> RevisionCapability : injected; WP-2 consumes
 Gateway --|> Session
 Gateway --|> History
 Gateway o-- Storage : storage capability
@@ -158,6 +161,8 @@ Storage <|-- VolatileStorage
 Storage <|-- NativeStorage
 Outline --> Tree
 Memory ..|> Gateway
+Memory ..|> RevisionQueries
+RevisionCapability o-- RevisionQueries : available host
 Memory --> Tree
 Memory --> Services
 Memory --> Browser
@@ -174,8 +179,8 @@ AiPort -[dashed]-> App : contract only
 
 | Host | HTML entry | TypeScript entry | Injected dependencies | Output |
 |---|---|---|---|---|
-| Standalone | [`index.html`](../index.html) | [`src/main.tsx`](../src/main.tsx) | `MemoryDocumentGateway` | one inlined `dist/index.html` |
-| Tauri desktop | [`tauri.html`](../tauri.html) | [`src/main-tauri.tsx`](../src/main-tauri.tsx) | `TauriDocumentGateway`, `tauriFileDialogs` | WebView assets inside native package |
+| Standalone | [`index.html`](../index.html) | [`src/main.tsx`](../src/main.tsx) | `MemoryDocumentGateway`, available revision-query capability | one inlined `dist/index.html` |
+| Tauri desktop | [`tauri.html`](../tauri.html) | [`src/main-tauri.tsx`](../src/main-tauri.tsx) | `TauriDocumentGateway`, host-deferred revision-query capability, `tauriFileDialogs` | WebView assets inside native package |
 
 [`App`](../src/App.tsx) has no Tauri import. This is the main separation-of-concerns rule: a new host supplies adapters at a new composition root instead of adding environment detection to the UI.
 
@@ -197,6 +202,7 @@ The Rust store is not imported into the TypeScript build. `TauriDocumentGateway`
 - A `DocumentOperation` is a discriminated mutation command.
 - A `Contribution` attributes one committed revision to a contributor and optional session/group/message, and records a resulting state hash.
 - A snapshot stores a complete `DocumentState` at a revision. Restoration materializes an old snapshot into a new revision rather than removing later history.
+- A `MaterializedRevision` is a detached, structurally validated snapshot whose stored hash was recomputed successfully. It is currently available only through the standalone revision-query capability and is not yet rendered by the UI.
 
 ### Principle of operation
 

@@ -777,9 +777,49 @@ end note
 
 For development, `tauri dev` runs `corepack pnpm dev`, points the webview at `http://127.0.0.1:1420`, and still uses `tauri.html` as the desktop window URL. A raw `cargo build --release` does not execute the configured frontend build/bundling pipeline and is not the documented release command.
 
-## Proposed interaction sequences — not implemented
+## Materialize a standalone revision at the adapter boundary
 
-The implemented sequences above deliberately retain the current master/detail workspace, restore-only historical action, and 1.2-second rich-text quiet-period flow. Target sequences are embedded in the resumable proposal package:
+**Implemented in WP-1; not yet invoked by the UI.** This query is deliberately separate from the restore command above.
+
+```plantuml
+@startuml
+title Verified memory revision materialization (implemented adapter boundary)
+participant "standalone composition" as Host
+participant "RevisionQueryCapability" as Capability
+participant "MemoryDocumentGateway" as Memory
+collections "Map<revision, StoredRevision>" as Snapshots
+participant "tree/hash validation" as Validation
+
+Host -> Capability : narrow kind == available
+Capability -> Memory : materializeRevision(R)
+Memory -> Memory : require nonnegative safe integer
+Memory -> Snapshots : get(R)
+alt missing
+  Memory --> Host : RevisionNotFoundError
+else snapshot found
+  Snapshots --> Memory : detached state source + stored hash
+  Memory -> Memory : clone/project DocumentState
+  Memory -> Validation : revision identity + assertValidTree(state.nodes)
+  Memory -> Validation : hashDocument(state)
+  alt invalid tree or hash mismatch
+    Validation --> Host : RevisionIntegrityError
+  else verified
+    Validation --> Memory : matching canonical browser hash
+    Memory --> Host : MaterializedRevision(verified)
+    note right of Memory
+      current view, contribution ledger,
+      revision map, and attribution are unchanged
+    end note
+  end
+end
+@enduml
+```
+
+The Tauri composition advertises the same capability as `host-deferred` and supplies no query object or throwing stub. WP-2/WP-3 will add draft draining, request epochs, explicit historical workspace state, and View/Back presentation.
+
+## Proposed interaction sequences — partially implemented package
+
+The implemented sequences above deliberately retain the current master/detail workspace, restore-only historical action, and 1.2-second rich-text quiet-period flow. Apart from the WP-1 adapter query above, target interaction sequences remain embedded in the resumable proposal package:
 
 | Proposed sequence | Design source |
 |---|---|

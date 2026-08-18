@@ -4,8 +4,13 @@ import { App } from "./App";
 import { MemoryDocumentGateway } from "./persistence/memoryGateway";
 import "./styles.css";
 
+const documentGateway = new MemoryDocumentGateway();
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App documentGateway={new MemoryDocumentGateway()} />
+    <App
+      documentGateway={documentGateway}
+      revisionQueryCapability={documentGateway.revisionQueryCapability}
+    />
   </StrictMode>,
 );

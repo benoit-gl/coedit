@@ -78,13 +78,15 @@ FileDialogs --> NativeDialogs
 
 - `DocumentSession`: close, apply one attributed operation, and restore a revision;
 - `ContributionHistory`: return cursor-addressable `ContributionPage` values;
+- `DocumentRevisionQueries`: materialize one detached, structurally valid, hash-verified snapshot without mutation;
+- `RevisionQueryCapability`: advertise that query port as `available` or explicitly `host-deferred`;
 - `DocumentStorage`: a discriminated union held in `DocumentGateway.storage`;
 - `VolatileDocumentStorage`: create/export with no filesystem path;
 - `NativeDocumentStorage`: create/open/backup/export with required filesystem paths.
 
 The controller narrows `storage.kind` (`volatile` or `native-file`) before calling its shape-specific methods. The memory adapter no longer implements rejecting native open/backup stubs, and method signatures no longer accept meaningless nullable paths.
 
-The port returns complete `DocumentView` values after mutations and bounded `ContributionPage` values for history. It has no event stream, optimistic expected-revision argument, partial-document API, non-mutating revision-materialization API, total-history-count API, contributor-registration API, attachment API, or import API.
+The command port returns complete `DocumentView` values after mutations, the history port returns bounded `ContributionPage` values, and the separate optional query capability returns `MaterializedRevision`. It has no event stream, optimistic expected-revision argument, partial-document API, total-history-count API, contributor-registration API, attachment API, or import API.
 
 ### `DocumentFileDialogs`
 
@@ -96,9 +98,9 @@ The port returns complete `DocumentView` values after mutations and bounded `Con
 
 - one current `DocumentView`;
 - an in-memory `Contribution[]`;
-- a `Map<number, DocumentState>` containing every runtime revision.
+- a `Map<number, StoredRevision>` containing a projected `DocumentState` and its commit-time hash for every runtime revision.
 
-It uses `src/domain/tree.ts` for operations and `src/domain/hash.ts` for SHA-256 hashes. It can create, edit, query history, restore, and download exports. It cannot open SQLite files, and closing or reloading destroys the document.
+It uses `src/domain/tree.ts` for operations and structural validation and `src/domain/hash.ts` for SHA-256 hashes. It can create, edit, query history, materialize a detached verified revision, restore, and download exports. Materialization validates the revision key and tree, recomputes the snapshot hash, and does not change current state, history, or stored snapshots. It cannot open SQLite files, and closing or reloading destroys the document.
 
 Memory history filters the complete newest-first runtime ledger before applying an exclusive `beforeRevision` cursor and page limit. JSON export writes an explicitly marked `coedit-recovery` `RecoveryExport` version-2 envelope containing algorithm/state hash, an explicit `DocumentState` projection, history order/completeness, and every contribution accumulated in that runtime, newest first. It does not serialize the internal revision-snapshot `Map`, and no importer exists.
 
@@ -150,7 +152,8 @@ interface DocumentFileDialogs {
 class MemoryDocumentGateway {
   - current: DocumentView?
   - contributions: Contribution[]
-  - revisions: Map<number, DocumentState>
+  - revisions: Map<number, StoredRevision>
+  + materializeRevision(revision): MaterializedRevision
   - download(name, content, type): ExportResult
 }
 
@@ -588,13 +591,15 @@ Gateway --> App : replace view
 @enduml
 ```
 
-## Proposed revision-query port — not implemented
+## Revision-query port — standalone WP-1 implemented
 
-The target [query-first historical-view design](./proposals/QUERY_FIRST_HISTORY.md) adds a discriminated `RevisionQueryCapability` containing `DocumentRevisionQueries.materializeRevision(revision)`. It reads the memory revision map or SQLite `snapshots.state_json/state_hash`, validates state, recomputes and compares the host/schema-appropriate hash, and returns a detached verified `MaterializedRevision` without replacing current state, appending a contribution, incrementing revision, or writing another snapshot.
+[`gateway.ts`](../src/persistence/gateway.ts) now defines a discriminated `RevisionQueryCapability` containing `DocumentRevisionQueries.materializeRevision(revision)`. The memory implementation reads its hash-bearing runtime revision map, validates and detaches the state, recomputes the browser canonical hash, and returns a verified `MaterializedRevision` without replacing current state, appending a contribution, incrementing revision, or writing another snapshot.
 
-For the standalone milestone, memory advertises the capability as available while Tauri may advertise it unavailable and omit **View**; the native composition must still compile and must not supply a throwing stub. WP-10 adds the read-only Rust query/IPC and makes Tauri advertise availability only after shared contract tests pass.
+The standalone composition advertises the memory query as `available`. The Tauri composition compiles with the same capability boundary but advertises `host-deferred`; it supplies no throwing query stub. WP-10 adds the read-only Rust query/IPC and makes Tauri advertise availability only after shared contract tests pass.
 
-`restoreRevision` remains the mutating command described above. Viewing and restoration must not share an implementation that temporarily changes the live store. The proposed port includes validation, missing/tampered snapshot behavior, request/epoch guards, memory/Tauri contract tests, and explicit live/historical controller modes.
+`restoreRevision` remains the mutating command described above. Viewing and restoration do not share an implementation that temporarily changes the live memory store. WP-1 covers memory validation and missing/tampered snapshot behavior; request/epoch guards, native contract tests, and explicit live/historical controller modes remain later work.
+
+WP-1 ends at the adapter/composition boundary. `App`, `useDocumentController`, and `HistoryPanel` do not consume the capability yet, so no read-only historical view is currently reachable. Those controller and presentation parts remain WP-2/WP-3.
 
 No document-schema change is required merely to read and verify existing snapshots under their host/schema algorithm. Cross-adapter canonical hash alignment and future compaction remain separate format/version decisions.
 
@@ -636,6 +641,7 @@ Desktop exports and backups write or copy a temporary file in the destination di
 | Contributions | Runtime array | SQLite ledger |
 | Sessions | Never populated | Lazily inserted when context supplies an ID |
 | Restore | Runtime revision map | SQLite full snapshots |
+| Revision materialization query | Available; detached, tree-validated, browser-hash-verified | Explicitly `host-deferred`; no throwing stub |
 | Hash | Browser Web Crypto, JS canonicalization | Rust SHA-256 over Serde JSON |
 | Storage capability | `VolatileDocumentStorage`: pathless create/export | `NativeDocumentStorage`: path-required create/open/export/backup |
 | JSON export | Marked `coedit-recovery` version-2 envelope: algorithm/hash, portable state, explicit complete runtime ledger | Legacy version-1 state/contributions envelope capped by the current store query |
@@ -707,8 +713,8 @@ Define a domain model and gateway first. Then add store commands, checksum valid
 
 ## Verification and known gaps
 
-Current persistence tests are listed in [Testing strategy](./TESTING.md). Memory tests cover attribution/restore, boundary sanitization and JSON detachment/validation, cursor paging and filter-before-page semantics, complete runtime recovery export, and filename normalization. Separate TypeScript fixtures cover canonical hash and browser sanitization. Rust tests still cover cycle rejection, HTML sanitization, and a create-edit-restore-backup-export-reopen path; they do not yet consume the new protocol fixtures.
+Current persistence tests are listed in [Testing strategy](./TESTING.md). Memory tests cover attribution/restore, detached and non-mutating verified materialization, invalid/missing/corrupt snapshot rejection, boundary sanitization and JSON detachment/validation, cursor paging and filter-before-page semantics, complete runtime recovery export, and filename normalization. Separate TypeScript fixtures cover canonical hash and browser sanitization. Rust tests still cover cycle rejection, HTML sanitization, and a create-edit-restore-backup-export-reopen path; they do not yet consume the new protocol fixtures.
 
-Priority missing coverage includes format migration, corrupt snapshots, hash verification, adapter parity, transaction failure injection, size boundaries, read-only behavior, history beyond 100,000 entries, contributor/session integrity, overwrite failures, and simultaneous access.
+Priority missing coverage includes format migration, native/open/restore hash verification, adapter parity, transaction failure injection, size boundaries, read-only behavior, history beyond 100,000 entries, contributor/session integrity, overwrite failures, and simultaneous access. Memory materialization now covers invalid revision keys, missing snapshots, detached results, non-mutation, mismatched hashes, and structurally invalid snapshots.
 
 The definitive triage list, including uncontrolled host-exit lifecycle and cross-adapter/native parity risks, is [Known limitations](./KNOWN_LIMITATIONS.md).

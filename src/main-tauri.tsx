@@ -5,8 +5,14 @@ import { tauriFileDialogs } from "./persistence/tauriFiles";
 import { TauriDocumentGateway } from "./persistence/tauriGateway";
 import "./styles.css";
 
+const documentGateway = new TauriDocumentGateway();
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <App documentGateway={new TauriDocumentGateway()} fileDialogs={tauriFileDialogs} />
+    <App
+      documentGateway={documentGateway}
+      revisionQueryCapability={documentGateway.revisionQueryCapability}
+      fileDialogs={tauriFileDialogs}
+    />
   </StrictMode>,
 );

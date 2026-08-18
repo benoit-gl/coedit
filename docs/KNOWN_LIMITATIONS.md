@@ -14,7 +14,7 @@ Priority meaning:
 | ID | Priority | Area | Current limitation | Primary evidence |
 |---|---|---|---|---|
 | R-03 | P0 | Attribution | Opening another author's file can silently attribute new work to its first contributor | `App` `contributor` fallback; no registration API |
-| R-04 | P1 | Integrity | Contribution/snapshot hashes are stored but never verified or replayed | `DocumentStore::open`/`restore`; both gateways |
+| R-04 | P1 | Integrity | Memory revision queries verify snapshot hashes, but desktop open/restore and both restore paths still do not verify/replay the ledger | `materializeRevision`; `DocumentStore::open`/`restore` |
 | R-05 | P1 | Compatibility | Format/version fields exist, but there is no migration machinery | `FORMAT_VERSION`; `DocumentStore::open` |
 | R-06 | P1 | Draft lifecycle | Controlled transitions drain registered drafts, but page/process exit and forced host suspension cannot await them | controller/editor; React/browser lifecycle |
 | R-07 | P1 | Recovery export | Desktop JSON silently caps history at 100,000; neither JSON envelope has an importer | Rust export; both product workflows |
@@ -35,7 +35,7 @@ Priority meaning:
 | R-23 | P3 | Reserved features | Attachments, AI, collaboration, contributor management, and direct node restore have no complete workflow | schema/types/interfaces with missing UI/adapters |
 | R-24 | P3 | Outline behavior | New expansion state, drag placement/root drops, and affected-node reporting are limited | `Outline`; both operation models |
 | R-25 | P2 | Writing flow | Separate outline and selected-node editor force master/detail context switching for ordinary writing and node insertion | `App` workspace composition; `Outline`; `NodeEditor` |
-| R-26 | P2 | Historical inspection | History offers mutating restoration but no read-only materialized revision view | `HistoryPanel`; `DocumentGateway.restoreRevision` only |
+| R-26 | P2 | Historical inspection | Memory can materialize verified revisions, but History still offers only mutating restoration and native queries are host-deferred | `MemoryDocumentGateway.materializeRevision`; `HistoryPanel` |
 | R-27 | P2 | Edit history/noise | Fixed 1.2-second quiet-period checkpoints and one new group ID per body commit create indiscriminate revisions and noisy History | `RichTextEditor`; `controller.commitBody`; full snapshots |
 
 ## Data-integrity and attribution risks
@@ -50,7 +50,7 @@ The local contributor preference lives in browser `localStorage`. After opening 
 
 ### R-04: stored hashes are checksums, not verified provenance
 
-Desktop contributions and snapshots receive a SHA-256 of serialized `DocumentState`; memory contributions receive a Web Crypto hash. On open, the store checks SQLite integrity and tree structure but does not:
+Desktop contributions and snapshots receive a SHA-256 of serialized `DocumentState`; memory contributions receive a Web Crypto hash. WP-1 memory materialization now recomputes the browser canonical hash and rejects a mismatch before returning a detached snapshot. On open/restore, the store still checks SQLite integrity and tree structure but does not:
 
 - recompute the current state hash and compare it with the current contribution/snapshot;
 - verify each snapshot's `state_hash`;
@@ -185,9 +185,11 @@ The workspace renders a separate hierarchy navigator and only one selected node'
 
 **Recommended direction:** implement the proposed [continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md): a flattened pre-order projection, separate canvas-context/focus-region/editor-owner state, one active Tiptap editor, drain-before-hide collapse behavior, sanitized inactive previews, inline structural controls, and complete keyboard/touch alternatives. Large-document orientation may use the proposed optional navigation-only tree sidebar, docked when space permits and presented as an explicitly opened drawer on compact/touch screens. It must share the canvas's live/historical projection while keeping browsing/expansion state independent; it is not a selectable revival of the current tree-plus-detail editor. This is a component/application redesign, not a CSS-only change.
 
-### R-26: historical inspection is restore-only
+### R-26: historical inspection is not yet reachable as a query
 
-Both adapters retain per-revision materializations, but the shared gateway exposes no read-only revision query. The only History action copies an old snapshot into a new current revision, appends a contribution, and stores another snapshot. That is appropriate for resuming work, not merely inspecting the past.
+The WP-1 boundary defines a discriminated read-only query capability. Memory advertises it as available and returns detached, tree-validated, hash-verified snapshots without changing live state, history, or its snapshot map. Tauri explicitly advertises `host-deferred` and exposes no throwing stub.
+
+The controller and History UI do not consume that capability yet. The only visible History action still copies an old snapshot into a new current revision, appends a contribution, and stores another snapshot. That is appropriate for resuming work, not merely inspecting the past.
 
 **Recommended direction:** implement [query-first historical views](./proposals/QUERY_FIRST_HISTORY.md). An advertised query capability must return detached, validated, host-hash-verified state while leaving live state, revision, contribution count, and snapshots unchanged; loading retains its live/historical origin, historical mode rejects commands, and restoration remains separately confirmed.
 
@@ -209,7 +211,7 @@ Keep these labeled **Reserved** or **Proposed** in contributor-facing material.
 
 ## Verification and delivery gaps
 
-The current source inventory is forty-two TypeScript cases and three Rust cases. New TypeScript coverage includes the draft coordinator, controller transition ordering/generation, serialized-queue behavior, contributor-storage validation, node-editor normalization, tag normalization/combobox behavior, JSON detachment/validation, cursor paging/filtering, recovery-envelope shape, filename normalization, and versioned hash/sanitizer fixtures. There is still no:
+The current source inventory is forty-five TypeScript cases and three Rust cases. New TypeScript coverage includes the draft coordinator, controller transition ordering/generation, serialized-queue behavior, contributor-storage validation, node-editor normalization, tag normalization/combobox behavior, JSON detachment/validation, cursor paging/filtering, recovery-envelope shape, verified memory revision materialization, explicit host-deferred Tauri capability advertisement, filename normalization, and versioned hash/sanitizer fixtures. There is still no:
 
 - full-App React/editor integration or end-to-end browser suite;
 - fake-timer editor debounce/lifecycle suite;

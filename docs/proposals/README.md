@@ -2,7 +2,7 @@
 
 **Product decision:** Approved design direction.
 
-**Implementation status:** Proposed; no part of this package is implemented.
+**Implementation status:** Partial. WP-1's standalone revision-query contract, verified memory materialization, and explicit host capability advertisement are implemented. Workspace mode, historical UI, checkpointing, canvas, navigator, and native query parity remain proposed.
 
 **Purpose:** Preserve an implementation-ready design for three related UX and architecture changes so work can resume later without reconstructing product decisions from conversation history.
 
@@ -17,6 +17,8 @@ The current implementation and the root engineering documents remain authoritati
 - [`App`](../../src/App.tsx) still renders `Outline` beside one selected `NodeEditor`;
 - [`HistoryPanel`](../../src/components/HistoryPanel.tsx) still offers restoration rather than read-only revision viewing; and
 - [`RichTextEditor`](../../src/editor/RichTextEditor.tsx) still checkpoints after 1.2 seconds without a Yjs update.
+
+WP-1 is intentionally UI-neutral: [`gateway.ts`](../../src/persistence/gateway.ts) defines the discriminated query capability and verified result, [`MemoryDocumentGateway`](../../src/persistence/memoryGateway.ts) implements it over detached hash-bearing snapshots, and the two composition roots advertise `available` or `host-deferred`. It does not yet make historical inspection reachable from History.
 
 ## Documents in this package
 
@@ -166,6 +168,8 @@ stop
 
 WP-1 through WP-3 can ship independently and provide immediate safe historical viewing. WP-4 should land before WP-7 so moving focus between inline blocks has a defined checkpoint boundary. WP-5 may land with WP-4 or later, but until it does History remains noisy even if persistence batching is correct. WP-7A follows the canvas/projection boundary: it must reuse controller intents and must not preserve the retired `Outline`/`NodeEditor` composition as another mode.
 
+**Current delivery position:** WP-1 is implemented for the standalone adapter and host-capability boundary. WP-2 is next. Native materialization remains part of WP-10.
+
 The first delivery milestone is standalone: memory-backed revision queries, checkpoint coordination/grouping, the continuous canvas, and its optional navigator pass their automated and double-click artifact checks. During that milestone the Tauri composition must continue to type-check/build at its frontend boundary, but it may omit the new query capability and retain documented stale behavior. WP-10 closes that intentional gap; adapters must not use throwing capability stubs merely to appear complete.
 
 ## Proposed source ownership
@@ -196,7 +200,7 @@ These names may be adjusted during implementation, but responsibilities and depe
 
 ### Slice A — safe historical viewing
 
-- query capability and memory adapter for the standalone milestone; native adapter parity in WP-10 (capability absent, not throwing, until then);
+- query capability and verified memory adapter for the standalone milestone (**implemented in WP-1**); native adapter parity remains in WP-10 (capability is explicitly unavailable, not throwing, until then);
 - verified snapshot materialization, historical workspace discriminant, and origin-retaining loading state;
 - History **View** action;
 - read-only banner, **Back to current**, and explicit **Restore as new revision**;
