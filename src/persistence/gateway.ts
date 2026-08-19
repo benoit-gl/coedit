@@ -107,7 +107,7 @@ export interface DocumentSession {
 
 export interface ContributionHistory {
   listContributions(query?: ContributionQuery): Promise<ContributionPage>;
-  readonly contributionGroupQueryCapability: ContributionGroupQueryCapability;
+  readonly contributionGroupQueryCapability?: ContributionGroupQueryCapability;
 }
 
 export interface VolatileDocumentStorage {
