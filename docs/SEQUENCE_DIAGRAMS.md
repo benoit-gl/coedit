@@ -252,11 +252,11 @@ A file whose SQLite `user_version` is newer than the supported format is reopene
 @startuml
 title Apply DocumentOperation across adapters (implemented)
 actor User
-participant "Outline / NodeEditor / Header" as Component
+participant "DocumentCanvas / NodeBlock / Header" as Component
 participant "App" as App
 participant "useDocumentController" as Controller
 participant "DraftTransitionCoordinator" as Drafts
-participant "title + node-editor participants" as Participants
+participant "document-title + block metadata/body participants" as Participants
 participant "SerializedTaskQueue" as Queue
 participant "DocumentGateway" as Gateway
 participant "MemoryDocumentGateway" as Memory
@@ -393,7 +393,7 @@ end
 @enduml
 ```
 
-`TagEditor` and `RichTextEditor` each expose a participant to `NodeEditor`; `NodeEditor` combines pending tag input, metadata, and rich-text drains for the reachable master/detail path. The live `DocumentCanvas` seam instead registers its sole owner's rich-text participant directly under `NodeBlock`. Controlled selection, editor transfer, operations, restore, export, backup, and Close synchronously freeze and await registered drafts rather than depending on unmount cleanup. A transfer does not change owner until drain succeeds; failure retains the old editor. In the desktop branch, Rust decodes both Base64 values, enforces content/Yjs size limits, independently sanitizes HTML with Ammonia, and writes the complete Yjs state. Rust sanitizer-fixture parity remains second-pass work.
+`TagEditor` exposes its pending-input participant to `NodeMetadataFields`, which registers one metadata participant per visible live block. The sole live `RichTextEditor` registers its body participant directly through the owning `NodeBlock`. Controlled editor transfer/release, collapse/delete/create/move, historical entry, restore, export, backup, and Close synchronously freeze and await registered drafts rather than depending on unmount cleanup. Ownership does not change until drain succeeds; failure retains the old editor. In the desktop branch, Rust decodes both Base64 values, enforces content/Yjs size limits, independently sanitizes HTML with Ammonia, and writes the complete Yjs state. Rust sanitizer-fixture parity remains second-pass work.
 
 ## Load, filter, and page history
 
@@ -515,8 +515,8 @@ else user confirms
     Gateway --> Controller : page including new restore contribution when it matches
   end
   Controller --> App : current state
-  App -> App : key NodeEditor by node ID + editorGeneration
-  App -> App : remount RichTextEditor with restored Yjs state
+  App -> App : key owning RichTextEditor by node ID + editorGeneration
+  App -> App : remount owner with restored Yjs state when valid/visible
   Controller -> Participants : release/unfreeze old participants
   App --> User : rerender restored document
 end
@@ -658,7 +658,7 @@ actor User
 participant App
 participant useDocumentController as Controller
 participant DraftTransitionCoordinator as Drafts
-participant "DocumentTitleInput + NodeEditor" as Participants
+participant "DocumentTitleInput + NodeMetadataFields + RichTextEditor" as Participants
 participant SerializedTaskQueue as Queue
 participant DocumentGateway as Gateway
 
@@ -783,7 +783,7 @@ participant "HistoryPanel View / test" as Caller
 control "useDocumentController" as Controller
 boundary App
 boundary HistoricalWorkspaceBanner as Banner
-boundary HistoricalNodeView as HistoricalView
+boundary DocumentCanvas as HistoricalCanvas
 participant "DraftTransitionCoordinator" as Drafts
 participant "RevisionQueryCapability" as Capability
 participant "MemoryDocumentGateway" as Memory
@@ -819,7 +819,7 @@ else available
         Controller -> Controller : WorkspaceProjection = historical\nretain live view/selection/current revision\neditor owner = null
         Controller --> App : historical projection
         App -> Banner : viewed R + retained current revision
-        App -> HistoricalView : sanitized static selected node
+        App -> HistoricalCanvas : sanitized static visible-node projection
         Controller --> Caller : true
       end
     end
@@ -828,11 +828,11 @@ end
 @enduml
 ```
 
-Back invalidates an in-flight request and returns the retained live projection without a gateway call. Close invalidates and clears both projections. A failed restore retains historical mode; the banner's separately confirmed restore accepts one compensating `DocumentView` and exits historical mode. Historical `App` composition replaces `DocumentTitleInput`/`NodeEditor` with plain title text and `HistoricalNodeView`, so no Tiptap/Yjs instance, metadata input, checkpoint timer, or editor draft participant is mounted. Document operations, export, and backup require an idle live projection, and their affordances are disabled. The Tauri composition advertises `host-deferred`, supplies no query object or throwing stub, omits **View**, and retains row-level restore until WP-10.
+Back invalidates an in-flight request and returns the retained live projection without a gateway call. Close invalidates and clears both projections. A failed restore retains historical mode; the banner's separately confirmed restore accepts one compensating `DocumentView` and exits historical mode. Historical `App` composition renders a plain document title and `DocumentCanvas`'s read-only contract, so no Tiptap/Yjs instance, metadata input, structural mutation, checkpoint timer, or draft participant mounts. Document operations, export, and backup require an idle live projection. Tauri advertises `host-deferred`, supplies no query object or throwing stub, omits **View**, and retains row-level restore until WP-10.
 
-## Proposed interaction sequences — partially implemented package
+## Continuous-workspace follow-on sequences
 
-The implemented sequences above retain the current master/detail UI but now use the semantic checkpoint coordinator. WP-3 replaces restore-only standalone History with the safe historical presentation, and the WP-4/WP-7 gate proves single-owner canvas transfer before that canvas becomes reachable. Structural canvas, grouped History, navigator, browser qualification, and native target sequences remain embedded in the resumable proposal package:
+The implemented sequences above use the WP-7 continuous canvas and semantic checkpoint coordinator. Inline create/structure, single-owner transfer/release, and shared historical presentation are implemented; grouped History, navigator, browser qualification, and native target detail remain embedded in the resumable proposal package:
 
 | Proposed sequence | Design source |
 |---|---|
@@ -844,7 +844,7 @@ The implemented sequences above retain the current master/detail UI but now use 
 | Threshold, insertion/deletion, cursor/focus, idle, and tree-operation checkpoint boundaries | [Body checkpoint strategy](proposals/BODY_CHECKPOINT_STRATEGY.md#state-machine) |
 | Checkpoint failure, ordered retention, and retry | [Body checkpoint strategy](proposals/BODY_CHECKPOINT_STRATEGY.md#failure-and-retry) |
 
-When these flows are implemented, replace the corresponding implemented diagrams rather than leaving contradictory current and proposed sequences in the main interaction view.
+When the remaining flows are implemented, replace the corresponding target diagrams rather than leaving contradictory sequences in the main interaction view.
 
 ## Maintaining these diagrams
 

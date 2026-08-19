@@ -1,12 +1,11 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { DocumentNode } from "./domain/types";
 import { MemoryDocumentGateway } from "./persistence/memoryGateway";
 
-vi.mock("./components/NodeEditor", () => ({
-  NodeEditor: ({ node }: { node: DocumentNode }) => (
-    <div data-testid="live-node-editor">Live editor: {node.title}</div>
+vi.mock("./editor/RichTextEditor", () => ({
+  RichTextEditor: ({ node }: { node: { title: string } }) => (
+    <div data-testid="live-rich-editor">Live editor: {node.title}</div>
   ),
 }));
 
@@ -33,18 +32,16 @@ afterEach(async () => {
 
 async function settle(): Promise<void> {
   await act(async () => {
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
   });
 }
 
 async function click(element: Element): Promise<void> {
   await act(async () => {
     (element as HTMLElement).click();
-    await Promise.resolve();
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
   });
 }
 
@@ -80,8 +77,9 @@ describe("App historical workspace", () => {
 
     await click(button("Create document"));
     await click(button("Create the first idea"));
-    await click(container.querySelector(".outline-heading button")!);
-    expect(container.querySelector('[data-testid="live-node-editor"]')).not.toBeNull();
+    await click(button("Add below"));
+    await click(button("Edit body"));
+    expect(container.querySelector('[data-testid="live-rich-editor"]')).not.toBeNull();
     expect((await gateway.listContributions()).items).toHaveLength(3);
 
     const historyToggle = [...container.querySelectorAll<HTMLButtonElement>("button")]
@@ -98,18 +96,18 @@ describe("App historical workspace", () => {
       .toContain("Viewing revision 1Read only · current revision is 2");
     expect(container.querySelector('[role="status"]')?.textContent)
       .toBe("Viewing revision 1, read only. Current revision is 2.");
-    expect(container.querySelector('[data-testid="live-node-editor"]')).toBeNull();
-    expect(container.querySelector(".historical-node-view")).not.toBeNull();
-    expect(container.querySelector(".node-editor input, .node-editor [contenteditable=true]")).toBeNull();
+    expect(container.querySelector('[data-testid="live-rich-editor"]')).toBeNull();
+    expect(container.querySelector('.document-canvas[data-workspace-kind="historical"]')).not.toBeNull();
+    expect(container.querySelector('.document-canvas[data-workspace-kind="historical"] input, .document-canvas[data-workspace-kind="historical"] [contenteditable=true]')).toBeNull();
     expect(container.querySelector(".document-title")?.tagName).toBe("DIV");
-    expect(container.querySelector<HTMLButtonElement>(".outline-heading button")?.disabled).toBe(true);
+    expect(container.querySelector('.document-canvas[data-workspace-kind="historical"] .node-block-actions')).toBeNull();
     expect([...container.querySelectorAll<HTMLButtonElement>(".menu button")].every((item) => item.disabled)).toBe(true);
     expect(revisionRow(1).getAttribute("aria-current")).toBe("true");
     expect((await gateway.listContributions()).items).toHaveLength(3);
 
     await click(button("Back to current"));
     expect(container.querySelector(".historical-banner")).toBeNull();
-    expect(container.querySelector('[data-testid="live-node-editor"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="live-rich-editor"]')).not.toBeNull();
     expect(materialize).toHaveBeenCalledTimes(1);
     expect((await gateway.listContributions()).items).toHaveLength(3);
 
@@ -124,7 +122,8 @@ describe("App historical workspace", () => {
     expect(restore).toHaveBeenCalledTimes(1);
     expect(restore).toHaveBeenCalledWith(1, expect.objectContaining({ contributorId: expect.any(String) }));
     expect(container.querySelector(".historical-banner")).toBeNull();
-    expect(container.querySelector('[data-testid="live-node-editor"]')).not.toBeNull();
+    expect(container.querySelector('[data-testid="live-rich-editor"]')).toBeNull();
+    expect(container.querySelector('.document-canvas[data-workspace-kind="live"] .node-block')).not.toBeNull();
     const history = await gateway.listContributions();
     expect(history.items).toHaveLength(4);
     expect(history.items[0]).toMatchObject({ operationType: "restoreRevision", revision: 3 });

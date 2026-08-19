@@ -64,7 +64,7 @@ The implementation handoff for the next UX iteration is [Proposed continuous wor
 
 1. [Query-first historical views](./proposals/QUERY_FIRST_HISTORY.md) - add a non-mutating revision query and explicit live/historical workspace modes.
 2. [Body checkpoint and commit strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md) - replace the fixed timer with an injectable event-aware coordinator before inline focus transfer depends on it.
-3. [Continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md) - replace the master/detail composition after the query and checkpoint boundaries exist.
+3. [Continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md) - implemented through WP-7; governs the canvas and optional navigator follow-on.
 
 When picking the work up later:
 
@@ -75,7 +75,7 @@ When picking the work up later:
 - implement the optional navigator only after the canvas projection is stable; keep it navigation-only, consume the same live/historical projection, and keep Navigator preference, History dock request/effective visibility/query staleness/data generation, compact drawer, selection/expansion, canvas context, actual focus region, actual editor ownership, one-shot retained-live resume candidate, and canvas expansion as the distinct states defined by the proposal; never accept an older History response over a hidden change or mount a restored resume target until its rebuilt canvas ancestry is visible;
 - store at most validated, versioned preferred dock visibility in browser UI storage, default an invalid initial read closed, keep compact drawer state transient, and prove neither enters document state, hashes, snapshots, History, or exports;
 - update the proposal decision/status tables and the as-built RUP, traceability, sequences, UI/UX, limitations, security, and testing sections only as behavior becomes reachable; and
-- do not delete the current master/detail or timer documentation before the replacement passes its acceptance criteria.
+- keep as-built canvas/checkpoint documentation synchronized with each completed work package.
 
 The proposal documents are the decision record. Conversation history is not required to reconstruct the intended behavior.
 
@@ -153,7 +153,7 @@ Change all of these together:
 
 - normalization and vocabulary collection in [`src/domain/tags.ts`](../src/domain/tags.ts);
 - token/combobox interaction in [`src/components/TagEditor.tsx`](../src/components/TagEditor.tsx);
-- `NodeEditor` draft composition and transition flushing;
+- `NodeMetadataFields` draft composition and transition flushing;
 - the mirrored Rust `Vec<String>` validation and SQLite `tags_json` paths;
 - hashes, snapshots, recovery fixtures, and format/migration behavior;
 - TypeScript/Rust/UI tests and documentation.
@@ -291,7 +291,7 @@ There is currently no lint script. TypeScript compilation and tests are the enfo
 2. **Pass 2 — Rust/Tauri parity and hardening (deferred):** make Rust consume the hash/sanitizer fixtures, implement store-side indexed cursor filtering without a 100,000-row pre-window, move file authorization/path ownership behind a defensible Rust boundary, minimize native permissions, add schema migration and measured snapshot-compaction policy, and run native/platform verification.
 3. **Pass 3 — dormant-feature decisions (deferred):** explicitly finish, retain as reserved, migrate, or remove AI, attachments, `restoreNode`, session lifecycle, contribution grouping, and generic node metadata.
 
-The continuous-workspace package is a separately scoped UX/application iteration. The revision-query slice, checkpoint core/concrete editor adapter, visible-node projection, canvas scaffold, and one-editor drain/failure gate are complete. Next comes editable/structural canvas parity and retirement of master/detail, followed by grouped History and the optional navigator over the stable shared projection, with standalone qualification first. Every new action that can hide/remove the editor owner must use the registered transition barrier and gain a failure-cancellation test. The navigator is not a compatibility mode for the current master/detail editor. Do not confuse the checkpoint use of `groupId` for body-edit presentation with a final pass-3 decision about the broader dormant grouping/session model.
+The continuous-workspace package is an active UX/application iteration. WP-7 editable/structural canvas parity, historical reuse, and retirement of master/detail are complete. Next comes grouped History (WP-5), followed by the optional navigator over the stable shared projection, with standalone qualification first. Every new action that can hide/remove the editor owner must use the registered transition barrier and gain a failure-cancellation test. The navigator is not a compatibility mode for the retired master/detail editor. Do not confuse the checkpoint use of `groupId` for body-edit presentation with a final pass-3 decision about the broader dormant grouping/session model.
 
 Do not implement a pass-2 or pass-3 item incidentally without updating its design, format/security impact, and tests.
 

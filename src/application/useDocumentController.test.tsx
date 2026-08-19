@@ -98,6 +98,7 @@ async function createTwoNodes(getController: () => Controller): Promise<void> {
       "Second node",
     )).toBe(true);
   });
+  await act(async () => { expect(await getController().selectNode("first")).toBe(true); });
 }
 
 describe("useDocumentController draft transitions", () => {
@@ -149,6 +150,68 @@ describe("useDocumentController draft transitions", () => {
     expect(events).toEqual(["freeze", "flush", "unfreeze"]);
     expect(getController().selectedId).toBe("first");
     expect(getController().error).toBe("draft save failed");
+  });
+
+  it("releases body ownership only after a successful drain and keeps it on failure", async () => {
+    const getController = await renderController();
+    await createTwoNodes(getController);
+    const events: string[] = [];
+    const flush = deferred<void>();
+    const unregister = getController().registerDraftParticipant("owned-body", {
+      freeze: () => events.push("freeze"),
+      flush: async () => {
+        events.push("flush");
+        await flush.promise;
+      },
+      unfreeze: () => events.push("unfreeze"),
+    });
+
+    let releasing!: Promise<boolean>;
+    act(() => { releasing = getController().releaseEditorOwner("second"); });
+    expect(events[0]).toBe("freeze");
+    expect(getController().workspaceProjection).toMatchObject({ editorOwnerNodeId: "first" });
+    await act(async () => {
+      flush.resolve();
+      expect(await releasing).toBe(true);
+    });
+    expect(events).toEqual(["freeze", "flush", "unfreeze"]);
+    expect(getController().workspaceProjection).toMatchObject({
+      displayed: { selectedNodeId: "second" },
+      editorOwnerNodeId: null,
+    });
+    unregister();
+
+    await act(async () => { expect(await getController().selectNode("first")).toBe(true); });
+    getController().registerDraftParticipant("failing-body", {
+      freeze: () => undefined,
+      flush: async () => { throw new Error("checkpoint failed"); },
+      unfreeze: () => undefined,
+    });
+    await act(async () => {
+      expect(await getController().releaseEditorOwner("second")).toBe(false);
+    });
+    expect(getController().workspaceProjection).toMatchObject({
+      displayed: { selectedNodeId: "first" },
+      editorOwnerNodeId: "first",
+    });
+  });
+
+  it("creates a canvas node at the requested position and leaves its title as context", async () => {
+    const getController = await renderController();
+    await createTwoNodes(getController);
+
+    let createdId: string | null = null;
+    await act(async () => { createdId = await getController().createCanvasNode(null, 1); });
+
+    expect(createdId).not.toBeNull();
+    expect(getController().workspaceProjection).toMatchObject({
+      displayed: { selectedNodeId: createdId },
+      editorOwnerNodeId: null,
+    });
+    expect(getController().view?.nodes
+      .filter((node) => node.deletedAt === null)
+      .sort((left, right) => left.position - right.position)
+      .map((node) => node.id)).toEqual(["first", createdId, "second"]);
   });
 
   it("flushes before restore and replaces the authoritative editor generation", async () => {

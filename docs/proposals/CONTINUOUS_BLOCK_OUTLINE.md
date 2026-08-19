@@ -2,13 +2,13 @@
 
 **Product decision:** Approved design direction.
 
-**Implementation status:** Partial. WP-6 implements the pure visible-node projection and its domain-validation/scale tests. WP-7 implements the unreachable `DocumentCanvas`/`NodeBlock` scaffold and sanitized previews; the WP-4/WP-7 gate adds explicit one-editor ownership, registered checkpoint participation, drain-before-transfer, and failure retention. Reachable canvas composition, metadata/structural controls, historical-controller reuse, shell focus state, and the optional navigator remain staged.
+**Implementation status:** WP-6 and WP-7 are implemented. `App` uses the continuous canvas for live editing and historical reading; inline title/tag/insertion, pointer and keyboard structure controls, disclosure, focus fallback, announcements, and one-editor drain-before-hide semantics replace master/detail. The optional navigator, broader shell `focusRegion` model, and browser/accessibility/performance qualification remain staged.
 
 **Change package:** [Continuous workspace proposals](./README.md)
 
 ## Problem statement
 
-The implemented workspace is master/detail: `Outline` renders the hierarchy in a left column and `NodeEditor` renders only the selected node in the central column. Adding or developing another node requires a structural action, selection/context change, and movement between visually separate regions. This makes the application feel like a record editor rather than a continuous writing surface.
+The former workspace was master/detail: an outline rendered beside one selected-node editor. WP-7 removes that runtime composition in favor of the continuous writing surface specified here.
 
 The target interaction resembles an outline-oriented word processor: hierarchy and authored text flow in one scrollable document, while indentation and disclosure still expose structure.
 
@@ -569,20 +569,24 @@ Implemented in the WP-7 scaffold and WP-4/WP-7 integration gate:
 - projected active nodes render in continuous order with depth indentation;
 - collapsed, empty, and invalid projections render deterministic non-editable states;
 - titles and tags render as static text and bodies pass through the centralized sanitizer;
-- historical/read-only rendering exposes no input, button, contenteditable surface, toolbar, Tiptap/Yjs owner, draft participant, or mutation callback;
+- historical/read-only rendering exposes disclosure buttons only: no input, mutation action, contenteditable surface, toolbar, Tiptap/Yjs owner, draft participant, or document-mutation callback;
 - a live editable contract takes one explicit `editorOwnerNodeId`; exactly that block mounts `RichTextEditor`, while inactive bodies remain sanitized previews with native **Edit body** controls;
 - the active block registers its coordinator-backed participant under its stable node ID; transfer waits for drain, mounts no duplicate editor, and failure retains the old owner plus initiating control;
-- the component contract remains unreachable from `App` until editable metadata and structural parity.
+- the component contract became reachable from `App` only after editable metadata and structural parity passed.
 
-Pending at the parity stages:
+Implemented at the WP-7 parity stage:
 
 - title Enter and explicit insertion create/focus correct sibling;
 - indent/outdent/reorder issue correct operations;
 - collapse/focus behavior and live announcements;
 - collapse of an ancestor containing the editor drains before removal and cancels on failure;
-- complete canvas-context/focus-region shell state and cross-block title activation; keyboard activation of native **Edit body** already follows the button/transfer path;
+- canvas context remains independent from editor ownership; title focus and native **Edit body** activation use distinct paths;
 - historical canvas exposes no mutation controls;
 - keyboard commands do not fire during IME composition or from ordinary rich-text editing;
+
+Pending beyond WP-7:
+
+- complete the broader shell `focusRegion` model used by optional Navigator/History responsive handoff;
 - toggling the navigator never remounts the canvas or its editor and never invokes a document command;
 - navigator selection/expansion remain independent of canvas context, actual focus region, editor owner, and canvas expansion;
 - Arrow/Home/End/Left/Right tree behavior, `Space` locate, `Enter` focus transfer, and stable-ID fallback;
@@ -634,13 +638,13 @@ Pending at the parity stages:
 
 1. **Implemented (WP-4 core):** establish and unit-test the UI-neutral policy, classifier, edit-group machine, bounded FIFO/retry behavior, and stable application contract; defer component-lifecycle integration.
 2. **Implemented (WP-6):** add and test the pure visible-node projection without changing reachable UI.
-3. **Implemented (WP-7 scaffold):** add the unreachable `DocumentCanvas`/`NodeBlock` scaffold beside the current workspace.
+3. **Implemented (WP-7 scaffold):** initially add the unreachable `DocumentCanvas`/`NodeBlock` scaffold beside the then-current workspace.
 4. **Implemented (WP-7 scaffold):** render sanitized read-only previews for every visible block with no editor, draft participant, or structural mutation surface.
 5. **Implemented (WP-4/WP-7 integration gate):** add one active-editor owner through the checkpoint coordinator. Focused tests prove body transfer drains first, never mounts two editors, and retains the old owner on failure.
-6. **Timer removal implemented:** add title/tag editing and insertion through the final `NodeBlock` boundary next, routing every action that could hide/remove the owner through the same drain contract.
-7. Add structural keyboard and pointer controls only after drain-before-unmount and failure-cancel tests pass.
-8. Reuse the canvas for historical mode.
-9. Remove the master/detail composition only after canvas parity is demonstrated; do not retain it as a runtime mode.
+6. **Implemented (WP-7):** add title/tag editing and insertion through the final `NodeBlock` boundary, routing controlled operations through the draft barrier.
+7. **Implemented (WP-7):** add structural keyboard/pointer controls, focus fallback, announcements, and drain-before-collapse/delete ordering with failure cancellation.
+8. **Implemented (WP-7):** reuse the canvas for historical mode with disclosure but no mutation/editor surface.
+9. **Implemented (WP-7):** remove the master/detail composition after parity; it is not retained as a runtime mode.
 10. Add WP-5 grouped History projection and exact checkpoint expansion over the stable group-ID contract.
 11. Add the optional navigation-only `NavigatorPanel`, independent tree projection/state, validated dock preference, transient compact-drawer state, and responsive shell composition.
 12. Complete accessibility/performance/browser testing for both canvas-only and navigator-open layouts.

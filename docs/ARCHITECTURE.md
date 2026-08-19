@@ -45,15 +45,15 @@ The current hardening program is intentionally divided so current claims remain 
 
 No pass-2 or pass-3 item should be inferred as implemented from a type, schema table, Tauri icon, or compatibility shim.
 
-### Proposed continuous-workspace iteration
+### Continuous-workspace iteration
 
-A separate [proposed change package](./proposals/README.md) specifies the next workspace direction without altering the current 4+1/as-built views below:
+The [continuous-workspace change package](./proposals/README.md) governs the current canvas implementation and its remaining staged work:
 
 - [continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md), using a flattened tree projection, one active Tiptap editor, and an optional navigation-only tree sidebar over the same live or historical projection;
 - [query-first historical views](./proposals/QUERY_FIRST_HISTORY.md), separating non-mutating snapshot materialization from compensating restore commands; and
 - [body checkpoint strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md), using an edit-batch state machine, shared semantic group IDs, and one injectable policy for `batchCharacterThreshold` and `idleTimeoutMs`.
 
-Most of these remain proposed decisions. WP-1 embodies the discriminated revision-query boundary and verified memory materialization. WP-2 adds a controller-owned `WorkspaceProjection`, retained live context, origin-aware revision request state, stale-response invalidation, Back semantics, and command/export guards. WP-3 connects standalone History **View** to a static sanitized historical detail path with a persistent banner, no-query Back, and separately confirmed restore. WP-4/WP-7 now connect semantic Tiptap/Yjs checkpoints to a tested single-owner canvas seam, while the `Outline`/selected-detail layout remains reachable until WP-7 structural parity. The navigator is an auxiliary view within the target workspace, not a second editor or selectable legacy layout.
+WP-1 through WP-4, WP-6, and WP-7 are implemented. The controller owns the live/historical projection, request guards, context/editor-owner separation, draft barriers, and semantic checkpoints. `App` now routes both modes through the continuous `DocumentCanvas`; master/detail components have been removed. Grouped History, the optional auxiliary navigator, native revision querying, and broader browser/accessibility qualification remain staged.
 
 ## 2. System context
 
@@ -100,11 +100,11 @@ top to bottom direction
 
 package "Presentation" {
   [App] as App
-  [Outline] as Outline
-  [NodeEditor] as NodeEditor
+  [DocumentCanvas] as Canvas
+  [NodeBlock] as NodeBlock
+  [NodeMetadataFields] as Metadata
   [RichTextEditor] as RichTextEditor
   [HistoryPanel] as HistoryPanel
-  [HistoricalNodeView] as HistoricalNodeView
   [HistoricalWorkspaceBanner] as HistoricalBanner
 }
 
@@ -144,18 +144,19 @@ package "Desktop adapters" {
   database "SQLite .coedit" as SQLite
 }
 
-App --> Outline
-App --> NodeEditor
-NodeEditor --> RichTextEditor
+App --> Canvas
+Canvas --> NodeBlock
+NodeBlock --> Metadata
+NodeBlock --> RichTextEditor : sole live owner
 App --> HistoryPanel
-App --> HistoricalNodeView
 App --> HistoricalBanner
 App --> Controller
 Controller --> Queue
 Controller --> Drafts
 Controller --> Workspace
 Drafts --> App : document-title participant
-Drafts --> NodeEditor : metadata + rich-text participant
+Drafts --> Metadata : per-block metadata participants
+Drafts --> RichTextEditor : sole body participant
 Controller --> Types
 Controller --> Gateway
 Controller --> DialogPort
@@ -166,7 +167,7 @@ Gateway --|> History
 Gateway o-- Storage : storage capability
 Storage <|-- VolatileStorage
 Storage <|-- NativeStorage
-Outline --> Tree
+Canvas --> Tree
 Memory ..|> Gateway
 Memory ..|> RevisionQueries
 RevisionCapability o-- RevisionQueries : available host
@@ -209,19 +210,19 @@ The Rust store is not imported into the TypeScript build. `TauriDocumentGateway`
 - A `DocumentOperation` is a discriminated mutation command.
 - A `Contribution` attributes one committed revision to a contributor and optional session/group/message, and records a resulting state hash.
 - A snapshot stores a complete `DocumentState` at a revision. Restoration materializes an old snapshot into a new revision rather than removing later history.
-- A `MaterializedRevision` is a detached, structurally validated snapshot whose stored hash was recomputed successfully. It is currently available only through the standalone revision-query capability and is not yet rendered by the UI.
+- A `MaterializedRevision` is a detached, structurally validated snapshot whose stored hash was recomputed successfully. It is currently available through the standalone revision-query capability and renders through the read-only `DocumentCanvas` path.
 - A `WorkspaceProjection` explicitly distinguishes live from historical display. Historical state retains the live `DocumentView` and selection, reports the live current revision separately, owns no editor, and can return through Back without a gateway call.
 
 ### Principle of operation
 
 1. The selected entry point constructs `App` with a host-specific `DocumentGateway`, an explicit revision-query capability, and, on desktop, a `DocumentFileDialogs` adapter.
 2. `App` delegates document use cases and state ownership to `useDocumentController`, then renders either the no-document welcome state or the displayed `DocumentView` derived from the controller's live/historical `WorkspaceProjection`.
-3. A user interaction becomes a typed `DocumentOperation`; the controller adds contributor, application-lifetime session, and message context plus any caller-supplied group identity. Before a controlled transition can change or externalize the workspace, `DraftTransitionCoordinator` synchronously freezes the registered document-title and node-editor participants, then awaits their metadata and rich-text drains.
+3. A user interaction becomes a typed `DocumentOperation`; the controller adds contributor, application-lifetime session, and message context plus any caller-supplied group identity. Before a controlled transition can change or externalize the workspace, `DraftTransitionCoordinator` synchronously freezes the registered document-title, block-metadata, and sole rich-text participants, then awaits their drains.
 4. In standalone mode, the memory adapter applies the pure TypeScript mutation, hashes it, and appends in-memory contribution/snapshot records. In desktop mode, the Tauri adapter invokes a Rust command and `DocumentStore` performs the equivalent validated SQLite transaction.
 5. `SerializedTaskQueue` executes document commands one at a time and continues after a rejected task. Workspace epochs, monotonically numbered history requests, and revision checks prevent late responses from replacing a newer workspace/view.
-6. The gateway returns a complete new view. The controller accepts it and re-renders the outline/editor. If History is open it refreshes the first 100-entry page under the active filters; otherwise it marks history stale and fetches when the panel is next opened. `ContributionPage.nextBeforeRevision` drives exclusive-cursor loading of older entries.
+6. The gateway returns a complete new view. The controller accepts it and reprojects the continuous canvas. If History is open it refreshes the first 100-entry page under the active filters; otherwise it marks history stale and fetches when the panel is next opened. `ContributionPage.nextBeforeRevision` drives exclusive-cursor loading of older entries.
 7. The node body is the special high-frequency path: a Tiptap dispatch extension observes each ProseMirror transaction before application and combines step facts with `beforeinput`/composition context. `BodyEditBatchCoordinator` owns semantic groups, thresholds, idle/focus boundaries, IME completion, synchronous centralized HTML sanitization plus incremental/complete Yjs capture, a two-checkpoint FIFO, visible backpressure/failure, and exact-object retry. Its registered `DraftParticipant` freezes and drains before controlled transitions; `NodeBlock` uses that same adapter for its sole live editor owner. The controller preserves the coordinator-supplied group ID.
-8. Restore loads a stored revision but writes it as a new current revision. An accepted create/open/restore advances `editorGeneration`; `App` includes that generation in `NodeEditor`'s React key so an authoritative state replacement constructs a fresh `Y.Doc` even when the selected node ID is unchanged.
+8. Restore loads a stored revision but writes it as a new current revision. An accepted create/open/restore advances `editorGeneration`; the owning `NodeBlock` includes that generation in `RichTextEditor`'s React key so an authoritative state replacement constructs a fresh `Y.Doc` even when the owner ID is unchanged.
 9. Export is host-specific: the browser produces safe-named downloads, including a versioned state-plus-complete-runtime-ledger recovery envelope; desktop output remains the Rust/Tauri responsibility.
 
 This is a request/complete-view-response architecture. There is no runtime state stream, remote synchronization loop, or server-side session.
@@ -309,7 +310,7 @@ Docs ..> Rust
 |---|---|---|
 | `src/App.tsx` | Presentation composition, welcome/profile UI, and user-event translation | [Frontend design](./FRONTEND_DESIGN.md) |
 | `src/application/` | `WorkspaceProjection`, `useDocumentController`, serialized command queue, history/revision request guards, and draft-transition coordination | [Frontend design](./FRONTEND_DESIGN.md) |
-| `src/components/` | Outline, metadata editor, history presentation | [UI and UX](./UI_UX.md) |
+| `src/components/` | Continuous canvas/blocks, inline metadata, history presentation | [UI and UX](./UI_UX.md) |
 | `src/editor/` | Tiptap/Yjs lifecycle and encoding | [Frontend design](./FRONTEND_DESIGN.md) |
 | `src/domain/` | Shared TypeScript data contracts, pure tree rules, browser hashing/IDs | [Frontend design](./FRONTEND_DESIGN.md) |
 | `src/persistence/` | Gateway/dialog ports and browser/Tauri adapters | [Persistence design](./PERSISTENCE_DESIGN.md) |
@@ -422,7 +423,7 @@ Proposed decisions PW-01 through PW-25 are recorded separately in the [continuou
 | Recoverability | Every-revision snapshots, compensating restore, backup, recovery warning, controlled-action draft drains, authoritative editor remount | Page/process exit remains unawaitable; no JSON importer or controller/editor end-to-end suite |
 | Portability | Browser UI, host ports, bundled SQLite, portable document | Native macOS/Linux/iPadOS release paths are unverified/incomplete |
 | Modifiability | Discriminated operations, capability-oriented gateway ports, and an application controller | Mirrored Rust behavior can drift until second-pass conformance work is complete |
-| Usability | Outline/editor/history layout, keyboard navigation, visible status | Touch and accessibility coverage are partial |
+| Usability | Continuous canvas/history layout, structural keyboard navigation, visible status | Touch and accessibility coverage are partial |
 | Performance | Incremental Yjs grouping, cursor-paged history, indexed sibling lookup, single connection | Complete view replacement and full snapshot per revision do not scale indefinitely; Rust history still pre-windows 100,000 rows |
 | Testability | Pure tree functions, in-memory gateway, queue/draft/controller tests, and versioned hash/sanitizer fixtures | Full editor UI, Rust fixture parity, IPC, migration, failure, and multi-platform tests are sparse |
 

@@ -261,7 +261,7 @@ OpenState .. UC10
 **Main success scenario:**
 
 1. The author creates a root or child node, or selects an existing active node.
-2. `Outline` emits the requested identifier, parent, and sibling index.
+2. `DocumentCanvas` maps block title/actions/handle input to the requested identifier, parent, and sibling index.
 3. `App` asks `useDocumentController` to apply a typed `DocumentOperation` and message.
 4. The controller synchronously freezes and drains registered document-title, pending tag-input, node-metadata, and rich-text drafts, creates contribution context, and serializes the gateway call.
 5. The active gateway checks identity and tree constraints, applies the operation, normalizes active sibling positions, advances the revision, and records the contribution/snapshot.
@@ -269,16 +269,17 @@ OpenState .. UC10
 
 **Alternate and exception flows:**
 
-- Arrow up/down selects the previous/next visible row; arrow right expands; arrow left collapses or selects the parent.
-- Dragging a node onto another node reparents it as that node's last child. Up/down controls reorder siblings.
+- Arrow up/down moves handle/disclosure focus through visible blocks; disclosure right expands/enters children and left collapses/returns to the parent.
+- Dragging a block onto another reparents it as that block's last child. Named actions and `Alt+Shift+Arrow*` reorder, indent, and outdent without drag.
+- Collapsing an ancestor that owns the editor drains/releases it first; failure cancels collapse.
 - Moving a node into itself or one of its descendants is rejected.
 - Deletion asks for confirmation, then timestamps the complete subtree rather than removing rows.
 - `restoreNode` exists in both operation models, but the current UI exposes restoration only through whole-revision restore.
-- Read-only or busy outline controls are disabled.
+- Historical mode exposes only local disclosure; transition-locked live controls are disabled without unmounting the editor owner.
 
 **Postconditions:** The active hierarchy remains acyclic, every non-root parent exists, active sibling positions are normalized, and stable node IDs are retained.
 
-**Realization:** `src/components/Outline.tsx`, `src/App.tsx`, `src/domain/tree.ts`, both gateway adapters, `src-tauri/src/models.rs`, and `DocumentStore::apply_sql`.
+**Realization:** `src/components/DocumentCanvas.tsx`, `src/components/NodeBlock.tsx`, `src/App.tsx`, `src/domain/visibleNodes.ts`, `src/domain/tree.ts`, both gateway adapters, `src-tauri/src/models.rs`, and `DocumentStore::apply_sql`.
 
 ### UC-04 - Edit node metadata
 
@@ -294,10 +295,10 @@ OpenState .. UC10
 
 **Main success scenario:**
 
-1. `NodeEditor` keeps title and tag drafts plus a dirty-field set in component state/refs.
+1. Each live `NodeMetadataFields` keeps title and tag drafts plus a dirty-field set in component state/refs.
 2. `TagEditor` filters document-local suggestions, creates arbitrary normalized tags, and removes tag chips; blur/Enter/selection drains the tag array.
-3. `NodeEditor` composes its metadata drain with nested tag and rich-text participants and registers one participant with the controller.
-4. A controlled transition freezes the participant synchronously, drains pending tag input, metadata, then the rich-text body, and creates queued `updateNode`/`updateBody` operations as needed.
+3. The metadata component composes pending tag input into its stable-ID participant; the sole body editor registers a separate stable-ID participant.
+4. A controlled transition freezes all participants synchronously, drains pending tag input, metadata, then the rich-text body, and creates queued `updateNode`/`updateBody` operations as needed.
 5. Each serialized gateway command applies the update and records a new revision; successfully persisted fields are removed from the dirty set, while failed ones remain retryable.
 
 **Alternate and exception flows:**
@@ -310,7 +311,7 @@ OpenState .. UC10
 
 **Postconditions:** Updated metadata and attribution are visible in the current view and history.
 
-**Realization:** `src/components/NodeEditor.tsx`, `useDocumentController.applyOperation`, `src/domain/tree.ts`, and `DocumentStore::apply_sql`.
+**Realization:** `src/components/NodeMetadataFields.tsx`, `src/components/TagEditor.tsx`, `useDocumentController`, `src/domain/tree.ts`, and `DocumentStore::apply_sql`.
 
 ### UC-05 - Edit node body
 
@@ -340,11 +341,11 @@ OpenState .. UC10
 - A capture/persistence failure freezes body changes, retains exact pending/FIFO work, and exposes **Retry save**; controller failures also appear in the global error banner.
 - Controlled node changes, canvas editor transfer, operations, restore, export, backup, and Close synchronously freeze and await registered participants. A rejected commit retains its dirty metadata/checkpoint work and cancels the controlled action.
 - Browser tab close/reload or process termination cannot await React cleanup; standalone state is volatile regardless.
-- An authoritative create/open/restore increments `editorGeneration`; `App` keys `NodeEditor` by node ID plus generation, so a whole-revision restore recreates the selected node's `Y.Doc` even when its ID is unchanged.
+- An authoritative create/open/restore increments `editorGeneration`; the owning `NodeBlock` keys `RichTextEditor` by node ID plus generation, so a whole-revision restore recreates its `Y.Doc` even when the ID is unchanged.
 
 **Postconditions:** After a successful commit, the node stores sanitized HTML and full Yjs state, and history contains the operation payload including its incremental Yjs update.
 
-**Realization:** `src/editor/RichTextEditor.tsx`, `src/editor/yjsEncoding.ts`, `src/components/NodeEditor.tsx`, `src/App.tsx`, and the `UpdateBody` branches in both persistence implementations.
+**Realization:** `src/editor/RichTextEditor.tsx`, `src/editor/yjsEncoding.ts`, `src/components/NodeBlock.tsx`, `src/App.tsx`, and the `UpdateBody` branches in both persistence implementations.
 
 ### UC-06 - Inspect contribution history
 
@@ -397,7 +398,7 @@ OpenState .. UC10
 3. It preserves the current contributor set and assigns current revision plus one.
 4. Desktop mode replaces materialized nodes and title inside a transaction.
 5. The adapter computes the restored-state hash and appends a `restoreRevision` contribution and snapshot.
-6. The controller accepts the returned view under epoch/revision guards as an authoritative reset, increments `editorGeneration`, remounts `NodeEditor`/`RichTextEditor`, and reloads the first history page when History remains open.
+6. The controller accepts the returned view under epoch/revision guards as an authoritative reset, increments `editorGeneration`, remounts the owning `RichTextEditor` when a valid visible owner remains, and reloads the first history page when History remains open.
 
 **Alternate and exception flows:**
 
@@ -535,11 +536,11 @@ OpenState .. UC10
 
 ## Proposed next-iteration use cases
 
-The following use cases are specified together in the [continuous-workspace change package](./proposals/README.md). UC-13 is reachable end to end in standalone mode through the current selected-detail workspace (WP-1 through WP-3); its continuous-canvas and native-host realizations remain partial. UC-12 now has WP-6, the WP-7 scaffold, and a tested single-editor transfer gate. UC-14 has its WP-4 core plus concrete Tiptap/Yjs adapter; both still await reachable structural-canvas completion and browser qualification.
+The following use cases are specified together in the [continuous-workspace change package](./proposals/README.md). UC-12 is implemented through WP-7 and UC-13 is reachable end to end through the shared historical canvas in standalone mode; both still need broader browser/accessibility qualification, while UC-13 also awaits native query parity. UC-14 has its WP-4 core, concrete Tiptap/Yjs adapter, and WP-7 structural integration; grouped History remains WP-5.
 
 ### UC-12 - Edit through a continuous block outline
 
-**Status:** Partial. WP-6 implements the validated flattened visible-node projection. WP-7 implements unreachable `DocumentCanvas`/`NodeBlock` rendering with sanitized previews, and the integration gate supplies exactly one live editor owner with checkpointed transfer/failure retention. Reachable composition, metadata/structural controls, historical-controller reuse, full focus-region state, and the optional navigator are not implemented.
+**Status:** Implemented through WP-7. The validated visible-node projection feeds the reachable live/historical `DocumentCanvas`; inline metadata, insertion, structural keyboard/pointer controls, focus fallback, announcements, and exactly one checkpointed editor owner are present. The broader responsive `focusRegion` shell, optional navigator, and browser/accessibility/performance qualification remain.
 
 **Primary actor:** Author.
 
@@ -571,7 +572,7 @@ The following use cases are specified together in the [continuous-workspace chan
 
 ### UC-13 - View a materialized historical revision
 
-**Status:** Partial. WP-1 through WP-3 implement the complete standalone flow in the current selected-detail workspace. The WP-7 canvas can render static historical identity but is not connected to the controller; reachable continuous-canvas reuse and Tauri/native materialization remain proposed.
+**Status:** Partial by host. WP-1 through WP-3 plus WP-7 implement the complete standalone flow through the shared read-only canvas. Tauri/native materialization remains proposed.
 
 **Primary actor:** Author or custodian.
 
@@ -626,7 +627,7 @@ The following use cases are specified together in the [continuous-workspace chan
 |---|---|---|
 | US-01 | As an author, I can create a titled document and begin without an account. | UC-01 succeeds in either composition root. |
 | US-02 | As an author, I can arrange stable ideas into an ordered hierarchy. | Create, move, reparent, expand/collapse, and cycle rejection work. |
-| US-03 | As an author, I can add, reuse, and remove multiple freeform tags on a node. | `TagEditor` derives active-document suggestions and `NodeEditor` persists the normalized tag array through `updateNode`. |
+| US-03 | As an author, I can add, reuse, and remove multiple freeform tags on a node. | `TagEditor` derives active-document suggestions and `NodeMetadataFields` persists the normalized tag array through `updateNode`. |
 | US-04 | As an author, I can develop formatted prose for each node. | Tiptap/Yjs editor commits sanitized content. |
 | US-05 | As an author, I can identify recent changes by revision and contributor. | History presents contribution metadata and hash prefix. |
 | US-06 | As an author, I can make a stored revision current without deleting later history. | Restore appends a new `restoreRevision` contribution. |
@@ -828,10 +829,10 @@ The prioritized verification work is in [Testing strategy](./TESTING.md). Owners
 | Group ID | Optional contribution field; the body coordinator owns one stable ID across an edit episode's threshold checkpoints. |
 | Body checkpoint | A physical attributed `updateBody` revision captured at a recovery or semantic boundary. History currently renders each as a row. |
 | Edit group (partial) | One human-meaningful body-edit episode. Multiple threshold checkpoints share its `groupId`; collapsed History presentation remains WP-5. |
-| Historical projection (partial) | Detached materialized state for a selected revision without replacing live state. WP-2 implements the controller projection; WP-3 makes it user-visible in standalone mode through a sanitized static selected-detail path. Continuous-canvas and native-host reuse remain. |
+| Historical projection (partial) | Detached materialized state for a selected revision without replacing live state. WP-2 implements the controller projection; WP-7 renders it in the shared read-only canvas. Native-host query parity remains. |
 | Materialized state | Current document and node rows, as opposed to the historical ledger/snapshots. |
 | Navigator (proposed) | Optional navigation-only tree over the active workspace projection. It may locate/reveal a block but is not an editor, structural command surface, or alternate workspace mode. |
-| Visible-node projection (partial) | Implemented pure flattened pre-order list of active, expansion-visible nodes plus depth/layout metadata; WP-7 renders it in the unreachable canvas, and it does not replace the persisted tree. |
+| Visible-node projection | Pure flattened pre-order list of active, expansion-visible nodes plus depth/layout metadata; WP-7 renders it in the reachable canvas, and it does not replace the persisted tree. |
 | Operation | Typed request that mutates document materialized state, such as `moveNode` or `updateBody`. |
 | Port | Interface that separates shared UI policy from a host capability, notably `DocumentGateway` and `DocumentFileDialogs`. |
 | Revision | Monotonically increasing document-state number, beginning at `0` for creation. |

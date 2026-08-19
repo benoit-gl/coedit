@@ -137,3 +137,28 @@ export function selectWorkspaceNode(workspace: WorkspaceProjection, nodeId: stri
     displayed: { ...workspace.displayed, selectedNodeId: nodeId },
   };
 }
+
+/** Updates canvas/navigation context without claiming live editor ownership. */
+export function contextWorkspaceNode(
+  workspace: WorkspaceProjection,
+  nodeId: string,
+): WorkspaceProjection {
+  return workspace.kind === "live"
+    ? { ...workspace, displayed: { ...workspace.displayed, selectedNodeId: nodeId } }
+    : { ...workspace, displayed: { ...workspace.displayed, selectedNodeId: nodeId } };
+}
+
+/** Releases the live editor after its registered participant has drained. */
+export function releaseWorkspaceEditor(
+  workspace: WorkspaceProjection & { kind: "live" },
+  preferredContextNodeId: string | null = workspace.displayed.selectedNodeId,
+): WorkspaceProjection & { kind: "live" } {
+  return {
+    ...workspace,
+    displayed: {
+      ...workspace.displayed,
+      selectedNodeId: selectedNodeForState(workspace.displayed.view, preferredContextNodeId),
+    },
+    editorOwnerNodeId: null,
+  };
+}

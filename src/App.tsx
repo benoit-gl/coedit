@@ -5,12 +5,9 @@ import {
   type RegisterDraftParticipant,
 } from "./application/useDocumentController";
 import { loadLocalContributor, LOCAL_CONTRIBUTOR_KEY } from "./application/localContributor";
+import { DocumentCanvas } from "./components/DocumentCanvas";
 import { HistoryPanel } from "./components/HistoryPanel";
-import { HistoricalNodeView } from "./components/HistoricalNodeView";
 import { HistoricalWorkspaceBanner } from "./components/HistoricalWorkspaceBanner";
-import { NodeEditor } from "./components/NodeEditor";
-import { Outline } from "./components/Outline";
-import { newId } from "./domain/ids";
 import { collectActiveTags } from "./domain/tags";
 import type { DocumentFileDialogs } from "./persistence/fileDialogs";
 import type { DocumentGateway, RevisionQueryCapability } from "./persistence/gateway";
@@ -106,13 +103,18 @@ interface AppProps {
 export function App({ documentGateway, revisionQueryCapability, fileDialogs }: AppProps) {
   const [newTitle, setNewTitle] = useState("Untitled document");
   const [profile, setProfile] = useState(loadLocalContributor);
+  const [liveExpandedNodeIds, setLiveExpandedNodeIds] = useState<ReadonlySet<string>>(() => new Set());
+  const [historicalExpandedNodeIds, setHistoricalExpandedNodeIds] = useState<ReadonlySet<string>>(() => new Set());
+  const liveExpansionDocument = useRef<string | null>(null);
+  const knownLiveNodeIds = useRef<Set<string>>(new Set());
+  const historicalExpansionKey = useRef<string | null>(null);
   const controller = useDocumentController({
     documentGateway,
     revisionQueryCapability,
     fileDialogs,
     profile,
   });
-  const { view, selectedNode } = controller;
+  const { view } = controller;
   const historicalProjection = controller.workspaceProjection?.kind === "historical"
     ? controller.workspaceProjection
     : null;
@@ -123,6 +125,40 @@ export function App({ documentGateway, revisionQueryCapability, fileDialogs }: A
   const tagSuggestions = useMemo(() => collectActiveTags(view?.nodes ?? []), [view?.nodes]);
 
   useEffect(() => {
+    if (!view) {
+      liveExpansionDocument.current = null;
+      knownLiveNodeIds.current = new Set();
+      historicalExpansionKey.current = null;
+      setLiveExpandedNodeIds(new Set());
+      setHistoricalExpandedNodeIds(new Set());
+      return;
+    }
+    const activeIds = new Set(view.nodes.filter((node) => node.deletedAt === null).map((node) => node.id));
+    if (historicalProjection) {
+      const key = `${view.document.id}:${view.document.revision}`;
+      if (historicalExpansionKey.current !== key) {
+        historicalExpansionKey.current = key;
+        setHistoricalExpandedNodeIds(activeIds);
+      } else {
+        setHistoricalExpandedNodeIds((current) => new Set([...current].filter((id) => activeIds.has(id))));
+      }
+      return;
+    }
+    if (liveExpansionDocument.current !== view.document.id) {
+      liveExpansionDocument.current = view.document.id;
+      knownLiveNodeIds.current = activeIds;
+      setLiveExpandedNodeIds(activeIds);
+      return;
+    }
+    setLiveExpandedNodeIds((current) => {
+      const next = new Set([...current].filter((id) => activeIds.has(id)));
+      for (const id of activeIds) if (!knownLiveNodeIds.current.has(id)) next.add(id);
+      return next;
+    });
+    knownLiveNodeIds.current = activeIds;
+  }, [historicalProjection, view]);
+
+  useEffect(() => {
     try {
       localStorage.setItem(LOCAL_CONTRIBUTOR_KEY, JSON.stringify(profile));
     } catch {
@@ -130,20 +166,10 @@ export function App({ documentGateway, revisionQueryCapability, fileDialogs }: A
     }
   }, [profile]);
 
-  const addNode = async (parentId: string | null) => {
-    const id = newId();
-    const added = await controller.applyOperation(
-      { type: "createNode", node: { id, parentId, title: "New idea" } },
-      parentId ? "Added sub-idea" : "Added root idea",
-    );
-    if (added) await controller.selectNode(id);
-  };
-
-  const deleteNode = (nodeId: string) => {
+  const deleteNode = async (nodeId: string): Promise<boolean> => {
     const node = view?.nodes.find((item) => item.id === nodeId);
-    if (node && window.confirm(`Move “${node.title}” and its sub-ideas to the document history?`)) {
-      void controller.applyOperation({ type: "softDeleteNode", nodeId }, `Deleted ${node.title}`);
-    }
+    if (!node || !window.confirm(`Move “${node.title}” and its sub-ideas to the document history?`)) return false;
+    return controller.applyOperation({ type: "softDeleteNode", nodeId }, `Deleted ${node.title}`);
   };
 
   const restoreRevision = (revision: number) => {
@@ -240,39 +266,44 @@ export function App({ documentGateway, revisionQueryCapability, fileDialogs }: A
       {view.recoveryWarning && <div className="warning-banner">{view.recoveryWarning}</div>}
       {controller.error && <div className="error-banner global">{controller.error}<button onClick={controller.clearError}>×</button></div>}
       <div className={`workspace ${controller.historyOpen ? "with-history" : ""}`}>
-        <Outline
-          nodes={view.nodes}
-          selectedId={controller.selectedId}
-          readOnly={controlsLocked}
-          onSelect={(nodeId) => void controller.selectNode(nodeId)}
-          onAdd={(parentId) => void addNode(parentId)}
-          onMove={(nodeId, parentId, index) => void controller.applyOperation({ type: "moveNode", nodeId, parentId, index }, "Moved idea")}
-          onDelete={deleteNode}
-        />
-        <main className="editor-pane">
-          {historicalProjection && selectedNode ? (
-            <HistoricalNodeView node={selectedNode} />
-          ) : selectedNode ? (
-            <NodeEditor
-              key={`${selectedNode.id}:${controller.editorGeneration}`}
-              node={selectedNode}
-              tagSuggestions={tagSuggestions}
-              readOnly={controlsLocked}
-              registerDraftParticipant={controller.registerDraftParticipant}
-              onMetadataChange={(changes) => controller.commitNodeMetadata(selectedNode.id, changes)}
-              onBodyChange={controller.commitBody}
+        <main className="canvas-pane">
+          {historicalProjection || view.readOnly ? (
+            <DocumentCanvas
+              nodes={view.nodes}
+              expandedNodeIds={historicalProjection ? historicalExpandedNodeIds : liveExpandedNodeIds}
+              workspaceKind={historicalProjection ? "historical" : "live"}
+              contextNodeId={controller.selectedId}
+              readOnly
+              onExpandedNodeIdsChange={historicalProjection ? setHistoricalExpandedNodeIds : setLiveExpandedNodeIds}
+              onSetContextNode={controller.setCanvasContextNode}
             />
-          ) : historicalProjection ? (
-            <div className="empty-editor historical-empty-state">
-              <h2>No ideas at this revision</h2>
-              <p>Select another revision or return to the current document.</p>
-            </div>
           ) : (
-            <div className="empty-editor">
-              <h2>Start with an idea</h2>
-              <p>Add a root idea in the outline, then refine it here.</p>
-              <button className="primary" disabled={controlsLocked} onClick={() => void addNode(null)}>Create the first idea</button>
-            </div>
+            <DocumentCanvas
+              nodes={view.nodes}
+              expandedNodeIds={liveExpandedNodeIds}
+              workspaceKind="live"
+              contextNodeId={controller.selectedId}
+              readOnly={false}
+              disabled={controlsLocked}
+              editorOwnerNodeId={controller.workspaceProjection?.kind === "live"
+                ? controller.workspaceProjection.editorOwnerNodeId
+                : null}
+              editorGeneration={controller.editorGeneration}
+              tagSuggestions={tagSuggestions}
+              onExpandedNodeIdsChange={setLiveExpandedNodeIds}
+              onSetContextNode={controller.setCanvasContextNode}
+              onRequestEditorOwner={controller.selectNode}
+              onReleaseEditorOwner={controller.releaseEditorOwner}
+              onCommitMetadata={controller.commitNodeMetadata}
+              onCommitBody={controller.commitBody}
+              onCreateNode={controller.createCanvasNode}
+              onMoveNode={(nodeId, parentId, index) => controller.applyOperation(
+                { type: "moveNode", nodeId, parentId, index },
+                "Moved idea",
+              )}
+              onDeleteNode={deleteNode}
+              registerDraftParticipant={controller.registerDraftParticipant}
+            />
           )}
         </main>
         {controller.historyOpen && (

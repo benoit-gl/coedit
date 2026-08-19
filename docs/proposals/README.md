@@ -2,7 +2,7 @@
 
 **Product decision:** Approved design direction.
 
-**Implementation status:** Partial. WP-1 through WP-3 implement the standalone revision query, explicit controller workspace mode/command guard, and user-facing read-only historical path. WP-4 now includes its policy/coordinator contract plus concrete Tiptap/ProseMirror/Yjs capture adapter, and the WP-6/WP-7 component seam now supports a tested single active editor with drain-before-transfer failure cancellation. The canvas remains unreachable until WP-7 editable/structural parity; grouped History, the navigator, browser qualification, and native query parity remain staged.
+**Implementation status:** Partial. WP-1 through WP-4, WP-6, and WP-7 are implemented: standalone revision queries, explicit workspace modes, semantic checkpointing, the visible-node projection, and the reachable live/historical continuous canvas. WP-7 includes inline metadata/insertion, structural pointer and keyboard controls, one-editor ownership, drain-before-hide failure cancellation, focus fallback, and retirement of master/detail. Grouped History (WP-5), the optional navigator, browser/accessibility qualification, and native query parity remain staged.
 
 **Purpose:** Preserve an implementation-ready design for three related UX and architecture changes so work can resume later without reconstructing product decisions from conversation history.
 
@@ -12,9 +12,9 @@ This package proposes:
 2. making historical inspection a non-mutating query, with restoration retained as a separate explicit command; and
 3. replacing the fixed 1.2-second rich-text quiet-period rule with configurable, event-aware checkpoints and semantic edit groups.
 
-The current implementation and the root engineering documents remain authoritative until this package is implemented. In particular:
+The current implementation and root engineering documents remain authoritative. In particular:
 
-- [`App`](../../src/App.tsx) still renders `Outline` beside one selected `NodeEditor`;
+- [`App`](../../src/App.tsx) renders `DocumentCanvas` as the sole live/historical document surface;
 - [`HistoryPanel`](../../src/components/HistoryPanel.tsx) offers View-first read-only revision inspection in standalone mode, while host-deferred Tauri retains row-level restoration; and
 - [`RichTextEditor`](../../src/editor/RichTextEditor.tsx) classifies pre-application Tiptap transactions and checkpoints through the bounded semantic coordinator; the fixed 1.2-second compatibility timer has been removed.
 
@@ -22,7 +22,7 @@ WP-1 is intentionally UI-neutral: [`gateway.ts`](../../src/persistence/gateway.t
 
 WP-2 remains presentation-neutral: [`workspaceProjection.ts`](../../src/application/workspaceProjection.ts) owns the live/historical union, retained-live wrapper, loading origin, and command-guard error; [`useDocumentController`](../../src/application/useDocumentController.ts) drains before querying, rejects stale responses, restores exact origins on failure/Back, guards live commands and exports, and exits historical mode only through Back, Close, or a successful compensating restore.
 
-WP-3 connects that boundary to the current workspace: capable-host History rows make **View** primary and identify current/loading/viewed revisions; [`HistoricalNodeView`](../../src/components/HistoricalNodeView.tsx) renders sanitized static content without live editor machinery; and [`HistoricalWorkspaceBanner`](../../src/components/HistoricalWorkspaceBanner.tsx) persistently exposes **Back to current** plus separately confirmed **Restore as new revision**. The WP-7 `DocumentCanvas` now has the single-editor safety seam needed for later live composition, while the reachable application remains on the transitional master/detail presentation until structural parity.
+WP-3 first connected that boundary to a static historical path. WP-7 now routes the displayed live or historical projection through [`DocumentCanvas`](../../src/components/DocumentCanvas.tsx): historical blocks retain disclosure but expose no metadata/body/structural mutation surface, while [`HistoricalWorkspaceBanner`](../../src/components/HistoricalWorkspaceBanner.tsx) persistently exposes **Back to current** plus separately confirmed **Restore as new revision**.
 
 ## Documents in this package
 
@@ -173,15 +173,15 @@ stop
 @enduml
 ```
 
-WP-1 through WP-3 can ship independently and provide immediate safe historical viewing. WP-4 and WP-7 are intentionally interleaved: the UI-neutral WP-4 core and its stable application contract landed first, WP-6 supplied the canvas ordering contract, the WP-7 scaffold established the final block boundary, and the WP-4/WP-7 integration now supplies one-editor ownership plus checkpoint capture/drain/failure cancellation. WP-7 completion may now add editable metadata and structural behavior, but every action that can hide/remove the owner must use the same barrier. WP-5 follows canvas parity: checkpoint persistence already supplies stable group IDs, while the grouped History projection can be added without affecting editor safety. WP-7A follows the canvas/projection boundary and grouped History shell work: it must reuse controller intents and must not preserve the retired `Outline`/`NodeEditor` composition as another mode.
+WP-1 through WP-3 supplied safe historical viewing. WP-4 and WP-7 were intentionally interleaved: the UI-neutral WP-4 core landed first, WP-6 supplied canvas ordering, the WP-7 scaffold established the final block boundary, and integration supplied one-editor checkpoint capture/drain/failure cancellation. WP-7 completion now adds editable metadata, structure, shared historical rendering, and the reachable cutover. WP-5 follows this parity: checkpoint persistence already supplies stable group IDs, while grouped History can be added without affecting editor safety. WP-7A must reuse controller intents and cannot preserve the retired master/detail components as another mode.
 
-**Current delivery position:** WP-1 through WP-3, WP-4 core plus editor integration, WP-6, the WP-7 scaffold, and the WP-4/WP-7 active-editor safety gate are implemented. Next is WP-7 editable/structural parity and retirement of master/detail. Native materialization remains part of WP-10.
+**Current delivery position:** WP-1 through WP-4, WP-6, and WP-7 are implemented. Next is WP-5 grouped History. Native materialization remains part of WP-10.
 
 The first delivery milestone is standalone: memory-backed revision queries, checkpoint coordination/grouping, the continuous canvas, and its optional navigator pass their automated and double-click artifact checks. During that milestone the Tauri composition must continue to type-check/build at its frontend boundary, but it may omit the new query capability and retain documented stale behavior. WP-10 closes that intentional gap; adapters must not use throwing capability stubs merely to appear complete.
 
 ## Proposed source ownership
 
-Names below define target ownership. WP-1 through WP-3 introduced the gateway, workspace-projection, History action, and transitional historical-renderer entries. WP-4 added the application checkpoint request, policy, classifier, coordinator, and concrete editor adapter; WP-6 added the pure visible-node projection; and WP-7 plus its integration gate added the static canvas/block sources and one-editor lifecycle. Later work packages will add or refine the remaining sources.
+Names below define target ownership. WP-1 through WP-7 introduced the query/workspace/checkpoint/projection boundaries and completed the continuous canvas. Later work packages add grouped History, the optional shell/navigator, and native parity.
 
 | Proposed source | Responsibility |
 |---|---|
@@ -190,11 +190,11 @@ Names below define target ownership. WP-1 through WP-3 introduced the gateway, w
 | `src/domain/visibleNodes.ts` | Implemented pure active/collapsed pre-order projection with depth, child/expansion state, stable visible adjacency, and immutable results |
 | `src/domain/navigatorTree.ts` | Pure active-node hierarchy projection using navigator-specific expansion state; no commands or document mutation |
 | `src/application/workspacePreferences.ts` | Versioned validation and best-effort browser storage for `navigatorDockPreferredOpen` only |
-| `src/components/DocumentCanvas.tsx` | Implemented unreachable live/static surface: memoized visible projection, ordered semantics, at-most-one delegated editor owner, live/historical identity, empty state, and fail-closed invalid-tree state |
+| `src/components/DocumentCanvas.tsx` | Reachable live/historical surface: memoized visible projection, controlled expansion/context/focus fallback, insertion and structural intent, announcements, drag/drop, one delegated editor owner, empty state, and fail-closed invalid-tree state |
 | `src/components/WorkspaceShell.tsx` | Responsive composition of the sole canvas and Navigator/History docks or mutually exclusive compact auxiliary dialog; Navigator dock preference, transient History dock request, toggles, deterministic breakpoint transition, focus/checkpoint handoff/return |
 | `src/components/NavigatorPanel.tsx` | Navigation-only ARIA tree, selection/reveal/focus intents, live/historical labels; never mounts an editor |
-| `src/components/NodeBlock.tsx` | Implemented depth/disclosure/title/tag/body-preview boundary plus single live `RichTextEditor` ownership and registered checkpoint participant; metadata, gutter commands, and insertion remain gated |
-| `src/components/HistoricalNodeView.tsx` | Implemented transitional static historical detail; sanitized content and no live editor/draft machinery until `DocumentCanvas` replaces it |
+| `src/components/NodeBlock.tsx` | Depth/disclosure/metadata/body-preview boundary, named structural controls and shortcuts, drag handle, and single live `RichTextEditor` ownership |
+| `src/components/NodeMetadataFields.tsx` | Per-block title/tag drafts, transition participation, normalization acknowledgement, and title-driven insertion |
 | `src/components/HistoricalWorkspaceBanner.tsx` | Implemented viewed/current revision identity, announcement, Back, and confirmed restore actions |
 | `src/application/bodyCheckpoint.ts` | Implemented application-facing body checkpoint commit request; the producer supplies stable edit-group identity |
 | `src/editor/bodyCheckpointPolicy.ts` | Implemented exported default `batchCharacterThreshold` and `idleTimeoutMs`; validation and injectable type |
@@ -214,23 +214,23 @@ These names may be adjusted during implementation, but responsibilities and depe
 - query capability and verified memory adapter for the standalone milestone (**implemented in WP-1**); native adapter parity remains in WP-10 (capability is explicitly unavailable, not throwing, until then);
 - verified snapshot materialization, historical workspace discriminant, origin-retaining loading state, and controller command guards (**implemented in WP-1/WP-2**);
 - History **View** action (**implemented in WP-3**);
-- static sanitized historical rendering, read-only banner, **Back to current**, and explicit **Restore as new revision** (**implemented in WP-3**; historical canvas reachability remains part of WP-7 completion);
+- static sanitized historical rendering, read-only banner, **Back to current**, and explicit **Restore as new revision** (**implemented in WP-3 and moved onto the shared canvas in WP-7**);
 - query/controller/component/full-App integration tests (**implemented for standalone WP-1 through WP-3**).
 
 ### Slice B — semantic checkpoints
 
 - **WP-4 core, before canvas scaffolding (implemented):** configurable policy, transaction classifier, edit-batch state machine, asynchronous serialized FIFO/backpressure, stable group-ID/application contract, and deterministic unit tests;
-- **WP-4 integration, after the read-only canvas scaffold (implemented):** synchronous Yjs/HTML capture and the `DraftParticipant` adapter are connected directly to the final one-active-editor `NodeBlock` lifecycle; the reachable compatibility editor uses the same coordinator rather than a second timer path;
-- controlled controller transitions already drain registered participants; focused canvas tests prove owner transfer waits and cancels on failure. WP-7 completion must route collapse, delete, create, move, and other new owner-removing controls through that same contract;
+- **WP-4 integration, after the read-only canvas scaffold (implemented):** synchronous Yjs/HTML capture and the `DraftParticipant` adapter connect directly to the final one-active-editor `NodeBlock` lifecycle;
+- controlled transitions drain registered participants; focused controller/canvas tests prove owner transfer/release and owner-hiding collapse wait and cancel on failure, while delete/create/move use the same operation barrier;
 - **WP-5, after canvas parity:** page-aware grouped History projection and exact group query consume the stable checkpoint group IDs without driving editor lifecycle.
 
 ### Slice C — continuous outline
 
 - **WP-6, after the WP-4 core contract (implemented):** validated, deterministic, iterative visible-node projection;
-- **WP-7 scaffold, before WP-4 UI integration (implemented):** unreachable canvas/block components and sanitized read-only previews, kept beside the current workspace until parity;
-- **WP-4/WP-7 integration gate (implemented at the component/ownership seam):** the live canvas takes an explicit editor owner and mounts exactly one registered coordinator-backed editor; transfer drains first and failure retains the old owner/control. Full canvas-context/focus-region shell state arrives with reachable WP-7 composition;
-- inline insertion and structural keyboard commands are now eligible for WP-7 completion, but each owner-hiding path still requires focused barrier coverage;
-- live/historical reuse, accessibility, browser, and performance qualification;
+- **WP-7 scaffold, before WP-4 UI integration (implemented):** canvas/block components and sanitized read-only previews were kept unreachable until parity;
+- **WP-4/WP-7 integration gate (implemented):** the live canvas takes an explicit editor owner and mounts exactly one registered coordinator-backed editor; transfer/release drain first and failure retains the old owner/control;
+- **WP-7 completion (implemented):** inline metadata/insertion, structural pointer/keyboard commands, context/focus fallback, historical reuse, and retirement of master/detail;
+- accessibility, browser, touch, and performance qualification remains;
 - optional navigation-only hierarchy with independent selection/expansion, docked/drawer layouts, and no loss of canvas capability when closed.
 
 ## Explicit non-goals

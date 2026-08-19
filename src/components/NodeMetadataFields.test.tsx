@@ -1,15 +1,11 @@
 import { act, useState } from "react";
-import { createRoot } from "react-dom/client";
+import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { DraftParticipant, RegisterDraftParticipant } from "../application/draftTransition";
 import type { DocumentNode } from "../domain/types";
-
-vi.mock("../editor/RichTextEditor", () => ({ RichTextEditor: () => <div role="textbox" aria-label="Node body" /> }));
-
-import { NodeEditor } from "./NodeEditor";
+import { NodeMetadataFields } from "./NodeMetadataFields";
 
 declare global {
-  // React uses this opt-in to validate that stateful test work is wrapped in act().
   // eslint-disable-next-line no-var
   var IS_REACT_ACT_ENVIRONMENT: boolean;
 }
@@ -30,7 +26,7 @@ const initialNode: DocumentNode = {
   deletedAt: null,
 };
 
-let root: ReturnType<typeof createRoot> | null = null;
+let root: Root | null = null;
 let container: HTMLDivElement | null = null;
 
 afterEach(async () => {
@@ -40,24 +36,26 @@ afterEach(async () => {
   container = null;
 });
 
-describe("NodeEditor metadata drafts", () => {
-  it("adopts the normalized title returned by persistence after a successful flush", async () => {
+describe("NodeMetadataFields", () => {
+  it("adopts persistence normalization and creates a sibling only for unmodified, non-IME Enter", async () => {
     let participant: DraftParticipant | null = null;
     const register: RegisterDraftParticipant = (_key, next) => {
       participant = next;
       return () => { if (participant === next) participant = null; };
     };
+    const createSibling = vi.fn(async () => undefined);
 
     function Harness() {
       const [node, setNode] = useState(initialNode);
       return (
-        <NodeEditor
+        <NodeMetadataFields
           node={node}
           tagSuggestions={[]}
-          readOnly={false}
+          disabled={false}
           registerDraftParticipant={register}
-          onBodyChange={async () => undefined}
-          onMetadataChange={async (changes) => {
+          onContext={() => undefined}
+          onCreateSibling={createSibling}
+          onCommit={async (changes) => {
             setNode((current) => ({
               ...current,
               ...changes,
@@ -74,37 +72,21 @@ describe("NodeEditor metadata drafts", () => {
     document.body.append(container);
     root = createRoot(container);
     await act(async () => root?.render(<Harness />));
+    const input = container.querySelector<HTMLInputElement>('[data-node-control="title"]')!;
 
-    const input = container.querySelector<HTMLInputElement>(".title-input");
-    expect(input).not.toBeNull();
     await act(async () => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, "   ");
-      input!.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      await participant!.flush();
     });
-    expect(input!.value).toBe("   ");
-    await act(async () => { await participant!.flush(); });
+    expect(input.value).toBe("Untitled idea");
 
-    expect(input!.value).toBe("Untitled idea");
-  });
-
-  it("renders one body editor and no secondary freeform summary field", async () => {
-    const register: RegisterDraftParticipant = () => () => undefined;
-    container = document.createElement("div");
-    document.body.append(container);
-    root = createRoot(container);
-    await act(async () => root?.render(
-      <NodeEditor
-        node={initialNode}
-        tagSuggestions={[]}
-        readOnly={false}
-        registerDraftParticipant={register}
-        onBodyChange={async () => undefined}
-        onMetadataChange={async () => undefined}
-      />,
-    ));
-
-    expect(container.querySelectorAll('[role="textbox"][aria-label="Node body"]')).toHaveLength(1);
-    expect(container.querySelector("textarea")).toBeNull();
-    expect(container.textContent).not.toContain("Working summary");
+    await act(async () => {
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", ctrlKey: true, bubbles: true }));
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", isComposing: true, bubbles: true }));
+      input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+      await Promise.resolve();
+    });
+    expect(createSibling).toHaveBeenCalledTimes(1);
   });
 });

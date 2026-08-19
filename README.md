@@ -70,6 +70,6 @@ Start with the [engineering documentation index](./docs/README.md). It routes co
 - feature-to-file traceability, extension recipes, tests, build/release portability, and known limitations;
 - the `.coedit` format/recovery and security specifications.
 
-Future work on the continuous block-outline workspace, its optional navigation-only tree sidebar, native historical-query parity, and grouped History presentation starts at the [continuous-workspace change package](./docs/proposals/README.md). The canvas projection and single-editor safety gate exist but are not yet the reachable workspace; standalone historical viewing remains reachable through master/detail until structural canvas parity. The future sidebar is an auxiliary view of one continuous canvas, not a return to that layout.
+The live and historical workspace now share the continuous block-outline canvas described by the [continuous-workspace change package](./docs/proposals/README.md). Remaining work begins with grouped History (WP-5), followed by the optional navigation-only sidebar, native historical-query parity, and browser/accessibility qualification. The future sidebar is auxiliary to the canvas, not a return to master/detail.
 
 The [original architecture plan](./LOCAL_FIRST_TREE_EDITOR_PLAN.md) remains a roadmap artifact. Where it differs from the current engineering documentation or executable code, the latter describe the current implementation.

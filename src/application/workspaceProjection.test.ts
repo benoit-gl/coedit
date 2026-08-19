@@ -3,9 +3,11 @@ import type { DocumentNode, DocumentView } from "../domain/types";
 import type { MaterializedRevision } from "../persistence/gateway";
 import {
   displayedDocumentView,
+  contextWorkspaceNode,
   historicalWorkspace,
   liveProjectionFor,
   liveWorkspace,
+  releaseWorkspaceEditor,
   selectWorkspaceNode,
 } from "./workspaceProjection";
 
@@ -104,5 +106,23 @@ describe("workspace projection", () => {
       retainedLive: { live: { selectedNodeId: "first" }, resumeEditorNodeId: "first" },
     });
     expect(liveProjectionFor(secondHistory).displayed.selectedNodeId).toBe("first");
+  });
+
+  it("updates canvas context independently and releases only live editor ownership", () => {
+    const live = liveWorkspace(
+      view(2, [node("first", "First"), node("second", "Second")]),
+      "first",
+    );
+    const contextual = contextWorkspaceNode(live, "second");
+    expect(contextual).toMatchObject({
+      displayed: { selectedNodeId: "second" },
+      editorOwnerNodeId: "first",
+    });
+
+    const released = releaseWorkspaceEditor(contextual as Extract<typeof contextual, { kind: "live" }>, "second");
+    expect(released).toMatchObject({
+      displayed: { selectedNodeId: "second" },
+      editorOwnerNodeId: null,
+    });
   });
 });

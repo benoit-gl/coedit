@@ -2,7 +2,7 @@
 
 **Product decision:** Approved design direction.
 
-**Implementation status:** Partial. WP-1 implements query contracts/materialization/capabilities; WP-2 implements explicit controller workspace/request state and guards; WP-3 implements standalone View-first History, static sanitized historical rendering, the persistent Back/Restore banner, and UI integration tests. The WP-7 canvas has a tested static historical presentation identity but is intentionally unreachable; controller/canvas context integration and native query parity remain proposed.
+**Implementation status:** Standalone WP-1 through WP-3 plus WP-7 canvas reuse are implemented: query contracts/materialization/capabilities, explicit workspace/request state and guards, View-first History, the shared sanitized read-only canvas, persistent Back/Restore banner, and UI integration tests. Native query parity remains proposed.
 
 **Change package:** [Continuous workspace proposals](./README.md)
 
@@ -15,7 +15,7 @@ Both adapters already retain materialized revisions:
 - the memory adapter has an internal revision-to-hash-bearing-`DocumentState` map; and
 - SQLite stores full `state_json` and `state_hash` rows in `snapshots`.
 
-The standalone adapter has a read-only query that returns one of those states without changing the live workspace or ledger, the controller projects it through an explicit historical workspace mode, and WP-3 exposes it through a static read-only historical UI. WP-7 adds the unreachable sanitizer-backed canvas presentation seam; remaining gaps are controller/canvas reuse and native parity.
+The standalone adapter has a read-only query that returns one of those states without changing the live workspace or ledger, the controller projects it through an explicit historical workspace mode, and WP-7 exposes the complete snapshot through the same sanitizer-backed canvas used live. The remaining host gap is native parity.
 
 ## Goals
 
@@ -104,7 +104,7 @@ Do not encode this only as `DocumentView.readOnly`. A discriminated union makes 
 
 ```ts
 // Target canvas-era shape. WP-2 implements the same discriminants and retained-live/loading invariants
-// with selectedNodeId as the current master/detail context until the canvas work packages land.
+// selectedNodeId currently carries canvas context; editorOwnerNodeId remains separate.
 interface NavigatorContextState {
   navigatorSelectionId: string | null;
   navigatorExpandedIds: ReadonlySet<string>;

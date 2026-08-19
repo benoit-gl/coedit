@@ -303,7 +303,7 @@ The proposed [body checkpoint strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md)
 - collapsed History presentation is a query/projection over immutable raw rows; it does not merge, delete, or rewrite contributions; and
 - expanding a group exposes its exact physical revisions, each of which remains individually materializable/restorable.
 
-The two easy-to-change code-policy values, `batchCharacterThreshold` and `idleTimeoutMs`, control *when* checkpoints are requested; they are not persisted document properties and do not alter file interpretation. The implemented, validated defaults are `20` graphemes and `30_000` milliseconds, though they remain unreachable until editor integration. Changing them can materially affect ledger/snapshot volume and must be measured, but does not by itself require a format migration.
+The two easy-to-change code-policy values, `batchCharacterThreshold` and `idleTimeoutMs`, control *when* checkpoints are requested; they are not persisted document properties and do not alter file interpretation. The integrated, validated defaults are `20` graphemes and `30_000` milliseconds. Changing them can materially affect ledger/snapshot volume and must be measured, but does not by itself require a format migration.
 
 This grouping design does not solve snapshot-per-revision growth. Retention, compaction, delta snapshots, and replay/checkpoint strategy remain separate format work and must not be inferred from a collapsed History row.
 

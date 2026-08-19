@@ -23,11 +23,13 @@ import { SerializedTaskQueue } from "./serializedTaskQueue";
 import {
   displayedDocumentView,
   displayedSelectedNodeId,
+  contextWorkspaceNode,
   historicalWorkspace,
   liveContextFor,
   liveProjectionFor,
   liveWorkspace,
   selectWorkspaceNode,
+  releaseWorkspaceEditor,
   WorkspaceMutationUnavailableError,
   type RevisionRequestState,
   type WorkspaceProjection,
@@ -192,7 +194,17 @@ export function useDocumentController({
       ? currentSelection
       : next.nodes.find((node) => node.deletedAt === null)?.id ?? null;
 
-    setWorkspaceProjection(liveWorkspace(next, nextSelection));
+    const currentEditorOwner = currentWorkspace?.kind === "live"
+      ? currentWorkspace.editorOwnerNodeId
+      : null;
+    const editorOwnerStillExists = sameDocument
+      && currentEditorOwner !== null
+      && next.nodes.some((node) => node.id === currentEditorOwner && node.deletedAt === null);
+    setWorkspaceProjection(liveWorkspace(
+      next,
+      nextSelection,
+      editorOwnerStillExists ? currentEditorOwner : null,
+    ));
     if (authoritativeReset) setEditorGeneration((generation) => generation + 1);
 
     let nextQuery = historyQuery.current;
@@ -399,6 +411,27 @@ export function useDocumentController({
     () => commitRawOperation(operation, message, groupId),
   ), [commitRawOperation, runTransition]);
 
+  const updateContextHistoryQuery = useCallback((nodeId: string) => {
+    if (!historyQuery.current.nodeId) return;
+    const query = normalizedHistoryQuery({ ...historyQuery.current, nodeId });
+    historyQuery.current = query;
+    setHistoryQueryState(query);
+    if (historyOpenRef.current) {
+      void requestHistory(query, null, false, workspaceEpoch.current, true);
+    }
+  }, [requestHistory]);
+
+  const setCanvasContextNode = useCallback((nodeId: string): boolean => {
+    const projection = workspaceProjectionRef.current;
+    if (!projection || !displayedDocumentView(projection).nodes.some(
+      (node) => node.id === nodeId && node.deletedAt === null,
+    )) return false;
+    if (displayedSelectedNodeId(projection) === nodeId) return true;
+    setWorkspaceProjection(contextWorkspaceNode(projection, nodeId));
+    updateContextHistoryQuery(nodeId);
+    return true;
+  }, [setWorkspaceProjection, updateContextHistoryQuery]);
+
   const selectNode = useCallback((nodeId: string): Promise<boolean> => {
     const current = workspaceProjectionRef.current;
     if (
@@ -415,16 +448,46 @@ export function useDocumentController({
         (node) => node.id === nodeId && node.deletedAt === null,
       )) throw new Error("The selected idea is no longer available.");
       setWorkspaceProjection(selectWorkspaceNode(projection, nodeId));
-      if (historyQuery.current.nodeId) {
-        const query = normalizedHistoryQuery({ ...historyQuery.current, nodeId });
-        historyQuery.current = query;
-        setHistoryQueryState(query);
-        if (historyOpenRef.current) {
-          void requestHistory(query, null, false, workspaceEpoch.current, true);
-        }
-      }
+      updateContextHistoryQuery(nodeId);
     });
-  }, [requestHistory, runTransition, setWorkspaceProjection]);
+  }, [runTransition, setWorkspaceProjection, updateContextHistoryQuery]);
+
+  const releaseEditorOwner = useCallback((preferredContextNodeId?: string): Promise<boolean> => {
+    const current = workspaceProjectionRef.current;
+    if (current?.kind === "live" && current.editorOwnerNodeId === null) {
+      if (preferredContextNodeId) setCanvasContextNode(preferredContextNodeId);
+      return Promise.resolve(true);
+    }
+    return runTransition(async () => {
+      const projection = workspaceProjectionRef.current;
+      if (!projection || projection.kind !== "live") {
+        throw new WorkspaceMutationUnavailableError();
+      }
+      const contextNodeId = preferredContextNodeId ?? projection.displayed.selectedNodeId;
+      setWorkspaceProjection(releaseWorkspaceEditor(projection, contextNodeId));
+      if (contextNodeId) updateContextHistoryQuery(contextNodeId);
+    });
+  }, [runTransition, setCanvasContextNode, setWorkspaceProjection, updateContextHistoryQuery]);
+
+  const createCanvasNode = useCallback(async (
+    parentId: string | null,
+    index?: number,
+  ): Promise<string | null> => {
+    const id = newId();
+    const created = await runTransition(async () => {
+      await commitRawOperation(
+        { type: "createNode", node: { id, parentId, title: "New idea" }, index },
+        parentId ? "Added sub-idea" : "Added root idea",
+      );
+      const projection = workspaceProjectionRef.current;
+      if (!projection || projection.kind !== "live") {
+        throw new WorkspaceMutationUnavailableError();
+      }
+      setWorkspaceProjection(releaseWorkspaceEditor(projection, id));
+      updateContextHistoryQuery(id);
+    });
+    return created ? id : null;
+  }, [commitRawOperation, runTransition, setWorkspaceProjection, updateContextHistoryQuery]);
 
   const viewRevision = useCallback(async (revision: number): Promise<boolean> => {
     if (revisionQueryCapability.kind !== "available") {
@@ -607,6 +670,9 @@ export function useDocumentController({
     commitNodeMetadata,
     commitDocumentTitle,
     selectNode,
+    setCanvasContextNode,
+    releaseEditorOwner,
+    createCanvasNode,
     viewRevision,
     backToCurrent,
     restoreRevision,

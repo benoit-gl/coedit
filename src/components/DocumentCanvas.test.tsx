@@ -69,7 +69,10 @@ describe("DocumentCanvas read-only scaffold", () => {
     expect(canvas?.getAttribute("data-read-only")).toBe("true");
     expect(items.map((item) => item.dataset.nodeId)).toEqual(["root", "child", "later-root"]);
     expect(items.map((item) => item.dataset.depth)).toEqual(["0", "1", "0"]);
-    expect(container.querySelector("script, input, textarea, button, [contenteditable], [role=toolbar]")).toBeNull();
+    expect(container.querySelector("script, input, textarea, [contenteditable], [role=toolbar]")).toBeNull();
+    expect([...container.querySelectorAll("button")].every(
+      (button) => button.classList.contains("node-block-disclosure"),
+    )).toBe(true);
   });
 
   it("shows collapsed and empty projections without exposing controls", async () => {

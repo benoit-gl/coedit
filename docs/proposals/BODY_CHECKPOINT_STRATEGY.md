@@ -2,7 +2,7 @@
 
 **Product decision:** Approved design direction.
 
-**Implementation status:** WP-4 core/application contract and the WP-4/WP-7 editor integration gate are implemented: Tiptap transactions are observed before application, Yjs/HTML capture is synchronous, persistence uses the bounded coordinator, IME composition is not split, and canvas ownership transfers drain before unmount. Grouped History, full structural-canvas coverage, and browser/native qualification remain staged.
+**Implementation status:** WP-4 and its WP-7 integration are implemented: Tiptap transactions are observed before application, Yjs/HTML capture is synchronous, persistence uses the bounded coordinator, IME composition is not split, and canvas transfer/collapse/delete/create/move paths drain through the controlled transition boundary. Grouped History and browser/native qualification remain staged.
 
 **Change package:** [Continuous workspace proposals](./README.md)
 
@@ -467,11 +467,11 @@ Use injected policy values and fake time.
 2. **Implemented across the fact and editor boundaries:** transaction classification covers selection-only changes, insertion/deletion, composition updates/commits, paste/drop/cut, replacement, formatting, undo, redo, and persistence loads; `bodyEditorTransaction.ts` supplies concrete ProseMirror/`beforeinput` observation before state application.
 3. **Implemented (WP-4 core):** add the UI-neutral edit-group machine, immutable checkpoint FIFO/retry/backpressure, and its `DraftParticipant`-compatible/application-facing contract without coupling ownership to `Outline` or `NodeEditor`.
 4. **Implemented (WP-4 core):** move `groupId` ownership from `commitBody` to the checkpoint application request and test the contract independently of either workspace composition. The temporary timer path supplies one fresh ID per legacy flush until step 6.
-5. **Implemented (WP-7 scaffold):** establish unreachable read-only `DocumentCanvas`/`NodeBlock` boundaries.
+5. **Implemented (WP-7 scaffold):** establish read-only `DocumentCanvas`/`NodeBlock` boundaries before their later reachable cutover.
 6. **Implemented (WP-4/WP-7 integration gate):** connect pre-application transaction observation, synchronous Yjs/HTML capture, IME-aware batching, visible retry/backpressure, and the registered `DraftParticipant` to the single active editor owned by `NodeBlock`.
-7. **Implemented for ownership transfer and existing controller transitions:** transfer retains the old owner until drain succeeds and cancels on failure; existing select/history/export/backup/close paths use the draft-transition barrier. WP-7 completion must add the same focused proof for every new collapse, delete, create, and move path before it can hide/remove the owner.
-8. **Implemented:** delete the 1.2-second path; current master/detail and future canvas editors share the semantic coordinator rather than two batching implementations.
-9. Complete editable/structural canvas parity, then add grouped History projection and exact checkpoint expansion as WP-5.
+7. **Implemented:** transfer retains the old owner until drain succeeds and cancels on failure; select/history/export/backup/close and WP-7 collapse/delete/create/move paths use the draft-transition barrier, with focused release/collapse failure evidence.
+8. **Implemented:** delete the 1.2-second path; the final canvas editor uses the semantic coordinator.
+9. **Canvas parity implemented:** add grouped History projection and exact checkpoint expansion next as WP-5.
 10. Add the optional navigator's one focus-departure boundary and non-boundary browsing events after the canvas/controller boundary is stable.
 11. Measure standalone memory and native SQLite snapshot/history growth.
 12. Run browser, IME, accessibility, failure, recovery, and platform suites.

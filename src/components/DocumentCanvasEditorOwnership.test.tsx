@@ -98,9 +98,23 @@ function CanvasHarness({ gateway }: { gateway: MemoryDocumentGateway }) {
           expandedNodeIds={new Set()}
           workspaceKind="live"
           readOnly={false}
+          disabled={false}
           editorOwnerNodeId={workspace.editorOwnerNodeId}
+          editorGeneration={controller.editorGeneration}
+          tagSuggestions={[]}
           onRequestEditorOwner={controller.selectNode}
+          onReleaseEditorOwner={controller.releaseEditorOwner}
+          onCommitMetadata={controller.commitNodeMetadata}
           onCommitBody={controller.commitBody}
+          onCreateNode={controller.createCanvasNode}
+          onMoveNode={(nodeId, parentId, index) => controller.applyOperation(
+            { type: "moveNode", nodeId, parentId, index },
+            "Moved idea",
+          )}
+          onDeleteNode={(nodeId) => controller.applyOperation(
+            { type: "softDeleteNode", nodeId },
+            "Deleted idea",
+          )}
           registerDraftParticipant={controller.registerDraftParticipant}
         />
       )}
@@ -132,6 +146,7 @@ async function renderHarness(): Promise<void> {
       "Second node",
     )).toBe(true);
   });
+  await act(async () => { expect(await getController().selectNode("first")).toBe(true); });
 }
 
 describe("DocumentCanvas active editor ownership", () => {
@@ -159,7 +174,10 @@ describe("DocumentCanvas active editor ownership", () => {
       '[aria-label="Edit body for second"]',
     );
     expect(secondButton).not.toBeNull();
-    act(() => secondButton?.click());
+    await act(async () => {
+      secondButton?.click();
+      await Promise.resolve();
+    });
 
     expect(events).toEqual(["freeze:first", "flush:first"]);
     expect(secondButton?.disabled).toBe(true);

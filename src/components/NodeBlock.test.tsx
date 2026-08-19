@@ -67,7 +67,9 @@ describe("NodeBlock read-only scaffold", () => {
       .toEqual(["Research", "Draft"]);
     expect(container.querySelector(".node-body-preview")?.textContent).toBe("Safe preview");
     expect(container.querySelector("script, [onclick]")).toBeNull();
-    expect(container.querySelector("input, textarea, button, [contenteditable], [role=toolbar]")).toBeNull();
+    expect(container.querySelector("input, textarea, [contenteditable], [role=toolbar]")).toBeNull();
+    expect([...container.querySelectorAll("button")]).toHaveLength(1);
+    expect(container.querySelector(".node-block-disclosure")).not.toBeNull();
   });
 
   it("renders explicit fallbacks for an empty title and body", async () => {

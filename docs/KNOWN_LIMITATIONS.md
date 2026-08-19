@@ -28,14 +28,13 @@ Priority meaning:
 | R-15 | P2 | Session model | Sessions are partial: memory has none; desktop starts lazily and never ends them | both gateways/schema |
 | R-16 | P2 | Rich-text/export | Markdown conversion is deliberately lossy; browser and Rust converters differ | `markdownFor`; Rust `markdown`/`plain_text` |
 | R-17 | P2 | Platform support | Linux/macOS are unverified; iPadOS native/touch/file lifecycle is unfinished | build config/UI/dialog contracts |
-| R-18 | P2 | UI accessibility/touch | Drag/drop, hover actions, narrow layout, and ARIA coverage are incomplete | `Outline`, `styles.css`, toolbar |
+| R-18 | P2 | UI accessibility/touch | Canvas actions have keyboard equivalents, but touch discovery, narrow layout, and browser/ARIA qualification remain incomplete | `DocumentCanvas`, `NodeBlock`, `styles.css`, toolbar |
 | R-19 | P2 | Test/release confidence | Focused component coverage exists, but no browser E2E/IPC/migration/a11y/CI/platform matrix; Rust does not consume the protocol fixtures | current test files/repository |
 | R-21 | P2 | Tampered-data defense | Open validates structure but does not re-sanitize all stored HTML or validate snapshot hashes/content limits | `load_state`; `restore` |
 | R-22 | P2 | Crash durability | Atomic output syncs the file, not explicitly its parent directory | `atomic_write`, `atomic_copy`, `replace_file` |
 | R-23 | P3 | Reserved features | Attachments, AI, collaboration, contributor management, and direct node restore have no complete workflow | schema/types/interfaces with missing UI/adapters |
-| R-24 | P3 | Outline behavior | New expansion state, drag placement/root drops, and affected-node reporting are limited | `Outline`; both operation models |
-| R-25 | P2 | Writing flow | Separate outline and selected-node editor force master/detail context switching; the WP-7 canvas is intentionally unreachable pending editable/structural parity, although its single-editor safety gate is implemented | `App` workspace composition; `Outline`; `NodeEditor`; `DocumentCanvas`; `NodeBlock` |
-| R-26 | P2 | Historical inspection | Standalone View/Back is implemented in the current master/detail workspace, but continuous-canvas reuse and native queries remain incomplete | `workspaceProjection`; `HistoryPanel`; `HistoricalNodeView`; Tauri query capability |
+| R-24 | P3 | Canvas structure | Dragging reparents only as the target's last child; no between-block/root drop target exists, and affected-node reporting is limited | `DocumentCanvas`; both operation models |
+| R-26 | P2 | Historical inspection | Standalone View/Back uses the shared read-only canvas, but native revision queries remain incomplete | `workspaceProjection`; `DocumentCanvas`; `HistoryPanel`; Tauri query capability |
 | R-27 | P2 | Edit history/noise | Semantic checkpoints now share episode group IDs, but History does not yet collapse them and every physical checkpoint still stores a full snapshot | `RichTextEditor`; `BodyEditBatchCoordinator`; full snapshots; `HistoryPanel` |
 
 ## Data-integrity and attribution risks
@@ -169,29 +168,22 @@ Windows standalone was manually exercised. The architecture is intended for Linu
 
 ### R-18 and R-24: interaction/accessibility limitations
 
-- Dragging only makes a node the last child of another node; there is no root drop target or between-row indicator.
-- Reordering has buttons, but drag itself has no complete keyboard/touch equivalent for reparenting.
-- Row actions appear on hover or selection, a weak pattern for touch discovery.
-- Outline expansion state initializes from mount-time nodes and is not explicitly synchronized for every newly added node.
-- At widths at or below 900 px, History becomes an overlay but the 230 px outline remains; no phone/pane-switching design exists.
+- Dragging only makes a block the last child of another block; there is no root drop target or between-block indicator.
+- Reorder, indent, and outdent have buttons and handle shortcuts, but touch drag alternatives have not been platform-qualified.
+- Block actions appear on hover/focus, a weak pattern for touch discovery.
+- At widths at or below 900 px, History becomes an overlay; the proposed deterministic compact Navigator/History drawer shell is not implemented.
 - Toolbar toggles do not expose full `aria-pressed` state; some symbol-only controls rely on `title`; no screen-reader audit exists.
 - Affected-node lists generally name only the requested node, not every descendant/sibling whose stored state changed.
 
 Current interaction details and proposed accessibility acceptance criteria are in [UI and UX](./UI_UX.md).
 
-### R-25: master/detail interrupts the writing flow
-
-The workspace renders a separate hierarchy navigator and only one selected node's editor. Creating or developing adjacent nodes repeatedly moves attention between structural controls and a detail pane, so hierarchy does not read or edit as one continuous document. WP-6 supplies the validated immutable active/collapsed pre-order; WP-7 renders it as sanitized blocks; and the integration gate proves one active editor with drain-before-transfer. `App` intentionally does not expose that canvas until title/tag/structural parity and all owner-hiding actions use the barrier.
-
-**Recommended direction:** implement the proposed [continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md): a flattened pre-order projection, separate canvas-context/focus-region/editor-owner state, one active Tiptap editor, drain-before-hide collapse behavior, sanitized inactive previews, inline structural controls, and complete keyboard/touch alternatives. Large-document orientation may use the proposed optional navigation-only tree sidebar, docked when space permits and presented as an explicitly opened drawer on compact/touch screens. It must share the canvas's live/historical projection while keeping browsing/expansion state independent; it is not a selectable revival of the current tree-plus-detail editor. This is a component/application redesign, not a CSS-only change.
-
 ### R-26: historical inspection remains partial by host and workspace layout
 
 The WP-1 boundary defines a discriminated read-only query capability. Memory advertises it as available and returns detached, tree-validated, hash-verified snapshots without changing live state, history, or its snapshot map. Tauri explicitly advertises `host-deferred` and exposes no throwing stub. WP-2 adds explicit controller live/historical projections, exact retained origins, stale request guards, no-query Back, restore separation, and command/export rejection outside live mode.
 
-WP-3 connects capable-host History **View** to a static sanitized historical detail that mounts no title/body editor or draft participant. A persistent banner identifies viewed/current revisions, makes **Back to current** primary, and keeps **Restore as new revision** separately confirmed. Component and full-`App` integration tests prove View/Back is non-mutating and one confirmed restore appends one compensating revision. Host-deferred Tauri still exposes row-level Restore until WP-10.
+WP-3 and WP-7 connect capable-host History **View** to the same continuous canvas in historical mode. It mounts no title/body editor, structural mutation control, or draft participant; only local disclosure remains. A persistent banner identifies viewed/current revisions, makes **Back to current** primary, and keeps **Restore as new revision** separately confirmed. Component and full-`App` integration tests prove View/Back is non-mutating and one confirmed restore appends one compensating revision. Host-deferred Tauri still exposes row-level Restore until WP-10.
 
-**Recommended direction:** use the implemented WP-4/WP-7 ownership gate while connecting the historical projection to the reachable `DocumentCanvas`, including canvas/navigator context pruning and focus restoration, then add native materialization and shared contract qualification in WP-10.
+**Recommended direction:** add native materialization and shared contract qualification in WP-10, then include the optional navigator in live/historical context-pruning and focus-restoration qualification.
 
 ### R-27: body checkpoint groups are not yet projected in History
 
