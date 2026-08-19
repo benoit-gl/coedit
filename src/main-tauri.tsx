@@ -4,6 +4,7 @@ import { App } from "./App";
 import { tauriFileDialogs } from "./persistence/tauriFiles";
 import { TauriDocumentGateway } from "./persistence/tauriGateway";
 import "./styles.css";
+import "./historyGroups.css";
 
 const documentGateway = new TauriDocumentGateway();
 
