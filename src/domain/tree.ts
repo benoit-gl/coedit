@@ -40,22 +40,32 @@ function descendantIds(nodes: DocumentNode[], nodeId: string): Set<string> {
   return result;
 }
 
-export function assertValidTree(nodes: DocumentNode[]): void {
-  const ids = new Set(nodes.map((node) => node.id));
-  if (ids.size !== nodes.length) throw new Error("The document contains duplicate node identifiers.");
-
+export function assertValidTree(nodes: readonly DocumentNode[]): void {
+  const byId = new Map<string, DocumentNode>();
+  for (const node of nodes) {
+    if (byId.has(node.id)) throw new Error("The document contains duplicate node identifiers.");
+    byId.set(node.id, node);
+  }
   for (const node of nodes) {
     if (node.parentId === node.id) throw new Error("A node cannot be its own parent.");
-    if (node.parentId !== null && !ids.has(node.parentId)) {
+    if (node.parentId !== null && !byId.has(node.parentId)) {
       throw new Error(`Node ${node.id} refers to a missing parent.`);
     }
-    const ancestors = new Set<string>([node.id]);
-    let parentId = node.parentId;
-    while (parentId !== null) {
-      if (ancestors.has(parentId)) throw new Error("The hierarchy contains a cycle.");
-      ancestors.add(parentId);
-      parentId = nodes.find((candidate) => candidate.id === parentId)?.parentId ?? null;
+  }
+
+  const validated = new Set<string>();
+  for (const node of nodes) {
+    if (validated.has(node.id)) continue;
+    const path: string[] = [];
+    const pathIds = new Set<string>();
+    let current: DocumentNode | undefined = node;
+    while (current && !validated.has(current.id)) {
+      if (pathIds.has(current.id)) throw new Error("The hierarchy contains a cycle.");
+      path.push(current.id);
+      pathIds.add(current.id);
+      current = current.parentId === null ? undefined : byId.get(current.parentId);
     }
+    for (const id of path) validated.add(id);
   }
 }
 

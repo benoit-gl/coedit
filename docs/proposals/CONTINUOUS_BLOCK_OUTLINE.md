@@ -2,7 +2,7 @@
 
 **Product decision:** Approved design direction.
 
-**Implementation status:** Proposed; not implemented.
+**Implementation status:** Partial. WP-6 implements the pure visible-node projection and its domain-validation/scale tests. `DocumentCanvas`, `NodeBlock`, editor ownership, structural controls, historical-canvas reuse, and the optional navigator remain staged.
 
 **Change package:** [Continuous workspace proposals](./README.md)
 
@@ -93,15 +93,15 @@ Responsive layout never selects a different editor implementation. The saved doc
 Persistence remains a flat collection. A pure projection produces the canvas order.
 
 ```ts
-// Proposed shape; not current source.
+// Implemented in src/domain/visibleNodes.ts.
 interface VisibleNodeBlock {
-  node: DocumentNode;
-  depth: number;
-  hasActiveChildren: boolean;
-  expanded: boolean;
-  visibleIndex: number;
-  previousVisibleNodeId: string | null;
-  nextVisibleNodeId: string | null;
+  readonly node: Readonly<DocumentNode>;
+  readonly depth: number;
+  readonly hasActiveChildren: boolean;
+  readonly expanded: boolean;
+  readonly visibleIndex: number;
+  readonly previousVisibleNodeId: string | null;
+  readonly nextVisibleNodeId: string | null;
 }
 ```
 
@@ -549,16 +549,18 @@ The first performance tactic is one active editor, not virtualization.
 - A stale/missing reveal target is pruned by stable ID and announced; it never resolves by array position.
 - Failed drain during **Focus in document** retains the old editor owner and navigator focus, leaves document state unchanged, and offers the existing retry path.
 
-## Proposed tests
+## Tests
 
-### Pure projection
+### Pure projection (implemented in WP-6)
 
 - pre-order traversal, root/sibling ordering, depth, adjacency;
 - collapsed descendants excluded;
 - deleted nodes excluded;
 - multiple roots and stable tie-breaks;
 - no mutation of input;
-- invalid parent/cycle behavior follows domain validation.
+- invalid parent/cycle behavior follows domain validation;
+- an active node beneath a deleted parent fails validation instead of being silently promoted;
+- a 10,000-level expanded hierarchy projects without recursive traversal or stack overflow.
 
 ### Components
 
@@ -622,9 +624,9 @@ The first performance tactic is one active editor, not virtualization.
 
 ## Implementation sequence
 
-1. Establish and unit-test the UI-neutral WP-4 policy, classifier, edit-group machine, bounded FIFO/retry behavior, and stable application contract; defer component-lifecycle integration.
-2. Add and test pure WP-6 visible-node projection without changing reachable UI.
-3. Add the WP-7 `DocumentCanvas`/`NodeBlock` scaffold in a feature branch/flag beside the current workspace.
+1. **Implemented (WP-4 core):** establish and unit-test the UI-neutral policy, classifier, edit-group machine, bounded FIFO/retry behavior, and stable application contract; defer component-lifecycle integration.
+2. **Implemented (WP-6):** add and test the pure visible-node projection without changing reachable UI.
+3. **Next (WP-7 scaffold):** add the `DocumentCanvas`/`NodeBlock` scaffold in a feature branch/flag beside the current workspace.
 4. Render read-only previews for every visible block. At this stage the scaffold must not mount an editor or expose structural mutations, so it does not depend on the temporary master/detail batching lifecycle.
 5. Complete the WP-4/WP-7 safety gate by adding one active-editor owner through the new checkpoint coordinator. Focus transfer and every action that could hide/remove the owner must drain first and retain the old owner on failure.
 6. Remove the fixed 1.2-second batching path, then add title/tag editing and insertion through the final `NodeBlock` boundary.

@@ -2,7 +2,7 @@
 
 **Product decision:** Approved design direction.
 
-**Implementation status:** Partial. WP-1 through WP-3 implement the standalone revision query, explicit controller workspace mode/command guard, and user-facing read-only historical path. The WP-4 UI-neutral checkpoint core/application contract is implemented; its Tiptap/canvas integration, grouped History, the continuous canvas, navigator, and native query parity remain staged.
+**Implementation status:** Partial. WP-1 through WP-3 implement the standalone revision query, explicit controller workspace mode/command guard, and user-facing read-only historical path. The WP-4 UI-neutral checkpoint core/application contract and WP-6 pure visible-node projection are implemented; Tiptap/canvas integration, grouped History, the continuous canvas, navigator, and native query parity remain staged.
 
 **Purpose:** Preserve an implementation-ready design for three related UX and architecture changes so work can resume later without reconstructing product decisions from conversation history.
 
@@ -173,21 +173,21 @@ stop
 @enduml
 ```
 
-WP-1 through WP-3 can ship independently and provide immediate safe historical viewing. WP-4 and WP-7 are intentionally interleaved: the UI-neutral WP-4 core and its stable application contract land first; WP-6 and the read-only WP-7 scaffold then establish the final block/component boundary; checkpoint capture and controlled-transfer integration are implemented in that final boundary before any editable or structural canvas behavior is enabled. Completing Slice C before this integration gate is prohibited because focus transfer, collapse, delete, and other ownership-changing actions could otherwise unmount uncheckpointed work. WP-5 follows canvas parity: checkpoint persistence already supplies stable group IDs, while the grouped History projection can be added without affecting editor safety. WP-7A follows the canvas/projection boundary and grouped History shell work: it must reuse controller intents and must not preserve the retired `Outline`/`NodeEditor` composition as another mode.
+WP-1 through WP-3 can ship independently and provide immediate safe historical viewing. WP-4 and WP-7 are intentionally interleaved: the UI-neutral WP-4 core and its stable application contract landed first, and WP-6 now supplies the canvas ordering contract; the read-only WP-7 scaffold next establishes the final block/component boundary. Checkpoint capture and controlled-transfer integration are implemented in that final boundary before any editable or structural canvas behavior is enabled. Completing Slice C before this integration gate is prohibited because focus transfer, collapse, delete, and other ownership-changing actions could otherwise unmount uncheckpointed work. WP-5 follows canvas parity: checkpoint persistence already supplies stable group IDs, while the grouped History projection can be added without affecting editor safety. WP-7A follows the canvas/projection boundary and grouped History shell work: it must reuse controller intents and must not preserve the retired `Outline`/`NodeEditor` composition as another mode.
 
-**Current delivery position:** WP-1 through WP-3 and the UI-neutral WP-4 core/application contract are implemented. Next is WP-6 and the read-only WP-7 scaffold. The subsequent active-editor integration completes the WP-4 safety gate inside the final canvas component model. Native materialization remains part of WP-10.
+**Current delivery position:** WP-1 through WP-3, the UI-neutral WP-4 core/application contract, and the pure WP-6 visible-node projection are implemented. Next is the read-only WP-7 `DocumentCanvas`/`NodeBlock` scaffold. The subsequent active-editor integration completes the WP-4 safety gate inside the final canvas component model. Native materialization remains part of WP-10.
 
 The first delivery milestone is standalone: memory-backed revision queries, checkpoint coordination/grouping, the continuous canvas, and its optional navigator pass their automated and double-click artifact checks. During that milestone the Tauri composition must continue to type-check/build at its frontend boundary, but it may omit the new query capability and retain documented stale behavior. WP-10 closes that intentional gap; adapters must not use throwing capability stubs merely to appear complete.
 
 ## Proposed source ownership
 
-Names below define target ownership. WP-1 through WP-3 introduced the gateway, workspace-projection, History action, and transitional historical-renderer entries. The WP-4 core added the application checkpoint request plus policy, classifier, and coordinator entries; later work packages will add or refine the remaining sources.
+Names below define target ownership. WP-1 through WP-3 introduced the gateway, workspace-projection, History action, and transitional historical-renderer entries. The WP-4 core added the application checkpoint request plus policy, classifier, and coordinator entries, and WP-6 added the pure visible-node projection; later work packages will add or refine the remaining sources.
 
 | Proposed source | Responsibility |
 |---|---|
 | `src/application/workspaceProjection.ts` | `WorkspaceProjection` live/historical discriminated union and guards |
 | `src/application/useWorkspaceController.ts` or a split of `useDocumentController.ts` | Workspace mode, revision-query capability, canvas context versus actual focus region versus editor owner, retained-live/loading origin, command eligibility, stale-query guards |
-| `src/domain/visibleNodes.ts` | Pure active/collapsed pre-order projection and depth metadata |
+| `src/domain/visibleNodes.ts` | Implemented pure active/collapsed pre-order projection with depth, child/expansion state, stable visible adjacency, and immutable results |
 | `src/domain/navigatorTree.ts` | Pure active-node hierarchy projection using navigator-specific expansion state; no commands or document mutation |
 | `src/application/workspacePreferences.ts` | Versioned validation and best-effort browser storage for `navigatorDockPreferredOpen` only |
 | `src/components/DocumentCanvas.tsx` | Continuous document surface and block collection semantics |
@@ -226,7 +226,7 @@ These names may be adjusted during implementation, but responsibilities and depe
 
 ### Slice C — continuous outline
 
-- **WP-6, after the WP-4 core contract:** visible-node projection;
+- **WP-6, after the WP-4 core contract (implemented):** validated, deterministic, iterative visible-node projection;
 - **WP-7 scaffold, before WP-4 UI integration:** canvas/block components and read-only previews, kept beside the current workspace until parity;
 - **WP-4/WP-7 integration gate:** separate canvas-context/focus-region/editor-owner state and one-active-editor ownership wired to checkpoint capture, drain, retry, and failure cancellation;
 - inline insertion and structural keyboard commands only after that safety gate passes;

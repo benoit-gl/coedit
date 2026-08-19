@@ -32,7 +32,7 @@ In RUP terms, the frontend contains boundary, control, and entity/domain element
 
 - **Boundary:** HTML entry points and the components in `src/components/` and `src/editor/`.
 - **Control:** `useDocumentController`, `SerializedTaskQueue`, gateway implementations, and the rich-text commit coordinator inside `RichTextEditor`.
-- **Entity/domain:** the interfaces in `src/domain/types.ts` and tree operations in `src/domain/tree.ts`.
+- **Entity/domain:** the interfaces in `src/domain/types.ts`, tree operations in `src/domain/tree.ts`, and the UI-neutral visible-node projection in `src/domain/visibleNodes.ts`.
 - **External boundary:** Tauri IPC and native dialogs, isolated behind adapters in `src/persistence/`.
 
 ```plantuml
@@ -159,6 +159,7 @@ IPC --> SQLite
 |---|---|---|
 | `src/domain/types.ts` | `DocumentState`, `DocumentView`, `DocumentNode`, `DocumentOperation`, `ContributionPage`, `RecoveryExport`, `ExportFormat`, related interfaces and unions | Shared serialized model, paging/recovery shapes, and operation contract. |
 | `src/domain/tree.ts` | `TreeNode`, `buildTree`, private `descendantIds`, `assertValidTree`, `affectedNodeIds`, `applyOperation` | Hierarchy projection, validation, mutation, and attribution support. |
+| `src/domain/visibleNodes.ts` | `VisibleNodeBlock`, `projectVisibleNodes` | Immutable, deterministic active/collapsed pre-order with derived depth, child state, and visible adjacency for the staged canvas. |
 | `src/domain/json.ts` | `cloneJson`, `cloneJsonObject`, `canonicalJson`, `compareJsonStrings` | Validates/detaches JSON-only data (including strict array/property rules) and serializes it with explicit UTF-16 key ordering. |
 | `src/domain/tags.ts` | `normalizeTag`, `normalizeTags`, `collectActiveTags` | Defines tag limits, canonicalization/deduplication, and the active document-local suggestion vocabulary. |
 | `src/domain/hash.ts` | `DOCUMENT_HASH_ALGORITHM`, `toDocumentState`, `canonicalDocumentJson`, `hashDocument` | Explicit host-field projection, versioned canonical JSON, and browser SHA-256 hashing. |
@@ -488,11 +489,11 @@ Extend the centralized `ExportFormat` union in `src/domain/types.ts`, update the
 
 `src/ai/provider.ts` is only a contract. An implementation should be injected explicitly, initiated only by a user action, and return a proposal. Accepted changes must become ordinary attributed `DocumentOperation` values; a provider must not mutate a gateway or document directly.
 
-## Proposed workspace replacement — not implemented
+## Proposed workspace replacement — partial infrastructure
 
 The current source map, React tree, class diagram, and control flow above remain the as-built design. A resumable target design is maintained separately:
 
-- [Continuous block-outline](proposals/CONTINUOUS_BLOCK_OUTLINE.md) replaces the `Outline` plus selected `NodeEditor` composition with `DocumentCanvas`, a pure visible-node projection, separate canvas-context/focus-region/editor-owner state, drain-before-hide controls, and one active Tiptap owner. An optional `NavigatorPanel` may render a navigation-only tree over the same live or historical `WorkspaceProjection`; it is not a second editor or presentation strategy.
+- [Continuous block-outline](proposals/CONTINUOUS_BLOCK_OUTLINE.md) replaces the `Outline` plus selected `NodeEditor` composition with `DocumentCanvas`, separate canvas-context/focus-region/editor-owner state, drain-before-hide controls, and one active Tiptap owner. WP-6 implements its pure, deterministic visible-node projection; the React canvas and editor integration remain staged. An optional `NavigatorPanel` may render a navigation-only tree over the same live or historical `WorkspaceProjection`; it is not a second editor or presentation strategy.
 - [Query-first historical views](proposals/QUERY_FIRST_HISTORY.md) now has WP-1 query capability/materialization, WP-2 explicit `WorkspaceProjection = live | historical` with origin/stale/command guards, and WP-3 View-first standalone presentation with a sanitized static historical detail, persistent banner, Back, and separately confirmed restore. Continuous-canvas contexts and native parity remain proposed.
 - [Body checkpoint strategy](proposals/BODY_CHECKPOINT_STRATEGY.md) replaces the 1.2-second timer with a transaction-classifying batch coordinator, two-checkpoint FIFO backpressure, and page-aware group projection. It requires one injectable code policy containing easily modifiable `batchCharacterThreshold` and `idleTimeoutMs` values.
 
@@ -512,6 +513,7 @@ These are observations, not recommended behavior. The consolidated risk list and
 - The standalone `coedit-document-state-v1` hash now has a golden fixture and excludes view-only fields. Rust has not yet adopted/proved that canonical byte representation.
 - `Outline` initializes expansion state only on mount. IDs added later are not automatically expanded.
 - `App` composes a separate `Outline` with one selected `NodeEditor`; the current workspace is master/detail rather than a continuous document canvas.
+- `projectVisibleNodes` implements the UI-neutral active/collapsed pre-order, depth, child-state, and visible-adjacency contract; no reachable component consumes it until WP-7.
 - Standalone History can enter an explicit read-only historical projection through the memory query, renders static sanitized content with no editor participant, and exposes a persistent Back/confirmed-restore banner. Tauri advertises the query as host-deferred and retains row-level restore until WP-10.
 - `RichTextEditor` still uses a fixed 1.2-second quiet-period timer and allocates a fresh group ID for every compatibility flush; `commitBody` now preserves the supplied ID, but the implemented WP-4 coordinator is not yet connected and edit episodes are not semantically grouped.
 - Hook-level controller and full-`App` historical-flow tests cover View/Back/non-mutation and one confirmed restore; focused component tests cover the static sanitizer path, banner semantics, and History capability presentation. Complete Tiptap timing, browser end-to-end, accessibility, and native suites remain absent.

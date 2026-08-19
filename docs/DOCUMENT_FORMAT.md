@@ -276,7 +276,7 @@ This is distinct from `restoreNode`: that operation undeletes one node and its a
 
 ## Workspace-view and checkpoint semantics
 
-This section records the data contract expected by the [continuous-workspace package](./proposals/README.md) and does not declare a new schema version. The standalone WP-1 query implements historical materialization against its in-memory snapshots, WP-2 retains that result in an explicit non-persisted historical controller projection, and the WP-4 application contract now accepts producer-owned checkpoint group IDs. The native SQLite query and runtime checkpoint/group presentation semantics remain staged; the implemented UI-neutral coordinator is not yet connected to the editor.
+This section records the data contract expected by the [continuous-workspace package](./proposals/README.md) and does not declare a new schema version. The standalone WP-1 query implements historical materialization against its in-memory snapshots, WP-2 retains that result in an explicit non-persisted historical controller projection, WP-4's application contract accepts producer-owned checkpoint group IDs, and WP-6 derives visible canvas order/depth entirely in memory without adding persisted fields. The native SQLite query and runtime checkpoint/group presentation semantics remain staged; the implemented UI-neutral coordinator is not yet connected to the editor.
 
 ### Historical materialization is a query
 

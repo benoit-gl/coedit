@@ -535,11 +535,11 @@ OpenState .. UC10
 
 ## Proposed next-iteration use cases
 
-The following use cases are specified together in the [continuous-workspace change package](./proposals/README.md). UC-13 is now reachable end to end in standalone mode through the current selected-detail workspace (WP-1 through WP-3); its continuous-canvas and native-host realizations remain partial. UC-12 and UC-14 remain design targets.
+The following use cases are specified together in the [continuous-workspace change package](./proposals/README.md). UC-13 is now reachable end to end in standalone mode through the current selected-detail workspace (WP-1 through WP-3); its continuous-canvas and native-host realizations remain partial. UC-12 has its WP-6 pure projection but no reachable canvas, while UC-14 has its WP-4 UI-neutral core but no editor integration.
 
 ### UC-12 - Edit through a continuous block outline
 
-**Status:** Proposed. The historical projection infrastructure delivered by WP-1 through WP-3 will be reused, but the continuous block outline and optional navigator are not implemented.
+**Status:** Partial. WP-6 implements the validated flattened visible-node projection, but `DocumentCanvas`, `NodeBlock`, editor ownership, structural controls, historical-canvas reuse, and the optional navigator are not implemented.
 
 **Primary actor:** Author.
 
@@ -709,7 +709,7 @@ These requirements describe the target package, not current satisfaction.
 
 | ID | Proposed requirement | Acceptance evidence required before status changes |
 |---|---|---|
-| FR-PW-01 | The live hierarchy shall be rendered as a pure, flattened, active-node pre-order projection with depth and expansion state. | Projection unit tests cover multiple roots, collapse, deletion, ordering, and deep nesting. |
+| FR-PW-01 | The live hierarchy shall be rendered as a pure, flattened, active-node pre-order projection with depth and expansion state. | Implemented at the WP-6 pure seam: unit tests cover multiple roots, collapse, deletion, deterministic ordering, depth/adjacency, invalid ancestry/cycles, input immutability, and 10,000-level nesting; canvas rendering remains WP-7. |
 | FR-PW-02 | The first block-outline implementation shall allow at most one live rich-text editor owner. | Focus-transfer integration tests prove drain-before-unmount and no duplicate Yjs ownership. |
 | FR-PW-03 | Revision materialization shall be a read query with no document, ledger, revision, or snapshot mutation. | Partial: memory before/after tests cover live revision continuity, ledger/snapshot counts, detachment, hash mismatch, and invalid trees; native parity remains. |
 | FR-PW-04 | Historical workspace mode shall reject every document mutation independently of control visibility. | Implemented for the standalone WP-2/WP-3 path: controller guards reject direct/stale operations and exports, while the UI mounts no historical editor/draft participant and disables mutation/export affordances. Continuous-canvas and native callback coverage remain. |
@@ -831,7 +831,7 @@ The prioritized verification work is in [Testing strategy](./TESTING.md). Owners
 | Historical projection (partial) | Detached materialized state for a selected revision without replacing live state. WP-2 implements the controller projection; WP-3 makes it user-visible in standalone mode through a sanitized static selected-detail path. Continuous-canvas and native-host reuse remain. |
 | Materialized state | Current document and node rows, as opposed to the historical ledger/snapshots. |
 | Navigator (proposed) | Optional navigation-only tree over the active workspace projection. It may locate/reveal a block but is not an editor, structural command surface, or alternate workspace mode. |
-| Visible-node projection (proposed) | Flattened pre-order list of active, expansion-visible nodes plus depth/layout metadata; it does not replace the persisted tree. |
+| Visible-node projection (partial) | Implemented pure flattened pre-order list of active, expansion-visible nodes plus depth/layout metadata; WP-7 has not yet rendered it in the canvas, and it does not replace the persisted tree. |
 | Operation | Typed request that mutates document materialized state, such as `moveNode` or `updateBody`. |
 | Port | Interface that separates shared UI policy from a host capability, notably `DocumentGateway` and `DocumentFileDialogs`. |
 | Revision | Monotonically increasing document-state number, beginning at `0` for creation. |

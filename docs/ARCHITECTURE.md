@@ -388,7 +388,7 @@ The architecturally significant use cases are:
 
 Full use-case specifications are in [Vision and use cases](./RUP_VISION_AND_USE_CASES.md).
 
-UC-12 through UC-14 cover continuous block editing (including its optional navigation-only sidebar), non-mutating historical viewing, and semantic checkpoint grouping. The table includes UC-13's implemented standalone selected-detail slice and UC-14's implemented UI-neutral policy/classifier/coordinator plus caller-owned group contract; canvas/editor integration, grouped History, native completion, and user-facing UC-12/UC-14 paths remain staged. Target realizations and dependency order are in the [continuous-workspace package index](./proposals/README.md).
+UC-12 through UC-14 cover continuous block editing (including its optional navigation-only sidebar), non-mutating historical viewing, and semantic checkpoint grouping. The table includes UC-13's implemented standalone selected-detail slice, UC-14's implemented UI-neutral policy/classifier/coordinator plus caller-owned group contract, and UC-12's implemented WP-6 pure visible-node projection. Canvas/editor integration, grouped History, native completion, and user-facing UC-12/UC-14 paths remain staged. Target realizations and dependency order are in the [continuous-workspace package index](./proposals/README.md).
 
 ## 8. Architecture decisions embodied in code
 
