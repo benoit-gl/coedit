@@ -21,7 +21,7 @@ afterEach(async () => {
   container = null;
 });
 
-function contribution(revision: number): Contribution {
+function contribution(revision: number, overrides: Partial<Contribution> = {}): Contribution {
   return {
     id: `contribution-${revision}`,
     revision,
@@ -37,7 +37,16 @@ function contribution(revision: number): Contribution {
     baseRevision: revision - 1,
     resultingHash: `${revision}`.repeat(64),
     message: `Revision ${revision}`,
+    ...overrides,
   };
+}
+
+function checkpoint(revision: number): Contribution {
+  return contribution(revision, {
+    groupId: "episode",
+    operationType: "updateBody",
+    message: "Writing contribution",
+  });
 }
 
 async function renderPanel(overrides: Partial<Parameters<typeof HistoryPanel>[0]> = {}) {
@@ -49,6 +58,7 @@ async function renderPanel(overrides: Partial<Parameters<typeof HistoryPanel>[0]
     viewedRevision: 1,
     loadingRevision: 2,
     revisionViewingAvailable: true,
+    contributionGroupQueryAvailable: true,
     viewDisabled: false,
     restoreDisabled: false,
     hasMore: false,
@@ -57,6 +67,7 @@ async function renderPanel(overrides: Partial<Parameters<typeof HistoryPanel>[0]
     loadError: null,
     onQueryChange: vi.fn(),
     onLoadOlder: vi.fn(),
+    onLoadContributionGroup: vi.fn().mockResolvedValue([]),
     onView: vi.fn(),
     onRestore: vi.fn(),
     onClose: vi.fn(),
@@ -70,10 +81,17 @@ async function renderPanel(overrides: Partial<Parameters<typeof HistoryPanel>[0]
 }
 
 function row(revision: number): HTMLLIElement {
-  const match = [...container!.querySelectorAll<HTMLLIElement>(".history-list li")]
-    .find((item) => item.querySelector(".history-revision")?.textContent === `r${revision}`);
+  const match = [...container!.querySelectorAll<HTMLLIElement>(".history-list > li")]
+    .find((item) => item.querySelector(":scope > .history-revision")?.textContent === `r${revision}`);
   if (!match) throw new Error(`Revision ${revision} row was not rendered.`);
   return match;
+}
+
+async function settle(): Promise<void> {
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  });
 }
 
 describe("HistoryPanel revision actions", () => {
@@ -103,5 +121,54 @@ describe("HistoryPanel revision actions", () => {
     await act(async () => row(2).querySelector<HTMLButtonElement>("button")!.click());
     expect(props.onRestore).toHaveBeenCalledWith(2);
     expect(props.onView).not.toHaveBeenCalled();
+  });
+
+  it("labels a partial group honestly and expands the exact standalone group", async () => {
+    const loadGroup = vi.fn().mockResolvedValue([checkpoint(4), checkpoint(3), checkpoint(2)]);
+    await renderPanel({
+      contributions: [checkpoint(4), checkpoint(3)],
+      currentRevision: 5,
+      viewedRevision: null,
+      loadingRevision: null,
+      hasMore: true,
+      onLoadContributionGroup: loadGroup,
+    });
+
+    expect(container!.textContent).toContain("2+ raw contributions loaded · 1 history rows");
+    expect(container!.textContent).toContain("at least 2 safety checkpoints");
+    expect(container!.textContent).toContain("Older checkpoints are not loaded.");
+
+    const expand = [...container!.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent === "Expand");
+    if (!expand) throw new Error("Expand button was not rendered.");
+    await act(async () => { expand.click(); });
+    await settle();
+
+    expect(loadGroup).toHaveBeenCalledWith("episode");
+    expect(container!.textContent).toContain("3 safety checkpoints");
+    expect([...container!.querySelectorAll(".history-checkpoints .history-revision")].map((item) => item.textContent))
+      .toEqual(["r4", "r3", "r2"]);
+  });
+
+  it("makes host-deferred full expansion explicit while retaining loaded checkpoints", async () => {
+    await renderPanel({
+      contributions: [checkpoint(4), checkpoint(3)],
+      currentRevision: 5,
+      viewedRevision: null,
+      loadingRevision: null,
+      revisionViewingAvailable: false,
+      contributionGroupQueryAvailable: false,
+      hasMore: true,
+    });
+
+    const expand = [...container!.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent === "Expand");
+    if (!expand) throw new Error("Expand button was not rendered.");
+    await act(async () => { expand.click(); });
+
+    expect(container!.textContent).toContain(
+      "Full group expansion is unavailable in this host; showing loaded checkpoints only.",
+    );
+    expect(container!.querySelectorAll(".history-checkpoints .history-revision")).toHaveLength(2);
   });
 });
