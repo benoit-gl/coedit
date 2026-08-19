@@ -129,6 +129,7 @@ This remains compatible with the repository's layered React and ports/adapters a
 | PW-23 | Navigator selection is distinct from canvas context, actual focus region, and editor ownership. Browsing changes only `navigatorSelectionId`; reveal expands required canvas ancestors and scrolls, while explicit **Focus in document** uses the normal drain-before-transfer barrier. | Arrowing through the tree does not churn Tiptap instances or create checkpoint noise. |
 | PW-24 | The navigator is docked when named available-width constraints are met and becomes an explicitly opened modal drawer on compact/touch layouts; `historyDockRequestedOpen`, one `activeCompactAuxiliary`, and `lastExplicitAuxiliary` make Navigator/History visibility and collision deterministic. Effective History visibility is derived from layout plus those states and alone governs its contribution queries. | A saved Navigator dock preference never auto-opens a modal; History's dock request is page-session state. Successful drawer activation validates/drains before close and target focus; failure keeps the drawer/row available. Breakpoint transitions choose the focused then last-explicit panel, capture once only if dirty-body focus actually leaves, preserve outside-app focus, and never rewrite requested visibility. First reveal without a page queries once; a valid non-stale reveal is silent; hidden changes advance a data generation, mark stale, reject older responses, and coalesce into one guarded refresh on reappearance. |
 | PW-25 | The navigator consumes the active live or historical `WorkspaceProjection`; historical navigator state is temporary and read-only. Historical entry wraps the exact live UI context with a fresh one-shot editor-resume candidate; **Back to current** restores the context and consumes the candidate, while Restore derives and validates a new live context against the compensating view and also consumes it. | A historical tree cannot invoke live document commands, leak historical node IDs into live state, reuse a stale editor owner, or mount one in a hidden block; Restore expands changed required ancestry for a surviving target or chooses a visible fallback and never copies historical UI context. |
+| PW-26 | Interleave Slice B and Slice C at the active-editor safety boundary: implement the UI-neutral checkpoint core and application contract first, then the visible-node/read-only canvas scaffold, and integrate checkpointing directly into the canvas's final single-editor ownership model before enabling editable or structural canvas behavior. | The coordinator is not coupled deeply to the temporary master/detail lifecycle, while no canvas action can transfer, hide, or remove an editor owner without the required drain-before-unmount contract. Grouped History may follow canvas parity because it consumes stable group IDs but does not protect editor lifecycle. |
 
 ## Requirements
 
@@ -158,10 +159,12 @@ start
 :WP-1 Add revision materialization query;
 :WP-2 Add explicit live/historical workspace mode;
 :WP-3 Add read-only historical canvas path;
-:WP-4 Implement body edit-batch coordinator;
-:WP-5 Implement grouped History projection;
+:WP-4 core Implement policy, classifier, state machine, FIFO, and application contract;
 :WP-6 Implement visible-node projection;
-:WP-7 Replace master/detail with DocumentCanvas;
+:WP-7 scaffold Add DocumentCanvas, NodeBlock, and read-only previews;
+:WP-4/WP-7 integration Connect the single active editor and checkpoint barriers;
+:WP-7 completion Add editable/structural parity and retire master/detail;
+:WP-5 Implement grouped History projection;
 :WP-7A Add optional navigation-only NavigatorPanel;
 :WP-8 Add keyboard/focus/accessibility coverage;
 :WP-9 Run standalone qualification;
@@ -170,9 +173,9 @@ stop
 @enduml
 ```
 
-WP-1 through WP-3 can ship independently and provide immediate safe historical viewing. WP-4 should land before WP-7 so moving focus between inline blocks has a defined checkpoint boundary. WP-5 may land with WP-4 or later, but until it does History remains noisy even if persistence batching is correct. WP-7A follows the canvas/projection boundary: it must reuse controller intents and must not preserve the retired `Outline`/`NodeEditor` composition as another mode.
+WP-1 through WP-3 can ship independently and provide immediate safe historical viewing. WP-4 and WP-7 are intentionally interleaved: the UI-neutral WP-4 core and its stable application contract land first; WP-6 and the read-only WP-7 scaffold then establish the final block/component boundary; checkpoint capture and controlled-transfer integration are implemented in that final boundary before any editable or structural canvas behavior is enabled. Completing Slice C before this integration gate is prohibited because focus transfer, collapse, delete, and other ownership-changing actions could otherwise unmount uncheckpointed work. WP-5 follows canvas parity: checkpoint persistence already supplies stable group IDs, while the grouped History projection can be added without affecting editor safety. WP-7A follows the canvas/projection boundary and grouped History shell work: it must reuse controller intents and must not preserve the retired `Outline`/`NodeEditor` composition as another mode.
 
-**Current delivery position:** WP-1 through WP-3 are implemented for the standalone path. WP-4 is next. Native materialization remains part of WP-10.
+**Current delivery position:** WP-1 through WP-3 are implemented for the standalone path. Next is the UI-neutral WP-4 core and contract, followed by WP-6 and the read-only WP-7 scaffold. The subsequent active-editor integration completes the WP-4 safety gate inside the final canvas component model. Native materialization remains part of WP-10.
 
 The first delivery milestone is standalone: memory-backed revision queries, checkpoint coordination/grouping, the continuous canvas, and its optional navigator pass their automated and double-click artifact checks. During that milestone the Tauri composition must continue to type-check/build at its frontend boundary, but it may omit the new query capability and retain documented stale behavior. WP-10 closes that intentional gap; adapters must not use throwing capability stubs merely to appear complete.
 
@@ -214,18 +217,17 @@ These names may be adjusted during implementation, but responsibilities and depe
 
 ### Slice B — semantic checkpoints
 
-- configurable policy module;
-- transaction classifier and edit-batch state machine;
-- synchronous checkpoint capture plus asynchronous serialized persistence;
-- two-checkpoint backpressure, shared group IDs, page-aware grouped History projection, and exact group query;
-- deterministic timer, IME, failure, and boundary tests.
+- **WP-4 core, before canvas scaffolding:** configurable policy, transaction classifier, edit-batch state machine, asynchronous serialized FIFO/backpressure, stable group-ID/application contract, and deterministic unit tests;
+- **WP-4 integration, after the read-only canvas scaffold:** synchronous Yjs/HTML capture and the `DraftParticipant` adapter are connected directly to the final one-active-editor `NodeBlock` lifecycle;
+- controlled focus, tree, historical, export, backup, and close transitions cannot pass the integration gate until checkpoint ordering and failure cancellation tests pass;
+- **WP-5, after canvas parity:** page-aware grouped History projection and exact group query consume the stable checkpoint group IDs without driving editor lifecycle.
 
 ### Slice C — continuous outline
 
-- visible-node projection;
-- canvas/block components;
-- separate canvas-context/focus-region/editor-owner state and one-active-editor ownership;
-- inline insertion and structural keyboard commands;
+- **WP-6, after the WP-4 core contract:** visible-node projection;
+- **WP-7 scaffold, before WP-4 UI integration:** canvas/block components and read-only previews, kept beside the current workspace until parity;
+- **WP-4/WP-7 integration gate:** separate canvas-context/focus-region/editor-owner state and one-active-editor ownership wired to checkpoint capture, drain, retry, and failure cancellation;
+- inline insertion and structural keyboard commands only after that safety gate passes;
 - live/historical reuse, accessibility, browser, and performance qualification;
 - optional navigation-only hierarchy with independent selection/expansion, docked/drawer layouts, and no loss of canvas capability when closed.
 

@@ -465,11 +465,14 @@ Use injected policy values and fake time.
 
 1. Add pure policy validation and edit-state reducer/coordinator tests.
 2. Add transaction classifier tests around ProseMirror/Tiptap events and `beforeinput`.
-3. Integrate synchronous Yjs checkpoint capture while retaining the old timer behind a temporary feature switch if needed.
-4. Move `groupId` ownership from `commitBody` to the edit-batch coordinator/application request.
-5. Add grouped History projection and exact checkpoint expansion.
-6. Integrate draft-transition/tree/focus/historical boundaries, including the optional navigator's one focus-departure boundary and non-boundary browsing events.
-7. Delete the 1.2-second path after parity/failure tests pass.
-8. Measure standalone memory and native SQLite snapshot/history growth.
-9. Run browser, IME, accessibility, failure, recovery, and platform suites.
-10. Update current architecture, frontend, sequences, RUP, testing, traceability, persistence, and limitations documentation.
+3. Implement the UI-neutral edit-group machine, immutable checkpoint FIFO/retry/backpressure, and its `DraftParticipant`/application-facing contract without coupling ownership to `Outline` or `NodeEditor`.
+4. Move `groupId` ownership from `commitBody` to the coordinator/application request and test the contract independently of either workspace composition.
+5. Pause WP-4 component integration while WP-6 and the read-only WP-7 scaffold establish `DocumentCanvas`/`NodeBlock`; the existing master/detail editor may retain its current timer only while that scaffold is unreachable or read-only.
+6. Integrate transaction classification and synchronous Yjs/HTML capture into the single active editor owned by the final `NodeBlock` boundary.
+7. Integrate draft-transition/tree/focus/historical boundaries and prove that transfer, collapse, delete, create, move, export, backup, and close drain before changing/removing the owner and cancel on failure.
+8. Delete the 1.2-second path before enabling editable canvas behavior; do not ship or qualify the editable canvas behind two batching implementations.
+9. Complete editable/structural canvas parity, then add grouped History projection and exact checkpoint expansion as WP-5.
+10. Add the optional navigator's one focus-departure boundary and non-boundary browsing events after the canvas/controller boundary is stable.
+11. Measure standalone memory and native SQLite snapshot/history growth.
+12. Run browser, IME, accessibility, failure, recovery, and platform suites.
+13. Update current architecture, frontend, sequences, RUP, testing, traceability, persistence, and limitations documentation.

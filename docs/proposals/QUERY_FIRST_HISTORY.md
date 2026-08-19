@@ -501,10 +501,10 @@ For every adapter that advertises `RevisionQueryCapability.kind === "available"`
 2. **Implemented (WP-1):** implement/test the memory query without UI changes.
 3. **Implemented (WP-2):** add `WorkspaceProjection`, retained-origin request state, Back, stale-response guards, and command guards to the controller.
 4. **Implemented (WP-3):** add View/Back UI using the existing editor layout, with a static sanitizer-backed historical detail and persistent banner. Standalone artifact qualification remains part of the broader milestone.
-5. **Implemented at the capability boundary (WP-1):** keep the Tauri composition compiling with the query capability explicitly unavailable and document that temporary host difference.
-6. Add the Rust store query, IPC command, Tauri adapter, and shared contract fixtures/tests in the native parity slice.
-7. Reuse the new `DocumentCanvas` when continuous outline work lands.
-8. Add the optional navigator against the same `WorkspaceProjection`, with separate live/historical UI contexts and no command surface.
-9. **Implemented for available hosts (WP-3):** remove row-level Restore in favor of explicit historical banner confirmation; host-deferred Tauri retains its row action until native View exists.
-10. Add grouping/checkpoint expansion integration.
+5. **Implemented for available hosts (WP-3):** remove row-level Restore in favor of explicit historical banner confirmation; host-deferred Tauri retains its row action until native View exists.
+6. **Implemented at the capability boundary (WP-1):** keep the Tauri composition compiling with the query capability explicitly unavailable and document that temporary host difference.
+7. After the UI-neutral checkpoint core and read-only canvas scaffold exist, reuse `DocumentCanvas` for historical mode only after the active-editor checkpoint safety gate passes.
+8. After canvas parity, add grouped History and exact checkpoint expansion over the stable coordinator-owned group IDs.
+9. Add the optional navigator against the same `WorkspaceProjection`, with separate live/historical UI contexts and no command surface.
+10. In WP-10, add the Rust store query, IPC command, Tauri adapter, and shared contract fixtures/tests after standalone qualification.
 11. Update current architecture, persistence, sequence, RUP, traceability, testing, security, and limitations documents as each milestone becomes implemented.

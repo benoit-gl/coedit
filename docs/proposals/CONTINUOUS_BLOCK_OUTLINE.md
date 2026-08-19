@@ -622,14 +622,16 @@ The first performance tactic is one active editor, not virtualization.
 
 ## Implementation sequence
 
-1. Add and test pure visible-node projection without changing UI.
-2. Add `DocumentCanvas` in a feature branch/flag beside the current workspace.
-3. Render read-only previews for every visible block.
-4. Add active-editor ownership using the new checkpoint coordinator.
-5. Add title/tag editing and insertion.
-6. Add structural keyboard and pointer controls.
-7. Reuse the canvas for historical mode.
-8. Remove the master/detail composition only after canvas parity is demonstrated; do not retain it as a runtime mode.
-9. Add the optional navigation-only `NavigatorPanel`, independent tree projection/state, validated dock preference, transient compact-drawer state, and responsive shell composition.
-10. Complete accessibility/performance/browser testing for both canvas-only and navigator-open layouts.
-11. Update as-built architecture, UI/UX, sequences, traceability, and known limitations.
+1. Establish and unit-test the UI-neutral WP-4 policy, classifier, edit-group machine, bounded FIFO/retry behavior, and stable application contract; defer component-lifecycle integration.
+2. Add and test pure WP-6 visible-node projection without changing reachable UI.
+3. Add the WP-7 `DocumentCanvas`/`NodeBlock` scaffold in a feature branch/flag beside the current workspace.
+4. Render read-only previews for every visible block. At this stage the scaffold must not mount an editor or expose structural mutations, so it does not depend on the temporary master/detail batching lifecycle.
+5. Complete the WP-4/WP-7 safety gate by adding one active-editor owner through the new checkpoint coordinator. Focus transfer and every action that could hide/remove the owner must drain first and retain the old owner on failure.
+6. Remove the fixed 1.2-second batching path, then add title/tag editing and insertion through the final `NodeBlock` boundary.
+7. Add structural keyboard and pointer controls only after drain-before-unmount and failure-cancel tests pass.
+8. Reuse the canvas for historical mode.
+9. Remove the master/detail composition only after canvas parity is demonstrated; do not retain it as a runtime mode.
+10. Add WP-5 grouped History projection and exact checkpoint expansion over the stable group-ID contract.
+11. Add the optional navigation-only `NavigatorPanel`, independent tree projection/state, validated dock preference, transient compact-drawer state, and responsive shell composition.
+12. Complete accessibility/performance/browser testing for both canvas-only and navigator-open layouts.
+13. Update as-built architecture, UI/UX, sequences, traceability, and known limitations.
