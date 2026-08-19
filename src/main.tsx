@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { MemoryDocumentGateway } from "./persistence/memoryGateway";
 import "./styles.css";
+import "./historyGroups.css";
 
 const documentGateway = new MemoryDocumentGateway();
 
