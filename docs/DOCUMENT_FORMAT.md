@@ -276,7 +276,7 @@ This is distinct from `restoreNode`: that operation undeletes one node and its a
 
 ## Workspace-view and checkpoint semantics
 
-This section records the data contract expected by the [continuous-workspace package](./proposals/README.md) and does not declare a new schema version. The standalone WP-1 query implements historical materialization against its in-memory snapshots, and WP-2 retains that result in an explicit non-persisted historical controller projection. The historical UI, native SQLite query, and checkpoint subsections remain proposed.
+This section records the data contract expected by the [continuous-workspace package](./proposals/README.md) and does not declare a new schema version. The standalone WP-1 query implements historical materialization against its in-memory snapshots, WP-2 retains that result in an explicit non-persisted historical controller projection, and the WP-4 application contract now accepts producer-owned checkpoint group IDs. The native SQLite query and runtime checkpoint/group presentation semantics remain staged; the implemented UI-neutral coordinator is not yet connected to the editor.
 
 ### Historical materialization is a query
 
@@ -303,7 +303,7 @@ The proposed [body checkpoint strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md)
 - collapsed History presentation is a query/projection over immutable raw rows; it does not merge, delete, or rewrite contributions; and
 - expanding a group exposes its exact physical revisions, each of which remains individually materializable/restorable.
 
-The two easy-to-change code-policy values, `batchCharacterThreshold` and `idleTimeoutMs`, control *when* checkpoints are requested; they are not persisted document properties and do not alter file interpretation. The proposed defaults are `20` graphemes and `30_000` milliseconds. Changing them can materially affect ledger/snapshot volume and must be measured, but does not by itself require a format migration.
+The two easy-to-change code-policy values, `batchCharacterThreshold` and `idleTimeoutMs`, control *when* checkpoints are requested; they are not persisted document properties and do not alter file interpretation. The implemented, validated defaults are `20` graphemes and `30_000` milliseconds, though they remain unreachable until editor integration. Changing them can materially affect ledger/snapshot volume and must be measured, but does not by itself require a format migration.
 
 This grouping design does not solve snapshot-per-revision growth. Retention, compaction, delta snapshots, and replay/checkpoint strategy remain separate format work and must not be inferred from a collapsed History row.
 

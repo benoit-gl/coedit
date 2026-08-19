@@ -36,7 +36,7 @@ Priority meaning:
 | R-24 | P3 | Outline behavior | New expansion state, drag placement/root drops, and affected-node reporting are limited | `Outline`; both operation models |
 | R-25 | P2 | Writing flow | Separate outline and selected-node editor force master/detail context switching for ordinary writing and node insertion | `App` workspace composition; `Outline`; `NodeEditor` |
 | R-26 | P2 | Historical inspection | Standalone View/Back is implemented in the current master/detail workspace, but continuous-canvas reuse and native queries remain incomplete | `workspaceProjection`; `HistoryPanel`; `HistoricalNodeView`; Tauri query capability |
-| R-27 | P2 | Edit history/noise | Fixed 1.2-second quiet-period checkpoints and one new group ID per body commit create indiscriminate revisions and noisy History | `RichTextEditor`; `controller.commitBody`; full snapshots |
+| R-27 | P2 | Edit history/noise | Fixed 1.2-second quiet-period checkpoints and one new group ID per compatibility editor flush create indiscriminate revisions and noisy History; the WP-4 core is implemented but not wired | `RichTextEditor`; `BodyEditBatchCoordinator`; full snapshots |
 
 ## Data-integrity and attribution risks
 
@@ -195,9 +195,9 @@ WP-3 connects capable-host History **View** to a static sanitized historical det
 
 ### R-27: body checkpoints are temporally arbitrary and visually noisy
 
-Every Yjs update resets a 1.2-second timer. Expiry emits a body operation, and the controller assigns a new group ID to every operation. Short pauses therefore become unrelated History rows even when they form one editing episode, while every resulting revision also receives a full snapshot.
+Every Yjs update currently resets a 1.2-second timer. Expiry emits a body operation, and the compatibility editor assigns a new group ID to every flush while the controller preserves that supplied ID. Short pauses therefore remain unrelated History rows even when they form one editing episode, while every resulting revision also receives a full snapshot. WP-4 has implemented the validated policy, transaction classifier, edit-group state machine, immutable two-checkpoint FIFO/retry/backpressure, and caller-owned group-ID contract; Tiptap/Yjs capture and canvas ownership wiring remain intentionally deferred.
 
-**Recommended direction:** use the proposed [body checkpoint and commit strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md): semantic edit-mode/focus/tree boundaries, threshold safety checkpoints that reuse a group ID, a two-checkpoint backpressure bound, page-aware exact group expansion, and a single injectable policy containing easily modifiable `batchCharacterThreshold` and `idleTimeoutMs` defaults. Physical snapshot compaction remains separate R-12 work.
+**Recommended direction:** complete the [body checkpoint and commit strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md) by wiring the implemented core into the final canvas editor boundary, then add page-aware exact group expansion. The core already supplies semantic edit-mode/focus boundaries, threshold checkpoints that reuse a group ID, a two-checkpoint backpressure bound, and one injectable policy containing `batchCharacterThreshold` and `idleTimeoutMs`. Physical snapshot compaction remains separate R-12 work.
 
 ## Reserved capabilities, not current features
 

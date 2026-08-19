@@ -359,7 +359,7 @@ component callback
      else: mark loaded History stale until the panel opens
 ```
 
-`context()` includes the selected contributor, the per-mount session ID, an optional group ID, and a human-readable message. `addNode()` creates the node ID before dispatch so it can select that node when the operation resolves. Content commits create a fresh group ID for each debounced editor batch and enter the same serialized queue. A rejected task does not poison later queue entries.
+`context()` includes the selected contributor, the per-mount session ID, an optional caller-supplied group ID, and a human-readable message. `addNode()` creates the node ID before dispatch so it can select that node when the operation resolves. The current compatibility editor creates a fresh group ID for each debounced body batch; `commitBody(BodyCheckpointCommitRequest)` preserves that identity through the same serialized queue. A rejected task does not poison later queue entries. The implemented UI-neutral coordinator will instead retain one group ID across threshold checkpoints after the canvas integration gate.
 
 History reads are not serialized with document commands. The controller instead gives each request a monotonically increasing request number and workspace epoch. A superseded request cannot overwrite the active page. Search/node filters run in the adapter before pagination; the panel debounces query changes by 250 ms. Pages contain 100 items by default, advertise `hasMore`, and use `nextBeforeRevision` as an exclusive cursor for **Load older contributions**. The header suffixes the loaded count with `+` when more entries are reachable; it is not a total-count query.
 
@@ -407,7 +407,7 @@ The desktop persistence layer has its own Rust implementation. Changes to operat
 7. On flush, the quiet-period timer is canceled and updates are merged with `Y.mergeUpdates`.
 8. Current editor HTML is sanitized through `sanitizeRichText()`.
 9. Both the merged incremental update and `Y.encodeStateAsUpdate(document)` are Base64 encoded.
-10. `onCommit(bodyHtml, yjsUpdate, yjsState)` dispatches `updateBody` through the controller queue.
+10. `onCommit(BodyCheckpointCommitRequest)` supplies node/group identity plus `bodyHtml`, `yjsUpdate`, and `yjsState`, then dispatches `updateBody` through the controller queue.
 11. If updates arrive while a commit is awaiting persistence, the drain loop commits them before resolving. If persistence rejects, the merged delta is restored to the pending queue for a later explicit retry.
 
 The component exposes its `DraftParticipant` to `NodeEditor`; the node editor combines that drain with its metadata drain and registers the aggregate with the controller. Together with the document-title participant, controlled node selection, document operations, restore, export, backup, and Close freeze new edits and await all dirty state before proceeding. `RichTextEditor` cleanup intentionally clears its timer and does not start unawaitable persistence work; browser unload/process termination therefore remains outside the guarantee. The toolbar currently exposes bold, italic, level-two heading, bullet list, ordered list, blockquote, undo, and redo.
@@ -513,7 +513,7 @@ These are observations, not recommended behavior. The consolidated risk list and
 - `Outline` initializes expansion state only on mount. IDs added later are not automatically expanded.
 - `App` composes a separate `Outline` with one selected `NodeEditor`; the current workspace is master/detail rather than a continuous document canvas.
 - Standalone History can enter an explicit read-only historical projection through the memory query, renders static sanitized content with no editor participant, and exposes a persistent Back/confirmed-restore banner. Tauri advertises the query as host-deferred and retains row-level restore until WP-10.
-- `RichTextEditor` uses a fixed 1.2-second quiet-period timer and `commitBody` creates a fresh group ID for every checkpoint; edit episodes are not semantically grouped.
+- `RichTextEditor` still uses a fixed 1.2-second quiet-period timer and allocates a fresh group ID for every compatibility flush; `commitBody` now preserves the supplied ID, but the implemented WP-4 coordinator is not yet connected and edit episodes are not semantically grouped.
 - Hook-level controller and full-`App` historical-flow tests cover View/Back/non-mutation and one confirmed restore; focused component tests cover the static sanitizer path, banner semantics, and History capability presentation. Complete Tiptap timing, browser end-to-end, accessibility, and native suites remain absent.
 
 ## Review checklist for frontend changes

@@ -1,4 +1,5 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { BodyCheckpointCommitRequest } from "../application/bodyCheckpoint";
 import type { DraftParticipant, RegisterDraftParticipant } from "../application/draftTransition";
 import type { DocumentNode } from "../domain/types";
 import { normalizeTags } from "../domain/tags";
@@ -13,7 +14,7 @@ interface NodeEditorProps {
   tagSuggestions: string[];
   readOnly: boolean;
   onMetadataChange: (changes: MetadataChanges) => Promise<void>;
-  onBodyChange: (bodyHtml: string, yjsUpdate: string, yjsState: string) => Promise<void>;
+  onBodyChange: (checkpoint: BodyCheckpointCommitRequest) => Promise<void>;
   registerDraftParticipant: RegisterDraftParticipant;
 }
 

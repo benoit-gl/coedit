@@ -260,7 +260,7 @@ export function App({ documentGateway, revisionQueryCapability, fileDialogs }: A
               readOnly={controlsLocked}
               registerDraftParticipant={controller.registerDraftParticipant}
               onMetadataChange={(changes) => controller.commitNodeMetadata(selectedNode.id, changes)}
-              onBodyChange={(bodyHtml, yjsUpdate, yjsState) => controller.commitBody(selectedNode.id, bodyHtml, yjsUpdate, yjsState)}
+              onBodyChange={controller.commitBody}
             />
           ) : historicalProjection ? (
             <div className="empty-editor historical-empty-state">

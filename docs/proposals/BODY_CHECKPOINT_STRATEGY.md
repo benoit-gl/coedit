@@ -2,13 +2,13 @@
 
 **Product decision:** Approved design direction.
 
-**Implementation status:** Proposed; not implemented.
+**Implementation status:** WP-4 UI-neutral core and application contract implemented; Tiptap/Yjs capture, canvas ownership integration, grouped History, and browser/native qualification remain staged.
 
 **Change package:** [Continuous workspace proposals](./README.md)
 
 ## Problem statement
 
-The current editor accumulates Yjs updates and resets a fixed 1.2-second timer after every update. When the timer expires, it emits an `updateBody` operation. This protects against pending in-app drafts but treats every short pause as a separate revision. The controller also assigns a fresh `groupId` to every body operation, so the history cannot collapse related safety checkpoints into one semantic writing episode.
+The current compatibility editor accumulates Yjs updates and resets a fixed 1.2-second timer after every update. When the timer expires, it emits an `updateBody` operation with a fresh caller-owned `groupId`. This protects against pending in-app drafts but treats every short pause as a separate revision, so History cannot yet collapse related safety checkpoints into one semantic writing episode. The controller contract now accepts the producer's group ID; the implemented coordinator core will reuse it across threshold checkpoints when connected at the canvas integration gate.
 
 The target design checkpoints at explicit editing boundaries and a bounded character threshold, with a longer configurable idle safety interval.
 
@@ -463,10 +463,10 @@ Use injected policy values and fake time.
 
 ## Implementation sequence
 
-1. Add pure policy validation and edit-state reducer/coordinator tests.
-2. Add transaction classifier tests around ProseMirror/Tiptap events and `beforeinput`.
-3. Implement the UI-neutral edit-group machine, immutable checkpoint FIFO/retry/backpressure, and its `DraftParticipant`/application-facing contract without coupling ownership to `Outline` or `NodeEditor`.
-4. Move `groupId` ownership from `commitBody` to the coordinator/application request and test the contract independently of either workspace composition.
+1. **Implemented (WP-4 core):** add pure policy validation and edit-state coordinator tests.
+2. **Implemented at the UI-neutral fact boundary (WP-4 core):** add transaction classification for selection-only changes, insertion/deletion, composition updates/commits, paste/drop/cut, replacement, formatting, undo, redo, and persistence loads. Concrete ProseMirror/`beforeinput` observation wiring remains step 6.
+3. **Implemented (WP-4 core):** add the UI-neutral edit-group machine, immutable checkpoint FIFO/retry/backpressure, and its `DraftParticipant`-compatible/application-facing contract without coupling ownership to `Outline` or `NodeEditor`.
+4. **Implemented (WP-4 core):** move `groupId` ownership from `commitBody` to the checkpoint application request and test the contract independently of either workspace composition. The temporary timer path supplies one fresh ID per legacy flush until step 6.
 5. Pause WP-4 component integration while WP-6 and the read-only WP-7 scaffold establish `DocumentCanvas`/`NodeBlock`; the existing master/detail editor may retain its current timer only while that scaffold is unreachable or read-only.
 6. Integrate transaction classification and synchronous Yjs/HTML capture into the single active editor owned by the final `NodeBlock` boundary.
 7. Integrate draft-transition/tree/focus/historical boundaries and prove that transfer, collapse, delete, create, move, export, backup, and close drain before changing/removing the owner and cancel on failure.

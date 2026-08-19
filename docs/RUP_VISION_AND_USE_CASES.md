@@ -330,7 +330,7 @@ OpenState .. UC10
 2. Tiptap Collaboration maps the editor field to that Yjs document.
 3. Yjs updates are accumulated in memory.
 4. After 1.2 seconds without another update—or when the controller explicitly requests a flush—the editor merges updates, sanitizes rendered HTML through `coedit-rich-text-v1`, encodes the incremental update and complete Yjs state, and calls `onCommit`.
-5. The controller queues `updateBody` with a new group ID and message `Writing contribution`.
+5. The compatibility editor supplies a new group ID for the flush, and the controller queues `updateBody` with that ID and message `Writing contribution`.
 6. Desktop persistence checks sizes and base64, sanitizes HTML again with Ammonia, and commits state plus history; the memory adapter applies the equivalent domain operation.
 
 **Alternate and exception flows:**
@@ -804,7 +804,7 @@ These requirements describe the target package, not current satisfaction.
 | RK-10 | Replacement and interrupted-journal recovery paths lack fault-injection coverage. | Low-medium / high | Atomic-style helpers and warning | Filesystem failure tests and recovery rehearsal |
 | RK-11 | A continuous canvas can create focus loss, editor remount, or keyboard conflicts across blocks. | Medium / high usability and data integrity | Proposed one-active-editor ownership and explicit shortcut scope | Component integration, IME, screen-reader, touch, and browser tests from UC-12 |
 | RK-12 | Historical viewing could accidentally invoke live commands or render untrusted snapshot content unsafely. | Low-medium / high integrity and security | Memory query detaches/verifies tree/hash; WP-2 discriminated workspace mode rejects live commands and stale responses | Native query parity, full UI callback guards, and hostile historical-rendering cases from UC-13 |
-| RK-13 | Checkpoint classification, off-by-one counting, timers, or slow persistence can lose boundaries, exhaust memory, or create noisy history. | Medium / high integrity and usability | Proposed pure coordinator, injectable policy, two-checkpoint backpressure, FIFO retention, page-aware shared edit groups | Fake-time/property/IME/slow/failure/page-boundary tests from UC-14 plus snapshot-growth measurements |
+| RK-13 | Checkpoint classification, off-by-one counting, timers, or slow persistence can lose boundaries, exhaust memory, or create noisy history. | Medium / high integrity and usability | Implemented pure coordinator, injectable validated policy, two-checkpoint backpressure, FIFO retention, and caller-owned group contract; editor integration and page-aware shared-group presentation remain | Implemented deterministic policy/classifier/threshold/timer/slow/failure units plus pending browser IME/page-boundary tests and snapshot-growth measurements |
 | RK-14 | An auxiliary navigator could drift into a second editor, couple its expansion to the canvas, steal focus/editor ownership, or obscure the canvas on touch devices. | Medium / medium-high usability and architectural complexity | Proposed navigation-only boundary, independent state, explicit focus action, and responsive drawer | Ownership/non-mutation tests, ARIA tree and focus tests, live/historical parity, and iPadOS/Safari qualification from UC-12 and UC-13 |
 
 The prioritized verification work is in [Testing strategy](./TESTING.md). Ownership and suggested fixes are maintained in [Known limitations](./KNOWN_LIMITATIONS.md).

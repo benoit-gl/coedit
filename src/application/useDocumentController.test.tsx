@@ -172,6 +172,56 @@ describe("useDocumentController draft transitions", () => {
   });
 });
 
+describe("useDocumentController body checkpoint contract", () => {
+  it("persists coordinator-owned group IDs without allocating replacements", async () => {
+    const gateway = new MemoryDocumentGateway();
+    const getController = await renderController(gateway);
+    await createTwoNodes(getController);
+
+    await act(async () => {
+      await getController().commitBody({
+        nodeId: "first",
+        groupId: "writing-episode",
+        bodyHtml: "<p>First checkpoint</p>",
+        yjsUpdate: "update-1",
+        yjsState: "state-1",
+      });
+      await getController().commitBody({
+        nodeId: "first",
+        groupId: "writing-episode",
+        bodyHtml: "<p>Second checkpoint</p>",
+        yjsUpdate: "update-2",
+        yjsState: "state-2",
+      });
+    });
+
+    const bodyRows = (await gateway.listContributions()).items.filter(
+      (contribution) => contribution.operationType === "updateBody",
+    );
+    expect(bodyRows).toHaveLength(2);
+    expect(bodyRows.map((contribution) => contribution.groupId)).toEqual([
+      "writing-episode",
+      "writing-episode",
+    ]);
+  });
+
+  it("rejects an empty checkpoint group ID before persistence", async () => {
+    const gateway = new MemoryDocumentGateway();
+    const getController = await renderController(gateway);
+    await createTwoNodes(getController);
+    const revision = getController().view?.document.revision;
+
+    await expect(getController().commitBody({
+      nodeId: "first",
+      groupId: " ",
+      bodyHtml: "<p>Rejected</p>",
+      yjsUpdate: "update",
+      yjsState: "state",
+    })).rejects.toThrow(/group ID/);
+    expect(getController().view?.document.revision).toBe(revision);
+  });
+});
+
 describe("useDocumentController workspace projection", () => {
   it("flushes before entering historical mode, guards commands, and returns to retained live state", async () => {
     const gateway = new MemoryDocumentGateway();

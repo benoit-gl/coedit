@@ -3,7 +3,9 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Collaboration from "@tiptap/extension-collaboration";
 import * as Y from "yjs";
+import type { BodyCheckpointCommitRequest } from "../application/bodyCheckpoint";
 import type { DraftParticipant } from "../application/draftTransition";
+import { newId } from "../domain/ids";
 import type { DocumentNode } from "../domain/types";
 import { sanitizeRichText } from "./sanitizeRichText";
 import { bytesToBase64, createYDoc } from "./yjsEncoding";
@@ -11,7 +13,7 @@ import { bytesToBase64, createYDoc } from "./yjsEncoding";
 interface RichTextEditorProps {
   node: DocumentNode;
   readOnly: boolean;
-  onCommit: (bodyHtml: string, yjsUpdate: string, yjsState: string) => Promise<void>;
+  onCommit: (checkpoint: BodyCheckpointCommitRequest) => Promise<void>;
   registerDraftParticipant: (participant: DraftParticipant) => () => void;
 }
 
@@ -72,7 +74,16 @@ export function RichTextEditor({ node, readOnly, onCommit, registerDraftParticip
         const html = sanitizeRichText(activeEditor.getHTML());
         const yjsState = Y.encodeStateAsUpdate(document);
         try {
-          await commitRef.current(html, bytesToBase64(update), bytesToBase64(yjsState));
+          // Compatibility path until the coordinator is connected to the
+          // canvas editor: preserve the legacy one-group-per-timer-flush UX,
+          // but keep group allocation outside the application controller.
+          await commitRef.current({
+            nodeId: node.id,
+            groupId: newId(),
+            bodyHtml: html,
+            yjsUpdate: bytesToBase64(update),
+            yjsState: bytesToBase64(yjsState),
+          });
         } catch (error) {
           // Preserve the delta so the transition remains blocked and a later
           // explicit flush or edit can retry it.
@@ -89,7 +100,7 @@ export function RichTextEditor({ node, readOnly, onCommit, registerDraftParticip
       () => { if (drain.current === pending) drain.current = null; },
     );
     return pending;
-  }, [document]);
+  }, [document, node.id]);
 
   const participant = useMemo<DraftParticipant>(() => ({
     freeze: () => { editorRef.current?.setEditable(false); },

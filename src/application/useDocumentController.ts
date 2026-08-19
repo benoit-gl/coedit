@@ -13,6 +13,7 @@ import type {
 import type { DocumentFileDialogs } from "../persistence/fileDialogs";
 import type { DocumentGateway, RevisionQueryCapability } from "../persistence/gateway";
 import { DEFAULT_CONTRIBUTION_PAGE_SIZE } from "../persistence/gateway";
+import type { BodyCheckpointCommitRequest } from "./bodyCheckpoint";
 import {
   DraftTransitionCoordinator,
   type DraftParticipant,
@@ -360,16 +361,22 @@ export function useDocumentController({
     }, "All changes saved locally");
   }, [acceptView, assertCurrentWorkspace, context, documentGateway, executeMutation, requireLiveWorkspace]);
 
-  const commitBody = useCallback((
-    nodeId: string,
-    bodyHtml: string,
-    yjsUpdate: string,
-    yjsState: string,
-  ): Promise<void> => commitRawOperation(
-    { type: "updateBody", nodeId, bodyHtml, yjsUpdate, yjsState },
-    "Writing contribution",
-    newId(),
-  ), [commitRawOperation]);
+  const commitBody = useCallback((checkpoint: BodyCheckpointCommitRequest): Promise<void> => {
+    if (!checkpoint.groupId.trim()) {
+      return Promise.reject(new Error("A body checkpoint requires a non-empty group ID."));
+    }
+    return commitRawOperation(
+      {
+        type: "updateBody",
+        nodeId: checkpoint.nodeId,
+        bodyHtml: checkpoint.bodyHtml,
+        yjsUpdate: checkpoint.yjsUpdate,
+        yjsState: checkpoint.yjsState,
+      },
+      "Writing contribution",
+      checkpoint.groupId,
+    );
+  }, [commitRawOperation]);
 
   const commitNodeMetadata = useCallback((
     nodeId: string,

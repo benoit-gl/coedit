@@ -2,7 +2,7 @@
 
 **Product decision:** Approved design direction.
 
-**Implementation status:** Partial. WP-1 through WP-3 implement the standalone revision query, explicit controller workspace mode/command guard, and user-facing read-only historical path. Checkpointing, the continuous canvas, navigator, and native query parity remain proposed.
+**Implementation status:** Partial. WP-1 through WP-3 implement the standalone revision query, explicit controller workspace mode/command guard, and user-facing read-only historical path. The WP-4 UI-neutral checkpoint core/application contract is implemented; its Tiptap/canvas integration, grouped History, the continuous canvas, navigator, and native query parity remain staged.
 
 **Purpose:** Preserve an implementation-ready design for three related UX and architecture changes so work can resume later without reconstructing product decisions from conversation history.
 
@@ -175,13 +175,13 @@ stop
 
 WP-1 through WP-3 can ship independently and provide immediate safe historical viewing. WP-4 and WP-7 are intentionally interleaved: the UI-neutral WP-4 core and its stable application contract land first; WP-6 and the read-only WP-7 scaffold then establish the final block/component boundary; checkpoint capture and controlled-transfer integration are implemented in that final boundary before any editable or structural canvas behavior is enabled. Completing Slice C before this integration gate is prohibited because focus transfer, collapse, delete, and other ownership-changing actions could otherwise unmount uncheckpointed work. WP-5 follows canvas parity: checkpoint persistence already supplies stable group IDs, while the grouped History projection can be added without affecting editor safety. WP-7A follows the canvas/projection boundary and grouped History shell work: it must reuse controller intents and must not preserve the retired `Outline`/`NodeEditor` composition as another mode.
 
-**Current delivery position:** WP-1 through WP-3 are implemented for the standalone path. Next is the UI-neutral WP-4 core and contract, followed by WP-6 and the read-only WP-7 scaffold. The subsequent active-editor integration completes the WP-4 safety gate inside the final canvas component model. Native materialization remains part of WP-10.
+**Current delivery position:** WP-1 through WP-3 and the UI-neutral WP-4 core/application contract are implemented. Next is WP-6 and the read-only WP-7 scaffold. The subsequent active-editor integration completes the WP-4 safety gate inside the final canvas component model. Native materialization remains part of WP-10.
 
 The first delivery milestone is standalone: memory-backed revision queries, checkpoint coordination/grouping, the continuous canvas, and its optional navigator pass their automated and double-click artifact checks. During that milestone the Tauri composition must continue to type-check/build at its frontend boundary, but it may omit the new query capability and retain documented stale behavior. WP-10 closes that intentional gap; adapters must not use throwing capability stubs merely to appear complete.
 
 ## Proposed source ownership
 
-Names below define target ownership. WP-1 through WP-3 introduced the gateway, workspace-projection, History action, and transitional historical-renderer entries; later work packages will add or refine the remaining sources.
+Names below define target ownership. WP-1 through WP-3 introduced the gateway, workspace-projection, History action, and transitional historical-renderer entries. The WP-4 core added the application checkpoint request plus policy, classifier, and coordinator entries; later work packages will add or refine the remaining sources.
 
 | Proposed source | Responsibility |
 |---|---|
@@ -196,8 +196,10 @@ Names below define target ownership. WP-1 through WP-3 introduced the gateway, w
 | `src/components/NodeBlock.tsx` | Gutter, title, tags, body preview/editor ownership, insertion affordance |
 | `src/components/HistoricalNodeView.tsx` | Implemented transitional static historical detail; sanitized content and no live editor/draft machinery until `DocumentCanvas` replaces it |
 | `src/components/HistoricalWorkspaceBanner.tsx` | Implemented viewed/current revision identity, announcement, Back, and confirmed restore actions |
-| `src/editor/bodyCheckpointPolicy.ts` | Exported default `batchCharacterThreshold` and `idleTimeoutMs`; validation and injectable type |
-| `src/editor/BodyEditBatchCoordinator.ts` | Pure/event-driven edit batching, group lifecycle, two-checkpoint FIFO/backpressure |
+| `src/application/bodyCheckpoint.ts` | Implemented application-facing body checkpoint commit request; the producer supplies stable edit-group identity |
+| `src/editor/bodyCheckpointPolicy.ts` | Implemented exported default `batchCharacterThreshold` and `idleTimeoutMs`; validation and injectable type |
+| `src/editor/bodyEditTransaction.ts` | Implemented UI-neutral transaction-fact classification and grapheme counting; ProseMirror/`beforeinput` observation wiring remains at the integration gate |
+| `src/editor/BodyEditBatchCoordinator.ts` | Implemented pure/event-driven edit batching, group lifecycle, idle timer, immutable capture contract, and two-checkpoint FIFO/backpressure |
 | `src/persistence/gateway.ts` | Discriminated revision-query capability for `materializeRevision`; exact edit-group query; command/query separation |
 | `src/persistence/memoryGateway.ts` | Clone/verify a stored revision without changing `current`/history; page exact group members from the runtime ledger |
 | `src-tauri/src/store.rs` | Later native parity: read-only verified snapshot lookup and indexed exact-group query without a mutating transaction |
@@ -217,7 +219,7 @@ These names may be adjusted during implementation, but responsibilities and depe
 
 ### Slice B — semantic checkpoints
 
-- **WP-4 core, before canvas scaffolding:** configurable policy, transaction classifier, edit-batch state machine, asynchronous serialized FIFO/backpressure, stable group-ID/application contract, and deterministic unit tests;
+- **WP-4 core, before canvas scaffolding (implemented):** configurable policy, transaction classifier, edit-batch state machine, asynchronous serialized FIFO/backpressure, stable group-ID/application contract, and deterministic unit tests;
 - **WP-4 integration, after the read-only canvas scaffold:** synchronous Yjs/HTML capture and the `DraftParticipant` adapter are connected directly to the final one-active-editor `NodeBlock` lifecycle;
 - controlled focus, tree, historical, export, backup, and close transitions cannot pass the integration gate until checkpoint ordering and failure cancellation tests pass;
 - **WP-5, after canvas parity:** page-aware grouped History projection and exact group query consume the stable checkpoint group IDs without driving editor lifecycle.
