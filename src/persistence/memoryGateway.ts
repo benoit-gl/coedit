@@ -20,6 +20,9 @@ import {
   contributionCursor,
   contributionPage,
   contributionPageSize,
+  type ContributionGroupQueries,
+  type ContributionGroupQuery,
+  type ContributionGroupQueryCapability,
   type DocumentGateway,
   type DocumentRevisionQueries,
   type MaterializedRevision,
@@ -73,10 +76,11 @@ interface StoredRevision {
   stateHash: string;
 }
 
-export class MemoryDocumentGateway implements DocumentGateway, DocumentRevisionQueries, VolatileDocumentStorage {
+export class MemoryDocumentGateway implements DocumentGateway, DocumentRevisionQueries, ContributionGroupQueries, VolatileDocumentStorage {
   readonly kind = "volatile" as const;
   readonly storage: VolatileDocumentStorage = this;
   readonly revisionQueryCapability: RevisionQueryCapability = { kind: "available", queries: this };
+  readonly contributionGroupQueryCapability: ContributionGroupQueryCapability = { kind: "available", queries: this };
   private current: DocumentView | null = null;
   private contributions: Contribution[] = [];
   private revisions = new Map<number, StoredRevision>();
@@ -158,6 +162,18 @@ export class MemoryDocumentGateway implements DocumentGateway, DocumentRevisionQ
       const term = query.search.toLowerCase();
       result = result.filter((item) => `${item.message ?? ""} ${item.operationType} ${item.contributorName}`.toLowerCase().includes(term));
     }
+    const limit = contributionPageSize(query.limit);
+    return clone(contributionPage(result, limit));
+  }
+
+  async listContributionGroup(query: ContributionGroupQuery): Promise<ContributionPage> {
+    const groupId = query.groupId.trim();
+    if (!groupId) throw new Error("A contribution group query requires a non-empty group ID.");
+    let result = [...this.contributions]
+      .reverse()
+      .filter((item) => item.operationType === "updateBody" && item.groupId === groupId);
+    const beforeRevision = contributionCursor(query.beforeRevision);
+    if (beforeRevision !== undefined) result = result.filter((item) => item.revision < beforeRevision);
     const limit = contributionPageSize(query.limit);
     return clone(contributionPage(result, limit));
   }

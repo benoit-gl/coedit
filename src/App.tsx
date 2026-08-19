@@ -9,8 +9,9 @@ import { DocumentCanvas } from "./components/DocumentCanvas";
 import { HistoryPanel } from "./components/HistoryPanel";
 import { HistoricalWorkspaceBanner } from "./components/HistoricalWorkspaceBanner";
 import { collectActiveTags } from "./domain/tags";
+import type { Contribution } from "./domain/types";
 import type { DocumentFileDialogs } from "./persistence/fileDialogs";
-import type { DocumentGateway, RevisionQueryCapability } from "./persistence/gateway";
+import { MAX_CONTRIBUTION_PAGE_SIZE, type DocumentGateway, type RevisionQueryCapability } from "./persistence/gateway";
 
 interface DocumentTitleInputProps {
   title: string;
@@ -180,6 +181,34 @@ export function App({ documentGateway, revisionQueryCapability, fileDialogs }: A
     }
   };
 
+  const loadContributionGroup = useCallback(async (groupId: string): Promise<Contribution[]> => {
+    const capability = documentGateway.contributionGroupQueryCapability;
+    if (capability.kind !== "available") {
+      throw new Error("Full contribution-group expansion is unavailable in this host.");
+    }
+    const items: Contribution[] = [];
+    const seen = new Set<string>();
+    let beforeRevision: number | undefined;
+    for (;;) {
+      const page = await capability.queries.listContributionGroup({
+        groupId,
+        ...(beforeRevision === undefined ? {} : { beforeRevision }),
+        limit: MAX_CONTRIBUTION_PAGE_SIZE,
+      });
+      for (const contribution of page.items) {
+        if (seen.has(contribution.id)) continue;
+        seen.add(contribution.id);
+        items.push(contribution);
+      }
+      if (!page.hasMore) break;
+      if (page.nextBeforeRevision === null) {
+        throw new Error("Contribution-group pagination ended without a continuation cursor.");
+      }
+      beforeRevision = page.nextBeforeRevision;
+    }
+    return items.sort((left, right) => right.revision - left.revision);
+  }, [documentGateway]);
+
   if (!view) {
     return (
       <main className="welcome-shell">
@@ -234,7 +263,7 @@ export function App({ documentGateway, revisionQueryCapability, fileDialogs }: A
                 : controller.busy ? "Saving…" : controller.status}
           </span>
           <button type="button" disabled={controller.transitioning} onClick={() => controller.setHistoryOpen(!controller.historyOpen)}>
-            History{controller.historyOpen && <span className="count">{controller.contributions.length}{controller.historyHasMore ? "+" : ""} loaded</span>}
+            History{controller.historyOpen && <span className="count">{controller.contributions.length}{controller.historyHasMore ? "+" : ""} raw</span>}
           </button>
           <details className="menu">
             <summary
@@ -315,6 +344,7 @@ export function App({ documentGateway, revisionQueryCapability, fileDialogs }: A
             viewedRevision={viewedRevision}
             loadingRevision={loadingRevision}
             revisionViewingAvailable={revisionQueryCapability.kind === "available"}
+            contributionGroupQueryAvailable={documentGateway.contributionGroupQueryCapability.kind === "available"}
             viewDisabled={controller.transitioning}
             restoreDisabled={controlsLocked}
             hasMore={controller.historyHasMore}
@@ -323,6 +353,7 @@ export function App({ documentGateway, revisionQueryCapability, fileDialogs }: A
             loadError={controller.historyError}
             onQueryChange={controller.updateHistoryQuery}
             onLoadOlder={controller.loadOlderHistory}
+            onLoadContributionGroup={loadContributionGroup}
             onView={(revision) => { void controller.viewRevision(revision); }}
             onRestore={restoreRevision}
             onClose={() => controller.setHistoryOpen(false)}

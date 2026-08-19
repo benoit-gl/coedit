@@ -60,6 +60,25 @@ export const HOST_DEFERRED_REVISION_QUERIES: RevisionQueryCapability = Object.fr
   reason: "host-deferred",
 });
 
+export interface ContributionGroupQuery {
+  groupId: string;
+  beforeRevision?: number;
+  limit?: number;
+}
+
+export interface ContributionGroupQueries {
+  listContributionGroup(query: ContributionGroupQuery): Promise<ContributionPage>;
+}
+
+export type ContributionGroupQueryCapability =
+  | { readonly kind: "available"; readonly queries: ContributionGroupQueries }
+  | { readonly kind: "unavailable"; readonly reason: "host-deferred" };
+
+export const HOST_DEFERRED_CONTRIBUTION_GROUP_QUERIES: ContributionGroupQueryCapability = Object.freeze({
+  kind: "unavailable",
+  reason: "host-deferred",
+});
+
 export class RevisionNotFoundError extends Error {
   readonly revision: number;
 
@@ -88,6 +107,7 @@ export interface DocumentSession {
 
 export interface ContributionHistory {
   listContributions(query?: ContributionQuery): Promise<ContributionPage>;
+  readonly contributionGroupQueryCapability: ContributionGroupQueryCapability;
 }
 
 export interface VolatileDocumentStorage {
