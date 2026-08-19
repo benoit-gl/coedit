@@ -6,6 +6,8 @@ import {
 } from "./application/useDocumentController";
 import { loadLocalContributor, LOCAL_CONTRIBUTOR_KEY } from "./application/localContributor";
 import { HistoryPanel } from "./components/HistoryPanel";
+import { HistoricalNodeView } from "./components/HistoricalNodeView";
+import { HistoricalWorkspaceBanner } from "./components/HistoricalWorkspaceBanner";
 import { NodeEditor } from "./components/NodeEditor";
 import { Outline } from "./components/Outline";
 import { newId } from "./domain/ids";
@@ -111,6 +113,13 @@ export function App({ documentGateway, revisionQueryCapability, fileDialogs }: A
     profile,
   });
   const { view, selectedNode } = controller;
+  const historicalProjection = controller.workspaceProjection?.kind === "historical"
+    ? controller.workspaceProjection
+    : null;
+  const viewedRevision = historicalProjection?.displayed.materialized.revision ?? null;
+  const loadingRevision = controller.revisionRequest.kind === "loading"
+    ? controller.revisionRequest.requestedRevision
+    : null;
   const tagSuggestions = useMemo(() => collectActiveTags(view?.nodes ?? []), [view?.nodes]);
 
   useEffect(() => {
@@ -138,7 +147,9 @@ export function App({ documentGateway, revisionQueryCapability, fileDialogs }: A
   };
 
   const restoreRevision = (revision: number) => {
-    if (window.confirm(`Restore the document to revision ${revision}? The current state remains in history.`)) {
+    if (window.confirm(
+      `Restore revision ${revision} as a new current revision? A new revision will be appended and later history will be retained.`,
+    )) {
       void controller.restoreRevision(revision);
     }
   };
@@ -167,36 +178,65 @@ export function App({ documentGateway, revisionQueryCapability, fileDialogs }: A
   const controlsLocked = view.readOnly
     || controller.transitioning
     || controller.revisionRequest.kind === "loading";
+  const revisionLoading = controller.revisionRequest.kind === "loading";
   return (
-    <div className="app-shell" aria-busy={controller.transitioning}>
+    <div
+      className={`app-shell ${historicalProjection ? "historical-mode" : ""}`}
+      aria-busy={controller.transitioning}
+    >
       <header className="topbar">
         <div className="brand"><span className="brand-mark small">C</span><span>Coedit</span></div>
-        <DocumentTitleInput
-          title={view.document.title}
-          readOnly={controlsLocked}
-          onCommit={controller.commitDocumentTitle}
-          registerDraftParticipant={controller.registerDraftParticipant}
-        />
+        {historicalProjection ? (
+          <div className="document-title historical-document-title" aria-label="Document title">
+            {view.document.title}
+          </div>
+        ) : (
+          <DocumentTitleInput
+            title={view.document.title}
+            readOnly={controlsLocked}
+            onCommit={controller.commitDocumentTitle}
+            registerDraftParticipant={controller.registerDraftParticipant}
+          />
+        )}
         <div className="top-actions">
           <span className="status">
             <i className={controller.busy ? "saving" : ""} />
-            {controller.transitioning ? "Finishing changes…" : controller.busy ? "Saving…" : controller.status}
+            {controller.transitioning
+              ? "Finishing changes…"
+              : loadingRevision !== null
+                ? `Loading revision ${loadingRevision}…`
+                : controller.busy ? "Saving…" : controller.status}
           </span>
           <button type="button" disabled={controller.transitioning} onClick={() => controller.setHistoryOpen(!controller.historyOpen)}>
             History{controller.historyOpen && <span className="count">{controller.contributions.length}{controller.historyHasMore ? "+" : ""} loaded</span>}
           </button>
           <details className="menu">
-            <summary aria-disabled={controller.transitioning}>Export</summary>
+            <summary
+              aria-disabled={controlsLocked}
+              onClick={(event) => { if (controlsLocked) event.preventDefault(); }}
+            >
+              Export
+            </summary>
             <div>
-              <button type="button" disabled={controller.transitioning} onClick={() => void controller.exportDocument("markdown")}>Markdown</button>
-              <button type="button" disabled={controller.transitioning} onClick={() => void controller.exportDocument("json")}>JSON recovery file</button>
-              {controller.nativeFilesAvailable && <button type="button" disabled={controller.transitioning} onClick={() => void controller.backupDocument()}>SQLite backup</button>}
+              <button type="button" disabled={controlsLocked} onClick={() => void controller.exportDocument("markdown")}>Markdown</button>
+              <button type="button" disabled={controlsLocked} onClick={() => void controller.exportDocument("json")}>JSON recovery file</button>
+              {controller.nativeFilesAvailable && <button type="button" disabled={controlsLocked} onClick={() => void controller.backupDocument()}>SQLite backup</button>}
             </div>
           </details>
           <button type="button" disabled={controller.transitioning} onClick={() => void controller.closeDocument()}>Close</button>
         </div>
       </header>
-      {view.readOnly && <div className="warning-banner">This document uses a newer format and is open read-only.</div>}
+      {historicalProjection && viewedRevision !== null && controller.currentRevision !== null && (
+        <HistoricalWorkspaceBanner
+          viewedRevision={viewedRevision}
+          currentRevision={controller.currentRevision}
+          backDisabled={controller.transitioning}
+          restoreDisabled={controller.transitioning || revisionLoading}
+          onBack={() => { controller.backToCurrent(); }}
+          onRestore={() => restoreRevision(viewedRevision)}
+        />
+      )}
+      {view.readOnly && !historicalProjection && <div className="warning-banner">This document uses a newer format and is open read-only.</div>}
       {view.recoveryWarning && <div className="warning-banner">{view.recoveryWarning}</div>}
       {controller.error && <div className="error-banner global">{controller.error}<button onClick={controller.clearError}>×</button></div>}
       <div className={`workspace ${controller.historyOpen ? "with-history" : ""}`}>
@@ -210,7 +250,9 @@ export function App({ documentGateway, revisionQueryCapability, fileDialogs }: A
           onDelete={deleteNode}
         />
         <main className="editor-pane">
-          {selectedNode ? (
+          {historicalProjection && selectedNode ? (
+            <HistoricalNodeView node={selectedNode} />
+          ) : selectedNode ? (
             <NodeEditor
               key={`${selectedNode.id}:${controller.editorGeneration}`}
               node={selectedNode}
@@ -220,6 +262,11 @@ export function App({ documentGateway, revisionQueryCapability, fileDialogs }: A
               onMetadataChange={(changes) => controller.commitNodeMetadata(selectedNode.id, changes)}
               onBodyChange={(bodyHtml, yjsUpdate, yjsState) => controller.commitBody(selectedNode.id, bodyHtml, yjsUpdate, yjsState)}
             />
+          ) : historicalProjection ? (
+            <div className="empty-editor historical-empty-state">
+              <h2>No ideas at this revision</h2>
+              <p>Select another revision or return to the current document.</p>
+            </div>
           ) : (
             <div className="empty-editor">
               <h2>Start with an idea</h2>
@@ -233,14 +280,19 @@ export function App({ documentGateway, revisionQueryCapability, fileDialogs }: A
             contributions={controller.contributions}
             query={controller.historyQuery}
             selectedNodeId={controller.selectedId}
-            currentRevision={view.document.revision}
-            readOnly={controlsLocked}
+            currentRevision={controller.currentRevision ?? view.document.revision}
+            viewedRevision={viewedRevision}
+            loadingRevision={loadingRevision}
+            revisionViewingAvailable={revisionQueryCapability.kind === "available"}
+            viewDisabled={controller.transitioning}
+            restoreDisabled={controlsLocked}
             hasMore={controller.historyHasMore}
             loading={controller.historyLoading}
             stale={controller.historyStale}
             loadError={controller.historyError}
             onQueryChange={controller.updateHistoryQuery}
             onLoadOlder={controller.loadOlderHistory}
+            onView={(revision) => { void controller.viewRevision(revision); }}
             onRestore={restoreRevision}
             onClose={() => controller.setHistoryOpen(false)}
           />

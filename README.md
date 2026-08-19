@@ -11,13 +11,13 @@ This is a new implementation inspired by TreeWriter's interaction model. It does
 - Keyboard navigation, sibling reordering, drag-to-reparent, and soft deletion
 - One rich-text body per node, edited with Tiptap and backed by Yjs updates
 - Contributor, writing-session, revision, operation, and state-hash attribution
-- Cursor-paged, adapter-filtered history and restoration through compensating contributions
+- Cursor-paged, adapter-filtered history, standalone read-only historical viewing, and restoration through compensating contributions
 - Portable `.coedit` SQLite document files
 - Versioned standalone JSON recovery envelopes, Markdown export, and desktop SQLite backup
 - Strict offline content-security policy and sanitization in both UI and persistence layers
 - Self-contained, double-clickable HTML5 build with an in-memory document backend
 
-The shared UI delegates use-case orchestration to `useDocumentController`. It serializes document commands, synchronously freezes and drains registered title/metadata/rich-text drafts before controlled lifecycle transitions, remounts editor state after authoritative restores, rejects stale view/history responses, narrows discriminated storage/revision-query capabilities, and owns an explicit live/historical projection with retained origins and command guards. History does not expose the historical View/Back workflow yet.
+The shared UI delegates use-case orchestration to `useDocumentController`. It serializes document commands, synchronously freezes and drains registered title/metadata/rich-text drafts before controlled lifecycle transitions, remounts editor state after authoritative restores, rejects stale view/history responses, narrows discriminated storage/revision-query capabilities, and owns an explicit live/historical projection with retained origins and command guards. In standalone mode, History exposes non-mutating **View**, a static sanitized historical workspace, persistent revision banner, **Back to current**, and separately confirmed compensating restore. Native historical queries remain host-deferred.
 
 AI and real-time synchronization are intentionally not connected. The provider interface exists so they can be added later without bypassing contribution history.
 
@@ -70,6 +70,6 @@ Start with the [engineering documentation index](./docs/README.md). It routes co
 - feature-to-file traceability, extension recipes, tests, build/release portability, and known limitations;
 - the `.coedit` format/recovery and security specifications.
 
-Future work on the continuous block-outline workspace, its optional navigation-only tree sidebar, non-mutating historical views, and configurable body checkpoint grouping starts at the [proposed continuous-workspace change package](./docs/proposals/README.md). The sidebar is an auxiliary view of the one canvas, not a return to the current master/detail editor. This is a design handoff, not a description of current behavior.
+Future work on the continuous block-outline workspace, its optional navigation-only tree sidebar, native historical-query parity, and configurable body checkpoint grouping starts at the [continuous-workspace change package](./docs/proposals/README.md). Standalone historical viewing is already reachable through the current master/detail workspace; the future sidebar is an auxiliary view of one continuous canvas, not a return to that layout.
 
 The [original architecture plan](./LOCAL_FIRST_TREE_EDITOR_PLAN.md) remains a roadmap artifact. Where it differs from the current engineering documentation or executable code, the latter describe the current implementation.

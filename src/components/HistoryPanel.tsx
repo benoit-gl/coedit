@@ -7,13 +7,18 @@ interface HistoryPanelProps {
   query: HistoryQuery;
   selectedNodeId: string | null;
   currentRevision: number;
-  readOnly: boolean;
+  viewedRevision: number | null;
+  loadingRevision: number | null;
+  revisionViewingAvailable: boolean;
+  viewDisabled: boolean;
+  restoreDisabled: boolean;
   hasMore: boolean;
   loading: boolean;
   stale: boolean;
   loadError: string | null;
   onQueryChange: (query: HistoryQuery) => void;
   onLoadOlder: () => void;
+  onView: (revision: number) => void;
   onRestore: (revision: number) => void;
   onClose: () => void;
 }
@@ -23,13 +28,18 @@ export function HistoryPanel({
   query,
   selectedNodeId,
   currentRevision,
-  readOnly,
+  viewedRevision,
+  loadingRevision,
+  revisionViewingAvailable,
+  viewDisabled,
+  restoreDisabled,
   hasMore,
   loading,
   stale,
   loadError,
   onQueryChange,
   onLoadOlder,
+  onView,
   onRestore,
   onClose,
 }: HistoryPanelProps) {
@@ -58,17 +68,48 @@ export function HistoryPanel({
       {stale && contributions.length > 0 && <div className="history-stale">Refreshing previously loaded results…</div>}
       {loadError && <div className="history-load-error">History could not be refreshed: {loadError}</div>}
       <ol className="history-list" aria-busy={loading}>
-        {contributions.map((contribution) => (
-          <li key={contribution.id}>
-            <div className="history-revision">r{contribution.revision}</div>
-            <div className="history-copy">
-              <strong>{contribution.message || contribution.operationType}</strong>
-              <span>{contribution.contributorName} · {new Date(contribution.timestamp).toLocaleString()}</span>
-              <code title={contribution.resultingHash}>{contribution.resultingHash.slice(0, 12)}</code>
-            </div>
-            <button type="button" disabled={readOnly || contribution.revision === currentRevision} onClick={() => onRestore(contribution.revision)}>Restore</button>
-          </li>
-        ))}
+        {contributions.map((contribution) => {
+          const current = contribution.revision === currentRevision;
+          const viewed = contribution.revision === viewedRevision;
+          const revisionLoading = contribution.revision === loadingRevision;
+          return (
+            <li
+              key={contribution.id}
+              className={viewed ? "viewing" : ""}
+              aria-current={viewed ? "true" : undefined}
+            >
+              <div className="history-revision">r{contribution.revision}</div>
+              <div className="history-copy">
+                <strong>{contribution.message || contribution.operationType}</strong>
+                <span>{contribution.contributorName} · {new Date(contribution.timestamp).toLocaleString()}</span>
+                <code title={contribution.resultingHash}>{contribution.resultingHash.slice(0, 12)}</code>
+              </div>
+              <div className="history-row-action">
+                {revisionViewingAvailable ? (
+                  viewed ? <span className="history-state">Viewing</span>
+                    : current ? <span className="history-state">Current</span>
+                      : (
+                        <button
+                          type="button"
+                          disabled={viewDisabled || revisionLoading}
+                          onClick={() => onView(contribution.revision)}
+                        >
+                          {revisionLoading ? "Loading…" : "View"}
+                        </button>
+                      )
+                ) : (
+                  <button
+                    type="button"
+                    disabled={restoreDisabled || current}
+                    onClick={() => onRestore(contribution.revision)}
+                  >
+                    Restore
+                  </button>
+                )}
+              </div>
+            </li>
+          );
+        })}
       </ol>
       {contributions.length === 0 && !loading && !loadError && <p className="empty-message">No matching contributions.</p>}
       {loading && <p className="history-loading">Loading history…</p>}

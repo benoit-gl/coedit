@@ -2,7 +2,7 @@
 
 **Product decision:** Approved design direction.
 
-**Implementation status:** Partial. WP-1's standalone revision query and WP-2's explicit controller workspace mode/command guard are implemented. User-facing historical View/Back, checkpointing, canvas, navigator, and native query parity remain proposed.
+**Implementation status:** Partial. WP-1 through WP-3 implement the standalone revision query, explicit controller workspace mode/command guard, and user-facing read-only historical path. Checkpointing, the continuous canvas, navigator, and native query parity remain proposed.
 
 **Purpose:** Preserve an implementation-ready design for three related UX and architecture changes so work can resume later without reconstructing product decisions from conversation history.
 
@@ -15,12 +15,14 @@ This package proposes:
 The current implementation and the root engineering documents remain authoritative until this package is implemented. In particular:
 
 - [`App`](../../src/App.tsx) still renders `Outline` beside one selected `NodeEditor`;
-- [`HistoryPanel`](../../src/components/HistoryPanel.tsx) still offers restoration rather than read-only revision viewing; and
+- [`HistoryPanel`](../../src/components/HistoryPanel.tsx) offers View-first read-only revision inspection in standalone mode, while host-deferred Tauri retains row-level restoration; and
 - [`RichTextEditor`](../../src/editor/RichTextEditor.tsx) still checkpoints after 1.2 seconds without a Yjs update.
 
 WP-1 is intentionally UI-neutral: [`gateway.ts`](../../src/persistence/gateway.ts) defines the discriminated query capability and verified result, [`MemoryDocumentGateway`](../../src/persistence/memoryGateway.ts) implements it over detached hash-bearing snapshots, and the two composition roots advertise `available` or `host-deferred`. It does not yet make historical inspection reachable from History.
 
-WP-2 remains presentation-neutral: [`workspaceProjection.ts`](../../src/application/workspaceProjection.ts) owns the live/historical union, retained-live wrapper, loading origin, and command-guard error; [`useDocumentController`](../../src/application/useDocumentController.ts) drains before querying, rejects stale responses, restores exact origins on failure/Back, guards live commands and exports, and exits historical mode only through Back, Close, or a successful compensating restore. `HistoryPanel` still has no **View** action.
+WP-2 remains presentation-neutral: [`workspaceProjection.ts`](../../src/application/workspaceProjection.ts) owns the live/historical union, retained-live wrapper, loading origin, and command-guard error; [`useDocumentController`](../../src/application/useDocumentController.ts) drains before querying, rejects stale responses, restores exact origins on failure/Back, guards live commands and exports, and exits historical mode only through Back, Close, or a successful compensating restore.
+
+WP-3 connects that boundary to the current workspace: capable-host History rows make **View** primary and identify current/loading/viewed revisions; [`HistoricalNodeView`](../../src/components/HistoricalNodeView.tsx) renders sanitized static content without live editor machinery; and [`HistoricalWorkspaceBanner`](../../src/components/HistoricalWorkspaceBanner.tsx) persistently exposes **Back to current** plus separately confirmed **Restore as new revision**. The future `DocumentCanvas` will reuse the same projection rather than preserving this master/detail presentation.
 
 ## Documents in this package
 
@@ -170,13 +172,13 @@ stop
 
 WP-1 through WP-3 can ship independently and provide immediate safe historical viewing. WP-4 should land before WP-7 so moving focus between inline blocks has a defined checkpoint boundary. WP-5 may land with WP-4 or later, but until it does History remains noisy even if persistence batching is correct. WP-7A follows the canvas/projection boundary: it must reuse controller intents and must not preserve the retired `Outline`/`NodeEditor` composition as another mode.
 
-**Current delivery position:** WP-1 and WP-2 are implemented for the standalone/controller boundary. WP-3 is next. Native materialization remains part of WP-10.
+**Current delivery position:** WP-1 through WP-3 are implemented for the standalone path. WP-4 is next. Native materialization remains part of WP-10.
 
 The first delivery milestone is standalone: memory-backed revision queries, checkpoint coordination/grouping, the continuous canvas, and its optional navigator pass their automated and double-click artifact checks. During that milestone the Tauri composition must continue to type-check/build at its frontend boundary, but it may omit the new query capability and retain documented stale behavior. WP-10 closes that intentional gap; adapters must not use throwing capability stubs merely to appear complete.
 
 ## Proposed source ownership
 
-Names below define target ownership. WP-1/WP-2 introduced the gateway and workspace-projection entries; later work packages will add or refine the remaining sources.
+Names below define target ownership. WP-1 through WP-3 introduced the gateway, workspace-projection, History action, and transitional historical-renderer entries; later work packages will add or refine the remaining sources.
 
 | Proposed source | Responsibility |
 |---|---|
@@ -189,12 +191,14 @@ Names below define target ownership. WP-1/WP-2 introduced the gateway and worksp
 | `src/components/WorkspaceShell.tsx` | Responsive composition of the sole canvas and Navigator/History docks or mutually exclusive compact auxiliary dialog; Navigator dock preference, transient History dock request, toggles, deterministic breakpoint transition, focus/checkpoint handoff/return |
 | `src/components/NavigatorPanel.tsx` | Navigation-only ARIA tree, selection/reveal/focus intents, live/historical labels; never mounts an editor |
 | `src/components/NodeBlock.tsx` | Gutter, title, tags, body preview/editor ownership, insertion affordance |
+| `src/components/HistoricalNodeView.tsx` | Implemented transitional static historical detail; sanitized content and no live editor/draft machinery until `DocumentCanvas` replaces it |
+| `src/components/HistoricalWorkspaceBanner.tsx` | Implemented viewed/current revision identity, announcement, Back, and confirmed restore actions |
 | `src/editor/bodyCheckpointPolicy.ts` | Exported default `batchCharacterThreshold` and `idleTimeoutMs`; validation and injectable type |
 | `src/editor/BodyEditBatchCoordinator.ts` | Pure/event-driven edit batching, group lifecycle, two-checkpoint FIFO/backpressure |
 | `src/persistence/gateway.ts` | Discriminated revision-query capability for `materializeRevision`; exact edit-group query; command/query separation |
 | `src/persistence/memoryGateway.ts` | Clone/verify a stored revision without changing `current`/history; page exact group members from the runtime ledger |
 | `src-tauri/src/store.rs` | Later native parity: read-only verified snapshot lookup and indexed exact-group query without a mutating transaction |
-| `src/components/HistoryPanel.tsx` | View-first action, grouped rows, exact checkpoint expansion |
+| `src/components/HistoryPanel.tsx` | Implemented View-first capability-aware actions; grouped rows and exact checkpoint expansion remain WP-5 |
 
 These names may be adjusted during implementation, but responsibilities and dependency direction should remain.
 
@@ -204,9 +208,9 @@ These names may be adjusted during implementation, but responsibilities and depe
 
 - query capability and verified memory adapter for the standalone milestone (**implemented in WP-1**); native adapter parity remains in WP-10 (capability is explicitly unavailable, not throwing, until then);
 - verified snapshot materialization, historical workspace discriminant, origin-retaining loading state, and controller command guards (**implemented in WP-1/WP-2**);
-- History **View** action;
-- read-only banner, **Back to current**, and explicit **Restore as new revision**;
-- query/controller/component tests.
+- History **View** action (**implemented in WP-3**);
+- static sanitized historical rendering, read-only banner, **Back to current**, and explicit **Restore as new revision** (**implemented in WP-3**; continuous-canvas reuse remains WP-7);
+- query/controller/component/full-App integration tests (**implemented for standalone WP-1 through WP-3**).
 
 ### Slice B — semantic checkpoints
 

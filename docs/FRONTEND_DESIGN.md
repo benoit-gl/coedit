@@ -130,7 +130,7 @@ IPC --> SQLite
 | `tauri.html` | Loads `/src/main-tauri.tsx` | Source entry used by the Tauri build. |
 | `src/main.tsx` | Entry module | Mounts `App` under `StrictMode` with a `MemoryDocumentGateway` and its available revision-query capability. |
 | `src/main-tauri.tsx` | Entry module | Mounts `App` under `StrictMode` with a `TauriDocumentGateway`, its explicitly host-deferred revision-query capability, and `tauriFileDialogs`. |
-| `src/App.tsx` | `App` | Owns welcome/profile presentation, renders controller state, and translates UI events into controller calls. |
+| `src/App.tsx` | `App` | Owns welcome/profile presentation, renders live versus historical controller state, and translates UI events into controller calls. |
 | `src/application/useDocumentController.ts` | `useDocumentController`, `HistoryQuery` | Owns the active workspace projection, revision-request origin/epoch, authoritative editor generation, contribution paging, capability dispatch, command guards, error/status state, contributor context, queue, and draft-transition barrier. |
 | `src/application/workspaceProjection.ts` | `WorkspaceProjection`, `RevisionRequestState`, live/historical context types, projection helpers, `WorkspaceMutationUnavailableError` | Explicit live/historical presentation model, retained live selection/view and one-shot editor-resume candidate, read-only historical `DocumentView` derivation, Back projection, and command-guard error. |
 | `src/application/serializedTaskQueue.ts` | `SerializedTaskQueue` | Runs document commands sequentially and keeps the queue usable after a rejection. |
@@ -144,11 +144,13 @@ IPC --> SQLite
 | `src/components/Outline.tsx` | `Outline` | Builds and presents the active node tree; selection, expansion, keyboard traversal, sibling reorder, drag-to-reparent, add, and delete. |
 | `src/components/Outline.tsx` | Private `OutlineRow` | Recursive row rendering and row-level commands. |
 | `src/components/NodeEditor.tsx` | `NodeEditor` | Owns dirty node title/tag drafts and composes the nested tag and rich-text body participants into one controller-visible participant. |
+| `src/components/HistoricalNodeView.tsx` | `HistoricalNodeView` | Renders historical title, tags, and sanitized rich text as static content without inputs, Tiptap/Yjs, timers, or draft participants. |
+| `src/components/HistoricalWorkspaceBanner.tsx` | `HistoricalWorkspaceBanner` | Persistently identifies viewed/current revisions, announces historical mode, and exposes Back plus separately confirmed restore intents. |
 | `src/components/TagEditor.tsx` | `TagEditor` | Editable ARIA combobox, reusable document suggestions, freeform tag creation, removable chips, keyboard/touch interaction, and pending-input flushing. |
 | `src/editor/RichTextEditor.tsx` | `RichTextEditor` | Tiptap/Yjs lifecycle, toolbar, grouping, retry-preserving commit drain, and participant registration with `NodeEditor`. |
 | `src/editor/sanitizeRichText.ts` | `sanitizeRichText`, `RICH_TEXT_POLICY`, allowlists | Central browser sanitization contract used for paste, fallback load, and commit. |
 | `src/editor/yjsEncoding.ts` | `bytesToBase64`, private `base64ToBytes`, `createYDoc` | Converts Yjs binary state to/from the string representation carried by the domain model. |
-| `src/components/HistoryPanel.tsx` | `HistoryPanel` | Debounces history filters, presents page/loading/error state, requests older pages, and requests revision restoration. |
+| `src/components/HistoryPanel.tsx` | `HistoryPanel` | Debounces history filters, presents page/loading/error state, requests older pages, and exposes View/current/loading/viewed states on capable hosts; host-deferred native mode retains row-level Restore. |
 | `src/styles.css` | Global style sheet | Layout, visual states, design tokens, focus indication, and the current responsive breakpoint. |
 
 ### Domain and extension contracts
@@ -181,13 +183,15 @@ createRoot
     ├── welcome-shell                         view === null
     └── app-shell                             view !== null
         ├── topbar
-        ├── warning/error banners
+        ├── compatibility/error banners
+        ├── HistoricalWorkspaceBanner     workspaceProjection.kind === historical
         └── workspace
             ├── Outline
             │   └── OutlineRow                recursive
             ├── editor-pane
-            │   ├── NodeEditor                active selection
+            │   ├── NodeEditor                active live selection
             │   │   └── RichTextEditor
+            │   ├── HistoricalNodeView        active historical selection
             │   └── empty-editor              no active selection
             └── HistoryPanel                  historyOpen === true
 ```
@@ -257,6 +261,8 @@ class Outline <<React boundary>>
 class NodeEditor <<React boundary>>
 class RichTextEditor <<React boundary>>
 class HistoryPanel <<React boundary>>
+class HistoricalNodeView <<React boundary>>
+class HistoricalWorkspaceBanner <<React boundary>>
 class DocumentView <<entity>>
 class DocumentState <<entity>>
 class DocumentNode <<entity>>
@@ -286,6 +292,8 @@ useDocumentController --> DocumentFileDialogs : optional/injected
 App --> Outline
 App --> NodeEditor
 App --> HistoryPanel
+App --> HistoricalNodeView
+App --> HistoricalWorkspaceBanner
 NodeEditor --> RichTextEditor
 useDocumentController --> WorkspaceProjection : owns current mode
 WorkspaceProjection --> DocumentView : derives displayed view
@@ -355,7 +363,7 @@ component callback
 
 History reads are not serialized with document commands. The controller instead gives each request a monotonically increasing request number and workspace epoch. A superseded request cannot overwrite the active page. Search/node filters run in the adapter before pagination; the panel debounces query changes by 250 ms. Pages contain 100 items by default, advertise `hasMore`, and use `nextBeforeRevision` as an exclusive cursor for **Load older contributions**. The header suffixes the loaded count with `+` when more entries are reachable; it is not a total-count query.
 
-`viewRevision()` is implemented as an application intent but is not yet connected to `HistoryPanel`. It first narrows `RevisionQueryCapability`; an unavailable host fails before drafts are touched. An available query freezes/drains drafts, captures the exact projection origin, records a monotonic request ID plus workspace epoch, and calls `materializeRevision()`. Only the current response can enter historical mode. Failure restores the exact origin; Back invalidates loading and recovers the retained live projection without a gateway call; Close invalidates and clears both projections. A newer View supersedes an older request. `commitRawOperation`, export, and backup require an idle live projection; the guard is checked again inside the serialized mutation task. Create/open are welcome-only lifecycle intents, preventing stale workspace callbacks from replacing a live or historical document. Restore is intentionally allowed from historical mode and exits it only after the compensating command succeeds.
+`viewRevision()` is connected to capable-host **View** actions in `HistoryPanel`. It first narrows `RevisionQueryCapability`; an unavailable host fails before drafts are touched. An available query freezes/drains drafts, captures the exact projection origin, records a monotonic request ID plus workspace epoch, and calls `materializeRevision()`. Only the current response can enter historical mode. Failure restores the exact origin; Back invalidates loading and recovers the retained live projection without a gateway call; Close invalidates and clears both projections. A newer View supersedes an older request. `commitRawOperation`, export, and backup require an idle live projection; the guard is checked again inside the serialized mutation task. Create/open are welcome-only lifecycle intents. Historical rendering replaces `DocumentTitleInput`/`NodeEditor` with static text and `HistoricalNodeView`, while restore is available only through the separately confirmed banner action and exits historical mode only after the compensating command succeeds.
 
 The operation union in `src/domain/types.ts` currently contains:
 
@@ -435,7 +443,7 @@ History filters are applied to the complete in-memory ledger before page constru
 | `storage.backupDocument` (`native-file`) | `backup_document` |
 | `exportDocument` | `export_document` |
 
-Native dialogs are separate from document persistence. `TauriDocumentGateway.storage` has kind `native-file`; `MemoryDocumentGateway.storage` has kind `volatile`. The controller narrows that union to derive method signatures and visible actions rather than requiring standalone methods that can only reject. Separately, each composition root passes a discriminated `RevisionQueryCapability`: memory is available, while Tauri is `host-deferred` and exposes no throwing method. `App` injects this boundary into the controller; the controller consumes it, while `HistoryPanel` does not expose the View intent yet. The Tauri adapter wraps the Rust contribution array as a `ContributionPage`, but Rust filtering/hash/sanitizer parity and native verification remain second-pass work.
+Native dialogs are separate from document persistence. `TauriDocumentGateway.storage` has kind `native-file`; `MemoryDocumentGateway.storage` has kind `volatile`. The controller narrows that union to derive method signatures and visible actions rather than requiring standalone methods that can only reject. Separately, each composition root passes a discriminated `RevisionQueryCapability`: memory is available, while Tauri is `host-deferred` and exposes no throwing method. `App` injects this boundary into the controller and `HistoryPanel` exposes **View** only for the available variant; host-deferred Tauri retains row-level Restore. The Tauri adapter wraps the Rust contribution array as a `ContributionPage`, but Rust filtering/hash/sanitizer parity and native verification remain second-pass work.
 
 ## Adding or changing frontend functionality
 
@@ -485,7 +493,7 @@ Extend the centralized `ExportFormat` union in `src/domain/types.ts`, update the
 The current source map, React tree, class diagram, and control flow above remain the as-built design. A resumable target design is maintained separately:
 
 - [Continuous block-outline](proposals/CONTINUOUS_BLOCK_OUTLINE.md) replaces the `Outline` plus selected `NodeEditor` composition with `DocumentCanvas`, a pure visible-node projection, separate canvas-context/focus-region/editor-owner state, drain-before-hide controls, and one active Tiptap owner. An optional `NavigatorPanel` may render a navigation-only tree over the same live or historical `WorkspaceProjection`; it is not a second editor or presentation strategy.
-- [Query-first historical views](proposals/QUERY_FIRST_HISTORY.md) now has WP-1 query capability/materialization and WP-2 explicit `WorkspaceProjection = live | historical`, origin-aware loading, Back, stale-response invalidation, and command guards. History View/Back presentation, canvas-era contexts, and native parity remain proposed; `restoreRevision` stays mutating and separately confirmed.
+- [Query-first historical views](proposals/QUERY_FIRST_HISTORY.md) now has WP-1 query capability/materialization, WP-2 explicit `WorkspaceProjection = live | historical` with origin/stale/command guards, and WP-3 View-first standalone presentation with a sanitized static historical detail, persistent banner, Back, and separately confirmed restore. Continuous-canvas contexts and native parity remain proposed.
 - [Body checkpoint strategy](proposals/BODY_CHECKPOINT_STRATEGY.md) replaces the 1.2-second timer with a transaction-classifying batch coordinator, two-checkpoint FIFO backpressure, and page-aware group projection. It requires one injectable code policy containing easily modifiable `batchCharacterThreshold` and `idleTimeoutMs` values.
 
 Proposed names and interfaces must not be added to the current source-map tables until corresponding files exist. Target navigator state separates `navigatorDockPreferredOpen`, page-session `historyDockRequestedOpen`, transient/mutually-exclusive `activeCompactAuxiliary`, `lastExplicitAuxiliary`, `navigatorSelectionId`, and `navigatorExpandedIds` from `canvasContextNodeId`, `focusRegion`, actual `editorOwnerNodeId`, the one-shot `resumeEditorNodeId` held only by a retained-live wrapper, and canvas expansion. Effective Navigator/History rendering is derived from layout plus requested/active state; only effective History visibility drives its initial/refresh queries, hidden changes mark the page stale, and a monotonic `historyDataGeneration` prevents an older in-flight response from clearing that state. `NavigatorPanel` may select/reveal a block and explicitly transfer focus through the same controlled draft boundary, but must not mount Tiptap, expose metadata/body editors, dispatch structural mutations, or write its browser preference into document state. Restore must never mount a resumed editor until its required ancestry is expanded and it is visible. Implementation should follow the delivery slices and acceptance criteria in the proposal index rather than attempting a single document-wide ProseMirror rewrite.
@@ -504,9 +512,9 @@ These are observations, not recommended behavior. The consolidated risk list and
 - The standalone `coedit-document-state-v1` hash now has a golden fixture and excludes view-only fields. Rust has not yet adopted/proved that canonical byte representation.
 - `Outline` initializes expansion state only on mount. IDs added later are not automatically expanded.
 - `App` composes a separate `Outline` with one selected `NodeEditor`; the current workspace is master/detail rather than a continuous document canvas.
-- The controller can enter an explicit read-only historical projection through the memory query, but History still exposes no **View** action or Back/banner presentation; Tauri advertises the query as host-deferred.
+- Standalone History can enter an explicit read-only historical projection through the memory query, renders static sanitized content with no editor participant, and exposes a persistent Back/confirmed-restore banner. Tauri advertises the query as host-deferred and retains row-level restore until WP-10.
 - `RichTextEditor` uses a fixed 1.2-second quiet-period timer and `commitBody` creates a fresh group ID for every checkpoint; edit episodes are not semantically grouped.
-- There is a hook-level React controller suite but no full component/editor or end-to-end suite. Current TypeScript tests cover tree rules, queue and draft-transition ordering/recovery, controller selection/Close/restore generation, JSON/hash and sanitizer fixtures, memory boundary validation/history paging/recovery export, and filename normalization.
+- Hook-level controller and full-`App` historical-flow tests cover View/Back/non-mutation and one confirmed restore; focused component tests cover the static sanitizer path, banner semantics, and History capability presentation. Complete Tiptap timing, browser end-to-end, accessibility, and native suites remain absent.
 
 ## Review checklist for frontend changes
 

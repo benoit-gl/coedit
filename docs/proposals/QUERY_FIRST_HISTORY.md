@@ -2,20 +2,20 @@
 
 **Product decision:** Approved design direction.
 
-**Implementation status:** Partial. WP-1 implements query contracts/materialization/capabilities; WP-2 implements explicit controller workspace and request states, retained-live origins, stale-response guards, Back, and live-command enforcement. History View/Back UI, canvas context, and native query parity remain proposed.
+**Implementation status:** Partial. WP-1 implements query contracts/materialization/capabilities; WP-2 implements explicit controller workspace/request state and guards; WP-3 implements standalone View-first History, static sanitized historical rendering, the persistent Back/Restore banner, and UI integration tests. Continuous-canvas context and native query parity remain proposed.
 
 **Change package:** [Continuous workspace proposals](./README.md)
 
 ## Problem statement
 
-The current History UI exposes `restoreRevision` as the way to materialize an older state. Restoration intentionally creates a new compensating revision, changes the live document, appends a contribution, and stores another snapshot. That behavior is correct for resuming work from an old state, but wrong for inspection.
+The Tauri History UI still exposes `restoreRevision` as the way to materialize an older state because native revision queries are host-deferred. Restoration intentionally creates a new compensating revision, changes the live document, appends a contribution, and stores another snapshot. That behavior is correct for resuming work from an old state, but wrong for inspection; the standalone UI now uses **View** for inspection.
 
 Both adapters already retain materialized revisions:
 
 - the memory adapter has an internal revision-to-hash-bearing-`DocumentState` map; and
 - SQLite stores full `state_json` and `state_hash` rows in `snapshots`.
 
-The standalone adapter now has a read-only query that returns one of those states without changing the live workspace or ledger, and the controller can project it through an explicit historical workspace mode. The remaining gap is to expose that mode through the read-only historical UI, then add native parity.
+The standalone adapter has a read-only query that returns one of those states without changing the live workspace or ledger, the controller projects it through an explicit historical workspace mode, and WP-3 exposes it through a static read-only historical UI. Remaining gaps are continuous-canvas reuse and native parity.
 
 ## Goals
 
@@ -500,11 +500,11 @@ For every adapter that advertises `RevisionQueryCapability.kind === "available"`
 1. **Implemented (WP-1):** define verified `MaterializedRevision`, `DocumentRevisionQueries`, and the discriminated `RevisionQueryCapability`.
 2. **Implemented (WP-1):** implement/test the memory query without UI changes.
 3. **Implemented (WP-2):** add `WorkspaceProjection`, retained-origin request state, Back, stale-response guards, and command guards to the controller.
-4. Add View/Back UI using the existing editor layout if necessary and qualify the standalone artifact.
+4. **Implemented (WP-3):** add View/Back UI using the existing editor layout, with a static sanitizer-backed historical detail and persistent banner. Standalone artifact qualification remains part of the broader milestone.
 5. **Implemented at the capability boundary (WP-1):** keep the Tauri composition compiling with the query capability explicitly unavailable and document that temporary host difference.
 6. Add the Rust store query, IPC command, Tauri adapter, and shared contract fixtures/tests in the native parity slice.
 7. Reuse the new `DocumentCanvas` when continuous outline work lands.
 8. Add the optional navigator against the same `WorkspaceProjection`, with separate live/historical UI contexts and no command surface.
-9. Demote direct restore and add explicit historical banner confirmation.
+9. **Implemented for available hosts (WP-3):** remove row-level Restore in favor of explicit historical banner confirmation; host-deferred Tauri retains its row action until native View exists.
 10. Add grouping/checkpoint expansion integration.
 11. Update current architecture, persistence, sequence, RUP, traceability, testing, security, and limitations documents as each milestone becomes implemented.

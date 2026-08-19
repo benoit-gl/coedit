@@ -26,6 +26,7 @@ function OutlineRow(props: RowProps) {
   const siblingIndex = siblings.findIndex((item) => item.id === node.id);
   const onDrop = (event: DragEvent) => {
     event.preventDefault();
+    if (readOnly) return;
     const draggedId = event.dataTransfer.getData("application/x-coedit-node");
     if (draggedId && draggedId !== node.id) onMove(draggedId, node.id, node.children.length);
   };
@@ -37,7 +38,7 @@ function OutlineRow(props: RowProps) {
         style={{ paddingInlineStart: `${depth * 18 + 8}px` }}
         draggable={!readOnly}
         onDragStart={(event) => event.dataTransfer.setData("application/x-coedit-node", node.id)}
-        onDragOver={(event) => event.preventDefault()}
+        onDragOver={(event) => { if (!readOnly) event.preventDefault(); }}
         onDrop={onDrop}
       >
         <button className="disclosure" type="button" aria-label={isExpanded ? "Collapse" : "Expand"} onClick={() => toggle(node.id)} disabled={node.children.length === 0}>
@@ -99,11 +100,14 @@ export function Outline(props: OutlineProps) {
         <span>Outline</span>
         <button type="button" onClick={() => props.onAdd(null)} disabled={props.readOnly}>＋ Root idea</button>
       </div>
-      {tree.length === 0 ? <button className="empty-outline" type="button" onClick={() => props.onAdd(null)}>Create the first idea</button> : (
+      {tree.length === 0 ? <button className="empty-outline" type="button" disabled={props.readOnly} onClick={() => props.onAdd(null)}>Create the first idea</button> : (
         <ul>{tree.map((node) => <OutlineRow key={node.id} {...props} node={node} depth={0} expanded={expanded} toggle={toggle} siblings={tree} />)}</ul>
       )}
-      <p className="outline-help">Drag onto an idea to make it a child. Use ↑ and ↓ to reorder siblings.</p>
+      <p className="outline-help">
+        {props.readOnly
+          ? "Historical outline. Select an idea to inspect it."
+          : "Drag onto an idea to make it a child. Use ↑ and ↓ to reorder siblings."}
+      </p>
     </nav>
   );
 }
-

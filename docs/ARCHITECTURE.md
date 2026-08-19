@@ -39,7 +39,7 @@ The current hardening program is intentionally divided so current claims remain 
 
 | Pass | Scope | Status |
 |---|---|---|
-| 1 — standalone-first | Application controller/queue, synchronous draft freeze plus awaitable metadata/rich-text drains, discriminated storage and revision-query capabilities, verified memory materialization, explicit live/historical workspace projection and command guards, cursor-paged memory history, complete runtime recovery envelope, centralized export/filename/sanitizer contracts, browser hash/sanitizer fixtures | Implemented in the current worktree; standalone verification is the focus |
+| 1 — standalone-first | Application controller/queue, synchronous draft freeze plus awaitable metadata/rich-text drains, discriminated storage and revision-query capabilities, verified memory materialization, explicit live/historical workspace projection and command guards, View-first read-only historical rendering with Back/confirmed restore, cursor-paged memory history, complete runtime recovery envelope, centralized export/filename/sanitizer contracts, browser hash/sanitizer fixtures | Implemented in the current worktree; standalone verification is the focus |
 | 2 — Rust/Tauri parity and hardening | Rust conformance to versioned fixtures, indexed store-side cursor filtering, Rust-owned file authorization/path security, minimized permissions, versioned migrations, measured snapshot compaction, native/platform tests | Deferred; existing Tauri adapter compatibility is not proof of completion |
 | 3 — dormant-feature decisions | AI, attachments, `restoreNode`, session lifecycle, contribution grouping, and generic metadata: finish, reserve, migrate, or remove explicitly | Deferred product/format decision |
 
@@ -53,7 +53,7 @@ A separate [proposed change package](./proposals/README.md) specifies the next w
 - [query-first historical views](./proposals/QUERY_FIRST_HISTORY.md), separating non-mutating snapshot materialization from compensating restore commands; and
 - [body checkpoint strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md), using an edit-batch state machine, shared semantic group IDs, and one injectable policy for `batchCharacterThreshold` and `idleTimeoutMs`.
 
-Most of these remain proposed decisions. WP-1 embodies the discriminated revision-query boundary and verified memory materialization. WP-2 adds a controller-owned `WorkspaceProjection`, retained live context, origin-aware revision request state, stale-response invalidation, Back semantics, and guards that reject document commands/exports outside live mode. The navigator is an auxiliary view within the target workspace, not a second editor or selectable legacy layout. The existing `Outline`/`NodeEditor`, restore-only History action, and 1.2-second quiet-period paths remain the current UI architecture until later implementation and acceptance evidence land.
+Most of these remain proposed decisions. WP-1 embodies the discriminated revision-query boundary and verified memory materialization. WP-2 adds a controller-owned `WorkspaceProjection`, retained live context, origin-aware revision request state, stale-response invalidation, Back semantics, and command/export guards. WP-3 connects standalone History **View** to a static sanitized historical detail path with a persistent banner, no-query Back, and separately confirmed restore; Tauri retains row-level restore while its query capability is host-deferred. The navigator is an auxiliary view within the target workspace, not a second editor or selectable legacy layout. The existing `Outline`/selected-detail layout and 1.2-second quiet-period path remain until later work packages land.
 
 ## 2. System context
 
@@ -104,6 +104,8 @@ package "Presentation" {
   [NodeEditor] as NodeEditor
   [RichTextEditor] as RichTextEditor
   [HistoryPanel] as HistoryPanel
+  [HistoricalNodeView] as HistoricalNodeView
+  [HistoricalWorkspaceBanner] as HistoricalBanner
 }
 
 package "Application control" {
@@ -146,6 +148,8 @@ App --> Outline
 App --> NodeEditor
 NodeEditor --> RichTextEditor
 App --> HistoryPanel
+App --> HistoricalNodeView
+App --> HistoricalBanner
 App --> Controller
 Controller --> Queue
 Controller --> Drafts
@@ -380,10 +384,11 @@ The architecturally significant use cases are:
 | UC-08/09 Export/backup | Splits browser downloads from atomic desktop output | [Output sequences](./SEQUENCE_DIAGRAMS.md#export-json-or-markdown) |
 | UC-10 Close | Exercises explicit draft drain and serialized backend lifecycle ordering | [Close sequence](./SEQUENCE_DIAGRAMS.md#close-with-an-explicit-draft-transition-barrier) |
 | UC-11 Run standalone | Demonstrates absence of native/server dependencies | [Standalone bootstrap](./SEQUENCE_DIAGRAMS.md#standalone-bootstrap) |
+| UC-13 View historical revision (standalone partial) | Separates verified snapshot queries and retained UI projection from compensating restore commands | [Historical view sequence](./SEQUENCE_DIAGRAMS.md#enter-a-historical-controller-projection) |
 
 Full use-case specifications are in [Vision and use cases](./RUP_VISION_AND_USE_CASES.md).
 
-Proposed UC-12 through UC-14 cover continuous block editing (including its optional navigation-only sidebar), non-mutating historical viewing, and semantic checkpoint grouping. Their target realizations and dependency order are in the [continuous-workspace proposal index](./proposals/README.md); they are intentionally excluded from the implemented-use-case table above.
+UC-12 through UC-14 cover continuous block editing (including its optional navigation-only sidebar), non-mutating historical viewing, and semantic checkpoint grouping. The table includes UC-13's implemented standalone selected-detail slice; its continuous-canvas/native completion and all UC-12/UC-14 paths remain proposed. Target realizations and dependency order are in the [continuous-workspace package index](./proposals/README.md).
 
 ## 8. Architecture decisions embodied in code
 

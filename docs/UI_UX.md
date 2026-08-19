@@ -59,7 +59,7 @@ Coedit Local
         ├── selected-idea filter
         ├── contribution metadata
         ├── load older contributions
-        └── restore revision
+        └── view revision (available host) / restore (host-deferred)
 ```
 
 ## UI state model
@@ -95,7 +95,11 @@ state Workspace {
   HistoryOpen --> NodeSelected : close history [node selected]
   HistoryOpen --> EmptyEditor : close history [no node]
   NodeSelected --> NodeSelected : metadata/content/tree operation
-  HistoryOpen --> HistoryOpen : search/filter/restore
+  HistoryOpen --> HistoryOpen : search/filter/view another revision
+  HistoryOpen --> Historical : View [available host]
+  Historical --> NodeSelected : Back to current
+  Historical --> NodeSelected : confirmed Restore succeeds
+  Historical --> HistoryOpen : History remains open
 }
 
 Workspace --> Busy : lifecycle/mutation/export request
@@ -106,7 +110,8 @@ Workspace --> Welcome : Close
 
 `App` renders orthogonal conditions owned by `useDocumentController` and the current view:
 
-- `view.readOnly` shows a newer-format warning and disables mutation controls.
+- `workspaceProjection.kind === "historical"` renders a persistent revision banner and static sanitized node detail; mutation/export controls are disabled while History navigation, Back, confirmed restore, and Close remain available.
+- `view.readOnly` outside historical mode shows a newer-format warning and disables mutation controls.
 - `view.recoveryWarning` shows a recovery warning.
 - `busy` changes the status dot/text and disables selected controls.
 - `error` shows a dismissible fixed error banner.
@@ -195,13 +200,32 @@ Implementation ownership:
 │   ▸ Discovery    │                                  │ ────────────────────── │
 │                  │ Text                             │ r12 Writing contribution│
 │                  │                                  │ Local author · time    │
-│                  │                                  │ 62bf…       [Restore]  │
+│                  │                                  │ 62bf…          [View]  │
 │                  │                                  │ ────────────────────── │
 │                  │                                  │ r11 Refined idea       │
 └──────────────────┴──────────────────────────────────┴────────────────────────┘
 ```
 
 Implementation: history is a third 340 px grid column on viewports wider than 900 px. The list is newest-first as returned by the gateway. Search and selected-node changes are debounced for 250 ms and sent to the adapter before pagination. A **Load older contributions** button appears when the current page reports `hasMore`.
+
+On a host with revision queries, a row is labeled **Current**, **Loading…**, or **Viewing** as appropriate and other historical rows expose **View**. Host-deferred Tauri omits View and retains its row-level Restore fallback until WP-10.
+
+### Historical workspace — standalone
+
+```text
+┌──────────────────────────────────────────────────────────────────────┐
+│ Viewing revision 7 · Read only · current revision is 12             │
+│                         [Back to current] [Restore as new revision…] │
+├──────────────────────┬───────────────────────────────────────────────┤
+│ HISTORICAL OUTLINE   │ Earlier idea title                            │
+│ select/expand only   │ [research] [draft]                            │
+│ no add/move/delete   │                                               │
+│                      │ READ-ONLY TEXT                                │
+│                      │ Sanitized static historical content…          │
+└──────────────────────┴───────────────────────────────────────────────┘
+```
+
+Implementation: `App` unmounts `DocumentTitleInput` and `NodeEditor` in historical mode and renders plain document-title text plus `HistoricalNodeView`. The static renderer uses `sanitizeRichText` and mounts no form field, contenteditable region, toolbar, Tiptap/Yjs instance, timer, or draft participant. The banner is outside the scrolling workspace, announces both revisions through a polite status, makes **Back to current** primary, and explains the append/retention consequence before restore. Export cannot open and its actions are disabled; Outline mutation/drop paths are disabled while selection and disclosure remain local navigation.
 
 ### Narrow layout
 
@@ -239,11 +263,11 @@ Implementation: at `max-width: 900px`, the brand text and save-status text are h
 
 | Control | Commit behavior | Notes |
 |---|---|---|
-| Document title | `renameDocument` on blur if changed | Disabled when `view.readOnly`. Empty/whitespace is normalized to `Untitled document` by domain logic. |
-| Status | Changes to `Saving…` while `busy`, otherwise shows last success text | The dot pulses in the saving state. |
+| Document title | `renameDocument` on blur if changed | Replaced by static text in historical mode; otherwise disabled when `view.readOnly`. Empty/whitespace is normalized to `Untitled document` by domain logic. |
+| Status | Shows transition, revision-loading, saving, or last-success text in that priority order | The dot pulses in the saving state. |
 | History | Toggles panel | Count is the number currently loaded. A `+` suffix means another page is reachable; no suffix does not claim a separately queried lifetime total. |
-| Export → Markdown | Immediate download in standalone; path dialog then write in desktop | Presentation/interchange export. |
-| Export → JSON recovery file | Flush then immediate download in standalone; flush, path dialog, then write in desktop | Standalone emits the marked `coedit-recovery` version-2 envelope with hash and explicit history completeness. Desktop's legacy version-1 envelope lacks those fields and remains capped. Neither has an importer. |
+| Export → Markdown | Immediate download in standalone; path dialog then write in desktop | Presentation/interchange export; disabled in historical/loading/read-only mode. |
+| Export → JSON recovery file | Flush then immediate download in standalone; flush, path dialog, then write in desktop | Standalone emits the marked `coedit-recovery` version-2 envelope with hash and explicit history completeness. Desktop's legacy version-1 envelope lacks those fields and remains capped. Neither has an importer. Disabled outside an idle live workspace. |
 | Export → SQLite backup | Desktop only | Uses a `.coedit-backup` save dialog. |
 
 ### Outline
@@ -285,9 +309,13 @@ Pasted, legacy/fallback, and committed HTML use the centralized `coedit-rich-tex
 | Selected idea only | Excludes contributions whose `affectedNodeIds` do not contain the current selected ID. Disabled when no node is selected. |
 | Inspect | Shows revision, message/operation, contributor, localized time, and first 12 hash characters; full hash is the code element's title. |
 | Load older contributions | Requests the next page using the exclusive `nextBeforeRevision` cursor and appends unseen entries. Shown only while `hasMore`. |
-| Restore | Confirmation followed by `restoreRevision`; current state remains represented in history through a new compensating revision. |
+| View (available host) | Flushes live drafts, materializes the revision through the query capability, and swaps the selected detail to static historical content without changing live state or the ledger. |
+| Current / Loading… / Viewing | Non-command row states distinguish the retained live revision, active query, and displayed materialization. Other View rows remain available during query loading so a newer request can supersede it. |
+| Back to current | Banner action that invalidates a pending query if necessary and restores retained live state without a gateway call. |
+| Restore as new revision… | Banner action with explicit confirmation that one new revision will be appended and later history retained. Success returns live; failure retains the historical view. |
+| Restore (host-deferred) | Until native revision queries exist, Tauri retains confirmation followed by row-level `restoreRevision`. |
 
-The current document revision's Restore button is disabled, as are all restore controls in read-only or transitioning state. A history request has independent loading and error presentation, so a committed mutation is not represented as failed solely because a visible-panel refresh failed.
+The current live revision is not viewable/restorable from its row. A materialization request has row-local loading state and may be superseded by choosing another revision; query failures preserve the exact live or historical origin and use the global error banner. Contribution-list loading/errors remain independent, so a committed mutation is not represented as failed solely because a visible-panel refresh failed.
 
 ## Keyboard behavior
 
@@ -412,11 +440,11 @@ Important CSS ownership:
 
 Before describing iPadOS or phone support as complete, add a touch-first outline reordering design, pane navigation for narrow widths, safe-area handling, and manual coverage for software keyboard, selection, paste, download, and browser tab lifecycle.
 
-## Proposed workspace UX — not implemented
+## Workspace UX — partially implemented
 
 The current information architecture, mockups, and interaction tables above describe the executable master/detail interface. The agreed product direction is specified in a separate resumable package:
 
-WP-1/WP-2 now provide the non-visual prerequisite beneath this section: verified memory materialization plus an explicit live/historical controller projection, origin/stale-request handling, Back semantics, and command guards. No History **View**, historical banner, or **Back to current** control is rendered yet, so the UX below remains proposed until WP-3.
+WP-1 through WP-3 now provide the standalone historical slice beneath this section: verified memory materialization, explicit live/historical projections, origin/stale-request handling and command guards, View-first History rows, a sanitizer-backed static historical detail, and a persistent banner with **Back to current** plus separately confirmed restore. The current path still uses `Outline` plus one selected detail; continuous-canvas, navigator, responsive-drawer, and checkpoint UX below remain proposed.
 
 - [Continuous block-outline](proposals/CONTINUOUS_BLOCK_OUTLINE.md): one scrolling projection, indented blocks, contextual controls, separate canvas-context/focus-region/editor-owner state, drain-before-hide collapse, one Tiptap editor, normal Tab navigation, handle-scoped structural shortcuts, live/historical reuse, and an optional navigation-only tree sidebar.
 - [Query-first historical views](proposals/QUERY_FIRST_HISTORY.md): History **View** as the primary action, verified detached snapshots, origin-aware loading, persistent read-only revision banner, **Back to current**, and separately confirmed **Restore as new revision**.

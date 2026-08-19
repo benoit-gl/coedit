@@ -29,13 +29,13 @@ Priority meaning:
 | R-16 | P2 | Rich-text/export | Markdown conversion is deliberately lossy; browser and Rust converters differ | `markdownFor`; Rust `markdown`/`plain_text` |
 | R-17 | P2 | Platform support | Linux/macOS are unverified; iPadOS native/touch/file lifecycle is unfinished | build config/UI/dialog contracts |
 | R-18 | P2 | UI accessibility/touch | Drag/drop, hover actions, narrow layout, and ARIA coverage are incomplete | `Outline`, `styles.css`, toolbar |
-| R-19 | P2 | Test/release confidence | No component/E2E/IPC/migration/a11y/CI/platform matrix; Rust does not consume the protocol fixtures | current test files/repository |
+| R-19 | P2 | Test/release confidence | Focused component coverage exists, but no browser E2E/IPC/migration/a11y/CI/platform matrix; Rust does not consume the protocol fixtures | current test files/repository |
 | R-21 | P2 | Tampered-data defense | Open validates structure but does not re-sanitize all stored HTML or validate snapshot hashes/content limits | `load_state`; `restore` |
 | R-22 | P2 | Crash durability | Atomic output syncs the file, not explicitly its parent directory | `atomic_write`, `atomic_copy`, `replace_file` |
 | R-23 | P3 | Reserved features | Attachments, AI, collaboration, contributor management, and direct node restore have no complete workflow | schema/types/interfaces with missing UI/adapters |
 | R-24 | P3 | Outline behavior | New expansion state, drag placement/root drops, and affected-node reporting are limited | `Outline`; both operation models |
 | R-25 | P2 | Writing flow | Separate outline and selected-node editor force master/detail context switching for ordinary writing and node insertion | `App` workspace composition; `Outline`; `NodeEditor` |
-| R-26 | P2 | Historical inspection | Memory and the controller support guarded historical projections, but History still offers only mutating restoration and native queries are host-deferred | `workspaceProjection`; `useDocumentController.viewRevision`; `HistoryPanel` |
+| R-26 | P2 | Historical inspection | Standalone View/Back is implemented in the current master/detail workspace, but continuous-canvas reuse and native queries remain incomplete | `workspaceProjection`; `HistoryPanel`; `HistoricalNodeView`; Tauri query capability |
 | R-27 | P2 | Edit history/noise | Fixed 1.2-second quiet-period checkpoints and one new group ID per body commit create indiscriminate revisions and noisy History | `RichTextEditor`; `controller.commitBody`; full snapshots |
 
 ## Data-integrity and attribution risks
@@ -185,13 +185,13 @@ The workspace renders a separate hierarchy navigator and only one selected node'
 
 **Recommended direction:** implement the proposed [continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md): a flattened pre-order projection, separate canvas-context/focus-region/editor-owner state, one active Tiptap editor, drain-before-hide collapse behavior, sanitized inactive previews, inline structural controls, and complete keyboard/touch alternatives. Large-document orientation may use the proposed optional navigation-only tree sidebar, docked when space permits and presented as an explicitly opened drawer on compact/touch screens. It must share the canvas's live/historical projection while keeping browsing/expansion state independent; it is not a selectable revival of the current tree-plus-detail editor. This is a component/application redesign, not a CSS-only change.
 
-### R-26: historical inspection is not yet reachable as a query
+### R-26: historical inspection remains partial by host and workspace layout
 
 The WP-1 boundary defines a discriminated read-only query capability. Memory advertises it as available and returns detached, tree-validated, hash-verified snapshots without changing live state, history, or its snapshot map. Tauri explicitly advertises `host-deferred` and exposes no throwing stub. WP-2 adds explicit controller live/historical projections, exact retained origins, stale request guards, no-query Back, restore separation, and command/export rejection outside live mode.
 
-The History UI does not consume the controller intent yet. The only visible History action still copies an old snapshot into a new current revision, appends a contribution, and stores another snapshot. That is appropriate for resuming work, not merely inspecting the past.
+WP-3 connects capable-host History **View** to a static sanitized historical detail that mounts no title/body editor or draft participant. A persistent banner identifies viewed/current revisions, makes **Back to current** primary, and keeps **Restore as new revision** separately confirmed. Component and full-`App` integration tests prove View/Back is non-mutating and one confirmed restore appends one compensating revision. Host-deferred Tauri still exposes row-level Restore until WP-10.
 
-**Recommended direction:** continue [query-first historical views](./proposals/QUERY_FIRST_HISTORY.md) with WP-3: make **View** primary in History, render the controller's read-only projection with a persistent revision/current-revision banner and **Back to current**, keep restore separately confirmed, and exercise every rendered callback against the WP-2 guard. Native query parity remains WP-10.
+**Recommended direction:** reuse the implemented historical projection in the continuous `DocumentCanvas` during WP-7, including canvas/navigator context pruning and focus restoration, then add native materialization and shared contract qualification in WP-10.
 
 ### R-27: body checkpoints are temporally arbitrary and visually noisy
 
@@ -211,9 +211,9 @@ Keep these labeled **Reserved** or **Proposed** in contributor-facing material.
 
 ## Verification and delivery gaps
 
-The current source inventory is fifty-three TypeScript cases and three Rust cases. New TypeScript coverage includes the draft coordinator, controller transition ordering/generation, live/historical projection and request races, historical command guards, serialized-queue behavior, contributor-storage validation, node-editor normalization, tag normalization/combobox behavior, JSON detachment/validation, cursor paging/filtering, recovery-envelope shape, verified memory revision materialization, explicit host-deferred Tauri capability advertisement, filename normalization, and versioned hash/sanitizer fixtures. There is still no:
+The current source inventory is fifty-eight TypeScript cases and three Rust cases. New TypeScript coverage includes the draft coordinator, controller transition ordering/generation, live/historical projection and request races, historical command guards, full-App View/Back/restore composition, static historical sanitization, banner/History actions, serialized-queue behavior, contributor-storage validation, node-editor normalization, tag normalization/combobox behavior, JSON detachment/validation, cursor paging/filtering, recovery-envelope shape, verified memory revision materialization, explicit host-deferred Tauri capability advertisement, filename normalization, and versioned hash/sanitizer fixtures. There is still no:
 
-- full-App React/editor integration or end-to-end browser suite;
+- full-App integration with the real Tiptap editor or end-to-end browser suite;
 - fake-timer editor debounce/lifecycle suite;
 - shared gateway contract suite;
 - TypeScript/Rust IPC schema compatibility suite;

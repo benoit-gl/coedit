@@ -39,7 +39,7 @@ The set follows Rational Unified Process (RUP) ideas without assuming a heavywei
 | Configuration and change management | [Known limitations](./KNOWN_LIMITATIONS.md) | Verified defects, constraints, workarounds, and recommended ownership |
 | Data / recovery | [Document format](./DOCUMENT_FORMAT.md) | `.coedit` format, schema policy, backup, export, and recovery |
 | Security | [Security model](./SECURITY.md) | Trust boundaries, sanitization, CSP, capabilities, future network rules |
-| Proposed analysis/design | [Continuous workspace change package](./proposals/README.md) | Target design for a continuous block outline with an optional navigation-only sidebar, non-mutating historical views, and configurable semantic body checkpoints; explicitly not current behavior |
+| Staged analysis/design | [Continuous workspace change package](./proposals/README.md) | WP-1 through WP-3 as-built historical slice plus target design for a continuous block outline, optional navigation-only sidebar, semantic body checkpoints, and native parity |
 
 The earlier [local-first implementation plan](../LOCAL_FIRST_TREE_EDITOR_PLAN.md) records product intent and phased acceptance criteria. Where it differs from the code, this engineering set and the code describe the current state; the plan remains a roadmap artifact.
 
@@ -98,7 +98,7 @@ Store --> SQLite
 
 The current branch is intentionally staged:
 
-1. **Standalone-first architecture (implemented in the current worktree):** application controller and serialized command queue; synchronous freeze plus awaitable title, metadata, and rich-text drains; authoritative editor remount after restore; discriminated volatile/native-file storage and revision-query capabilities; verified non-mutating memory materialization; explicit live/historical controller projections with retained origins and command guards; cursor-paged history; a complete in-memory recovery envelope; centralized filename/sanitization contracts; and versioned TypeScript fixtures.
+1. **Standalone-first architecture (implemented in the current worktree):** application controller and serialized command queue; synchronous freeze plus awaitable title, metadata, and rich-text drains; authoritative editor remount after restore; discriminated volatile/native-file storage and revision-query capabilities; verified non-mutating memory materialization; explicit live/historical controller projections with retained origins and command guards; View-first History with a sanitized static historical path, persistent banner, no-query Back, and separately confirmed restore; cursor-paged history; a complete in-memory recovery envelope; centralized filename/sanitization contracts; and versioned TypeScript fixtures.
 2. **Tauri parity and hardening (second pass):** align Rust hashing and sanitizer expectations with the versioned fixtures; push indexed filtering/pagination into SQLite without the 100,000-row pre-window; move file authorization/path ownership behind a defensible Rust boundary; minimize native permissions; define versioned schema migration and measured snapshot compaction; and run the full native verification matrix. The current TypeScript Tauri adapter is shaped for the new ports, but this documentation does not claim native parity has been proven.
 3. **Dormant-feature decisions (third pass):** explicitly retain, finish, migrate, or remove AI, attachments, `restoreNode`, contributor/session lifecycle, contribution grouping, and generic node metadata.
 
@@ -106,13 +106,13 @@ These pass boundaries are scope statements, not release promises. [Known limitat
 
 ## Proposed next-iteration workspace design
 
-The [continuous workspace change package](./proposals/README.md) records the next UX/application-architecture iteration. WP-1's standalone verified revision query and WP-2's explicit controller workspace mode are implemented; user-facing historical mode and the workspace redesign remain future work. Its three coordinated designs are:
+The [continuous workspace change package](./proposals/README.md) records the next UX/application-architecture iteration. WP-1 through WP-3 implement standalone verified revision queries, explicit controller workspace modes, and the user-facing read-only historical path. The continuous canvas, checkpointing, navigator, and native parity remain future work. Its three coordinated designs are:
 
 - a continuous block-outline canvas replacing the master/detail outline-plus-selected-editor workflow, with an optional runtime-toggleable tree sidebar that navigates that same canvas but never becomes a second editor;
 - query-first, read-only historical materialization with restoration kept as an explicit compensating command; and
 - an edit-batch checkpoint state machine whose `batchCharacterThreshold` and `idleTimeoutMs` defaults are centralized and injectable.
 
-These documents are the handoff point for resuming that work. Each work package must remain labeled **Proposed** until its code paths and acceptance tests exist; the package index records WP-1/WP-2 as partial implementation evidence rather than implying that historical View is already available.
+These documents are the handoff point for resuming that work. Each work package remains **Proposed** until its code paths and acceptance tests exist; the package index records WP-1 through WP-3 as partial package evidence without implying that the continuous-canvas or native paths exist.
 
 ## Status language
 

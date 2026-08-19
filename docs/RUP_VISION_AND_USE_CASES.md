@@ -386,9 +386,9 @@ OpenState .. UC10
 
 **Goal:** Make an earlier snapshot the current document state without erasing intervening history.
 
-**Preconditions:** A writable document is open and the target revision is available. The latest loaded contribution is not offered as a restore target.
+**Preconditions:** A writable document is open and the target revision is available. On a query-capable host, that revision is already displayed historically; on a host-deferred native composition it is an older History row. The current live revision is not offered as a restore target.
 
-**Trigger:** The author activates **Restore** for a history entry and confirms the warning.
+**Trigger:** The author activates **Restore as new revision…** in the historical banner, or the host-deferred row-level **Restore** fallback, and confirms the append/retention warning.
 
 **Main success scenario:**
 
@@ -405,11 +405,11 @@ OpenState .. UC10
 - A missing snapshot, unregistered contributor, or read-only document is rejected.
 - Desktop restoration validates stored Yjs base64 and sanitizes restored HTML.
 - Current history remains present; restore never deletes contribution rows.
-- The current controller test proves flush-before-restore and the generation increment, but there is not yet a full Tiptap DOM/edit/reopen regression test or native restore-parity run.
+- Controller tests prove flush-before-restore, failure retention, and generation changes; the full-`App` WP-3 test proves one confirmed banner restore appends exactly one contribution and returns live. There is not yet a real Tiptap DOM/edit/reopen regression test or native restore-parity run.
 
 **Postconditions:** The restored materialized state is the newest revision and a compensating audit record identifies the source revision.
 
-**Realization:** `HistoryPanel`, `useDocumentController.restoreRevision`, both gateway `restoreRevision` implementations, and `DocumentStore::restore`.
+**Realization:** `HistoricalWorkspaceBanner`, the host-deferred `HistoryPanel` fallback, `useDocumentController.restoreRevision`, both gateway `restoreRevision` implementations, and `DocumentStore::restore`.
 
 ### UC-08 - Export a document
 
@@ -535,11 +535,11 @@ OpenState .. UC10
 
 ## Proposed next-iteration use cases
 
-The following use cases are approved design targets and are not yet reachable end to end. They are specified together in the [continuous-workspace change package](./proposals/README.md). WP-1 implements UC-13's standalone adapter query and WP-2 implements its controller projection/request/guard layer; current UC-03 through UC-07 remain the executable UI baseline until WP-3 connects the History interaction.
+The following use cases are specified together in the [continuous-workspace change package](./proposals/README.md). UC-13 is now reachable end to end in standalone mode through the current selected-detail workspace (WP-1 through WP-3); its continuous-canvas and native-host realizations remain partial. UC-12 and UC-14 remain design targets.
 
 ### UC-12 - Edit through a continuous block outline
 
-**Status:** Partial infrastructure. WP-1 provides verified, detached, non-mutating memory materialization and explicit host capability advertisement. WP-2 provides live/historical controller modes, retained origins, Back, stale-response invalidation, and command guards. User-facing View/Back behavior remains proposed.
+**Status:** Proposed. The historical projection infrastructure delivered by WP-1 through WP-3 will be reused, but the continuous block outline and optional navigator are not implemented.
 
 **Primary actor:** Author.
 
@@ -571,7 +571,7 @@ The following use cases are approved design targets and are not yet reachable en
 
 ### UC-13 - View a materialized historical revision
 
-**Status:** Proposed.
+**Status:** Partial. WP-1 through WP-3 implement the complete standalone flow in the current selected-detail workspace; continuous-canvas reuse and Tauri/native materialization remain proposed.
 
 **Primary actor:** Author or custodian.
 
@@ -584,8 +584,8 @@ The following use cases are approved design targets and are not yet reachable en
 1. The controller freezes and drains live drafts so the return point is unambiguous.
 2. A revision-query port reads the selected snapshot without invoking a mutation command.
 3. The workspace enters an explicit historical projection containing detached state, revision, hash, and materialization metadata.
-4. The continuous canvas renders that projection with a persistent read-only banner.
-5. The actor navigates nodes in the canvas or optional sidebar, both sourced from the historical snapshot, and may return to the unchanged live projection.
+4. The current workspace renders the selected historical node as sanitized static content with a persistent read-only banner; WP-7 will reuse the projection in the continuous canvas.
+5. The actor navigates historical nodes through the read-only outline and may return to the unchanged live projection. The optional sidebar remains proposed.
 
 **Alternate and exception flows:** Missing, invalid, or stale responses leave live mode unchanged and report an error. Command guards reject mutations even if a UI control is invoked indirectly. First effective History reveal without a valid page queries once; responsive or Navigator-driven hide/reveal with a valid non-stale page issues no contribution query. Relevant accepted changes while hidden advance a History data generation, mark its page stale, reject older responses, and make the next effective reveal perform one guarded refresh. An actor who chooses **Restore as new revision** enters UC-07 through a separately confirmed command; a surviving editor-resume ID is mounted only after its possibly changed ancestry is expanded and it is visible, otherwise a visible fallback is chosen.
 
@@ -712,8 +712,8 @@ These requirements describe the target package, not current satisfaction.
 | FR-PW-01 | The live hierarchy shall be rendered as a pure, flattened, active-node pre-order projection with depth and expansion state. | Projection unit tests cover multiple roots, collapse, deletion, ordering, and deep nesting. |
 | FR-PW-02 | The first block-outline implementation shall allow at most one live rich-text editor owner. | Focus-transfer integration tests prove drain-before-unmount and no duplicate Yjs ownership. |
 | FR-PW-03 | Revision materialization shall be a read query with no document, ledger, revision, or snapshot mutation. | Partial: memory before/after tests cover live revision continuity, ledger/snapshot counts, detachment, hash mismatch, and invalid trees; native parity remains. |
-| FR-PW-04 | Historical workspace mode shall reject every document mutation independently of control visibility. | Implemented at the controller boundary in WP-2: direct operation/title/export attempts are rejected before storage; stale and loading requests are guarded. Full UI callback coverage remains WP-3. |
-| FR-PW-05 | Restoration from a historical view shall remain a separately confirmed compensating operation. | Partial: WP-2 tests failure retention and one successful compensating exit; explicit historical UI confirmation remains WP-3. |
+| FR-PW-04 | Historical workspace mode shall reject every document mutation independently of control visibility. | Implemented for the standalone WP-2/WP-3 path: controller guards reject direct/stale operations and exports, while the UI mounts no historical editor/draft participant and disables mutation/export affordances. Continuous-canvas and native callback coverage remain. |
+| FR-PW-05 | Restoration from a historical view shall remain a separately confirmed compensating operation. | Implemented for standalone WP-3: row-level Restore is removed on capable hosts, the banner describes append/retention consequences, and full-App coverage proves exactly one compensating revision. Native View/confirmation parity remains. |
 | FR-PW-06 | Body checkpoints shall occur at the defined edit-mode, selection/focus, structural-operation, character-threshold, and idle boundaries. | Pure coordinator tests use deterministic transactions, grapheme counts, and fake time. |
 | FR-PW-07 | `batchCharacterThreshold` and `idleTimeoutMs` shall be defined once in an exported immutable policy, injected into the coordinator, and independently overrideable in tests. | Source check finds no duplicate policy literals; unit tests inject non-default values. |
 | FR-PW-08 | Threshold checkpoints within one uninterrupted edit episode shall reuse one `groupId`, while semantic boundaries shall close that group. | History tests cover collapsed/expanded representations, raw page-boundary coalescing, partial labels, and exact group paging. |
@@ -828,7 +828,7 @@ The prioritized verification work is in [Testing strategy](./TESTING.md). Owners
 | Group ID | Optional contribution field used to associate a logical burst, currently generated per rich-text commit. |
 | Body checkpoint (proposed) | A physical attributed `updateBody` revision captured at a recovery or semantic boundary. It is not necessarily one History row. |
 | Edit group (proposed) | One human-meaningful body-edit episode. Multiple threshold checkpoints can share its `groupId` and be collapsed in History. |
-| Historical projection (partial) | Detached materialized state for a selected revision without replacing live state. WP-2 implements the controller projection and read-only derived view; WP-3 will make it user-visible. |
+| Historical projection (partial) | Detached materialized state for a selected revision without replacing live state. WP-2 implements the controller projection; WP-3 makes it user-visible in standalone mode through a sanitized static selected-detail path. Continuous-canvas and native-host reuse remain. |
 | Materialized state | Current document and node rows, as opposed to the historical ledger/snapshots. |
 | Navigator (proposed) | Optional navigation-only tree over the active workspace projection. It may locate/reveal a block but is not an editor, structural command surface, or alternate workspace mode. |
 | Visible-node projection (proposed) | Flattened pre-order list of active, expansion-visible nodes plus depth/layout metadata; it does not replace the persisted tree. |

@@ -779,13 +779,16 @@ For development, `tauri dev` runs `corepack pnpm dev`, points the webview at `ht
 
 ## Enter a historical controller projection
 
-**Implemented through WP-1/WP-2; not yet invoked by the UI.** This query/state transition is deliberately separate from the restore command above.
+**Implemented through WP-1/WP-3 and invoked by standalone History.** This query/state transition is deliberately separate from the restore command above.
 
 ```plantuml
 @startuml
-title Verified historical controller projection (implemented; UI-neutral)
-participant "future History View intent / test" as Caller
+title Verified standalone historical view (implemented)
+participant "HistoryPanel View / test" as Caller
 control "useDocumentController" as Controller
+boundary App
+boundary HistoricalWorkspaceBanner as Banner
+boundary HistoricalNodeView as HistoricalView
 participant "DraftTransitionCoordinator" as Drafts
 participant "RevisionQueryCapability" as Capability
 participant "MemoryDocumentGateway" as Memory
@@ -819,6 +822,9 @@ else available
         Controller --> Caller : false; ignore response
       else current response
         Controller -> Controller : WorkspaceProjection = historical\nretain live view/selection/current revision\neditor owner = null
+        Controller --> App : historical projection
+        App -> Banner : viewed R + retained current revision
+        App -> HistoricalView : sanitized static selected node
         Controller --> Caller : true
       end
     end
@@ -827,11 +833,11 @@ end
 @enduml
 ```
 
-Back invalidates an in-flight request and returns the retained live projection without a gateway call. Close invalidates and clears both projections. A failed restore retains historical mode; a successful compensating restore accepts the returned live `DocumentView` and exits historical mode. Document operations, export, and backup require an idle live projection. The Tauri composition advertises `host-deferred` and supplies no query object or throwing stub. WP-3 adds the History **View**, banner, and **Back to current** presentation.
+Back invalidates an in-flight request and returns the retained live projection without a gateway call. Close invalidates and clears both projections. A failed restore retains historical mode; the banner's separately confirmed restore accepts one compensating `DocumentView` and exits historical mode. Historical `App` composition replaces `DocumentTitleInput`/`NodeEditor` with plain title text and `HistoricalNodeView`, so no Tiptap/Yjs instance, metadata input, checkpoint timer, or editor draft participant is mounted. Document operations, export, and backup require an idle live projection, and their affordances are disabled. The Tauri composition advertises `host-deferred`, supplies no query object or throwing stub, omits **View**, and retains row-level restore until WP-10.
 
 ## Proposed interaction sequences — partially implemented package
 
-The implemented sequences above deliberately retain the current master/detail UI, restore-only visible History action, and 1.2-second rich-text quiet-period flow. Apart from the WP-1/WP-2 query/controller path above, target interaction sequences remain embedded in the resumable proposal package:
+The implemented sequences above deliberately retain the current master/detail UI and 1.2-second rich-text quiet-period flow, but WP-3 replaces restore-only standalone History with the safe historical presentation above. Continuous-canvas, checkpoint, navigator, and native target sequences remain embedded in the resumable proposal package:
 
 | Proposed sequence | Design source |
 |---|---|
