@@ -591,15 +591,15 @@ Gateway --> App : replace view
 @enduml
 ```
 
-## Revision-query port — standalone WP-1 implemented
+## Revision-query port and controller projection — standalone WP-1/WP-2 implemented
 
 [`gateway.ts`](../src/persistence/gateway.ts) now defines a discriminated `RevisionQueryCapability` containing `DocumentRevisionQueries.materializeRevision(revision)`. The memory implementation reads its hash-bearing runtime revision map, validates and detaches the state, recomputes the browser canonical hash, and returns a verified `MaterializedRevision` without replacing current state, appending a contribution, incrementing revision, or writing another snapshot.
 
 The standalone composition advertises the memory query as `available`. The Tauri composition compiles with the same capability boundary but advertises `host-deferred`; it supplies no throwing query stub. WP-10 adds the read-only Rust query/IPC and makes Tauri advertise availability only after shared contract tests pass.
 
-`restoreRevision` remains the mutating command described above. Viewing and restoration do not share an implementation that temporarily changes the live memory store. WP-1 covers memory validation and missing/tampered snapshot behavior; request/epoch guards, native contract tests, and explicit live/historical controller modes remain later work.
+`restoreRevision` remains the mutating command described above. Viewing and restoration do not share an implementation that temporarily changes the live memory store. WP-1 covers memory validation and missing/tampered snapshot behavior. WP-2 adds controller request/workspace guards, exact retained origins, explicit live/historical modes, no-query Back, and restore-success/failure transitions. Native contract tests remain later work.
 
-WP-1 ends at the adapter/composition boundary. `App`, `useDocumentController`, and `HistoryPanel` do not consume the capability yet, so no read-only historical view is currently reachable. Those controller and presentation parts remain WP-2/WP-3.
+`App` now passes the capability into `useDocumentController`, which consumes it through `viewRevision()`. `HistoryPanel` does not expose that intent yet, so no read-only historical view is currently reachable through the product UI. Presentation is WP-3.
 
 No document-schema change is required merely to read and verify existing snapshots under their host/schema algorithm. Cross-adapter canonical hash alignment and future compaction remain separate format/version decisions.
 

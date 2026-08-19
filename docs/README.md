@@ -56,6 +56,7 @@ component "Standalone index.html\nself-contained file:// artifact" as Standalone
 component "Tauri desktop window" as Desktop
 component "Shared React UI\nApp and components" as UI
 component "useDocumentController\nuse cases + queue + draft transitions" as Controller
+component "WorkspaceProjection\nlive | historical" as Workspace
 interface "DocumentGateway" as Gateway
 interface "DocumentStorage\ndiscriminated capability" as Storage
 interface "RevisionQueryCapability\navailable | host-deferred" as RevisionCapability
@@ -70,8 +71,10 @@ database ".coedit SQLite file" as SQLite
 Standalone --> UI : main.tsx
 Desktop --> UI : main-tauri.tsx
 UI --> Controller
-UI --> RevisionCapability : injected; not yet consumed
+UI --> RevisionCapability : injects
 Controller --> Gateway
+Controller --> Workspace
+Controller --> RevisionCapability : narrows and queries
 Gateway <|.. Memory
 Gateway <|.. TauriAdapter
 Gateway o-- Storage
@@ -95,7 +98,7 @@ Store --> SQLite
 
 The current branch is intentionally staged:
 
-1. **Standalone-first architecture (implemented in the current worktree):** application controller and serialized command queue; synchronous freeze plus awaitable title, metadata, and rich-text drains; authoritative editor remount after restore; discriminated volatile/native-file storage and revision-query capabilities; verified non-mutating memory materialization; cursor-paged history; a complete in-memory recovery envelope; centralized filename/sanitization contracts; and versioned TypeScript fixtures.
+1. **Standalone-first architecture (implemented in the current worktree):** application controller and serialized command queue; synchronous freeze plus awaitable title, metadata, and rich-text drains; authoritative editor remount after restore; discriminated volatile/native-file storage and revision-query capabilities; verified non-mutating memory materialization; explicit live/historical controller projections with retained origins and command guards; cursor-paged history; a complete in-memory recovery envelope; centralized filename/sanitization contracts; and versioned TypeScript fixtures.
 2. **Tauri parity and hardening (second pass):** align Rust hashing and sanitizer expectations with the versioned fixtures; push indexed filtering/pagination into SQLite without the 100,000-row pre-window; move file authorization/path ownership behind a defensible Rust boundary; minimize native permissions; define versioned schema migration and measured snapshot compaction; and run the full native verification matrix. The current TypeScript Tauri adapter is shaped for the new ports, but this documentation does not claim native parity has been proven.
 3. **Dormant-feature decisions (third pass):** explicitly retain, finish, migrate, or remove AI, attachments, `restoreNode`, contributor/session lifecycle, contribution grouping, and generic node metadata.
 
@@ -103,13 +106,13 @@ These pass boundaries are scope statements, not release promises. [Known limitat
 
 ## Proposed next-iteration workspace design
 
-The [continuous workspace change package](./proposals/README.md) records the next UX/application-architecture iteration. WP-1's standalone verified revision-query boundary is implemented; the workspace behavior described by the package remains future work. Its three coordinated designs are:
+The [continuous workspace change package](./proposals/README.md) records the next UX/application-architecture iteration. WP-1's standalone verified revision query and WP-2's explicit controller workspace mode are implemented; user-facing historical mode and the workspace redesign remain future work. Its three coordinated designs are:
 
 - a continuous block-outline canvas replacing the master/detail outline-plus-selected-editor workflow, with an optional runtime-toggleable tree sidebar that navigates that same canvas but never becomes a second editor;
 - query-first, read-only historical materialization with restoration kept as an explicit compensating command; and
 - an edit-batch checkpoint state machine whose `batchCharacterThreshold` and `idleTimeoutMs` defaults are centralized and injectable.
 
-These documents are the handoff point for resuming that work. Each work package must remain labeled **Proposed** until its code paths and acceptance tests exist; the package index records WP-1 as partial implementation evidence rather than implying that historical View is already available.
+These documents are the handoff point for resuming that work. Each work package must remain labeled **Proposed** until its code paths and acceptance tests exist; the package index records WP-1/WP-2 as partial implementation evidence rather than implying that historical View is already available.
 
 ## Status language
 

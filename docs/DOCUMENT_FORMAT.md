@@ -276,7 +276,7 @@ This is distinct from `restoreNode`: that operation undeletes one node and its a
 
 ## Workspace-view and checkpoint semantics
 
-This section records the data contract expected by the [continuous-workspace package](./proposals/README.md) and does not declare a new schema version. The standalone WP-1 query implements the historical-materialization rules below against its in-memory snapshots. The historical workspace/UI, native SQLite query, and checkpoint subsections remain proposed.
+This section records the data contract expected by the [continuous-workspace package](./proposals/README.md) and does not declare a new schema version. The standalone WP-1 query implements historical materialization against its in-memory snapshots, and WP-2 retains that result in an explicit non-persisted historical controller projection. The historical UI, native SQLite query, and checkpoint subsections remain proposed.
 
 ### Historical materialization is a query
 
@@ -289,7 +289,7 @@ Materializing revision `R` for inspection shall:
 
 Repeatedly viewing `R` and returning to live mode must therefore be observationally idempotent: live state, current revision, contribution count, and snapshot count remain unchanged. This is intentionally distinct from the existing restore semantics above. **Restore as new revision** continues to append one compensating contribution and snapshot.
 
-The current memory adapter satisfies this query contract and advertises it through an `available` capability. The Tauri adapter advertises `host-deferred`; it does not yet read `snapshots.state_json/state_hash` through IPC. No current UI action invokes either capability.
+The current memory adapter satisfies this query contract and advertises it through an `available` capability. The controller can invoke it, retain the live projection, reject commands historically, and return without a gateway call. The Tauri adapter advertises `host-deferred`; it does not yet read `snapshots.state_json/state_hash` through IPC. No current UI action invokes the controller intent.
 
 The memory adapter can clone its existing per-revision state. The native implementation can read `snapshots.state_json` and `state_hash` through a read-only store/query method. The exact wire type is an application-port decision, not necessarily a persisted schema addition.
 

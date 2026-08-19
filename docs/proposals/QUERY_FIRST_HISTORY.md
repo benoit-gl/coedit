@@ -2,7 +2,7 @@
 
 **Product decision:** Approved design direction.
 
-**Implementation status:** Partial. WP-1 implements the query contracts, verified memory materialization, focused adapter tests, and explicit `available`/`host-deferred` composition wiring. Controller workspace modes, History View/Back UI, and native query parity remain proposed.
+**Implementation status:** Partial. WP-1 implements query contracts/materialization/capabilities; WP-2 implements explicit controller workspace and request states, retained-live origins, stale-response guards, Back, and live-command enforcement. History View/Back UI, canvas context, and native query parity remain proposed.
 
 **Change package:** [Continuous workspace proposals](./README.md)
 
@@ -15,7 +15,7 @@ Both adapters already retain materialized revisions:
 - the memory adapter has an internal revision-to-hash-bearing-`DocumentState` map; and
 - SQLite stores full `state_json` and `state_hash` rows in `snapshots`.
 
-The standalone adapter now has a read-only query that returns one of those states without changing the live workspace or ledger. The remaining gap is to consume it through an explicit historical workspace mode and UI, then add native parity.
+The standalone adapter now has a read-only query that returns one of those states without changing the live workspace or ledger, and the controller can project it through an explicit historical workspace mode. The remaining gap is to expose that mode through the read-only historical UI, then add native parity.
 
 ## Goals
 
@@ -103,7 +103,8 @@ Hash verification here detects snapshot/state inconsistency under the algorithm 
 Do not encode this only as `DocumentView.readOnly`. A discriminated union makes command eligibility explicit.
 
 ```ts
-// Proposed shape; not current source.
+// Target canvas-era shape. WP-2 implements the same discriminants and retained-live/loading invariants
+// with selectedNodeId as the current master/detail context until the canvas work packages land.
 interface NavigatorContextState {
   navigatorSelectionId: string | null;
   navigatorExpandedIds: ReadonlySet<string>;
@@ -498,7 +499,7 @@ For every adapter that advertises `RevisionQueryCapability.kind === "available"`
 
 1. **Implemented (WP-1):** define verified `MaterializedRevision`, `DocumentRevisionQueries`, and the discriminated `RevisionQueryCapability`.
 2. **Implemented (WP-1):** implement/test the memory query without UI changes.
-3. Add `WorkspaceProjection` and command guard to the controller.
+3. **Implemented (WP-2):** add `WorkspaceProjection`, retained-origin request state, Back, stale-response guards, and command guards to the controller.
 4. Add View/Back UI using the existing editor layout if necessary and qualify the standalone artifact.
 5. **Implemented at the capability boundary (WP-1):** keep the Tauri composition compiling with the query capability explicitly unavailable and document that temporary host difference.
 6. Add the Rust store query, IPC command, Tauri adapter, and shared contract fixtures/tests in the native parity slice.

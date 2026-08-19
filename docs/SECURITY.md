@@ -201,10 +201,10 @@ The standalone download path uses centralized `safeFilenameStem()` normalization
 
 ## Proposed continuous-workspace security requirements
 
-The [continuous-workspace package](./proposals/README.md) is mostly not implemented. WP-1's memory query now returns a detached value only after tree and stored-hash verification; native querying and all rendering/controller requirements below remain incomplete. The package must preserve these trust boundaries:
+The [continuous-workspace package](./proposals/README.md) is mostly not implemented. WP-1's memory query returns a detached value only after tree and stored-hash verification. WP-2 enforces live/historical mode, loading/workspace request invalidation, and command/export guards in the controller. Native querying and historical rendering requirements below remain incomplete. The package must preserve these trust boundaries:
 
 - A materialized historical snapshot is untrusted document input, not safe merely because it came from the application's own history table. Every adapter advertising the query capability must validate its shape/tree/limits, recompute/compare its stored host-schema hash, and pass every historical body through the same render-time sanitization policy as live content. This check is integrity evidence, not authentication.
-- `WorkspaceProjection.kind === "historical"` must be enforced at the controller/command boundary. Hiding or disabling buttons is defense in depth, not authorization; stale callbacks, keyboard commands, editor extensions, and tests that call commands directly must all be rejected.
+- `WorkspaceProjection.kind === "historical"` is enforced at the controller/command boundary for operation/export/backup paths, while create/open are welcome-only lifecycle intents. Hiding or disabling buttons remains defense in depth; WP-3 must ensure every newly reachable stale callback, keyboard command, and editor extension continues through those guards.
 - A revision query must return a detached value. Components must not receive mutable aliases to the live adapter state or snapshot cache.
 - Request/workspace epochs must discard a response that belongs to a closed, restored, or replaced document. Snapshot data from one workspace must never be rendered into another.
 - Returning to live mode must not trust selection, expansion, or node IDs from the snapshot without resolving them against current live state.

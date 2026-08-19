@@ -35,7 +35,7 @@ Priority meaning:
 | R-23 | P3 | Reserved features | Attachments, AI, collaboration, contributor management, and direct node restore have no complete workflow | schema/types/interfaces with missing UI/adapters |
 | R-24 | P3 | Outline behavior | New expansion state, drag placement/root drops, and affected-node reporting are limited | `Outline`; both operation models |
 | R-25 | P2 | Writing flow | Separate outline and selected-node editor force master/detail context switching for ordinary writing and node insertion | `App` workspace composition; `Outline`; `NodeEditor` |
-| R-26 | P2 | Historical inspection | Memory can materialize verified revisions, but History still offers only mutating restoration and native queries are host-deferred | `MemoryDocumentGateway.materializeRevision`; `HistoryPanel` |
+| R-26 | P2 | Historical inspection | Memory and the controller support guarded historical projections, but History still offers only mutating restoration and native queries are host-deferred | `workspaceProjection`; `useDocumentController.viewRevision`; `HistoryPanel` |
 | R-27 | P2 | Edit history/noise | Fixed 1.2-second quiet-period checkpoints and one new group ID per body commit create indiscriminate revisions and noisy History | `RichTextEditor`; `controller.commitBody`; full snapshots |
 
 ## Data-integrity and attribution risks
@@ -187,11 +187,11 @@ The workspace renders a separate hierarchy navigator and only one selected node'
 
 ### R-26: historical inspection is not yet reachable as a query
 
-The WP-1 boundary defines a discriminated read-only query capability. Memory advertises it as available and returns detached, tree-validated, hash-verified snapshots without changing live state, history, or its snapshot map. Tauri explicitly advertises `host-deferred` and exposes no throwing stub.
+The WP-1 boundary defines a discriminated read-only query capability. Memory advertises it as available and returns detached, tree-validated, hash-verified snapshots without changing live state, history, or its snapshot map. Tauri explicitly advertises `host-deferred` and exposes no throwing stub. WP-2 adds explicit controller live/historical projections, exact retained origins, stale request guards, no-query Back, restore separation, and command/export rejection outside live mode.
 
-The controller and History UI do not consume that capability yet. The only visible History action still copies an old snapshot into a new current revision, appends a contribution, and stores another snapshot. That is appropriate for resuming work, not merely inspecting the past.
+The History UI does not consume the controller intent yet. The only visible History action still copies an old snapshot into a new current revision, appends a contribution, and stores another snapshot. That is appropriate for resuming work, not merely inspecting the past.
 
-**Recommended direction:** implement [query-first historical views](./proposals/QUERY_FIRST_HISTORY.md). An advertised query capability must return detached, validated, host-hash-verified state while leaving live state, revision, contribution count, and snapshots unchanged; loading retains its live/historical origin, historical mode rejects commands, and restoration remains separately confirmed.
+**Recommended direction:** continue [query-first historical views](./proposals/QUERY_FIRST_HISTORY.md) with WP-3: make **View** primary in History, render the controller's read-only projection with a persistent revision/current-revision banner and **Back to current**, keep restore separately confirmed, and exercise every rendered callback against the WP-2 guard. Native query parity remains WP-10.
 
 ### R-27: body checkpoints are temporally arbitrary and visually noisy
 
@@ -211,7 +211,7 @@ Keep these labeled **Reserved** or **Proposed** in contributor-facing material.
 
 ## Verification and delivery gaps
 
-The current source inventory is forty-five TypeScript cases and three Rust cases. New TypeScript coverage includes the draft coordinator, controller transition ordering/generation, serialized-queue behavior, contributor-storage validation, node-editor normalization, tag normalization/combobox behavior, JSON detachment/validation, cursor paging/filtering, recovery-envelope shape, verified memory revision materialization, explicit host-deferred Tauri capability advertisement, filename normalization, and versioned hash/sanitizer fixtures. There is still no:
+The current source inventory is fifty-three TypeScript cases and three Rust cases. New TypeScript coverage includes the draft coordinator, controller transition ordering/generation, live/historical projection and request races, historical command guards, serialized-queue behavior, contributor-storage validation, node-editor normalization, tag normalization/combobox behavior, JSON detachment/validation, cursor paging/filtering, recovery-envelope shape, verified memory revision materialization, explicit host-deferred Tauri capability advertisement, filename normalization, and versioned hash/sanitizer fixtures. There is still no:
 
 - full-App React/editor integration or end-to-end browser suite;
 - fake-timer editor debounce/lifecycle suite;

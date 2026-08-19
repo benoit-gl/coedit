@@ -39,7 +39,7 @@ The current hardening program is intentionally divided so current claims remain 
 
 | Pass | Scope | Status |
 |---|---|---|
-| 1 — standalone-first | Application controller/queue, synchronous draft freeze plus awaitable metadata/rich-text drains, discriminated storage and revision-query capabilities, verified memory materialization, cursor-paged memory history, complete runtime recovery envelope, centralized export/filename/sanitizer contracts, browser hash/sanitizer fixtures | Implemented in the current worktree; standalone verification is the focus |
+| 1 — standalone-first | Application controller/queue, synchronous draft freeze plus awaitable metadata/rich-text drains, discriminated storage and revision-query capabilities, verified memory materialization, explicit live/historical workspace projection and command guards, cursor-paged memory history, complete runtime recovery envelope, centralized export/filename/sanitizer contracts, browser hash/sanitizer fixtures | Implemented in the current worktree; standalone verification is the focus |
 | 2 — Rust/Tauri parity and hardening | Rust conformance to versioned fixtures, indexed store-side cursor filtering, Rust-owned file authorization/path security, minimized permissions, versioned migrations, measured snapshot compaction, native/platform tests | Deferred; existing Tauri adapter compatibility is not proof of completion |
 | 3 — dormant-feature decisions | AI, attachments, `restoreNode`, session lifecycle, contribution grouping, and generic metadata: finish, reserve, migrate, or remove explicitly | Deferred product/format decision |
 
@@ -53,7 +53,7 @@ A separate [proposed change package](./proposals/README.md) specifies the next w
 - [query-first historical views](./proposals/QUERY_FIRST_HISTORY.md), separating non-mutating snapshot materialization from compensating restore commands; and
 - [body checkpoint strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md), using an edit-batch state machine, shared semantic group IDs, and one injectable policy for `batchCharacterThreshold` and `idleTimeoutMs`.
 
-Most of these remain proposed decisions. WP-1 embodies only the discriminated revision-query boundary and verified memory materialization: standalone advertises it available, Tauri advertises it host-deferred, and `App` accepts the capability without consuming it. The navigator is an auxiliary view within the target workspace, not a second editor or selectable legacy layout. The existing `Outline`/`NodeEditor`, restore-only History action, and 1.2-second quiet-period paths remain the current architecture until later implementation and acceptance evidence land.
+Most of these remain proposed decisions. WP-1 embodies the discriminated revision-query boundary and verified memory materialization. WP-2 adds a controller-owned `WorkspaceProjection`, retained live context, origin-aware revision request state, stale-response invalidation, Back semantics, and guards that reject document commands/exports outside live mode. The navigator is an auxiliary view within the target workspace, not a second editor or selectable legacy layout. The existing `Outline`/`NodeEditor`, restore-only History action, and 1.2-second quiet-period paths remain the current UI architecture until later implementation and acceptance evidence land.
 
 ## 2. System context
 
@@ -108,6 +108,7 @@ package "Presentation" {
 
 package "Application control" {
   [useDocumentController] as Controller
+  [WorkspaceProjection] as Workspace
   [SerializedTaskQueue] as Queue
   [DraftTransitionCoordinator] as Drafts
 }
@@ -148,12 +149,14 @@ App --> HistoryPanel
 App --> Controller
 Controller --> Queue
 Controller --> Drafts
+Controller --> Workspace
 Drafts --> App : document-title participant
 Drafts --> NodeEditor : metadata + rich-text participant
 Controller --> Types
 Controller --> Gateway
 Controller --> DialogPort
-App --> RevisionCapability : injected; WP-2 consumes
+App --> RevisionCapability : injects
+Controller --> RevisionCapability : narrows and queries
 Gateway --|> Session
 Gateway --|> History
 Gateway o-- Storage : storage capability
@@ -203,11 +206,12 @@ The Rust store is not imported into the TypeScript build. `TauriDocumentGateway`
 - A `Contribution` attributes one committed revision to a contributor and optional session/group/message, and records a resulting state hash.
 - A snapshot stores a complete `DocumentState` at a revision. Restoration materializes an old snapshot into a new revision rather than removing later history.
 - A `MaterializedRevision` is a detached, structurally validated snapshot whose stored hash was recomputed successfully. It is currently available only through the standalone revision-query capability and is not yet rendered by the UI.
+- A `WorkspaceProjection` explicitly distinguishes live from historical display. Historical state retains the live `DocumentView` and selection, reports the live current revision separately, owns no editor, and can return through Back without a gateway call.
 
 ### Principle of operation
 
-1. The selected entry point constructs `App` with a host-specific `DocumentGateway` and, on desktop, a `DocumentFileDialogs` adapter.
-2. `App` delegates document use cases and state ownership to `useDocumentController`, then renders either the no-document welcome state or a workspace from the controller's complete `DocumentView`.
+1. The selected entry point constructs `App` with a host-specific `DocumentGateway`, an explicit revision-query capability, and, on desktop, a `DocumentFileDialogs` adapter.
+2. `App` delegates document use cases and state ownership to `useDocumentController`, then renders either the no-document welcome state or the displayed `DocumentView` derived from the controller's live/historical `WorkspaceProjection`.
 3. A user interaction becomes a typed `DocumentOperation`; the controller adds contributor, application-lifetime session, grouping, and message context. Before a controlled transition can change or externalize the workspace, `DraftTransitionCoordinator` synchronously freezes the registered document-title and node-editor participants, then awaits their metadata and rich-text drains.
 4. In standalone mode, the memory adapter applies the pure TypeScript mutation, hashes it, and appends in-memory contribution/snapshot records. In desktop mode, the Tauri adapter invokes a Rust command and `DocumentStore` performs the equivalent validated SQLite transaction.
 5. `SerializedTaskQueue` executes document commands one at a time and continues after a rejected task. Workspace epochs, monotonically numbered history requests, and revision checks prevent late responses from replacing a newer workspace/view.
@@ -222,7 +226,7 @@ This is a request/complete-view-response architecture. There is no runtime state
 
 ### Browser/WebView process
 
-`useDocumentController` owns one current `DocumentView`, the selected node, the authoritative editor generation, accumulated history pages, cursor/filter/loading/error state, contributor/session context, command status/error state, workspace/request epochs, the serialized mutation queue, and the draft-transition registry. `App` retains welcome-form/profile persistence and renders the controller state. There is no router, global store, worker, event bus, background synchronization loop, or service container.
+`useDocumentController` owns one nullable live/historical `WorkspaceProjection`, an idle/loading `RevisionRequestState`, the displayed selection and derived `DocumentView`, the authoritative editor generation, accumulated history pages, cursor/filter/loading/error state, contributor/session context, command status/error state, workspace/request epochs, the serialized mutation queue, and the draft-transition registry. A historical projection retains the exact live view/selection/current revision separately and has no editor owner. `App` retains welcome-form/profile persistence and renders the controller state. There is no router, global store, worker, event bus, background synchronization loop, or service container.
 
 Tiptap and Yjs run in the UI process. Yjs updates are accumulated for a 1.2-second quiet period. A flush sends sanitized `bodyHtml`, the merged incremental update, and the complete Yjs state as one queued `updateBody` operation. The gateway responds with a complete replacement `DocumentView`. History requests are intentionally outside the mutation queue; request/epoch guards discard stale responses and history failures have their own visible error state.
 
@@ -300,7 +304,7 @@ Docs ..> Rust
 | Package/file | Responsibility | Detailed artifact |
 |---|---|---|
 | `src/App.tsx` | Presentation composition, welcome/profile UI, and user-event translation | [Frontend design](./FRONTEND_DESIGN.md) |
-| `src/application/` | `useDocumentController`, serialized command queue, history paging/guards, and draft-transition coordination | [Frontend design](./FRONTEND_DESIGN.md) |
+| `src/application/` | `WorkspaceProjection`, `useDocumentController`, serialized command queue, history/revision request guards, and draft-transition coordination | [Frontend design](./FRONTEND_DESIGN.md) |
 | `src/components/` | Outline, metadata editor, history presentation | [UI and UX](./UI_UX.md) |
 | `src/editor/` | Tiptap/Yjs lifecycle and encoding | [Frontend design](./FRONTEND_DESIGN.md) |
 | `src/domain/` | Shared TypeScript data contracts, pure tree rules, browser hashing/IDs | [Frontend design](./FRONTEND_DESIGN.md) |
@@ -397,7 +401,7 @@ These are descriptive decision records, not proposals.
 | AD-08 | Sanitize at UI and persistence boundaries | The memory gateway re-sanitizes direct rich-text operations and validates JSON-compatible payloads; Rust independently applies Ammonia and byte limits | `sanitizeRichText`, memory gateway, Rust store |
 | AD-09 | Deny network in base configuration | Strong offline default; AI/collaboration need explicit alternate permissions/configuration | CSPs, capabilities, empty AI composition |
 | AD-10 | Manually mirror TypeScript/Rust types | Simple toolchain; contract drift must be caught by review/tests | `domain/types.ts`, `models.rs` |
-| AD-11 | Put use-case state and sequencing in `useDocumentController` | Components stay declarative; mutations are serialized and stale history/view responses are rejected | `application/useDocumentController.ts`, `serializedTaskQueue.ts` |
+| AD-11 | Put use-case state and sequencing in `useDocumentController` | Components stay declarative; mutations are serialized; live/historical state is explicit; stale history/revision responses and non-live commands are rejected | `application/useDocumentController.ts`, `workspaceProjection.ts`, `serializedTaskQueue.ts` |
 | AD-12 | Model host storage as a discriminated capability | Standalone implements only meaningful volatile operations; UI narrows `storage.kind` instead of calling rejecting native stubs | `gateway.ts::DocumentStorage`, `VolatileDocumentStorage`, `NativeDocumentStorage` |
 | AD-13 | Page history with an exclusive revision cursor | Long in-memory ledgers are incrementally reachable and filters run before pagination; no total-count query is implied | `ContributionPage`, `HistoryPanel`, memory gateway |
 | AD-14 | Version browser-side protocol algorithms and fixtures | Standalone hashing/sanitization become reviewable contracts; Rust conformance remains explicit second-pass work | `fixtures/protocol/`, `hash.ts`, `sanitizeRichText.ts` |

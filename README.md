@@ -17,7 +17,7 @@ This is a new implementation inspired by TreeWriter's interaction model. It does
 - Strict offline content-security policy and sanitization in both UI and persistence layers
 - Self-contained, double-clickable HTML5 build with an in-memory document backend
 
-The shared UI delegates use-case orchestration to `useDocumentController`. It serializes document commands, synchronously freezes and drains registered title/metadata/rich-text drafts before controlled lifecycle transitions, remounts editor state after authoritative restores, rejects stale view/history responses, and narrows a discriminated storage capability without putting Tauri checks in components.
+The shared UI delegates use-case orchestration to `useDocumentController`. It serializes document commands, synchronously freezes and drains registered title/metadata/rich-text drafts before controlled lifecycle transitions, remounts editor state after authoritative restores, rejects stale view/history responses, narrows discriminated storage/revision-query capabilities, and owns an explicit live/historical projection with retained origins and command guards. History does not expose the historical View/Back workflow yet.
 
 AI and real-time synchronization are intentionally not connected. The provider interface exists so they can be added later without bypassing contribution history.
 

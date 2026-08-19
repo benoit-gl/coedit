@@ -777,49 +777,61 @@ end note
 
 For development, `tauri dev` runs `corepack pnpm dev`, points the webview at `http://127.0.0.1:1420`, and still uses `tauri.html` as the desktop window URL. A raw `cargo build --release` does not execute the configured frontend build/bundling pipeline and is not the documented release command.
 
-## Materialize a standalone revision at the adapter boundary
+## Enter a historical controller projection
 
-**Implemented in WP-1; not yet invoked by the UI.** This query is deliberately separate from the restore command above.
+**Implemented through WP-1/WP-2; not yet invoked by the UI.** This query/state transition is deliberately separate from the restore command above.
 
 ```plantuml
 @startuml
-title Verified memory revision materialization (implemented adapter boundary)
-participant "standalone composition" as Host
+title Verified historical controller projection (implemented; UI-neutral)
+participant "future History View intent / test" as Caller
+control "useDocumentController" as Controller
+participant "DraftTransitionCoordinator" as Drafts
 participant "RevisionQueryCapability" as Capability
 participant "MemoryDocumentGateway" as Memory
 collections "Map<revision, StoredRevision>" as Snapshots
 participant "tree/hash validation" as Validation
 
-Host -> Capability : narrow kind == available
-Capability -> Memory : materializeRevision(R)
-Memory -> Memory : require nonnegative safe integer
-Memory -> Snapshots : get(R)
-alt missing
-  Memory --> Host : RevisionNotFoundError
-else snapshot found
-  Snapshots --> Memory : detached state source + stored hash
-  Memory -> Memory : clone/project DocumentState
-  Memory -> Validation : revision identity + assertValidTree(state.nodes)
-  Memory -> Validation : hashDocument(state)
-  alt invalid tree or hash mismatch
-    Validation --> Host : RevisionIntegrityError
-  else verified
-    Validation --> Memory : matching canonical browser hash
-    Memory --> Host : MaterializedRevision(verified)
-    note right of Memory
-      current view, contribution ledger,
-      revision map, and attribution are unchanged
-    end note
+Caller -> Controller : viewRevision(R)
+Controller -> Capability : narrow kind
+alt host-deferred
+  Controller --> Caller : false + unavailable error; no draft flush
+else available
+  Controller -> Drafts : begin; freeze and flush
+  alt flush fails
+    Drafts --> Controller : error
+    Controller --> Caller : false; retain live projection; no query
+  else flushed
+    Controller -> Controller : capture exact origin + workspace epoch\nallocate monotonic request ID
+    Controller -> Memory : materializeRevision(R)
+    Memory -> Memory : require nonnegative safe integer
+    Memory -> Snapshots : get(R)
+    Snapshots --> Memory : detached state source + stored hash
+    Memory -> Validation : revision identity + assertValidTree + hashDocument
+    alt missing, invalid tree, or hash mismatch
+      Validation --> Controller : typed error
+      Controller -> Controller : restore exact origin if request still current
+      Controller --> Caller : false
+    else verified
+      Validation --> Memory : matching canonical browser hash
+      Memory --> Controller : MaterializedRevision(verified)
+      alt stale request or workspace epoch
+        Controller --> Caller : false; ignore response
+      else current response
+        Controller -> Controller : WorkspaceProjection = historical\nretain live view/selection/current revision\neditor owner = null
+        Controller --> Caller : true
+      end
+    end
   end
 end
 @enduml
 ```
 
-The Tauri composition advertises the same capability as `host-deferred` and supplies no query object or throwing stub. WP-2/WP-3 will add draft draining, request epochs, explicit historical workspace state, and View/Back presentation.
+Back invalidates an in-flight request and returns the retained live projection without a gateway call. Close invalidates and clears both projections. A failed restore retains historical mode; a successful compensating restore accepts the returned live `DocumentView` and exits historical mode. Document operations, export, and backup require an idle live projection. The Tauri composition advertises `host-deferred` and supplies no query object or throwing stub. WP-3 adds the History **View**, banner, and **Back to current** presentation.
 
 ## Proposed interaction sequences — partially implemented package
 
-The implemented sequences above deliberately retain the current master/detail workspace, restore-only historical action, and 1.2-second rich-text quiet-period flow. Apart from the WP-1 adapter query above, target interaction sequences remain embedded in the resumable proposal package:
+The implemented sequences above deliberately retain the current master/detail UI, restore-only visible History action, and 1.2-second rich-text quiet-period flow. Apart from the WP-1/WP-2 query/controller path above, target interaction sequences remain embedded in the resumable proposal package:
 
 | Proposed sequence | Design source |
 |---|---|

@@ -11,7 +11,7 @@ import type {
   ExportFormat,
 } from "../domain/types";
 import type { DocumentFileDialogs } from "../persistence/fileDialogs";
-import type { DocumentGateway } from "../persistence/gateway";
+import type { DocumentGateway, RevisionQueryCapability } from "../persistence/gateway";
 import { DEFAULT_CONTRIBUTION_PAGE_SIZE } from "../persistence/gateway";
 import {
   DraftTransitionCoordinator,
@@ -19,11 +19,24 @@ import {
   type RegisterDraftParticipant,
 } from "./draftTransition";
 import { SerializedTaskQueue } from "./serializedTaskQueue";
+import {
+  displayedDocumentView,
+  displayedSelectedNodeId,
+  historicalWorkspace,
+  liveContextFor,
+  liveProjectionFor,
+  liveWorkspace,
+  selectWorkspaceNode,
+  WorkspaceMutationUnavailableError,
+  type RevisionRequestState,
+  type WorkspaceProjection,
+} from "./workspaceProjection";
 
 export type HistoryQuery = Pick<ContributionQuery, "search" | "nodeId" | "contributorId">;
 
 interface UseDocumentControllerOptions {
   documentGateway: DocumentGateway;
+  revisionQueryCapability: RevisionQueryCapability;
   fileDialogs?: DocumentFileDialogs;
   profile: Contributor;
 }
@@ -46,10 +59,15 @@ function sameHistoryQuery(left: HistoryQuery, right: HistoryQuery): boolean {
     && left.contributorId === right.contributorId;
 }
 
-export function useDocumentController({ documentGateway, fileDialogs, profile }: UseDocumentControllerOptions) {
-  const [view, setView] = useState<DocumentView | null>(null);
+export function useDocumentController({
+  documentGateway,
+  revisionQueryCapability,
+  fileDialogs,
+  profile,
+}: UseDocumentControllerOptions) {
+  const [workspaceProjection, setWorkspaceProjectionState] = useState<WorkspaceProjection | null>(null);
+  const [revisionRequestState, setRevisionRequestStateValue] = useState<RevisionRequestState>({ kind: "idle" });
   const [contributions, setContributions] = useState<Contribution[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [editorGeneration, setEditorGeneration] = useState(0);
   const [historyOpen, setHistoryOpenState] = useState(false);
   const [historyQueryState, setHistoryQueryState] = useState<HistoryQuery>({});
@@ -65,8 +83,9 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
   const [mutationQueue] = useState(() => new SerializedTaskQueue());
   const [draftTransitions] = useState(() => new DraftTransitionCoordinator());
   const [sessionId] = useState(() => newId());
-  const viewRef = useRef<DocumentView | null>(null);
-  const selectedIdRef = useRef<string | null>(null);
+  const workspaceProjectionRef = useRef<WorkspaceProjection | null>(null);
+  const revisionRequestStateRef = useRef<RevisionRequestState>({ kind: "idle" });
+  const revisionRequestId = useRef(0);
   const contributorRef = useRef(profile);
   const workspaceEpoch = useRef(0);
   const historyRequest = useRef(0);
@@ -75,9 +94,15 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
   const historyCursor = useRef<number | null>(null);
   const historyLoadingRef = useRef(false);
 
+  const view = useMemo(
+    () => workspaceProjection ? displayedDocumentView(workspaceProjection) : null,
+    [workspaceProjection],
+  );
+  const liveView = workspaceProjection ? liveContextFor(workspaceProjection).view : null;
+  const selectedId = workspaceProjection ? displayedSelectedNodeId(workspaceProjection) : null;
   const contributor = useMemo(
-    () => view?.contributors.find((item) => item.id === profile.id) ?? view?.contributors[0] ?? profile,
-    [profile, view],
+    () => liveView?.contributors.find((item) => item.id === profile.id) ?? liveView?.contributors[0] ?? profile,
+    [liveView, profile],
   );
   useLayoutEffect(() => { contributorRef.current = contributor; }, [contributor]);
 
@@ -87,6 +112,21 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
     groupId,
     message,
   }), [sessionId]);
+
+  const setWorkspaceProjection = useCallback((next: WorkspaceProjection | null) => {
+    workspaceProjectionRef.current = next;
+    setWorkspaceProjectionState(next);
+  }, []);
+
+  const setRevisionRequestState = useCallback((next: RevisionRequestState) => {
+    revisionRequestStateRef.current = next;
+    setRevisionRequestStateValue(next);
+  }, []);
+
+  const invalidateRevisionRequest = useCallback(() => {
+    ++revisionRequestId.current;
+    setRevisionRequestState({ kind: "idle" });
+  }, [setRevisionRequestState]);
 
   const requestHistory = useCallback(async (
     query: HistoryQuery,
@@ -136,18 +176,14 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
     }
   }, [documentGateway]);
 
-  const setSelection = useCallback((nodeId: string | null) => {
-    selectedIdRef.current = nodeId;
-    setSelectedId(nodeId);
-  }, []);
-
   const acceptView = useCallback((next: DocumentView, epoch: number, authoritativeReset = false): boolean => {
     if (epoch !== workspaceEpoch.current) return false;
-    const current = viewRef.current;
+    const currentWorkspace = workspaceProjectionRef.current;
+    const current = currentWorkspace ? liveContextFor(currentWorkspace).view : null;
     if (current?.document.id === next.document.id && next.document.revision < current.document.revision) return false;
 
     const sameDocument = current?.document.id === next.document.id;
-    const currentSelection = selectedIdRef.current;
+    const currentSelection = currentWorkspace ? liveContextFor(currentWorkspace).selectedNodeId : null;
     const selectionStillExists = sameDocument
       && currentSelection !== null
       && next.nodes.some((node) => node.id === currentSelection && node.deletedAt === null);
@@ -155,9 +191,7 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
       ? currentSelection
       : next.nodes.find((node) => node.deletedAt === null)?.id ?? null;
 
-    viewRef.current = next;
-    setView(next);
-    setSelection(nextSelection);
+    setWorkspaceProjection(liveWorkspace(next, nextSelection));
     if (authoritativeReset) setEditorGeneration((generation) => generation + 1);
 
     let nextQuery = historyQuery.current;
@@ -174,7 +208,7 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
       setHistoryStale(true);
     }
     return true;
-  }, [requestHistory, setSelection]);
+  }, [requestHistory, setWorkspaceProjection]);
 
   const enqueue = useCallback(async <T,>(task: () => Promise<T>): Promise<T> => {
     setBusyCount((count) => count + 1);
@@ -240,6 +274,9 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
   }, []);
 
   const createDocument = useCallback((title: string): Promise<boolean> => runTransition(async () => {
+    if (workspaceProjectionRef.current || revisionRequestStateRef.current.kind === "loading") {
+      throw new Error("Creating a document is available only from the welcome workspace.");
+    }
     const storage = documentGateway.storage;
     let created: DocumentView;
     if (storage.kind === "volatile") {
@@ -255,6 +292,7 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
       );
     }
     const epoch = ++workspaceEpoch.current;
+    invalidateRevisionRequest();
     resetHistoryForWorkspace();
     acceptView(created, epoch, true);
   }, "Document created"), [
@@ -262,18 +300,23 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
     documentGateway,
     executeMutation,
     fileDialogs,
+    invalidateRevisionRequest,
     profile,
     resetHistoryForWorkspace,
     runTransition,
   ]);
 
   const openDocument = useCallback((): Promise<boolean> => runTransition(async () => {
+    if (workspaceProjectionRef.current || revisionRequestStateRef.current.kind === "loading") {
+      throw new Error("Opening a document is available only from the welcome workspace.");
+    }
     const storage = documentGateway.storage;
     if (storage.kind !== "native-file" || !fileDialogs) throw new TransitionCancelled();
     const path = await fileDialogs.chooseDocumentToOpen();
     if (!path) throw new TransitionCancelled();
     const opened = await executeMutation(() => storage.openDocument(path));
     const epoch = ++workspaceEpoch.current;
+    invalidateRevisionRequest();
     resetHistoryForWorkspace();
     acceptView(opened, epoch, true);
   }, "Document opened"), [
@@ -281,23 +324,33 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
     documentGateway,
     executeMutation,
     fileDialogs,
+    invalidateRevisionRequest,
     resetHistoryForWorkspace,
     runTransition,
   ]);
 
+  const requireLiveWorkspace = useCallback(() => {
+    const current = workspaceProjectionRef.current;
+    if (!current) throw new Error("No document is open.");
+    if (current.kind !== "live" || revisionRequestStateRef.current.kind === "loading") {
+      throw new WorkspaceMutationUnavailableError();
+    }
+    return current;
+  }, []);
+
   const assertCurrentWorkspace = useCallback((epoch: number, documentId: string) => {
-    if (epoch !== workspaceEpoch.current || viewRef.current?.document.id !== documentId) {
+    const current = requireLiveWorkspace();
+    if (epoch !== workspaceEpoch.current || current.displayed.view.document.id !== documentId) {
       throw new Error("The document changed before the edit could be saved.");
     }
-  }, []);
+  }, [requireLiveWorkspace]);
 
   const commitRawOperation = useCallback(async (
     operation: DocumentOperation,
     message: string,
     groupId: string | null = null,
   ): Promise<void> => {
-    const current = viewRef.current;
-    if (!current) throw new Error("No document is open.");
+    const current = requireLiveWorkspace().displayed.view;
     const epoch = workspaceEpoch.current;
     const documentId = current.document.id;
     await executeMutation(async () => {
@@ -305,7 +358,7 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
       const updated = await documentGateway.applyOperation(operation, context(message, groupId));
       acceptView(updated, epoch);
     }, "All changes saved locally");
-  }, [acceptView, assertCurrentWorkspace, context, documentGateway, executeMutation]);
+  }, [acceptView, assertCurrentWorkspace, context, documentGateway, executeMutation, requireLiveWorkspace]);
 
   const commitBody = useCallback((
     nodeId: string,
@@ -340,11 +393,17 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
   ), [commitRawOperation, runTransition]);
 
   const selectNode = useCallback((nodeId: string): Promise<boolean> => {
-    if (nodeId === selectedIdRef.current) return Promise.resolve(true);
+    const current = workspaceProjectionRef.current;
+    if (current && nodeId === displayedSelectedNodeId(current)) return Promise.resolve(true);
     return runTransition(async () => {
-      const exists = viewRef.current?.nodes.some((node) => node.id === nodeId && node.deletedAt === null);
-      if (!exists) throw new Error("The selected idea is no longer available.");
-      setSelection(nodeId);
+      if (revisionRequestStateRef.current.kind === "loading") {
+        throw new Error("Workspace navigation is unavailable while a historical revision is loading.");
+      }
+      const projection = workspaceProjectionRef.current;
+      if (!projection || !displayedDocumentView(projection).nodes.some(
+        (node) => node.id === nodeId && node.deletedAt === null,
+      )) throw new Error("The selected idea is no longer available.");
+      setWorkspaceProjection(selectWorkspaceNode(projection, nodeId));
       if (historyQuery.current.nodeId) {
         const query = normalizedHistoryQuery({ ...historyQuery.current, nodeId });
         historyQuery.current = query;
@@ -354,19 +413,86 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
         }
       }
     });
-  }, [requestHistory, runTransition, setSelection]);
+  }, [requestHistory, runTransition, setWorkspaceProjection]);
+
+  const viewRevision = useCallback(async (revision: number): Promise<boolean> => {
+    if (revisionQueryCapability.kind !== "available") {
+      setError("Historical revision viewing is unavailable in this host.");
+      return false;
+    }
+    if (!workspaceProjectionRef.current) {
+      setError("No document is open.");
+      return false;
+    }
+
+    const flushed = await runTransition(async () => undefined);
+    if (!flushed) return false;
+
+    const origin = workspaceProjectionRef.current;
+    if (!origin) return false;
+    const epoch = workspaceEpoch.current;
+    const requestId = ++revisionRequestId.current;
+    setRevisionRequestState({ kind: "loading", requestedRevision: revision, requestId, origin });
+    setError(null);
+
+    try {
+      const materialized = await revisionQueryCapability.queries.materializeRevision(revision);
+      if (requestId !== revisionRequestId.current || epoch !== workspaceEpoch.current) return false;
+      setWorkspaceProjection(historicalWorkspace(origin, materialized));
+      setRevisionRequestState({ kind: "idle" });
+      setEditorGeneration((generation) => generation + 1);
+      setStatus(`Viewing revision ${revision} read-only`);
+      return true;
+    } catch (caught) {
+      if (requestId !== revisionRequestId.current || epoch !== workspaceEpoch.current) return false;
+      setWorkspaceProjection(origin);
+      setRevisionRequestState({ kind: "idle" });
+      setError(errorMessage(caught));
+      return false;
+    }
+  }, [revisionQueryCapability, runTransition, setRevisionRequestState, setWorkspaceProjection]);
+
+  const backToCurrent = useCallback((): boolean => {
+    const request = revisionRequestStateRef.current;
+    const current = workspaceProjectionRef.current;
+    const origin = request.kind === "loading" ? request.origin : current;
+    const changed = request.kind === "loading" || origin?.kind === "historical";
+    invalidateRevisionRequest();
+
+    if (origin?.kind === "historical") {
+      setWorkspaceProjection(liveProjectionFor(origin));
+      setEditorGeneration((generation) => generation + 1);
+    } else if (origin?.kind === "live" && current !== origin) {
+      setWorkspaceProjection(origin);
+    }
+    if (changed) {
+      setError(null);
+      setStatus("Back to current revision");
+    }
+    return changed;
+  }, [invalidateRevisionRequest, setWorkspaceProjection]);
 
   const restoreRevision = useCallback((revision: number): Promise<boolean> => runTransition(async () => {
+    if (revisionRequestStateRef.current.kind === "loading") {
+      throw new Error("Wait for historical revision loading to finish before restoring.");
+    }
     const epoch = workspaceEpoch.current;
     const restored = await executeMutation(
       () => documentGateway.restoreRevision(revision, context(`Restored revision ${revision}`)),
     );
+    invalidateRevisionRequest();
     acceptView(restored, epoch, true);
-  }, `Restored revision ${revision}`), [acceptView, context, documentGateway, executeMutation, runTransition]);
+  }, `Restored revision ${revision}`), [
+    acceptView,
+    context,
+    documentGateway,
+    executeMutation,
+    invalidateRevisionRequest,
+    runTransition,
+  ]);
 
   const exportDocument = useCallback((format: ExportFormat): Promise<boolean> => runTransition(async () => {
-    const current = viewRef.current;
-    if (!current) throw new Error("No document is open.");
+    const current = requireLiveWorkspace().displayed.view;
     const storage = documentGateway.storage;
     if (storage.kind === "volatile") {
       await executeMutation(() => storage.exportDocument(format));
@@ -376,30 +502,38 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
     const path = await fileDialogs.chooseExportPath(format, current.document.title);
     if (!path) throw new TransitionCancelled();
     await executeMutation(() => storage.exportDocument(format, path));
-  }, `Exported ${format}`), [documentGateway, executeMutation, fileDialogs, runTransition]);
+  }, `Exported ${format}`), [documentGateway, executeMutation, fileDialogs, requireLiveWorkspace, runTransition]);
 
   const backupDocument = useCallback((): Promise<boolean> => runTransition(async () => {
-    const current = viewRef.current;
+    const current = requireLiveWorkspace().displayed.view;
     const storage = documentGateway.storage;
-    if (!current || storage.kind !== "native-file" || !fileDialogs) {
+    if (storage.kind !== "native-file" || !fileDialogs) {
       throw new TransitionCancelled();
     }
     const path = await fileDialogs.chooseBackupPath(current.document.title);
     if (!path) throw new TransitionCancelled();
     await executeMutation(() => storage.backupDocument(path));
-  }, "Backup created"), [documentGateway, executeMutation, fileDialogs, runTransition]);
+  }, "Backup created"), [documentGateway, executeMutation, fileDialogs, requireLiveWorkspace, runTransition]);
 
-  const closeDocument = useCallback((): Promise<boolean> => runTransition(async () => {
-    await executeMutation(() => documentGateway.closeDocument());
-    ++workspaceEpoch.current;
-    resetHistoryForWorkspace();
-    viewRef.current = null;
-    setView(null);
-    setSelection(null);
-    setHistoryOpenState(false);
-    historyOpenRef.current = false;
-    setEditorGeneration((generation) => generation + 1);
-  }), [documentGateway, executeMutation, resetHistoryForWorkspace, runTransition, setSelection]);
+  const closeDocument = useCallback((): Promise<boolean> => {
+    invalidateRevisionRequest();
+    return runTransition(async () => {
+      await executeMutation(() => documentGateway.closeDocument());
+      ++workspaceEpoch.current;
+      resetHistoryForWorkspace();
+      setWorkspaceProjection(null);
+      setHistoryOpenState(false);
+      historyOpenRef.current = false;
+      setEditorGeneration((generation) => generation + 1);
+    });
+  }, [
+    documentGateway,
+    executeMutation,
+    invalidateRevisionRequest,
+    resetHistoryForWorkspace,
+    runTransition,
+    setWorkspaceProjection,
+  ]);
 
   const updateHistoryQuery = useCallback((query: HistoryQuery) => {
     const normalized = normalizedHistoryQuery(query);
@@ -410,13 +544,13 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
     setContributions([]);
     setHistoryHasMore(false);
     setHistoryStale(false);
-    if (viewRef.current && historyOpenRef.current) {
+    if (workspaceProjectionRef.current && historyOpenRef.current) {
       void requestHistory(normalized, null, false, workspaceEpoch.current, true);
     }
   }, [requestHistory]);
 
   const loadOlderHistory = useCallback(() => {
-    if (!viewRef.current || !historyOpenRef.current || !historyHasMore
+    if (!workspaceProjectionRef.current || !historyOpenRef.current || !historyHasMore
       || historyLoadingRef.current || historyCursor.current === null) return;
     void requestHistory(historyQuery.current, historyCursor.current, true, workspaceEpoch.current);
   }, [historyHasMore, requestHistory]);
@@ -425,7 +559,7 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
     historyOpenRef.current = open;
     setHistoryOpenState(open);
     if (open) {
-      if (viewRef.current) {
+      if (workspaceProjectionRef.current) {
         void requestHistory(historyQuery.current, null, false, workspaceEpoch.current);
       }
     } else {
@@ -437,6 +571,9 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
 
   return {
     view,
+    workspaceProjection,
+    revisionRequest: revisionRequestState,
+    currentRevision: workspaceProjection ? liveContextFor(workspaceProjection).view.document.revision : null,
     contributions,
     selectedId,
     selectedNode: view?.nodes.find((node) => node.id === selectedId && node.deletedAt === null) ?? null,
@@ -459,6 +596,8 @@ export function useDocumentController({ documentGateway, fileDialogs, profile }:
     commitNodeMetadata,
     commitDocumentTitle,
     selectNode,
+    viewRevision,
+    backToCurrent,
     restoreRevision,
     exportDocument,
     backupDocument,

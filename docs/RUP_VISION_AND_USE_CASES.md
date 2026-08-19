@@ -535,11 +535,11 @@ OpenState .. UC10
 
 ## Proposed next-iteration use cases
 
-The following use cases are approved design targets and are not yet reachable end to end. They are specified together in the [continuous-workspace change package](./proposals/README.md). WP-1 implements UC-13's standalone adapter query/capability prerequisite only; current UC-03 through UC-07 remain the executable UI baseline until the corresponding delivery slice is complete.
+The following use cases are approved design targets and are not yet reachable end to end. They are specified together in the [continuous-workspace change package](./proposals/README.md). WP-1 implements UC-13's standalone adapter query and WP-2 implements its controller projection/request/guard layer; current UC-03 through UC-07 remain the executable UI baseline until WP-3 connects the History interaction.
 
 ### UC-12 - Edit through a continuous block outline
 
-**Status:** Partial infrastructure. WP-1 provides verified, detached, non-mutating memory materialization and explicit host capability advertisement; controller mode and user-facing View/Back behavior remain proposed.
+**Status:** Partial infrastructure. WP-1 provides verified, detached, non-mutating memory materialization and explicit host capability advertisement. WP-2 provides live/historical controller modes, retained origins, Back, stale-response invalidation, and command guards. User-facing View/Back behavior remains proposed.
 
 **Primary actor:** Author.
 
@@ -712,8 +712,8 @@ These requirements describe the target package, not current satisfaction.
 | FR-PW-01 | The live hierarchy shall be rendered as a pure, flattened, active-node pre-order projection with depth and expansion state. | Projection unit tests cover multiple roots, collapse, deletion, ordering, and deep nesting. |
 | FR-PW-02 | The first block-outline implementation shall allow at most one live rich-text editor owner. | Focus-transfer integration tests prove drain-before-unmount and no duplicate Yjs ownership. |
 | FR-PW-03 | Revision materialization shall be a read query with no document, ledger, revision, or snapshot mutation. | Partial: memory before/after tests cover live revision continuity, ledger/snapshot counts, detachment, hash mismatch, and invalid trees; native parity remains. |
-| FR-PW-04 | Historical workspace mode shall reject every document mutation independently of control visibility. | Controller command-guard tests exercise direct and stale callbacks. |
-| FR-PW-05 | Restoration from a historical view shall remain a separately confirmed compensating operation. | Restore produces exactly one new current revision and retains intervening history. |
+| FR-PW-04 | Historical workspace mode shall reject every document mutation independently of control visibility. | Implemented at the controller boundary in WP-2: direct operation/title/export attempts are rejected before storage; stale and loading requests are guarded. Full UI callback coverage remains WP-3. |
+| FR-PW-05 | Restoration from a historical view shall remain a separately confirmed compensating operation. | Partial: WP-2 tests failure retention and one successful compensating exit; explicit historical UI confirmation remains WP-3. |
 | FR-PW-06 | Body checkpoints shall occur at the defined edit-mode, selection/focus, structural-operation, character-threshold, and idle boundaries. | Pure coordinator tests use deterministic transactions, grapheme counts, and fake time. |
 | FR-PW-07 | `batchCharacterThreshold` and `idleTimeoutMs` shall be defined once in an exported immutable policy, injected into the coordinator, and independently overrideable in tests. | Source check finds no duplicate policy literals; unit tests inject non-default values. |
 | FR-PW-08 | Threshold checkpoints within one uninterrupted edit episode shall reuse one `groupId`, while semantic boundaries shall close that group. | History tests cover collapsed/expanded representations, raw page-boundary coalescing, partial labels, and exact group paging. |
@@ -803,7 +803,7 @@ These requirements describe the target package, not current satisfaction.
 | RK-09 | Desktop history silently pre-windows the newest 100,000 rows before filtering. | Medium in very long documents / medium | Shared cursor UI and memory paging implemented | Indexed SQL cursor/filter query and boundary tests |
 | RK-10 | Replacement and interrupted-journal recovery paths lack fault-injection coverage. | Low-medium / high | Atomic-style helpers and warning | Filesystem failure tests and recovery rehearsal |
 | RK-11 | A continuous canvas can create focus loss, editor remount, or keyboard conflicts across blocks. | Medium / high usability and data integrity | Proposed one-active-editor ownership and explicit shortcut scope | Component integration, IME, screen-reader, touch, and browser tests from UC-12 |
-| RK-12 | Historical viewing could accidentally invoke live commands or render untrusted snapshot content unsafely. | Low-medium / high integrity and security | Memory query now detaches and verifies tree/hash; discriminated workspace mode and controller guards remain proposed | Native query parity, non-mutation/guard contracts, and hostile historical-rendering cases from UC-13 |
+| RK-12 | Historical viewing could accidentally invoke live commands or render untrusted snapshot content unsafely. | Low-medium / high integrity and security | Memory query detaches/verifies tree/hash; WP-2 discriminated workspace mode rejects live commands and stale responses | Native query parity, full UI callback guards, and hostile historical-rendering cases from UC-13 |
 | RK-13 | Checkpoint classification, off-by-one counting, timers, or slow persistence can lose boundaries, exhaust memory, or create noisy history. | Medium / high integrity and usability | Proposed pure coordinator, injectable policy, two-checkpoint backpressure, FIFO retention, page-aware shared edit groups | Fake-time/property/IME/slow/failure/page-boundary tests from UC-14 plus snapshot-growth measurements |
 | RK-14 | An auxiliary navigator could drift into a second editor, couple its expansion to the canvas, steal focus/editor ownership, or obscure the canvas on touch devices. | Medium / medium-high usability and architectural complexity | Proposed navigation-only boundary, independent state, explicit focus action, and responsive drawer | Ownership/non-mutation tests, ARIA tree and focus tests, live/historical parity, and iPadOS/Safari qualification from UC-12 and UC-13 |
 
@@ -828,7 +828,7 @@ The prioritized verification work is in [Testing strategy](./TESTING.md). Owners
 | Group ID | Optional contribution field used to associate a logical burst, currently generated per rich-text commit. |
 | Body checkpoint (proposed) | A physical attributed `updateBody` revision captured at a recovery or semantic boundary. It is not necessarily one History row. |
 | Edit group (proposed) | One human-meaningful body-edit episode. Multiple threshold checkpoints can share its `groupId` and be collapsed in History. |
-| Historical projection (proposed) | Detached materialized state for a selected revision, rendered read-only without replacing live state. WP-1 provides the memory materialization value but not this UI projection. |
+| Historical projection (partial) | Detached materialized state for a selected revision without replacing live state. WP-2 implements the controller projection and read-only derived view; WP-3 will make it user-visible. |
 | Materialized state | Current document and node rows, as opposed to the historical ledger/snapshots. |
 | Navigator (proposed) | Optional navigation-only tree over the active workspace projection. It may locate/reveal a block but is not an editor, structural command surface, or alternate workspace mode. |
 | Visible-node projection (proposed) | Flattened pre-order list of active, expansion-visible nodes plus depth/layout metadata; it does not replace the persisted tree. |

@@ -101,10 +101,15 @@ interface AppProps {
   fileDialogs?: DocumentFileDialogs;
 }
 
-export function App({ documentGateway, fileDialogs }: AppProps) {
+export function App({ documentGateway, revisionQueryCapability, fileDialogs }: AppProps) {
   const [newTitle, setNewTitle] = useState("Untitled document");
   const [profile, setProfile] = useState(loadLocalContributor);
-  const controller = useDocumentController({ documentGateway, fileDialogs, profile });
+  const controller = useDocumentController({
+    documentGateway,
+    revisionQueryCapability,
+    fileDialogs,
+    profile,
+  });
   const { view, selectedNode } = controller;
   const tagSuggestions = useMemo(() => collectActiveTags(view?.nodes ?? []), [view?.nodes]);
 
@@ -159,7 +164,9 @@ export function App({ documentGateway, fileDialogs }: AppProps) {
     );
   }
 
-  const controlsLocked = view.readOnly || controller.transitioning;
+  const controlsLocked = view.readOnly
+    || controller.transitioning
+    || controller.revisionRequest.kind === "loading";
   return (
     <div className="app-shell" aria-busy={controller.transitioning}>
       <header className="topbar">

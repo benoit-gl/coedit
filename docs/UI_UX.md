@@ -416,6 +416,8 @@ Before describing iPadOS or phone support as complete, add a touch-first outline
 
 The current information architecture, mockups, and interaction tables above describe the executable master/detail interface. The agreed product direction is specified in a separate resumable package:
 
+WP-1/WP-2 now provide the non-visual prerequisite beneath this section: verified memory materialization plus an explicit live/historical controller projection, origin/stale-request handling, Back semantics, and command guards. No History **View**, historical banner, or **Back to current** control is rendered yet, so the UX below remains proposed until WP-3.
+
 - [Continuous block-outline](proposals/CONTINUOUS_BLOCK_OUTLINE.md): one scrolling projection, indented blocks, contextual controls, separate canvas-context/focus-region/editor-owner state, drain-before-hide collapse, one Tiptap editor, normal Tab navigation, handle-scoped structural shortcuts, live/historical reuse, and an optional navigation-only tree sidebar.
 - [Query-first historical views](proposals/QUERY_FIRST_HISTORY.md): History **View** as the primary action, verified detached snapshots, origin-aware loading, persistent read-only revision banner, **Back to current**, and separately confirmed **Restore as new revision**.
 - [Body checkpoint strategy](proposals/BODY_CHECKPOINT_STRATEGY.md): semantic insertion/deletion/cursor/focus/tree boundaries, bounded FIFO backpressure, page-aware grouped checkpoints, and centralized configurable `batchCharacterThreshold`/`idleTimeoutMs` defaults.
