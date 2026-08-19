@@ -35,6 +35,8 @@ interface Harness {
   insert(text: string): ReturnType<BodyEditBatchCoordinator["acceptChange"]>;
   delete(change?: (body: string) => string): ReturnType<BodyEditBatchCoordinator["acceptChange"]>;
   atomic(change: (body: string) => string): ReturnType<BodyEditBatchCoordinator["acceptChange"]>;
+  beginComposition(): ReturnType<BodyEditBatchCoordinator["beginComposition"]>;
+  compose(text: string): ReturnType<BodyEditBatchCoordinator["acceptCompositionChange"]>;
 }
 
 function harness(options: {
@@ -91,6 +93,11 @@ function harness(options: {
       { kind: "atomic" },
       () => { body = change(body); pendingUpdate = true; },
     ),
+    beginComposition: () => coordinator.beginComposition(),
+    compose: (text) => coordinator.acceptCompositionChange(() => {
+      body += text;
+      pendingUpdate = true;
+    }),
   };
 }
 
@@ -187,6 +194,56 @@ describe("BodyEditBatchCoordinator edit groups", () => {
       { groupId: "group-1", reason: "atomic-edit", bodyHtml: "draft" },
       { groupId: "group-2", reason: "atomic-edit", bodyHtml: "final" },
     ]);
+  });
+
+  it("seals prior work before composition and captures the final IME result once", async () => {
+    const test = harness({ threshold: 20 });
+    test.insert("draft");
+
+    expect(test.beginComposition()).toEqual({ accepted: true });
+    expect(test.captures).toMatchObject([
+      { groupId: "group-1", reason: "atomic-edit", bodyHtml: "draft" },
+    ]);
+    expect(test.compose("に")).toEqual({ accepted: true });
+    expect(test.compose("ほ")).toEqual({ accepted: true });
+    expect(test.captures).toHaveLength(1);
+    expect(test.coordinator.getSnapshot()).toMatchObject({
+      compositionActive: true,
+      dirty: true,
+      groupId: "group-2",
+    });
+
+    expect(test.coordinator.endComposition()).toBe(true);
+    await test.coordinator.retry();
+    expect(test.commits).toMatchObject([
+      { groupId: "group-1", reason: "atomic-edit", bodyHtml: "draft" },
+      { groupId: "group-2", reason: "atomic-edit", bodyHtml: "draftにほ" },
+    ]);
+    expect(test.coordinator.getSnapshot()).toMatchObject({
+      compositionActive: false,
+      mode: "clean",
+      dirty: false,
+    });
+  });
+
+  it("reserves composition capacity before allowing browser changes", async () => {
+    const gate = deferred<void>();
+    const test = harness({
+      threshold: 2,
+      commit: () => gate.promise,
+    });
+    test.insert("a");
+    test.insert("b");
+    test.insert("c");
+    expect(test.coordinator.getSnapshot().pendingCheckpointCount).toBe(2);
+
+    expect(test.beginComposition()).toEqual({ accepted: false, reason: "blocked" });
+    expect(test.compose("x")).toEqual({ accepted: false, reason: "blocked" });
+    expect(test.body()).toBe("abc");
+
+    gate.resolve();
+    await microtasks();
+    test.coordinator.dispose();
   });
 
   it("seals once after the injected idle timeout, including deletion", async () => {

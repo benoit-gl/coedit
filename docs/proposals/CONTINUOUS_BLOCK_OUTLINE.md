@@ -2,7 +2,7 @@
 
 **Product decision:** Approved design direction.
 
-**Implementation status:** Partial. WP-6 implements the pure visible-node projection and its domain-validation/scale tests. The WP-7 read-only scaffold implements unreachable `DocumentCanvas`, `NodeBlock`, sanitized `NodeBodyPreview`, list/indentation styling, fail-closed rendering, and component tests. Reachable canvas composition, editor ownership, structural controls, historical-controller integration, and the optional navigator remain staged.
+**Implementation status:** Partial. WP-6 implements the pure visible-node projection and its domain-validation/scale tests. WP-7 implements the unreachable `DocumentCanvas`/`NodeBlock` scaffold and sanitized previews; the WP-4/WP-7 gate adds explicit one-editor ownership, registered checkpoint participation, drain-before-transfer, and failure retention. Reachable canvas composition, metadata/structural controls, historical-controller reuse, shell focus state, and the optional navigator remain staged.
 
 **Change package:** [Continuous workspace proposals](./README.md)
 
@@ -564,24 +564,23 @@ The first performance tactic is one active editor, not virtualization.
 
 ### Components
 
-Implemented in the read-only WP-7 scaffold:
+Implemented in the WP-7 scaffold and WP-4/WP-7 integration gate:
 
 - projected active nodes render in continuous order with depth indentation;
 - collapsed, empty, and invalid projections render deterministic non-editable states;
 - titles and tags render as static text and bodies pass through the centralized sanitizer;
-- no input, button, contenteditable surface, toolbar, Tiptap/Yjs owner, draft participant, or mutation callback exists;
-- the same static component contract accepts live or historical workspace identity, but remains unreachable from `App` until the safety gate.
+- historical/read-only rendering exposes no input, button, contenteditable surface, toolbar, Tiptap/Yjs owner, draft participant, or mutation callback;
+- a live editable contract takes one explicit `editorOwnerNodeId`; exactly that block mounts `RichTextEditor`, while inactive bodies remain sanitized previews with native **Edit body** controls;
+- the active block registers its coordinator-backed participant under its stable node ID; transfer waits for drain, mounts no duplicate editor, and failure retains the old owner plus initiating control;
+- the component contract remains unreachable from `App` until editable metadata and structural parity.
 
-Pending at the active-editor and parity stages:
+Pending at the parity stages:
 
-- only one active rich editor exists;
-- focus transfer waits for the old checkpoint;
-- failed checkpoint retains old block/editor;
 - title Enter and explicit insertion create/focus correct sibling;
 - indent/outdent/reorder issue correct operations;
 - collapse/focus behavior and live announcements;
 - collapse of an ancestor containing the editor drains before removal and cancels on failure;
-- separate canvas-context/focus-region/editor-owner state, cross-block title activation, and keyboard activation of **Edit body**;
+- complete canvas-context/focus-region shell state and cross-block title activation; keyboard activation of native **Edit body** already follows the button/transfer path;
 - historical canvas exposes no mutation controls;
 - keyboard commands do not fire during IME composition or from ordinary rich-text editing;
 - toggling the navigator never remounts the canvas or its editor and never invokes a document command;
@@ -637,8 +636,8 @@ Pending at the active-editor and parity stages:
 2. **Implemented (WP-6):** add and test the pure visible-node projection without changing reachable UI.
 3. **Implemented (WP-7 scaffold):** add the unreachable `DocumentCanvas`/`NodeBlock` scaffold beside the current workspace.
 4. **Implemented (WP-7 scaffold):** render sanitized read-only previews for every visible block with no editor, draft participant, or structural mutation surface.
-5. **Next (WP-4/WP-7 integration gate):** add one active-editor owner through the new checkpoint coordinator. Focus transfer and every action that could hide/remove the owner must drain first and retain the old owner on failure.
-6. Remove the fixed 1.2-second batching path, then add title/tag editing and insertion through the final `NodeBlock` boundary.
+5. **Implemented (WP-4/WP-7 integration gate):** add one active-editor owner through the checkpoint coordinator. Focused tests prove body transfer drains first, never mounts two editors, and retains the old owner on failure.
+6. **Timer removal implemented:** add title/tag editing and insertion through the final `NodeBlock` boundary next, routing every action that could hide/remove the owner through the same drain contract.
 7. Add structural keyboard and pointer controls only after drain-before-unmount and failure-cancel tests pass.
 8. Reuse the canvas for historical mode.
 9. Remove the master/detail composition only after canvas parity is demonstrated; do not retain it as a runtime mode.

@@ -175,7 +175,7 @@ export function NodeEditor({ node, tagSuggestions, readOnly, onMetadataChange, o
       />
       <div className="text-heading">
         <div><span className="eyebrow">Text</span><h2>Write and refine</h2></div>
-        <span className="save-hint">Typing is grouped after 1.2 seconds of rest</span>
+        <span className="save-hint">Changes are grouped at semantic checkpoints</span>
       </div>
       <RichTextEditor
         node={node}

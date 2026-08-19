@@ -122,6 +122,10 @@ button.primary { color: white; background: var(--accent); border-color: var(--ac
 .editor-surface a { color: var(--accent); text-decoration-thickness: 1px; }
 .editor-surface blockquote { border-left: 3px solid #9eb5a9; margin-left: 0; padding-left: 20px; color: #565c55; }
 .editor-surface pre { overflow: auto; padding: 14px; border-radius: 8px; background: #292b27; color: #f6f4ec; font: 13px/1.5 ui-monospace, monospace; }
+.body-checkpoint-status, .body-checkpoint-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 10px; padding: 9px 11px; border-radius: 7px; font-size: 12px; line-height: 1.4; }
+.body-checkpoint-status { color: #705c23; background: #fff2c9; }
+.body-checkpoint-error { color: #7f2921; background: #f9ddd8; }
+.body-checkpoint-error button { flex: 0 0 auto; }
 .empty-editor { height: 100%; display: grid; place-content: center; justify-items: center; color: var(--muted); text-align: center; }
 .empty-editor h2 { color: var(--ink); font: 600 30px Georgia, serif; margin-bottom: 4px; }
 
@@ -140,6 +144,10 @@ button.primary { color: white; background: var(--accent); border-color: var(--ac
 .node-block-heading h2 { margin: 0; font: 600 25px/1.25 Georgia, serif; letter-spacing: -.012em; overflow-wrap: anywhere; }
 .node-block-tags { display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0 0; padding: 0; list-style: none; }
 .node-block-tags li { padding: 4px 8px; border-radius: 13px; background: var(--accent-soft); color: #29483c; font-size: 11px; }
+.node-block-inactive-body { position: relative; }
+.node-block-edit-body { min-height: 44px; margin: 10px 0 0 24px; }
+.node-block[data-editor-owner="true"] .rich-editor { margin: 14px 0 0 24px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.node-block[data-editor-owner="true"] .editor-surface { min-height: 180px; }
 .node-body-preview, .node-body-preview-empty { margin: 10px 0 0 24px; }
 .node-body-preview { font: 16px/1.68 Georgia, serif; overflow-wrap: anywhere; }
 .node-body-preview > *:first-child { margin-top: 0; }

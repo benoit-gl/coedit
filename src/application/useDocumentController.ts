@@ -401,7 +401,11 @@ export function useDocumentController({
 
   const selectNode = useCallback((nodeId: string): Promise<boolean> => {
     const current = workspaceProjectionRef.current;
-    if (current && nodeId === displayedSelectedNodeId(current)) return Promise.resolve(true);
+    if (
+      current
+      && nodeId === displayedSelectedNodeId(current)
+      && (current.kind === "historical" || current.editorOwnerNodeId === nodeId)
+    ) return Promise.resolve(true);
     return runTransition(async () => {
       if (revisionRequestStateRef.current.kind === "loading") {
         throw new Error("Workspace navigation is unavailable while a historical revision is loading.");

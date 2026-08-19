@@ -328,17 +328,17 @@ OpenState .. UC10
 
 1. `RichTextEditor` creates a Yjs document from the node's stored base64 state.
 2. Tiptap Collaboration maps the editor field to that Yjs document.
-3. Yjs updates are accumulated in memory.
-4. After 1.2 seconds without another update—or when the controller explicitly requests a flush—the editor merges updates, sanitizes rendered HTML through `coedit-rich-text-v1`, encodes the incremental update and complete Yjs state, and calls `onCommit`.
-5. The compatibility editor supplies a new group ID for the flush, and the controller queues `updateBody` with that ID and message `Writing contribution`.
+3. A pre-application Tiptap adapter classifies ProseMirror steps plus `beforeinput`/composition context while Yjs updates accumulate in memory.
+4. At a semantic, threshold, idle, IME-completion, or controlled-transition boundary, the coordinator synchronously merges pending updates, sanitizes rendered HTML through `coedit-rich-text-v1`, encodes the incremental update and complete Yjs state, and enqueues an immutable checkpoint.
+5. The coordinator owns one group ID across threshold checkpoints in the same edit episode, and the controller queues `updateBody` with that ID and message `Writing contribution`.
 6. Desktop persistence checks sizes and base64, sanitizes HTML again with Ammonia, and commits state plus history; the memory adapter applies the equivalent domain operation.
 
 **Alternate and exception flows:**
 
 - Pasted HTML is restricted to the editor's allow-list; Rust independently sanitizes desktop persistence.
 - Initial legacy HTML is sanitized and loaded when no Yjs state exists.
-- A gateway failure is shown in the global error banner.
-- Controlled node changes, operations, restore, export, backup, and Close synchronously freeze and await the registered document-title/node-editor participants. A rejected commit retains its dirty metadata value or merged rich-text update for retry and cancels the controlled action.
+- A capture/persistence failure freezes body changes, retains exact pending/FIFO work, and exposes **Retry save**; controller failures also appear in the global error banner.
+- Controlled node changes, canvas editor transfer, operations, restore, export, backup, and Close synchronously freeze and await registered participants. A rejected commit retains its dirty metadata/checkpoint work and cancels the controlled action.
 - Browser tab close/reload or process termination cannot await React cleanup; standalone state is volatile regardless.
 - An authoritative create/open/restore increments `editorGeneration`; `App` keys `NodeEditor` by node ID plus generation, so a whole-revision restore recreates the selected node's `Y.Doc` even when its ID is unchanged.
 
@@ -535,11 +535,11 @@ OpenState .. UC10
 
 ## Proposed next-iteration use cases
 
-The following use cases are specified together in the [continuous-workspace change package](./proposals/README.md). UC-13 is now reachable end to end in standalone mode through the current selected-detail workspace (WP-1 through WP-3); its continuous-canvas and native-host realizations remain partial. UC-12 has its WP-6 projection and unreachable read-only WP-7 canvas/block scaffold, while UC-14 has its WP-4 UI-neutral core; both still await the active-editor integration gate.
+The following use cases are specified together in the [continuous-workspace change package](./proposals/README.md). UC-13 is reachable end to end in standalone mode through the current selected-detail workspace (WP-1 through WP-3); its continuous-canvas and native-host realizations remain partial. UC-12 now has WP-6, the WP-7 scaffold, and a tested single-editor transfer gate. UC-14 has its WP-4 core plus concrete Tiptap/Yjs adapter; both still await reachable structural-canvas completion and browser qualification.
 
 ### UC-12 - Edit through a continuous block outline
 
-**Status:** Partial. WP-6 implements the validated flattened visible-node projection, and WP-7 implements unreachable read-only `DocumentCanvas`/`NodeBlock` rendering with sanitized previews and no controls. Reachable composition, editor ownership, structural controls, historical-controller reuse, and the optional navigator are not implemented.
+**Status:** Partial. WP-6 implements the validated flattened visible-node projection. WP-7 implements unreachable `DocumentCanvas`/`NodeBlock` rendering with sanitized previews, and the integration gate supplies exactly one live editor owner with checkpointed transfer/failure retention. Reachable composition, metadata/structural controls, historical-controller reuse, full focus-region state, and the optional navigator are not implemented.
 
 **Primary actor:** Author.
 
@@ -694,7 +694,7 @@ These requirements complement the use cases. “Current satisfaction” describe
 | FR-08 | A persisted visible mutation shall be represented by a typed operation and attributed contribution. | Mostly satisfied; controlled actions drain and serialize rich text, while uncontrolled host exit and metadata drafts retain limitations. |
 | FR-09 | A mutation shall advance revision from its base revision and record affected nodes, payload, hash, contributor context, and message. | Satisfied by both gateways. |
 | FR-10 | Desktop state, contribution, hash, and snapshot shall commit atomically. | Satisfied by the current Rust transaction path. |
-| FR-11 | Text typing shall be grouped rather than committed per keystroke. | Satisfied with a fixed 1.2-second idle timer. |
+| FR-11 | Text typing shall be grouped rather than committed per keystroke. | Satisfied through semantic/threshold/idle checkpoints with stable episode group IDs. |
 | FR-12 | Rich HTML shall be sanitized before use and independently before desktop persistence. | Satisfied through DOMPurify and Ammonia. |
 | FR-13 | Restore shall append a compensating revision instead of removing history. | Satisfied at persistence level. |
 | FR-14 | Desktop opening shall validate identity, version consistency, SQLite integrity, typed values, and tree structure. | Satisfied for the current schema; no migration behavior exists. |
@@ -709,16 +709,16 @@ These requirements describe the target package, not current satisfaction.
 
 | ID | Proposed requirement | Acceptance evidence required before status changes |
 |---|---|---|
-| FR-PW-01 | The live hierarchy shall be rendered as a pure, flattened, active-node pre-order projection with depth and expansion state. | Implemented at the WP-6 pure seam and WP-7 static component seam: units cover multiple roots, collapse, deletion, ordering, depth/adjacency, invalid ancestry/cycles, immutability, 10,000-level nesting, static block order/depth, empty and fail-closed states; reachable live canvas remains gated. |
-| FR-PW-02 | The first block-outline implementation shall allow at most one live rich-text editor owner. | Focus-transfer integration tests prove drain-before-unmount and no duplicate Yjs ownership. |
+| FR-PW-01 | The live hierarchy shall be rendered as a pure, flattened, active-node pre-order projection with depth and expansion state. | Implemented at the WP-6 pure seam and WP-7 component seam: units cover multiple roots, collapse, deletion, ordering, depth/adjacency, invalid ancestry/cycles, immutability, 10,000-level nesting, block order/depth, empty and fail-closed states; reachable live canvas remains gated. |
+| FR-PW-02 | The first block-outline implementation shall allow at most one live rich-text editor owner. | Implemented at the component gate: focus-transfer tests prove drain-before-unmount, one mounted editor, and old-owner retention on failure. Browser qualification remains. |
 | FR-PW-03 | Revision materialization shall be a read query with no document, ledger, revision, or snapshot mutation. | Partial: memory before/after tests cover live revision continuity, ledger/snapshot counts, detachment, hash mismatch, and invalid trees; native parity remains. |
 | FR-PW-04 | Historical workspace mode shall reject every document mutation independently of control visibility. | Implemented for the standalone WP-2/WP-3 path: controller guards reject direct/stale operations and exports, while the UI mounts no historical editor/draft participant and disables mutation/export affordances. Continuous-canvas and native callback coverage remain. |
 | FR-PW-05 | Restoration from a historical view shall remain a separately confirmed compensating operation. | Implemented for standalone WP-3: row-level Restore is removed on capable hosts, the banner describes append/retention consequences, and full-App coverage proves exactly one compensating revision. Native View/confirmation parity remains. |
-| FR-PW-06 | Body checkpoints shall occur at the defined edit-mode, selection/focus, structural-operation, character-threshold, and idle boundaries. | Pure coordinator tests use deterministic transactions, grapheme counts, and fake time. |
+| FR-PW-06 | Body checkpoints shall occur at the defined edit-mode, selection/focus, structural-operation, character-threshold, and idle boundaries. | Coordinator tests use deterministic transactions, grapheme counts, fake time, and IME grouping; concrete ProseMirror/Tiptap/Yjs tests prove observation and matching capture. New structural controls remain to be routed. |
 | FR-PW-07 | `batchCharacterThreshold` and `idleTimeoutMs` shall be defined once in an exported immutable policy, injected into the coordinator, and independently overrideable in tests. | Source check finds no duplicate policy literals; unit tests inject non-default values. |
 | FR-PW-08 | Threshold checkpoints within one uninterrupted edit episode shall reuse one `groupId`, while semantic boundaries shall close that group. | History tests cover collapsed/expanded representations, raw page-boundary coalescing, partial labels, and exact group paging. |
 | FR-PW-09 | A structural operation shall await a successfully captured pending body checkpoint before changing or removing blocks. | Ordered integration tests cover create, move, collapse, delete, restore, export, and failure/retry. |
-| FR-PW-10 | Slow or failed checkpoint persistence shall retain FIFO order and apply bounded visible backpressure. | A named two-checkpoint high-water mark, size checks, slow/failure tests, and lossless retry are required. |
+| FR-PW-10 | Slow or failed checkpoint persistence shall retain FIFO order and apply bounded visible backpressure. | Implemented with the named two-checkpoint high-water mark, slow/failure tests, exact-object retry, editor blocked/persisting/error state, and **Retry save**. Shared size enforcement/browser qualification remain. |
 | FR-PW-11 | Continuous block interactions shall remain reachable by keyboard, pointer, and touch without overriding normal body editing or Tab focus navigation. | Context-scoped component/accessibility/browser tests cover structural and edit-body activation paths. |
 | FR-PW-12 | The workspace shall offer a runtime-toggleable, default-closed navigator that renders a navigation-only tree over the active live or historical projection while the continuous canvas remains the sole editing surface. | Component tests prove there is still at most one Tiptap owner and that navigator browsing exposes no metadata/body editor, structural command, or document mutation. |
 | FR-PW-13 | Navigator selection/expansion shall be modeled independently from canvas context/expansion, actual focus region, and editor ownership; layouts with enough available width shall dock it and compact/touch layouts shall present an explicitly opened accessible drawer with deterministic reveal, explicit focus transfer, focus return, and History coexistence. Its validated, versioned dock preference, page-session History dock request, and transient browsing/drawer state shall remain outside document state, hashes, snapshots, History, and exports. | State, preference, focus, resize-checkpoint, outside-focus, ARIA-tree, keyboard, mutually exclusive drawer, live/historical transition, malformed-storage, and non-persistence tests pass. |
@@ -802,9 +802,9 @@ These requirements describe the target package, not current satisfaction.
 | RK-08 | Native behavior is not continuously tested on Windows, macOS, and Linux. | High / medium-high | Source portability only | CI build matrix and platform smoke checklist |
 | RK-09 | Desktop history silently pre-windows the newest 100,000 rows before filtering. | Medium in very long documents / medium | Shared cursor UI and memory paging implemented | Indexed SQL cursor/filter query and boundary tests |
 | RK-10 | Replacement and interrupted-journal recovery paths lack fault-injection coverage. | Low-medium / high | Atomic-style helpers and warning | Filesystem failure tests and recovery rehearsal |
-| RK-11 | A continuous canvas can create focus loss, editor remount, or keyboard conflicts across blocks. | Medium / high usability and data integrity | Proposed one-active-editor ownership and explicit shortcut scope | Component integration, IME, screen-reader, touch, and browser tests from UC-12 |
+| RK-11 | A continuous canvas can create focus loss, editor remount, or keyboard conflicts across blocks. | Medium / high usability and data integrity | Implemented one-active-editor transfer/failure gate; explicit shortcut scope remains proposed | Structural component integration, IME, screen-reader, touch, and browser tests from UC-12 |
 | RK-12 | Historical viewing could accidentally invoke live commands or render untrusted snapshot content unsafely. | Low-medium / high integrity and security | Memory query detaches/verifies tree/hash; WP-2 discriminated workspace mode rejects live commands and stale responses | Native query parity, full UI callback guards, and hostile historical-rendering cases from UC-13 |
-| RK-13 | Checkpoint classification, off-by-one counting, timers, or slow persistence can lose boundaries, exhaust memory, or create noisy history. | Medium / high integrity and usability | Implemented pure coordinator, injectable validated policy, two-checkpoint backpressure, FIFO retention, and caller-owned group contract; editor integration and page-aware shared-group presentation remain | Implemented deterministic policy/classifier/threshold/timer/slow/failure units plus pending browser IME/page-boundary tests and snapshot-growth measurements |
+| RK-13 | Checkpoint classification, off-by-one counting, timers, or slow persistence can lose boundaries, exhaust memory, or create noisy history. | Medium / high integrity and usability | Implemented coordinator, concrete Tiptap/Yjs adapter, injectable validated policy, two-checkpoint backpressure, FIFO retention, visible retry, and producer-owned group contract; page-aware shared-group presentation remains | Deterministic policy/classifier/threshold/idle/IME/slow/failure and real-editor capture tests plus pending browser IME/page-boundary tests and snapshot-growth measurements |
 | RK-14 | An auxiliary navigator could drift into a second editor, couple its expansion to the canvas, steal focus/editor ownership, or obscure the canvas on touch devices. | Medium / medium-high usability and architectural complexity | Proposed navigation-only boundary, independent state, explicit focus action, and responsive drawer | Ownership/non-mutation tests, ARIA tree and focus tests, live/historical parity, and iPadOS/Safari qualification from UC-12 and UC-13 |
 
 The prioritized verification work is in [Testing strategy](./TESTING.md). Ownership and suggested fixes are maintained in [Known limitations](./KNOWN_LIMITATIONS.md).
@@ -825,13 +825,13 @@ The prioritized verification work is in [Testing strategy](./TESTING.md). Owners
 | Document state | Document metadata, nodes, contributors, and sessions. The browser explicitly projects this shape for hashing/export; Rust hashes its separately serialized equivalent. |
 | Document view | Document state plus path, read-only flag, and recovery warning returned to the UI. |
 | Format version | Version of the `.coedit` schema/contract; currently `1`. |
-| Group ID | Optional contribution field used to associate a logical burst, currently generated per rich-text commit. |
-| Body checkpoint (proposed) | A physical attributed `updateBody` revision captured at a recovery or semantic boundary. It is not necessarily one History row. |
-| Edit group (proposed) | One human-meaningful body-edit episode. Multiple threshold checkpoints can share its `groupId` and be collapsed in History. |
+| Group ID | Optional contribution field; the body coordinator owns one stable ID across an edit episode's threshold checkpoints. |
+| Body checkpoint | A physical attributed `updateBody` revision captured at a recovery or semantic boundary. History currently renders each as a row. |
+| Edit group (partial) | One human-meaningful body-edit episode. Multiple threshold checkpoints share its `groupId`; collapsed History presentation remains WP-5. |
 | Historical projection (partial) | Detached materialized state for a selected revision without replacing live state. WP-2 implements the controller projection; WP-3 makes it user-visible in standalone mode through a sanitized static selected-detail path. Continuous-canvas and native-host reuse remain. |
 | Materialized state | Current document and node rows, as opposed to the historical ledger/snapshots. |
 | Navigator (proposed) | Optional navigation-only tree over the active workspace projection. It may locate/reveal a block but is not an editor, structural command surface, or alternate workspace mode. |
-| Visible-node projection (partial) | Implemented pure flattened pre-order list of active, expansion-visible nodes plus depth/layout metadata; WP-7 has not yet rendered it in the canvas, and it does not replace the persisted tree. |
+| Visible-node projection (partial) | Implemented pure flattened pre-order list of active, expansion-visible nodes plus depth/layout metadata; WP-7 renders it in the unreachable canvas, and it does not replace the persisted tree. |
 | Operation | Typed request that mutates document materialized state, such as `moveNode` or `updateBody`. |
 | Port | Interface that separates shared UI policy from a host capability, notably `DocumentGateway` and `DocumentFileDialogs`. |
 | Revision | Monotonically increasing document-state number, beginning at `0` for creation. |

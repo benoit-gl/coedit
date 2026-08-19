@@ -34,9 +34,9 @@ Priority meaning:
 | R-22 | P2 | Crash durability | Atomic output syncs the file, not explicitly its parent directory | `atomic_write`, `atomic_copy`, `replace_file` |
 | R-23 | P3 | Reserved features | Attachments, AI, collaboration, contributor management, and direct node restore have no complete workflow | schema/types/interfaces with missing UI/adapters |
 | R-24 | P3 | Outline behavior | New expansion state, drag placement/root drops, and affected-node reporting are limited | `Outline`; both operation models |
-| R-25 | P2 | Writing flow | Separate outline and selected-node editor force master/detail context switching; the WP-7 read-only canvas scaffold is intentionally unreachable pending safe editor integration | `App` workspace composition; `Outline`; `NodeEditor`; `DocumentCanvas`; `NodeBlock` |
+| R-25 | P2 | Writing flow | Separate outline and selected-node editor force master/detail context switching; the WP-7 canvas is intentionally unreachable pending editable/structural parity, although its single-editor safety gate is implemented | `App` workspace composition; `Outline`; `NodeEditor`; `DocumentCanvas`; `NodeBlock` |
 | R-26 | P2 | Historical inspection | Standalone View/Back is implemented in the current master/detail workspace, but continuous-canvas reuse and native queries remain incomplete | `workspaceProjection`; `HistoryPanel`; `HistoricalNodeView`; Tauri query capability |
-| R-27 | P2 | Edit history/noise | Fixed 1.2-second quiet-period checkpoints and one new group ID per compatibility editor flush create indiscriminate revisions and noisy History; the WP-4 core is implemented but not wired | `RichTextEditor`; `BodyEditBatchCoordinator`; full snapshots |
+| R-27 | P2 | Edit history/noise | Semantic checkpoints now share episode group IDs, but History does not yet collapse them and every physical checkpoint still stores a full snapshot | `RichTextEditor`; `BodyEditBatchCoordinator`; full snapshots; `HistoryPanel` |
 
 ## Data-integrity and attribution risks
 
@@ -129,7 +129,7 @@ Rust still selects at most the newest 100,000 rows before applying `beforeRevisi
 
 ### R-12: snapshot growth is unbounded
 
-Every revision stores a full JSON `DocumentState`, including Base64 Yjs states, in addition to materialized node data and operation payloads. Long writing sessions can create a snapshot after each 1.2-second typing group.
+Every revision stores a full JSON `DocumentState`, including Base64 Yjs states, in addition to materialized node data and operation payloads. Long writing sessions can create snapshots at semantic/threshold body checkpoints; the new grouping policy improves boundaries but does not reduce the physical snapshot size.
 
 **Recommended direction:** measure real files first, then define retention/checkpoint/replay/compaction that preserves recovery and verifiability. Never delete historical material without a format/backup policy. The proposed [body checkpoint strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md) improves semantic boundaries and collapsed presentation but can still create frequent physical revisions at the character threshold; it does not by itself solve snapshot growth.
 
@@ -181,7 +181,7 @@ Current interaction details and proposed accessibility acceptance criteria are i
 
 ### R-25: master/detail interrupts the writing flow
 
-The workspace renders a separate hierarchy navigator and only one selected node's editor. Creating or developing adjacent nodes repeatedly moves attention between structural controls and a detail pane, so hierarchy does not read or edit as one continuous document. WP-6 supplies the validated immutable active/collapsed pre-order, and the WP-7 scaffold renders it as static sanitized blocks, but `App` intentionally does not expose that canvas before safe editor ownership exists.
+The workspace renders a separate hierarchy navigator and only one selected node's editor. Creating or developing adjacent nodes repeatedly moves attention between structural controls and a detail pane, so hierarchy does not read or edit as one continuous document. WP-6 supplies the validated immutable active/collapsed pre-order; WP-7 renders it as sanitized blocks; and the integration gate proves one active editor with drain-before-transfer. `App` intentionally does not expose that canvas until title/tag/structural parity and all owner-hiding actions use the barrier.
 
 **Recommended direction:** implement the proposed [continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md): a flattened pre-order projection, separate canvas-context/focus-region/editor-owner state, one active Tiptap editor, drain-before-hide collapse behavior, sanitized inactive previews, inline structural controls, and complete keyboard/touch alternatives. Large-document orientation may use the proposed optional navigation-only tree sidebar, docked when space permits and presented as an explicitly opened drawer on compact/touch screens. It must share the canvas's live/historical projection while keeping browsing/expansion state independent; it is not a selectable revival of the current tree-plus-detail editor. This is a component/application redesign, not a CSS-only change.
 
@@ -191,13 +191,13 @@ The WP-1 boundary defines a discriminated read-only query capability. Memory adv
 
 WP-3 connects capable-host History **View** to a static sanitized historical detail that mounts no title/body editor or draft participant. A persistent banner identifies viewed/current revisions, makes **Back to current** primary, and keeps **Restore as new revision** separately confirmed. Component and full-`App` integration tests prove View/Back is non-mutating and one confirmed restore appends one compensating revision. Host-deferred Tauri still exposes row-level Restore until WP-10.
 
-**Recommended direction:** connect the implemented historical projection to `DocumentCanvas` only through the WP-4/WP-7 ownership gate, including canvas/navigator context pruning and focus restoration, then add native materialization and shared contract qualification in WP-10.
+**Recommended direction:** use the implemented WP-4/WP-7 ownership gate while connecting the historical projection to the reachable `DocumentCanvas`, including canvas/navigator context pruning and focus restoration, then add native materialization and shared contract qualification in WP-10.
 
-### R-27: body checkpoints are temporally arbitrary and visually noisy
+### R-27: body checkpoint groups are not yet projected in History
 
-Every Yjs update currently resets a 1.2-second timer. Expiry emits a body operation, and the compatibility editor assigns a new group ID to every flush while the controller preserves that supplied ID. Short pauses therefore remain unrelated History rows even when they form one editing episode, while every resulting revision also receives a full snapshot. WP-4 has implemented the validated policy, transaction classifier, edit-group state machine, immutable two-checkpoint FIFO/retry/backpressure, and caller-owned group-ID contract; Tiptap/Yjs capture and canvas ownership wiring remain intentionally deferred.
+`RichTextEditor` now feeds pre-application ProseMirror/`beforeinput` facts into the validated coordinator. Thresholds, semantic boundaries, IME completion, idle expiry, synchronous sanitized HTML/Yjs capture, two-checkpoint backpressure, immutable retry, and controller/canvas drains are implemented; the fixed timer is gone. Multiple checkpoints in one writing episode share a group ID, but `HistoryPanel` still renders each physical contribution as its own row, and every checkpoint still receives a full snapshot.
 
-**Recommended direction:** complete the [body checkpoint and commit strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md) by wiring the implemented core into the final canvas editor boundary, then add page-aware exact group expansion. The core already supplies semantic edit-mode/focus boundaries, threshold checkpoints that reuse a group ID, a two-checkpoint backpressure bound, and one injectable policy containing `batchCharacterThreshold` and `idleTimeoutMs`. Physical snapshot compaction remains separate R-12 work.
+**Recommended direction:** complete the [body checkpoint and commit strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md) with WP-5's page-aware grouped History and exact expansion, then qualify the adapter in real browsers/IME. Physical snapshot compaction remains separate R-12 work.
 
 ## Reserved capabilities, not current features
 

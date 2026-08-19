@@ -1,29 +1,45 @@
 import { useMemo } from "react";
+import type { BodyCheckpointCommitRequest } from "../application/bodyCheckpoint";
+import type { RegisterDraftParticipant } from "../application/draftTransition";
 import type { DocumentNode } from "../domain/types";
 import { projectVisibleNodes } from "../domain/visibleNodes";
+import type { BodyCheckpointPolicy } from "../editor/bodyCheckpointPolicy";
 import { NodeBlock } from "./NodeBlock";
 
 export type DocumentCanvasWorkspaceKind = "live" | "historical";
 
-export interface DocumentCanvasProps {
+interface DocumentCanvasBaseProps {
   nodes: readonly DocumentNode[];
   expandedNodeIds: ReadonlySet<string>;
   workspaceKind: DocumentCanvasWorkspaceKind;
-  readOnly: true;
   label?: string;
 }
 
+interface ReadOnlyDocumentCanvasProps extends DocumentCanvasBaseProps {
+  readOnly: true;
+}
+
+interface EditableDocumentCanvasProps extends DocumentCanvasBaseProps {
+  workspaceKind: "live";
+  readOnly: false;
+  editorOwnerNodeId: string | null;
+  onRequestEditorOwner: (nodeId: string) => Promise<boolean>;
+  onCommitBody: (checkpoint: BodyCheckpointCommitRequest) => Promise<void>;
+  registerDraftParticipant: RegisterDraftParticipant;
+  checkpointPolicy?: BodyCheckpointPolicy;
+}
+
+export type DocumentCanvasProps = ReadOnlyDocumentCanvasProps | EditableDocumentCanvasProps;
+
 /**
- * Read-only WP-7 canvas scaffold. It is deliberately not connected to the
- * reachable workspace until active-editor ownership and checkpoint barriers
- * are implemented at this component boundary.
+ * Continuous document projection. Historical canvases are entirely static;
+ * live canvases mount no more than the controller-designated editor owner.
  */
-export function DocumentCanvas({
-  nodes,
-  expandedNodeIds,
-  workspaceKind,
-  label = workspaceKind === "historical" ? "Historical document" : "Document preview",
-}: DocumentCanvasProps) {
+export function DocumentCanvas(props: DocumentCanvasProps) {
+  const { nodes, expandedNodeIds, workspaceKind } = props;
+  const label = props.label
+    ?? (workspaceKind === "historical" ? "Historical document" : "Document preview");
+  const editable = props.readOnly ? null : props;
   const projection = useMemo(() => {
     try {
       return { kind: "ready" as const, blocks: projectVisibleNodes(nodes, expandedNodeIds) };
@@ -38,7 +54,7 @@ export function DocumentCanvas({
         className="document-canvas document-canvas-error"
         aria-label={label}
         data-workspace-kind={workspaceKind}
-        data-read-only="true"
+        data-read-only={String(props.readOnly)}
         role="alert"
       >
         <h2>Document unavailable</h2>
@@ -52,7 +68,8 @@ export function DocumentCanvas({
       className="document-canvas"
       aria-label={label}
       data-workspace-kind={workspaceKind}
-      data-read-only="true"
+      data-read-only={String(props.readOnly)}
+      data-editor-owner-node-id={editable?.editorOwnerNodeId ?? undefined}
     >
       <div className="document-canvas-page">
         {projection.blocks.length === 0 ? (
@@ -60,7 +77,20 @@ export function DocumentCanvas({
         ) : (
           <ol className="document-canvas-list">
             {projection.blocks.map((block) => (
-              <NodeBlock key={block.node.id} block={block} readOnly />
+              editable ? (
+                <NodeBlock
+                  key={block.node.id}
+                  block={block}
+                  readOnly={false}
+                  editorOwner={editable.editorOwnerNodeId === block.node.id}
+                  onRequestEditorOwner={editable.onRequestEditorOwner}
+                  onCommitBody={editable.onCommitBody}
+                  registerDraftParticipant={editable.registerDraftParticipant}
+                  checkpointPolicy={editable.checkpointPolicy}
+                />
+              ) : (
+                <NodeBlock key={block.node.id} block={block} readOnly />
+              )
             ))}
           </ol>
         )}

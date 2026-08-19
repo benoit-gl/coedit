@@ -48,6 +48,7 @@ export interface BodyEditBatchSnapshot {
   groupId: string | null;
   segmentGraphemeCount: number;
   dirty: boolean;
+  compositionActive: boolean;
   pendingCheckpointCount: number;
   persistenceState: "idle" | "persisting" | "failed";
   bodyChangesBlocked: boolean;
@@ -117,6 +118,7 @@ export class BodyEditBatchCoordinator {
   private groupId: string | null = null;
   private segmentGraphemeCount = 0;
   private dirty = false;
+  private compositionActive = false;
   private transitionFrozen = false;
   private pendingCapture: PendingCapture | null = null;
   private failure: unknown | null = null;
@@ -144,6 +146,7 @@ export class BodyEditBatchCoordinator {
       groupId: this.groupId,
       segmentGraphemeCount: this.segmentGraphemeCount,
       dirty: this.dirty,
+      compositionActive: this.compositionActive,
       pendingCheckpointCount: this.queue.length,
       persistenceState: this.failure !== null
         ? "failed"
@@ -168,7 +171,9 @@ export class BodyEditBatchCoordinator {
   acceptChange(change: BodyContentChange, applyChange: () => void): BodyChangeResult {
     this.assertAvailable();
     this.validateChange(change);
-    if (this.bodyChangesBlocked()) return { accepted: false, reason: "blocked" };
+    if (this.compositionActive || this.bodyChangesBlocked()) {
+      return { accepted: false, reason: "blocked" };
+    }
 
     const requiredSlots = this.requiredCheckpointSlots(change);
     if (this.queue.length + requiredSlots > MAX_PENDING_BODY_CHECKPOINTS) {
@@ -185,6 +190,61 @@ export class BodyEditBatchCoordinator {
     this.scheduleIdleTimer();
     this.emit();
     return { accepted: true };
+  }
+
+  /**
+   * Reserves one FIFO slot for an IME composition and seals any prior edit
+   * group before the browser applies the first composing transaction.
+   */
+  beginComposition(): BodyChangeResult {
+    this.assertAvailable();
+    if (this.compositionActive) return { accepted: true };
+    if (this.bodyChangesBlocked()) return { accepted: false, reason: "blocked" };
+
+    const requiredSlots = (this.dirty ? 1 : 0) + 1;
+    if (this.queue.length + requiredSlots > MAX_PENDING_BODY_CHECKPOINTS) {
+      return { accepted: false, reason: "capacity" };
+    }
+
+    this.cancelIdleTimer();
+    if (this.dirty) this.captureCurrent("atomic-edit", true);
+    this.groupId = this.nextGroupId();
+    this.mode = "inserting";
+    this.segmentGraphemeCount = 0;
+    this.dirty = false;
+    this.compositionActive = true;
+    this.lastBodyChangeAt = null;
+    this.startPump();
+    this.emit();
+    return { accepted: true };
+  }
+
+  /** Applies one browser composition update without checkpointing mid-IME. */
+  acceptCompositionChange(applyChange: () => void): BodyChangeResult {
+    this.assertAvailable();
+    if (!this.compositionActive || this.transitionFrozen) {
+      return { accepted: false, reason: "blocked" };
+    }
+    applyChange();
+    this.dirty = true;
+    this.lastBodyChangeAt = this.clock.now();
+    this.emit();
+    return { accepted: true };
+  }
+
+  /** Captures the complete composed result as one sealed atomic edit. */
+  endComposition(): boolean {
+    this.assertAvailable();
+    if (!this.compositionActive) return true;
+    this.compositionActive = false;
+    if (this.dirty) {
+      this.captureCurrent("atomic-edit", true);
+      this.startPump();
+    } else {
+      this.closeGroupWithoutCapture();
+    }
+    this.emit();
+    return true;
   }
 
   selectionChanged(): boolean {
@@ -206,6 +266,7 @@ export class BodyEditBatchCoordinator {
   /** DraftParticipant-compatible controlled-transition drain. */
   async flush(): Promise<void> {
     this.assertAvailable();
+    this.compositionActive = false;
     while (this.dirty) {
       if (this.failure !== null) throw this.failure;
       if (this.pendingCapture !== null) {
@@ -252,6 +313,7 @@ export class BodyEditBatchCoordinator {
   dispose(): void {
     if (this.disposed) return;
     this.disposed = true;
+    this.compositionActive = false;
     this.cancelIdleTimer();
     this.listeners.clear();
     this.cachedSnapshot = null;
@@ -329,6 +391,7 @@ export class BodyEditBatchCoordinator {
   private sealAtBoundary(reason: "cursor-move" | "focus-change" | "idle-timeout"): boolean {
     this.assertAvailable();
     this.cancelIdleTimer();
+    this.compositionActive = false;
     if (this.groupId === null) return true;
     if (!this.dirty) {
       this.closeGroupWithoutCapture();
@@ -501,6 +564,7 @@ export class BodyEditBatchCoordinator {
     this.groupId = null;
     this.segmentGraphemeCount = 0;
     this.dirty = false;
+    this.compositionActive = false;
     this.lastBodyChangeAt = null;
     this.cancelIdleTimer();
   }

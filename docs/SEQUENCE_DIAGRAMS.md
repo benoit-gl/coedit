@@ -322,21 +322,20 @@ App --> Component : rerender from returned state
 
 Both adapters return a complete materialized view after every successful mutation. Components do not mutate `view.nodes` directly.
 
-## Rich-text/Yjs commit after 1.2 seconds
+## Semantic rich-text/Yjs checkpoint
 
-**Implemented.** The quiet-period timer starts only after a Yjs update. No gateway operation occurs for each keystroke.
+**Implemented.** Tiptap transactions are classified before application; ordinary edits remain local until a character, mode, focus, selection, idle, atomic, composition, or controlled-transition boundary. No gateway operation occurs for each keystroke.
 
 ```plantuml
 @startuml
-title Debounced rich-text contribution (implemented)
+title Semantic rich-text checkpoint (implemented)
 actor User
 participant "Tiptap Editor" as Tiptap
+participant "Transaction adapter" as Adapter
 participant "Y.Doc\nfield: content" as YDoc
 participant "RichTextEditor" as Rich
-participant "window timer" as Timer
+participant "BodyEditBatchCoordinator" as Batch
 participant "DOMPurify" as Purify
-participant "NodeEditor" as NodeEditor
-participant "App" as App
 participant "useDocumentController" as Controller
 participant "SerializedTaskQueue" as Queue
 participant "DocumentGateway" as Gateway
@@ -347,58 +346,54 @@ note over Rich,YDoc
   the persistence listener.
 end note
 
-loop each edit in a typing burst
-  User -> Tiptap : type or formatting command
+User -> Tiptap : type, delete, paste, format, or compose
+Tiptap -> Adapter : dispatchTransaction(transaction, next)
+Adapter -> Adapter : derive step + beforeinput/composition facts
+Adapter -> Batch : accept classified change(next)
+alt below capacity and not failed/frozen
+  Batch -> Tiptap : next(transaction)
   Tiptap -> YDoc : collaboration transaction
   YDoc -> Rich : update(bytes, origin)
   Rich -> Rich : pendingUpdates.push(update)
-  opt prior timer exists
-    Rich -> Timer : clearTimeout(previous)
+  opt semantic/threshold/idle boundary
+    Batch -> Rich : captureCheckpoint(groupId, reason)
+    Rich -> Rich : detach and Y.mergeUpdates(pendingUpdates)
+    Rich -> Tiptap : getHTML()
+    Tiptap --> Rich : materialized HTML
+    Rich -> Purify : sanitizeRichText(coedit-rich-text-v1)
+    Purify --> Rich : clean HTML
+    Rich -> YDoc : Y.encodeStateAsUpdate(document)
+    YDoc --> Rich : complete binary state
+    Rich --> Batch : immutable HTML + incremental/full Base64 state
+    Batch -> Controller : commitBody(checkpoint)
+    Controller -> Queue : enqueue updateBody with checkpoint groupId
+    Queue -> Gateway : applyOperation(updateBody, context)
   end
-  Rich -> Timer : setTimeout(flush, 1200 ms)
+else two checkpoints pending, capture failed, or persistence failed
+  Batch --> Adapter : rejected; body changes blocked
+  Rich --> User : waiting/failure status + Retry save
 end
-
-... 1.2 seconds with no new Yjs update ...
-Timer -> Rich : flush()
-Rich -> Rich : cancel timer; start one drain Promise
-Rich -> Rich : Y.mergeUpdates(pendingUpdates); clear queue
-Rich -> Tiptap : getHTML()
-Tiptap --> Rich : materialized HTML
-Rich -> Purify : sanitizeRichText() using coedit-rich-text-v1
-Purify --> Rich : clean HTML
-Rich -> YDoc : Y.encodeStateAsUpdate(document)
-YDoc --> Rich : complete binary state
-Rich -> Rich : Base64 merged update + complete state
-Rich -> NodeEditor : onCommit(html, update, state)
-NodeEditor -> App : onBodyChange(...)
-App -> Controller : commitBody(...)
-Controller -> Controller : newId() for this contribution group
-Controller -> Queue : enqueue updateBody
-Queue -> Gateway : applyOperation(updateBody, context)
-Gateway --> Queue : updated DocumentView
-Queue --> Controller : updated view
-loop updates arrived while persistence was pending
-  Rich -> Rich : merge/sanitize/encode next pending batch
-  Rich -> Controller : commitBody(next batch)
-  Controller -> Queue : enqueue next updateBody
-end
-opt History is open
-  Controller -> Gateway : refresh first history page
-  Gateway --> Controller : ContributionPage
-else History is closed
-  Controller -> Controller : mark History stale for next open
-end
-App --> User : saved status and rerender
-
-alt commit rejects
-  Gateway --> Rich : rejection through controller/callback
-  Rich -> Rich : prepend merged delta to pendingUpdates
-  Rich --> Controller : rejected flush; controlled action is canceled
+opt checkpoint was enqueued
+  alt commit succeeds
+    Gateway --> Queue : updated DocumentView
+    Queue --> Controller : updated view
+    opt History is open
+      Controller -> Gateway : refresh first history page
+      Gateway --> Controller : ContributionPage
+    else History is closed
+      Controller -> Controller : mark History stale for next open
+    end
+  else commit rejects
+    Gateway --> Batch : rejection through controller/callback
+    Batch -> Batch : retain exact FIFO head and group identity
+    Batch --> Rich : failed snapshot; freeze body changes
+    Rich --> User : Retry save
+  end
 end
 @enduml
 ```
 
-`TagEditor` and `RichTextEditor` each expose a participant to `NodeEditor`; `NodeEditor` combines pending tag input, its metadata drain, and the rich-text drain and registers that aggregate with the controller. The document title registers separately. Controlled selection, operations, restore, export, backup, and Close synchronously freeze these drafts and await them rather than depending on unmount cleanup. In the desktop branch, Rust decodes both Base64 values, enforces content/Yjs size limits, independently sanitizes HTML with Ammonia, and writes the complete Yjs state. Rust sanitizer-fixture parity remains second-pass work.
+`TagEditor` and `RichTextEditor` each expose a participant to `NodeEditor`; `NodeEditor` combines pending tag input, metadata, and rich-text drains for the reachable master/detail path. The live `DocumentCanvas` seam instead registers its sole owner's rich-text participant directly under `NodeBlock`. Controlled selection, editor transfer, operations, restore, export, backup, and Close synchronously freeze and await registered drafts rather than depending on unmount cleanup. A transfer does not change owner until drain succeeds; failure retains the old editor. In the desktop branch, Rust decodes both Base64 values, enforces content/Yjs size limits, independently sanitizes HTML with Ammonia, and writes the complete Yjs state. Rust sanitizer-fixture parity remains second-pass work.
 
 ## Load, filter, and page history
 
@@ -837,7 +832,7 @@ Back invalidates an in-flight request and returns the retained live projection w
 
 ## Proposed interaction sequences — partially implemented package
 
-The implemented sequences above deliberately retain the current master/detail UI and 1.2-second rich-text quiet-period flow, but WP-3 replaces restore-only standalone History with the safe historical presentation above. Continuous-canvas, checkpoint, navigator, and native target sequences remain embedded in the resumable proposal package:
+The implemented sequences above retain the current master/detail UI but now use the semantic checkpoint coordinator. WP-3 replaces restore-only standalone History with the safe historical presentation, and the WP-4/WP-7 gate proves single-owner canvas transfer before that canvas becomes reachable. Structural canvas, grouped History, navigator, browser qualification, and native target sequences remain embedded in the resumable proposal package:
 
 | Proposed sequence | Design source |
 |---|---|
