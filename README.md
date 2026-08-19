@@ -11,13 +11,14 @@ This is a new implementation inspired by TreeWriter's interaction model. It does
 - Keyboard navigation, sibling reordering, drag-to-reparent, and soft deletion
 - One rich-text body per node, edited with Tiptap/Yjs and saved through semantic, bounded checkpoints
 - Contributor, writing-session, revision, operation, and state-hash attribution
-- Cursor-paged, adapter-filtered history, standalone read-only historical viewing, and restoration through compensating contributions
+- Cursor-paged, adapter-filtered History that collapses contiguous body checkpoints into semantic edit groups while retaining exact revision access
+- Standalone read-only historical viewing and restoration through compensating contributions
 - Portable `.coedit` SQLite document files
 - Versioned standalone JSON recovery envelopes, Markdown export, and desktop SQLite backup
 - Strict offline content-security policy and sanitization in both UI and persistence layers
 - Self-contained, double-clickable HTML5 build with an in-memory document backend
 
-The shared UI delegates use-case orchestration to `useDocumentController`. It serializes document commands, synchronously freezes and drains registered title/metadata/rich-text drafts before controlled lifecycle transitions, remounts editor state after authoritative restores, rejects stale view/history responses, narrows discriminated storage/revision-query capabilities, and owns an explicit live/historical projection with retained origins and command guards. Rich-text transactions are grouped by semantic/threshold/idle boundaries with synchronous sanitized HTML/Yjs capture, bounded FIFO persistence, visible retry, and stable episode IDs. In standalone mode, History exposes non-mutating **View**, a static sanitized historical workspace, persistent revision banner, **Back to current**, and separately confirmed compensating restore. Native historical queries remain host-deferred.
+The shared UI delegates use-case orchestration to `useDocumentController`. It serializes document commands, synchronously freezes and drains registered title/metadata/rich-text drafts before controlled lifecycle transitions, remounts editor state after authoritative restores, rejects stale view/history responses, narrows discriminated storage/revision-query capabilities, and owns an explicit live/historical projection with retained origins and command guards. Rich-text transactions are grouped by semantic/threshold/idle boundaries with synchronous sanitized HTML/Yjs capture, bounded FIFO persistence, visible retry, and stable episode IDs. History projects contiguous body checkpoints sharing an episode ID into one collapsed row, merges loaded groups across normal history-page boundaries, distinguishes raw contribution counts from visible rows, and exposes exact checkpoint expansion. Standalone can fetch a complete page-spanning group from the in-memory ledger; native exact group queries and historical materialization remain host-deferred. In standalone mode, History also exposes non-mutating **View**, a static sanitized historical workspace, persistent revision banner, **Back to current**, and separately confirmed compensating restore.
 
 AI and real-time synchronization are intentionally not connected. The provider interface exists so they can be added later without bypassing contribution history.
 
@@ -70,6 +71,6 @@ Start with the [engineering documentation index](./docs/README.md). It routes co
 - feature-to-file traceability, extension recipes, tests, build/release portability, and known limitations;
 - the `.coedit` format/recovery and security specifications.
 
-The live and historical workspace now share the continuous block-outline canvas described by the [continuous-workspace change package](./docs/proposals/README.md). Remaining work begins with grouped History (WP-5), followed by the optional navigation-only sidebar, native historical-query parity, and browser/accessibility qualification. The future sidebar is auxiliary to the canvas, not a return to master/detail.
+The live and historical workspace now share the continuous block-outline canvas described by the [continuous-workspace change package](./docs/proposals/README.md), and grouped History (WP-5) is implemented in the shared UI with exact standalone group expansion. Remaining work begins with the optional navigation-only sidebar, followed by native historical/group-query parity and browser/accessibility qualification. The future sidebar is auxiliary to the canvas, not a return to master/detail.
 
 The [original architecture plan](./LOCAL_FIRST_TREE_EDITOR_PLAN.md) remains a roadmap artifact. Where it differs from the current engineering documentation or executable code, the latter describe the current implementation.
