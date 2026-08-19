@@ -191,9 +191,11 @@ export function HistoryPanel({
           const checkpointLabel = row.partial && !expansion?.items
             ? `at least ${row.contributions.length} safety checkpoints`
             : `${exactItems.length} safety checkpoint${exactItems.length === 1 ? "" : "s"}`;
-          const revisionLabel = row.oldestRevision === row.newestRevision
-            ? `r${row.newestRevision}`
-            : `r${row.oldestRevision}–r${row.newestRevision}`;
+          const newestRevision = exactItems[0]?.revision ?? row.newestRevision;
+          const oldestRevision = exactItems[exactItems.length - 1]?.revision ?? row.oldestRevision;
+          const revisionLabel = oldestRevision === newestRevision
+            ? `r${newestRevision}`
+            : `r${oldestRevision}–r${newestRevision}`;
           const viewed = exactItems.some((item) => item.revision === viewedRevision);
           return (
             <li key={`group:${row.groupId}`} className={`history-group ${viewed ? "viewing" : ""}`}>
