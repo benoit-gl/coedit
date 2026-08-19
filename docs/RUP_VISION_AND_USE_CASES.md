@@ -535,11 +535,11 @@ OpenState .. UC10
 
 ## Proposed next-iteration use cases
 
-The following use cases are specified together in the [continuous-workspace change package](./proposals/README.md). UC-13 is now reachable end to end in standalone mode through the current selected-detail workspace (WP-1 through WP-3); its continuous-canvas and native-host realizations remain partial. UC-12 has its WP-6 pure projection but no reachable canvas, while UC-14 has its WP-4 UI-neutral core but no editor integration.
+The following use cases are specified together in the [continuous-workspace change package](./proposals/README.md). UC-13 is now reachable end to end in standalone mode through the current selected-detail workspace (WP-1 through WP-3); its continuous-canvas and native-host realizations remain partial. UC-12 has its WP-6 projection and unreachable read-only WP-7 canvas/block scaffold, while UC-14 has its WP-4 UI-neutral core; both still await the active-editor integration gate.
 
 ### UC-12 - Edit through a continuous block outline
 
-**Status:** Partial. WP-6 implements the validated flattened visible-node projection, but `DocumentCanvas`, `NodeBlock`, editor ownership, structural controls, historical-canvas reuse, and the optional navigator are not implemented.
+**Status:** Partial. WP-6 implements the validated flattened visible-node projection, and WP-7 implements unreachable read-only `DocumentCanvas`/`NodeBlock` rendering with sanitized previews and no controls. Reachable composition, editor ownership, structural controls, historical-controller reuse, and the optional navigator are not implemented.
 
 **Primary actor:** Author.
 
@@ -571,7 +571,7 @@ The following use cases are specified together in the [continuous-workspace chan
 
 ### UC-13 - View a materialized historical revision
 
-**Status:** Partial. WP-1 through WP-3 implement the complete standalone flow in the current selected-detail workspace; continuous-canvas reuse and Tauri/native materialization remain proposed.
+**Status:** Partial. WP-1 through WP-3 implement the complete standalone flow in the current selected-detail workspace. The WP-7 canvas can render static historical identity but is not connected to the controller; reachable continuous-canvas reuse and Tauri/native materialization remain proposed.
 
 **Primary actor:** Author or custodian.
 
@@ -709,7 +709,7 @@ These requirements describe the target package, not current satisfaction.
 
 | ID | Proposed requirement | Acceptance evidence required before status changes |
 |---|---|---|
-| FR-PW-01 | The live hierarchy shall be rendered as a pure, flattened, active-node pre-order projection with depth and expansion state. | Implemented at the WP-6 pure seam: unit tests cover multiple roots, collapse, deletion, deterministic ordering, depth/adjacency, invalid ancestry/cycles, input immutability, and 10,000-level nesting; canvas rendering remains WP-7. |
+| FR-PW-01 | The live hierarchy shall be rendered as a pure, flattened, active-node pre-order projection with depth and expansion state. | Implemented at the WP-6 pure seam and WP-7 static component seam: units cover multiple roots, collapse, deletion, ordering, depth/adjacency, invalid ancestry/cycles, immutability, 10,000-level nesting, static block order/depth, empty and fail-closed states; reachable live canvas remains gated. |
 | FR-PW-02 | The first block-outline implementation shall allow at most one live rich-text editor owner. | Focus-transfer integration tests prove drain-before-unmount and no duplicate Yjs ownership. |
 | FR-PW-03 | Revision materialization shall be a read query with no document, ledger, revision, or snapshot mutation. | Partial: memory before/after tests cover live revision continuity, ledger/snapshot counts, detachment, hash mismatch, and invalid trees; native parity remains. |
 | FR-PW-04 | Historical workspace mode shall reject every document mutation independently of control visibility. | Implemented for the standalone WP-2/WP-3 path: controller guards reject direct/stale operations and exports, while the UI mounts no historical editor/draft participant and disables mutation/export affordances. Continuous-canvas and native callback coverage remain. |

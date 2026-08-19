@@ -2,7 +2,7 @@
 
 **Product decision:** Approved design direction.
 
-**Implementation status:** Partial. WP-6 implements the pure visible-node projection and its domain-validation/scale tests. `DocumentCanvas`, `NodeBlock`, editor ownership, structural controls, historical-canvas reuse, and the optional navigator remain staged.
+**Implementation status:** Partial. WP-6 implements the pure visible-node projection and its domain-validation/scale tests. The WP-7 read-only scaffold implements unreachable `DocumentCanvas`, `NodeBlock`, sanitized `NodeBodyPreview`, list/indentation styling, fail-closed rendering, and component tests. Reachable canvas composition, editor ownership, structural controls, historical-controller integration, and the optional navigator remain staged.
 
 **Change package:** [Continuous workspace proposals](./README.md)
 
@@ -564,7 +564,16 @@ The first performance tactic is one active editor, not virtualization.
 
 ### Components
 
-- all active nodes appear in continuous order;
+Implemented in the read-only WP-7 scaffold:
+
+- projected active nodes render in continuous order with depth indentation;
+- collapsed, empty, and invalid projections render deterministic non-editable states;
+- titles and tags render as static text and bodies pass through the centralized sanitizer;
+- no input, button, contenteditable surface, toolbar, Tiptap/Yjs owner, draft participant, or mutation callback exists;
+- the same static component contract accepts live or historical workspace identity, but remains unreachable from `App` until the safety gate.
+
+Pending at the active-editor and parity stages:
+
 - only one active rich editor exists;
 - focus transfer waits for the old checkpoint;
 - failed checkpoint retains old block/editor;
@@ -626,9 +635,9 @@ The first performance tactic is one active editor, not virtualization.
 
 1. **Implemented (WP-4 core):** establish and unit-test the UI-neutral policy, classifier, edit-group machine, bounded FIFO/retry behavior, and stable application contract; defer component-lifecycle integration.
 2. **Implemented (WP-6):** add and test the pure visible-node projection without changing reachable UI.
-3. **Next (WP-7 scaffold):** add the `DocumentCanvas`/`NodeBlock` scaffold in a feature branch/flag beside the current workspace.
-4. Render read-only previews for every visible block. At this stage the scaffold must not mount an editor or expose structural mutations, so it does not depend on the temporary master/detail batching lifecycle.
-5. Complete the WP-4/WP-7 safety gate by adding one active-editor owner through the new checkpoint coordinator. Focus transfer and every action that could hide/remove the owner must drain first and retain the old owner on failure.
+3. **Implemented (WP-7 scaffold):** add the unreachable `DocumentCanvas`/`NodeBlock` scaffold beside the current workspace.
+4. **Implemented (WP-7 scaffold):** render sanitized read-only previews for every visible block with no editor, draft participant, or structural mutation surface.
+5. **Next (WP-4/WP-7 integration gate):** add one active-editor owner through the new checkpoint coordinator. Focus transfer and every action that could hide/remove the owner must drain first and retain the old owner on failure.
 6. Remove the fixed 1.2-second batching path, then add title/tag editing and insertion through the final `NodeBlock` boundary.
 7. Add structural keyboard and pointer controls only after drain-before-unmount and failure-cancel tests pass.
 8. Reuse the canvas for historical mode.

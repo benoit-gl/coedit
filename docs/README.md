@@ -106,13 +106,13 @@ These pass boundaries are scope statements, not release promises. [Known limitat
 
 ## Proposed next-iteration workspace design
 
-The [continuous workspace change package](./proposals/README.md) records the next UX/application-architecture iteration. WP-1 through WP-3 implement standalone verified revision queries, explicit controller workspace modes, and the user-facing read-only historical path; the WP-4 UI-neutral checkpoint core/caller-owned group contract and WP-6 pure visible-node projection are also implemented. The continuous canvas, checkpoint/editor integration, grouped History, navigator, and native parity remain future work. Its three coordinated designs are:
+The [continuous workspace change package](./proposals/README.md) records the next UX/application-architecture iteration. WP-1 through WP-3 implement standalone verified revision queries, explicit controller workspace modes, and the user-facing read-only historical path; the WP-4 UI-neutral checkpoint core/caller-owned group contract, WP-6 pure visible-node projection, and unreachable read-only WP-7 canvas/block scaffold are also implemented. Reachable canvas composition, checkpoint/editor integration, grouped History, navigator, and native parity remain future work. Its three coordinated designs are:
 
 - a continuous block-outline canvas replacing the master/detail outline-plus-selected-editor workflow, with an optional runtime-toggleable tree sidebar that navigates that same canvas but never becomes a second editor;
 - query-first, read-only historical materialization with restoration kept as an explicit compensating command; and
 - an edit-batch checkpoint state machine whose `batchCharacterThreshold` and `idleTimeoutMs` defaults are centralized and injectable.
 
-These documents are the handoff point for resuming that work. Each work package remains **Proposed** until its code paths and acceptance tests exist; the package index records WP-1 through WP-3 as partial package evidence without implying that the continuous-canvas or native paths exist.
+These documents are the handoff point for resuming that work. Each work package remains **Proposed** until its code paths and acceptance tests exist; the package index records implemented partial seams through the WP-7 read-only scaffold without implying that the continuous canvas is reachable or that native parity exists.
 
 ## Status language
 

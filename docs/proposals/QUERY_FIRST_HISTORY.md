@@ -2,7 +2,7 @@
 
 **Product decision:** Approved design direction.
 
-**Implementation status:** Partial. WP-1 implements query contracts/materialization/capabilities; WP-2 implements explicit controller workspace/request state and guards; WP-3 implements standalone View-first History, static sanitized historical rendering, the persistent Back/Restore banner, and UI integration tests. Continuous-canvas context and native query parity remain proposed.
+**Implementation status:** Partial. WP-1 implements query contracts/materialization/capabilities; WP-2 implements explicit controller workspace/request state and guards; WP-3 implements standalone View-first History, static sanitized historical rendering, the persistent Back/Restore banner, and UI integration tests. The WP-7 canvas has a tested static historical presentation identity but is intentionally unreachable; controller/canvas context integration and native query parity remain proposed.
 
 **Change package:** [Continuous workspace proposals](./README.md)
 
@@ -15,7 +15,7 @@ Both adapters already retain materialized revisions:
 - the memory adapter has an internal revision-to-hash-bearing-`DocumentState` map; and
 - SQLite stores full `state_json` and `state_hash` rows in `snapshots`.
 
-The standalone adapter has a read-only query that returns one of those states without changing the live workspace or ledger, the controller projects it through an explicit historical workspace mode, and WP-3 exposes it through a static read-only historical UI. Remaining gaps are continuous-canvas reuse and native parity.
+The standalone adapter has a read-only query that returns one of those states without changing the live workspace or ledger, the controller projects it through an explicit historical workspace mode, and WP-3 exposes it through a static read-only historical UI. WP-7 adds the unreachable sanitizer-backed canvas presentation seam; remaining gaps are controller/canvas reuse and native parity.
 
 ## Goals
 
@@ -503,7 +503,7 @@ For every adapter that advertises `RevisionQueryCapability.kind === "available"`
 4. **Implemented (WP-3):** add View/Back UI using the existing editor layout, with a static sanitizer-backed historical detail and persistent banner. Standalone artifact qualification remains part of the broader milestone.
 5. **Implemented for available hosts (WP-3):** remove row-level Restore in favor of explicit historical banner confirmation; host-deferred Tauri retains its row action until native View exists.
 6. **Implemented at the capability boundary (WP-1):** keep the Tauri composition compiling with the query capability explicitly unavailable and document that temporary host difference.
-7. After the UI-neutral checkpoint core and read-only canvas scaffold exist, reuse `DocumentCanvas` for historical mode only after the active-editor checkpoint safety gate passes.
+7. **Next:** with the UI-neutral checkpoint core and read-only canvas scaffold implemented, reuse `DocumentCanvas` for historical mode only through the active-editor checkpoint safety gate.
 8. After canvas parity, add grouped History and exact checkpoint expansion over the stable coordinator-owned group IDs.
 9. Add the optional navigator against the same `WorkspaceProjection`, with separate live/historical UI contexts and no command surface.
 10. In WP-10, add the Rust store query, IPC command, Tauri adapter, and shared contract fixtures/tests after standalone qualification.
