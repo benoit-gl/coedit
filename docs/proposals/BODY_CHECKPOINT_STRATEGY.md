@@ -71,7 +71,24 @@ Classification belongs at the ProseMirror/Tiptap transaction plus relevant `befo
 
 ### Atomic edits
 
-Paste, body drop, cut, formatting an existing selection, undo and redo are semantic atomic edits. They do not inherit an unrelated open insertion/deletion group. Stored-mark changes that do not change the document create no checkpoint by themselves. Programmatic persistence/hydration loads never create user-edit checkpoints.
+Paste, body drop, cut, formatting an existing selection, undo and redo are semantic atomic edits. Their ordering is normative:
+
+1. if unrelated insertion/deletion work is dirty, capture and seal it **before** accepting the atomic transaction;
+2. accept the complete atomic editor transaction as one semantic unit without threshold-fragmenting it;
+3. immediately capture the resulting body state as an `atomic-edit` checkpoint and seal that atomic group **before** accepting later ordinary body work.
+
+Thus an atomic edit never inherits an unrelated open group and never leaves its accepted result waiting for an idle/focus boundary before its own checkpoint. Stored-mark changes that do not change the document create no checkpoint by themselves. Programmatic persistence/hydration loads never create user-edit checkpoints.
+
+### Idle timer lifecycle
+
+`idleTimeoutMs` applies only to accepted dirty body work:
+
+- after each accepted body-changing transaction that leaves an open dirty group, start or reset the idle timer from that activity;
+- selection/cursor movement by itself does not extend the timer; if it is a qualifying boundary, it seals immediately instead;
+- expiry captures and seals the current dirty group exactly once;
+- cancel the timer when the coordinator becomes clean, frozen for a controlled transition, disposed/unmounted, or after capture/seal;
+- historical mode does not own a live editor/coordinator and therefore has no body idle timer;
+- deterministic tests use an injected/fake clock rather than real wall time.
 
 ## State-machine contract
 
@@ -84,6 +101,7 @@ Paste, body drop, cut, formatting an existing selection, undo and redo are seman
 | inserting | first deletion | capture/seal insertion before deletion; allocate deletion group | deleting |
 | deleting | further deletion | retain group | deleting |
 | deleting | first insertion | capture/seal deletion before insertion; allocate insertion group | inserting |
+| dirty | atomic edit | capture/seal prior group before input; accept atomic transaction; capture/seal atomic result immediately | clean |
 | dirty | first qualifying selection/focus boundary | capture/seal once | clean |
 | dirty | idle expiry | capture/seal | clean |
 | dirty | controlled transition | freeze, capture/seal, await required FIFO prefix | frozen/clean on success |
@@ -181,8 +199,8 @@ These are intentionally explicit regression oracles rather than an inventory of 
 2. First deletion after insertion captures insertion before deletion; repeated deletion does not create one revision per repeat.
 3. First insertion after deletion captures deletion before insertion.
 4. First qualifying selection/focus departure after dirty work captures once; later clean navigation is silent.
-5. Dirty work left idle for `idleTimeoutMs` captures/seals once.
-6. Paste/cut/format/undo/redo and composition completion obey atomic/IME rules and do not create synthetic threshold fragments.
+5. Dirty work left idle for `idleTimeoutMs` captures/seals once; accepted body activity resets that deadline while selection-only movement does not extend it.
+6. Paste/cut/format/undo/redo and composition completion obey atomic/IME rules: prior dirty work seals before the accepted atomic transaction, and its resulting checkpoint seals immediately afterward without synthetic threshold fragments.
 7. Every controlled create/move/collapse/delete/history/restore/export/backup/Close path drains required body work before invalidating its editor context.
 8. A failed checkpoint is retried as the same immutable object and no later checkpoint overtakes it.
 9. A slow unresolved head plus one successor reaches the two-checkpoint high-water mark; later body changes are blocked until progress.
