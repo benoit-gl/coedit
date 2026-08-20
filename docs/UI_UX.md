@@ -42,6 +42,28 @@ Exactly one live node may own `RichTextEditor`. Other live nodes show sanitized 
 
 Historical mode uses the same canvas but is read-only: no title/tag inputs, rich-text editor, toolbar, create/move/delete actions, or draft participants are mounted. Local disclosure remains available.
 
+## Keyboard and focus contract
+
+These bindings are current interaction behavior, not incidental implementation details. Structural shortcuts are scoped to block controls so they do not steal normal rich-text editing keys.
+
+| Context | Input | Required behavior |
+|---|---|---|
+| Block title | plain `Enter` | Create a following sibling. Modified Enter or IME-composition Enter does not take this title shortcut. |
+| Any live block | `Mod+Enter` | Create a following sibling. |
+| Any live block | `Mod+Shift+Enter` | Create the last child. |
+| Block handle or disclosure | `ArrowUp` / `ArrowDown` | Focus the previous / next visible block control. |
+| Disclosure | `ArrowLeft` | Collapse an expanded block; otherwise focus its visible parent. |
+| Disclosure | `ArrowRight` | Expand a collapsed block; otherwise focus its first visible child. |
+| Block handle | `Alt+Shift+ArrowUp/Down` | Move the block up/down among siblings. |
+| Block handle | `Alt+Shift+ArrowRight/Left` | Indent / outdent the block. |
+| Block handle | `Delete` | Invoke the confirmed subtree-delete action. Text-editor Delete remains text editing. |
+| Inline block control | `Escape` | Return focus to that block's structural handle without discarding drafts. |
+| General navigation | `Tab` / `Shift+Tab` | Follow native DOM focus order; there is no structural Tab override. |
+
+Handled structural keys prevent their ordinary browser action only when a structural command is actually recognized. Structural key handling is suppressed during IME composition. Tiptap retains ownership of rich-text editing behavior, including its Yjs-backed undo/redo commands.
+
+The **Edit body** action is the explicit cross-block editor-ownership transfer. A successful transfer drains the old owner before focusing/mounting the new editor; a failed drain leaves the old owner in place.
+
 ## History behavior
 
 History is backed by immutable physical contribution rows but presents body checkpoint groups semantically.
@@ -110,7 +132,15 @@ The optional Navigator/History modal-drawer shell described in `docs/proposals/C
 
 ## Accessibility and interaction status
 
-Current canvas structure has keyboard alternatives for core hierarchy actions and explicit focus handling, but full browser/screen-reader/touch qualification is still incomplete. Known gaps include hover-dependent discoverability, toolbar ARIA polish, touch drag behavior, narrow-layout qualification, and absence of a full browser accessibility suite.
+Current canvas structure has named keyboard alternatives for core hierarchy actions and explicit focus handling, but full browser/screen-reader/touch qualification is still incomplete.
+
+Current concrete gaps include:
+
+- formatting toggles show active state visually but do not expose `aria-pressed`;
+- History search relies on placeholder text rather than an explicit accessible label;
+- the compact History overlay has no complete modal focus-trap/focus-return contract;
+- hover/focus-dependent action discoverability and drag/reparent behavior remain weakly qualified for touch/magnification;
+- there is no full real-browser screen-reader, touch, or accessibility-engine qualification suite.
 
 Do not describe WP-8 as complete until those behaviors have been qualified on real browser/assistive-technology paths.
 
