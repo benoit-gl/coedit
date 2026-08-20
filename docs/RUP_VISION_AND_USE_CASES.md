@@ -123,6 +123,72 @@ Cross-cutting use-case invariants:
 4. Historical **View** is a query and **Restore** is a mutation. Implementations must not substitute one for the other.
 5. Host capability absence is represented explicitly (`host-deferred`/omitted action), not by a reachable method that only throws or by UI text implying parity.
 
+## Stable cross-cutting requirement registry
+
+The identifiers below are stable traceability anchors retained from the fuller RUP artifact. The requirement sentence is normative; implementation/status detail belongs in the linked authoritative artifact and `KNOWN_LIMITATIONS.md`. Keeping the IDs here allows tests, issues, PRs, and design notes to reference durable contracts without duplicating volatile inventories.
+
+### Functional architecture and persistence
+
+| ID | Normative requirement | Authoritative detail |
+|---|---|---|
+| FR-01 | The host shall select persistence explicitly at a composition root. | [Architecture](./ARCHITECTURE.md), [Frontend design](./FRONTEND_DESIGN.md) |
+| FR-02 | UI orchestration shall depend on `DocumentGateway`, not invoke Tauri directly. | [Architecture](./ARCHITECTURE.md), [Persistence design](./PERSISTENCE_DESIGN.md) |
+| FR-03 | A desktop document shall use `.coedit`, a fixed application ID, and a versioned schema. | [Document format](./DOCUMENT_FORMAT.md) |
+| FR-04 | The application shall permit at most one active document per instance. | [Architecture](./ARCHITECTURE.md), [Persistence design](./PERSISTENCE_DESIGN.md) |
+| FR-05 | Every node shall have a stable ID, optional parent, sibling position, freeform tag set, metadata, Yjs state, timestamps, and deletion marker. | [Document format](./DOCUMENT_FORMAT.md), [Frontend design](./FRONTEND_DESIGN.md) |
+| FR-06 | A hierarchy shall reject duplicate IDs, missing parents, self-parenting/cycles, and moves into descendants. | [Document format](./DOCUMENT_FORMAT.md), [Testing](./TESTING.md) |
+| FR-07 | Deletion shall be soft and cover the subtree. | [Document format](./DOCUMENT_FORMAT.md), UC-03 above |
+| FR-08 | A persisted visible mutation shall be represented by a typed operation and attributed contribution. | [Architecture](./ARCHITECTURE.md), [Persistence design](./PERSISTENCE_DESIGN.md) |
+| FR-09 | A mutation shall advance revision from its base revision and record affected nodes, payload, hash, contributor context, and message. | [Document format](./DOCUMENT_FORMAT.md), [Persistence design](./PERSISTENCE_DESIGN.md) |
+| FR-10 | Desktop state, contribution, hash, and snapshot shall commit atomically. | [Persistence design](./PERSISTENCE_DESIGN.md), [Runtime sequences](./SEQUENCE_DIAGRAMS.md) |
+| FR-11 | Text typing shall be grouped rather than committed per keystroke. | [Frontend design](./FRONTEND_DESIGN.md), [Body checkpoint decision record](./proposals/BODY_CHECKPOINT_STRATEGY.md) |
+| FR-12 | Rich HTML shall be sanitized before use and independently before desktop persistence. | [Security](./SECURITY.md), [Frontend design](./FRONTEND_DESIGN.md) |
+| FR-13 | Restore shall append a compensating revision instead of removing history. | UC-08 above, [Persistence design](./PERSISTENCE_DESIGN.md) |
+| FR-14 | Desktop opening shall validate identity, version consistency, SQLite integrity, typed values, and tree structure. | [Document format](./DOCUMENT_FORMAT.md), [Runtime sequences](./SEQUENCE_DIAGRAMS.md) |
+| FR-15 | Newer supported-core documents shall be exposed read-only. | [Document format](./DOCUMENT_FORMAT.md), [Security](./SECURITY.md) |
+| FR-16 | Markdown shall be presented as lossy interchange, and JSON/SQLite as recovery-oriented outputs. | [Document format](./DOCUMENT_FORMAT.md), [Persistence design](./PERSISTENCE_DESIGN.md) |
+| FR-17 | A standalone production build shall contain no required external JS/CSS assets. | [Build and portability](./BUILD_AND_PORTABILITY.md) |
+| FR-18 | The base application shall not register an AI or synchronization provider. | [Architecture](./ARCHITECTURE.md), [Security](./SECURITY.md) |
+
+### Security and privacy
+
+| ID | Normative requirement | Authoritative detail |
+|---|---|---|
+| NFR-SEC-01 | Base production operation shall require no outbound network request. | [Security](./SECURITY.md), [Build and portability](./BUILD_AND_PORTABILITY.md) |
+| NFR-SEC-02 | Native permissions shall follow least privilege. | [Security](./SECURITY.md) |
+| NFR-SEC-03 | `.coedit` content and imported HTML shall be treated as untrusted. | [Security](./SECURITY.md), [Document format](./DOCUMENT_FORMAT.md) |
+| NFR-SEC-04 | Contributor preferences shall not store secrets. | [Security](./SECURITY.md), [Frontend design](./FRONTEND_DESIGN.md) |
+| NFR-SEC-05 | Future network behavior shall require an explicit build/permission/consent design. | [Security](./SECURITY.md), [Contributing](./CONTRIBUTING.md) |
+
+### Integrity, recovery, and limits
+
+| ID | Normative requirement | Authoritative detail |
+|---|---|---|
+| NFR-DATA-01 | A committed desktop mutation shall be all-or-nothing. | [Persistence design](./PERSISTENCE_DESIGN.md), [Runtime sequences](./SEQUENCE_DIAGRAMS.md) |
+| NFR-DATA-02 | Creation/export/backup shall avoid exposing a partially written destination. | [Persistence design](./PERSISTENCE_DESIGN.md), [Security](./SECURITY.md), [Runtime sequences](./SEQUENCE_DIAGRAMS.md) |
+| NFR-DATA-03 | A current document shall have a materialized snapshot for every revision. | [Document format](./DOCUMENT_FORMAT.md), [Persistence design](./PERSISTENCE_DESIGN.md) |
+| NFR-DATA-04 | State hashes shall be deterministic and verifiable. | [Document format](./DOCUMENT_FORMAT.md), [Known limitations](./KNOWN_LIMITATIONS.md) |
+| NFR-DATA-05 | Desktop input shall have explicit size bounds. | [Document format](./DOCUMENT_FORMAT.md), [Security](./SECURITY.md) |
+| NFR-DATA-06 | A locked SQLite file shall fail promptly rather than hang indefinitely. | [Document format](./DOCUMENT_FORMAT.md), [Testing](./TESTING.md) |
+| NFR-DATA-07 | Recovery procedures and format semantics shall be documented. | [Document format](./DOCUMENT_FORMAT.md), [Testing](./TESTING.md) |
+
+### Portability, usability, and maintainability
+
+| ID | Normative requirement | Authoritative detail |
+|---|---|---|
+| NFR-PORT-01 | Desktop source shall be buildable for Windows, macOS, and Linux through Tauri. | [Build and portability](./BUILD_AND_PORTABILITY.md) |
+| NFR-PORT-02 | A closed desktop document shall normally be one movable file. | [Document format](./DOCUMENT_FORMAT.md), [Build and portability](./BUILD_AND_PORTABILITY.md) |
+| NFR-PORT-03 | The standalone build shall run through `file://` in a compatible desktop browser. | [Build and portability](./BUILD_AND_PORTABILITY.md), [Testing](./TESTING.md) |
+| NFR-PORT-04 | iPadOS support shall not be claimed from icon assets alone. | [Build and portability](./BUILD_AND_PORTABILITY.md) |
+| NFR-UX-01 | The UI shall make standalone volatility, read-only mode, recovery warnings, busy state, and errors visible. | [UI/UX](./UI_UX.md), [Known limitations](./KNOWN_LIMITATIONS.md) |
+| NFR-UX-02 | Core hierarchy navigation shall be keyboard accessible. | [UI/UX](./UI_UX.md), [Testing](./TESTING.md) |
+| NFR-UX-03 | The workspace shall remain usable at the desktop window minimum and narrower browser widths. | [UI/UX](./UI_UX.md), [Build and portability](./BUILD_AND_PORTABILITY.md) |
+| NFR-MAINT-01 | Shared UI code shall remain independent of native APIs. | [Architecture](./ARCHITECTURE.md), [Contributing](./CONTRIBUTING.md) |
+| NFR-MAINT-02 | TypeScript and Rust models shall remain wire-compatible. | [Persistence design](./PERSISTENCE_DESIGN.md), [Testing](./TESTING.md) |
+| NFR-MAINT-03 | Externally visible changes shall remain traceable from requirement to code and test. | [Traceability](./TRACEABILITY.md), [Contributing](./CONTRIBUTING.md) |
+
+When a product requirement genuinely changes, keep its existing ID and revise the normative sentence deliberately. Do not remove an ID merely because implementation detail moved to another document; retire it only with an explicit replacement/deprecation note so historical references remain interpretable.
+
 ## Continuous-workspace requirements
 
 | ID | Requirement | Current status |
