@@ -34,6 +34,7 @@ This is the current risk list for Coedit Local `0.1.0`. It records present limit
 | R-22 | P2 | Crash durability | Atomic output syncs file contents but does not explicitly fsync parent directories. |
 | R-23 | P3 | Reserved features | Attachments, AI, collaboration, contributor management and direct node restore lack complete workflows. |
 | R-24 | P3 | Canvas structure | Drag reparenting targets the target's last-child position only; no between-block/root drop indicator. |
+| R-25 | P2 | History/provenance | Affected-node reporting generally names only the requested node, so node-filtered History can omit descendant/sibling changes made by the same operation. |
 | R-26 | P2 | Historical parity | Standalone View/Back uses verified read-only materialization; native revision queries remain host-deferred. |
 | R-27 | P2 | Group-query parity | Grouped History is implemented, but Tauri cannot yet fetch the exact remainder of a page-spanning group. |
 
@@ -80,6 +81,14 @@ The shared contract is cursor-paged and filter-before-page, but Rust still mater
 ### R-12 — full snapshot per physical checkpoint
 
 Semantic grouping improves human readability but every checkpoint remains an immutable contribution plus full snapshot. Measure real file growth before designing compaction/replay/retention.
+
+### R-25 — affected-node provenance is incomplete
+
+Both `src/domain/tree.ts::affectedNodeIds` and Rust `DocumentOperation::affected_node_ids` generally report only the requested node (with creation naming the new node and document rename naming none). Several operations materially change more state than that list describes: subtree deletion changes descendants, restore can reactivate ancestors, and create/move/delete normalization can change sibling positions.
+
+Because the selected-node History filter relies on `affectedNodeIds`, filtering for one of those indirectly changed descendants/siblings can omit the contribution that changed it. The same under-reporting weakens provenance for future attribution/replay tooling.
+
+**Direction:** either report every node whose persisted state materially changes, with equivalent TypeScript/Rust semantics and tests, or deliberately define a narrower "operation target" contract and stop presenting the field/filter as complete affected-node provenance.
 
 ### R-26/R-27 — native query parity
 
