@@ -97,6 +97,32 @@ Freeze and drain registered drafts, close the host document, and return to Welco
 
 Open generated `dist/index.html` through `file://`, use the complete shared UI with volatile storage, and export before leaving.
 
+## Durable use-case contracts
+
+The summaries above state intent. The following table is the compact normative contract for preconditions, material alternate/failure behavior, and postconditions. Implementation details belong in design/sequence documents; these conditions should change only when product behavior changes.
+
+| Use case | Preconditions | Material alternate/failure behavior | Required postcondition |
+|---|---|---|---|
+| UC-01 Create | Welcome state; desktop file dialogs available when using the native host | Canceling the native destination leaves Welcome unchanged. Desktop rejects an existing target, wrong creation extension or unusable parent. Gateway/store failure installs no partial document. Blank title/name use the documented fallbacks. | Exactly one writable document is active at revision `0`; desktop state is durable, standalone state is volatile. |
+| UC-02 Open | Desktop host; no active document; selected path is available to the native storage path | Cancel changes nothing. Wrong application identity, corrupt SQLite, inconsistent format metadata, invalid typed data, missing parents or cycles fail closed. A readable future format is opened read-only rather than rewritten. A pre-existing rollback journal is surfaced as a recovery warning. | A validated store/view replaces the empty workspace only after open succeeds; writeability reflects format support. |
+| UC-03 Organize hierarchy | Writable live document | Every structural action that can hide/transfer/remove the editor first drains registered drafts; drain/persistence failure cancels the structural action. Cycles/self-descendant moves are rejected. Delete is confirmed and soft-deletes the subtree. Historical mode exposes disclosure only. | Stable node IDs remain; active hierarchy is acyclic with existing parents and normalized sibling ordering. |
+| UC-04 Edit metadata | Writable live block | Dirty title/tag drafts survive unrelated rerenders until flushed. Controlled-transition failure keeps the originating workspace/edit state available for retry. Tag normalization/limits remain domain contracts, not UI-only behavior. | Accepted metadata is persisted through ordinary attributed operations; no metadata draft is silently lost across a successful controlled transition. |
+| UC-05 Edit body | Writable live block owns the sole editor | IME/atomic input is not split arbitrarily; threshold/semantic boundaries capture in order. At the pending-checkpoint bound, further body changes are visibly blocked rather than dropped. Failed persistence retains the exact immutable FIFO head for retry and blocks unsafe transitions. | Every accepted persisted body checkpoint is an ordinary attributed revision; checkpoints from one semantic episode retain one `groupId` and no required checkpoint is overtaken. |
+| UC-06 Inspect History | Document open | History reads do not enter the mutation queue or modify document state. Older-page responses and exact-group responses must not overwrite newer workspace/filter intent. A partial group is never labeled complete without exact evidence; native hosts state capability gaps explicitly. | Raw ledger rows remain immutable; presentation may group them, and visible/raw counts remain semantically distinct. |
+| UC-07 View revision | Query-capable host; requested revision exists; pending live drafts can be drained | Draft-save failure issues no query. Missing/invalid/hash-mismatched snapshots fail closed. Newer revision requests, Back, close/open/create invalidate stale responses. | Materialization itself changes no live state, revision, contribution or snapshot; Back restores the retained live projection locally. |
+| UC-08 Restore | Target historical revision available; user confirms append-only consequence | Restore failure leaves the previous live/historical projection intact. The current revision is not offered as a meaningful restore target. Restoration must not be implemented by deleting/rewinding later ledger rows. | Exactly one new compensating current revision is appended and later history remains present. |
+| UC-09 Export/backup | Live document; required drafts can be drained; native destination chosen where applicable | Canceling a native destination causes no write. Drain/output failure leaves the document open and primary state unchanged. Markdown remains lossy; JSON is not described as an importer/round-trip format. Backup is desktop-only. | A successful output reflects the accepted live state after required drains; exporting never silently changes the document revision. |
+| UC-10 Close | Document open | Failed draft drain or host close keeps the workspace mounted with recoverable drafts/error. Browser/process termination is not equivalent to this awaitable path. | Only after successful drain/close is application workspace/history state cleared and Welcome shown. |
+| UC-11 Standalone artifact | Generated `dist/index.html` opened directly, not source `index.html`/Tauri frontend | No native Open/backup exists. Reload/close destroys the in-memory working document. Ordinary network access is outside the artifact contract. | The complete shared UI operates from one self-contained artifact over volatile memory; preservation requires explicit export. |
+
+Cross-cutting use-case invariants:
+
+1. A visible persisted mutation is represented by a typed `DocumentOperation` plus contribution context; UI-local presentation state is never smuggled into document state.
+2. A controlled transition that can hide, replace, externalize or close the active editor must drain required drafts before the transition becomes authoritative.
+3. Failure must preserve the last accepted authoritative document and enough local draft/checkpoint state to retry; it must not create a partially advanced revision.
+4. Historical **View** is a query and **Restore** is a mutation. Implementations must not substitute one for the other.
+5. Host capability absence is represented explicitly (`host-deferred`/omitted action), not by a reachable method that only throws or by UI text implying parity.
+
 ## Continuous-workspace requirements
 
 | ID | Requirement | Current status |
