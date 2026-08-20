@@ -1,253 +1,95 @@
 # Security model
 
-This document describes the security posture of the current offline standalone and Tauri desktop builds. It is a design/control inventory, not a claim that the application or `.coedit` format has completed a security audit. Residual defects are tracked in [Known limitations](./KNOWN_LIMITATIONS.md).
+This document describes the current security posture of Coedit Local `0.1.0`. It is a control inventory, not a security-audit claim. Residual defects are tracked in [Known limitations](./KNOWN_LIMITATIONS.md).
 
 ## Security goals
 
-- Keep the base product functional without outbound network access or a local production server.
-- Treat document files, stored rich content, pasted HTML, IPC payloads, and export destinations as untrusted input.
-- Minimize native capabilities and expose narrow document commands rather than arbitrary filesystem/database access to the UI.
-- Prevent imported/persisted content from becoming executable application code.
-- Commit desktop materialized state and its attribution/recovery records atomically.
-- Fail closed for wrong/corrupt document identity and unsupported structures.
-- Keep future AI and collaboration explicitly opt-in and outside the base capability profile.
-
-## Non-goals and trust assumptions
-
-- A plain `.coedit` file is not encrypted. Anyone with filesystem access can read it with SQLite tooling.
-- Contributions and hashes are not digitally signed. A person who can modify the database directly can rewrite state/history/hashes.
-- The application does not protect a compromised operating-system account, browser, WebView, native runtime, or dependency supply chain.
-- Standalone memory is not durable or isolated from browser extensions/process inspection.
-- The current hash ledger is not verified on open and is not a tamper-evident chain.
-
-## Assets
-
-| Asset | Desired property |
-|---|---|
-| Node bodies and hierarchy | confidentiality on the local device; integrity and recoverability |
-| Contributor attribution/history | correct identity association; append-only behavior through the application |
-| `.coedit` and backup files | recognizable format, structurally valid state, safe recovery |
-| Standalone exports | no accidental remote transmission; clear limits/fidelity |
-| Local contributor preference | availability only; it is not secret/authentication material |
-| Native capabilities | least privilege and explicit review |
+- operate without ordinary outbound network access;
+- treat `.coedit` data, rich HTML, snapshot content, IPC payloads and output paths as untrusted;
+- keep native capability surface narrow;
+- prevent stored/pasted HTML from becoming executable application code;
+- keep desktop mutation state/history/snapshot updates atomic;
+- separate non-mutating historical inspection from restoration;
+- keep future AI/collaboration explicit and opt-in.
 
 ## Trust boundaries
 
-```plantuml
-@startuml
-skinparam componentStyle rectangle
-actor Author
+Standalone runs the shared UI plus `MemoryDocumentGateway` inside one browser page. The generated CSP denies `connect-src` and remote application resources. It has no native filesystem command surface.
 
-rectangle "Untrusted inputs" {
-  artifact ".coedit / backup file" as InputFile
-  artifact "pasted rich HTML" as Paste
-  artifact "IPC operation payload" as Payload
-  artifact "export destination path" as Destination
-}
+Desktop runs the shared UI in a WebView and crosses Tauri IPC to registered Rust commands. Rust owns SQLite validation, mutation transactions, backup/export and native persistence sanitization. Native dialog paths are still renderer-supplied strings after user selection; stronger Rust-owned authorization remains hardening work.
 
-rectangle "Browser / WebView boundary" {
-  component "React + Tiptap" as UI
-  component "DOMPurify" as DOMP
-  component "Gateway adapter" as Gateway
-}
+## Rich-text boundary
 
-rectangle "Tauri native boundary" {
-  component "registered commands" as Commands
-  component "DocumentStore validation" as Validation
-  component "Ammonia" as Ammonia
-  database "SQLite" as SQLite
-}
+The browser uses the centralized `sanitizeRichText`/DOMPurify policy for paste, fallback loading, previews and checkpoint capture. The memory gateway sanitizes direct body operations again.
 
-cloud "Network" as Network
+Rust uses Ammonia on persisted body HTML. Browser and Rust policies are not yet proven equivalent against one shared fixture set.
 
-Author --> UI
-Paste --> DOMP
-DOMP --> UI
-Payload --> Commands
-InputFile --> Validation
-Destination --> Validation
-UI --> Gateway
-Gateway --> Commands : Tauri IPC only
-Commands --> Validation
-Validation --> Ammonia
-Validation --> SQLite
-UI -[dashed]-> Network : denied in base CSP
-@enduml
-```
+Yjs state/update values are untrusted structured input. The desktop backend validates sizes/encoding but does not prove the supplied HTML, incremental update and complete Yjs state are semantically equivalent.
 
-### Standalone boundary
+## Continuous canvas and historical mode
 
-The standalone build contains UI, domain logic, and `MemoryDocumentGateway` in one local HTML file. It has no native command boundary. Its generated CSP denies all `connect-src`; exports use browser Blob/object URLs and a download anchor. `localStorage` contains only the contributor object under `coedit-local-contributor`; storage failure is non-fatal.
+WP-7's continuous `DocumentCanvas` is reachable in both live and historical modes; the old master/detail editor is retired.
 
-### Desktop boundary
+Security-relevant invariants:
 
-The OS WebView contains the shared UI and thin Tauri adapters. The Rust process holds the SQLite connection. TypeScript can call only registered Tauri commands and enabled plugin capabilities. The command layer maps typed payloads to `DocumentStore`; it does not expose arbitrary SQL or a generic file-read command. `NativeDocumentStorage` is an application capability boundary used to hide native workflows from the standalone host; it is not itself a security authorization primitive.
+- at most one live block owns a Tiptap/Yjs editor;
+- inactive live and all historical bodies render through sanitized previews;
+- historical blocks expose no metadata/body editor or structural mutation controls;
+- controller command/export guards reject mutation outside live mode;
+- revision materialization returns detached data only after standalone snapshot/tree/hash verification;
+- stale revision responses are rejected by request/workspace guards;
+- Back to current is non-mutating; Restore is a separately confirmed compensating mutation.
 
-## Network and content-security policy
+Native revision materialization is still host-deferred, so the same verification path is not yet available through Tauri.
 
-No HTTP client, synchronization provider, telemetry SDK, updater, remote image/font/script, or AI provider is registered in the base application.
+## Grouped History security boundary
 
-The generated standalone policy denies all sources by default, permits only the build-generated inline script hash and inline CSS, permits data/blob image/font resources needed locally, and sets `connect-src 'none'`.
+WP-5 groups History for presentation; it never rewrites physical ledger rows.
 
-The desktop production policy permits packaged resources and Tauri IPC (`ipc:` and `http://ipc.localhost`) while denying ordinary remote connections, frames, objects, base changes, and form submission. The only enabled plugin permissions are native open/save dialogs plus core defaults.
+Only contiguous `updateBody` rows with the same non-null `groupId` collapse. Expanded rows expose immutable checkpoint metadata and exact revision actions. Group labels/messages are rendered as text, not executable markup.
 
-Vite binds `127.0.0.1:1420` only during development. A release artifact attempting to load that address is misbuilt, not a production service design; see [Build and portability](./BUILD_AND_PORTABILITY.md).
+A partial page-spanning group can request all physical members by exact `groupId` on standalone. That query:
 
-## Native command and capability surface
+- is read-only;
+- ignores ordinary History filters intentionally;
+- returns contribution data only;
+- cannot alter snapshots, revisions or document state.
 
-Registered document commands in [`src-tauri/src/lib.rs`](../src-tauri/src/lib.rs):
+Tauri exact group querying is explicitly host-deferred. The UI must not imply a partial native group is complete.
 
-- `create_document`
-- `open_document`
-- `close_document`
-- `apply_operation`
-- `list_contributions`
-- `restore_revision`
-- `backup_document`
-- `export_document`
+## Native command surface
 
-[`src-tauri/capabilities/default.json`](../src-tauri/capabilities/default.json) enables only:
+Current registered document commands remain focused on create/open/close, apply operation, list contributions, restore, backup and export. WP-5 adds no Rust command and no new native permission because native exact-group querying is deferred to WP-10.
 
-- `core:default`
-- `dialog:allow-open`
-- `dialog:allow-save`
+When WP-10 adds query commands, they should be narrow read-only methods rather than generic SQL/file access and must preserve the same validation/detachment semantics as the standalone contracts.
 
-Adding a plugin, command, filesystem scope, shell access, network origin, updater, or second window is a security-model change and requires threat/permission review.
+## `.coedit` validation and integrity limits
 
-Current second-pass boundary: native command paths are still strings supplied by the renderer after the normal UI opens a dialog. A compromised renderer could attempt a registered command without following that visible picker flow. The Tauri hardening pass should move dialog selection and file authorization into Rust, or issue opaque short-lived grants that Rust validates, and should re-evaluate whether `core:default` can be narrowed. The current code does **not** claim this is already fixed.
+Current open validation checks file identity/version consistency, SQLite integrity, typed decoding and hierarchy validity. It does **not** authenticate the file, replay the ledger, verify every stored contribution/snapshot hash, reapply every normal write limit on all stored fields, or comprehensively re-sanitize every hostile database value.
 
-## `.coedit` validation
+Hashes are checksums/integrity evidence, not signatures. A person with direct file-write access can replace both content and hash.
 
-`DocumentStore::open` currently performs:
+## Offline policy
 
-1. ordinary-file existence check;
-2. read-only probe of SQLite `application_id` and `user_version`;
-3. fixed application-ID comparison;
-4. read-only mode selection for a newer version;
-5. five-second SQLite busy timeout and foreign keys;
-6. `PRAGMA integrity_check`;
-7. metadata magic marker comparison;
-8. agreement between metadata format version and `user_version`;
-9. typed contributor/session/node loading and JSON/enum/Base64 conversion;
-10. unique node ID, existing parent, and no-cycle validation.
+The base application registers no HTTP client, telemetry, sync transport or AI provider. Standalone CSP denies network connections. Desktop CSP allows required packaged resources/Tauri IPC but denies ordinary remote connections.
 
-A pre-existing sibling rollback journal produces a recovery warning. Full format details and limitations are in [Document format](./DOCUMENT_FORMAT.md).
+Any future provider, updater, plugin, filesystem scope, shell permission or network origin is a security-model change and must update CSP/capability documentation and tests deliberately.
 
-Current validation does **not** authenticate the file, verify contribution/snapshot hashes, replay the ledger, reapply all field-size limits on open, or perform a complete sanitization pass over every loaded record. Treat a document from another party as untrusted despite a successful open.
+## Output/recovery controls
 
-## Rich-text controls
+Desktop file outputs use temporary sibling files, content sync and rename/replace logic; parent directories are not explicitly fsynced. Standalone downloads use browser Blob URLs and safe filename normalization.
 
-### Frontend boundary
+Standalone recovery JSON and desktop JSON differ and neither imports. Do not present them as a tested round trip.
 
-[`RichTextEditor`](../src/editor/RichTextEditor.tsx) calls the centralized [`sanitizeRichText`](../src/editor/sanitizeRichText.ts) DOMPurify policy when:
+## Principal residual risks
 
-- transforming pasted HTML;
-- obtaining HTML for a debounced commit;
-- loading fallback `bodyHtml` when no Yjs state exists.
+- contributor fallback can misattribute work;
+- desktop hash/ledger verification is incomplete;
+- no migration framework;
+- browser/Rust sanitizer/hash/Yjs parity is incomplete;
+- native file authorization can be hardened;
+- host exit/suspension cannot await JavaScript draft drains;
+- full snapshots grow with every physical checkpoint;
+- no comprehensive CI/platform/accessibility/security matrix.
 
-The browser policy is named `coedit-rich-text-v1`; its tags/attributes live in one module and `fixtures/protocol/rich-text-v1.json` supplies executable expected outputs and idempotence cases. This is standalone evidence only until Rust consumes or deliberately versions an equivalent fixture contract.
-
-`MemoryDocumentGateway` applies the same sanitizer again to direct `createNode.bodyHtml` and `updateBody.bodyHtml` operations, so callers that bypass the editor do not bypass the standalone persistence boundary. Its `cloneJson` boundary detaches accepted inputs and rejects non-finite/non-JSON values, circular references, non-plain objects, symbol/accessor/non-enumerable properties, and sparse or extra-property arrays. This does not provide Rust's byte-size quotas.
-
-Its explicit allowed tags are paragraphs/breaks, basic emphasis, code/pre, blockquote, lists/items, headings 1-4, anchors, and horizontal rules. Allowed attributes are `href` and `title`.
-
-### Desktop persistence boundary
-
-Rust uses Ammonia when creating/updating node HTML and when restoring snapshot HTML. This protects the native store even if a caller bypasses the normal paste UI. A Rust test checks removal of scripts and event-handler content.
-
-The Rust and browser sanitizer policies are not yet specified as identical. Changing Tiptap extensions/tags/attributes requires a browser policy-version/fixture decision and tests at both boundaries, including URL schemes and export behavior. Rust fixture parity is a second-pass task.
-
-### Yjs boundary
-
-The backend checks that update/state values are valid Base64 and bounds the strings/decoded state, but it does not interpret the incremental update or prove that the supplied HTML and full Yjs state are equivalent. Yjs data is untrusted structured input and should not be treated as validation of the HTML representation.
-
-## Input limits on normal desktop mutations
-
-| Value | Current limit |
-|---|---:|
-| Title/display name after trim/fallback | 4,096 bytes |
-| Serialized metadata JSON | 1,048,576 bytes |
-| Body HTML input/cleaned creation body | 16,777,216 bytes |
-| Encoded incremental Yjs update string | 67,108,864 bytes |
-| Decoded complete Yjs state | 33,554,432 bytes |
-
-These are mutation-boundary limits, not comprehensive quotas. File size, node count, contribution count, snapshot size, and every loaded/tampered snapshot field are not globally capped. Standalone domain/gateway calls do not independently apply these Rust limits.
-
-## Persistence and output controls
-
-- SQLite uses `STRICT` tables, foreign keys, `journal_mode=DELETE`, and `synchronous=FULL` at creation.
-- A normal mutation updates materialized state, revision metadata, contribution, hash, and snapshot in one transaction.
-- Creation uses a temporary sibling file and final rename.
-- JSON/Markdown export and backup use a temporary sibling, sync file contents, and replace the destination by rename.
-- Parent directories are not explicitly fsynced; direct filesystem/symlink/race hardening has not been audited.
-- Export destinations come from explicit native dialogs in the current UI.
-
-The standalone download path uses centralized `safeFilenameStem()` normalization without native path access. It retains normalized Unicode letters/numbers, replaces unsafe runs, bounds length by code point, and rejects reserved Windows device stems. Browser download policy still depends on the host browser; filename normalization is not a filesystem sandbox.
-
-## Threat/control matrix
-
-| Threat | Current controls | Residual exposure / required work |
-|---|---|---|
-| Remote script/data exfiltration | offline dependencies, CSP, no provider, minimal capabilities | dependency/WebView compromise; future provider permissions |
-| Script/event HTML injection | DOMPurify, Ammonia, ProseMirror rendering boundary | policy drift, stored/tampered data validation, URL-scheme cases |
-| Wrong/corrupt SQLite opened | application ID, magic, version agreement, integrity/tree/type checks | hash/ledger/snapshot validation and migration fixtures absent |
-| Oversized mutation payload | Rust byte limits and Base64 decode | standalone parity, document/node/count quotas, hostile snapshot load |
-| Partial state/history commit | one SQLite transaction per mutation; frontend serialized queue and controlled-action title/metadata/rich-text drains | page/process exit and forced suspension remain outside the awaitable draft protocol |
-| Export overwrite/failure | temporary file, sync, rename/rollback attempt | parent-dir durability, filesystem races, platform fault testing |
-| Contributor impersonation | store rejects unknown contributor IDs | UI silently falls back to first document contributor |
-| History tampering | hashes recorded | no authentication, chain, replay, or verification |
-| Unexpected native access | narrow commands, optional application capability, dialog plugin | renderer-supplied paths are not Rust-authorized grants; second pass must harden and minimize permissions |
-| Development server exposed | loopback host and strict port | dev machine/browser threat remains; never a release topology |
-
-## Proposed continuous-workspace security requirements
-
-The [continuous-workspace package](./proposals/README.md) is partially implemented. WP-1's memory query returns a detached value only after tree and stored-hash verification. WP-2 enforces live/historical mode, loading/workspace request invalidation, and command/export guards in the controller. WP-3 renders historical bodies through the centralized sanitizer without mounting title/tag/Tiptap editors or draft participants, disables mutation/export affordances, and keeps restore separately confirmed. WP-7 sanitizes every inactive block body and fails closed on an invalid projection; its editable type permits exactly one explicitly owned live editor, while historical canvases cannot receive editor callbacks. Native querying and reachable continuous-canvas composition remain incomplete. The package must preserve these trust boundaries:
-
-- A materialized historical snapshot is untrusted document input, not safe merely because it came from the application's own history table. Every adapter advertising the query capability must validate its shape/tree/limits, recompute/compare its stored host-schema hash, and pass every historical body through the same render-time sanitization policy as live content. This check is integrity evidence, not authentication.
-- `WorkspaceProjection.kind === "historical"` is enforced at the controller/command boundary for operation/export/backup paths, while create/open are welcome-only lifecycle intents. WP-3 adds defense in depth by replacing live editors and disabling outline/export affordances; later canvas, keyboard, and editor-extension callbacks must continue through the same guards.
-- A revision query must return a detached value. Components must not receive mutable aliases to the live adapter state or snapshot cache.
-- Request/workspace epochs must discard a response that belongs to a closed, restored, or replaced document. Snapshot data from one workspace must never be rendered into another.
-- Returning to live mode must not trust selection, expansion, or node IDs from the snapshot without resolving them against current live state.
-- The WP-7 `NodeBodyPreview` implements the continuous canvas's centralized sanitizer path; the active editor uses the same sanitizer for hydration, paste, and checkpoint capture. Reachable historical composition must not create an alternate raw-HTML path for performance.
-- The optional navigator is a navigation-only view, not an authorization or mutation surface. It must render node titles as text, consume only validated live/historical projections, expose no body/metadata editor or structural commands, and remain subject to the historical-mode controller guard even if a stale callback is invoked.
-- Effective History visibility must not weaken stale-response protection: contribution requests capture the current workspace/filter/request guards and monotonic History data generation, and a response started before an accepted change must not replace newer rows or clear stale state.
-- A versioned Navigator preferred-dock browser setting may contain only a validated boolean and must default closed when its initial read is missing or invalid. A later write failure may retain only the in-memory session choice. It must not contain document content, paths, node IDs, or contributor/session data and must never enter document state, hashes, snapshots, History, recovery output, or exports; the History dock request, compact drawer state, and one-shot editor-resume candidate are never persisted.
-- The checkpoint coordinator retains immutable FIFO ordering and enforces the two-checkpoint pending high-water mark for slow and failed persistence; its validated configurable values require positive safe integers and cap the timeout at the portable browser-timer ceiling. The editor integration visibly freezes body changes at failure/capacity, exposes retry, and prevents owner transfer before ordered drain. Deliberate non-default values require volume/failure tests so an extremely eager or lax policy is not shipped accidentally.
-- Expanding grouped History entries may reveal exact revisions but must not change the immutable contribution records or accept group labels/payloads as executable markup.
-
-The detailed controls and hostile cases are in [Query-first historical views](./proposals/QUERY_FIRST_HISTORY.md), [Continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md), and the [proposed verification plan](./TESTING.md#proposed-continuous-workspace-verification-plan).
-
-## Future network features
-
-AI and collaboration must remain opt-in. A future provider must:
-
-1. display its endpoint/model and the content being sent;
-2. require an explicit user action and support cancellation;
-3. validate protocols and redirects, and define private-network policy;
-4. keep returned material as a proposal and preview sanitized output;
-5. apply accepted changes through ordinary attributed operations;
-6. distinguish provider identity from the approving human;
-7. store credentials in an appropriate host secret facility, never document metadata or contributor `localStorage`;
-8. use a dedicated CSP/capability/build or explicit permission flow;
-9. define retention, logging, authentication, offline failure, and threat behavior;
-10. add security tests before the feature is described as supported.
-
-Yjs in the editor is not itself a secure collaboration implementation. A transport would also require authentication, authorization, structural conflict semantics, ledger ordering, and recovery design.
-
-## Security review checklist for contributions
-
-- Does this add an input, parser, URL, file type, command, plugin, permission, origin, or secret?
-- Can hostile content cross the browser/native or document/render boundary?
-- Are validation, size bounds, and sanitization applied at the authoritative boundary?
-- Does failure preserve the primary document, contribution ledger, and recoverable output?
-- Does standalone behavior bypass a control present only in Rust?
-- Does a schema/model change require a migration and hostile fixture?
-- Does historical mode reject mutation in the controller as well as the rendered controls?
-- Are materialized snapshots detached, validated, bounded, and sanitized exactly like live/opened content?
-- Can configurable checkpoint values or accumulated failed work exhaust memory, CPU, or history storage?
-- Are CSP/capability changes minimal and documented?
-- Are accepted AI/automation changes attributable and user-approved?
-- Are success and malicious/failure cases covered by tests in [Testing](./TESTING.md)?
-- Are residual limitations recorded rather than hidden?
-
-Report vulnerabilities privately to the project maintainers before public disclosure. The repository does not currently define a separate reporting address or coordinated-disclosure SLA.
+See [Known limitations](./KNOWN_LIMITATIONS.md) for priorities and evidence.
