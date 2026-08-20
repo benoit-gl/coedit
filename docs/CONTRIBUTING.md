@@ -37,6 +37,73 @@ The current decision record is [`docs/proposals/README.md`](./proposals/README.m
 - Do not change schema/wire/hash/recovery formats without explicit compatibility/migration work.
 - Do not claim native parity because a capability type exists; use `host-deferred` honestly until implemented.
 
+## Cross-layer change playbooks
+
+These are durable dependency maps, not exhaustive file inventories. Use Traceability/source for exact current symbols; use these playbooks to avoid implementing only one side of a contract.
+
+### Add or change a persisted document operation
+
+Review/change together:
+
+1. TypeScript `DocumentOperation` shape and pure domain/tree semantics, including affected-node reporting and invalid cases.
+2. Controller initiation through the normal draft-transition/serialization path.
+3. Memory-gateway semantics and tests.
+4. Mirrored Rust operation/wire shape, validation and transactional SQL behavior.
+5. Contribution attribution/type/payload, revision/hash/snapshot behavior and rollback/reopen evidence.
+6. UI initiation/failure handling plus use-case, traceability, security and format documentation where affected.
+
+Do not land an operation only in the UI, memory adapter or Rust store; that creates silent host divergence.
+
+### Add or change a persisted field/schema/wire shape
+
+First classify the value as transient presentation state, existing generic metadata, typed document state, ledger-only metadata or normalized persisted relationship. If it is persisted/typed:
+
+- update TypeScript and Rust models plus constructors/cloning/serialization;
+- update schema/load/write/restore/hash/snapshot/export/recovery paths that include the value;
+- define old-document/default semantics;
+- because no migration framework exists, design/version/test migration before claiming old documents remain writable;
+- update `DOCUMENT_FORMAT.md` and compatibility/hostile fixtures.
+
+A fresh-database success is not format compatibility evidence.
+
+### Change rich text or checkpoint semantics
+
+Treat Tiptap schema/extensions, browser sanitization, Rust sanitization, Yjs state/update capture, `BodyEditBatchCoordinator`, checkpoint policy, transition drains, History grouping and export as one boundary.
+
+- An allowed formatting feature must survive the intended editor→sanitizer→persistence→reload/restore path without creating an unsafe native bypass.
+- Changes to `groupId`, threshold/boundary or retry/backpressure semantics must be reviewed against grouped History and storage-growth expectations.
+- Define Markdown behavior explicitly; it remains lossy rather than a recovery format.
+- Test malicious HTML/URLs, paste, reload/restore, undo/redo/IME and failure/ordering at the appropriate seam.
+
+### Add a gateway capability or another host
+
+Use the smallest capability that states what the host really supports. For a shared capability:
+
+- define the focused TypeScript port/capability and absence semantics;
+- implement/test memory behavior when applicable;
+- map Tauri through a narrow command and authoritative Rust validation/store behavior when applicable;
+- orchestrate through the controller rather than importing adapters into components;
+- define durability, attribution, limits, sanitization, hashes, history/revision semantics, recovery/export and platform evidence.
+
+For native-only behavior, prefer a discriminated capability over a method that exists on every host only to reject. A new host should get its own explicit composition root rather than runtime host detection in shared UI.
+
+### Add import/export/recovery behavior
+
+Classify each format as lossless recovery, interchange or presentation output before implementation. Specify identity/history/snapshot behavior and validation before calling anything an importer or round trip.
+
+- Centralize format/filename/dialog dispatch rather than adding one-off host paths.
+- Desktop output should preserve atomic replacement/failure behavior; standalone uses browser download semantics.
+- Test large/hostile content and overwrite/failure cases.
+- The current standalone and desktop JSON exports are not equivalent and neither imports; do not build new guarantees on an undocumented assumption of parity.
+
+### Add contributor/session management
+
+The types/tables are not a complete identity system. A real workflow must define registration/selection/reconciliation, local-profile-to-document matching, explicit session lifecycle, attribution behavior across hosts, and UI that never silently impersonates an existing contributor. Update the current P0 attribution risk and tests as part of that work.
+
+### Add AI, automation or collaboration
+
+These are product/security boundary changes, not simple provider wiring. Before accepted output can mutate a document, define endpoint/auth/authorization/consent/cancellation/privacy/retention behavior, provider versus approving-human attribution, sanitized proposal/preview semantics, offline/error behavior and CSP/capability changes. Collaboration additionally needs structural-operation conflict semantics, replica identity, ledger/revision ordering and recovery design; local Yjs presence does not supply those decisions.
+
 ## Changing History
 
 History has two separate contracts:
