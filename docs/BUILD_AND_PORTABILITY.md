@@ -14,6 +14,30 @@ Coedit has two intentional frontend outputs: a self-contained standalone HTML ar
 
 Prerequisites: Node 24, Corepack, Rust 1.90/Cargo, and platform-specific Tauri 2 prerequisites.
 
+## Artifact contracts
+
+The build commands above are not interchangeable evidence.
+
+### Standalone
+
+`corepack pnpm build` must produce a self-contained `dist/index.html` that can be opened directly through `file://`. The standalone build contract is:
+
+- generated JavaScript and CSS are inlined into the one distributable HTML artifact;
+- the build rejects unexpected external application assets/imports rather than silently producing a server-dependent bundle;
+- the generated CSP permits only the local resources required by the artifact and denies ordinary network connections (`connect-src 'none'`);
+- the runtime composition is `src/main.tsx` + `MemoryDocumentGateway` and has no Tauri IPC or native file capability;
+- source-root `index.html` is a Vite development entry, not the distributable artifact.
+
+### Tauri
+
+`corepack pnpm build:tauri` builds the frontend intended to run inside Tauri. It is not a standalone browser artifact and may rely on Tauri IPC. `corepack pnpm tauri:build` is the release/package evidence because it runs the Tauri frontend build and native Rust/package pipeline together.
+
+A raw `cargo build --release` is not equivalent: it does not prove that the correct frontend composition was built and embedded.
+
+### Development topology
+
+`corepack pnpm dev` and `corepack pnpm tauri:dev` intentionally use Vite on loopback for development/hot reload. Production Coedit does not use a local HTTP application server. A release artifact that attempts to load `127.0.0.1` is misbuilt.
+
 ## Standalone artifact
 
 `corepack pnpm build` runs TypeScript compilation plus the standalone Vite build. The custom inliner requires a single self-contained `dist/index.html`, embeds generated JavaScript/CSS, inserts a script CSP hash, and rejects unexpected external build assets.
@@ -57,6 +81,16 @@ The optional navigation-only sidebar and the proposed deterministic compact Navi
 
 Configured build targets are not support evidence. Claim a platform only after building and smoking the actual artifact there.
 
+### Platform qualification constraints
+
+These are durable constraints behind the table rather than claims of current support:
+
+- **Standalone/browser:** verify `file://` launch, Web Crypto/random APIs, Blob/download behavior, Tiptap/ProseMirror/Yjs interaction, CSP behavior, and any browser version named in support claims. A transpilation target is not runtime qualification.
+- **Linux native:** build on the target distro family and verify required WebKit/system libraries, dialogs, Unicode/space paths, packaging format and display-server behavior as applicable.
+- **macOS native:** build on macOS and verify WebView/dialog/path behavior plus signing/notarization/release assumptions before distribution claims.
+- **iPadOS/browser:** treat as a separate qualification project. Files/Safari launch semantics, downloads/import absence, touch interactions, dynamic viewport/software keyboard, safe areas, IME, scrolling/reveal and assistive technology require real-device evidence.
+- **iPadOS native:** requires a deliberate mobile host/document-picker/security-scoped-access design; desktop path-string assumptions are not a native iPad file model.
+
 ## Current release gaps
 
 There is no repository CI or automated multi-platform release matrix. Important remaining evidence includes:
@@ -68,6 +102,20 @@ There is no repository CI or automated multi-platform release matrix. Important 
 - migrations/old-format fixtures;
 - long-history SQL behavior;
 - platform-native package verification.
+
+## Operational troubleshooting
+
+These checks preserve topology knowledge that is easy to lose during build refactors.
+
+| Symptom | Likely cause | Correct action |
+|---|---|---|
+| Browser/native window tries `127.0.0.1` and fails | Development entry/configuration was launched as though it were a release artifact | For browser use, rebuild/open generated `dist/index.html`; for desktop release, use `tauri:build`; use loopback only via `dev`/`tauri:dev`. |
+| Direct browser launch shows source/module CORS errors | Source-root `index.html` or non-inlined output was opened instead of the generated standalone artifact | Open only generated `dist/index.html` for serverless standalone use; a successful standalone build should not depend on external application JS chunks. |
+| `tauri.html` opens but document commands fail in a normal browser | The Tauri frontend was launched without the Tauri IPC host | Use the standalone entry in a browser or launch the frontend through Tauri. |
+| Standalone has no Open/SQLite backup | Expected volatile-host capability boundary | Export JSON/Markdown before closing; do not add rejecting native stubs or runtime host probing to “fix” this. |
+| Raw Cargo release behaves unlike packaged app | Native binary was built without proving the correct frontend/package integration | Use `corepack pnpm tauri:build` for distributable/release evidence. |
+
+If a build-system change alters any row above, update the artifact contract and qualification tests in the same change rather than treating the symptom as local setup trivia.
 
 ## Release checklist
 
