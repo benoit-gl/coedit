@@ -1,6 +1,6 @@
 # Feature traceability and code map
 
-This document answers “where is current behavior implemented?” Status terms are defined in [`docs/README.md`](./README.md).
+This document answers “where is current behavior implemented?” and “what automated evidence protects the current use-case contract?” Status terms are defined in [`docs/README.md`](./README.md).
 
 ## Current feature map
 
@@ -28,6 +28,26 @@ This document answers “where is current behavior implemented?” Status terms 
 | Standalone qualification | artifact/manual work | WP-9 proposed |
 | Native revision/group query parity | Tauri/Rust | WP-10 proposed |
 
+## Use-case → implementation → evidence
+
+This compact matrix is the stable bridge from the normative contracts in `RUP_VISION_AND_USE_CASES.md` to implementation and automated evidence. It is intentionally not an exhaustive action/symbol inventory.
+
+| Use case | Primary implementation path | Focused automated evidence | Current status / caveat |
+|---|---|---|---|
+| UC-01 Create document | `App`/controller → `DocumentGateway.createDocument` → memory or Rust store | `src/App.test.tsx`; `src/persistence/memoryGateway.test.ts`; Rust `store.rs` tests | Both hosts implemented; standalone volatile |
+| UC-02 Open portable document | Tauri file dialog/gateway → Rust IPC → `DocumentStore` open/validation | `src/persistence/tauriGateway.test.ts`; Rust `store.rs` tests | Desktop implemented; identity/migration/integrity caveats remain |
+| UC-03 Organize hierarchy | `DocumentCanvas`/`NodeBlock` → controller draft barrier → `DocumentOperation`/tree → gateway/store | `src/domain/tree.test.ts`; `src/components/DocumentCanvas*.test.tsx`; `src/application/useDocumentController.test.tsx`; Rust `store.rs` tests | Implemented; affected-node provenance is incomplete (R-25) |
+| UC-04 Edit metadata | `NodeMetadataFields`/`TagEditor` → draft participant → controller `updateNode` | `src/components/NodeMetadataFields.test.tsx`; `TagEditor.test.tsx`; controller tests | Implemented |
+| UC-05 Edit body | `RichTextEditor` → transaction classifier → `BodyEditBatchCoordinator` → controller `updateBody` → gateway/store | `bodyEditTransaction.test.ts`; `bodyEditorTransaction.test.ts`; `BodyEditBatchCoordinator.test.ts`; controller tests | Implemented; forced host exit remains outside drain protocol |
+| UC-06 Inspect History | controller raw paging/filter → `historyProjection` → `HistoryPanel`; optional exact group capability | `historyProjection.test.ts`; `HistoryPanel.test.tsx`; `memoryGateway.groupHistory.test.ts`; `tauriGateway.test.ts` | Grouped History implemented; desktop pre-window and native exact-group gaps remain |
+| UC-07 View historical revision | History action → controller query epoch/drain → `RevisionQueryCapability` → historical workspace projection | `useDocumentController.test.tsx`; `workspaceProjection.test.ts`; `HistoryPanel.test.tsx`; `HistoricalWorkspaceBanner.test.tsx`; `memoryGateway.test.ts` | Standalone implemented; Tauri host-deferred |
+| UC-08 Restore revision | History/banner confirmation → controller mutation → gateway/store compensating restore | `useDocumentController.test.tsx`; `memoryGateway.test.ts`; Rust `store.rs` tests | Implemented; append-only compensating revision |
+| UC-09 Export / backup | header action → draft drain → storage/export capability → browser download or native file/store path | controller/App tests; `memoryGateway.test.ts`; Rust `store.rs` tests | Implemented with documented fidelity/recovery differences |
+| UC-10 Close document | header action → draft transition barrier → host close → workspace reset | `draftTransition.test.ts`; `useDocumentController.test.tsx`; `App.test.tsx` | Controlled close implemented; forced process/page exit remains limited |
+| UC-11 Standalone artifact | `src/main.tsx` + memory composition + single-file Vite build | source-level `App`/memory tests; manual ST-01..ST-05 artifact suite in `TESTING.md` | Runtime artifact implemented; browser/platform qualification remains WP-9 |
+
+Automated suites prove their stated seams only. They do not turn jsdom, memory-adapter, or store tests into real-browser/native-package evidence; use `TESTING.md` for the required qualification level.
+
 ## WP-5 traceability
 
 | Requirement | Implementation | Focused automated evidence |
@@ -42,21 +62,6 @@ This document answers “where is current behavior implemented?” Status terms 
 | Ignore ordinary filters during explicit group expansion | memory exact group query | memory group-query tests |
 | Admit native gap honestly | `TauriDocumentGateway.contributionGroupQueryCapability` | adapter/type boundary; UI host message |
 | Preserve exact revision actions | History group/canonical checkpoint rendering | `HistoryPanel.test.tsx` |
-
-## Use-case status
-
-| Use case | Status |
-|---|---|
-| Create document | Implemented |
-| Open `.coedit` | Desktop implemented; identity/migration caveats |
-| Organize hierarchy | Implemented through continuous canvas |
-| Edit metadata | Implemented |
-| Edit body | Implemented with host-exit/parity limitations |
-| Inspect/filter History | Implemented with grouped History; desktop long-history/query limitations |
-| View historical revision | Standalone implemented; native host-deferred |
-| Restore revision | Implemented |
-| Export/backup | Implemented with fidelity/recovery limitations |
-| Close | Implemented for controlled in-app close; forced host exit remains limited |
 
 ## Important persistence/code boundaries
 
