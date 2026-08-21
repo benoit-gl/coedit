@@ -1,510 +1,244 @@
-# Proposed query-first historical-view design
+# Query-first historical views — decision record
 
-**Product decision:** Approved design direction.
+**Status:** standalone implementation is complete through WP-1, WP-2, WP-3, WP-5 and WP-7. Native revision materialization and exact contribution-group queries remain WP-10.
 
-**Implementation status:** Standalone WP-1 through WP-3 plus WP-7 canvas reuse are implemented: query contracts/materialization/capabilities, explicit workspace/request state and guards, View-first History, the shared sanitized read-only canvas, persistent Back/Restore banner, and UI integration tests. Native query parity remains proposed.
+## Adopted command/query separation
 
-**Change package:** [Continuous workspace proposals](./README.md)
+Historical inspection is not restoration.
 
-## Problem statement
+- **View/materialize** is a read-only query that returns a detached historical state and does not change revision, contributions, snapshots or live state.
+- **Restore** is an explicit compensating command that creates a new live revision while retaining later history.
 
-The Tauri History UI still exposes `restoreRevision` as the way to materialize an older state because native revision queries are host-deferred. Restoration intentionally creates a new compensating revision, changes the live document, appends a contribution, and stores another snapshot. That behavior is correct for resuming work from an old state, but wrong for inspection; the standalone UI now uses **View** for inspection.
+The shared application models live/historical state with a discriminated `WorkspaceProjection`; it does not rely only on `DocumentView.readOnly`.
 
-Both adapters already retain materialized revisions:
+## Query contract
 
-- the memory adapter has an internal revision-to-hash-bearing-`DocumentState` map; and
-- SQLite stores full `state_json` and `state_hash` rows in `snapshots`.
+A revision materialization query must:
 
-The standalone adapter has a read-only query that returns one of those states without changing the live workspace or ledger, the controller projects it through an explicit historical workspace mode, and WP-7 exposes the complete snapshot through the same sanitizer-backed canvas used live. The remaining host gap is native parity.
+- accept only a valid nonnegative revision;
+- locate exactly that stored snapshot;
+- deserialize/validate it as untrusted document state;
+- verify its stored hash using the host/schema-appropriate algorithm;
+- return detached data marked as verified;
+- never replace the current live state;
+- never increment revision or append contributions/snapshots;
+- never alter current contributor/session attribution;
+- never emulate a query through restore, temporary live-state replacement or export.
 
-## Goals
+A capability that is not implemented is represented as `host-deferred`; shared UI must not receive a method whose only behavior is to throw.
 
-1. Make **View** the primary action for a historical revision.
-2. Guarantee that viewing and leaving a revision is non-mutating.
-3. Render historical state through the same continuous canvas as live state.
-4. Make historical mode visibly, behaviorally, and programmatically read-only.
-5. Preserve restoration as an explicit compensating command.
-6. Support rapid movement between revisions without stale query responses replacing newer choices.
-7. Keep both standalone and Tauri adapters behind a common query contract.
-8. Drive the optional navigation-only hierarchy from the same active live/historical projection as the canvas.
+## Standalone implementation
 
-## Non-goals
+`MemoryDocumentGateway` exposes an available `RevisionQueryCapability`. Materialization:
 
-- Editing a snapshot in place.
-- Rewinding the revision counter or deleting later contributions.
-- Reconstructing state through contribution replay.
-- Comparing two revisions side by side in the first slice.
-- Importing/exporting historical revisions in the first slice.
-- Persisting historical-view canvas/navigator selection, expansion, scroll, or navigator visibility in the document file.
+- requires a valid revision;
+- clones/detaches stored state;
+- validates the tree;
+- recomputes and compares the stored state hash;
+- returns `MaterializedRevision` without mutating current state or ledger.
 
-## Terminology
+The controller drains pending live drafts before issuing the query, retains the exact live origin, rejects stale responses, and renders the accepted result through the shared read-only `DocumentCanvas`.
 
-| Term | Meaning |
-|---|---|
-| Live state | The current accepted document state to which commands may be applied. |
-| Historical materialization | An immutable clone of a stored snapshot for one prior revision. |
-| View | Non-mutating query plus read-only projection. |
-| Restore | Explicit command that copies historical material into a new current revision. |
-| Current revision | Revision number of the live document, even while an older revision is displayed. |
-| Viewed revision | Revision represented by the active historical projection. |
+**Back to current** restores the retained live projection locally and makes no gateway call. **Restore as new revision** remains separately confirmed.
 
-## Command/query separation
+## Workspace/request invariants
 
-The gateway should distinguish reads from mutations. Exact naming can evolve, but semantic separation is mandatory.
+The following are application contracts rather than incidental implementation detail:
 
-```ts
-// The first three shapes are implemented by WP-1; DocumentCommands remains design guidance.
-interface MaterializedRevision {
-  revision: number;
-  state: DocumentState;
-  stateHash: string;
-  hashVerification: "verified";
-}
-
-interface DocumentRevisionQueries {
-  materializeRevision(revision: number): Promise<MaterializedRevision>;
-}
-
-type RevisionQueryCapability =
-  | { kind: "available"; queries: DocumentRevisionQueries }
-  | { kind: "unavailable"; reason: "host-deferred" };
-
-interface DocumentCommands {
-  applyOperation(
-    operation: DocumentOperation,
-    context: ContributionContext,
-  ): Promise<DocumentView>;
-
-  restoreRevision(
-    revision: number,
-    context: ContributionContext,
-  ): Promise<DocumentView>;
-}
-```
-
-`materializeRevision` contract:
-
-- accepts a nonnegative integer revision;
-- rejects an unavailable revision with a specific not-found error;
-- recomputes the host/schema-appropriate state hash, compares it with the stored snapshot hash, rejects a mismatch, and returns detached/immutable state only with `hashVerification: "verified"`;
-- never changes the gateway's live current state;
-- never increments document revision;
-- never appends a contribution or snapshot;
-- never changes current contributor/session attribution;
-- applies the same structural/JSON/trust-boundary validation required when reading document state;
-- may cache immutable results, but cache behavior is not observable.
-
-For a staged standalone-first rollout, pass the concrete `RevisionQueryCapability` alongside the document gateway. The memory composition uses `kind: "available"`; until its native command exists, the Tauri composition uses `kind: "unavailable"` and the shared UI omits **View** while retaining its current restore behavior as a documented gap. Do not satisfy the interface with a method that only throws. The Tauri TypeScript composition must still compile, and native capability parity remains the final delivery slice.
-
-Hash verification here detects snapshot/state inconsistency under the algorithm appropriate to that host/schema. It is not authentication, a signature, cross-adapter hash equality, or proof that an attacker did not replace both state and hash.
-
-## Workspace state model
-
-Do not encode this only as `DocumentView.readOnly`. A discriminated union makes command eligibility explicit.
-
-```ts
-// Target canvas-era shape. WP-2 implements the same discriminants and retained-live/loading invariants
-// selectedNodeId currently carries canvas context; editorOwnerNodeId remains separate.
-interface NavigatorContextState {
-  navigatorSelectionId: string | null;
-  navigatorExpandedIds: ReadonlySet<string>;
-}
-
-interface CanvasContextState {
-  canvasContextNodeId: string | null;
-  canvasExpandedIds: ReadonlySet<string>;
-  scrollAnchor: string | null;
-}
-
-interface LiveWorkspaceContext {
-  view: DocumentView;
-  canvas: CanvasContextState;
-  navigator: NavigatorContextState;
-}
-
-interface RetainedLiveWorkspaceContext {
-  live: LiveWorkspaceContext;
-  resumeEditorNodeId: string | null; // one-shot candidate; never mounted ownership
-}
-
-interface HistoricalWorkspaceContext {
-  materialized: MaterializedRevision;
-  canvas: CanvasContextState;
-  navigator: NavigatorContextState;
-}
-
-type WorkspaceProjection =
-  | {
-      kind: "live";
-      displayed: LiveWorkspaceContext;
-      editorOwnerNodeId: string | null;
-    }
-  | {
-      kind: "historical";
-      displayed: HistoricalWorkspaceContext;
-      retainedLive: RetainedLiveWorkspaceContext;
-      currentRevision: number;
-      editorOwnerNodeId: null;
-    };
-
-type RevisionRequestState =
-  | { kind: "idle" }
-  | {
-      kind: "loading";
-      requestedRevision: number;
-      requestId: number;
-      origin: WorkspaceProjection;
-    };
-```
-
-Controller invariants:
-
-1. Mutation commands require `kind === "live"`.
-2. `currentRevision` always refers to the retained live view, not the viewed snapshot.
-3. Entering historical mode does not overwrite the retained live view.
-4. **Back to current** restores the retained live projection without a gateway mutation.
-5. A successful restore replaces the retained live view with the returned compensating revision and exits historical mode.
-6. Close clears both live and historical projections.
-7. Open/create resets historical mode and any materialization cache/query epoch.
-8. A loading request retains its exact origin projection. Failure/cancel returns to that origin unless a newer request/workspace epoch has superseded it.
-9. Live and historical canvas/navigator contexts are distinct. The historical union member owns a `RetainedLiveWorkspaceContext`, so **Back to current** does not depend on a loading-only origin or reconstruct UI state from historical IDs.
-10. `navigatorSelectionId`/`navigatorExpandedIds` are never aliases for `canvasContextNodeId`/`canvasExpandedIds`; actual DOM `focusRegion` is shell state outside the projection.
-11. Preferred Navigator dock visibility plus transient `historyDockRequestedOpen`, `activeCompactAuxiliary`, and `lastExplicitAuxiliary` are shell state outside this union; changing them alone cannot change the active projection, call `materializeRevision`, or issue a document mutation. `historyVisible` is derived from dock capability plus requested/active state. Only becoming effectively visible may issue its ordinary contribution-list query, and only when no valid page is loaded or the hidden panel became stale.
-12. Before historical mode, construct a fresh retained wrapper by pairing the live context with `resumeEditorNodeId` copied from actual `editorOwnerNodeId`, unmount the editor, and set actual ownership to `null`. **Back to current** or successful Restore validates and consumes that one-shot candidate, discards the wrapper, and returns to an ordinary `LiveWorkspaceContext` with no stored resume target. A later history entry derives a new candidate from then-current ownership.
-13. A monotonic `historyDataGeneration` advances for every accepted change that can affect contribution rows. Every History page request captures the workspace epoch, filter epoch, request ID, and data generation; a response may replace rows or clear stale state only if all still match. Thus a response started before a hidden accepted change is ignored rather than making obsolete rows appear current.
-
-All sets, IDs, and query-generation counters in this UI model are runtime projection/application state. They are excluded from `DocumentState`, snapshot hashes, `.coedit` persistence, recovery/Markdown/JSON exports, and contribution history. Only `navigatorDockPreferredOpen` may be retained separately as a versioned, validated, best-effort browser UI preference; it contains no document or node identity. `historyDockRequestedOpen`, `historyDataGeneration`, compact `activeCompactAuxiliary`, and `lastExplicitAuxiliary` are transient page-session state and never auto-restored.
-
-```plantuml
-@startuml
-state Welcome
-state "Live workspace" as Live
-state "Loading from live" as LoadingLive
-state "Loading from history" as LoadingHistorical
-state "Historical read-only" as Historical
-state "Restoring" as Restoring
-
-[*] --> Welcome
-Welcome --> Live : create/open
-Live --> LoadingLive : View revision R\nfreeze + flush live drafts
-LoadingLive --> Historical : materialization accepted
-LoadingLive --> Live : cancel/failure/stale result
-Historical --> LoadingHistorical : View another revision
-LoadingHistorical --> Historical : materialization accepted\nreplace historical projection
-LoadingHistorical --> Historical : cancel/failure/stale result\nretain prior historical projection
-LoadingHistorical --> Live : Back to current\ncancel request
-Historical --> Live : Back to current
-Historical --> Restoring : Restore as new revision + confirm
-Restoring --> Live : compensating revision accepted
-Restoring --> Historical : failure
-Live --> Welcome : close
-Historical --> Welcome : close document
-LoadingLive --> Welcome : close\ninvalidate request
-LoadingHistorical --> Welcome : close\ninvalidate request
-@enduml
-```
+1. document mutations require a live workspace;
+2. `currentRevision` always refers to retained live state even while an older snapshot is displayed;
+3. entering historical mode never overwrites retained live state;
+4. a loading request retains the exact origin projection from which it started;
+5. a failed/canceled request returns to that exact origin unless a newer workspace/request superseded it;
+6. viewing B supersedes an in-flight request for A;
+7. close/open/create invalidate prior historical requests;
+8. **Back to current** during loading invalidates the request and cannot later be overwritten by its result;
+9. stale query results are ignored rather than replacing newer live/historical intent;
+10. historical mode has zero editor owner and no mutation callbacks even if a control is invoked indirectly;
+11. live and historical canvas/Navigator contexts are distinct and presentation-only;
+12. each transition into historical mode derives a fresh one-shot resume-editor candidate from actual current ownership;
+13. Back/Restore validate and consume that candidate; ordinary live state never retains a stale resume target.
 
 ## Entering historical mode
 
-The query itself is non-mutating, but pending live drafts must have an unambiguous home.
+The required ordering is:
 
-Required sequence:
+1. user requests **View revision R**;
+2. controller begins the existing controlled transition and synchronously freezes live drafts;
+3. pending title/tag/body work is flushed and awaited;
+4. if draft persistence fails, remain live and issue no revision query;
+5. capture the now-current live origin plus workspace/request epoch and fresh resume candidate;
+6. issue `materializeRevision(R)`;
+7. accept only a response whose workspace/request identity is still current;
+8. on success, enter historical mode with detached state and no editor owner;
+9. initialize/prune historical canvas/Navigator state against that snapshot;
+10. on failure, restore the recorded live/historical origin and surface the query error.
 
-1. User requests **View** on revision R.
-2. Controller begins the existing controlled transition and synchronously freezes live draft participants.
-3. Pending title/tag/body changes are checkpointed and awaited. These saves may legitimately create live contributions because they predate the view request.
-4. Controller records the now-current `LiveWorkspaceContext` and copies actual editor ownership into a fresh one-shot resume candidate.
-5. Controller issues `materializeRevision(R)` as a query.
-6. A request token plus workspace epoch guards against stale results.
-7. On success, controller retains that wrapper, unmounts the editor, sets actual ownership to `null`, and enters historical mode with detached state.
-8. On success, controller also initializes historical canvas/navigator state from compatible retained live IDs and prunes every ID missing from R.
-9. On failure, controller restores the request's origin projection (live for this first request), including its exact navigator context, unfreezes drafts when appropriate, and reports the query error.
-10. The materialization itself adds no contribution.
+Saving drafts before the query may legitimately append live contributions because those edits predate the View request. The **materialization itself** must remain non-mutating.
 
-```plantuml
-@startuml
-actor Author
-boundary HistoryPanel
-control WorkspaceController as Controller
-control DraftTransitionCoordinator as Drafts
-participant "Document revision queries" as Queries
-database "revision snapshots" as Snapshots
-boundary DocumentCanvas as Canvas
+## Historical UI invariants
 
-Author -> HistoryPanel : View revision R
-HistoryPanel -> Controller : viewRevision(R)
-Controller -> Drafts : begin and freeze live drafts
-Controller -> Drafts : flush()
-Drafts --> Controller : live drafts accepted
-Controller -> Controller : retain live view/current revision; new request token
-Controller -> Queries : materializeRevision(R)
-Queries -> Snapshots : read state/hash for R
-Snapshots --> Queries : stored state + hash
-Queries -> Queries : validate state; recompute/compare hash
-Queries --> Controller : MaterializedRevision
-Controller -> Controller : accept only current token/epoch
-Controller -> Canvas : historical projection (read-only)
-Canvas --> Author : revision banner + document
-@enduml
-```
+- historical mode always identifies viewed and current revisions;
+- historical content uses the same sanitizer-backed canvas as live previews;
+- no title/tag/body editor, draft participant or structural mutation surface is mounted;
+- Back is the primary safe exit;
+- Restore requires confirmation and explains that a new revision will be appended while later history is retained;
+- historical disclosure/selection/scroll are local presentation state;
+- presentation state such as History filters/group expansion/canvas/Navigator disclosure is not persisted document state;
+- exporting the retained live document while a historical snapshot is visibly displayed must not happen accidentally; any historical export behavior requires its own explicit query-side design.
 
-“Before viewing, save pending live edits” must be communicated in status behavior but must not be presented as the historical query modifying history.
+## Back to current
 
-## Adapter behavior
+Back is intentionally local application state restoration:
 
-### Memory adapter
+1. invalidate any pending historical request;
+2. restore the retained live projection;
+3. validate the retained one-shot resume candidate against authoritative live state;
+4. remount/focus it only if still active/visible;
+5. discard the retained wrapper/candidate;
+6. perform no gateway mutation and append no contribution.
 
-The existing internal revision map is the source.
+Back must not depend on re-materializing the current revision.
 
-- Look up exact revision.
-- Clone through the JSON validation/detachment boundary.
-- Recompute the browser canonical state hash and compare it with the hash recorded for that revision; reject mismatch.
-- Return without assigning `current`, modifying `contributions`, or adding a revision-map entry.
-- Tests must compare private state indirectly through subsequent live operations and history counts.
+## Restore from historical mode
 
-The current recovery export does not serialize the internal snapshot map, so only revisions available in the current runtime can be viewed after a standalone session starts. No importer is added by this proposal.
+Restore remains a command, not a query.
 
-### Rust/SQLite adapter
+Required behavior:
 
-Add a read-only store method and Tauri command, conceptually:
+1. require explicit confirmation of source revision and append-only consequence;
+2. issue exactly one `restoreRevision` command with current contribution context;
+3. on success, use the returned authoritative live `DocumentView` as the new current state;
+4. append exactly one compensating revision and retain all intervening ledger history;
+5. rebuild live canvas/Navigator context against that returned state rather than copying historical UI context;
+6. if the retained resume ID survives under changed ancestry, expand every required canvas ancestor before mounting it;
+7. if the target is absent/deleted/cannot be made visible, clear it and choose a visible fallback;
+8. discard the retained historical wrapper/candidate;
+9. if restore fails, remain in the historical projection with retained live state unchanged.
 
-```text
-materialize_revision(revision)
-  SELECT state_json, state_hash
-  FROM snapshots
-  WHERE revision = ?
-```
+The controller must not first mutate to “view” the snapshot, restore twice, or append a separate “viewed revision” contribution.
 
-Requirements:
+## Grouped History interaction
 
-- use a shared/read-only connection path where practical;
-- do not start a mutation transaction;
-- deserialize and validate `DocumentState`;
-- verify the state claims the requested revision;
-- recompute the format-1 Rust state hash and compare it with `state_hash` before returning;
-- do not change metadata, nodes, sessions, contributions, or snapshots;
-- return a typed not-found/invalid-snapshot error.
+WP-5 adds semantic grouping without weakening query separation.
 
-### Tauri adapter
+A collapsed body-edit group uses its newest/final checkpoint as the canonical View target. Expanding the group exposes exact checkpoint revisions, each of which can be viewed independently on a capable host.
 
-Map the shared query to a dedicated IPC command. Do not emulate viewing by calling `restore_revision`, exporting JSON, or temporarily replacing the open store.
+A page-spanning group is labeled partial until exact group data is known. Standalone uses `ContributionGroupQueryCapability` to fetch all physical members of the `groupId`; this is another read-only query and does not inherit ordinary History search/node filters.
 
-## Historical UI
+Exact group-query invariants:
 
-### History panel
+- filter by one exact non-empty `groupId`;
+- return immutable raw contributions newest-first;
+- page with an exclusive revision cursor;
+- permit callers to continue until the complete group is known;
+- deduplicate by contribution identity in the caller;
+- perform no document/ledger/snapshot mutation;
+- ignore ordinary History search/node/contributor filters for this explicit expansion request.
 
-- The primary row action becomes **View**.
-- **Restore** is removed from ordinary row actions or demoted behind a menu; restoration is offered prominently after a revision is being viewed.
-- The viewed row is highlighted and marked `Viewing`.
-- Selecting another row updates the same historical canvas.
-- Grouped body contributions default to viewing the group's final checkpoint; expanded checkpoints can each be viewed exactly.
-- A group crossing the raw cursor-page boundary is labeled partial (`at least N`) until its exact `groupId` query has fetched all checkpoints; loaded contribution count and visible collapsed-row count remain distinct.
-- Loading and failure states are independent of live mutation status.
-- Where available container width preserves the canvas minimum, History is effectively visible when `historyDockRequestedOpen` is true. Otherwise it is visible only when `activeCompactAuxiliary === "history"` and uses that shared slot as a labeled `role="dialog"` with `aria-modal="true"`, traps focus, makes the workspace inert, supports `Escape`, and restores focus to the History invoker on ordinary dismissal.
-- `activeCompactAuxiliary` permits only `none`, `navigator`, or `history`. The first slice requires closing one drawer before its background header toggle is reachable; keyboard/programmatic handoff closes the loser without focus-return and places focus in the winner. Breakpoint collision uses the deterministic focused-panel/`lastExplicitAuxiliary` rule in the continuous-workspace design.
-- Initial contribution loading and accepted-change first-page refresh follow effective `historyVisible`, not `historyDockRequestedOpen` alone. A first reveal with no valid page queries once. Hidden History retains its page, becomes stale after relevant accepted changes, and refreshes exactly once when it next becomes visible. A hide/reveal with an already valid, non-stale page issues no query. Workspace/filter/request guards plus the captured `historyDataGeneration` reject an older in-flight response after a hidden change and prevent it from clearing stale state.
+## History visibility/stale-response contract
 
-### Persistent banner
+The remaining shell work must preserve query correctness when History is hidden by layout/Navigator state:
 
-Historical mode must display a banner that cannot scroll out of awareness:
+- first effective reveal with no valid page issues one guarded contribution query;
+- hiding/revealing a valid non-stale page issues no redundant query;
+- relevant accepted live changes while hidden mark History stale and advance a monotonic data generation;
+- an older in-flight response cannot clear that newer stale state;
+- next effective reveal performs exactly one current guarded refresh;
+- responsive changes do not rewrite History’s requested-visible preference merely to match effective visibility.
 
-```text
-Viewing revision 17 · read only · current revision is 43
-[Back to current] [Restore as new revision…]
-```
+This is a contribution-list query rule, not a document mutation rule.
 
-The banner:
+## Current native gap
 
-- identifies both viewed and current revisions;
-- uses text/iconography in addition to color;
-- is announced when mode changes;
-- exposes **Back to current** as the primary safe action;
-- requires confirmation before restore;
-- reports restore consequences: a new revision will be appended and later history retained.
+Tauri advertises both revision materialization and exact contribution-group querying as host-deferred. The shared UI therefore:
 
-### Optional navigator
+- does not expose fake View actions that would throw;
+- temporarily retains row-level Restore;
+- labels a partial group's loaded checkpoints honestly;
+- states that full exact expansion is unavailable in the current host.
 
-When open, the navigation-only `NavigatorPanel` consumes the historical materialization currently shown by `DocumentCanvas`; it must never keep showing the retained live tree behind a historical canvas. Its title rows are plain text and its only behaviors are independent disclosure, selection/location, and focus of a read-only historical block.
+## WP-10 requirements
 
-- No editor, title/tag field, insertion affordance, structural menu, drag/drop, or live command is rendered.
-- Opening, closing, browsing, revealing, and focusing a historical row are local UI actions and cannot call `materializeRevision` again unless the user separately chooses another revision in History.
-- Navigator selection/expansion are temporary historical context. They are initialized from compatible live IDs, preserved where valid across historical revision queries, and discarded on **Back to current**.
-- A docked row locate expands necessary historical canvas ancestors and scrolls without claiming canvas focus. **Focus in document** transfers focus to a read-only block handle/heading. Historical mode has no draft drain, but compact-drawer row activation still validates/reveals the target before closing the drawer and focusing it; a stale/invalid target leaves the drawer open on a valid fallback.
-- Navigator and History may both dock only when their container leaves the canvas at or above its named readable minimum. Whenever either uses an overlay/drawer, they are mutually exclusive: opening either closes the other, no nested focus traps are allowed, and ordinary dismissal returns focus to that panel's own invoker. Atomic handoff suppresses the losing panel's return and moves focus directly into the winner.
-- Historical mode retains the same docked/drawer, ARIA tree, focus-return, and storage-fallback behavior specified by [Optional navigator sidebar](./CONTINUOUS_BLOCK_OUTLINE.md#optional-navigator-sidebar).
+Native parity must add narrow read-only Tauri/Rust queries for:
 
-### Command availability
+1. exact snapshot materialization by revision;
+2. exact contribution-group paging by `groupId`;
+3. scalable indexed raw History paging/filtering beyond the current newest-100,000 pre-window.
 
-Historical mode permits:
+### Native materialization requirements
 
-- scrolling, text selection, copy;
-- collapse/expand as local view state;
-- optional navigator disclosure, selection, locate, and read-only block focus;
-- History search, paging, and viewing another revision;
-- Back to current;
-- explicit restore;
-- close document.
+The Rust/Tauri query must:
 
-Historical mode prohibits:
+- read the requested snapshot without beginning a mutation transaction;
+- verify that the returned state identifies the requested revision;
+- deserialize/validate tree/typed data as untrusted input;
+- recompute and compare the stored host/schema state hash before returning;
+- preserve the currently open live store and all materialized rows;
+- return detached data through a narrow typed IPC result;
+- expose a typed not-found/invalid-snapshot failure;
+- make no file timestamp/content/ledger change through the query itself where the platform permits that to be asserted.
 
-- title, tag, and body editing;
-- create, move, reparent, reorder, delete, or direct node restore;
-- document rename;
-- checkpoint timers and draft participants;
-- any command that implicitly targets the retained live document while the historical state is displayed.
-- any navigator action that invokes title/tag/body editing or structural mutation.
+Do not emulate native View by calling restore, exporting JSON, replacing the store temporarily, or broadening a mutable command.
 
-Exporting the historical state is deferred unless explicitly added as a query-side use case. The first implementation should disable Export in historical mode rather than accidentally export the retained live document.
+### Native exact-group requirements
 
-## Selection, expansion, and scroll
+The Rust/Tauri group query must:
 
-- Preserve the complete `LiveWorkspaceContext` (canvas context/expansion/scroll and navigator selection/expansion) inside a `RetainedLiveWorkspaceContext`, alongside a fresh one-shot `resumeEditorNodeId`. Actual `editorOwnerNodeId` becomes `null` before historical rendering.
-- In historical mode, prefer the same canvas-context node ID if present and active at that revision; no editor owner exists there.
-- Otherwise choose its nearest available ancestor if determinable, then the first visible root.
-- Historical canvas expansion and navigator expansion are separate temporary sets, each initialized from its compatible live counterpart and pruned to the materialized state. Collapsing one never collapses the other.
-- Historical `navigatorSelectionId` is independent of `canvasContextNodeId`. Tree arrowing updates only navigator selection; locate may reveal/scroll, and explicit focus updates `canvasContextNodeId` after the target exists.
-- Moving among historical revisions retains the current historical `canvasContextNodeId` when possible.
-- Moving among historical revisions also retains navigator selection/expansion where IDs remain active; missing IDs fall back by stable hierarchy (ancestor, next, previous, first root), never by array position.
-- **Back to current** restores `retainedLive.live` after the live projection renders; the one-shot `resumeEditorNodeId` is validated against that authoritative live state before it may become actual editor ownership, then the wrapper and candidate are discarded. Shell `focusRegion` changes only when the chosen canvas focus target is ready.
-- Preferred Navigator dock visibility and page-session `historyDockRequestedOpen` are not swapped with revisions. A visible dock stays mounted while its data source changes; History remains completely usable when the navigator is absent. Compact drawer visibility is transient and may close under the one-modal-panel rule when History opens.
+- query exact `group_id` at the store layer rather than depending on the ordinary 100,000-row broad history pre-window;
+- page newest-first by exclusive revision cursor;
+- return only immutable contribution rows;
+- ignore ordinary History filters;
+- preserve complete revision/attribution/payload data required for exact checkpoint actions;
+- perform no mutation or snapshot creation.
 
-## Restoration from historical mode
+### Native shared-contract evidence
 
-Restoration remains a command and uses the existing append-only semantics.
+WP-10 is not complete merely because an IPC method exists. Qualify at least:
 
-```plantuml
-@startuml
-actor Author
-boundary "Historical banner" as Banner
-control WorkspaceController as Controller
-participant "Document commands" as Commands
-database "live store + ledger" as Store
-
-Author -> Banner : Restore as new revision
-Banner --> Author : confirm source R and consequence
-Author -> Banner : Confirm
-Banner -> Controller : restoreViewedRevision()
-Controller -> Controller : assert historical mode and source R
-Controller -> Commands : restoreRevision(R, context)
-Commands -> Store : compensating transaction
-Store --> Commands : new live DocumentView at revision N
-Commands --> Controller : accepted live view
-Controller -> Controller : build new live context from accepted view
-Controller -> Controller : resolve retained UI intent into new live context;\nprune IDs; reveal active target or clear; consume candidate
-Controller -> Controller : exit historical; reset editor generation
-Controller --> Author : live canvas at N; history retained
-@enduml
-```
-
-Exactly one restore command is issued. The controller must not first materialize by mutation, restore twice, or append a separate “viewed revision” contribution. Unlike **Back to current**, Restore does not reinstate the retained live context verbatim: it seeds a new context from `retainedLive.live` UI intent and resolves every canvas/navigator ID and scroll anchor against the accepted compensating view. A one-shot `resumeEditorNodeId` may become initial actual ownership only if it is active and visible in the rebuilt canvas projection. If its stable ID moved beneath different ancestry, expand every required canvas ancestor before mounting it; if that cannot produce a valid visible target, clear it and choose a visible fallback. Then discard the retained wrapper/candidate. Historical selection/expansion/scroll state is never copied into the new live context.
-
-## Concurrency and stale responses
-
-- Every materialization request carries the workspace epoch and monotonically increasing request ID.
-- Viewing revision B supersedes a pending request for A.
-- Closing/opening/creating a document invalidates all prior materialization requests.
-- A response for a different document ID is rejected.
-- Query cancellation is optional; ignoring stale results is mandatory.
-- **Back to current** during a historical-origin request cancels/invalidates it and immediately restores the retained live projection; **Close** invalidates a request from either origin.
-- Live commands are unavailable after historical mode is accepted. Before acceptance, the controlled transition freezes live drafts.
-- If another external process changes the native file, existing single-process/locking policy applies; this proposal does not add live file watching.
+- known/missing/invalid revision materialization;
+- hash mismatch/corrupt snapshot failure;
+- no live-state/revision/ledger/snapshot mutation before versus after View;
+- subsequent live edit continuing from the unchanged current state;
+- exact group spanning more than one query page;
+- group query deduplication/order/cursor completion;
+- ordinary History filters not affecting exact expansion;
+- stale request cancellation/ignoring through the controller;
+- row-level Restore fallback removed only after View is actually reachable;
+- Tauri capability advertises `available` only after the real query path and evidence exist.
 
 ## Error behavior
 
 | Failure | Required result |
 |---|---|
-| Pending live draft cannot save | Remain live; do not issue historical query. |
-| Revision unavailable | Restore the recorded origin projection (live or prior historical); show not-found error. |
-| Snapshot invalid/hash mismatch | Restore the recorded origin projection; do not render partial state; show integrity error. |
-| Stale response | Ignore silently except diagnostic logging. |
-| Restore fails | Remain in historical view; retained live state stays unchanged. |
-| Back to current | Cannot require a gateway mutation and should not fail after retained state exists. |
-| Historical navigator target disappears between query/activation | Prune by stable ID, retain tree focus on a valid fallback, announce unavailable target, and issue no live command. |
-| Navigator preference initial read is missing/malformed/denied | Default the dock preference closed; do not fail materialization or document opening. |
-| Navigator preference write later fails | Retain the user's current in-memory dock choice for the session, report non-blockingly, and do not snap the UI closed. |
+| pending live draft cannot save | remain live; issue no historical query |
+| revision unavailable | return to exact recorded origin; show not-found error |
+| snapshot invalid/hash mismatch | fail closed; render no partial historical state |
+| stale response | ignore it; do not replace newer intent |
+| Back during loading | invalidate request and restore retained live projection |
+| Close/open/create during loading | invalidate old request so it cannot reinstall stale state |
+| Restore failure | remain historical; retained live state unchanged |
+| stale Navigator/canvas target | prune by stable ID and choose a valid fallback; no live command from historical mode |
 
-## Proposed tests
+## Acceptance criteria retained for future work
 
-### Shared query contract
+The query-first design remains accepted only while these criteria hold:
 
-For every adapter that advertises `RevisionQueryCapability.kind === "available"` (memory at the standalone milestone; Tauri at package completion):
+1. Viewing an available revision does not change live revision/state, contribution count or snapshot count through the materialization query itself.
+2. Returned state is detached, structurally valid and hash-verified before rendering.
+3. Historical mode is explicit and has no reachable mutation path except separately confirmed restore.
+4. Back returns to retained live state without a gateway mutation.
+5. Restore appends exactly one new compensating revision and preserves later history.
+6. Rapid revision selection cannot display a stale result; failure/cancel restores the exact origin projection.
+7. Back/Close/open/create invalidate pending responses that would otherwise overwrite newer state.
+8. The same continuous canvas renders live and historical states, with zero live editor in historical mode.
+9. Group collapsed View targets the final checkpoint and exact expanded revisions remain individually viewable on capable hosts.
+10. Navigator/history presentation state never enters persisted document state or causes a materialization mutation.
+11. Restore rebuilds live UI context against the returned compensating view and never mounts an editor in a hidden/invalid block.
+12. Each historical entry derives a fresh resume candidate; Back/Restore validate and consume it.
+13. History first-reveal/stale-refresh behavior remains generation-guarded across Navigator/responsive hiding.
+14. Standalone must pass this contract before native parity is claimed; WP-10 must make Tauri pass the same semantic contract for the capabilities it advertises.
 
-1. Materialize known revision and compare exact portable state.
-2. Confirm live current revision/state is unchanged.
-3. Confirm contribution and snapshot counts are unchanged.
-4. Confirm returned state is detached from adapter storage.
-5. Reject missing, negative, fractional, or malformed revision.
-6. Reject a validly shaped snapshot whose recomputed hash differs from its stored hash.
-7. Confirm later live edits still begin from the original current state.
+## Remaining qualification
 
-### Controller
-
-- flush live drafts before querying;
-- no query when flush fails;
-- enter historical/read-only mode on current response;
-- ignore stale response after another revision/workspace request;
-- failed/canceled live-origin query returns live; failed/canceled historical-origin query retains the prior historical projection;
-- Back/Close during loading invalidate the request and cannot be overwritten by its eventual response;
-- Back restores retained live projection without gateway call;
-- Back validates and consumes the one-shot resume candidate; after any later live owner transfer, the next historical entry captures that new owner rather than reusing stale state;
-- mutation commands rejected in historical mode;
-- restore calls command exactly once and exits to returned live revision;
-- restore failure retains historical mode;
-- successful restore rebuilds live canvas/navigator/scroll context against the accepted compensating view, expands changed required ancestry for an active resume target or clears it for a visible fallback, consumes the candidate, and imports no historical UI context;
-- restore fixture where the same stable resume ID has different ancestry at the target revision proves required-ancestor expansion before mount; absent/deleted target proves visible fallback and no hidden editor owner;
-- canvas-context fallback and retained-live restoration, deterministic shell focus-region transitions, and zero editor owner in historical mode;
-- separate live/historical navigator contexts survive success/failure/Back correctly and prune missing stable IDs;
-- navigator visibility does not alter query epochs or the retained origin projection.
-- effective History visibility controls initial/refresh contribution queries: first reveal without a valid page queries once; shrink/expand and Navigator handoff with a valid non-stale page issue none; hidden accepted changes advance `historyDataGeneration`, mark stale, invalidate older responses, and reappearance coalesces them into one current guarded refresh.
-
-### UI/accessibility
-
-- View is primary History action;
-- persistent banner exposes viewed/current revision and read-only state;
-- no editable surface or structural mutation control in historical mode;
-- mode change announced;
-- grouped row final revision and expanded checkpoint views;
-- keyboard-only View, Back, and Restore confirmation;
-- same canvas layout for live and historical projections;
-- open and closed historical navigator paths render the displayed snapshot, never retained live nodes;
-- navigator row browsing/reveal/focus remains read-only and tree selection stays distinct from canvas focus;
-- docked and modal-drawer focus/keyboard behavior remains correct while switching revisions.
-
-### Native integration
-
-- reopen document, materialize multiple stored revisions, close without writes;
-- file timestamp/size and ledger counts remain unchanged after view-only session where feasible to assert;
-- malformed snapshot fails closed;
-- IPC serialization matches TypeScript contract.
-
-## Acceptance criteria
-
-1. Viewing any available revision does not change live revision, live state, contribution count, snapshot count, or document file through the materialization query itself.
-2. A returned snapshot is structurally valid, detached, and hash-verified against its stored host/schema hash before rendering; mismatch fails closed without implying authentication.
-3. Historical mode is explicit and contains no reachable mutation path except confirmed compensating restoration.
-4. Back to current returns to the retained live state without an adapter mutation.
-5. Restore from historical mode appends exactly one new revision and retains all later history.
-6. Rapid revision selection cannot display a stale result, and failure/cancel restores the exact live or historical origin projection.
-7. Back/Close during loading invalidates the request and cannot be overwritten by its eventual response.
-8. The continuous canvas renders live and historical states through the same node projection/components.
-9. The standalone milestone passes the shared contract against memory; package completion additionally requires the Tauri adapter to pass the same contract.
-10. Documentation and UI consistently use **View** for queries and **Restore** for mutation.
-11. If the optional navigator is open, it renders only the active live or historical projection, exposes no mutation path, and restores the retained live navigator context on Back.
-12. Navigator state changes do not mutate, query, hash, snapshot, export, or enter the document; historical navigator state is temporary and safely pruned by stable ID.
-13. Restore builds a new live canvas/navigator/scroll context against the accepted compensating view, expands required changed ancestry before mounting an active editor-resume target or clears it for a visible fallback, and never copies historical UI context into live state.
-14. Every historical entry derives a fresh one-shot editor-resume candidate from actual live ownership; Back and Restore validate, optionally apply, and discard it, and ordinary live state never retains it.
-15. Initial and refresh contribution queries follow effective History visibility: first reveal without a valid page queries once, visibility-only transitions with a valid non-stale page issue no query, hidden accepted changes advance `historyDataGeneration` and mark the page stale, older in-flight responses cannot clear it, and the next reveal performs exactly one current guarded refresh.
-
-## Implementation sequence
-
-1. **Implemented (WP-1):** define verified `MaterializedRevision`, `DocumentRevisionQueries`, and the discriminated `RevisionQueryCapability`.
-2. **Implemented (WP-1):** implement/test the memory query without UI changes.
-3. **Implemented (WP-2):** add `WorkspaceProjection`, retained-origin request state, Back, stale-response guards, and command guards to the controller.
-4. **Implemented (WP-3):** add View/Back UI using the existing editor layout, with a static sanitizer-backed historical detail and persistent banner. Standalone artifact qualification remains part of the broader milestone.
-5. **Implemented for available hosts (WP-3):** remove row-level Restore in favor of explicit historical banner confirmation; host-deferred Tauri retains its row action until native View exists.
-6. **Implemented at the capability boundary (WP-1):** keep the Tauri composition compiling with the query capability explicitly unavailable and document that temporary host difference.
-7. **Next:** with the UI-neutral checkpoint core and read-only canvas scaffold implemented, reuse `DocumentCanvas` for historical mode only through the active-editor checkpoint safety gate.
-8. After canvas parity, add grouped History and exact checkpoint expansion over the stable coordinator-owned group IDs.
-9. Add the optional navigator against the same `WorkspaceProjection`, with separate live/historical UI contexts and no command surface.
-10. In WP-10, add the Rust store query, IPC command, Tauri adapter, and shared contract fixtures/tests after standalone qualification.
-11. Update current architecture, persistence, sequence, RUP, traceability, testing, security, and limitations documents as each milestone becomes implemented.
+Browser/accessibility behavior belongs to WP-8, standalone artifact qualification to WP-9, and native query parity to WP-10. The fundamental query/command design is already implemented and should not be described as future work.

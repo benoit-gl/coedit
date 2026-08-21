@@ -1,231 +1,109 @@
 # Known limitations and risk register
 
-This is the current RUP risk list for version `0.1.0`, not a roadmap promise. Each item is grounded in the present code. Severity combines likelihood and impact; it is not a security rating.
+This is the current risk list for Coedit Local `0.1.0`. It records present limitations, not roadmap promises.
 
-Priority meaning:
+## Priority guide
 
-- **P0**: credible document loss, corruption, or attribution-integrity risk; address before relying on Coedit for important work.
-- **P1**: material correctness, recovery, compatibility, or architectural risk.
-- **P2**: scalability, usability, portability, or maintainability limitation.
-- **P3**: reserved capability or polish gap with limited current impact.
+- **P0** — credible document loss, corruption, or attribution-integrity risk.
+- **P1** — material correctness, recovery, compatibility, or architectural risk.
+- **P2** — scalability, usability, portability, or maintainability limitation.
+- **P3** — reserved capability or polish gap.
 
-## Summary register
+## Current register
 
-| ID | Priority | Area | Current limitation | Primary evidence |
-|---|---|---|---|---|
-| R-03 | P0 | Attribution | Opening another author's file can silently attribute new work to its first contributor | `App` `contributor` fallback; no registration API |
-| R-04 | P1 | Integrity | Memory revision queries verify snapshot hashes, but desktop open/restore and both restore paths still do not verify/replay the ledger | `materializeRevision`; `DocumentStore::open`/`restore` |
-| R-05 | P1 | Compatibility | Format/version fields exist, but there is no migration machinery | `FORMAT_VERSION`; `DocumentStore::open` |
-| R-06 | P1 | Draft lifecycle | Controlled transitions drain registered drafts, but page/process exit and forced host suspension cannot await them | controller/editor; React/browser lifecycle |
-| R-07 | P1 | Recovery export | Desktop JSON silently caps history at 100,000; neither JSON envelope has an importer | Rust export; both product workflows |
-| R-08 | P1 | CRDT integrity | Desktop decodes but does not reconcile/verify incremental Yjs update, full state, and HTML | `DocumentStore::apply_sql(UpdateBody)` |
-| R-09 | P1 | Adapter parity | Browser/Rust hash, sanitization, limits, sessions, and Markdown semantics differ; new TS fixtures have no Rust conformance yet | protocol fixtures versus Rust store |
-| R-10 | P1 | Backup UX | `.coedit-backup` is produced, but Open filters only `.coedit` | `tauriFiles.ts` filters |
-| R-11 | P2 | History | Shared UI pages/filter-before-limit correctly, but desktop only considers the newest 100,000 rows | `ContributionPage`; `DocumentStore::contributions` |
-| R-12 | P2 | Storage growth | Every revision stores a complete JSON snapshot | `insert_snapshot` on create/apply/restore |
-| R-13 | P2 | Standalone durability | Page close/reload loses the document; no import or durable browser store exists | `MemoryDocumentGateway` |
-| R-14 | P2 | Multi-document/concurrency | One process-global store/mutex supports one open document and serialized commands | `AppState` in `lib.rs` |
-| R-15 | P2 | Session model | Sessions are partial: memory has none; desktop starts lazily and never ends them | both gateways/schema |
-| R-16 | P2 | Rich-text/export | Markdown conversion is deliberately lossy; browser and Rust converters differ | `markdownFor`; Rust `markdown`/`plain_text` |
-| R-17 | P2 | Platform support | Linux/macOS are unverified; iPadOS native/touch/file lifecycle is unfinished | build config/UI/dialog contracts |
-| R-18 | P2 | UI accessibility/touch | Canvas actions have keyboard equivalents, but touch discovery, narrow layout, and browser/ARIA qualification remain incomplete | `DocumentCanvas`, `NodeBlock`, `styles.css`, toolbar |
-| R-19 | P2 | Test/release confidence | Focused component coverage exists, but no browser E2E/IPC/migration/a11y/CI/platform matrix; Rust does not consume the protocol fixtures | current test files/repository |
-| R-21 | P2 | Tampered-data defense | Open validates structure but does not re-sanitize all stored HTML or validate snapshot hashes/content limits | `load_state`; `restore` |
-| R-22 | P2 | Crash durability | Atomic output syncs the file, not explicitly its parent directory | `atomic_write`, `atomic_copy`, `replace_file` |
-| R-23 | P3 | Reserved features | Attachments, AI, collaboration, contributor management, and direct node restore have no complete workflow | schema/types/interfaces with missing UI/adapters |
-| R-24 | P3 | Canvas structure | Dragging reparents only as the target's last child; no between-block/root drop target exists, and affected-node reporting is limited | `DocumentCanvas`; both operation models |
-| R-26 | P2 | Historical inspection | Standalone View/Back uses the shared read-only canvas, but native revision queries remain incomplete | `workspaceProjection`; `DocumentCanvas`; `HistoryPanel`; Tauri query capability |
-| R-27 | P2 | Edit history/noise | Semantic checkpoints now share episode group IDs, but History does not yet collapse them and every physical checkpoint still stores a full snapshot | `RichTextEditor`; `BodyEditBatchCoordinator`; full snapshots; `HistoryPanel` |
+| ID | Priority | Area | Current limitation |
+|---|---:|---|---|
+| R-03 | P0 | Attribution | Opening another author's file can fall back to its first contributor and misattribute new work. |
+| R-04 | P1 | Integrity | Standalone revision queries verify stored snapshot hashes; desktop open/restore still does not fully verify/replay the ledger. |
+| R-05 | P1 | Compatibility | Format/version fields exist but there is no migration machinery. |
+| R-06 | P1 | Draft lifecycle | Controlled transitions drain drafts; forced page/process exit or host suspension cannot await them. |
+| R-07 | P1 | Recovery | Desktop JSON is capped/bounded and neither recovery JSON shape has an importer. |
+| R-08 | P1 | CRDT integrity | Desktop stores HTML/Yjs update/state without proving they describe one consistent edit. |
+| R-09 | P1 | Adapter parity | TypeScript and Rust hashing, sanitizer, limits, sessions and export semantics are not fully equivalent. |
+| R-10 | P1 | Backup UX | `.coedit-backup` output is not directly selectable by the normal Open dialog. |
+| R-11 | P2 | History scale | Desktop History still searches only inside a newest-100,000-row pre-window. |
+| R-12 | P2 | Storage growth | Every physical revision/checkpoint stores a complete JSON snapshot. |
+| R-13 | P2 | Standalone durability | Reload/close loses the in-memory document; no durable browser store or JSON import exists. |
+| R-14 | P2 | Multi-document/concurrency | One process-global Rust store supports one open document and serialized access. |
+| R-15 | P2 | Session model | Writing-session lifecycle is incomplete and inconsistent across hosts. |
+| R-16 | P2 | Rich-text/export | Markdown is deliberately lossy and browser/Rust conversion differs. |
+| R-17 | P2 | Platform support | Linux/macOS packages and iPad workflows are not qualified. |
+| R-18 | P2 | Accessibility/touch | Canvas actions have keyboard paths but touch/browser/ARIA qualification is incomplete. |
+| R-19 | P2 | Test/release confidence | No browser E2E, full native IPC/E2E, migration suite, accessibility suite, CI or platform matrix. |
+| R-21 | P2 | Tampered data | Open/restore does not revalidate every stored field/hash/sanitization invariant against hostile database edits. |
+| R-22 | P2 | Crash durability | Atomic output syncs file contents but does not explicitly fsync parent directories. |
+| R-23 | P3 | Reserved features | Attachments, AI, collaboration, contributor management and direct node restore lack complete workflows. |
+| R-24 | P3 | Canvas structure | Drag reparenting targets the target's last-child position only; no between-block/root drop indicator. |
+| R-25 | P2 | History/provenance | Affected-node reporting generally names only the requested node, so node-filtered History can omit descendant/sibling changes made by the same operation. |
+| R-26 | P2 | Historical parity | Standalone View/Back uses verified read-only materialization; native revision queries remain host-deferred. |
+| R-27 | P2 | Group-query parity | Grouped History is implemented, but Tauri cannot yet fetch the exact remainder of a page-spanning group. |
 
-## Data-integrity and attribution risks
+## Resolved/changed risk: grouped History
 
-### R-03: contributor fallback can misattribute work
+The former R-27 statement that History did not collapse semantic body checkpoint groups is obsolete. WP-5 now collapses contiguous `updateBody` contributions sharing a non-null `groupId`, merges groups across ordinary raw-page boundaries, distinguishes raw counts from visible rows, and exposes exact standalone expansion.
 
-The local contributor preference lives in browser `localStorage`. After opening a `.coedit` whose contributors do not contain that ID, `App` selects `view.contributors[0]`. The store correctly rejects unknown contributor IDs, but this fallback avoids rejection by impersonating an existing contributor.
+The remaining risk is narrower: Tauri advertises exact group querying as host-deferred. When the oldest loaded group is partial, native History can only show the loaded checkpoints and explicitly says full expansion is unavailable. WP-10 should implement and qualify native exact-group and revision queries.
 
-**Impact:** a file moved to another computer/user can record edits under its first original contributor.
+Grouping is presentation only. It does not reduce the number or size of physical snapshots, so R-12 remains.
 
-**Recommended direction:** add contributor registration/selection to the gateway and store; prompt rather than silently fall back; specify import/cross-device identity rules and tests.
+## High-priority details
 
-### R-04: stored hashes are checksums, not verified provenance
+### R-03 — contributor fallback can misattribute work
 
-Desktop contributions and snapshots receive a SHA-256 of serialized `DocumentState`; memory contributions receive a Web Crypto hash. WP-1 memory materialization now recomputes the browser canonical hash and rejects a mismatch before returning a detached snapshot. On open/restore, the store still checks SQLite integrity and tree structure but does not:
+The local contributor preference is browser-local. If its ID is absent from an opened document, the UI can fall back to the document's first contributor. The persistence layer rejects unknown IDs, but this fallback bypasses that protection by selecting an existing identity.
 
-- recompute the current state hash and compare it with the current contribution/snapshot;
-- verify each snapshot's `state_hash`;
-- replay the contribution ledger;
-- authenticate the ledger against malicious direct SQLite edits.
+**Direction:** add contributor registration/selection/reconciliation and never silently impersonate an existing contributor.
 
-The browser now has a named `coedit-document-state-v1` canonical form and golden fixture. It projects only `DocumentState`, sorts entity collections by ID and object keys recursively, and excludes host-only `DocumentView` fields. Rust still hashes Serde's own `DocumentState` encoding/order and has not been run against the shared vector.
+### R-04 — hashes are incomplete integrity evidence
 
-**Recommended direction:** adopt the existing versioned canonical fixture in Rust or deliberately version a different cross-language contract; verify snapshot/current hashes on open/restore; define replay/tamper guarantees honestly. Cryptographic authentication would require a trust/key model beyond plain hashes.
+Standalone materialization recomputes a canonical browser state hash before returning a historical snapshot. Desktop open/restore does not yet verify the full contribution/snapshot ledger, and hashes are not authenticated signatures.
 
-### R-06: host-exit draft/lifecycle boundaries remain
+**Direction:** define cross-language hash semantics, consume shared fixtures in Rust, verify state/snapshots on open/restore, and document exactly what integrity guarantee remains.
 
-`useDocumentController` serializes document commands and rejects older/superseded view/history responses. `DraftTransitionCoordinator` synchronously freezes the registered document-title and node-editor participants and awaits title, metadata, and rich-text drains before controlled selection, operations, restore, export, backup, and Close. Failed commits retain their dirty value/delta for retry and cancel the controlled action. This closes the earlier in-app Close-before-debounce and blur-ordering mechanisms.
+### R-05 — no migrations
 
-Residual limitations remain:
+Do not change persisted schema/field constraints without a format-version and migration design. A fresh-database success is not migration evidence.
 
-- tab close/reload, process termination, forced native suspension, and arbitrary React teardown cannot await a Promise;
-- `RichTextEditor` cleanup intentionally does not launch a late unawaitable commit, so pending standalone state is lost if the host bypasses controller actions;
-- controller tests cover freeze/flush ordering, failure blocking, Close/selection, and restore generation, but a full Tiptap DOM/native lifecycle test is absent.
+### R-06 — host exit cannot await JavaScript drains
 
-**Recommended direction:** define discard/retry behavior for actual application-exit and suspension hooks in each host and add controlled-timer editor/component/native lifecycle tests.
+In-app selection, structure changes, historical entry, restore, export, backup and Close use the draft barrier. Browser reload, process termination and forced host suspension remain outside that awaitable protocol.
 
-### R-08: Yjs payload consistency is trusted
+### R-08 — HTML/Yjs relationship is trusted
 
-`updateBody` carries sanitized rendered `bodyHtml`, a merged incremental `yjsUpdate`, and a complete `yjsState`. Rust checks size/Base64 validity and stores the complete state, but it does not apply the update to the prior state or prove that the HTML and state represent the same content. The incremental update remains only in the contribution payload.
+`updateBody` carries sanitized HTML, incremental Yjs update and complete Yjs state. Rust validates size/encoding and sanitizes HTML but does not reconstruct the prior Yjs state or prove equivalence.
 
-**Recommended direction:** decide which representation is authoritative; reconstruct/validate state transitions at the persistence boundary; derive sanitized HTML from the accepted editor state where practical; test malformed/mismatched updates.
+## History and storage limitations
 
-## Persistence, recovery, and compatibility risks
+### R-11 — desktop raw-history pre-window
 
-### R-05: there are no migrations
+The shared contract is cursor-paged and filter-before-page, but Rust still materializes at most the newest 100,000 rows before some filtering/paging work. Very old matches may therefore be unreachable on desktop.
 
-`PRAGMA user_version` and metadata `format_version` are validated, but no code upgrades an older schema. A higher version is opened read-only only if current tables/columns are still readable. A lower version would be opened writable if current queries happen to succeed.
+### R-12 — full snapshot per physical checkpoint
 
-**Rule for contributors:** do not alter a persisted field, enum constraint, or table shape without a version increment, transactional migration design, fixtures, rollback/recovery rules, and compatibility tests. See [Document format](./DOCUMENT_FORMAT.md).
+Semantic grouping improves human readability but every checkpoint remains an immutable contribution plus full snapshot. Measure real file growth before designing compaction/replay/retention.
 
-### R-07: recovery JSON has desktop bounds and no importer
+### R-25 — affected-node provenance is incomplete
 
-- Standalone export now uses the explicitly marked `coedit-recovery` `RecoveryExport` version 2 with algorithm/state hash, an explicit portable `DocumentState`, history order/completeness metadata, and every newest-first contribution accumulated during the current in-memory session.
-- The standalone envelope deliberately excludes internal revision snapshots; it preserves the ledger but cannot currently be opened by Coedit.
-- Desktop export still uses an older version-1 envelope without `hashAlgorithm`, `stateHash`, or `history`, and `DocumentStore::contributions` never reads more than the newest 100,000 records.
-- Neither host provides JSON validation/import/reconstruction UI.
+Both `src/domain/tree.ts::affectedNodeIds` and Rust `DocumentOperation::affected_node_ids` generally report only the requested node (with creation naming the new node and document rename naming none). Several operations materially change more state than that list describes: subtree deletion changes descendants, restore can reactivate ancestors, and create/move/delete normalization can change sibling positions.
 
-Documentation and UI must not call either format a tested round trip. For desktop recovery, preserve the `.coedit`/backup as the primary lossless artifact.
+Because the selected-node History filter relies on `affectedNodeIds`, filtering for one of those indirectly changed descendants/siblings can omit the contribution that changed it. The same under-reporting weakens provenance for future attribution/replay tooling.
 
-### R-09: standalone and desktop are not behavioral equivalents
+**Direction:** either report every node whose persisted state materially changes, with equivalent TypeScript/Rust semantics and tests, or deliberately define a narrower "operation target" contract and stop presenting the field/filter as complete affected-node provenance.
 
-| Concern | Standalone | Desktop |
-|---|---|---|
-| Durability | page memory | SQLite file |
-| Input limits | no gateway/domain limits | Rust byte limits |
-| Sanitization | editor DOMPurify path | editor plus Rust Ammonia on writes |
-| Sessions | contribution IDs only; state array stays empty | session row inserted lazily |
-| Hash input/algorithm | Versioned canonical `DocumentState` + TS golden vector | Rust serialized `DocumentState`; fixture parity pending |
-| Native open/backup | capability absent | SQLite open/byte-copy capability |
-| JSON | marked `coedit-recovery` version-2 envelope, state hash, explicit complete runtime ledger | legacy version-1 envelope + bounded ledger |
-| Markdown conversion | browser DOM text | Rust tag stripping/entity replacements |
+### R-26/R-27 — native query parity
 
-The shared gateway/page shapes are structural contracts, not proven semantic equivalence; recovery JSON schemas still differ. Shared adapter-contract and Rust protocol-fixture tests do not yet exist.
+Standalone supports both non-mutating revision materialization and exact contribution-group expansion. Tauri currently supports neither query capability. The shared UI is deliberately honest about this: row-level Restore remains the historical fallback, and partial grouped History says full expansion is unavailable.
 
-### R-10: backup extension cannot be selected by Open
+## Product/UX limitations
 
-Backup saves `title.coedit-backup`. The Open dialog accepts only extension `coedit`, though `DocumentStore::open` itself identifies a file by SQLite application ID rather than requiring its extension.
+- standalone is volatile and has no import workflow;
+- only one document is open per process;
+- direct deleted-node restore has no UI;
+- History overlay behavior is implemented, but the optional Navigator/History compact drawer shell is not;
+- touch discoverability and screen-reader/browser qualification are incomplete;
+- native package/platform evidence is sparse;
+- backup reopen requires copying/renaming to `.coedit` today.
 
-**Current workaround:** copy or rename a backup to a new `.coedit` path before opening it; preserve the original backup.
+## Release rule
 
-**Recommended direction:** include backup files in the dialog, make recovery intent explicit, and test read/recovery behavior.
-
-### R-11: desktop history still has a hidden pre-window
-
-The shared contract now returns `ContributionPage`, filters before page construction, and uses an exclusive revision cursor. The UI loads 100 at a time, exposes **Load older contributions**, displays a loaded count with `+` while more is reachable, and issues search/node filters to the adapter rather than filtering a fixed client slice. Memory history is fully reachable within the page lifetime.
-
-Rust still selects at most the newest 100,000 rows before applying `beforeRevision`, contributor, node, and search filters. The Tauri adapter can page only within that pre-window, so older matches remain unreachable.
-
-**Recommended direction:** move cursor and scalar filters into indexed SQL, define an affected-node indexing strategy instead of JSON scanning, and add 100,001+ desktop cases in the second pass.
-
-### R-12: snapshot growth is unbounded
-
-Every revision stores a full JSON `DocumentState`, including Base64 Yjs states, in addition to materialized node data and operation payloads. Long writing sessions can create snapshots at semantic/threshold body checkpoints; the new grouping policy improves boundaries but does not reduce the physical snapshot size.
-
-**Recommended direction:** measure real files first, then define retention/checkpoint/replay/compaction that preserves recovery and verifiability. Never delete historical material without a format/backup policy. The proposed [body checkpoint strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md) improves semantic boundaries and collapsed presentation but can still create frequent physical revisions at the character threshold; it does not by itself solve snapshot growth.
-
-### R-21: open/restore validation is incomplete for hostile database edits
-
-Open checks application ID, version agreement, SQLite integrity, magic metadata, enum/JSON decoding, parents, and cycles. It does not validate recorded hashes, apply the normal write limits to every loaded field, or re-sanitize all stored `body_html`. Restore re-sanitizes HTML but does not reapply every normal body/metadata limit to a tampered snapshot.
-
-The React fallback path sanitizes `bodyHtml` when there is no Yjs state, and ProseMirror does not simply execute stored HTML as application JavaScript, but this does not replace a complete hostile-format validation policy.
-
-### R-22: atomic replacement is not maximum crash durability
-
-Exports/backups write/copy a temporary sibling, call `sync_all` on that file, and rename. The helpers do not explicitly fsync the parent directory after rename. Destination replacement temporarily renames the previous file and attempts recovery on failure.
-
-This is materially safer than direct overwrite but is not a formal guarantee against every power-loss/filesystem behavior. Add platform-specific fault testing before strengthening recovery claims.
-
-## Product and UX limitations
-
-### R-13: standalone documents are deliberately volatile
-
-There is no IndexedDB/local filesystem persistence, autosave, JSON import, or `.coedit` parser in the standalone composition. `localStorage` contains only a non-secret contributor preference. The warning on the welcome screen is the current safeguard.
-
-### R-14: one document and one process-level store
-
-Tauri `AppState` holds `Mutex<Option<DocumentStore>>`. A second open/create replaces the previous store; the current UI avoids that route by exposing a single-document workspace. Multiple windows would share this state. External simultaneous processes are not coordinated as a supported editing workflow.
-
-### R-15: writing sessions are incomplete
-
-The application generates one session ID per mounted `App`. Desktop mutation lazily creates a row and contributions refer to it, but sessions are never ended or described. Memory contributions carry the ID while `DocumentView.sessions` stays empty. `contributions.session_id` has no SQLite foreign key.
-
-### R-16: Markdown is interchange, not rich recovery
-
-Both Markdown exporters walk active nodes and emit the heading structure followed by each node body as plain text, losing most formatting and semantic details. Browser DOM text extraction and Rust's small tag/entity converter can produce different results. Deleted nodes, Yjs state, contributions, and attachments are absent.
-
-### R-17: platform support is not yet evidenced broadly
-
-Windows standalone was manually exercised. The architecture is intended for Linux/macOS desktop, but no CI/package evidence is recorded. iPadOS needs mobile document-provider/path handling, lifecycle flush, touch hierarchy controls, compact navigation, and packaging. See [Build and portability](./BUILD_AND_PORTABILITY.md).
-
-### R-18 and R-24: interaction/accessibility limitations
-
-- Dragging only makes a block the last child of another block; there is no root drop target or between-block indicator.
-- Reorder, indent, and outdent have buttons and handle shortcuts, but touch drag alternatives have not been platform-qualified.
-- Block actions appear on hover/focus, a weak pattern for touch discovery.
-- At widths at or below 900 px, History becomes an overlay; the proposed deterministic compact Navigator/History drawer shell is not implemented.
-- Toolbar toggles do not expose full `aria-pressed` state; some symbol-only controls rely on `title`; no screen-reader audit exists.
-- Affected-node lists generally name only the requested node, not every descendant/sibling whose stored state changed.
-
-Current interaction details and proposed accessibility acceptance criteria are in [UI and UX](./UI_UX.md).
-
-### R-26: historical inspection remains partial by host and workspace layout
-
-The WP-1 boundary defines a discriminated read-only query capability. Memory advertises it as available and returns detached, tree-validated, hash-verified snapshots without changing live state, history, or its snapshot map. Tauri explicitly advertises `host-deferred` and exposes no throwing stub. WP-2 adds explicit controller live/historical projections, exact retained origins, stale request guards, no-query Back, restore separation, and command/export rejection outside live mode.
-
-WP-3 and WP-7 connect capable-host History **View** to the same continuous canvas in historical mode. It mounts no title/body editor, structural mutation control, or draft participant; only local disclosure remains. A persistent banner identifies viewed/current revisions, makes **Back to current** primary, and keeps **Restore as new revision** separately confirmed. Component and full-`App` integration tests prove View/Back is non-mutating and one confirmed restore appends one compensating revision. Host-deferred Tauri still exposes row-level Restore until WP-10.
-
-**Recommended direction:** add native materialization and shared contract qualification in WP-10, then include the optional navigator in live/historical context-pruning and focus-restoration qualification.
-
-### R-27: body checkpoint groups are not yet projected in History
-
-`RichTextEditor` now feeds pre-application ProseMirror/`beforeinput` facts into the validated coordinator. Thresholds, semantic boundaries, IME completion, idle expiry, synchronous sanitized HTML/Yjs capture, two-checkpoint backpressure, immutable retry, and controller/canvas drains are implemented; the fixed timer is gone. Multiple checkpoints in one writing episode share a group ID, but `HistoryPanel` still renders each physical contribution as its own row, and every checkpoint still receives a full snapshot.
-
-**Recommended direction:** complete the [body checkpoint and commit strategy](./proposals/BODY_CHECKPOINT_STRATEGY.md) with WP-5's page-aware grouped History and exact expansion, then qualify the adapter in real browsers/IME. Physical snapshot compaction remains separate R-12 work.
-
-## Reserved capabilities, not current features
-
-- `attachments` is a reserved SQLite table with no TypeScript domain type, operation, gateway method, command, exporter, or UI.
-- `AiProvider` and proposal types are contracts only; no provider or AI user flow exists.
-- Yjs is used locally; no collaboration transport, authentication, shared structural model, or conflict protocol exists.
-- Contributor/session tables do not constitute contributor management.
-- `restoreNode` exists in both mutation engines, but no current UI browses deleted nodes or invokes it.
-
-Keep these labeled **Reserved** or **Proposed** in contributor-facing material.
-
-## Verification and delivery gaps
-
-The current source inventory is fifty-eight TypeScript cases and three Rust cases. New TypeScript coverage includes the draft coordinator, controller transition ordering/generation, live/historical projection and request races, historical command guards, full-App View/Back/restore composition, static historical sanitization, banner/History actions, serialized-queue behavior, contributor-storage validation, node-editor normalization, tag normalization/combobox behavior, JSON detachment/validation, cursor paging/filtering, recovery-envelope shape, verified memory revision materialization, explicit host-deferred Tauri capability advertisement, filename normalization, and versioned hash/sanitizer fixtures. There is still no:
-
-- full-App integration with the real Tiptap editor or end-to-end browser suite;
-- fake-timer editor debounce/lifecycle suite;
-- shared gateway contract suite;
-- TypeScript/Rust IPC schema compatibility suite;
-- Rust conformance test for the TypeScript hash or sanitizer fixtures;
-- migration/format fixture suite;
-- corruption/fault-injection/atomic-output suite;
-- accessibility/touch automation;
-- CI workflow or multi-platform build/package matrix;
-- performance/load test for snapshots/history/large Yjs states.
-
-The prioritized target matrix and manual suites are in [Testing](./TESTING.md).
-
-## Risk closure rule
-
-When fixing a risk:
-
-1. add a regression test that fails for the documented mechanism;
-2. update the relevant use case, sequence, and design contract;
-3. verify both standalone and desktop behavior when the boundary is shared;
-4. record any format/security/portability consequence;
-5. remove or rewrite this entry only after the implementation and verification are present.
-
-Do not close a risk merely because the UI hides the path or because a manual happy-path test passed once.
+Before describing Coedit as suitable for important work, address the P0 attribution problem and materially improve P1 integrity/recovery/parity evidence. WP-5 improves History usability; it does not change those safety priorities.

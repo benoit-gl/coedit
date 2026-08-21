@@ -1,263 +1,136 @@
 # Build, release, and portability
 
-Coedit has two intentional frontend outputs. Choose the command by runtime, not by convenience: the default build is a serverless standalone HTML application; the Tauri build is the frontend half of a native desktop package.
+Coedit has two intentional frontend outputs: a self-contained standalone HTML artifact and a Tauri desktop application.
 
 ## Build matrix
 
-| Goal | Command | Entry/composition root | Expected output | Persistence |
-|---|---|---|---|---|
-| Browser development | `corepack pnpm dev` | `index.html` / `src/main.tsx` | Vite at `127.0.0.1:1420` | memory |
-| Standalone artifact | `corepack pnpm build` | `index.html` / `src/main.tsx` | self-contained `dist/index.html` | memory |
-| Tauri frontend only | `corepack pnpm build:tauri` | `tauri.html` / `src/main-tauri.tsx` | `dist/tauri.html` plus assets/maps | Tauri adapter when hosted |
-| Desktop development | `corepack pnpm tauri:dev` | Tauri config starts Vite and native host | development WebView/native process | SQLite |
-| Desktop release package | `corepack pnpm tauri:build` | Tauri config runs `build:tauri` and Cargo | platform-native package/binary | SQLite |
-
-`corepack pnpm build:tauri` is normally an internal/debugging command. Opening its `tauri.html` directly in a browser will not supply Tauri IPC and is not a supported standalone runtime.
-
-## Prerequisites
-
-- Node.js 24
-- Corepack
-- Rust 1.90 and Cargo
-- Platform-specific Tauri 2 build prerequisites for native work
-
-Versions are pinned in [`package.json`](../package.json), [`pnpm-lock.yaml`](../pnpm-lock.yaml), [`src-tauri/rust-toolchain.toml`](../src-tauri/rust-toolchain.toml), [`src-tauri/Cargo.toml`](../src-tauri/Cargo.toml), and [`src-tauri/Cargo.lock`](../src-tauri/Cargo.lock). JavaScript dependency install scripts are disabled by `.npmrc`.
-
-Install reproducibly:
-
-```powershell
-corepack pnpm install --frozen-lockfile
-```
-
-Do not routinely replace the frozen lockfile. Review both lockfiles and [third-party notices](../THIRD_PARTY_NOTICES.md) when dependencies change.
-
-## Standalone build
-
-Run:
-
-```powershell
-corepack pnpm build
-```
-
-The script performs `tsc -b` and then Vite's default build. [`vite.config.ts`](../vite.config.ts) selects `index.html` unless the mode is `tauri`. Its `standaloneHtml()` plugin enforces the artifact contract:
-
-1. Rollup must produce exactly one JavaScript chunk with no static or dynamic imports.
-2. Generated CSS and ordinary assets must be inlineable; unexpected external outputs fail the build.
-3. The generated script and styles are embedded into `index.html`.
-4. Literal `</script` sequences in generated JavaScript are escaped.
-5. A SHA-256 CSP hash for the inline module is inserted into the document's final `</head>`.
-6. The embedded JavaScript is syntax-checked at build time.
-7. Every output except `index.html` is removed from the bundle.
-
-The result should therefore be:
-
-```text
-dist/
-└── index.html
-```
-
-### Manual acceptance
-
-1. Confirm the build reports only `dist/index.html` as its output.
-2. Double-click that file rather than the source-root `index.html`.
-3. Confirm the welcome screen says standalone documents are held in memory.
-4. Create a document and exercise the standalone smoke suite in [Testing](./TESTING.md).
-5. Exercise filtered History and **Load older contributions** where a long fixture is available.
-6. Export JSON and confirm the `coedit-recovery` version-2 state/contributions envelope; reload/close only after exporting anything worth keeping because reload is expected to lose the document.
-
-The source-root [`index.html`](../index.html) contains a Vite source module reference and is not the distributable artifact.
-
-### Standalone CSP
-
-The inliner generates a policy equivalent to:
-
-```text
-default-src 'none';
-script-src 'sha256-<generated digest>';
-style-src 'unsafe-inline';
-img-src data: blob:;
-font-src data:;
-connect-src 'none';
-object-src 'none'; frame-src 'none';
-base-uri 'none'; form-action 'none'
-```
-
-This prohibits network connections and remote subresources. The script hash changes whenever the bundle changes and must be generated rather than copied by hand.
-
-## Tauri desktop development
-
-Run:
-
-```powershell
-corepack pnpm tauri:dev
-```
-
-[`src-tauri/tauri.conf.json`](../src-tauri/tauri.conf.json) runs `corepack pnpm dev`, waits for `http://127.0.0.1:1420`, builds the Rust host, and opens a native window. In this one workflow the WebView intentionally depends on a loopback development server for hot reload.
-
-```plantuml
-@startuml
-actor Developer
-participant "Tauri CLI" as Tauri
-participant "Vite dev server\n127.0.0.1:1420" as Vite
-participant "OS WebView" as WebView
-participant "Rust process" as Rust
-
-Developer -> Tauri : corepack pnpm tauri:dev
-Tauri -> Vite : beforeDevCommand
-Vite --> Tauri : listener ready
-Tauri -> Rust : compile and launch
-Rust -> WebView : create window at devUrl
-WebView -> Vite : load frontend / hot updates
-WebView <-> Rust : Tauri IPC commands
-@enduml
-```
-
-Do not distribute or bookmark the `devUrl`; it has meaning only while Vite is running.
-
-## Tauri desktop release
-
-Run:
-
-```powershell
-corepack pnpm tauri:build
-```
-
-The Tauri CLI invokes `corepack pnpm build:tauri`, which runs TypeScript and Vite in `tauri` mode. That mode:
-
-- uses `tauri.html` and `src/main-tauri.tsx`;
-- keeps normal generated assets instead of making one HTML file;
-- enables source maps;
-- supplies `TauriDocumentGateway` and native file dialogs.
-
-The TypeScript Tauri adapter has been reshaped to the shared controller/capability/page contracts, but the present standalone-first pass does not claim a fully verified native build. Rust hash/sanitizer fixtures, indexed history paging, Rust-owned file authorization, minimal permissions, migration/compaction policy, and platform tests remain the explicit second pass.
-
-Tauri then builds the Rust application, embeds `frontendDist`, and produces platform packages for the configured targets. The window explicitly loads `tauri.html`.
-
-```plantuml
-@startuml
-start
-:corepack pnpm tauri:build;
-:Tauri reads tauri.conf.json;
-:run beforeBuildCommand\ncorepack pnpm build:tauri;
-:tsc -b;
-:Vite mode = tauri;
-:bundle tauri.html and assets into dist/;
-:Cargo builds Rust/Tauri application;
-:embed frontendDist;
-:create platform-native package(s);
-stop
-@enduml
-```
-
-Do not substitute `cargo build --release` for this command. A raw Cargo build does not guarantee that the correct frontend was built or embedded and can reproduce the confusing development-URL behavior that a release is supposed to eliminate.
-
-### Desktop runtime policy
-
-The production window policy in `tauri.conf.json` permits packaged resources and Tauri IPC, but denies ordinary remote connections, frames, and objects. [`src-tauri/capabilities/default.json`](../src-tauri/capabilities/default.json) grants only core defaults plus native open/save dialogs. A new plugin or permission is a security and architecture change, not merely a dependency addition.
-
-## How Tauri relates to the application
-
-Tauri supplies four things to the desktop build:
-
-- a native executable and operating-system WebView;
-- IPC between TypeScript adapters and explicitly registered Rust commands;
-- native dialog integration;
-- native packaging, icons, and platform metadata.
-
-It does not own the React UI, application controller, domain types, in-memory gateway, or standalone artifact. Removing Tauri-specific entry/adapters leaves a working volatile HTML5 editor. Persistent `.coedit` storage currently depends on the Rust/Tauri host. Shared UI actions narrow the injected `DocumentStorage` capability to `NativeDocumentStorage` before offering native open/backup; this is application decoupling, not proof that renderer-supplied native paths are securely authorized.
-
-## Portability matrix
-
-This matrix separates architectural plausibility from verified support. Icon presence is not evidence of a working platform port.
-
-| Target | Standalone artifact | Native/Tauri application | Current evidence and blockers |
+| Goal | Command | Composition | Persistence |
 |---|---|---|---|
-| Windows | **Implemented; manually exercised** | **Primary intended desktop target** | Standalone build/double-click confirmed. Native package still needs release smoke testing per change. |
-| Linux desktop | **Source-portable; unverified** | **Architecturally portable; unverified** | Requires compatible browser for standalone. Native packages depend on distro WebKit/system libraries and must be built/tested on Linux. |
-| macOS desktop | **Source-portable; unverified** | **Architecturally portable; unverified** | Native packages must be built on macOS; signing/notarization and file-association behavior are not configured/documented as a release service. |
-| iPadOS browser | **Experimental/unsupported** | Not applicable as desktop Tauri | `file://`/Files-app launch, Blob downloads, storage rules, touch drag/drop, and responsive layout are not validated. |
-| iPadOS native | Not the standalone target | **Not implemented** | No initialized iOS project or document-provider/security-scoped file design. Current dialogs yield path strings consumed as `PathBuf`; UI is not touch-first. |
+| Browser development | `corepack pnpm dev` | `index.html` / `src/main.tsx` | memory |
+| Standalone artifact | `corepack pnpm build` | generated `dist/index.html` | memory |
+| Tauri frontend | `corepack pnpm build:tauri` | `tauri.html` / `src/main-tauri.tsx` | Tauri adapter when hosted |
+| Desktop development | `corepack pnpm tauri:dev` | Tauri + Vite | SQLite |
+| Desktop package | `corepack pnpm tauri:build` | packaged Tauri frontend + Rust | SQLite |
 
-### Browser API requirements for standalone mode
+Prerequisites: Node 24, Corepack, Rust 1.90/Cargo, and platform-specific Tauri 2 prerequisites.
 
-The current bundle assumes support for:
+## Artifact contracts
 
-- ES modules and an ES2022-level bundle;
-- `crypto.subtle.digest`, `crypto.getRandomValues`, and preferably `crypto.randomUUID`;
-- `TextEncoder`/`TextDecoder`;
-- `DOMParser`, Blob/object URLs, and download anchors;
-- Indexed rich-text features used by React, Tiptap, ProseMirror, and Yjs.
+The build commands above are not interchangeable evidence.
 
-The configured Vite build targets include ES2022, Chrome 105, and Safari 13, but a configured transpilation target is not a tested support promise. In particular, browser behavior for cryptography and downloads on a local `file://` origin must be tested on each claimed platform.
+### Standalone
 
-### Linux notes
+`corepack pnpm build` must produce a self-contained `dist/index.html` that can be opened directly through `file://`. The standalone build contract is:
 
-- Install the Tauri 2 prerequisites for the distribution/toolchain before building.
-- Build the package on Linux rather than copying a Windows executable.
-- Test native dialogs, `.coedit` paths containing Unicode/spaces, WebKit rendering, backup replacement, and application packaging for the chosen distribution formats.
-- Do not infer Wayland/X11 or distribution compatibility from a successful Rust compile alone.
+- generated JavaScript and CSS are inlined into the one distributable HTML artifact;
+- the build rejects unexpected external application assets/imports rather than silently producing a server-dependent bundle;
+- the generated CSP permits only the local resources required by the artifact and denies ordinary network connections (`connect-src 'none'`);
+- the runtime composition is `src/main.tsx` + `MemoryDocumentGateway` and has no Tauri IPC or native file capability;
+- source-root `index.html` is a Vite development entry, not the distributable artifact.
 
-### macOS notes
+### Tauri
 
-- Build and sign on macOS with the desired deployment target.
-- Verify the WebView version, native dialogs, sandbox expectations, file permissions, Unicode paths, and backup replacement semantics.
-- Define signing/notarization/release credentials outside the repository before calling the package distributable.
-- Test the standalone HTML independently in Safari and at least one alternate browser.
+`corepack pnpm build:tauri` builds the frontend intended to run inside Tauri. It is not a standalone browser artifact and may rely on Tauri IPC. `corepack pnpm tauri:build` is the release/package evidence because it runs the Tauri frontend build and native Rust/package pipeline together.
 
-### iPadOS notes
+A raw `cargo build --release` is not equivalent: it does not prove that the correct frontend composition was built and embedded.
 
-The shared React UI can render in a browser in principle, but the current product model is not portable to iPadOS without design work:
+### Development topology
 
-- HTML drag-and-drop and hover-revealed row controls are weak touch interactions.
-- The outline remains visible at narrow widths; there is no pane switcher.
-- A browser document cannot reopen `.coedit` SQLite files.
-- Blob download/import and local HTML execution differ across Files/Safari contexts.
-- A native mobile host needs document-picker URI/bookmark handling rather than assuming an ordinary persistent path string.
-- Controlled in-app actions now synchronously freeze and await title, metadata, and editor drains, but browser/app suspension and forced termination still need host lifecycle integration because JavaScript cleanup cannot make termination await a Promise.
+`corepack pnpm dev` and `corepack pnpm tauri:dev` intentionally use Vite on loopback for development/hot reload. Production Coedit does not use a local HTTP application server. A release artifact that attempts to load `127.0.0.1` is misbuilt.
 
-Treat iPadOS as a new host/use-case project, not a packaging checkbox.
+## Standalone artifact
 
-The proposed [continuous block-outline](./proposals/CONTINUOUS_BLOCK_OUTLINE.md) defines pointer-independent structural commands, explicit touch targets, focus ownership, historical read-only rendering, and an optional navigation-only sidebar that becomes an explicitly opened drawer at compact/touch widths. These choices improve browser/tablet viability without creating a second editor. They are still design, not iPadOS support evidence. Before claiming support, qualify the canvas and navigator together: Navigator/History drawer mutual exclusion, focus/Escape/success-and-failure activation behavior, dynamic viewport and safe-area layout, software keyboard, IME, selection, scrolling/reveal, downloads, suspension, and assistive technology on actual Safari/iPadOS hardware. Preferred dock visibility is browser presentation data only; an invalid/unavailable initial Safari storage read defaults closed, a later write failure retains only session memory, compact drawer state is never restored, and none can affect document recovery.
+`corepack pnpm build` runs TypeScript compilation plus the standalone Vite build. The custom inliner requires a single self-contained `dist/index.html`, embeds generated JavaScript/CSS, inserts a script CSP hash, and rejects unexpected external build assets.
 
-## Troubleshooting
+The standalone application uses `MemoryDocumentGateway`. It cannot open `.coedit` files and loses the working document on reload/close. Export recovery JSON or Markdown before leaving anything worth preserving.
 
-### `127.0.0.1 refused to connect`
+Useful smoke coverage now includes grouped History:
 
-Cause: the launched page or native artifact points at the development URL, but Vite is not running. This is expected for a development configuration and wrong for a release artifact.
+1. create/edit a document;
+2. create enough body work to produce multiple checkpoints in one semantic group;
+3. open History and verify raw/visible counts and one collapsed group row;
+4. expand it and verify exact checkpoints;
+5. with a long fixture, load older raw pages and verify page-spanning groups merge;
+6. View/Back an older revision without adding a contribution;
+7. Restore and verify one compensating revision;
+8. export recovery JSON before closing.
 
-Resolution:
+## Desktop artifact
 
-- For UI-only debugging, run `corepack pnpm build` and double-click `dist/index.html`.
-- For desktop development, run `corepack pnpm tauri:dev` and let Tauri start Vite.
-- For a distributable desktop application, rebuild with `corepack pnpm tauri:build`; do not use a raw Cargo release as the package.
+Use `corepack pnpm tauri:build` for a distributable package. A raw `cargo build --release` is not equivalent because it does not guarantee the correct frontend was built/embedded.
 
-### Browser shows JavaScript source or reports module CORS errors
+The desktop host persists `.coedit` SQLite files and exposes native create/open/export/backup dialogs. The current TypeScript adapter compiles against the shared capability contracts, but native historical materialization and exact contribution-group queries remain host-deferred until WP-10.
 
-Confirm that you opened the generated `dist/index.html`, not the source-root HTML or `dist/tauri.html`. The successful standalone build has no `assets/index-*.js` reference. If it does, the standalone inlining contract failed and the artifact must not be distributed.
+## Responsive layout
 
-### Standalone opens but Open/SQLite backup is absent
+The primary workspace is the continuous `DocumentCanvas`; the former outline-plus-detail layout is gone.
 
-That is by design. The standalone composition supplies `VolatileDocumentStorage`, not `NativeDocumentStorage` or native dialogs. Export JSON or Markdown before closing. Standalone JSON contains portable current state plus the complete contribution ledger for that page lifetime, but there is no importer; see [Document format](./DOCUMENT_FORMAT.md).
+At the current narrow breakpoint, the canvas remains the same document surface and History becomes a fixed right-side overlay. There is no separate narrow-screen outline/editor mode.
 
-### Tauri frontend opens in a normal browser but commands fail
+The optional navigation-only sidebar and the proposed deterministic compact Navigator/History drawer shell are future WP-7A/WP-8 work.
 
-`tauri.html` and `src/main-tauri.tsx` require the Tauri IPC runtime. Use the standalone entry in a normal browser.
+## Portability status
+
+| Target | Standalone | Native/Tauri |
+|---|---|---|
+| Windows | implemented and manually exercised | primary intended desktop target; release smoke still required per change |
+| Linux desktop | source-portable, unverified | architecturally portable, unverified |
+| macOS desktop | source-portable, unverified | architecturally portable, unverified |
+| iPadOS browser | experimental/unsupported | n/a |
+| iPadOS native | n/a | not implemented |
+
+Configured build targets are not support evidence. Claim a platform only after building and smoking the actual artifact there.
+
+### Platform qualification constraints
+
+These are durable constraints behind the table rather than claims of current support:
+
+- **Standalone/browser:** verify `file://` launch, Web Crypto/random APIs, Blob/download behavior, Tiptap/ProseMirror/Yjs interaction, CSP behavior, and any browser version named in support claims. A transpilation target is not runtime qualification.
+- **Linux native:** build on the target distro family and verify required WebKit/system libraries, dialogs, Unicode/space paths, packaging format and display-server behavior as applicable.
+- **macOS native:** build on macOS and verify WebView/dialog/path behavior plus signing/notarization/release assumptions before distribution claims.
+- **iPadOS/browser:** treat as a separate qualification project. Files/Safari launch semantics, downloads/import absence, touch interactions, dynamic viewport/software keyboard, safe areas, IME, scrolling/reveal and assistive technology require real-device evidence.
+- **iPadOS native:** requires a deliberate mobile host/document-picker/security-scoped-access design; desktop path-string assumptions are not a native iPad file model.
+
+## Current release gaps
+
+There is no repository CI or automated multi-platform release matrix. Important remaining evidence includes:
+
+- browser E2E with real Tiptap/Yjs;
+- accessibility/touch qualification;
+- native IPC and package E2E;
+- Rust/TypeScript protocol parity;
+- migrations/old-format fixtures;
+- long-history SQL behavior;
+- platform-native package verification.
+
+## Operational troubleshooting
+
+These checks preserve topology knowledge that is easy to lose during build refactors.
+
+| Symptom | Likely cause | Correct action |
+|---|---|---|
+| Browser/native window tries `127.0.0.1` and fails | Development entry/configuration was launched as though it were a release artifact | For browser use, rebuild/open generated `dist/index.html`; for desktop release, use `tauri:build`; use loopback only via `dev`/`tauri:dev`. |
+| Direct browser launch shows source/module CORS errors | Source-root `index.html` or non-inlined output was opened instead of the generated standalone artifact | Open only generated `dist/index.html` for serverless standalone use; a successful standalone build should not depend on external application JS chunks. |
+| `tauri.html` opens but document commands fail in a normal browser | The Tauri frontend was launched without the Tauri IPC host | Use the standalone entry in a browser or launch the frontend through Tauri. |
+| Standalone has no Open/SQLite backup | Expected volatile-host capability boundary | Export JSON/Markdown before closing; do not add rejecting native stubs or runtime host probing to “fix” this. |
+| Raw Cargo release behaves unlike packaged app | Native binary was built without proving the correct frontend/package integration | Use `corepack pnpm tauri:build` for distributable/release evidence. |
+
+If a build-system change alters any row above, update the artifact contract and qualification tests in the same change rather than treating the symptom as local setup trivia.
 
 ## Release checklist
 
 Before calling a change releasable:
 
-1. Use a clean dependency install with the pinned lockfiles.
-2. Run the automated suites and static checks in [Testing](./TESTING.md).
-3. Build and manually smoke-test `dist/index.html` by double-clicking it.
-4. Build the native package with `corepack pnpm tauri:build` on each claimed operating system.
-5. Create, close, reopen, restore, export, and back up a desktop document.
-6. Reopen the backup (currently by copying/renaming to `.coedit`) and inspect recovery JSON/Markdown.
-7. Verify no production artifact attempts to reach `127.0.0.1` or any remote host.
-8. Inspect CSP and capability diffs; justify every added origin/plugin/permission.
-9. Review document-format compatibility, migration needs, and recovery guidance.
-10. Review dependency licenses/notices and both lockfile diffs.
-11. Record platform/version evidence; do not upgrade an unverified target to supported by assumption.
-12. Update [Known limitations](./KNOWN_LIMITATIONS.md) and [Traceability](./TRACEABILITY.md).
+1. install from frozen lockfiles;
+2. run the TypeScript/Rust commands in [Testing](./TESTING.md);
+3. build and double-click the standalone artifact;
+4. smoke continuous-canvas editing, grouped History, View/Back/Restore and exports;
+5. build `tauri:build` on every claimed native platform;
+6. create/close/reopen/edit/restore/export/backup a desktop document;
+7. verify the production artifact does not attempt ordinary outbound network access;
+8. inspect CSP/capability/dependency changes;
+9. review format/migration/recovery implications;
+10. update [Known limitations](./KNOWN_LIMITATIONS.md) and [Traceability](./TRACEABILITY.md);
+11. record platform/tool/browser versions and skipped checks.
 
-There is currently no repository CI workflow or automated multi-platform release pipeline. Until one exists, the release maintainer must record these checks manually.
+Do not upgrade `host-deferred`, `unverified`, or `proposed` behavior to supported based only on source compatibility.
