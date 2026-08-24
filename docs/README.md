@@ -23,6 +23,7 @@ WP-5 is presentation/query work only. It does **not** change `.coedit` format ve
 | Need | Primary document |
 |---|---|
 | Product scope and use cases | [Vision and use cases](./RUP_VISION_AND_USE_CASES.md) |
+| Future product ontology and recorded domain decisions | [Product and domain model](./PRODUCT_DOMAIN_MODEL.md) |
 | System shape and boundaries | [Architecture](./ARCHITECTURE.md) |
 | React/application ownership | [Frontend design](./FRONTEND_DESIGN.md) |
 | Gateways, history queries, SQLite | [Persistence design](./PERSISTENCE_DESIGN.md) |

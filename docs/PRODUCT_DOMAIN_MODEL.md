@@ -1,247 +1,422 @@
 # Product and domain model direction
 
-**Status:** product-direction draft
+**Status:** decision snapshot; directional, not a storage schema
+**Decision snapshot:** 2026-08-24
 
-**Purpose:** define the intended end-state product model for Coedit before further workspace, navigation, History, or AI integration work hardens assumptions from the current MVP.
+**Purpose:** capture the current product ontology for Coedit before further workspace, History, provenance, or AI work hardens assumptions from the MVP.
 
-This document describes the product Coedit is intended to become and the domain concepts that should guide future design. It is deliberately more stable than a UI mockup and less prescriptive than a storage migration specification. Existing code and format-version-1 documents remain authoritative for current behavior; this document defines the direction against which future changes should be evaluated.
+This document defines the domain direction against which future designs should be evaluated. It is more stable than a UI mockup but deliberately less prescriptive than a persistence specification or migration plan. Existing code and format-version-1 documents remain authoritative for current behavior.
+
+Detailed serialization, indexing, Yjs integration, migration, and performance choices should be recorded in focused design records once the corresponding work is scheduled. They should implement the concepts here rather than redefine them accidentally.
 
 ## 1. Product thesis
 
 Coedit should feel like one coherent document, not a tree database with an editor attached.
 
-An author should experience titles, subtitles, paragraphs, sections, notes, drafts, alternatives, and AI-assisted rewrites as related views of the same work. Hierarchy provides semantic structure, but hierarchy is not itself the primary user experience. The primary experience is writing and revising a document while being able to expose additional working material when useful.
+An author should experience chapters, sections, paragraphs, list items, summaries, comments, discussions, historical revisions, and AI-assisted changes as related material in one inspectable artifact. Hierarchy provides the semantic structure, but manipulating hierarchy should not dominate ordinary writing.
 
-The product should make it possible to move naturally through this progression:
+Coedit's distinguishing promise is:
 
-```text
-idea -> structure -> draft -> discussion -> rewrite -> final text
-```
+> A unified, local-first writing environment in which the semantic document, its history, its optional alternate representations, its discussions, and the provenance of its text remain inspectable without obscuring ordinary writing.
 
-without requiring those stages to overwrite one another or disappear into an external chat log.
-
-Coedit's distinguishing promise is therefore not merely hierarchical writing and not merely AI-assisted editing. It is:
-
-> A unified, local-first writing environment in which the semantic document, its working variants, its AI discussions, and the provenance of every accepted change remain part of one inspectable artifact.
-
-The author should usually see a clean document. The machinery that preserves drafts, discussions, revisions, attribution, and recoverability should remain available without dominating ordinary writing.
+The author should usually see a clean document. History, discussions, attribution, and recovery should be available when useful without being continuously prominent.
 
 ## 2. Product principles
 
 ### 2.1 The document is the primary object
 
-Users should think in terms of a document composed of headings, sections, paragraphs, and other meaningful units. Internal records may be hierarchical, but the interface should not make ordinary authoring feel like manipulating database rows.
+Users should think in terms of a document composed of meaningful sections and text, not rows or records. The internal hierarchy is a means of giving those parts stable identity and structure.
 
-### 2.2 Structure and prose are one surface
+### 2.2 Structure and text share one surface
 
-There should not be a conceptual split between an outline mode and a writing mode. The same semantic structure should support both high-level organization and detailed prose editing.
+Outline navigation and detailed writing are projections of the same blocks. A heading shown in the final document and its outline label should normally be the same content stored once.
 
-### 2.3 Working material is first-class, not disposable
+### 2.3 The block model should remain generic
 
-Initial drafts, alternate rewrites, notes, source material, and conversations with an LLM are valuable parts of the creative process. They should not need to be copied to external applications merely to preserve them.
+The core tree should use one recursive `Block` type. It should not persist separate entity types for `Idea`, `Heading`, `Paragraph`, or `Leaf` merely because a block currently occupies one of those roles.
 
-### 2.4 Multiple representations may coexist
+An "idea" remains a useful authoring heuristic: a terminal block should usually contain one coherent, independently useful piece of text. It is not a reliable schema invariant and should not become an `Idea` entity in code.
 
-An author may need to see the final text, an earlier draft, and an AI conversation simultaneously. The system should treat this as a normal projection of one document rather than as three unrelated modes.
+### 2.4 History is first-class
 
-### 2.5 AI is a contributor, not a privileged editor
+Every committed mutation contributes to append-only History. Any historical revision should be inspectable without mutation. Restoring historical state should create a new compensating revision rather than moving or deleting the historical record.
 
-An LLM may eventually create, edit, move, tag, or delete document content, but it should do so through the same attributable contribution model used by humans and automation. AI actions must not bypass provenance, revision history, or document invariants.
+Earlier drafts normally survive as historical states. They do not require duplicate live content records merely to remain recoverable.
 
-### 2.6 Provenance must survive composition
+### 2.5 Optional representations may coexist
 
-Attribution at the granularity of a whole node is insufficient for the intended product. A final paragraph may contain text written by a human, inserted by an LLM, subsequently rewritten by the human, and derived from an earlier draft. That lineage should remain queryable even if it is normally hidden from view.
+A block may have more than one live content value when the product genuinely needs simultaneous material, such as a manually maintained summary or an alternative wording. Multiple contents are supported but not mandatory; the ordinary case may contain exactly one.
 
-### 2.7 Presentation is a projection
+### 2.6 AI is a contributor, not a privileged editor
 
-Which content is visible, which lanes are shown, which tags are selected, which branches are collapsed, and which auxiliary panes are open are presentation choices. They should not be confused with the durable semantic document itself.
+An LLM may eventually create, edit, move, tag, or delete document material, but it must do so through the same attributable operation and contribution boundaries used by humans and automation.
 
-## 3. The key domain distinction: semantic blocks and content containers
+### 2.7 Provenance survives composition
 
-The current MVP `DocumentNode` combines three concerns:
+Attribution at whole-block or whole-content granularity is insufficient. A passage may combine text inserted by several contributors and subsequently edited or copied. That lineage should remain queryable even when hidden in the normal writing view.
 
-1. a location in the hierarchy;
-2. metadata such as title and tags; and
-3. one rich-text body.
+### 2.8 Presentation is a projection
 
-That is a useful implementation for the current product, but it should not be treated as the final ontology.
+The current lens, selected tags, historical revision, visible overlays, pane layout, disclosure, focus, and navigation state are presentation choices unless explicitly saved as durable document material.
 
-The target model separates the **semantic place in the document** from the **content associated with that place**.
+## 3. Core structural model
 
-### 3.1 Semantic Block
+### 3.1 One recursive Block tree
 
-A **Semantic Block** is a stable unit in the document's structural spine.
+A **Block** is a stable unit in the document's structural spine. A block may represent a document root, chapter, section, subsection, paragraph-sized thought, list item, or another meaningful unit.
 
-A block may correspond to a chapter, section, subsection, paragraph-sized idea, argument, scene, note grouping, or another meaningful unit. The model should not prematurely require one block to equal one paragraph.
+Every block owns:
 
-A block owns structural identity and relationships, not a single canonical body.
+- stable identity;
+- tags that describe the semantic unit across its contents;
+- zero or more content values;
+- an ordered list of child blocks; and
+- a presentation rule for that direct child list.
 
-Conceptually, a block has:
+The logical aggregate is:
 
 ```text
-SemanticBlock
+Document
+  root: Block
+
+Block
   id
-  parentId
-  position
-  title / heading metadata
-  structural metadata
   tags
-  contentContainers[]
-  conversations[]
+  childrenPresentation
+  contents: BlockContent[]
+  children: Block[]
   createdAt / updatedAt / deletedAt
 ```
 
-Hierarchy remains useful because it gives stable identity to concepts while allowing them to be reordered, nested, moved, hidden, and revisited.
+The tree is explicit in `Block.children`. Vector order is sibling order, and the containing block is the logical parent. A normalized store may persist equivalent `parentId` and `position` columns, but those are a serialization of the same tree rather than additional domain facts.
 
-### 3.2 Content Container
+A real root block is useful because document-level displayed text can then use the same content-selection machinery as every other level. A storage implementation may use a virtual root if it preserves equivalent semantics.
 
-A **Content Container** is a body of content associated with one semantic block.
+### 3.2 Content role is contextual
 
-A block may have zero, one, or many containers. Containers allow related representations to coexist instead of overwriting one another.
+Every block uses the same `BlockContent` representation. The low-level model does not store separate `heading` and `body` fields.
 
-Examples include:
+In a conventional section projection:
 
-- the initial author draft;
-- a later human rewrite;
-- an LLM-proposed rewrite;
-- the currently accepted/final prose;
-- notes or research material;
-- an alternative wording;
-- a summary or outline representation.
+- content on a non-terminal block introduces or labels its subtree and is normally rendered as a heading;
+- content on a terminal block is normally rendered as prose; and
+- the outline derives its label from the selected content of the same block.
 
-Conceptually:
+The heading shown in the document is therefore not duplicated in an outline-only metadata field or an artificial first child.
+
+This is a rendering rule, not a permanent content type. Adding the first child can cause a block's content to become the introduction to a subtree; removing the last child can make it terminal again. Product operations must make that structural consequence understandable.
+
+### 3.3 Child presentation is orthogonal
+
+`childrenPresentation` belongs logically to the parent because it describes how that parent's direct children relate and render as a group.
+
+An initial vocabulary may be:
 
 ```text
-ContentContainer
-  id
-  blockId
-  role
-  stage
-  tags
-  content
-  provenance
+ChildrenPresentation
+  Sections
+  Flow
+  Bullets
+  Numbers
+```
+
+This property refines topology without creating separate block classes. For example, a child of a `Bullets` block renders as a list item even when that child has nested children of its own. That child's own `childrenPresentation` determines how the next level renders.
+
+Heading/body/list-item behavior is therefore inferred from structural context: topology plus the incoming child presentation. It is not an intrinsic role on `InlineContent`.
+
+The current direction assumes that `childrenPresentation` is shared by all content lenses within one materialized revision. If a future requirement needs the same children to be sections in one simultaneous representation and bullets in another, that becomes a structural-representation problem. It should not be encoded by attaching an ambiguous free-form tag to an edge.
+
+### 3.4 Empty and introductory structures
+
+Two behaviors remain to be designed explicitly:
+
+1. how a user creates an empty structural section before it has a child; and
+2. how introductory prose under a heading is represented.
+
+The default direction for introductory prose is a first child block. This avoids an unordered mixture of a parent's own long-form prose and its children while still allowing the parent to own the displayed heading.
+
+## 4. BlockContent and InlineContent
+
+### 4.1 Minimal low-level definitions
+
+The current logical definitions are:
+
+```text
+Block
+  id: BlockId
+  tags: TagSet
+  childrenPresentation: ChildrenPresentation
+  contents: BlockContent[]
+  children: Block[]
   createdAt / updatedAt / deletedAt
+
+BlockContent
+  id: BlockContentId
+  tags: TagSet
+  value: InlineContent
+  createdAt / updatedAt / deletedAt
+
+InlineContent
+  text: CollaborativeText
+  formatting: RangeAnnotation<Formatting>[]
+  provenance: RangeAnnotation<Provenance>[]
 ```
 
-The exact serialization of rich content remains an implementation question. Tiptap/ProseMirror and Yjs remain plausible foundations.
+`BlockContent` gives an independently addressable content value identity, which is needed for editing, comments, provenance targets, copy derivation, and optional simultaneous representations. It does not prescribe why another content value exists.
 
-### 3.3 Role, stage, and free-form tags
+Most blocks may have one `BlockContent`. Zero contents can represent a purely structural or not-yet-authored block. Additional contents are created only when required.
 
-The product should preserve the flexibility of tags while avoiding the mistake of making essential semantics depend entirely on unstructured strings.
+### 4.2 No mandatory form, stage, or role fields
 
-A content container should therefore support both typed semantics and free-form tags.
+The low-level model intentionally does not require `ContentForm`, `ContentStage`, or `ContentRole` enums.
 
-For example:
+- `Summary` is not built into the storage ontology.
+- `Working` and `Accepted` are not duplicate live bodies by default.
+- `Primary` and `Alternative` are application-level selection concepts.
+
+The application may express these meanings using tag conventions, lens definitions, revision metadata, and validation rules. This keeps the primitive model generic and avoids requiring multiple versions merely because the schema anticipates them.
+
+### 4.3 Tags have distinct owners
+
+Tags may exist on both `Block` and `BlockContent`, but they are independent assertions:
+
+- block tags describe the semantic unit across all its contents, such as `topic:provenance` or `chapter:introduction`;
+- content tags describe one particular content value, such as `view:summary` or `user:needs-citation`; and
+- `InlineContent` itself has no tags. It contains text and range annotations.
+
+Both levels should use the same normalization rules and may share document-local autocomplete vocabulary. They do not automatically inherit, copy, or synchronize. A query must name whether it is matching block tags, content tags, or both.
+
+Product-significant tags should normally use application-owned namespaces. For example, ownership could be explicit as follows:
 
 ```text
-role: prose
-stage: draft
-tags: [opening, needs-citation]
+Block tag:        topic:provenance
+BlockContent tag: view:main
+BlockContent tag: view:summary
+BlockContent tag: user:needs-citation
+Revision tag:     workflow:accepted
 ```
 
-or:
+The low-level store need only persist generic normalized tags. The application owns reserved namespaces, selection rules, validation, and user-facing vocabulary. Namespacing prevents a user topic named `summary` from accidentally becoming a rendering command.
+
+### 4.4 History versus simultaneous contents
+
+Two states of the same content at different times belong in History:
 
 ```text
-role: prose
-stage: final
-tags: [approved]
+revision 12: accepted wording
+revision 13: first subsequent edit
+revision 14: current working wording
 ```
 
-or:
+They do not require three live `BlockContent` records.
+
+Two contents that must coexist in one materialized revision do require separate identities:
 
 ```text
-role: notes
-stage: working
-tags: [research, source-check]
+Block
+  BlockContent tags: [view:main]
+  BlockContent tags: [view:summary]
 ```
 
-`role` and `stage` should describe product-significant semantics. Free-form tags should remain user-extensible vocabulary for filtering, organization, workflows, and later automation.
+This boundary prevents History from being confused with optional parallel material.
 
-The initial controlled vocabulary does not need to be large. The important requirement is that concepts such as "final" must not depend solely on a user spelling a tag consistently.
+## 5. Lenses, revisions, and overlays
 
-## 4. Lenses: selecting what the document shows
+### 5.1 Lens
 
-The semantic hierarchy should remain stable while the user chooses which associated content to project.
+A **Lens** is an application-level presentation query. It may select:
 
-A **Lens** is a presentation query over the document. It determines which containers or related materials are visible and how they are arranged.
+- a live or historical base revision;
+- one `BlockContent` per visible block using tags and fallback rules;
+- blocks by structural or tag predicates;
+- associated materials such as comments, discussions, or provenance; and
+- a layout for comparing projections.
 
-Examples:
+Selecting a lens is normally non-mutating UI state. Named or saved lenses may later become optional document material, but the core data model does not require them.
 
-### Final lens
+### 5.2 Final and draft are normally historical projections
 
-Show the accepted/final prose for each visible semantic block.
-
-The result should read like an ordinary finished document.
-
-### Draft lens
-
-Show the current draft representation for each block using the same document structure.
-
-### Final + draft comparison lens
-
-Show corresponding final and draft containers side-by-side.
+History can provide the distinction between final and draft without storing mandatory stages on every `BlockContent`:
 
 ```text
-+----------------------+----------------------+
-| Final                | Draft                |
-|                      |                      |
-| accepted paragraph   | earlier paragraph    |
-+----------------------+----------------------+
+Final view = materialize an accepted revision read-only
+Draft view = materialize the current live revision
+Final + Draft = show both materializations side by side
 ```
 
-### Writing + discussion lens
+If acceptance applies to the whole document, `workflow:accepted` belongs naturally on revision metadata. If blocks can be accepted independently, the application may record block/content acceptance as attributed tag operations. A final view assembled from independently accepted block revisions is a composite historical projection and requires explicit tree-coherence rules; it is not automatically equivalent to one revision that once existed.
 
-Show the principal prose container alongside the conversation associated with the currently active block.
+### 5.3 Summary is optional content selected by a lens
 
-### Custom tag lens
+A Summary view may select `BlockContent` values tagged `view:summary`. Blocks without such content may fall back, be omitted, or receive a generated summary according to an explicit lens policy.
 
-Examples:
+Nothing in the low-level model requires a summary content value or a second version of the document.
 
-- show containers tagged `final`;
-- hide containers tagged `draft`;
-- show `needs-citation` material;
-- show AI-originated alternatives;
-- show research notes while keeping accepted prose visible.
-
-A lens is normally presentation state. Selecting a lens should not itself create document mutations.
-
-## 5. Multi-pane workspace
-
-The end-state workspace should be able to display multiple content containers at once while still feeling like one document.
-
-One useful composition is:
+For example, the same stable blocks may project as:
 
 ```text
-+----------------------+----------------------+----------------------+
-| Main document        | Draft / alternative  | Discussion           |
-|                      |                      |                      |
-| Heading              | Heading/context      | Human: ...           |
-| Final prose          | Draft prose          | LLM: ...             |
-|                      |                      | Human: ...           |
-| Next section ...     |                      | Proposal: ...        |
-+----------------------+----------------------+----------------------+
++--------------------------------+--------------------------------------+--------------------------------------------------------+
+| Final View                     | Draft View                           | Summary View                                           |
++--------------------------------+--------------------------------------+--------------------------------------------------------+
+| Document                       | Top                                  | Document: Provenance, Implementation                   |
+| +-- Why provenance matters     | +-- Provenance: Source, Consequences | +-- Provenance: why it matters, practical consequences |
+| |   +-- Practical consequences | +-- Implementation                   | +-- [...summary of the paragraph]                      |
+| +-- Implementation approach    |                                      | +-- Implementation                                     |
++--------------------------------+--------------------------------------+--------------------------------------------------------+
 ```
 
-This is not intended to mandate a fixed three-column layout. Screen width, task, and user preference may produce overlays, drawers, stacked views, or two-column layouts.
+Final and Draft may be different historical trees. Summary may be a content-selection lens over a chosen base revision.
 
-The durable requirement is that several representations of the same semantic block may be visible simultaneously and remain explicitly related.
+### 5.4 Structure within and across revisions
 
-The current one-active-editor architecture may still be valuable: many containers can be rendered simultaneously while only the focused editable container mounts active rich-text editor machinery. If retained, editor ownership should migrate conceptually from "node owns the editor" to "content container owns the editor."
+Within one materialized revision, all content-selection lenses initially share one `Block.children` spine. A content lens may select, omit, or fall back among contents, but it does not silently reparent a block.
 
-## 6. Conversation as durable document material
+Different historical revisions may have different complete trees. This naturally permits a current draft outline to differ from an earlier accepted outline.
 
-LLM discussion should not be treated as an ephemeral sidebar whose contents disappear after a response.
+If the product later requires several independently editable outlines to coexist in one revision, the model will need an explicit concept such as `Outline` or `BlockPlacement`. Tags on blocks or contents are not sufficient to represent different parents, sibling orders, or child-presentation rules safely.
 
-A **Conversation** is durable working material associated with a semantic context.
+### 5.5 Comments and discussions are overlays
 
-At minimum, a conversation should be attachable to a semantic block. Future requirements may justify document-level or multi-block conversations, but block-local discussion is the primary workflow.
+A Proofreading view is normally a base content projection plus comment threads. A Discussion view is a base projection plus durable conversations. Provenance coloring is another overlay.
 
-Conceptually:
+These materials may be tagged and queried, but they remain typed records because their behavior differs from manuscript text. They should not masquerade as ordinary child blocks or `BlockContent` merely to reuse a renderer.
+
+## 6. Fine-grained formatting and provenance
+
+### 6.1 Shared range-annotation abstraction
+
+Formatting and provenance should reuse the same generic range mechanism:
+
+```text
+RangeAnnotation<T>
+  range: StableTextRange
+  value: T
+
+StableTextRange
+  start: TextAnchor
+  end: TextAnchor
+
+Formatting
+  bold / italic / underline / strikethrough / link / durable font styling
+
+Provenance
+  contributionId
+  contributorId
+  origin
+  derivedFrom[]
+```
+
+This permits the same range-resolution and decoration machinery to render formatting or optional attribution overlays such as one color per contributor.
+
+The domain-level abstraction does not require both annotation kinds to have identical persistence or mutation implementations.
+
+### 6.2 Formatting and provenance have different edit semantics
+
+Formatting often inherits across insertion boundaries; provenance must not blindly do so.
+
+- typing inside bold text normally remains bold;
+- typing inside text attributed to author A must be attributed to the current contributor;
+- copying formatted text normally preserves its formatting;
+- copying attributed text should apply an explicit provenance policy, potentially preserving origin while recording a new copy contribution; and
+- deleting text removes it from the current projection but not from historical attribution.
+
+Shared representation and rendering do not imply shared inheritance rules.
+
+### 6.3 Yjs relative-position behavior
+
+Yjs relative positions are a plausible implementation of `TextAnchor` for sparse annotations.
+
+A relative position refers to a specific Yjs shared type, a CRDT item identity, and an association direction. It does not need to be recomputed whenever text is inserted before it. It resolves to the appropriate current absolute index, and peers that integrate the same updates converge on the same position.
+
+Important limitations are part of the design:
+
+- an anchor cannot resolve on a peer until the referenced update is present;
+- deletion may collapse a range to a surviving boundary;
+- deletion or garbage collection of the containing shared type may make an anchor unresolvable;
+- undo-following behavior must be configured consistently for shared anchors; and
+- reconstructing content from plain text creates new CRDT identities and invalidates old anchors.
+
+See the official [Yjs relative-position documentation](https://github.com/yjs/docs/blob/main/api/relative-positions.md) and implementation behavior before committing the format.
+
+### 6.4 Copy, paste, split, and move
+
+Relative positions do not automatically follow copied text between `BlockContent` values. Copy/paste creates new CRDT items in another shared type. Editor operations such as splitting a ProseMirror node may also recreate text with new identities.
+
+An internal clipboard operation should therefore be capable of carrying:
+
+```text
+text
+formatting annotations
+source provenance
+source BlockContent and range
+```
+
+The destination creates new text and new annotations according to an explicit derivation policy. Plain-text or external paste may begin an imported provenance chain.
+
+Moving an entire block while retaining its `BlockContent` and Yjs state is different: internal text identities and anchors can remain intact because the content itself was not copied.
+
+### 6.5 Dense provenance remains an implementation question
+
+Relative endpoints are attractive for sparse comments, selections, and decorations. Provenance may cover nearly every character, so storing two external anchors for many short runs may be inefficient.
+
+Candidate implementations include:
+
+- Yjs/ProseMirror attributes or marks;
+- attribution attached to inserted CRDT items or updates;
+- contribution-linked spans; or
+- a derived materialized run index backed by the contribution ledger.
+
+The chosen representation must preserve the domain behavior above and support optional author-colored rendering. It requires a focused design and realistic performance experiments.
+
+## 7. History as a first-class domain concept
+
+### 7.1 History and provenance answer different questions
+
+**History** answers how the document changed over time.
+
+**Provenance** answers where a current or historical text range came from.
+
+History may show that an AI rewrite was accepted at revision 92. Provenance may show that two current sentences still descend from it while another has been substantially rewritten by a human.
+
+### 7.2 Required History behavior
+
+The existing direction remains authoritative:
+
+1. each accepted mutation appends an attributed contribution and advances revision;
+2. historical materialization is detached and read-only;
+3. entering and leaving historical viewing does not mutate live state;
+4. restoration creates a new compensating contribution and revision;
+5. earlier ledger entries and snapshots remain intact; and
+6. semantic grouping may improve presentation without erasing physical contributions.
+
+History must cover the complete document aggregate: block structure, block/content tags, child presentation, all `BlockContent` values, inline content and annotations, conversations, comments, and relevant contributor/session records.
+
+### 7.3 Yjs state and annotation anchors travel together
+
+A historical snapshot containing range anchors must also contain the Yjs state whose item identities those anchors reference. Rebuilding a historical `InlineContent` from rendered HTML or plain text is insufficient.
+
+If History relies on separate complete Yjs states per product revision, an older state can retain the old identities even when the live document later garbage-collects content. If it instead relies on snapshots over one perpetually evolving Yjs document, deleted-content retention and garbage collection require special design. Yjs's own snapshot mechanism does not replace the product contribution ledger, tree operations, revision grouping, or restore semantics.
+
+Snapshot-versus-delta retention and compaction remain persistence-design questions. They must not weaken historical inspectability or compensating restore.
+
+### 7.4 Acceptance is revision-oriented by default
+
+An accepted/final state is normally a marked historical revision rather than a second mandatory `BlockContent` with a persistent stage enum.
+
+Editing after acceptance creates newer working revisions while the accepted revision remains inspectable. Accepting again records another attributed mutation or revision marker. Whether acceptance is document-wide or independently block-scoped remains a product decision.
+
+## 8. Conversations, comments, and AI proposals
+
+### 8.1 Durable conversations
+
+An AI discussion is durable working material associated with semantic context, not an ephemeral external chat log.
+
+At minimum:
 
 ```text
 Conversation
   id
-  blockId
+  target: BlockId | BlockContentId | TextRangeTarget
   tags
   messages[]
   createdAt / updatedAt
@@ -253,42 +428,28 @@ ConversationMessage
   timestamp
   content
   model metadata, when applicable
-  contextual document revision / references
+  contextual revision and references
 ```
 
-Conversation messages are not ordinary manuscript paragraphs and should not masquerade as children in the visible document hierarchy merely because both are persisted as records.
+Future requirements may allow document-level or multi-block conversations. The target must remain explicit.
 
-They belong to the `.coedit` artifact, can participate in History and provenance, and may be exposed through a chat-like UI, but they have a distinct semantic role.
+### 8.2 Comments
 
-A conversation should preserve enough context to answer questions such as:
+Comments are durable proofreading annotations attached to a block, content value, or text range. They may have threads, contributors, resolution state, and tags. A Comments lens controls visibility; hiding comments does not delete them.
 
-- what document state was being discussed;
-- which block or content container was referenced;
-- which model produced a response;
-- which proposal resulted from the discussion;
-- whether that proposal was accepted, modified, rejected, or superseded.
+### 8.3 AI proposals and operations
 
-## 7. AI proposals and document operations
+An LLM should eventually be able to propose typed operations such as:
 
-The current AI seam models a proposal primarily as replacement HTML for one node. That is a useful placeholder but too narrow for the target product.
+- insert, delete, or replace a range in `BlockContent`;
+- create or delete `BlockContent`;
+- create, move, restore, or delete a `Block`;
+- change `childrenPresentation`;
+- retag a block, content value, conversation, comment, or revision where permitted;
+- create an alternate or summary content value using application tag conventions; and
+- create a comment or conversation message.
 
-An LLM should eventually be able to propose a set of typed document operations such as:
-
-- replace a text range in a content container;
-- insert text at a position;
-- create a new content container;
-- create a semantic block;
-- append a child block;
-- retag a block or container;
-- move a block;
-- create an alternate rewrite without replacing the accepted text;
-- promote a draft or proposal into the accepted/final role.
-
-The author may preview and accept these operations as a unit or selectively where the product permits.
-
-Accepted AI actions must become ordinary attributed contributions. The AI provider should never directly mutate persistence or bypass the application command boundary.
-
-This keeps the central architecture simple:
+The author may preview and accept operations as one attributed group or selectively where supported. An AI provider must not mutate persistence directly.
 
 ```text
 human action -----\
@@ -296,53 +457,36 @@ automation --------> typed document operations -> contribution ledger -> durable
 AI proposal -------/
 ```
 
-The difference is contributor identity, context, review workflow, and presentation—not a separate mutation system.
+Contributor identity, context, and review differ; the mutation system does not.
 
-## 8. Fine-grained provenance
+## 9. Unified projections and workspace
 
-### 8.1 Why node-level attribution is insufficient
+The rendered workspace is derived from:
 
-A whole-container contribution can answer:
+```text
+materialized document revision
++ lens content/tag selection
++ overlays
++ layout and local presentation state
+= rendered workspace
+```
 
-> Which contributor last updated this body?
+Examples include:
 
-It cannot reliably answer:
+- **Live writing:** current revision, default content, no overlays;
+- **Final:** accepted historical revision, default content;
+- **Final + Draft:** accepted historical and live revisions side by side;
+- **Summary:** chosen base revision, `view:summary` content selection;
+- **Proofreading:** chosen base projection plus comments;
+- **Discussion:** chosen base projection plus conversations;
+- **AI provenance:** chosen projection plus contributor/origin decorations; and
+- **History:** any historical revision, read-only.
 
-> Who originated this sentence?
+The product may use panes, lanes, drawers, overlays, or stacked layouts. No fixed three-column arrangement is required. Several projections may be visible simultaneously while only one editable `BlockContent` owns active rich-text editor machinery.
 
-or:
+## 10. Contribution model
 
-> Which words in the final paragraph came from the LLM rewrite that followed this conversation?
-
-The target product requires provenance finer than the semantic block and finer than the whole content container.
-
-### 8.2 Required provenance capabilities
-
-The durable model should eventually support queries equivalent to:
-
-- identify the contributor responsible for a selected text range;
-- identify the contribution that introduced or replaced that range;
-- distinguish human, AI, automation, and imported origins;
-- trace accepted text back to an AI proposal or conversation where applicable;
-- show human edits made after an AI-generated passage;
-- show AI-authored or AI-modified portions of the current document;
-- retain provenance across ordinary subsequent edits as far as technically meaningful.
-
-The normal writing view should not need to show this information continuously. Provenance is primarily a durable capability with optional visualization.
-
-### 8.3 Provenance representation remains an open design problem
-
-Yjs already provides a structured editing substrate and incremental updates, but Yjs history alone should not be assumed to satisfy product-level provenance requirements.
-
-A future design must determine how durable attribution is attached to text operations or ranges. Candidate approaches may include provenance annotations, operation-linked spans, retained item metadata, or a derived lineage model.
-
-Whatever representation is selected must define behavior under insertions, deletions, replacement, copy/paste, splitting/merging blocks, accepted AI proposals, and later human revision.
-
-This decision is significant enough to deserve a dedicated design record before AI editing becomes an implementation commitment.
-
-## 9. Contribution model
-
-The existing contribution architecture remains aligned with the target product and should be preserved conceptually.
+The existing append-only contribution architecture remains aligned with this direction.
 
 A persisted mutation should continue to record, at minimum:
 
@@ -351,134 +495,63 @@ A persisted mutation should continue to record, at minimum:
 - session/group context;
 - timestamp;
 - typed operation or operation set;
-- affected semantic blocks and/or content containers;
-- base revision;
-- resulting revision/state verification data;
-- human-readable context/message where useful.
+- affected blocks, contents, and/or ranges;
+- base and resulting revision/state verification data; and
+- human-readable context where useful.
 
-The model should expand from `affectedNodeIds` toward targets that can identify the appropriate durable entities and fine-grained text effects.
+Fine-grained provenance extends this ledger; it does not replace it. A contribution may contain several coordinated operations when atomicity and attribution remain explicit.
 
-A contribution may eventually contain several coordinated operations, particularly for an AI rewrite or structural transformation, provided atomicity and provenance remain explicit.
+## 11. Relationship to the current implementation
 
-## 10. History and provenance are related but different
+### 11.1 Foundations to retain
 
-**History** answers how the document changed over time.
-
-**Provenance** answers where current content came from.
-
-They overlap but should not be conflated.
-
-For example, History may show that an AI rewrite was accepted at revision 92. Provenance may show that sentences one and two still descend from that rewrite while sentence three has subsequently been substantially rewritten by the author.
-
-The current append-only contribution ledger, semantic grouping, historical viewing, and compensating restore are strong foundations for History. Fine-grained provenance adds a separate lineage dimension rather than replacing that machinery.
-
-## 11. Unified document projection
-
-The principal document view should be derived from three things:
-
-```text
-semantic structure
-+ selected lens / visibility rules
-+ current or historical revision
-= rendered workspace
-```
-
-This implies several important invariants.
-
-1. The hierarchy does not need to change when switching from draft to final visibility.
-2. Showing or hiding a content role is normally a projection change, not a document edit.
-3. A historical view should apply the same projection concepts to historical semantic/content state.
-4. Conversation visibility is independent from whether conversation records are durable.
-5. Navigator selection, pane layout, disclosure, current lens, and focus are presentation state unless explicitly promoted into a saved workspace feature in the future.
-
-## 12. Example end-to-end workflow
-
-An author begins with a section called **Why provenance matters**.
-
-The semantic block exists once.
-
-The author writes an initial prose container:
-
-```text
-role: prose
-stage: draft
-tags: [initial]
-```
-
-They open a discussion attached to the block and ask an LLM to challenge the argument. The human and LLM messages are preserved in the conversation.
-
-The author then asks for a rewrite. The LLM proposes either a new alternative container or a set of text operations against the draft, depending on the chosen workflow.
-
-The proposal records the AI contributor/model and links back to the conversation.
-
-The author edits that proposal manually. Those edits are attributed to the human without erasing the provenance of unchanged AI-originated passages.
-
-When satisfied, the author promotes the resulting container to the accepted/final stage.
-
-Later they may choose:
-
-- **Final** lens to read the document cleanly;
-- **Final + Draft** to compare stages;
-- **Discussion** to revisit the reasoning that led to the rewrite;
-- **AI provenance** to inspect which current passages retain AI lineage;
-- **History** to view the document as it existed before the rewrite.
-
-All of these views refer to one `.coedit` document.
-
-## 13. Relationship to the current implementation
-
-### 13.1 Strong foundations to retain
-
-The following current concepts remain appropriate foundations:
+The following remain strong foundations:
 
 - portable local-first `.coedit` documents;
-- stable hierarchical identities using parent/order relationships;
-- free-form tags;
+- stable hierarchical identities and deterministic order;
+- normalized free-form tags and document-local suggestions;
 - contributor kinds including human, automation, AI, and imported;
-- writing sessions;
-- typed document operations;
-- append-only attributed contributions;
-- snapshots and deterministic state verification goals;
-- non-mutating historical viewing;
+- writing sessions and semantic contribution groups;
+- typed operations and append-only attributed contributions;
+- full-state historical materialization and deterministic verification goals;
+- read-only historical viewing;
 - compensating restoration rather than destructive rewind;
 - Tiptap/ProseMirror and Yjs as the current rich-text substrate;
-- explicit application/gateway boundaries;
-- offline-by-default provider registration;
-- separation of persisted domain state from UI presentation state.
+- controlled editor ownership and draft-transition barriers;
+- explicit application/gateway boundaries; and
+- separation of persisted domain state from UI state.
 
-### 13.2 Current assumptions that should not be hardened further
+### 11.2 MVP assumptions not to harden
 
-The following MVP assumptions should be treated as transitional:
+The following are transitional:
 
-- one semantic node has exactly one authored rich-text body;
-- the node's tag set is sufficient to describe all roles/stages associated with that semantic location;
-- `NodeBlock` is the final product-level unit of the workspace;
-- editor ownership is fundamentally node ownership rather than content-container ownership;
-- an AI proposal is fundamentally replacement HTML for one node;
-- node-level contribution attribution is sufficient provenance;
-- History and revision machinery alone can answer content-origin questions.
+- one node combines a title, tags, and exactly one body;
+- title and body are permanently different content entities;
+- a node's tags are sufficient for both semantic and content-specific classification;
+- editor ownership is fundamentally node ownership rather than `BlockContent` ownership;
+- an AI proposal is replacement HTML for one node;
+- node-level attribution is sufficient provenance; and
+- History alone answers current-content origin questions.
 
-### 13.3 Current continuous-canvas work is not discarded
+### 11.3 Continuous-canvas work remains useful
 
-The continuous document direction remains useful. The pivot is not a return to master/detail.
-
-Instead, the continuous canvas should evolve from:
+The continuous document direction remains useful. It should evolve from:
 
 ```text
-one visible semantic node -> one body
+one visible node -> title metadata + one body
 ```
 
-into:
+to:
 
 ```text
-one visible semantic block -> one or more projected content containers
+one visible Block -> selected generic BlockContent + projected children and overlays
 ```
 
-The document should become more unified, not less.
+This is not a return to master/detail or separate outline/editor applications.
 
-## 14. Migration direction
+## 12. Migration direction
 
-This document does not define a format migration, but the expected conceptual evolution is:
+This document does not define a format migration. The conceptual evolution is:
 
 ```text
 CURRENT
@@ -492,101 +565,148 @@ Document
 TARGET
 
 Document
-  -> SemanticBlock
-       -> structural metadata
+  -> root Block
        -> block tags
-       -> ContentContainer[]
-            -> role / stage / tags
-            -> rich content
-            -> provenance
-       -> Conversation[]
-            -> ConversationMessage[]
-            -> proposal references
+       -> childrenPresentation
+       -> BlockContent[]
+            -> content tags
+            -> InlineContent
+                 -> formatting annotations
+                 -> provenance annotations
+       -> Block[]
+       -> associated conversations/comments
+  -> contribution ledger and revision history
 ```
 
-A practical implementation may introduce these concepts incrementally rather than renaming every existing type at once.
+Mapping current nodes is not purely a rename. A current node may contain both a title and a body while also having children. A future migration must decide whether to create wrapper/child blocks, split body material into terminal blocks, or preserve transitional compatibility fields. It should not silently discard either title or body semantics.
 
-The first migration design should prioritize preserving stable block/node IDs and contribution/history integrity while extracting body content into independently identified containers.
+The first migration design should prioritize:
 
-## 15. Open product questions
+1. stable block/node IDs where semantically possible;
+2. contribution and revision integrity;
+3. deterministic reconstruction of tree order;
+4. Yjs state and annotation-anchor consistency;
+5. explicit classification of current node tags as block or content tags; and
+6. reversible validation before old documents remain writable.
 
-The following questions should remain explicit rather than being answered accidentally by implementation convenience.
+## 13. Recorded decisions
+
+The following decisions constitute this snapshot:
+
+1. The durable structural core is one recursive `Block` tree.
+2. `Idea`, `Heading`, `Body`, and `Leaf` are not persisted entity types.
+3. Every block may own generic content; heading/prose/list-item behavior is inferred from structure and child presentation.
+4. The displayed section heading and outline label normally reuse one selected `BlockContent`.
+5. `childrenPresentation` belongs to the parent and describes its direct children.
+6. A block may have zero, one, or several `BlockContent` values; several are optional rather than mandatory.
+7. `BlockContent` has identity, tags, and `InlineContent`, without required form/stage/role enums.
+8. Block tags and content tags share normalization but have independent ownership and query scope.
+9. Product-significant tag conventions should be application-owned and namespaced.
+10. Earlier working/final states normally live in History, not duplicate live content values.
+11. Acceptance is revision-oriented by default; restore remains a compensating mutation.
+12. Summary is an optional application-selected content value, not a built-in content form.
+13. Comments, conversations, and provenance are overlays over a selected base projection, while remaining durable typed material.
+14. Formatting and provenance reuse a generic range-annotation abstraction but have different edit/inheritance semantics.
+15. Yjs relative positions are plausible stable anchors within one retained shared type, not portable identities for copied text.
+16. Yjs state and annotations that reference it must be snapshotted and restored together.
+17. Different historical revisions may have different trees; simultaneous alternate outlines would require an explicit future structural model rather than tags.
+
+## 14. Open product and technical questions
+
+The following remain explicit:
 
 ### Block granularity
 
-Should a typical semantic block correspond to a paragraph, subsection, argument, scene, or user-chosen unit? The model should tolerate different granularity until observed workflows justify stronger conventions.
+What editing conventions help users create useful terminal blocks without pretending that every human "idea" has an objectively detectable boundary?
 
-### Accepted/final semantics
+### Empty structural blocks
 
-Can a block have several accepted containers for different outputs or audiences, or is there normally one accepted prose container per lens/profile?
+How are empty chapters/sections created and represented before they receive children?
 
-### Role and stage vocabulary
+### Children presentation
 
-Which values must be typed product concepts, and which should remain free-form tags?
+Which initial values are required, how are nested lists represented, and is presentation ever allowed to vary between simultaneous projections?
 
-### Conversation scope
+### Default content selection
 
-Are conversations always attached to one block, or can they span several blocks or the whole document while retaining explicit references?
+What lens rule selects content when a block has several values or none? How are application namespaces and fallback behavior validated?
 
-### Proposal workflow
+### Acceptance scope
 
-Should LLM rewrites default to new alternative containers, inline tracked operations against the active container, or offer both models?
+Is acceptance normally document-wide, block-specific, content-specific, or available at several explicit scopes?
+
+### Summary lifecycle
+
+Are summaries manually authored, generated and refreshable, frozen at a revision, or some combination? How is their derivation recorded?
+
+### Conversation and comment targeting
+
+Which target scopes are required initially, and what happens to range-targeted material after its text is deleted, copied, or restored?
 
 ### Fine-grained provenance
 
-What representation gives useful lineage through realistic rich-text editing without creating unacceptable complexity or storage cost?
+Which representation provides useful lineage through realistic Yjs/ProseMirror editing without unacceptable complexity or storage growth?
+
+### Boundary association
+
+For each annotation type, should inserted text at its start or end join the annotation? How do deletion, replacement, undo, and concurrent insertion affect that policy?
 
 ### Copy and derivation
 
-When content is copied from one block/container to another, should provenance follow the copied text, record derivation, or start a new origin chain?
+Should copied text preserve origin, add a derivation edge, attribute the copy to the current contributor, or record several of those facts separately?
 
-### Lens persistence
+### History retention
 
-Which lenses are transient UI selections and which, if any, can become named/saved document-local views?
+What checkpoint, delta, snapshot, compaction, and Yjs garbage-collection policy keeps History complete while bounding realistic document growth?
+
+### Named lenses
+
+Which lenses remain transient UI state, and which may become saved document-local queries?
 
 ### Export semantics
 
-How does Markdown/export choose content when multiple containers exist? The default likely needs a clear accepted/final projection, with explicit alternate export profiles later.
+How does export select a revision, contents, structural presentation, and overlays? The default likely needs a conventional accepted projection with explicit alternatives.
 
-## 16. Near-term product-development consequences
+## 15. Near-term design work
 
-Before investing heavily in optional navigation, native History parity, or production AI provider integration, the project should validate this domain direction.
+Before revising the durable `.coedit` schema, the project should:
 
-Recommended next design work:
+1. validate the minimal `Block` / `BlockContent` / `InlineContent` model with realistic documents;
+2. define tree-rendering and `childrenPresentation` semantics;
+3. define lens selection and namespaced-tag behavior independently of layout;
+4. prototype live versus accepted historical projections side by side;
+5. prototype an optional summary content value without requiring it globally;
+6. specify conversation/comment targets and overlays;
+7. design and benchmark fine-grained provenance, including copy/paste and dense attribution;
+8. define Yjs anchor, snapshot, garbage-collection, and restore requirements;
+9. design the format migration and operation vocabulary only after those behaviors are validated; and
+10. migrate existing continuous-canvas interactions without expanding the one-title/one-body assumption.
 
-1. define the minimum `SemanticBlock` / `ContentContainer` model and invariants;
-2. define lens/filter semantics independently of a particular layout;
-3. prototype a continuous block showing two prose containers plus block-local discussion;
-4. design the conversation/proposal relationship;
-5. design fine-grained provenance requirements and candidate representations;
-6. only then revise the durable `.coedit` schema and operation vocabulary;
-7. migrate existing continuous-canvas interactions onto the new model rather than expanding the one-body `NodeBlock` assumption.
+## 16. Directional acceptance criteria
 
-The goal is not to discard the correctness work already completed. It is to redirect that correctness machinery toward the intended author experience.
+Future proposals align with this direction only if they preserve these properties:
 
-## 17. Directional acceptance criteria
+1. An ordinary projection reads and feels like a conventional document.
+2. The same block content can serve the rendered heading and outline label without duplication.
+3. One generic recursive block type supports terminal and non-terminal structure.
+4. Optional additional contents do not make multiple versions mandatory.
+5. Historical final/draft comparison does not require duplicating live state.
+6. Tags remain generic while application conventions are unambiguous and validated.
+7. Comments and discussions remain durable, attributable, and linked to explicit context.
+8. AI actions become ordinary reviewed and attributed operations.
+9. Attribution can evolve to range-level provenance and optional visualization.
+10. Copy, split, restore, and Yjs identity behavior are specified rather than assumed.
+11. Historical viewing remains non-mutating and restoration remains append-only compensation.
+12. Local-first portability, verification, and recovery remain product constraints.
+13. UI layout, lens state, and navigation do not leak accidentally into durable semantic state.
+14. Implementation convenience does not force `one node = one title + one body + one author` as a permanent ontology.
 
-Future architecture and UX proposals should be considered aligned with this direction only if they preserve the following properties.
+## 17. Summary
 
-1. An ordinary final-only projection can read and feel like one conventional document.
-2. One semantic block can retain multiple related content containers without cloning the block's structural identity.
-3. Multiple containers for the same block can be shown simultaneously.
-4. Visibility can be selected by typed role/stage and by user tags without mutating underlying content.
-5. LLM conversations are durable `.coedit` material and remain linked to the semantic context they discuss.
-6. Accepted AI changes become normal attributed document contributions.
-7. AI can eventually address content and structure through typed operations rather than privileged direct storage mutation.
-8. Attribution can evolve to text-level provenance rather than stopping at node/container ownership.
-9. Historical state, current content provenance, and UI projection remain distinct concepts.
-10. Existing local-first, append-only, recovery, and portability guarantees remain product constraints rather than casualties of AI integration.
-11. The continuous workspace evolves toward richer projections of one semantic document and does not regress into separate outline/editor applications.
-12. Implementation convenience must not force `one node = one body = one author` as a permanent domain constraint.
+The central domain object is one recursive `Block`. Every block owns semantic tags, optional generic `BlockContent` values, an ordered child list, and a presentation rule for those children. The same selected content may render as a document heading, outline label, paragraph, or list item according to structural context.
 
-## 18. Summary
+`BlockContent` deliberately does not encode mandatory summary/draft/final/primary roles. Application-level lenses, namespaced tags, and revision metadata provide those meanings. History preserves earlier states; additional live contents exist only for material that must genuinely coexist.
 
-The current Coedit implementation has built strong infrastructure for durable local documents, hierarchy, contribution history, safe editing transitions, and future AI attribution. The next product step is to change the abstraction at the center of the workspace.
+Formatting and provenance operate over ranges in `InlineContent` through a shared abstraction, while retaining different editing semantics. History, provenance, comments, conversations, and lenses remain distinct but composable concepts.
 
-A semantic location in the document should not own exactly one body. It should anchor multiple related content containers and conversations. The user should be able to project those materials through lenses such as final, draft, comparison, notes, or discussion while continuing to perceive one coherent document.
-
-AI should participate as an attributable contributor operating through typed document commands. The contribution ledger remains the record of change over time, while a finer-grained provenance model records how current text originated and evolved.
-
-This model preserves the strongest parts of the present architecture while creating room for the intended **edit/coedit** workflow: writing, discussing, comparing, rewriting, accepting, and tracing content without losing the unity of the document or the history of how it came to be.
+This direction preserves the project's current strengths in local persistence, stable identity, attributed operations, historical viewing, and compensating restore while replacing the transitional title-plus-one-body node assumption with a smaller and more extensible core.
