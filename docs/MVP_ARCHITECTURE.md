@@ -33,13 +33,14 @@ Markdown renderer -----------+--> public engine API --> Document engine
 Future AI tools -------------|                              |
 Portable storage transport --+                      private representation
                                                    snapshots, deltas,
-                                                   checkpoints, caches
+                                                   storage indexes, caches
 ```
 
 The first useful vertical slice can import a realistic Markdown document,
 inspect its Block tree and diagnostics, edit structure and rich inline content,
-use optional content lenses, inspect and restore History, export Markdown, save
-and reopen a lossless portable document, and survive a browser reload.
+use optional content lenses, inspect and restore History, create semantic
+checkpoints, export Markdown, save and reopen a lossless portable document, and
+survive a browser reload.
 
 Tauri, Rust, SQLite, multi-user networking, AI providers, production provenance,
 attachments, and a final History-compaction strategy are not MVP requirements.
@@ -56,18 +57,19 @@ The engine owns:
 - stable document, content, Contribution, and version identities;
 - current projections and exact read-only historical materialization;
 - lightweight History listing and semantic changeset summaries;
+- checkpoint creation as a first-class durable Contribution;
 - restore as a new compensating mutation;
 - validation and lossless serialization of portable documents;
 - change notifications after successful publication; and
-- all choices about snapshots, deltas, CRDT updates, checkpoints, caching,
+- all choices about snapshots, deltas, CRDT updates, storage indexes, caching,
   compaction, private state representation, and portable encoding.
 
 Every client-originated durable mutation enters through `execute`, including
-interactive edits, imports, restorations, and future AI edits. Integrated remote
-work enters through a private replication-ingress path that preserves its
-original Contribution identity and causal metadata. Both paths share validation,
-invariants, History integration, atomic publication, and notifications. No
-client receives a privileged tree mutation path.
+interactive edits, imports, checkpoints, restorations, and future AI edits.
+Integrated remote work enters through a private replication-ingress path that
+preserves its original Contribution identity and causal metadata. Both paths
+share validation, invariants, History integration, atomic publication, and
+notifications. No client receives a privileged tree mutation path.
 
 ### Browser UX
 
@@ -142,8 +144,8 @@ type DocumentCommand =
       readonly operations: readonly DocumentOperation[];
       readonly source: ImportSourceMetadata;
     }
-  | { readonly kind: "restore"; readonly target: VersionToken }
-  | { readonly kind: "acceptCurrent" };
+  | { readonly kind: "checkpointCurrent" }
+  | { readonly kind: "restore"; readonly target: VersionToken };
 
 interface CommandReceipt {
   readonly commandId: CommandId;
@@ -242,18 +244,24 @@ the viewpoint of queries and notifications. A rich-text editor may have a
 transient local draft, but committing canonical text must still pass through the
 engine; a live Y.Doc is not a side door around commands.
 
+A `checkpointCurrent` command is a normal durable command. It produces one
+attributed checkpoint Contribution and one new Version with document material
+identical to its base Version. It does not imply approval, publication, or
+immutability.
+
 ### Query and History contract
 
 The frontend can, without accessing storage internals:
 
-- query the current, exact historical, or application-selected accepted Version
-  and receive both the materialized token and the frontier at which the query
-  was evaluated;
+- query the current or an exact historical Version and receive both the
+  materialized token and the frontier at which the query was evaluated;
 - query a document descriptor (identity and derived display title) for browser
   storage/listing without parsing the portable artifact;
 - list paginated Contribution summaries without materializing historical
   documents, while treating advertised VersionTokens as separate materialization
   identities;
+- identify checkpoint Contributions through their semantic kind and resulting
+  VersionToken;
 - request a semantic summary either for one Contribution or for the difference
   between two Versions;
 - materialize any advertised version exactly and read-only; and
@@ -269,8 +277,7 @@ The initial History read models are conceptually:
 ```ts
 type VersionSelector =
   | { readonly kind: "current" }
-  | { readonly kind: "exact"; readonly version: VersionToken }
-  | { readonly kind: "accepted"; readonly policy: "application-default" };
+  | { readonly kind: "exact"; readonly version: VersionToken };
 
 type DocumentQuery =
   | { readonly kind: "document"; readonly at: VersionSelector }
@@ -296,8 +303,8 @@ interface DocumentDescriptor {
 type ContributionKind =
   | "operations"
   | "importMarkdown"
-  | "restore"
-  | "acceptCurrent";
+  | "checkpoint"
+  | "restore";
 
 interface ContributionSummary {
   readonly contributionId: ContributionId;
@@ -356,6 +363,10 @@ A deliberately persisted human summary is Contribution metadata. A derived or
 LLM-generated summary is a disposable query projection unless an explicit
 attributed command persists it.
 
+Checkpoint Contributions are part of ordinary History. There is no singular
+"accepted" Version and no mutable checkpoint pointer. A caller that wants a
+specific checkpoint uses the exact resulting VersionToken from History.
+
 Restore never rewinds, deletes, or mutates old History. It creates a new
 Contribution against the current base version whose result restores the chosen
 historical material according to the engine's restore semantics.
@@ -364,12 +375,12 @@ React presentation normally consumes semantic projections. The trusted content
 adapter used by the editor may query a detached canonical CollaborativeText
 value for one InlineContent only from `current`, reconstruct a local Y.Doc, and
 submit incremental updates against the token returned by that query. Editing
-requires `result.version === result.observedAt`; exact historical and accepted
-projections remain read-only. To continue from historical material, the user
-first submits restore with the current `observedAt` as the command base and the
-historical `version` as the target. Editor bytes are copied values, never
-engine-owned buffers or update logs, and changing the local Y.Doc does not mutate
-canonical state.
+requires `result.version === result.observedAt`; exact historical projections
+remain read-only. To continue from historical material, the user first submits
+restore with the current `observedAt` as the command base and the historical
+`version` as the target. Editor bytes are copied values, never engine-owned
+buffers or update logs, and changing the local Y.Doc does not mutate canonical
+state.
 
 ### Change notification contract
 
@@ -379,7 +390,7 @@ Notifications are invalidation and change hints, not an alternate state stream:
 interface DocumentChanged {
   readonly version: VersionToken;
   readonly origins: readonly ("local" | "remote")[];
-  readonly causes: readonly ("edit" | "import" | "restore" | "accept")[];
+  readonly causes: readonly ("edit" | "import" | "checkpoint" | "restore")[];
   readonly contributionIds: readonly ContributionId[];
   readonly affectedBlockIds: readonly BlockId[];
   readonly affectedInlineContentIds: readonly InlineContentId[];
@@ -407,6 +418,20 @@ Transient selection and editor state do not create Contributions. A failed
 commit leaves the canonical model unchanged and the UX retains a recoverable
 draft or presents an explicit retry/discard choice.
 
+### Checkpoint
+
+```text
+current VersionToken
+  -> execute attributed checkpointCurrent command
+  -> engine publishes one checkpoint Contribution
+  -> engine creates one content-identical resulting Version
+  -> engine emits DocumentChanged
+  -> checkpoint is visible through ordinary History listing
+```
+
+A checkpoint is a durable semantic event. It does not clone live document
+entities, create a separate final document, or change the document material.
+
 ### Markdown import
 
 ```text
@@ -433,7 +458,7 @@ chosen VersionToken + optional lens/subtree
 ```
 
 Markdown is a potentially lossy rendering/interchange format. It is not native
-Save, an engine checkpoint, or sufficient recovery for all Coedit data.
+Save, a storage snapshot, or sufficient recovery for all Coedit data.
 
 ### Native Save and Open
 
@@ -455,8 +480,8 @@ the bytes produced.
 
 The portable artifact contains everything needed for exact reopening, including
 product History and any convergence state required by the implemented version.
-The UX does not know whether it contains snapshots, deltas, or checkpoints.
-Required convergence state can include causal/CRDT document truth and
+The UX does not know whether it contains full snapshots, deltas, indexes, or
+caches. Required convergence state can include causal/CRDT document truth and
 unsynchronized durable Contributions. It excludes credentials, relay URLs,
 presence, cursors, acknowledgements, and inbox/outbox delivery bookkeeping.
 
@@ -499,15 +524,15 @@ MVP implementation because it is simple to verify, but it is not a public data
 type or long-term contract.
 
 The engine may later use structural sharing, immutable shared byte buffers,
-incremental Yjs updates, Contribution deltas, periodic checkpoints,
+incremental Yjs updates, Contribution deltas, periodic storage snapshots,
 materialization caches, retention/compaction policies, IndexedDB, SQL, a worker,
 or a service. Defensive copies are required at mutable trust boundaries;
 immutable internal values may share storage safely.
 
 These optimizations must preserve engine contract tests and logical portable
 behavior. The frontend must never receive `RevisionRecord.snapshot`,
-`DocumentSessionArchive`, raw checkpoint/delta records, or Yjs update logs as its
-state API.
+`DocumentSessionArchive`, raw storage-snapshot/delta records, or Yjs update logs
+as its state API.
 
 ## 7. Compatibility with later consumers
 
@@ -517,8 +542,9 @@ group. It has no privileged mutation path.
 For collaboration, each UX talks to its local engine. Engines integrate remote
 work through a private replication adapter and surface ordinary change
 notifications; frontends neither exchange nor apply replication payloads.
-Product Contributions remain distinct from CRDT transport updates. The full
-constraints are in [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md).
+Product Contributions, including checkpoints, remain distinct from CRDT
+transport updates. The full constraints are in
+[`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md).
 
 ## 8. MVP capability and test boundary
 
@@ -530,6 +556,10 @@ interface drawn around React state. Contract and failure-path tests must prove:
 - interactive editing and Markdown import receive the same validation,
   attribution, atomicity, and History behavior;
 - import publishes one atomic Contribution or none;
+- checkpoint creation publishes one attributed Contribution and one
+  content-identical resulting Version;
+- checkpoint Contributions are listable through History and their resulting
+  Versions are exactly materializable;
 - every query result identifies the Version it observed, so commands never use a
   separately raced base token;
 - History summaries do not require materializing every version;
@@ -546,5 +576,5 @@ interface drawn around React state. Contract and failure-path tests must prove:
   suite.
 
 The MVP deliberately does not prove network convergence. It does preserve the
-opaque version, notification, identity, command-boundary, and serialization
-seams needed to investigate it later.
+opaque version, notification, identity, command-boundary, checkpoint, and
+serialization seams needed to investigate it later.
