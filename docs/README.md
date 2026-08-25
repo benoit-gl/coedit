@@ -1,48 +1,48 @@
 # Coedit documentation
 
-These documents describe the clean-slate application on `main`. They are split
-by responsibility so that domain vocabulary, component boundaries, future
-replication, and implementation order do not become one inseparable design.
+These documents describe the clean-slate application on `main`. Each document has one primary responsibility. This separation keeps domain meaning, prototype scope, component authority, future replication, and implementation order distinct.
 
-## Current documents
+## Current authoritative documents
 
 | Document | Authority |
 |---|---|
-| [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md) | Ordered implementation plan and exit criteria |
-| [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) | MVP component boundaries, public engine behavior, and adapter workflows |
+| [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) | Logical product ontology and domain vocabulary |
+| [`MVP_CONTRACT.md`](MVP_CONTRACT.md) | Required proof boundary for the document-engine MVP prototype |
+| [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) | MVP component authority, public engine behavior, and adapter workflows |
 | [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md) | Post-MVP collaboration, convergence, and causal History direction |
+| [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md) | Ordered implementation plan, concrete initial contracts, tests, and exit criteria |
 
-Step 1 of the scaffolding plan will add `PRODUCT_DOMAIN_MODEL.md`. That document
-will own the logical ontology (`Block`, `InlineContent`, tags, presentation,
-provenance, and related concepts). Until it has been reviewed and copied to
-`main`, inspect the preserved decision snapshot without checking out its branch:
-
-```powershell
-git show tauri-experimental-orphan:docs/PRODUCT_DOMAIN_MODEL.md
-```
+All authoritative clean-slate documentation is available on `main`. An implementer does not need another branch to determine the current domain model or MVP boundary.
 
 The documents have complementary scopes:
 
-- the domain model says what the document means;
-- the MVP architecture says who may read or change it;
-- the collaboration model says what a future replicated implementation must
-  make converge; and
-- the scaffolding plan says in which order to build and verify it.
+- the product/domain model says what the document concepts mean;
+- the MVP contract says what the prototype must prove;
+- the MVP architecture says which component may read or change durable state;
+- the collaboration model says what a future replicated implementation must make converge; and
+- the scaffolding plan says in which order to build and verify the prototype.
 
-If an illustrative type in the scaffolding plan exposes a full snapshot, a
-single head, a numeric sequence, or another prototype storage detail, the public
-boundary in `MVP_ARCHITECTURE.md` takes precedence. The collaboration constraints
-in `COLLABORATION_MODEL.md` take precedence over treating those local-only MVP
-details as permanent contracts.
+When documents overlap, use the authority above. In particular:
+
+- an illustrative private type in the scaffolding plan does not override the public engine boundary in `MVP_ARCHITECTURE.md`;
+- a prototype storage detail does not override the logical ontology in `PRODUCT_DOMAIN_MODEL.md`;
+- the short capability list in `MVP_CONTRACT.md` does not replace the detailed implementation and test rules in the scaffolding plan; and
+- the collaboration constraints in `COLLABORATION_MODEL.md` prevent local-only MVP details from becoming permanent distributed-system contracts.
 
 ## Preserved experimental evidence
 
-The complete earlier implementation and its documentation remain at the tip of
-`tauri-experimental-orphan`. That branch is read-only evidence, not current
-architecture and not an implementation base. In particular, its Tauri target,
-SQLite persistence, `DocumentNode` format, and older content vocabulary are not
-clean-slate commitments.
+The complete earlier implementation and its documentation remain on `tauri-experimental-orphan`. That branch is read-only evidence and a source of implementation examples. It is not current architecture and it is not an implementation base.
 
-Read preserved files with `git show` or selectively copy a reviewed file from
-the recorded reference commit as described in the scaffolding plan. Do not
-merge, rebase, or otherwise alter the reference branch.
+Useful preserved examples include domain utilities, tree invariants, tag normalization, rich-text sanitization, Yjs helpers, History tests, transition behavior, and recovery tests. The scaffolding plan identifies specific files and the intended reuse policy.
+
+The preserved branch also contains obsolete current-model assumptions, including Tauri, SQLite, `DocumentNode`, title/body separation, the old `BlockContent` vocabulary, and the earlier portable format. Do not copy those assumptions into the clean-slate application merely to reuse an implementation.
+
+Inspect preserved material without changing branches, for example:
+
+```powershell
+git show tauri-experimental-orphan:src/domain/tags.ts
+git show tauri-experimental-orphan:src/domain/tree.ts
+git show tauri-experimental-orphan:docs/TESTING.md
+```
+
+The recorded reference commit in the scaffolding plan can be used when reproducible inspection of the preserved state is required. Do not merge, rebase, or otherwise alter `tauri-experimental-orphan`.
