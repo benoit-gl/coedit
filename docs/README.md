@@ -1,6 +1,6 @@
 # Coedit documentation
 
-These documents describe the clean-slate application on `main`. Each document has one primary authority. This split keeps product meaning, MVP scope, architecture, implementation detail, work order, and future replication separate.
+These documents describe the clean-slate application on `main`. Each document has one primary authority. This split keeps product meaning, MVP scope, architecture, focused technical contracts, verification, work order, and future replication separate.
 
 ## Current authoritative documents
 
@@ -9,43 +9,60 @@ These documents describe the clean-slate application on `main`. Each document ha
 | [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) | Logical product ontology and domain vocabulary |
 | [`MVP_CONTRACT.md`](MVP_CONTRACT.md) | Required proof boundary for the document-engine MVP |
 | [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) | Component authority, public engine behavior, and adapter workflows |
-| [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md) | Concrete MVP technology choices, private implementation contracts, limits, test rules, and reuse guidance |
+| [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md) | Private MVP implementation rules that are not owned by a focused specification |
+| [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md) | Markdown import, export, diagnostics, and normalized round-trip behavior |
+| [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md) | Lossless `.coedit` version-1 wire format and hostile-input validation |
+| [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md) | MVP test strategy, risk coverage, and qualification evidence |
 | [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md) | Post-MVP replication, convergence, and causal History direction |
 | [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md) | RUP-inspired work order, phase gates, and completion criteria |
 
-All authoritative clean-slate documentation is available on `main`. An implementer does not need another branch to determine current behavior.
+All current design authority is local to `main`.
 
-Use the documents as follows:
+[`PRESERVED_BRANCH_RECONCILIATION.md`](PRESERVED_BRANCH_RECONCILIATION.md) is a supporting traceability record. It classifies material decisions from `tauri-experimental-orphan` as retained, adapted, superseded, or deferred. It also identifies selectively reusable code and tests. It is not a competing design authority.
 
-- Use the product/domain model to determine what a document concept means.
-- Use the MVP contract to determine what the prototype must prove.
-- Use the architecture to determine which component can read or change durable state.
-- Use the implementation specification to determine how to implement and verify the current MVP choices.
-- Use the collaboration model to evaluate future replicated designs.
-- Use the scaffolding plan to determine what to build next and when a phase can advance.
+## Authority rules
 
-When documents overlap, use the document with direct authority for the subject. In particular:
+Use the document with direct authority for the subject.
 
-- a private type in the implementation specification does not override the public engine boundary in `MVP_ARCHITECTURE.md`;
-- a storage or codec detail does not override the logical ontology in `PRODUCT_DOMAIN_MODEL.md`;
-- the implementation specification does not expand the required proof boundary in `MVP_CONTRACT.md`;
-- the scaffolding plan does not define technical contracts; and
-- local-only MVP implementation choices do not override the replication constraints in `COLLABORATION_MODEL.md`.
+- A private implementation type does not override `MVP_ARCHITECTURE.md`.
+- A codec or storage detail does not override `PRODUCT_DOMAIN_MODEL.md`.
+- A focused Markdown or `.coedit` specification overrides duplicated technical wording elsewhere.
+- `MVP_IMPLEMENTATION_SPEC.md` does not expand `MVP_CONTRACT.md`.
+- `SCAFFOLDING_PLAN.md` owns order and gates, not detailed technical behavior.
+- Local MVP shortcuts do not override `COLLABORATION_MODEL.md`.
+
+When implementation evidence invalidates an accepted rule, update the responsible authority in the same change.
+
+## Step 0 status
+
+The documentation set is not yet an implementation-ready Step 0 baseline.
+
+The concrete representation and update semantics of the opaque `TextAnchor` used by external formatting ranges remain open. The preserved branch treated Yjs relative positions as a plausible implementation, not a final decision. Do not infer an anchor representation from editor or CRDT convenience.
+
+Step 0 closes only after that decision is recorded in the relevant authoritative documents and verification plan.
 
 ## Preserved experimental evidence
 
-The earlier implementation and its documentation remain on `tauri-experimental-orphan`. That branch is read-only evidence and a source of implementation examples. It is not current architecture and is not an implementation base.
+The earlier implementation and its documentation remain on `tauri-experimental-orphan`. The recorded reference tip is:
 
-The implementation specification lists the preserved files that can provide useful behavior or test evidence. Examples include ID generation, tag normalization, tree invariants, rich-text sanitization, Yjs helpers, History behavior, editor transitions, and recovery tests.
+```text
+f63ce8f59547dc0d84b5f086301ddaf4ee20a89b
+```
 
-The preserved branch also contains obsolete current-model assumptions. These include Tauri, SQLite, `DocumentNode`, title/body separation, the old `BlockContent` vocabulary, and the earlier portable format. Do not copy those assumptions into the clean-slate application only to reuse code.
+The branch is read-only evidence and a source of selected behavior and tests. It is not current architecture and is not an implementation base.
+
+Use [`PRESERVED_BRANCH_RECONCILIATION.md`](PRESERVED_BRANCH_RECONCILIATION.md) before copying or adapting preserved material. It records which decisions still apply and which preserved assumptions are obsolete.
+
+Examples of useful evidence include tag normalization, tree invariants, semantic edit grouping, controlled editor transitions, History behavior, and recovery tests.
+
+Examples of assumptions that are not current authority include Tauri, SQLite, `DocumentNode`, title/body separation, separate current `BlockContent`, and the old SQLite `.coedit` bytes.
 
 Inspect preserved material without changing branches, for example:
 
 ```powershell
 git show tauri-experimental-orphan:src/domain/tags.ts
-git show tauri-experimental-orphan:src/domain/tree.ts
-git show tauri-experimental-orphan:docs/TESTING.md
+git show tauri-experimental-orphan:src/editor/BodyEditBatchCoordinator.ts
+git show tauri-experimental-orphan:docs/proposals/BODY_CHECKPOINT_STRATEGY.md
 ```
 
-Use the recorded reference commit in `MVP_IMPLEMENTATION_SPEC.md` when reproducible inspection is required. Do not merge, rebase, reset, or otherwise alter `tauri-experimental-orphan`.
+Do not merge, rebase, reset, or otherwise alter `tauri-experimental-orphan`.
