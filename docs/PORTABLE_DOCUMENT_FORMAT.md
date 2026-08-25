@@ -14,16 +14,15 @@ The preserved SQLite `.coedit` format on `tauri-experimental-orphan` is historic
 
 ## 2. Public transport identity
 
-The public `PortableDocument` metadata for format version 1 uses:
+The accepted user-facing transport identity is:
 
 ```text
 suggestedExtension: ".coedit"
-mediaType: "application/vnd.coedit.document+json"
 ```
 
-The bytes are UTF-8 JSON for version 1. The UX treats them as opaque.
+The public architecture keeps `mediaType` as opaque transport metadata. No specific MIME type is accepted yet, and the MVP format design does not depend on one.
 
-The extension is product-visible and stable. The media type and internal encoding can evolve only through an explicit compatibility decision.
+The version-1 bytes are UTF-8 JSON. The UX treats them as opaque.
 
 ## 3. Envelope
 
@@ -33,7 +32,7 @@ Use one JSON envelope with these logical fields:
 format: "coedit-document"
 formatVersion: 1
 exportedAt
- documentId
+documentId
 currentRevisionId
 contributors[]
 contributions[]
