@@ -139,7 +139,7 @@ interface DocumentEngineFactory {
 
 interface PortableDocument {
   readonly bytes: Uint8Array;
-  readonly mediaType: "application/vnd.coedit.document+json";
+  readonly mediaType: string;
   readonly suggestedExtension: ".coedit";
   readonly version: VersionToken;
 }
@@ -154,7 +154,7 @@ interface PortableDocumentInput {
 }
 ```
 
-`PORTABLE_DOCUMENT_FORMAT.md` owns the exact wire contract. The UX treats `bytes` as opaque.
+`PORTABLE_DOCUMENT_FORMAT.md` owns the exact wire contract. The UX treats `bytes` as opaque. No specific MIME type is part of the accepted MVP design yet.
 
 ## 4. Version and command contract
 
