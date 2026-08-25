@@ -10,7 +10,8 @@ For those concerns, use these documents:
 
 - [`MVP_CONTRACT.md`](MVP_CONTRACT.md) defines what the document-engine prototype must prove.
 - [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) defines component authority and the public engine boundary.
-- [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md) defines implementation order and concrete initial contracts.
+- [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md) defines concrete initial implementation contracts and limits.
+- [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md) defines implementation order and phase gates.
 - [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md) defines post-MVP replication constraints.
 
 The earlier product-domain snapshot remains on `tauri-experimental-orphan`. It is historical evidence. The earlier Tauri application, SQLite persistence, `DocumentNode` format, and `BlockContent` vocabulary are not current clean-slate behavior.
@@ -119,7 +120,7 @@ The clean-slate model requires these invariants:
 9. InlineContent order is the order of the Block's `contents` vector.
 10. The live Block tree contains no cycle.
 
-The scaffolding plan defines the initial size, depth, ID, and validation limits.
+The implementation specification defines the initial size, depth, ID, and validation limits.
 
 ### 3.3 Content role is contextual
 
@@ -162,7 +163,7 @@ This rule also resolves how an empty structural section is represented: a sectio
 
 A section heading belongs to the section Block. Introductory body material below that heading is represented by child Blocks in `flow` presentation.
 
-When one section contains both body material and subsections, transparent grouping Blocks can keep the two child relationships explicit. The Markdown import rules in the scaffolding plan define the first deterministic construction rule.
+When one section contains both body material and subsections, transparent grouping Blocks can keep the two child relationships explicit. The Markdown import rules in `MVP_IMPLEMENTATION_SPEC.md` define the first deterministic construction rule.
 
 ## 4. InlineContent and CollaborativeText
 
@@ -366,7 +367,7 @@ Useful examples include:
 
 Those examples use older concepts in places. In particular, the preserved branch can contain `DocumentNode`, title/body fields, `BlockContent`, Tauri gateways, SQLite, direct snapshot APIs, and the old `.coedit` format. Those concepts are not current authority.
 
-When preserved code conflicts with this document, [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md), [`MVP_CONTRACT.md`](MVP_CONTRACT.md), or the scaffolding plan, the current `main` documentation controls.
+When preserved code conflicts with this document, [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md), [`MVP_CONTRACT.md`](MVP_CONTRACT.md), [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md), or the scaffolding plan, the current `main` documentation controls.
 
 ## 11. Recorded clean-slate decisions
 
