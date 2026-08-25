@@ -10,24 +10,20 @@
 
 This document is the implementation guide for rebuilding Coedit from a clean browser-first foundation. It records the intended order of work, the minimum domain decisions needed to begin, the evidence to reuse from the preserved implementation, and the conditions that must be met before native packaging or a permanent database is reconsidered.
 
-Companion decision documents on `main` are:
+Companion authoritative documents on `main` are:
 
-- [`docs/MVP_ARCHITECTURE.md`](docs/MVP_ARCHITECTURE.md), authoritative for the
-  headless engine boundary, frontend/adapters, and MVP workflows; and
-- [`docs/COLLABORATION_MODEL.md`](docs/COLLABORATION_MODEL.md), authoritative for
-  future replication, causal History, and convergence constraints.
+- [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md), authoritative for the logical product ontology and domain vocabulary;
+- [`docs/MVP_CONTRACT.md`](docs/MVP_CONTRACT.md), authoritative for what the document-engine prototype must prove;
+- [`docs/MVP_ARCHITECTURE.md`](docs/MVP_ARCHITECTURE.md), authoritative for the headless engine boundary, frontend/adapters, and MVP workflows; and
+- [`docs/COLLABORATION_MODEL.md`](docs/COLLABORATION_MODEL.md), authoritative for future replication, causal History, and convergence constraints.
 
-The concrete linear ledger and full-snapshot records described later in this
-plan are permitted private MVP implementations. They are not frontend contracts.
-Where an illustrative type below conflicts with the opaque, asynchronous public
-boundary in the companion documents, the companion documents control and the
-type must remain private to the engine.
+The concrete linear ledger and full-snapshot records described later in this plan are permitted private MVP implementations. They are not frontend contracts. Where an illustrative type below conflicts with the opaque, asynchronous public boundary in the companion documents, the companion documents control and the type must remain private to the engine.
 
 The complete experimental implementation and its documentation remain available at the tip of `tauri-experimental-orphan`. That branch is evidence and a selective source of reusable utilities; it is not the base of the new implementation.
 
 All new work must occur on `main` or branches created from `main`. Do not commit, rebase, merge into, reset, or otherwise alter `tauri-experimental-orphan`.
 
-Before doing any work, verify:
+Before doing implementation work, verify:
 
 ```powershell
 git branch --show-current
@@ -35,34 +31,24 @@ git status --short
 git rev-parse tauri-experimental-orphan
 ```
 
-The first command must report `main` or a branch descended from the orphan `main`. The reference branch command should resolve successfully.
+The first command must report `main` or a branch descended from `main`. The reference branch command should resolve successfully.
 
-Inspect a preserved file without checking out the branch:
-
-```powershell
-git show tauri-experimental-orphan:docs/PRODUCT_DOMAIN_MODEL.md
-```
-
-Copy a deliberately selected file into the new branch without changing the reference branch:
+Inspect preserved material without checking out the branch, for example:
 
 ```powershell
-git restore --source=f63ce8f59547dc0d84b5f086301ddaf4ee20a89b -- docs/PRODUCT_DOMAIN_MODEL.md
+git show tauri-experimental-orphan:src/domain/tags.ts
+git show tauri-experimental-orphan:src/domain/tree.ts
 ```
 
-Never merge or cherry-pick the preserved implementation wholesale. Every copied file must be reviewed against the new domain model before it is committed.
+Never merge or cherry-pick the preserved implementation wholesale. Every copied file must be reviewed against the current domain model before it is committed.
 
 Generated directories left in a local working tree, such as `node_modules/`, `dist/`, and `*.tsbuildinfo`, are not source inputs. The new scaffold must ignore them immediately.
 
 ## 2. Product objective
 
-The first objective is not a packaged desktop application. It is a durable browser-based domain laboratory in which realistic structured documents can be imported, edited, inspected, viewed historically, restored, exported, and reopened.
+The first objective is not a packaged desktop application. It is a durable browser-based domain laboratory in which realistic structured documents can be imported, edited, inspected, viewed historically, checkpointed, restored, exported, and reopened.
 
-The MVP has two principal components: a headless `DocumentEngine` that owns all
-durable state and behavior, and a browser UX that queries it for display and
-submits commands for edits. Markdown import/export and portable storage are
-adapters that use the same engine boundary. The UX owns file and clipboard
-transport; the engine never receives a local path. See
-[`docs/MVP_ARCHITECTURE.md`](docs/MVP_ARCHITECTURE.md).
+The MVP has two principal components: a headless `DocumentEngine` that owns all durable state and behavior, and a browser UX that queries it for display and submits commands for edits. Markdown import/export and portable storage are adapters that use the same engine boundary. The UX owns file and clipboard transport; the engine never receives a local path. See [`docs/MVP_ARCHITECTURE.md`](docs/MVP_ARCHITECTURE.md).
 
 The first meaningful vertical slice must allow a user to:
 
@@ -73,17 +59,18 @@ The first meaningful vertical slice must allow a user to:
 5. add an optional second InlineContent, such as a summary;
 6. switch content-selection lenses;
 7. inspect a previous Version read-only;
-8. restore that Version through a new attributed Contribution;
-9. reload the browser without losing the document;
-10. export a selected version/lens/subtree to Markdown with loss diagnostics;
-11. save a lossless opaque portable artifact; and
-12. reopen that artifact with the same document state and History.
+8. create a checkpoint as a new attributed Contribution and Version;
+9. restore a historical Version through a new attributed Contribution;
+10. reload the browser without losing the document;
+11. export a selected Version/lens/subtree to Markdown with loss diagnostics;
+12. save a lossless opaque portable artifact; and
+13. reopen that artifact with the same document state and History.
 
 Native packaging, SQLite, AI providers, real-time networking, attachments, and production provenance storage are outside this first vertical slice.
 
 ## 3. Domain decisions that scaffolding must preserve
 
-The reference-tip `docs/PRODUCT_DOMAIN_MODEL.md` on `tauri-experimental-orphan` preserves the rationale behind these decisions. Copy and recontextualize it during Step 1 below; after that, the copy on `main` is the directional ontology and this plan supplies the executable contracts and work order.
+[`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md) is the current directional ontology. The preserved snapshot on `tauri-experimental-orphan` is historical rationale and implementation evidence only. This plan supplies the executable contracts and work order.
 
 The minimum logical model inside the engine is:
 
@@ -141,14 +128,15 @@ Required invariants:
 13. Application-owned tag namespaces express product conventions such as `view:summary`.
 14. Blocks and InlineContents do not initially carry `createdAt`, `updatedAt`, `deletedAt`, or tombstone fields. Contributions and historical Versions record lifecycle and recovery.
 15. Deleting a Block or InlineContent removes it from the live revisioned state. Earlier Versions retain it.
-16. Earlier working and accepted states normally live in History rather than parallel live content records.
-17. Acceptance targets an exact Version by default.
-18. Historical viewing is detached and read-only.
-19. Restoring a Version appends a compensating Contribution and never rewinds or deletes History.
-20. Formatting and provenance share a generic range mechanism but have different insertion and copy semantics.
-21. Inline-content state and any anchors into it must be co-versioned together.
-22. Initial import and editing attribution is contribution-level. Fine-grained range provenance is not claimed until the later provenance prototype defines it.
-23. Until named lens rules arrive, the default projection selects the first InlineContent in vector order. Zero contents means no own rendered content; tags do not alter this fallback implicitly.
+16. Earlier working and checkpointed states live in History rather than parallel live content records.
+17. A checkpoint is an attributed Contribution that creates a new Version whose document material is identical to its base Version.
+18. A document can have zero or many checkpoints. A checkpoint does not mean final, approved, published, or immutable.
+19. Historical viewing is detached and read-only.
+20. Restoring a Version appends a compensating Contribution and never rewinds or deletes History.
+21. Formatting and provenance share a generic range mechanism but have different insertion and copy semantics.
+22. Inline-content state and any anchors into it must be co-versioned together.
+23. Initial import and editing attribution is contribution-level. Fine-grained range provenance is not claimed until the later provenance prototype defines it.
+24. Until named lens rules arrive, the default projection selects the first InlineContent in vector order. Zero contents means no own rendered content; tags do not alter this fallback implicitly.
 
 The initial rendering precedence is explicit:
 
@@ -219,15 +207,9 @@ The canonical CollaborativeText value inside each InlineContent should be Yjs/Pr
 
 ### Commands from the beginning
 
-The UI must not mutate domain state directly. Every durable change passes through
-the asynchronous `DocumentEngine` API as a typed command/operation and produces
-an attributed Contribution. Markdown import and future AI tools use the same
-command path. Queries return detached/read-only projections, and change
-notifications cause the UI to re-query rather than apply internal patches.
+The UI must not mutate domain state directly. Every durable change passes through the asynchronous `DocumentEngine` API as a typed command/operation and produces an attributed Contribution. Markdown import, checkpoint creation, and future AI tools use the same command path. Queries return detached/read-only projections, and change notifications cause the UI to re-query rather than apply internal patches.
 
-Public versions are opaque `VersionToken` values. The UI and adapters must not
-depend on one head, one parent, a numeric sequence, a full revision snapshot, or
-an archive accessor. The engine may use those privately in the local MVP.
+Public versions are opaque `VersionToken` values. The UI and adapters must not depend on one head, one parent, a numeric sequence, a full revision snapshot, or an archive accessor. The engine may use those privately in the local MVP.
 
 React state may own transient UI concerns such as selection, disclosure, focus, open panels, and the active lens.
 
@@ -303,12 +285,43 @@ Do not split the code into separate packages until an actual independent consume
 
 Each step must end in a usable, tested state. Avoid implementing later-step infrastructure speculatively.
 
-### Step 0 — Establish the clean repository baseline
+### Step 0 — Verify the documentation foundation
 
-Create:
+This step is complete when the documentation-only baseline on `main` contains the full clean-slate authority set. It is a repository gate, not an implementation task.
+
+Required documents:
+
+- `SCAFFOLDING_PLAN.md`;
+- `docs/README.md`;
+- `docs/PRODUCT_DOMAIN_MODEL.md`;
+- `docs/MVP_CONTRACT.md`;
+- `docs/MVP_ARCHITECTURE.md`; and
+- `docs/COLLABORATION_MODEL.md`.
+
+Verify that:
+
+- every authoritative document is local to `main`;
+- the documentation index states each document's authority;
+- `PRODUCT_DOMAIN_MODEL.md` uses `Block.contents: InlineContent[]` with embedded CollaborativeText and does not use `BlockContent` as a current entity;
+- the MVP is explicitly a document-engine prototype, with AI and networking deferred;
+- checkpoint means a semantic, attributed Contribution that creates a content-identical Version;
+- physical persistence snapshots or bootstrap snapshots are not called semantic checkpoints;
+- references to Tauri, SQLite, `DocumentNode`, and the old `.coedit` format are clearly historical when they describe the preserved implementation; and
+- `tauri-experimental-orphan` is cited only as read-only evidence and implementation examples.
+
+Exit criteria:
+
+- an implementer can determine the current ontology, MVP proof boundary, public engine authority, collaboration constraints, and implementation order without reading another branch; and
+- no current authoritative document requires a preserved file to understand current behavior.
+
+This step is satisfied by the documentation-foundation change that introduces the local product/domain model and MVP contract. Future implementation branches must preserve the gate.
+
+### Step 1 — Establish the browser-only clean repository scaffold
+
+Starting from the documentation-only `main`, create:
 
 - `.gitignore`;
-- a concise `README.md` pointing to this plan and the domain model;
+- a concise root `README.md` pointing to the documentation index and this plan;
 - `LICENSE`;
 - `package.json`;
 - TypeScript/Vite/Vitest configuration; and
@@ -326,79 +339,22 @@ coverage/
 
 Pin the package manager and dependency versions when the scaffold is created. Do not copy the preserved lockfile because it includes Tauri and the obsolete application dependency graph.
 
+Do not copy old architecture documents into `main`. Use `tauri-experimental-orphan` only for the implementation examples named in Section 7.
+
 Exit criteria:
 
 - development server renders one page;
 - production build succeeds;
 - one trivial test succeeds;
-- the build performs no outbound runtime requests; and
-- the working tree contains no generated tracked files.
+- the build performs no outbound runtime requests;
+- the root README links to the authoritative documentation index;
+- the working tree contains no generated tracked files; and
+- the Step 0 documentation foundation remains unchanged except for links or wording required by the new scaffold.
 
 Suggested commit boundary:
 
 ```text
 build: establish browser-only clean-slate scaffold
-```
-
-### Step 1 — Bring forward the product decisions
-
-Create `docs/` and selectively copy the decision snapshot from the recorded reference commit:
-
-```powershell
-git restore --source=f63ce8f59547dc0d84b5f086301ddaf4ee20a89b -- docs/PRODUCT_DOMAIN_MODEL.md
-```
-
-The branch name is convenient for browsing, but the recorded commit makes the rebuild reproducible if that name later moves.
-
-Recontextualize the copied document on `main`. Add a clearly marked clean-slate note near its beginning stating that:
-
-- references to the "current implementation" mean the preserved implementation at `tauri-experimental-orphan`;
-- the preserved `DocumentNode` format-version-1 schema, Tauri, and SQLite are historical evidence rather than current clean-slate behavior;
-- the snapshot's separate `BlockContent` and `InlineContent` vocabulary is superseded on `main` by the collapsed `InlineContent` plus embedded `CollaborativeText` model in Section 3;
-- this scaffolding plan resolves the initial implementation questions needed for Steps 2–6; and
-- unresolved longer-term questions in the snapshot remain open unless this plan explicitly resolves them.
-
-Adapt the copied document as a whole, not only its recorded-decision summary:
-
-- every current-target `Block.contents` becomes `InlineContent[]`;
-- current-target InlineContent owns `id`, `tags`, and `text: CollaborativeText`;
-- old value-level references meaning canonical rich text and Formatting become CollaborativeText, while old provenance/range material becomes future InlineContent-scoped data targeted by `InlineContentId`, with its persistence placement deferred to Step 12;
-- current-target diagrams and text for lenses, History, acceptance, AI operations, comments/conversations, provenance/copy, projections, migration, near-term work, recorded decisions, open work, and the final summary use the collapsed vocabulary;
-- current Block and InlineContent structs omit entity timestamps and tombstones, with lifecycle represented by Contributions and historical Versions;
-- questions resolved by Section 3 of this plan are marked resolved rather than left open; and
-- preserved-implementation observations may retain old names only when the passage is explicitly labeled historical.
-
-Retain a short supersession note so readers can understand references in preserved code. Do not rewrite historical implementation observations to pretend they were made about the new branch.
-
-Maintain the existing `docs/README.md`, `docs/MVP_ARCHITECTURE.md`, and
-`docs/COLLABORATION_MODEL.md` while bringing forward the domain model. The
-documentation index distinguishes:
-
-- current clean-slate behavior;
-- intended domain direction; and
-- read-only legacy evidence on `tauri-experimental-orphan`.
-
-The documentation index must link to this plan as the executable order, to
-`PRODUCT_DOMAIN_MODEL.md` as the directional ontology, to
-`MVP_ARCHITECTURE.md` for current component/API boundaries, and to
-`COLLABORATION_MODEL.md` for future compatibility constraints. Do not copy the
-old Architecture, Frontend Design, Persistence Design, or Document Format as
-current documentation. They describe the preserved implementation.
-
-Exit criteria:
-
-- the new README and documentation index identify this plan as the work order;
-- the domain model is available on `main`;
-- its current model uses `Block.contents: InlineContent[]` with embedded CollaborativeText and does not retain `BlockContent` as a current entity;
-- in the copied domain document, `BlockContent` appears only in explicitly historical or supersession passages;
-- every reference to current versus preserved behavior is unambiguous;
-- no documentation claims that Tauri, SQLite, or the preserved `DocumentNode` format is current clean-slate behavior; and
-- the copied snapshot points readers to the concrete initial resolutions in Section 3 of this plan.
-
-Suggested commit boundary:
-
-```text
-docs: establish clean-slate domain and implementation direction
 ```
 
 ### Step 2 — Implement the pure Block domain
@@ -414,9 +370,7 @@ Implement:
 - typed structural operations; and
 - a pure operation reducer/materializer.
 
-The branded ID set grows with the corresponding capability and includes at
-least `DocumentId`, `BlockId`, `InlineContentId`, `ContributorId`, `CommandId`,
-`ContributionId`, `RevisionId` (private MVP storage), and `SessionId`.
+The branded ID set grows with the corresponding capability and includes at least `DocumentId`, `BlockId`, `InlineContentId`, `ContributorId`, `CommandId`, `ContributionId`, `RevisionId` (private MVP storage), and `SessionId`.
 
 All persisted IDs use canonical lowercase UUID-v4 text at the wire boundary and distinct branded TypeScript types in memory. Production generation uses Web Crypto; tests inject valid deterministic UUID sequences. There is no timestamp/random-number fallback.
 
@@ -560,13 +514,7 @@ Copying an InlineContent entity is different from copying text. Entity copy allo
 
 This per-content boundary is deliberate for the first browser laboratory: updates are naturally scoped, deletion and validation are explicit, and no document-wide collaboration topology is assumed prematurely. Reconsider it only after measurements demonstrate a need for cross-content Yjs transactions or one synchronization channel.
 
-The immutable domain value is the `CollaborativeText` already embedded in every
-InlineContent by the Step 2 contract. Its `state` is a complete Yjs update
-sufficient to reconstruct that content in a fresh detached Y.Doc. Constructors
-copy mutable input bytes, and public accessors/materializations return detached
-bytes. Private immutable History records may safely share storage. State vectors
-and incremental updates are not complete CollaborativeText values. JSON/base64
-is an interchange concern introduced later.
+The immutable domain value is the `CollaborativeText` already embedded in every InlineContent by the Step 2 contract. Its `state` is a complete Yjs update sufficient to reconstruct that content in a fresh detached Y.Doc. Constructors copy mutable input bytes, and public accessors/materializations return detached bytes. Private immutable History records may safely share storage. State vectors and incremental updates are not complete CollaborativeText values. JSON/base64 is an interchange concern introduced later.
 
 Define one inline-only schema:
 
@@ -660,20 +608,9 @@ feat(content): add headless Yjs CollaborativeText kernel
 
 ### Step 4 — Establish first-class in-memory History
 
-Implement first-class History behind the public engine boundary in
-[`docs/MVP_ARCHITECTURE.md`](docs/MVP_ARCHITECTURE.md). The frontend must be able
-to list and summarize History, materialize an exact version, and restore it
-without knowing how History is stored.
+Implement first-class History behind the public engine boundary in [`docs/MVP_ARCHITECTURE.md`](docs/MVP_ARCHITECTURE.md). The frontend must be able to list and summarize History, materialize an exact Version, create checkpoints, and restore a Version without knowing how History is stored.
 
-The sketch below includes shared boundary values as well as private records.
-`Contributor`, `GenesisRequest`, `ContributionContext`, and
-`ImportSourceMetadata` are boundary values. `RevisionRecord`,
-`MvpContributionRecord`, `MaterializedRevision`, and `DocumentSessionArchive`
-are a **private MVP in-memory/persistence model**, not types exported to React,
-import/export adapters, or future replication code. Their one parent, numeric
-sequence, moving head, and complete snapshot are deliberate local-prototype
-choices. A future causal Contribution graph is described in
-[`docs/COLLABORATION_MODEL.md`](docs/COLLABORATION_MODEL.md).
+The sketch below includes shared boundary values as well as private records. `Contributor`, `GenesisRequest`, `ContributionContext`, and `ImportSourceMetadata` are boundary values. `RevisionRecord`, `MvpContributionRecord`, `MaterializedRevision`, and `DocumentSessionArchive` are a **private MVP in-memory/persistence model**, not types exported to React, import/export adapters, or future replication code. Their one parent, numeric sequence, moving head, and complete snapshot are deliberate local-prototype choices. A future causal Contribution graph is described in [`docs/COLLABORATION_MODEL.md`](docs/COLLABORATION_MODEL.md).
 
 Partition private History storage from revisioned document state:
 
@@ -695,7 +632,6 @@ interface RevisionRecord { // private MVP storage record
   readonly sequence: number;
   readonly parentRevisionId: RevisionId | null;
   readonly contributionId: ContributionId | null;
-  readonly tags: readonly string[];
   readonly snapshot: RevisionedDocument;
 }
 
@@ -713,8 +649,8 @@ interface MvpContributionRecord { // private linear-ledger record
         readonly operations: readonly DocumentOperation[];
         readonly source: ImportSourceMetadata;
       }
-    | { readonly kind: "restore"; readonly targetRevisionId: RevisionId }
-    | { readonly kind: "acceptCurrent" };
+    | { readonly kind: "checkpointCurrent" }
+    | { readonly kind: "restore"; readonly targetRevisionId: RevisionId };
   readonly affectedBlockIds: readonly BlockId[];
   readonly affectedInlineContentIds: readonly InlineContentId[];
   readonly sessionId?: SessionId;
@@ -730,7 +666,6 @@ interface ContributionContext {
 interface MaterializedRevision { // private MVP materialization record
   readonly revisionId: RevisionId;
   readonly sequence: number;
-  readonly tags: readonly string[];
   readonly snapshot: RevisionedDocument;
 }
 
@@ -758,79 +693,29 @@ The private in-memory ledger inside a DocumentEngine owns five things:
 4. one moving head-revision pointer; and
 5. no durable UI state.
 
-`DocumentEngineFactory.create` uses a private ledger constructor. It requires at
-least one validated initial Contributor and creates the document ID, permanent
-empty root (`tags=[]`, `contents=[]`, `children=[]`,
-`childrenPresentation="flow"`), contributor catalog, and genesis record
-atomically. Contributor IDs must be unique; display names are trimmed,
-control-character-free text limited to 128 Unicode code points and 512 UTF-8
-bytes; kinds are closed to the four listed values; and conflicting duplicate
-records are rejected. Genesis is the only bootstrap path allowed to register a
-contributor without attribution. Adding contributors after genesis is deferred
-until a concrete AI/collaboration workflow defines an attributed catalog
-operation; code must not silently invent them.
+`DocumentEngineFactory.create` uses a private ledger constructor. It requires at least one validated initial Contributor and creates the document ID, permanent empty root (`tags=[]`, `contents=[]`, `children=[]`, `childrenPresentation="flow"`), contributor catalog, and genesis record atomically. Contributor IDs must be unique; display names are trimmed, control-character-free text limited to 128 Unicode code points and 512 UTF-8 bytes; kinds are closed to the four listed values; and conflicting duplicate records are rejected. Genesis is the only bootstrap path allowed to register a contributor without attribution. Adding contributors after genesis is deferred until a concrete AI/collaboration workflow defines an attributed catalog operation; code must not silently invent them.
 
-Each private MVP snapshot is one complete `RevisionedDocument`: the recursive
-Block tree already contains every live InlineContent and its embedded
-CollaborativeText, plus later revisioned comments/conversations. There is no
-parallel content map or one-field aggregate wrapper. Snapshots do not recursively
-contain the ledger, revision records, contributor catalog, or head pointer. The
-engine detaches mutable arrays at public/trust boundaries; internally immutable
-snapshots may use structural sharing or shared immutable byte buffers.
+Each private MVP snapshot is one complete `RevisionedDocument`: the recursive Block tree already contains every live InlineContent and its embedded CollaborativeText, plus later revisioned comments/conversations. There is no parallel content map or one-field aggregate wrapper. Snapshots do not recursively contain the ledger, revision records, contributor catalog, or head pointer. The engine detaches mutable arrays at public/trust boundaries; internally immutable snapshots may use structural sharing or shared immutable byte buffers.
 
-In the private MVP ledger, revision sequence zero is a genesis snapshot
-containing the permanent empty root and has no Contribution. Every later revision
-has exactly one Contribution, and every Contribution has exactly one resulting
-revision. This first History is linear: a new revision's parent is the local head
-that was current when the commit began. Sequence is a local display/storage aid,
-never public identity.
+In the private MVP ledger, revision sequence zero is a genesis snapshot containing the permanent empty root and has no Contribution. Every later revision has exactly one Contribution, and every Contribution has exactly one resulting revision. This first History is linear: a new revision's parent is the local head that was current when the commit began. Sequence is a local display/storage aid, never public identity.
 
-[`docs/MVP_ARCHITECTURE.md`](docs/MVP_ARCHITECTURE.md) is the single definition
-of the public `DocumentEngine` contract and read models; do not duplicate that
-interface in source-facing documentation. Implement it incrementally:
+[`docs/MVP_ARCHITECTURE.md`](docs/MVP_ARCHITECTURE.md) is the single definition of the public `DocumentEngine` contract and read models; do not duplicate that interface in source-facing documentation. Implement it incrementally:
 
 | Step | Public capability added |
 |---|---|
-| 4 | create a blank engine; execute operation, restore, and accept commands; current/exact queries; Contribution History pages and summaries; exact materialization; subscriptions |
+| 4 | create a blank engine; execute operation, checkpoint, and restore commands; current/exact queries; Contribution History pages and summaries; exact materialization; subscriptions |
 | 5 | the `importMarkdown` command used by the importer adapter |
 | 6 | version-checked opaque portable serialization and validated open |
 | 7 | document, outline, descriptor, and editor-content projections |
-| 10 | accepted-Version/lens projections and Markdown rendering adapter |
+| 10 | content lenses, exact historical comparison, and Markdown rendering adapter |
 
-Step 4 command requests carry a globally unique `CommandId`, opaque
-`expectedVersion: VersionToken`, typed `DocumentCommand`, and
-`ContributionContext`. Receipts carry the CommandId, resulting Contribution ID,
-and VersionToken. Current queries
-return the exact VersionToken they observed; callers never pair a projection
-with a separate racy `currentVersion()` read.
+Step 4 command requests carry a globally unique `CommandId`, opaque `expectedVersion: VersionToken`, typed `DocumentCommand`, and `ContributionContext`. Receipts carry the CommandId, resulting Contribution ID, and VersionToken. Current queries return the exact VersionToken they observed; callers never pair a projection with a separate racy `currentVersion()` read.
 
-The engine may map `VersionToken` directly to a RevisionId in the MVP. No caller
-may decode, order, or depend on that mapping. Public History uses separate
-Contribution summaries and materializable Version tokens. The private
-`RevisionRecord`, `MvpContributionRecord`, their snapshots, and
-`DocumentSessionArchive` never cross the public boundary. Every successful new
-command publishes a change notification; the UI re-queries instead of applying
-an internal patch.
+The engine may map `VersionToken` directly to a RevisionId in the MVP. No caller may decode, order, or depend on that mapping. Public History uses separate Contribution summaries and materializable Version tokens. The private `RevisionRecord`, `MvpContributionRecord`, their snapshots, and `DocumentSessionArchive` never cross the public boundary. Every successful new command publishes a change notification; the UI re-queries instead of applying an internal patch.
 
-`commandId` is globally unique and idempotent. The private Contribution record
-and portable wire persist it together with enough canonical request data to
-compare the base, effect, and context after Save/Open. Before stale-version
-checking, `execute` checks for an existing successful ID: an exact retry returns
-the original receipt and emits no Contribution/notification, while reuse with a
-different request is an error. `execute` captures its complete request before
-enqueueing it, including operation arrays and objects, tag arrays,
-CollaborativeText state, incremental updates, source metadata, and context. No
-caller-owned mutable value is retained.
+`commandId` is globally unique and idempotent. The private Contribution record and portable wire persist it together with enough canonical request data to compare the base, effect, and context after Save/Open. Before stale-version checking, `execute` checks for an existing successful ID: an exact retry returns the original receipt and emits no Contribution/notification, while reuse with a different request is an error. `execute` captures its complete request before enqueueing it, including operation arrays and objects, tag arrays, CollaborativeText state, incremental updates, source metadata, and context. No caller-owned mutable value is retained.
 
-Commits are serialized internally. The expected-version check occurs inside that
-serialization boundary; the MVP maps it to its private head, and a stale request
-returns `VersionConflict` rather than being silently rebased. Operations inside
-either commit effect apply sequentially to one detached candidate document;
-every intermediate operation boundary and the completed candidate undergo the
-structural and CollaborativeText validation defined in Steps 2–3.
-`importMarkdown` differs only by carrying durable source metadata; it does not
-bypass ordinary operations. Two concurrent local requests against the same
-VersionToken yield exactly one success.
+Commits are serialized internally. The expected-version check occurs inside that serialization boundary; the MVP maps it to its private head, and a stale request returns `VersionConflict` rather than being silently rebased. Operations inside either commit effect apply sequentially to one detached candidate document; every intermediate operation boundary and the completed candidate undergo the structural and CollaborativeText validation defined in Steps 2–3. `importMarkdown` differs only by carrying durable source metadata; it does not bypass ordinary operations. Two concurrent local requests against the same VersionToken yield exactly one success.
 
 Affected-target arrays are unique IDs sorted lexicographically and are derived by the session, never supplied or trusted by callers:
 
@@ -842,11 +727,21 @@ Affected-target arrays are unique IDs sorted lexicographically and are derived b
 - InlineContent tags or CollaborativeText updates affect that InlineContent;
 - an operation/import group records the union of all per-operation targets, including entities both created and deleted in the group;
 - restore records all live Block and InlineContent IDs in the union of base and target snapshots; and
-- acceptance records empty affected-target arrays.
+- checkpoint records empty affected-target arrays because it changes History state without changing document material.
 
 After request capture, head verification, operation application, complete validation, affected-ID derivation, and successful ID/timestamp generation, the session publishes the Contribution, RevisionRecord, reservation-set changes, and new head in one synchronous critical section. Any error before publication leaves all four unchanged.
 
 ID generation and the clock are injected. `committedAt` is canonical RFC 3339 UTC with exactly millisecond precision (`YYYY-MM-DDTHH:mm:ss.sssZ`). Contributor identity must already exist in the session catalog and is never silently substituted. While applying a group, the candidate reservation set contains all historically reserved IDs plus every ID created earlier in that group. A successful create reserves its Block or InlineContent ID for the document's lifetime—even if a later operation deletes it in the same group—so an identity cannot subsequently be reused for another entity of the same kind. Failed groups reserve nothing.
+
+Checkpoint semantics are exact. Checkpointing current head `H`:
+
+1. verifies that `H` is still the expected head;
+2. appends one `checkpointCurrent` Contribution attributed to the supplied contributor/context;
+3. appends a child revision whose document snapshot is material-identical to `H`;
+4. returns a new VersionToken for that resulting revision; and
+5. advances the private MVP head to the new revision.
+
+A checkpoint of a checkpoint is valid. It records another explicit durable interaction and produces another content-identical Version. Checkpointing does not require or create revision tags, a mutable checkpoint pointer, an `InlineContent` stage field, or a singular application-selected checkpoint. A caller that wants a checkpoint later obtains its resulting VersionToken from History.
 
 Restore semantics are exact. Restoring target `T` while the current head is `H`:
 
@@ -856,44 +751,11 @@ Restore semantics are exact. Restoring target `T` while the current head is `H`:
 4. appends a new revision whose parent is `H` and whose snapshot material is equal to `T`; and
 5. advances the head to that new revision.
 
-Restore is whole-document replacement in the local MVP, not a merge, rewind, or
-operation replay. Its new immutable material is semantically equal to the target,
-and every CollaborativeText byte sequence is byte-for-byte identical. Private
-storage may safely share immutable structure or buffers; public materializations
-remain detached. Restore never rebuilds text from InlineSeed, ProseMirror JSON,
-HTML, or projected atoms. Material added after `T` disappears from the new live
-projection, while every revision, Contribution, and contributor remains.
-Restoring the current head is rejected; restoring an older revision that happens
-to have equal material still records the historically meaningful restore.
+Restore is whole-document replacement in the local MVP, not a merge, rewind, or operation replay. Its new immutable material is semantically equal to the target, and every CollaborativeText byte sequence is byte-for-byte identical. Private storage may safely share immutable structure or buffers; public materializations remain detached. Restore never rebuilds text from InlineSeed, ProseMirror JSON, HTML, or projected atoms. Material added after `T` disappears from the new live projection, while every revision, Contribution, and contributor remains. Restoring the current head is rejected; restoring an older revision that happens to have equal material still records the historically meaningful restore.
 
-Revision tags use the Step 2 normalization contract but have independent revision
-ownership. Acceptance is version-oriented and attributed. `acceptCurrent`
-rejects a head already tagged as accepted; otherwise it appends an
-`acceptCurrent` Contribution and a child revision with material equal to the
-previous head and the revision tag `workflow:accepted`, then advances the private
-MVP head. Other new revisions begin with an empty tag array. The application asks
-the engine for its accepted-version policy result; it never selects by public
-numeric sequence. Accepting historical material requires restoring it first,
-then accepting the restored version. This avoids a mutable pointer or
-InlineContent stage field. Future incomparable accepted Versions require an
-explicit policy as described in the collaboration model.
+`query`, `listHistory`, `summarizeChanges`, and `materialize` return detached, read-only read models asynchronously, each correlated with the VersionToken it observed. Mutation methods return receipts and no public result exposes a private RevisionRecord/archive or a reference to an engine-owned array, object, `Uint8Array`, or Y.Doc. A trusted editor-content projection may contain copied CollaborativeText bytes for one InlineContent; ordinary React rendering consumes semantic projections and cannot mutate those bytes back into canonical state. A private persistence view may be supplied to the native codec and repository without becoming an application API.
 
-`query`, `listHistory`, `summarizeChanges`, and `materialize` return detached,
-read-only read models asynchronously, each correlated with the VersionToken it
-observed. Mutation methods return receipts and no public result exposes a private
-RevisionRecord/archive or a reference to an engine-owned array, object,
-`Uint8Array`, or Y.Doc. A trusted editor-content projection may contain copied
-CollaborativeText bytes for one InlineContent; ordinary React rendering consumes
-semantic projections and cannot mutate those bytes back into canonical state. A
-private persistence view may be supplied to the native codec and repository
-without becoming an application API.
-
-The private MVP ledger may use full snapshots initially. This is a deliberate
-simplicity choice, not the public definition of a revision or the final retention
-design. Do not yet add semantic text checkpoint grouping, snapshot compaction,
-retention policies, or replicated branching. Do implement lightweight paginated
-History summaries as an engine query; that behavior must remain when the private
-representation is later optimized.
+The private MVP ledger may use full snapshots initially. This is a deliberate simplicity choice, not the public definition of a revision or the final retention design. Do not yet add semantic text-grouping heuristics, snapshot compaction, retention policies, or replicated branching. Do implement lightweight paginated History summaries as an engine query; that behavior must remain when the private representation is later optimized.
 
 Required tests:
 
@@ -903,13 +765,11 @@ Required tests:
 - mutating a queued request, receipt, summary, or materialization cannot change the committed document or History;
 - reducer, clock, and ID-generator failures publish no ledger, revision, reservation, or head change;
 - deleting an entity does not make its ID reusable;
-- stale commit and restore requests mutate nothing;
-- two concurrent same-base commits produce one success and one conflict;
+- stale commit, checkpoint, and restore requests mutate nothing;
+- two concurrent same-base commands produce one success and one conflict;
 - every historical materialization is exact, detached, and read-only;
-- every query/materialization reports the exact VersionToken it observed, and a
-  command derived from an older projection conflicts cleanly;
-- a VersionToken from another DocumentId is rejected and tokens cannot be used
-  as an ordering key;
+- every query/materialization reports the exact VersionToken it observed, and a command derived from an older projection conflicts cleanly;
+- a VersionToken from another DocumentId is rejected and tokens cannot be used as an ordering key;
 - listing and summarizing History does not materialize every stored document;
 - History cursors retain one observed frontier and deterministic display order;
 - retrying a successful command ID is idempotent and conflicting reuse is rejected;
@@ -919,21 +779,23 @@ Required tests:
 - structural and Yjs changes commit or roll back atomically;
 - missing contributor identity fails;
 - timestamps and affected-target arrays are session-derived and canonical;
+- checkpoint creates one attributed Contribution and one content-identical child revision;
+- checkpoint has empty affected-target arrays and produces a new VersionToken;
+- a later edit does not mutate or move an earlier checkpoint Version;
+- multiple checkpoints remain independently listed and materializable;
 - restore creates a child of the pre-restore head with snapshot material equal to the target;
-- restore preserves the target, intervening revisions, ledger, and contributor catalog;
-- deleting an InlineContent and then restoring an earlier revision recovers its original ID, tags, and CollaborativeText state;
-- accepting current state creates one attributed, content-identical revision tagged `workflow:accepted`; and
-- later edits do not mutate or move the earlier accepted revision.
+- restore preserves the target, intervening revisions, checkpoints, ledger, and contributor catalog; and
+- deleting an InlineContent and then restoring an earlier revision recovers its original ID, tags, and CollaborativeText state.
 
 Exit criteria:
 
-- structural and inline operations can be committed, viewed historically, and restored entirely in memory; and
+- structural and inline operations can be committed, checkpointed, viewed historically, and restored entirely in memory; and
 - History behavior is proven without React, IndexedDB, file APIs, or a persistence adapter.
 
 Suggested commit boundary:
 
 ```text
-feat(history): add attributed snapshots and compensating restore
+feat(history): add attributed versions, checkpoints, and compensating restore
 ```
 
 ### Step 5 — Implement structured Markdown import
@@ -969,26 +831,11 @@ function planMarkdownImport(
 ): Promise<Result<MarkdownImportPlan, MarkdownImportFailure>>;
 ```
 
-`sourceName` is a display basename only; file pickers must not pass or persist an
-absolute/local path. The planner never reads or mutates a DocumentEngine or its
-private state. It creates one Contributor of kind `imported` (display name
-derived deterministically from the source name, or `Markdown import` when
-unnamed) and fills `sourceMetadata` with the source name, raw byte length,
-`text/markdown` media type, and lowercase SHA-256 of the original input bytes. A
-separate application service receives the current human Contributor, creates a
-candidate engine with both current and imported contributors, then submits the
-complete operation group through `execute` with the `importMarkdown` effect
-attributed to the imported contributor. The initial importer creates a new
-engine; it does not merge into or replace an already-open document. The
-application swaps to the new engine only after planning and the one atomic
-command both succeed.
+`sourceName` is a display basename only; file pickers must not pass or persist an absolute/local path. The planner never reads or mutates a DocumentEngine or its private state. It creates one Contributor of kind `imported` (display name derived deterministically from the source name, or `Markdown import` when unnamed) and fills `sourceMetadata` with the source name, raw byte length, `text/markdown` media type, and lowercase SHA-256 of the original input bytes. A separate application service receives the current human Contributor, creates a candidate engine with both current and imported contributors, then submits the complete operation group through `execute` with the `importMarkdown` effect attributed to the imported contributor. The initial importer creates a new engine; it does not merge into or replace an already-open document. The application swaps to the new engine only after planning and the one atomic command both succeed.
 
 Production IDs remain random. Determinism means that identical input with the same injected ID sequence and limits produces the same operation kinds, IDs, placement, tags, semantic CollaborativeText projections, and diagnostics. Complete Yjs state bytes inside `CreateInlineContent` need not be byte-identical after independent encoding, and unrelated production imports need not receive the same IDs.
 
-If parsing yields no manuscript AST nodes, return `empty-markdown` before
-allocating IDs or creating an engine. A user who wants an empty document uses New
-blank document; Markdown import never creates a metadata-only Contribution,
-Version, or empty operation group.
+If parsing yields no manuscript AST nodes, return `empty-markdown` before allocating IDs or creating an engine. A user who wants an empty document uses New blank document; Markdown import never creates a metadata-only Contribution, Version, or empty operation group.
 
 Use this heading algorithm:
 
@@ -1091,13 +938,7 @@ feat(import): map Markdown ASTs to attributed Block trees
 
 ### Step 6 — Define the lossless native interchange format
 
-Define the first portable encoding only after the Markdown fixtures have
-exercised the actual Block, InlineContent, and History shape. The engine exposes
-only opaque bytes plus media type/extension metadata; the UX never parses or
-depends on this JSON. The wire details below are a private version-1 codec, not
-the domain API or a permanent physical History representation. Persisting causal
-replicated History later will require an explicit format-version decision even
-though the public engine API stays unchanged.
+Define the first portable encoding only after the Markdown fixtures have exercised the actual Block, InlineContent, and History shape. The engine exposes only opaque bytes plus media type/extension metadata; the UX never parses or depends on this JSON. The wire details below are a private version-1 codec, not the domain API or a permanent physical History representation. Persisting causal replicated History later will require an explicit format-version decision even though the public engine API stays unchanged.
 
 Use one versioned JSON envelope containing:
 
@@ -1142,8 +983,7 @@ Wire rules are explicit:
 - branded IDs are JSON strings validated by their entity-specific parser;
 - revision snapshots use the flat Block/InlineContent tables above rather than recursive JSON;
 - there is no separate CollaborativeText table, ID, or ownership relation: each value is nested under its InlineContent record;
-- every non-genesis Contribution includes its stable `CommandId`, which is
-  unique in the document and round trips with its canonical request identity;
+- every non-genesis Contribution includes its stable `CommandId`, which is unique in the document and round trips with its canonical request identity;
 - every operation is an object with its exact Step 2/3 discriminator and payload;
 - timestamps use the Step 4 canonical UTC syntax and import hashes use exactly 64 lowercase hexadecimal SHA-256 characters;
 - optional properties are omitted rather than changed silently between `null` and missing; and
@@ -1151,8 +991,7 @@ Wire rules are explicit:
 
 No binary operation payload is silently dropped merely because full revision snapshots also exist. Decoders copy decoded bytes before constructing domain values.
 
-Keep transport separate from encoding. The public surface is the engine method
-and factory from Step 4:
+Keep transport separate from encoding. The public surface is the engine method and factory from Step 4:
 
 ```ts
 engine.serializePortableDocument({
@@ -1163,22 +1002,11 @@ factory.openPortableDocument(
 ): Promise<Result<DocumentEngine, OpenError>>;
 ```
 
-The private encoder/decoder receive the same reviewed asynchronous SHA-256
-adapter so tests can run without file APIs and hashing behavior is not
-duplicated. The first `PortableDocument.bytes` are UTF-8 JSON, but callers treat
-them as opaque. File names, file pickers, downloads, clipboard, and IndexedDB
-transport stay outside the codec and engine.
+The private encoder/decoder receive the same reviewed asynchronous SHA-256 adapter so tests can run without file APIs and hashing behavior is not duplicated. The first `PortableDocument.bytes` are UTF-8 JSON, but callers treat them as opaque. File names, file pickers, downloads, clipboard, and IndexedDB transport stay outside the codec and engine.
 
-The encoder reads a detached private persistence view supplied inside the engine;
-there is no public `archive()` or `DocumentSessionArchive` accessor. The decoder
-validates completely and constructs a candidate engine before the application
-replaces the active one.
+The encoder reads a detached private persistence view supplied inside the engine; there is no public `archive()` or `DocumentSessionArchive` accessor. The decoder validates completely and constructs a candidate engine before the application replaces the active one.
 
-Serialization checks `expectedVersion` after the UX flushes its editor. If the
-engine advanced first, it returns `VersionConflict` rather than silently saving
-a different Version. The returned artifact identifies the Version it contains.
-Open copies caller-owned input bytes before retaining them or crossing an
-asynchronous boundary.
+Serialization checks `expectedVersion` after the UX flushes its editor. If the engine advanced first, it returns `VersionConflict` rather than silently saving a different Version. The returned artifact identifies the Version it contains. Open copies caller-owned input bytes before retaining them or crossing an asynchronous boundary.
 
 Treat input as hostile. Parse into untrusted values and validate, in this order:
 
@@ -1191,7 +1019,7 @@ Treat input as hostile. Parse into untrusted values and validate, in this order:
 7. every Block invariant, exactly one Block reference to each InlineContent record, and no duplicate or orphan record; and
 8. every embedded CollaborativeText schema and limit.
 
-After shape validation, verify History from genesis in sequence order. Reapply `operations` and `importMarkdown` effects to their parent snapshot and compare the normalized Block structure plus `collaborativeStateEquivalent` text with the stored resulting snapshot; projection equality alone is insufficient. Verify a `restore` snapshot has byte-identical CollaborativeText state to its declared target and otherwise equal revisioned material. Verify an `acceptCurrent` snapshot equals its parent and its resulting RevisionRecord has exactly the `workflow:accepted` tag. Recompute affected-target arrays and the document-lifetime reserved-ID set rather than trusting serialized claims. Any mismatch is an integrity error.
+After shape validation, verify History from genesis in sequence order. Reapply `operations` and `importMarkdown` effects to their parent snapshot and compare the normalized Block structure plus `collaborativeStateEquivalent` text with the stored resulting snapshot; projection equality alone is insufficient. Verify a `checkpointCurrent` snapshot is material-identical to its parent. Verify a `restore` snapshot has byte-identical CollaborativeText state to its declared target and otherwise equal revisioned material. Recompute affected-target arrays and the document-lifetime reserved-ID set rather than trusting serialized claims. Any mismatch is an integrity error.
 
 Start with centralized native limits: 64 MiB of UTF-8 JSON, JSON nesting depth 128, 5,001 revisions including genesis, 5,000 Contributions, 250,000 operations in one Contribution, 1,000,000 operations in the archive, 50,000 Blocks and 50,000 InlineContents in any snapshot, 8 MiB for one decoded CollaborativeText value or incoming update, and 48 MiB of decoded binary data across the archive. Validate the raw byte limit before JSON parsing and use iterative bounded validation after parsing. Limits are format-reader policy rather than semantic document fields and may be raised deliberately with tests.
 
@@ -1205,31 +1033,23 @@ Required tests:
 
 - a realistic imported session round trips with the semantic equivalence above;
 - stored CollaborativeText and update bytes survive an ordinary native round trip exactly;
-- every advertised VersionToken remains equal for the same Version after a
-  portable Save/Open round trip;
-- after a portable round trip, retrying a stored CommandId returns its original
-  receipt without a duplicate Contribution or notification;
+- every advertised VersionToken remains equal for the same Version after a portable Save/Open round trip;
+- after a portable round trip, retrying a stored CommandId returns its original receipt without a duplicate Contribution or notification;
+- checkpoint Contributions and their resulting VersionTokens survive round trip;
 - current state is derived from exactly one stored revision snapshot;
 - unknown identifiers and unsupported newer versions fail explicitly;
 - truncated or duplicate-key JSON, unknown properties, invalid base64, oversized values, malformed trees, duplicate/orphan InlineContent records, duplicate/conflicting CommandIds, identity reuse, broken revision links, and unknown contributors are rejected;
 - a document at the supported Block-depth boundary round trips through the flat wire tables without exceeding the JSON-depth limit;
 - malformed Yjs updates and schema-invalid inline nodes/marks are rejected;
-- operation replay, restore targets, acceptance tags, reserved IDs, and affected-target arrays must agree with every stored snapshot;
+- operation replay, checkpoint equality, restore targets, reserved IDs, and affected-target arrays must agree with every stored snapshot;
 - changing payload or digest is detected as corruption;
-- serialization against a stale expected Version produces no artifact, while a
-  success reports the exact token encoded;
+- serialization against a stale expected Version produces no artifact, while a success reports the exact token encoded;
 - failed decoding does not replace the current application session;
-- mutating caller-owned input bytes after open begins cannot affect validation
-  or the opened engine;
+- mutating caller-owned input bytes after open begins cannot affect validation or the opened engine;
 - every encoder success is accepted by the same-version decoder, while an over-limit session returns a typed error without partial output; and
 - decoding and validation require no React, IndexedDB, DOM, or file API.
 
-Do not call Markdown a recovery format. The version-1 opaque portable artifact
-is the initial lossless recovery/interchange representation for capabilities
-implemented through Step 5. Adding range provenance, causal replicated History,
-or another later durable capability requires an explicit compatibility decision
-and, when necessary, a format-version change. The UI continues to use opaque
-bytes in every case.
+Do not call Markdown a recovery format. The version-1 opaque portable artifact is the initial lossless recovery/interchange representation for capabilities implemented through Step 5. Adding range provenance, causal replicated History, or another later durable capability requires an explicit compatibility decision and, when necessary, a format-version change. The UI continues to use opaque bytes in every case.
 
 Exit criteria:
 
@@ -1263,11 +1083,7 @@ Workspace:
 - import diagnostics; and
 - a development-only domain inspector showing the current tree, InlineContents, embedded text summaries, tags, and Version.
 
-All workspace and inspector data comes from `DocumentEngine` queries. The UI
-subscribes to change notifications as invalidation hints and re-queries the
-affected projection; it never holds or applies a private snapshot/ledger patch.
-Each displayed projection retains the VersionToken returned in the same query,
-and edits derived from it use that token as their expected base.
+All workspace and inspector data comes from `DocumentEngine` queries. The UI subscribes to change notifications as invalidation hints and re-queries the affected projection; it never holds or applies a private snapshot/ledger patch. Each displayed projection retains the VersionToken returned in the same query, and edits derived from it use that token as their expected base.
 
 At this step the renderer must render each lens-selected InlineContent read-only through the Step 3 semantic projection.
 
@@ -1334,17 +1150,7 @@ feat(ui): add operation-backed structural editing
 
 ### Step 9 — Integrate interactive InlineContent editing
 
-For the selected InlineContent, use the trusted `editor-content` engine query,
-which is restricted to `current`, to obtain detached CollaborativeText bytes and
-the VersionToken observed in the same read. Editing requires the result's
-materialized `version` to equal `observedAt`. Materialize a fresh live Y.Doc from
-that value and attach Tiptap/ProseMirror to it. Updates submit through
-`DocumentEngine.execute` against that observed token; mutating the local Y.Doc
-alone never changes canonical state. Historical/accepted content remains
-read-only until explicitly restored. This step adds interactive ownership and
-transitions; it does not introduce another content representation. Moving a
-Block changes only the semantic tree and retains the same InlineContent identity
-and CollaborativeText state.
+For the selected InlineContent, use the trusted `editor-content` engine query, which is restricted to `current`, to obtain detached CollaborativeText bytes and the VersionToken observed in the same read. Editing requires the result's materialized `version` to equal `observedAt`. Materialize a fresh live Y.Doc from that value and attach Tiptap/ProseMirror to it. Updates submit through `DocumentEngine.execute` against that observed token; mutating the local Y.Doc alone never changes canonical state. Historical content remains read-only until explicitly restored. This step adds interactive ownership and transitions; it does not introduce another content representation. Moving a Block changes only the semantic tree and retains the same InlineContent identity and CollaborativeText state.
 
 Implement:
 
@@ -1385,48 +1191,38 @@ feat(editor): add Yjs-backed InlineContent editing
 
 ### Step 10 — Add lenses and optional simultaneous contents
 
-Implement lenses as application-level queries over a selected Version.
+Implement lenses as application-level queries over an explicit selected Version.
 
 Initial lenses:
 
-- default/main content;
-- summary content selected by an application-owned tag;
-- accepted historical Version;
-- live/current Version; and
-- accepted-versus-live comparison.
+- default/main content; and
+- summary content selected by an application-owned tag.
 
-Lens selection is transient UI state. Do not persist it unless a later named-lens feature is deliberately designed.
+Version selection is separate from content-lens selection. The user can select the current Version or any exact historical Version, including the resulting Version of a checkpoint Contribution. Historical-versus-live comparison uses two explicit VersionTokens.
 
-Selection rules are deterministic:
+Lens and historical selection are transient UI state. Do not persist them unless a later named-lens feature is deliberately designed.
+
+Content selection rules are deterministic:
 
 - default/main selects the first content tagged `view:main`, otherwise the first content in vector order;
 - summary selects the first content tagged `view:summary`, otherwise falls back to that Block's default/main selection;
 - several matches select the first in vector order and produce a projection diagnostic;
-- zero contents produces no own rendered content;
-- initial lenses retain the complete structural tree and never reparent or omit a Block implicitly;
-- accepted asks the engine for its accepted-Version policy result and is
-  unavailable when none exists; it never chooses by a frontend-visible numeric
-  sequence; and
-- accepted-versus-live aligns matching Blocks by BlockId and displays unmatched subtrees explicitly rather than guessing correspondence.
+- zero contents produces no own rendered content; and
+- initial lenses retain the complete structural tree and never reparent or omit a Block implicitly.
 
-Also implement the Markdown rendering adapter at this step, once version and
-lens selection exist. It accepts an explicit `VersionToken` plus optional lens
-and subtree selection, queries/materializes through `DocumentEngine`, and returns
-Markdown text/bytes with stable loss diagnostics. It supports the structural and
-inline subset already accepted by the importer. Unsupported tags, overlays, or
-presentation are reported rather than silently presented as lossless.
+Historical-versus-live comparison aligns matching Blocks by BlockId and displays unmatched subtrees explicitly rather than guessing correspondence. A checkpoint has no special materialization rule: its resulting VersionToken is an ordinary exact historical VersionToken.
 
-The renderer has no file or clipboard API. The UX decides whether to copy,
-download, or otherwise transport its result. Markdown export is a lossy
-projection and is never used as native Save or History recovery.
+Also implement the Markdown rendering adapter at this step, once version and lens selection exist. It accepts an explicit `VersionToken` plus optional lens and subtree selection, queries/materializes through `DocumentEngine`, and returns Markdown text/bytes with stable loss diagnostics. It supports the structural and inline subset already accepted by the importer. Unsupported tags, overlays, or presentation are reported rather than silently presented as lossless.
+
+The renderer has no file or clipboard API. The UX decides whether to copy, download, or otherwise transport its result. Markdown export is a lossy projection and is never used as native Save or History recovery.
 
 Exit criteria:
 
 - most documents still use one InlineContent;
 - a summary is optional rather than schema-mandated;
-- final/draft comparison uses historical materialization rather than cloned live state; and
-- changing lenses creates no document mutation;
-- a chosen version/lens/subtree exports deterministically to Markdown; and
+- a checkpoint Version or any other historical Version can be compared with live through explicit VersionTokens;
+- changing lenses or historical selection creates no document mutation;
+- a chosen Version/lens/subtree exports deterministically to Markdown; and
 - export diagnostics disclose every unsupported or normalized construct.
 
 Suggested commit boundary:
@@ -1437,8 +1233,7 @@ feat(lenses): project optional contents and historical comparisons
 
 ### Step 11 — Add browser durability
 
-Define a browser-storage transport around opaque portable artifacts and local
-document descriptors, then implement:
+Define a browser-storage transport around opaque portable artifacts and local document descriptors, then implement:
 
 - an in-memory repository for tests and fallback;
 - an IndexedDB repository for ordinary browser use;
@@ -1447,19 +1242,9 @@ document descriptors, then implement:
 - opaque portable Save/Open through the engine API; and
 - recovery behavior when browser storage is unavailable or corrupt.
 
-IndexedDB is an application convenience, not the portable file format or a
-second engine repository. It stores bytes returned by
-`serializePortableDocument` and opens them through the engine factory; it never
-reconstructs or mutates private session records.
+IndexedDB is an application convenience, not the portable file format or a second engine repository. It stores bytes returned by `serializePortableDocument` and opens them through the engine factory; it never reconstructs or mutates private session records.
 
-Repository saves carry the opaque `VersionToken` most recently loaded from that
-local record. The IndexedDB adapter compares that expected saved token and writes
-the new artifact plus resulting token in one transaction; a mismatch reports a
-persistence conflict instead of overwriting another tab's work. It does not
-decode artifacts, reimplement, or replay domain operations. The UX tracks dirty
-state by comparing the current engine token with the last successfully saved
-token. Tokens are compared only for equality, are scoped to a DocumentId, and
-remain stable for the same Version across a lossless Save/Open round trip.
+Repository saves carry the opaque `VersionToken` most recently loaded from that local record. The IndexedDB adapter compares that expected saved token and writes the new artifact plus resulting token in one transaction; a mismatch reports a persistence conflict instead of overwriting another tab's work. It does not decode artifacts, reimplement, or replay domain operations. The UX tracks dirty state by comparing the current engine token with the last successfully saved token. Tokens are compared only for equality, are scoped to a DocumentId, and remain stable for the same Version across a lossless Save/Open round trip.
 
 Required tests:
 
@@ -1470,7 +1255,7 @@ Required tests:
 - imported native files do not overwrite another document without explicit intent;
 - corrupt records fail safely;
 - for sessions within the documented native limits, export remains sufficient recovery when IndexedDB is unavailable; and
-- History survives reload.
+- History, including checkpoints, survives reload.
 
 Exit criteria:
 
@@ -1518,7 +1303,7 @@ Exit criteria:
 - inserted text never inherits the previous author's identity accidentally;
 - copied text follows a documented origin/derivation policy;
 - range deletion and restoration behavior is explicit;
-- snapshots carry anchors with the Yjs state they reference;
+- storage snapshots carry anchors with the Yjs state they reference;
 - comments/discussions are overlays, not disguised manuscript Blocks; and
 - native export/import and IndexedDB reload preserve every durable overlay introduced by this step.
 
@@ -1534,15 +1319,13 @@ Only after Steps 0–12 have produced realistic measurements should the project 
 
 - whether SQLite is justified;
 - whether the portable artifact should be SQLite, an archive, or another format;
-- how History checkpoints/deltas/compaction should work;
+- how History storage snapshots/deltas/compaction should work;
 - whether Tauri is useful for packaging or filesystem access;
 - which platforms matter;
 - whether any validation must be implemented outside TypeScript; and
 - how attachments and large assets affect the artifact.
 
-Checkpoint, delta, structural-sharing, cache, or storage changes occur behind
-the engine contract and must pass the same command/query/History/serialization
-tests. They do not authorize exposing physical snapshots to the UX.
+Storage-snapshot, delta, structural-sharing, cache, or storage changes occur behind the engine contract and must pass the same command/query/History/serialization tests. They do not authorize exposing physical snapshots to the UX and they must not be confused with semantic checkpoint Contributions.
 
 Do not resume native-host work merely to obtain parity with the preserved experiment. Choose it only when the validated product requires it.
 
@@ -1577,7 +1360,7 @@ Copy only after the destination module and tests exist. Prefer copying the small
 | `src/persistence/memoryGateway.ts` and tests | Atomic commit, detached History, compensating restore |
 | `src/application/workspaceProjection.ts` and tests | Explicit live versus historical state |
 | `src/application/draftTransition.ts` and tests | Freeze/flush/retry behavior |
-| `src/editor/bodyCheckpointPolicy.ts` and coordinator tests | Evidence about semantic text grouping; add only when needed |
+| `src/editor/bodyCheckpointPolicy.ts` and coordinator tests | Evidence about semantic text grouping; despite the historical name, this is not the new semantic Checkpoint concept |
 | `src/application/historyProjection.ts` and tests | Human-readable grouping behavior, not old node targeting |
 | `src/components/DocumentCanvasInteractions.test.tsx` | Keyboard and focus expectations |
 | `src/components/DocumentCanvasEditorOwnership.test.tsx` | One-editor ownership expectations |
@@ -1588,13 +1371,13 @@ Rewrite these tests in the new vocabulary. Do not introduce `DocumentNode`, titl
 
 | Reference path | Use |
 |---|---|
-| `docs/PRODUCT_DOMAIN_MODEL.md` | Rationale and open-question evidence; adapt the current-target ontology exactly as Step 1 requires |
+| `docs/PRODUCT_DOMAIN_MODEL.md` | Historical rationale and prior open-question evidence; current authority is the local `main` copy |
 | `docs/DOCUMENT_FORMAT.md` | Existing History/restore/hash lessons; not the new format |
 | `docs/PERSISTENCE_DESIGN.md` | Gateway and atomicity lessons; not the new architecture |
 | `docs/SECURITY.md` | Untrusted rich text/file and offline constraints |
 | `docs/TESTING.md` | Data-loss, recovery, transition, and platform test ideas |
 | `docs/KNOWN_LIMITATIONS.md` | Failure modes the clean slate should avoid |
-| `docs/proposals/BODY_CHECKPOINT_STRATEGY.md` | Text checkpoint experiments |
+| `docs/proposals/BODY_CHECKPOINT_STRATEGY.md` | Historical text-grouping experiments; not semantic checkpoint authority |
 | `docs/proposals/QUERY_FIRST_HISTORY.md` | Non-mutating History/query semantics |
 | `docs/proposals/CONTINUOUS_BLOCK_OUTLINE.md` | Continuous workspace interaction lessons |
 
@@ -1628,15 +1411,15 @@ Prefer tests at the lowest meaningful boundary:
 
 1. pure domain invariant tests;
 2. headless CollaborativeText schema/update tests;
-3. operation/History tests;
+3. operation/History/checkpoint tests;
 4. Markdown planning fixtures;
 5. native-format round-trip and hostile-input tests;
 6. repository adapter contracts;
 7. editor integration tests with real Yjs state;
 8. component interaction/accessibility tests; and
-9. a small browser end-to-end suite for import/edit/reload/history/export.
+9. a small browser end-to-end suite for import/edit/checkpoint/reload/history/export.
 
-Every feature that can hide, replace, move, restore, export, or close active content must include a data-loss/failure test.
+Every feature that can hide, replace, move, checkpoint, restore, export, or close active content must include a data-loss/failure test when data loss or stale-state behavior is relevant.
 
 Every importer must include hostile, malformed, oversized, and unsupported-input tests.
 
@@ -1690,51 +1473,39 @@ Tauri must wrap the validated application rather than define it.
 
 ### Gate E — Before networked collaboration
 
-Use [`docs/COLLABORATION_MODEL.md`](docs/COLLABORATION_MODEL.md) as the decision
-baseline. Before connecting real clients, require:
+Use [`docs/COLLABORATION_MODEL.md`](docs/COLLABORATION_MODEL.md) as the decision baseline. Before connecting real clients, require:
 
-- a two-engine in-process replication harness with duplicate, delayed,
-  out-of-order, partition, and reconnect delivery;
+- a two-engine in-process replication harness with duplicate, delayed, out-of-order, partition, and reconnect delivery;
 - immutable attributed Contributions with stable IDs and causal dependencies;
-- convergence of the Contribution graph, collaborative state, and every named
-  materialization—not only equal rendered output;
-- a causal-frontier `VersionToken` implementation behind the existing opaque
-  API;
+- convergence of the Contribution graph, collaborative state, and every named materialization—not only equal rendered output;
+- semantic checkpoint Contributions that replicate without a special mutable pointer;
+- a causal-frontier `VersionToken` implementation behind the existing opaque API;
 - atomic integration of changes spanning structure and several InlineContents;
-- explicit Block-tree semantics for concurrent move, delete, order, cycle, and
-  delete-versus-edit conflicts;
+- explicit Block-tree semantics for concurrent move, delete, order, cycle, and delete-versus-edit conflicts;
 - distinct principal, contributor, replica, and session identities;
-- authentication, authorization, resource limits, catch-up, and durable outbox
-  behavior; and
+- authentication, authorization, resource limits, catch-up, and durable outbox behavior; and
 - a separate ephemeral channel for presence.
 
-The pragmatic first network phase may replicate Yjs text while a relay
-coordinates structural command proposals before final durable publication. It
-never rebases an immutable Contribution. Fully offline structural editing
-requires a proven replicated-tree algorithm and is a later decision. Do not treat Yjs text
-convergence, arrival order, or a deterministic display sort as global product
-History.
+The pragmatic first network phase may replicate Yjs text while a relay coordinates structural command proposals before final durable publication. It never rebases an immutable Contribution. Fully offline structural editing requires a proven replicated-tree algorithm and is a later decision. Do not treat Yjs text convergence, arrival order, or a deterministic display sort as global product History.
 
 ## 10. Completion definition for the scaffolding phase
 
 The scaffolding phase is complete when:
 
 - `main` contains a browser-only application;
-- the browser UX reads and mutates durable state only through the asynchronous
-  headless `DocumentEngine` boundary;
+- the browser UX reads and mutates durable state only through the asynchronous headless `DocumentEngine` boundary;
 - realistic Markdown documents can be imported with diagnostics;
-- selected versions/lenses/subtrees can be exported to Markdown with loss diagnostics;
+- selected Versions/lenses/subtrees can be exported to Markdown with loss diagnostics;
 - the recursive Block model is the only structural ontology;
 - all durable edits use attributed operations;
-- History can list and summarize Contributions, materialize any retained Version
-  read-only, and restore it through a new mutation;
-- within its documented limits, an opaque portable artifact round trips current
-  and historical behavior;
+- checkpoints are first-class attributed Contributions with content-identical resulting Versions;
+- History can list and summarize Contributions, materialize any retained Version read-only, and restore it through a new mutation;
+- within its documented limits, an opaque portable artifact round trips current and historical behavior;
 - successful engine changes emit invalidation events and the UX re-queries;
 - IndexedDB provides reload durability;
 - optional InlineContents and lenses can be exercised;
 - one active Yjs-backed editor preserves exact content;
-- tests cover loss, corruption, hostile import, and restoration;
+- tests cover loss, corruption, hostile import, checkpointing, and restoration;
 - the current documentation describes only the clean-slate application;
 - preserved implementation references explicitly name `tauri-experimental-orphan`; and
 - no Tauri, Rust, or SQL dependency has been introduced without passing the relevant decision gate.
