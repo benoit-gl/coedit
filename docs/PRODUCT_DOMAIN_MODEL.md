@@ -45,7 +45,7 @@ A Block can act as a document root, section, paragraph, list item, or grouping c
 
 Each committed durable mutation creates one attributed Contribution. Historical Versions are inspectable without mutation. Restore creates a new compensating Contribution. Restore never deletes or rewinds History.
 
-Earlier working and accepted states normally remain in History. They do not require parallel live copies.
+Earlier working and checkpointed states remain in History. They do not require parallel live copies.
 
 ### 2.5 Optional simultaneous contents are allowed
 
@@ -174,9 +174,9 @@ Most Blocks can contain one InlineContent. Zero contents are valid for grouping 
 
 ### 4.2 No mandatory content role enum
 
-InlineContent does not require `ContentForm`, `ContentStage`, `ContentRole`, `Primary`, `Summary`, `Working`, or `Accepted` fields.
+InlineContent does not require `ContentForm`, `ContentStage`, `ContentRole`, `Primary`, `Summary`, `Working`, `Accepted`, or `Checkpoint` fields.
 
-The application expresses product conventions with namespaced tags, lens rules, and Version metadata.
+The application expresses product conventions with namespaced tags, lens rules, and History Contributions.
 
 Examples:
 
@@ -185,7 +185,7 @@ Block tag:         topic:provenance
 InlineContent tag: view:main
 InlineContent tag: view:summary
 InlineContent tag: user:needs-citation
-Version metadata:  workflow:accepted
+History kind:      checkpoint
 ```
 
 ### 4.3 Tags have independent owners
@@ -212,7 +212,7 @@ Copying an InlineContent entity creates a new InlineContent ID. The copy receive
 
 Future provenance can record derivation separately from entity identity.
 
-## 5. History, Versions, and Contributions
+## 5. History, Versions, Contributions, and Checkpoints
 
 ### 5.1 Terms
 
@@ -222,6 +222,7 @@ Use these terms consistently:
 - **Version:** one materializable state of the document.
 - **History:** the retained Contributions and materializable Versions.
 - **VersionToken:** the opaque public identifier for a Version.
+- **Checkpoint:** one semantic Contribution that marks an exact point in History and produces a new content-identical Version.
 
 The private MVP can implement a linear revision ledger and complete snapshots. These are implementation choices, not logical domain requirements.
 
@@ -231,13 +232,17 @@ Historical materialization returns detached, read-only state. Entering or leavin
 
 Restore creates a new Contribution from the current Version to material that matches the selected historical target according to the engine restore contract.
 
-### 5.3 Acceptance is Version-oriented
+### 5.3 Checkpoints are Version-producing Contributions
 
-An accepted state is a marked Version, not a mandatory duplicate InlineContent.
+A checkpoint is a first-class durable interaction. It is not a mutable tag or pointer attached outside History.
 
-Editing after acceptance creates newer working Versions. The accepted Version remains inspectable. A later acceptance creates another attributed acceptance Contribution.
+Creating a checkpoint records who created it, its causal/base Version, and its place in History. The checkpoint Contribution produces a new Version whose document material is identical to its base Version.
 
-The MVP uses document-wide acceptance only. The accepted selector is an application policy over exact Versions. More granular acceptance is not part of the prototype and requires a later explicit design.
+A checkpoint does not mean final, published, approved, or immutable. Editing after a checkpoint creates newer Versions. The checkpoint Version remains exactly materializable. A document can contain zero, one, or many checkpoints.
+
+There is no singular "accepted" Version. A caller that needs a checkpoint selects an exact checkpoint Contribution or its resulting VersionToken from History.
+
+In later collaboration, checkpoints must replicate as ordinary Contributions. A checkpoint therefore records the exact causal frontier observed by its author rather than claiming a globally latest state.
 
 ### 5.4 History and simultaneous contents are different
 
@@ -245,7 +250,7 @@ Two states of one text at different times belong in History.
 
 Two content values that must exist at the same time belong in separate InlineContents in one Version.
 
-Do not create extra live InlineContents only to preserve an old draft.
+Do not create extra live InlineContents only to preserve an old draft or checkpointed state.
 
 ## 6. Lenses and projections
 
@@ -253,7 +258,7 @@ A Lens is an application-level presentation query over a selected Version.
 
 The initial model allows a lens to:
 
-- choose the current, exact historical, or application-selected accepted Version;
+- choose the current Version or an exact historical Version, including a checkpoint Version;
 - choose one InlineContent per Block with deterministic tag and fallback rules;
 - select a subtree; and
 - add later overlays without changing the underlying document.
@@ -321,6 +326,7 @@ A later AI collaborator can:
 - query an explicit Version;
 - propose or submit typed document operations under explicit authorization;
 - create or edit Blocks and InlineContents through ordinary commands;
+- create checkpoints through the same attributed command boundary when authorized;
 - create optional alternate content through normal InlineContent operations and tag conventions; and
 - contribute comments or conversations after those domain types exist.
 
@@ -338,7 +344,7 @@ materialized Version
 = rendered workspace
 ```
 
-The product can show several projections at the same time. For example, it can show accepted and live Versions side by side or show a summary projection beside main text.
+The product can show several projections at the same time. For example, it can show a chosen checkpoint Version beside the live Version or show a summary projection beside main text.
 
 No fixed pane layout is a domain requirement. Only one InlineContent needs to own active rich-text editor machinery at one time in the initial browser implementation.
 
@@ -383,15 +389,16 @@ The following decisions define the current ontology:
 15. Application-owned namespaces express product tag conventions such as `view:summary`.
 16. Blocks and InlineContents initially have no entity lifecycle timestamps or tombstone fields.
 17. Deleted live entities remain recoverable through retained historical Versions.
-18. Earlier working and accepted states normally live in History rather than parallel live contents.
-19. Acceptance is Version-oriented and document-wide in the MVP.
-20. Historical viewing is detached and read-only.
-21. Restore appends a compensating Contribution and does not rewind History.
-22. MVP text attribution is Contribution-level.
-23. Formatting and future provenance can share range-resolution concepts but require different edit rules.
-24. Durable anchors and the CollaborativeText state they reference must be co-versioned.
-25. Initial lenses preserve one shared Block spine within a materialized Version.
-26. AI is a future contributor through the ordinary engine boundary, not an MVP subsystem.
+18. Earlier working and checkpointed states live in History rather than parallel live contents.
+19. A checkpoint is a first-class attributed Contribution that produces a new content-identical Version.
+20. A document can have zero or many checkpoints; no checkpoint is inherently final or globally authoritative.
+21. Historical viewing is detached and read-only.
+22. Restore appends a compensating Contribution and does not rewind History.
+23. MVP text attribution is Contribution-level.
+24. Formatting and future provenance can share range-resolution concepts but require different edit rules.
+25. Durable anchors and the CollaborativeText state they reference must be co-versioned.
+26. Initial lenses preserve one shared Block spine within a materialized Version.
+27. AI is a future contributor through the ordinary engine boundary, not an MVP subsystem.
 
 ## 12. Open post-MVP questions
 
@@ -403,9 +410,9 @@ The following questions are intentionally not required to implement the document
 - What range-provenance representation gives useful lineage at acceptable cost?
 - What insertion-boundary rules apply to each future annotation type?
 - What derivation metadata should copy/paste retain?
-- Which History retention, checkpoint, compaction, and Yjs garbage-collection policy is appropriate after measurement?
+- Which History retention, storage-snapshot, compaction, and Yjs garbage-collection policy is appropriate after measurement?
 - Which lenses, if any, should become durable named document queries?
-- Does the product ever require acceptance below document scope?
+- Does the product need names, labels, or other metadata on checkpoint Contributions beyond ordinary Contribution context?
 - Does the product ever require simultaneous independently editable outlines?
 - Which collaboration policy should govern structural edits when networking is introduced?
 
@@ -419,10 +426,10 @@ A future design is compatible with this domain direction only if it preserves th
 2. A displayed heading and outline label can use the same stored InlineContent.
 3. One recursive Block type supports terminal and non-terminal structure.
 4. Optional additional InlineContents do not make multiple versions mandatory.
-5. Historical accepted/live comparison does not require duplicate live state.
+5. Historical checkpoint/live comparison does not require duplicate live state.
 6. Tags remain generic while application conventions stay explicit and validated.
 7. Historical viewing is non-mutating and restore is append-only compensation.
-8. Durable mutations are attributed Contributions.
+8. Durable mutations, including checkpoints, are attributed Contributions.
 9. AI can be added later through the ordinary mutation boundary.
 10. Provenance can evolve to range-level lineage without replacing History.
 11. Copy, restore, and collaborative-text identity rules are explicit where they matter.
@@ -434,6 +441,6 @@ A future design is compatible with this domain direction only if it preserves th
 
 The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns its identity, tags, and embedded CollaborativeText.
 
-The model does not persist heading/body entity types or a separate BlockContent identity layer. Structural context determines document-title, heading, prose, and list-item presentation. History preserves earlier states. Additional live InlineContents exist only for material that must coexist in the same Version.
+The model does not persist heading/body entity types or a separate BlockContent identity layer. Structural context determines document-title, heading, prose, and list-item presentation. History preserves earlier states. Checkpoints are ordinary semantic Contributions that create content-identical Versions. Additional live InlineContents exist only for material that must coexist in the same Version.
 
 The MVP is a document-engine prototype. It must validate these semantics without depending on AI, networking, Tauri, Rust, or SQLite. Later collaborators, including AI, must use the same attributable engine boundary.
