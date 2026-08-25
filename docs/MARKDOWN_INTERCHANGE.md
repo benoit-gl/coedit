@@ -4,7 +4,7 @@
 
 ## 1. Purpose and authority
 
-This document defines Markdown import, Markdown export, diagnostics, and the Markdown round-trip contract for the document-engine MVP.
+This document defines Markdown import, export, diagnostics, and the Markdown round-trip contract for the document-engine MVP.
 
 The input dialect is CommonMark plus GitHub Flavored Markdown (GFM). Markdown is an interchange and rendering format. It is not the lossless Coedit recovery format.
 
@@ -28,7 +28,7 @@ For every successfully imported Markdown document, `X` and `Y` must be equivalen
 
 The invariant does **not** require `Markdown A` and `Markdown B` to be textually equal. Export may canonicalize whitespace, heading syntax, list markers, emphasis delimiters, or other Markdown spelling.
 
-The invariant also does not require every arbitrary Coedit tree to be exactly representable in Markdown. A Coedit document can contain structures or metadata that are outside the canonical Markdown-representable subset. Export of those constructs must report stable diagnostics and must not claim exact structural interchange.
+The invariant also does not require every arbitrary Coedit tree to be exactly representable in Markdown. A Coedit document can contain structures or metadata outside the canonical Markdown-representable subset. Export of those constructs must report stable diagnostics and must not claim exact structural interchange.
 
 ## 3. Coedit equivalence for this contract
 
@@ -40,11 +40,11 @@ For Markdown round-trip verification, two Coedit documents are equivalent when t
 - the same number and order of InlineContents per Block;
 - the same application-significant tags created by Markdown import;
 - the same semantic inline text, hard breaks, formatting ranges, and safe link destinations; and
-- the same importer diagnostics that describe required normalization of the source construct where those diagnostics are part of the normalized import result.
+- the same importer normalization semantics where a source construct requires normalization.
 
 Generated IDs, Contributor IDs, Contribution IDs, VersionTokens, timestamps, Yjs internal identities, encoded update-byte order, and source-file metadata are not part of Markdown structural equivalence.
 
-Exact comparison of rich-text collaborative state belongs to `.coedit` recovery, not to this Markdown interchange invariant.
+Exact comparison of collaborative state belongs to `.coedit` recovery, not to this Markdown interchange invariant.
 
 ## 4. Import architecture
 
@@ -120,14 +120,14 @@ GFM task markers are preserved as literal `[ ]` or `[x]` prefixes and produce `t
 The Markdown interchange model supports:
 
 ```text
-text              -> text range
-hard break        -> hard break
+text                  -> text range
+hard break            -> hard break
 CommonMark soft break -> one ordinary space
-emphasis          -> italic Formatting range
-strong            -> bold Formatting range
-delete            -> strikethrough Formatting range
-inline code       -> inline-code Formatting range
-link               -> link Formatting range with safe href
+emphasis              -> italic Formatting range
+strong                -> bold Formatting range
+delete                -> strikethrough Formatting range
+inline code           -> inline-code Formatting range
+link                  -> link Formatting range with safe href
 ```
 
 Formatting is a logical external `RangeAnnotation<Formatting>` over opaque `TextAnchor` endpoints. This specification does not choose the concrete TextAnchor representation.
@@ -212,7 +212,7 @@ Every successfully imported fixture must run the complete property:
 ```text
 import(Markdown A) = Coedit X
 export(Coedit X) = Markdown B
-aimport(Markdown B) = Coedit Y
+import(Markdown B) = Coedit Y
 assert markdownEquivalent(X, Y)
 ```
 
@@ -240,7 +240,7 @@ Markdown interchange does not preserve:
 - Coedit History;
 - Contributors or attribution;
 - Version identity;
-- semantic checkpoints;
+- semantic Checkpoints;
 - command idempotency data;
 - exact CRDT identities or update bytes;
 - browser-storage metadata; or
