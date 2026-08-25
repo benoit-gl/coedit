@@ -50,7 +50,7 @@ The first meaningful vertical slice must allow a user to:
 2. see the resulting Block tree and import diagnostics;
 3. edit headings, prose, and list items;
 4. create, move, nest, reorder, and delete Blocks;
-5. add an optional second BlockContent, such as a summary;
+5. add an optional second InlineContent, such as a summary;
 6. switch content-selection lenses;
 7. inspect a previous revision read-only;
 8. restore that revision as a new revision;
@@ -62,7 +62,7 @@ Native packaging, SQLite, AI providers, real-time networking, attachments, and p
 
 ## 3. Domain decisions that scaffolding must preserve
 
-The authoritative discussion is `docs/PRODUCT_DOMAIN_MODEL.md` on `tauri-experimental-orphan`. Copy that document into the new branch during Step 1 below.
+The reference-tip `docs/PRODUCT_DOMAIN_MODEL.md` on `tauri-experimental-orphan` preserves the rationale behind these decisions. Copy and recontextualize it during Step 1 below; after that, the copy on `main` is the directional ontology and this plan supplies the executable contracts and work order.
 
 The minimum logical model is:
 
@@ -79,46 +79,44 @@ RevisionedDocument
   conversations[]  (introduced in Step 12)
   comments[]       (introduced in Step 12)
 
-AggregateSnapshot
-  document: RevisionedDocument
-  inlineContents: Map<BlockContentId, InlineContentSnapshot>
-
 Block
   id: BlockId
   tags: TagSet
   childrenPresentation: ChildrenPresentation
-  contents: BlockContent[]
+  contents: InlineContent[]
   children: Block[]
 
-BlockContent
-  id: BlockContentId
+InlineContent
+  id: InlineContentId
   tags: TagSet
+  text: CollaborativeText
 
-InlineContent identified by BlockContentId
+CollaborativeText
   collaborative text
   formatting marks (logical range annotations)
-  provenance range annotations (introduced in Step 12)
 ```
 
-`BlockContent` is the sole semantic owner of its inline value. Its `BlockContentId` also keys the corresponding InlineContent snapshot; there is no second `InlineContentId` and no independently mutable content reference. This prevents two contents from accidentally sharing one editable value while retaining stable identity when their owning Block moves.
+`InlineContent` is the selectable, tagged content entity owned by a Block. Its `CollaborativeText` is an embedded value with no independent ID, tags, lifecycle, or sharing semantics. There is no separate `BlockContent` type: it would duplicate the InlineContent's identity and ownership without adding a domain concept. A normalized store may key text state by `InlineContentId`, but that is a physical representation of the same ownership rather than another domain layer.
+
+Future provenance is scoped to an InlineContent, and its anchors must be snapshotted with the CollaborativeText they reference. Step 12 deliberately decides whether that data belongs inside the Yjs value or alongside it in the InlineContent; the low-level model does not preselect a storage representation.
 
 Required invariants:
 
 1. There is one recursive `Block` type.
 2. Every document has exactly one real root Block. The root cannot be moved or deleted.
-3. Every non-root Block has exactly one parent, and every Block and BlockContent ID is unique within its entity kind.
-4. Every BlockContent belongs to exactly one Block and owns exactly one InlineContent keyed by its BlockContentId.
+3. Every non-root Block has exactly one parent, and every Block and InlineContent ID is unique within its entity kind.
+4. Every InlineContent belongs to exactly one Block and embeds exactly one CollaborativeText value.
 5. `Idea`, `Heading`, `Body`, `Paragraph`, and `Leaf` are not persisted entity types.
 6. Root-title, heading, prose, and list-item presentation is inferred from structural context and the incoming child presentation.
-7. A rendered section heading and its outline label normally use the same selected BlockContent.
+7. A rendered section heading and its outline label normally use the same selected InlineContent.
 8. `childrenPresentation` belongs to the parent and describes its direct children.
 9. A contentless Block is a transparent grouping container: it emits no heading or prose of its own, and its children render according to its `childrenPresentation`.
-10. A Block may contain zero, one, or several BlockContents. Several are supported but never mandatory.
-11. BlockContent has no mandatory form, stage, or role enum.
-12. Block and BlockContent tags use the same normalization rules but have independent ownership.
+10. A Block may contain zero, one, or several InlineContents. Several are supported but never mandatory.
+11. InlineContent has no mandatory form, stage, or role enum.
+12. Block and InlineContent tags use the same normalization rules but have independent ownership.
 13. Application-owned tag namespaces express product conventions such as `view:summary`.
-14. Blocks and BlockContents do not initially carry `createdAt`, `updatedAt`, `deletedAt`, or tombstone fields. Contributions and revision snapshots record lifecycle and recovery.
-15. Deleting a Block or BlockContent removes it from the live revisioned state. Earlier snapshots retain it.
+14. Blocks and InlineContents do not initially carry `createdAt`, `updatedAt`, `deletedAt`, or tombstone fields. Contributions and revision snapshots record lifecycle and recovery.
+15. Deleting a Block or InlineContent removes it from the live revisioned state. Earlier snapshots retain it.
 16. Earlier working and accepted states normally live in History rather than parallel live content records.
 17. Acceptance is revision-oriented by default.
 18. Historical viewing is detached and read-only.
@@ -126,7 +124,7 @@ Required invariants:
 20. Formatting and provenance share a generic range mechanism but have different insertion and copy semantics.
 21. Inline-content state and any anchors into it must be snapshotted together.
 22. Initial import and editing attribution is contribution-level. Fine-grained range provenance is not claimed until the later provenance prototype defines it.
-23. Until named lens rules arrive, the default projection selects the first BlockContent in vector order. Zero contents means no own rendered content; tags do not alter this fallback implicitly.
+23. Until named lens rules arrive, the default projection selects the first InlineContent in vector order. Zero contents means no own rendered content; tags do not alter this fallback implicitly.
 
 The initial rendering precedence is explicit:
 
@@ -138,7 +136,7 @@ The initial rendering precedence is explicit:
 
 Topology still matters: a contentful Block may introduce a subtree, and its own `childrenPresentation` controls the next level. Incoming presentation determines how the Block itself renders. This also permits an empty section: a terminal child of a `sections` parent remains a heading even before it gains body children.
 
-A non-root Block with no BlockContents is always a grouping Block. An authored-but-empty section or list item therefore owns one empty BlockContent. A childless Block retains its `childrenPresentation`, but the value is dormant until children are added.
+A non-root Block with no InlineContents is always a grouping Block. An authored-but-empty section or list item therefore owns one InlineContent whose CollaborativeText is empty. A childless Block retains its `childrenPresentation`, but the value is dormant until children are added.
 
 An initial child-presentation vocabulary is:
 
@@ -193,7 +191,7 @@ A future native shell may provide packaging and file access. It should not autom
 
 Do not persist independently authoritative HTML and Yjs state.
 
-The canonical InlineContent representation should be Yjs/ProseMirror state. Rendered HTML is derived for display, and any later presentation export derives from the same state. A cache is permissible only if it is explicitly disposable or verifiably derived.
+The canonical CollaborativeText value inside each InlineContent should be Yjs/ProseMirror state. Rendered HTML is derived for display, and any later presentation export derives from the same state. A cache is permissible only if it is explicitly disposable or verifiably derived.
 
 ### Commands from the beginning
 
@@ -222,9 +220,9 @@ src/
     restore.ts
 
   content/
-    model.ts
+    inlineTypes.ts
     schema.ts
-    yjsInlineContent.ts
+    yjsCollaborativeText.ts
     readModel.ts
     annotations.ts
 
@@ -261,6 +259,8 @@ test/
     markdown/
     native/
 ```
+
+`domain/model.ts` owns `Block`, `InlineContent`, and the opaque `CollaborativeText` value shape. The `content/` folder owns only the Yjs interpretation plus the seed/projection types; it must not define a second content entity or ownership map. `annotations.ts` is added only when Step 12 begins.
 
 This is a routing guide, not a reason to create empty files in advance. Add a file when the corresponding behavior is implemented.
 
@@ -321,10 +321,21 @@ Recontextualize the copied document on `main`. Add a clearly marked clean-slate 
 
 - references to the "current implementation" mean the preserved implementation at `tauri-experimental-orphan`;
 - the preserved `DocumentNode` format-version-1 schema, Tauri, and SQLite are historical evidence rather than current clean-slate behavior;
+- the snapshot's separate `BlockContent` and `InlineContent` vocabulary is superseded on `main` by the collapsed `InlineContent` plus embedded `CollaborativeText` model in Section 3;
 - this scaffolding plan resolves the initial implementation questions needed for Steps 2–6; and
 - unresolved longer-term questions in the snapshot remain open unless this plan explicitly resolves them.
 
-Do not rewrite the snapshot to pretend those historical observations were made about the new branch.
+Adapt the copied document as a whole, not only its recorded-decision summary:
+
+- every current-target `Block.contents` becomes `InlineContent[]`;
+- current-target InlineContent owns `id`, `tags`, and `text: CollaborativeText`;
+- old value-level references meaning canonical rich text and Formatting become CollaborativeText, while old provenance/range material becomes future InlineContent-scoped data targeted by `InlineContentId`, with its persistence placement deferred to Step 12;
+- current-target diagrams and text for lenses, History, acceptance, AI operations, comments/conversations, provenance/copy, projections, migration, near-term work, recorded decisions, open work, and the final summary use the collapsed vocabulary;
+- current Block and InlineContent structs omit entity timestamps and tombstones, with lifecycle represented by Contributions and revision snapshots;
+- questions resolved by Section 3 of this plan are marked resolved rather than left open; and
+- preserved-implementation observations may retain old names only when the passage is explicitly labeled historical.
+
+Retain a short supersession note so readers can understand references in preserved code. Do not rewrite historical implementation observations to pretend they were made about the new branch.
 
 Add a short `docs/README.md` that distinguishes:
 
@@ -338,6 +349,8 @@ Exit criteria:
 
 - the new README and documentation index identify this plan as the work order;
 - the domain model is available on `main`;
+- its current model uses `Block.contents: InlineContent[]` with embedded CollaborativeText and does not retain `BlockContent` as a current entity;
+- in the copied domain document, `BlockContent` appears only in explicitly historical or supersession passages;
 - every reference to current versus preserved behavior is unambiguous;
 - no documentation claims that Tauri, SQLite, or the preserved `DocumentNode` format is current clean-slate behavior; and
 - the copied snapshot points readers to the concrete initial resolutions in Section 3 of this plan.
@@ -354,7 +367,7 @@ Implement:
 
 - branded, non-confusable IDs;
 - `TagSet` normalization using the preserved behavior as the initial contract;
-- `Block`, `BlockContent`, and the structural portion of `RevisionedDocument`;
+- `Block`, `InlineContent`, the opaque CollaborativeText value shape, and `RevisionedDocument`;
 - child-presentation values;
 - tree validation;
 - vector-based sibling order;
@@ -363,9 +376,9 @@ Implement:
 
 All persisted IDs use canonical lowercase UUID-v4 text at the wire boundary and distinct branded TypeScript types in memory. Production generation uses Web Crypto; tests inject valid deterministic UUID sequences. There is no timestamp/random-number fallback.
 
-The initial tag contract is NFKC normalization, trim, internal-whitespace collapse, case-insensitive identity, first-spelling preservation, removal of empty values, rejection of control characters, at most 20 tags per owner, and limits of 64 Unicode code points and 256 UTF-8 bytes per tag. Block and BlockContent tags pass through the same functions but remain separate arrays.
+The initial tag contract is NFKC normalization, trim, internal-whitespace collapse, case-insensitive identity, first-spelling preservation, removal of empty values, rejection of control characters, at most 20 tags per owner, and limits of 64 Unicode code points and 256 UTF-8 bytes per tag. Block and InlineContent tags pass through the same functions but remain separate arrays.
 
-The initial live-domain limits are 50,000 Blocks, 50,000 BlockContents, and Block depth 1,000 including the root. Validation and projection walk the tree iteratively so a hostile but in-limit document cannot overflow the JavaScript call stack. These limits also bound every native snapshot in Step 6.
+The initial live-domain limits are 50,000 Blocks, 50,000 InlineContents, and Block depth 1,000 including the root. Every domain/session tree walk—including lookup, validation, projection, cloning, affected-ID derivation, move/delete, materialization, and restore—is iterative and bounded so a hostile but in-limit document cannot overflow the JavaScript call stack. These limits also bound every native snapshot in Step 6.
 
 Use these structural contracts:
 
@@ -378,17 +391,24 @@ interface Block {
   readonly id: BlockId;
   readonly tags: readonly string[];
   readonly childrenPresentation: ChildrenPresentation;
-  readonly contents: readonly BlockContent[];
+  readonly contents: readonly InlineContent[];
   readonly children: readonly Block[];
 }
 
-interface BlockContent {
-  readonly id: BlockContentId;
+interface InlineContent {
+  readonly id: InlineContentId;
   readonly tags: readonly string[];
+  readonly text: CollaborativeText;
+}
+
+interface CollaborativeText {
+  readonly schemaVersion: 1;
+  readonly encoding: "yjs-update-v1";
+  readonly state: Uint8Array;
 }
 ```
 
-The content value owned by a BlockContent is supplied by Step 3. The structural reducer works with its stable identity without depending on Yjs.
+Step 2 treats CollaborativeText as an opaque immutable value and never interprets its bytes. Step 3 supplies the only constructors, validation, projection, and update logic. This keeps the structural reducer free of a Yjs runtime dependency without introducing another domain entity.
 
 The first structural operation vocabulary is exact:
 
@@ -410,22 +430,23 @@ type StructuralOperation =
     }
   | { readonly kind: "DeleteBlock"; readonly blockId: BlockId }
   | {
-      readonly kind: "CreateBlockContent";
+      readonly kind: "CreateInlineContent";
       readonly blockId: BlockId;
-      readonly blockContentId: BlockContentId;
+      readonly inlineContentId: InlineContentId;
       readonly index: number;
       readonly tags: readonly string[];
+      readonly text: CollaborativeText;
     }
   | {
-      readonly kind: "MoveBlockContent";
-      readonly blockContentId: BlockContentId;
+      readonly kind: "MoveInlineContent";
+      readonly inlineContentId: InlineContentId;
       readonly index: number;
     }
-  | { readonly kind: "DeleteBlockContent"; readonly blockContentId: BlockContentId }
+  | { readonly kind: "DeleteInlineContent"; readonly inlineContentId: InlineContentId }
   | { readonly kind: "SetBlockTags"; readonly blockId: BlockId; readonly tags: readonly string[] }
   | {
-      readonly kind: "SetBlockContentTags";
-      readonly blockContentId: BlockContentId;
+      readonly kind: "SetInlineContentTags";
+      readonly inlineContentId: InlineContentId;
       readonly tags: readonly string[];
     }
   | {
@@ -440,16 +461,17 @@ Operation payload and application rules are part of the contract:
 - `CreateBlock` supplies a new Block ID, destination parent ID, insertion index, initial tags, and initial `childrenPresentation`; its content and child arrays begin empty.
 - `MoveBlock` supplies the Block ID, destination parent ID, and insertion index measured after removing the Block from its old siblings.
 - `DeleteBlock` removes the selected Block and its complete subtree from the live structure. It cannot target the root.
-- `CreateBlockContent` supplies the owner Block ID, new BlockContent ID, insertion index, and initial tags. Its inline value is initially empty.
-- `MoveBlockContent` reorders a content value within its existing owner; cross-Block transfer and copy semantics are deferred.
-- `DeleteBlockContent` removes that identity from the live structure; Step 3 removes its InlineContent from the live aggregate while History retains earlier snapshots.
+- `CreateInlineContent` supplies the owner Block ID, new InlineContent ID, insertion index, initial tags, and complete initial CollaborativeText value. Creation is atomic: an InlineContent can never exist without its embedded text. The application obtains that value from the Step 3 content kernel; the Step 2 reducer treats it opaquely and takes ownership of a byte copy.
+- `MoveInlineContent` reorders an InlineContent within its existing owner while retaining its ID, tags, and text. Cross-Block transfer is deferred. Entity copy later uses an ordinary `CreateInlineContent` with a new ID and text produced by the Step 3 semantic-clone helper; it needs no separate structural primitive.
+- `DeleteInlineContent` removes the entity and its embedded text from the live structure. History retains both in earlier document snapshots.
 - the two tag operations replace, normalize, and validate the complete tag array rather than applying implicit merges;
-- `SetChildrenPresentation` accepts only the four initial values; and
-- indices are integers in the inclusive range `0..length`. Invalid indices are rejected rather than clamped.
+- `SetChildrenPresentation` accepts only the four initial values;
+- create indices are measured against the vector before insertion and accept `0..length`; and
+- move indices are measured against the destination vector after removing the moved entity and accept `0..postRemovalLength`. Invalid indices are rejected rather than clamped, and a move that resolves to the original order is `NoEffect`.
 
 An operation group is applied sequentially, and each operation sees the result of the previous operation in that group. Every reducer is immutable: it returns a new detached structure or a typed `DomainError`, never a partial mutation. Empty groups and operations that make no change are rejected. IDs and clocks are injected at the command/session boundary; reducers never generate either.
 
-There is deliberately no `RestoreBlock`, `SetInlineContentReference`, entity tombstone, or entity timestamp. Whole-revision restoration is defined in Step 4. A later application command may recover a selected subtree from a historical snapshot by emitting ordinary create operations, but that is not a primitive ambiguity in the structural reducer.
+There is deliberately no `RestoreBlock`, independent `CollaborativeText` reference/sharing operation, entity tombstone, or entity timestamp. Whole-revision restoration is defined in Step 4. A later application command may recover a selected subtree from a historical snapshot by emitting ordinary create operations, but that is not a primitive ambiguity in the structural reducer.
 
 Required tests:
 
@@ -457,14 +479,16 @@ Required tests:
 - duplicate IDs are rejected;
 - cycles are rejected;
 - no Block is owned by two parents;
-- no BlockContent is owned by two Blocks;
+- no InlineContent is owned by two Blocks;
 - sibling and content order follow vector order exactly;
 - invalid insertion indices are rejected without mutation;
 - Block/count/depth limits are enforced at and just beyond every boundary;
+- a depth-1,000 tree can be operated on without recursive stack growth;
 - moving a subtree retains identity;
 - moving into self or a descendant is rejected;
-- deleting a subtree removes every descendant and owned BlockContent from the live structure;
-- Block and BlockContent tag scopes do not leak into each other;
+- deleting a subtree removes every descendant and owned InlineContent, including its embedded text, from the live structure;
+- Block and InlineContent tag scopes do not leak into each other;
+- creating and reading InlineContent defensively copy the mutable CollaborativeText bytes;
 - adding content does not clone structural identity;
 - child presentation is a parent property;
 - contentless grouping Blocks validate; and
@@ -482,30 +506,17 @@ Suggested commit boundary:
 feat(domain): add recursive Block model and operations
 ```
 
-### Step 3 — Implement the headless InlineContent kernel
+### Step 3 — Implement the headless CollaborativeText kernel
 
 Establish the canonical inline representation before History, import, or serialization depends on it.
 
-Initially use one `Y.Doc` per InlineContent, with one fixed `Y.XmlFragment` named `prosemirror`. A BlockContent exclusively owns that document through their shared `BlockContentId`. Moving a Block preserves the same InlineContent; copying content creates a new BlockContent, a new Y.Doc, and new CRDT identities.
+Initially materialize one transient `Y.Doc` per InlineContent, with one fixed `Y.XmlFragment` named `prosemirror`. The persisted authority is the `CollaborativeText` value embedded in `InlineContent.text`; a live Y.Doc is reconstructed from that value only while the content is being created, validated, projected, or edited. Moving a Block or reordering an InlineContent preserves the same InlineContent and text value.
+
+Copying an InlineContent entity is different from copying text. Entity copy allocates a new InlineContent ID and builds a fresh Y.Doc from the normalized semantic projection so the copy has independent CRDT identities. Ordinary text copy/paste inserts projected content into the target InlineContent and does not transfer the source entity identity. Provenance-copy policy is deferred to Step 12.
 
 This per-content boundary is deliberate for the first browser laboratory: updates are naturally scoped, deletion and validation are explicit, and no document-wide collaboration topology is assumed prematurely. Reconsider it only after measurements demonstrate a need for cross-content Yjs transactions or one synchronization channel.
 
-The immutable domain snapshot is:
-
-```ts
-interface InlineContentSnapshot {
-  readonly schemaVersion: 1;
-  readonly encoding: "yjs-update-v1";
-  readonly state: Uint8Array;
-}
-
-interface AggregateSnapshot {
-  readonly document: RevisionedDocument;
-  readonly inlineContents: ReadonlyMap<BlockContentId, InlineContentSnapshot>;
-}
-```
-
-`state` is a complete Yjs update sufficient to reconstruct that InlineContent in a fresh detached Y.Doc. Snapshot constructors take private ownership by copying the map, every entry, and every mutable `Uint8Array`; accessors return detached copies rather than the backing `ReadonlyMap` or bytes. State vectors and incremental updates are not snapshots. JSON/base64 is an interchange concern introduced later.
+The immutable domain snapshot is the `CollaborativeText` value already embedded in every InlineContent by the Step 2 contract. Its `state` is a complete Yjs update sufficient to reconstruct that content in a fresh detached Y.Doc. Constructors take private ownership by copying every mutable `Uint8Array`; document cloning, History snapshots, and accessors also return detached bytes. State vectors and incremental updates are not snapshots. JSON/base64 is an interchange concern introduced later.
 
 Define one inline-only schema:
 
@@ -528,7 +539,9 @@ type InlineAtom =
 type InlineSeed = readonly InlineAtom[];
 ```
 
-Normalization removes empty text runs, coalesces adjacent runs with identical marks, rejects duplicate marks, validates link destinations, and stores marks in a fixed order. This normalized projection—not Yjs client IDs or encoded byte order—is the semantic equality boundary.
+Normalization removes empty text runs, coalesces adjacent runs with identical marks, rejects duplicate marks, validates link destinations, and stores marks in a fixed order. This normalized projection—not Yjs client IDs or encoded byte order—is the user-visible semantic equality boundary.
+
+Name and test two distinct comparisons. `projectionEquivalent(a, b)` compares normalized InlineAtom projections and is used for import determinism, rendering, and semantic entity copies. `collaborativeStateEquivalent(a, b)` compares the reconstructed Yjs shared-type structure, CRDT structs/identities, and delete sets while ignoring update-byte ordering; it is required when verifying History replay or any state that future relative anchors and incremental updates may distinguish. Mere projection equality is not sufficient for the latter.
 
 Font family and size changes are deferred until an observed authoring workflow justifies a durable mark vocabulary. Empty InlineContent is valid. Rendered HTML and plain text are derived views and are never persisted as parallel authorities.
 
@@ -536,63 +549,63 @@ ProseMirror marks are the initial persistence of logical Formatting ranges; do n
 
 Provide headless functions to:
 
-- create empty content or content from a validated `InlineSeed`;
-- decode a full snapshot into a fresh Y.Doc;
+- create an empty `CollaborativeText` or one from a validated `InlineSeed`;
+- `cloneCollaborativeTextSemantically(source)`, which projects the source and seeds a fresh Y.Doc to produce equivalent text with independent CRDT identities;
+- decode a `CollaborativeText` value into a fresh Y.Doc;
 - project content to a small immutable inline tree/run representation for testing and rendering;
+- implement the two named projection/state equivalence comparisons above;
 - apply a Yjs update to a detached candidate and validate the resulting schema and limits;
-- encode a new full snapshot; and
-- coordinate `CreateBlockContent` and `DeleteBlockContent` so the live BlockContent IDs and InlineContent map have exact one-to-one correspondence.
+- encode the validated candidate as a new complete `CollaborativeText` value; and
+- validate the embedded text of every InlineContent when validating a complete document.
 
-Extend `DocumentOperation` with two content operations:
+Extend `DocumentOperation` with one text operation:
 
 ```ts
-type InlineContentOperation =
-  | {
-      readonly kind: "InitializeInlineContent";
-      readonly blockContentId: BlockContentId;
-      readonly seed: InlineSeed;
-    }
-  | {
-      readonly kind: "ApplyInlineContentUpdate";
-      readonly blockContentId: BlockContentId;
-      readonly update: Uint8Array;
-    };
+type CollaborativeTextOperation = {
+  readonly kind: "ApplyCollaborativeTextUpdate";
+  readonly inlineContentId: InlineContentId;
+  readonly update: Uint8Array;
+};
 
-type DocumentOperation = StructuralOperation | InlineContentOperation;
+type DocumentOperation = StructuralOperation | CollaborativeTextOperation;
 ```
 
-`InitializeInlineContent` supplies a validated InlineSeed and may target only a BlockContent created earlier in the same operation group. `ApplyInlineContentUpdate` supplies the target BlockContentId and an incremental Yjs update; it applies that update only to the detached per-content Y.Doc, validates the complete result, and stores a new full snapshot. Deleting a Block or BlockContent removes every corresponding InlineContent from the candidate live map.
+`CreateInlineContent` remains the single atomic entity-creation operation: its `text` value is produced from an empty or populated `InlineSeed` before the operation is assembled. To copy an entity, the application allocates a new InlineContent ID, calls the semantic-clone helper for the source text, and submits the result through the same operation. `ApplyCollaborativeTextUpdate` locates the target InlineContent, reconstructs a detached Y.Doc from its current `text`, applies the incremental update, validates the complete result, and immutably replaces only that embedded value with a new full snapshot. Deleting a Block or InlineContent naturally removes its embedded text from the live tree. Reject every Yjs document containing a top-level shared type other than the one `prosemirror` fragment.
 
-Creating a BlockContent always creates its empty Y.Doc. Omit `InitializeInlineContent` for an empty seed, reject repeated initialization in one group, and reject every Yjs document containing a top-level shared type other than the one `prosemirror` fragment.
+Once this kernel is present, each `CreateInlineContent` validates its complete CollaborativeText before insertion, and each `ApplyCollaborativeTextUpdate` validates its input bounds, base state, update, and result at that operation boundary. Every intermediate candidate satisfies all currently implemented invariants, and the completed group is validated again before commit. A later operation cannot sanitize an invalid earlier payload for ledger purposes.
 
 Start with centralized content limits: 8 MiB for an incoming incremental update or encoded full snapshot, 2,000,000 decoded Yjs structs, 1,000,000 Unicode code points, 250,000 projected atoms, at most six marks on one text atom, and 2,048 Unicode code points or 8 KiB of UTF-8 in one link destination. Validate both before and after applying an update to the detached candidate.
 
 The module must have no React, Tiptap UI, DOM, HTML-parser, or browser-storage dependency. Markdown import will construct `InlineSeed` values directly rather than round-tripping through HTML.
 
-Initial attribution is contribution-level: an inline mutation identifies its affected BlockContent, and the enclosing History contribution identifies its contributor. Yjs transaction origins are not durable provenance. Do not add range-provenance marks or side tables at this step.
+Initial attribution is contribution-level: an inline mutation identifies its affected InlineContent, and the enclosing History contribution identifies its contributor. Yjs transaction origins are not durable provenance. Do not add range-provenance marks or side tables at this step.
 
 Required tests:
 
 - empty, marked, linked, and hard-break seeds round trip semantically;
-- full snapshot decoding produces a detached Y.Doc;
+- CollaborativeText decoding produces a detached Y.Doc;
 - malformed updates and schema-invalid content are rejected without changing the base;
-- hidden shared types, repeated initialization, and all over-limit boundaries are rejected;
+- hidden shared types and all over-limit boundaries are rejected;
+- creating invalid CollaborativeText and deleting that InlineContent later in the same group still rejects and rolls back the whole group;
 - an update for one InlineContent cannot affect another;
-- production Yjs byte equality is not required, but projected inline equality is;
-- moving a Block preserves BlockContent identity and projected inline state;
-- deleting a BlockContent removes it from the live aggregate; and
-- creating or deleting structure and InlineContent rolls back together when either half fails.
+- semantic clones require projection equality and deliberately do not require Yjs byte or CRDT-identity equality;
+- collaborative-state equivalence detects identity/delete-set differences even when projections match;
+- moving a Block or reordering an InlineContent preserves InlineContent identity and projected text;
+- entity-copy construction produces the same semantic projection with a new InlineContent ID and fresh CRDT identities;
+- deleting an InlineContent removes the entity and its embedded text from the live document;
+- every stored and returned byte array is detached from caller-owned mutable input; and
+- creating, deleting, and updating InlineContent rolls back with the complete operation group when validation fails.
 
 Exit criteria:
 
 - realistic headings, paragraphs, and list-item labels can be represented without HTML;
-- a complete aggregate snapshot contains exact canonical state for every live BlockContent; and
+- a complete RevisionedDocument snapshot contains the complete CollaborativeText state embedded in every live InlineContent; and
 - later History and import work need no placeholder content representation.
 
 Suggested commit boundary:
 
 ```text
-feat(content): add headless Yjs InlineContent kernel
+feat(content): add headless Yjs CollaborativeText kernel
 ```
 
 ### Step 4 — Establish first-class in-memory History
@@ -618,7 +631,7 @@ interface RevisionRecord {
   readonly parentRevisionId: RevisionId | null;
   readonly contributionId: ContributionId | null;
   readonly tags: readonly string[];
-  readonly snapshot: AggregateSnapshot;
+  readonly snapshot: RevisionedDocument;
 }
 
 interface Contribution {
@@ -637,7 +650,7 @@ interface Contribution {
     | { readonly kind: "restore"; readonly targetRevisionId: RevisionId }
     | { readonly kind: "acceptCurrent" };
   readonly affectedBlockIds: readonly BlockId[];
-  readonly affectedBlockContentIds: readonly BlockContentId[];
+  readonly affectedInlineContentIds: readonly InlineContentId[];
   readonly sessionId?: SessionId;
   readonly summary?: string;
 }
@@ -652,7 +665,15 @@ interface MaterializedRevision {
   readonly revisionId: RevisionId;
   readonly sequence: number;
   readonly tags: readonly string[];
-  readonly snapshot: AggregateSnapshot;
+  readonly snapshot: RevisionedDocument;
+}
+
+interface DocumentSessionArchive {
+  readonly documentId: DocumentId;
+  readonly currentRevisionId: RevisionId;
+  readonly contributors: readonly Contributor[];
+  readonly contributions: readonly Contribution[];
+  readonly revisions: readonly RevisionRecord[];
 }
 
 interface ImportSourceMetadata {
@@ -673,7 +694,7 @@ A DocumentSession owns five things:
 
 `createDocumentSession(genesis, dependencies)` requires at least one validated initial Contributor and creates the document ID, permanent empty root (`tags=[]`, `contents=[]`, `children=[]`, `childrenPresentation="flow"`), contributor catalog, and genesis revision atomically. Contributor IDs must be unique; display names are trimmed, control-character-free text limited to 128 Unicode code points and 512 UTF-8 bytes; kinds are closed to the four listed values; and conflicting duplicate records are rejected. Genesis is the only bootstrap path allowed to register a contributor without attribution. Adding contributors after genesis is deferred until a concrete AI/collaboration workflow defines an attributed catalog operation; code must not silently invent them.
 
-Snapshots contain the revisioned Block tree, all live BlockContents, the complete InlineContent snapshot map, and later revisioned comments/conversations. Snapshots do not recursively contain the ledger, revision records, contributor catalog, or head pointer.
+Each snapshot is one complete `RevisionedDocument`: the recursive Block tree already contains every live InlineContent and its embedded CollaborativeText, plus later revisioned comments/conversations. There is no parallel content map or one-field aggregate wrapper. Snapshots do not recursively contain the ledger, revision records, contributor catalog, or head pointer. Snapshot construction and materialization deep-copy every embedded `Uint8Array`.
 
 Revision sequence zero is a genesis snapshot containing the permanent empty root and has no Contribution. Every later revision has exactly one Contribution, and every Contribution has exactly one resulting revision. History is initially linear; a new revision's parent is the head that was current when the commit began.
 
@@ -707,14 +728,31 @@ interface DocumentSession {
   commit(request: CommitRequest): Promise<Result<RevisionRecord, CommitError>>;
   current(): MaterializedRevision;
   materialize(revisionId: RevisionId): Result<MaterializedRevision, UnknownRevision>;
+  archive(): DocumentSessionArchive;
   restore(request: RestoreRequest): Promise<Result<RevisionRecord, RestoreError>>;
   acceptCurrent(request: AcceptCurrentRequest): Promise<Result<RevisionRecord, CommitError>>;
 }
 ```
 
-Commits are serialized internally. The expected-head check occurs inside that serialization boundary; a stale request returns `RevisionConflict` and is never silently rebased. Operations inside either commit effect apply sequentially to one detached candidate aggregate, structural and InlineContent validation run on the complete candidate, and only total success appends one Contribution and one revision. `importMarkdown` differs only by carrying durable source metadata; it does not bypass ordinary operations. Every mutable binary operation payload is copied on commit and when read back from the ledger. `affectedBlockIds` and `affectedBlockContentIds` are derived by the session, never supplied or trusted from callers; cascading deletion includes the removed subtree and all owned contents, import includes all created targets, restore includes the union of live targets in the base and target snapshots, and acceptance affects neither array. Two concurrent requests against the same head yield exactly one success.
+Every public mutation method synchronously snapshots its complete request before enqueueing it, including operation arrays and objects, tag arrays, CollaborativeText state, incremental updates, source metadata, and context. No caller-owned mutable value is retained.
 
-ID generation and the clock are injected. `committedAt` is canonical RFC 3339 UTC with exactly millisecond precision (`YYYY-MM-DDTHH:mm:ss.sssZ`). Contributor identity must already exist in the session catalog and is never silently substituted. While applying a group, the candidate reservation set contains all historically reserved IDs plus every ID created earlier in that group. A successful create reserves its Block or BlockContent ID for the document's lifetime—even if a later operation deletes it in the same group—so an identity cannot subsequently be reused for a different entity. Failed groups reserve nothing.
+Commits are serialized internally. The expected-head check occurs inside that serialization boundary; a stale request returns `RevisionConflict` and is never silently rebased. Operations inside either commit effect apply sequentially to one detached candidate document; every intermediate operation boundary and the completed candidate undergo the structural and CollaborativeText validation defined in Steps 2–3. `importMarkdown` differs only by carrying durable source metadata; it does not bypass ordinary operations. Two concurrent requests against the same head yield exactly one success.
+
+Affected-target arrays are unique IDs sorted lexicographically and are derived by the session, never supplied or trusted by callers:
+
+- `CreateBlock` affects the new Block and destination parent;
+- `MoveBlock` affects the moved Block plus its old and new parents;
+- `DeleteBlock` affects the former parent plus every Block and InlineContent in the removed subtree;
+- Block tags or child presentation affect the target Block;
+- InlineContent create, move, or delete affects that InlineContent and its owning Block;
+- InlineContent tags or CollaborativeText updates affect that InlineContent;
+- an operation/import group records the union of all per-operation targets, including entities both created and deleted in the group;
+- restore records all live Block and InlineContent IDs in the union of base and target snapshots; and
+- acceptance records empty affected-target arrays.
+
+After request capture, head verification, operation application, complete validation, affected-ID derivation, and successful ID/timestamp generation, the session publishes the Contribution, RevisionRecord, reservation-set changes, and new head in one synchronous critical section. Any error before publication leaves all four unchanged.
+
+ID generation and the clock are injected. `committedAt` is canonical RFC 3339 UTC with exactly millisecond precision (`YYYY-MM-DDTHH:mm:ss.sssZ`). Contributor identity must already exist in the session catalog and is never silently substituted. While applying a group, the candidate reservation set contains all historically reserved IDs plus every ID created earlier in that group. A successful create reserves its Block or InlineContent ID for the document's lifetime—even if a later operation deletes it in the same group—so an identity cannot subsequently be reused for another entity of the same kind. Failed groups reserve nothing.
 
 Restore semantics are exact. Restoring target `T` while the current head is `H`:
 
@@ -724,11 +762,11 @@ Restore semantics are exact. Restoring target `T` while the current head is `H`:
 4. appends a new revision whose parent is `H` and whose snapshot material is equal to `T`; and
 5. advances the head to that new revision.
 
-Restore is whole-aggregate replacement, not a merge, rewind, or operation replay. Material added after `T` disappears from the new live projection, while every revision, Contribution, and contributor remains. Restoring the current head is rejected; restoring an older revision that happens to have equal material still records the historically meaningful restore.
+Restore is whole-document replacement, not a merge, rewind, or operation replay. It deep-clones the target tree: every CollaborativeText byte sequence is byte-for-byte identical to the target while stored in a distinct `Uint8Array`. Restore never rebuilds text from InlineSeed, ProseMirror JSON, HTML, or projected atoms. Material added after `T` disappears from the new live projection, while every revision, Contribution, and contributor remains. Restoring the current head is rejected; restoring an older revision that happens to have equal material still records the historically meaningful restore.
 
-Revision tags use the Step 2 normalization contract but have independent revision ownership. Acceptance is revision-oriented and attributed. `acceptCurrent` rejects a head already tagged as accepted; otherwise it appends an `acceptCurrent` Contribution and a child revision with snapshot material equal to the previous head and the revision tag `workflow:accepted`, then advances the head. Other new revisions begin with an empty tag array. The latest accepted projection is the greatest-sequence revision carrying it. Accepting historical material requires restoring it first, then accepting the restored head. This avoids a mutable pointer or BlockContent stage field.
+Revision tags use the Step 2 normalization contract but have independent revision ownership. Acceptance is revision-oriented and attributed. `acceptCurrent` rejects a head already tagged as accepted; otherwise it appends an `acceptCurrent` Contribution and a child revision with snapshot material equal to the previous head and the revision tag `workflow:accepted`, then advances the head. Other new revisions begin with an empty tag array. The latest accepted projection is the greatest-sequence revision carrying it. Accepting historical material requires restoring it first, then accepting the restored head. This avoids a mutable pointer or InlineContent stage field.
 
-`current()` and `materialize()` return detached read-only materializations: no mutable array, map, object, or Y.Doc is shared with the live session.
+`current()`, `materialize()`, and `archive()` return detached read-only materializations. Mutation methods return detached RevisionRecords, and no public result or ledger accessor exposes an internally stored array, object, `Uint8Array`, or Y.Doc.
 
 Use full snapshots initially. This is a deliberate simplicity choice, not the final retention design. Do not yet add SQL-style paging, semantic text checkpoint grouping, snapshot compaction, retention policies, branching History, or UI-specific History rows.
 
@@ -737,16 +775,19 @@ Required tests:
 - genesis has sequence zero, the permanent root, and no Contribution;
 - one successful non-empty operation group appends exactly one Contribution and revision;
 - a failed group appends neither and reserves no IDs;
+- mutating a queued request or returned RevisionRecord cannot change the committed document or History;
+- reducer, clock, and ID-generator failures publish no ledger, revision, reservation, or head change;
 - deleting an entity does not make its ID reusable;
 - stale commit and restore requests mutate nothing;
 - two concurrent same-base commits produce one success and one conflict;
 - every historical materialization is exact, detached, and read-only;
+- a depth-1,000 document can commit, materialize, and restore without recursive stack growth;
 - structural and Yjs changes commit or roll back atomically;
 - missing contributor identity fails;
 - timestamps and affected-target arrays are session-derived and canonical;
 - restore creates a child of the pre-restore head with snapshot material equal to the target;
-- restore preserves the target, intervening revisions, ledger, and contributor catalog; and
-- deleting content and then restoring an earlier revision recovers its original IDs and InlineContent state;
+- restore preserves the target, intervening revisions, ledger, and contributor catalog;
+- deleting an InlineContent and then restoring an earlier revision recovers its original ID, tags, and CollaborativeText state;
 - accepting current state creates one attributed, content-identical revision tagged `workflow:accepted`; and
 - later edits do not mutate or move the earlier accepted revision.
 
@@ -796,7 +837,7 @@ function planMarkdownImport(
 
 `sourceName` is a display basename only; file pickers must not pass or persist an absolute/local path. The planner never reads or mutates a DocumentSession. It creates one Contributor of kind `imported` (display name derived deterministically from the source name, or `Markdown import` when unnamed) and fills `sourceMetadata` with the source name, raw byte length, `text/markdown` media type, and lowercase SHA-256 of the original input bytes. A separate application service receives the current human Contributor, creates the genesis session with both current and imported contributors, then commits the complete operation group with the `importMarkdown` effect attributed to the imported contributor. The initial importer creates a new session; it does not merge into or replace an already-open document. The application swaps to the new session only after planning and commit both succeed.
 
-Production IDs remain random. Determinism means that identical input with the same injected ID sequence and limits produces structurally equal operations, projected InlineContent, and diagnostics; it does not require unrelated production imports or re-encoded Yjs bytes to match.
+Production IDs remain random. Determinism means that identical input with the same injected ID sequence and limits produces the same operation kinds, IDs, placement, tags, semantic CollaborativeText projections, and diagnostics. Complete Yjs state bytes inside `CreateInlineContent` need not be byte-identical after independent encoding, and unrelated production imports need not receive the same IDs.
 
 If parsing yields no manuscript AST nodes, return `empty-markdown` before allocating IDs or creating a session. A user who wants an empty document uses New blank document; Markdown import never creates a metadata-only revision or an empty operation group.
 
@@ -807,7 +848,7 @@ Use this heading algorithm:
 3. When the first H1 becomes the title, treat the root as heading depth 1 for skipped-level diagnostics. Otherwise treat it as depth 0. Every later H1 attaches directly to the root.
 4. For every other heading, pop the heading stack to the nearest open heading with a lower depth and attach the new section there, or to the root when none exists.
 5. A skipped level creates no synthetic heading. Attach to the nearest lower heading and emit `heading-level-skipped`.
-6. An empty heading creates one empty BlockContent so it remains a semantic section rather than becoming a transparent group.
+6. An empty heading creates one InlineContent with an empty CollaborativeText so it remains a semantic section rather than becoming a transparent group.
 7. A source filename is import metadata, never fabricated manuscript text.
 
 For each root or section, collect body nodes and subsection nodes separately, then normalize them as follows:
@@ -823,10 +864,10 @@ This rule makes paragraphs, lists, and subsections coexist without pretending th
 Map supported nodes exactly:
 
 ```text
-paragraph                 -> terminal Block with one BlockContent
+paragraph                 -> terminal Block with one InlineContent
 unordered list            -> transparent grouping Block with bullets children
 ordered list              -> transparent grouping Block with numbers children
-list item first paragraph -> the list-item BlockContent
+list item first paragraph -> the list-item InlineContent
 remaining item material   -> flow children of that list-item
 nested list               -> transparent group among those flow children
 text / hard break         -> InlineSeed text / hard break
@@ -836,9 +877,9 @@ delete / inline code      -> strikethrough / inline-code mark
 link                      -> safe link mark; unsafe links use literal-source fallback
 ```
 
-A list item without a leading paragraph receives one empty BlockContent. An ordered-list start other than one is normalized to one and emits a diagnostic until start-number semantics are represented explicitly. GFM task markers are preserved as literal `[ ]` or `[x]` prefixes with a diagnostic rather than hidden metadata.
+A list item without a leading paragraph receives one InlineContent with an empty CollaborativeText. An ordered-list start other than one is normalized to one and emits a diagnostic until start-number semantics are represented explicitly. GFM task markers are preserved as literal `[ ]` or `[x]` prefixes with a diagnostic rather than hidden metadata.
 
-Use one universal source-preserving fallback for unsupported Markdown nodes: preserve the node's exact normalized source slice as literal plain InlineContent in a terminal Block, attach the reserved content tag `import:markdown-literal`, and emit a source-positioned warning naming the lost presentation. "Normalized source" means UTF-8 decoded text after BOM removal and CRLF/CR conversion to LF; original byte offsets and line-ending style are not retained. Initially use this for fenced/indented code blocks, tables, block quotes, images, raw HTML, thematic breaks, and unknown block constructs. Unsupported inline nodes and unsafe links become literal source runs with the same warning policy, preserving both label and destination syntax. Never interpret raw HTML. If an unsupported node lacks usable source offsets, reject the import rather than discard it.
+Use one universal source-preserving fallback for unsupported Markdown nodes: create a terminal Block with one InlineContent tagged `import:markdown-literal`, whose CollaborativeText comes from a plain `InlineSeed` containing the node's exact normalized source slice, and emit a source-positioned warning naming the lost presentation. "Normalized source" means UTF-8 decoded text after BOM removal and CRLF/CR conversion to LF; original byte offsets and line-ending style are not retained. Initially use this for fenced/indented code blocks, tables, block quotes, images, raw HTML, thematic breaks, and unknown block constructs. Unsupported inline nodes and unsafe links become literal source runs with the same warning policy, preserving both label and destination syntax. Never interpret raw HTML. If an unsupported node lacks usable source offsets, reject the import rather than discard it.
 
 Diagnostics have stable fields and stable source order:
 
@@ -858,11 +899,11 @@ interface ImportDiagnostic {
 }
 ```
 
-The initial diagnostic-code vocabulary includes `heading-level-skipped`, `ordered-list-start-normalized`, `task-marker-literalized`, `unsafe-link-removed`, `unsupported-node-literalized`, and `unsupported-node-without-source`. New codes are added with fixtures; user-facing prose is not used as a machine identifier.
+The initial diagnostic-code vocabulary includes `heading-level-skipped`, `ordered-list-start-normalized`, `task-marker-literalized`, `unsafe-link-literalized`, `unsupported-node-literalized`, and `unsupported-node-without-source`. New codes are added with fixtures; user-facing prose is not used as a machine identifier.
 
 Start with named, centrally tested limits: 10 MiB of UTF-8 source, 200,000 Markdown AST nodes, 50,000 generated Blocks, nesting depth 100, 1,000,000 Unicode code points in one InlineContent, and 255 Unicode code points/1 KiB UTF-8 for a control-character-free source name. Decode UTF-8 with fatal error handling and an optional BOM, normalize line endings for parsing, and retain offsets into that normalized source. Invalid UTF-8 or any exceeded limit is an error and creates no session.
 
-Every created BlockContent is listed among the affected targets of the import contribution, so all imported text is attributable at contribution level. Do not claim that Markdown import has created range provenance.
+The planner turns each `InlineSeed` into a CollaborativeText with the Step 3 kernel and supplies it directly to an atomic `CreateInlineContent` operation. Every created InlineContent is listed among the affected targets of the import contribution, so all imported text is attributable at contribution level. Do not claim that Markdown import has created range provenance.
 
 Initial fixtures must cover:
 
@@ -917,22 +958,21 @@ revisions in sequence order, each with one complete snapshot
 integrity: { algorithm: "sha256", digest: lowercase hex }
 ```
 
-Do not store a duplicate "current aggregate." The current state is the snapshot of `currentRevisionId`.
+Do not store a duplicate "current document." The current state is the snapshot of `currentRevisionId`.
 
 Keep the in-memory model recursive but normalize each snapshot on the wire so valid deep documents do not violate JSON nesting limits:
 
 ```text
 rootBlockId
 blocks[]:
-  id, parentId|null, siblingIndex, tags, childrenPresentation, blockContentIds[]
-blockContents[]:
-  id, tags
-inlineContents[]
+  id, parentId|null, siblingIndex|null, tags, childrenPresentation, inlineContentIds[]
+inlineContents[]:
+  id, tags, text { schemaVersion, encoding, state }
 ```
 
-`blocks` are ordered parent-before-child with siblings in vector order; `blockContentIds` retain content vector order; and `blockContents` follow first ownership appearance. `parentId`, `siblingIndex`, and the flat arrays are only a lossless serialization of the recursive tree, not additional domain facts. Decoding reconstructs and validates exactly one root matching `rootBlockId`, contiguous sibling indices, unique ownership, and the original recursive order.
+`blocks` use iterative depth-first pre-order, preserving sibling vector order; each Block's `inlineContentIds` retain content vector order; and `inlineContents` follow first ownership appearance in that traversal. The root alone has `parentId: null` and `siblingIndex: null`; every non-root record has its zero-based index in its parent's child vector. These parent/index fields, ID references, and flat tables are only a lossless serialization of the recursive tree, not additional domain facts or a second domain layer. Decoding reconstructs and validates exactly one root matching `rootBlockId`, contiguous sibling indices, unique ownership, and the original recursive order.
 
-Every `inlineContents` entry maps one live BlockContentId to:
+Every `inlineContents` record is the complete InlineContent entity. Its nested `text` is:
 
 ```text
 schemaVersion: 1
@@ -945,26 +985,29 @@ JSON/base64 is only the interchange encoding; the in-memory domain continues to 
 Wire rules are explicit:
 
 - branded IDs are JSON strings validated by their entity-specific parser;
-- revision snapshots use the flat Block/BlockContent tables above rather than recursive JSON;
-- each InlineContent map is encoded as an array of `{ blockContentId, snapshot }` entries sorted lexicographically by ID for canonical output;
+- revision snapshots use the flat Block/InlineContent tables above rather than recursive JSON;
+- there is no separate CollaborativeText table, ID, or ownership relation: each value is nested under its InlineContent record;
 - every operation is an object with its exact Step 2/3 discriminator and payload;
-- InlineSeed uses the atom/mark JSON vocabulary from Step 3;
 - timestamps use the Step 4 canonical UTC syntax and import hashes use exactly 64 lowercase hexadecimal SHA-256 characters;
 - optional properties are omitted rather than changed silently between `null` and missing; and
-- snapshot bytes and every incremental Yjs update inside a Contribution operation use standard padded base64.
+- CollaborativeText state and every incremental Yjs update inside a Contribution operation use standard padded base64.
 
 No binary operation payload is silently dropped merely because full revision snapshots also exist. Decoders copy decoded bytes before constructing domain values.
 
 Keep transport separate from encoding:
 
 ```ts
-function encodeNativeDocument(session: DocumentSession): Promise<string>;
+function encodeNativeDocument(
+  session: DocumentSession,
+): Promise<Result<string, NativeFormatError>>;
 function decodeNativeDocument(
   input: string,
 ): Promise<Result<ValidatedDocumentSession, NativeFormatError>>;
 ```
 
 Both functions receive or import the same reviewed asynchronous SHA-256 adapter so tests can run without file APIs and hashing behavior is not duplicated.
+
+The encoder reads only the detached `DocumentSessionArchive` returned by `session.archive()`; it does not reach into session internals or expose live references.
 
 Treat input as hostile. Parse into untrusted values and validate, in this order:
 
@@ -973,28 +1016,33 @@ Treat input as hostile. Parse into untrusted values and validate, in this order:
 3. base64 shape and decoded-size limits;
 4. the corruption checksum over the still-untrusted payload;
 5. revision sequence, parent links, current pointer, and the one-to-one relationship between every non-genesis revision and its Contribution;
-6. contributor references, stable identity continuity across snapshots, and absence of ID reuse for a different entity;
-7. every Block invariant and exact BlockContent-to-InlineContent ownership; and
-8. every decoded InlineContent schema and limit.
+6. contributor references, stable identity continuity across snapshots, and absence of within-kind ID reuse for a different entity;
+7. every Block invariant, exactly one Block reference to each InlineContent record, and no duplicate or orphan record; and
+8. every embedded CollaborativeText schema and limit.
 
-After shape validation, verify History semantically from genesis in sequence order. Reapply `operations` and `importMarkdown` effects to their parent snapshot and compare the normalized Block structure and InlineContent projections with the stored resulting snapshot. Verify a `restore` snapshot equals its declared target. Verify an `acceptCurrent` snapshot equals its parent and its resulting RevisionRecord has exactly the `workflow:accepted` tag. Recompute affected-target arrays and the document-lifetime reserved-ID set rather than trusting serialized claims. Any mismatch is an integrity error.
+After shape validation, verify History from genesis in sequence order. Reapply `operations` and `importMarkdown` effects to their parent snapshot and compare the normalized Block structure plus `collaborativeStateEquivalent` text with the stored resulting snapshot; projection equality alone is insufficient. Verify a `restore` snapshot has byte-identical CollaborativeText state to its declared target and otherwise equal revisioned material. Verify an `acceptCurrent` snapshot equals its parent and its resulting RevisionRecord has exactly the `workflow:accepted` tag. Recompute affected-target arrays and the document-lifetime reserved-ID set rather than trusting serialized claims. Any mismatch is an integrity error.
 
-Start with centralized native limits: 64 MiB of UTF-8 JSON, JSON nesting depth 128, 5,000 revisions, 5,000 Contributions, 250,000 operations in one Contribution, 1,000,000 operations in the archive, 50,000 Blocks and 50,000 BlockContents in any snapshot, 8 MiB for one decoded InlineContent update, and 48 MiB of decoded binary data across the archive. Validate the raw byte limit before JSON parsing and use iterative bounded validation after parsing. Limits are format-reader policy rather than semantic document fields and may be raised deliberately with tests.
+Start with centralized native limits: 64 MiB of UTF-8 JSON, JSON nesting depth 128, 5,001 revisions including genesis, 5,000 Contributions, 250,000 operations in one Contribution, 1,000,000 operations in the archive, 50,000 Blocks and 50,000 InlineContents in any snapshot, 8 MiB for one decoded CollaborativeText value or incoming update, and 48 MiB of decoded binary data across the archive. Validate the raw byte limit before JSON parsing and use iterative bounded validation after parsing. Limits are format-reader policy rather than semantic document fields and may be raised deliberately with tests.
+
+The encoder preflights the same collection, binary, nesting, and final UTF-8 byte limits and returns a typed limit error instead of producing a file the same-version decoder would reject. Live in-memory sessions are not silently truncated to fit the portable format; if one exceeds an export limit, the UI must report that recovery limitation explicitly. Every successful encode must pass the same-version decoder.
 
 Use SHA-256 as a corruption checksum, not as proof of authenticity. Compute it over a documented canonical UTF-8 JSON representation of the envelope payload with the digest field omitted; object keys are sorted recursively, array order is retained, and one checked-in fixture provides the canonical bytes and expected digest. A malicious party able to rewrite both payload and digest is not detected, and the UI must not claim otherwise.
 
-`exportedAt` is metadata and may differ between exports. Round-trip equivalence means equal IDs, tree, tags, projected inline documents, contributor/Contribution data, every historical materialization, and restore behavior—not identical JSON text or Yjs bytes after re-encoding.
+`exportedAt` is metadata and may differ between exports. Because the codec only base64-wraps stored bytes, an ordinary encode/decode round trip must preserve every CollaborativeText snapshot and incremental update byte-for-byte in detached arrays. Canonical JSON text and Yjs re-encoding are not required when comparing separately produced but collaborative-state-equivalent sessions.
 
 Required tests:
 
 - a realistic imported session round trips with the semantic equivalence above;
+- stored CollaborativeText and update bytes survive an ordinary native round trip exactly;
 - current state is derived from exactly one stored revision snapshot;
 - unknown identifiers and unsupported newer versions fail explicitly;
-- truncated or duplicate-key JSON, unknown properties, invalid base64, oversized values, malformed trees, identity reuse, broken revision links, and unknown contributors are rejected;
+- truncated or duplicate-key JSON, unknown properties, invalid base64, oversized values, malformed trees, duplicate/orphan InlineContent records, identity reuse, broken revision links, and unknown contributors are rejected;
+- a document at the supported Block-depth boundary round trips through the flat wire tables without exceeding the JSON-depth limit;
 - malformed Yjs updates and schema-invalid inline nodes/marks are rejected;
 - operation replay, restore targets, acceptance tags, reserved IDs, and affected-target arrays must agree with every stored snapshot;
 - changing payload or digest is detected as corruption;
-- failed decoding does not replace the current application session; and
+- failed decoding does not replace the current application session;
+- every encoder success is accepted by the same-version decoder, while an over-limit session returns a typed error without partial output; and
 - decoding and validation require no React, IndexedDB, DOM, or file API.
 
 Do not call Markdown a recovery format. Native JSON is the initial lossless recovery/interchange format for capabilities implemented through Step 5. Adding range provenance or another later durable capability requires an explicit compatibility decision and, when necessary, a format-version change.
@@ -1029,11 +1077,11 @@ Workspace:
 - selected Block indication;
 - selected lens indication;
 - import diagnostics; and
-- a development-only domain inspector showing the current tree, BlockContents, tags, and revision.
+- a development-only domain inspector showing the current tree, InlineContents, embedded text summaries, tags, and revision.
 
-At this step the renderer may display InlineContent read-only.
+At this step the renderer must render each lens-selected InlineContent read-only through the Step 3 semantic projection.
 
-The renderer must implement the precedence and transparent-group rules from Section 3. The outline/navigation projection flattens contentless grouping Blocks and derives labels from the same selected BlockContent used in the document. Do not introduce a separate title field.
+The renderer must implement the precedence and transparent-group rules from Section 3. The outline/navigation projection flattens contentless grouping Blocks and derives labels from the same selected InlineContent used in the document. Do not introduce a separate title field.
 
 Exit criteria:
 
@@ -1052,6 +1100,8 @@ feat(ui): add importable read-only Block workspace
 
 Wire UI actions to the Step 2 operations through `DocumentSession`.
 
+When the UI creates an InlineContent, it first obtains an empty CollaborativeText from the Step 3 kernel and submits both together in one `CreateInlineContent` operation.
+
 Support:
 
 - create the root's first child Block;
@@ -1062,11 +1112,13 @@ Support:
 - drag/reorder only after button/keyboard semantics work;
 - delete, with recovery through whole-revision History restore;
 - edit Block tags;
-- create/delete/select BlockContent;
-- edit BlockContent tags; and
+- create/delete/select InlineContent;
+- edit InlineContent tags; and
 - change `childrenPresentation`.
 
 Preserve one explicit current selection and predictable focus after structural operations.
+
+Block and InlineContent selection are transient UI state: selecting either creates no operation, Contribution, or revision.
 
 Required interaction tests:
 
@@ -1076,7 +1128,7 @@ Required interaction tests:
 - child presentation affects direct children only;
 - selection survives unrelated renders;
 - failed commits retain editable state and expose retry; and
-- no React component mutates the aggregate directly.
+- no React component mutates the revisioned document directly.
 
 Exit criteria:
 
@@ -1092,7 +1144,7 @@ feat(ui): add operation-backed structural editing
 
 ### Step 9 — Integrate interactive InlineContent editing
 
-For the selected BlockContent, materialize a fresh live Y.Doc from the current Step 3 snapshot and attach Tiptap/ProseMirror to it. This step adds interactive ownership and transitions; it does not introduce another content representation. Moving a Block changes only the semantic tree and retains the same BlockContent identity and canonical state.
+For the selected InlineContent, materialize a fresh live Y.Doc from its embedded CollaborativeText and attach Tiptap/ProseMirror to it. This step adds interactive ownership and transitions; it does not introduce another content representation. Moving a Block changes only the semantic tree and retains the same InlineContent identity and CollaborativeText state.
 
 Implement:
 
@@ -1157,7 +1209,7 @@ Selection rules are deterministic:
 
 Exit criteria:
 
-- most documents still use one BlockContent;
+- most documents still use one InlineContent;
 - a summary is optional rather than schema-mandated;
 - final/draft comparison uses historical materialization rather than cloned live state; and
 - changing lenses creates no document mutation.
@@ -1191,7 +1243,7 @@ Required tests:
 - two writers from the same loaded head cannot silently overwrite one another;
 - imported native files do not overwrite another document without explicit intent;
 - corrupt records fail safely;
-- native export remains sufficient recovery when IndexedDB is unavailable; and
+- for sessions within the documented native limits, export remains sufficient recovery when IndexedDB is unavailable; and
 - History survives reload.
 
 Exit criteria:
@@ -1228,7 +1280,7 @@ Prototype:
 - explicit insertion attribution;
 - copy/paste derivation;
 - behavior under split/merge/delete/undo;
-- comments targeted to Block, BlockContent, or range; and
+- comments targeted to a Block, an InlineContent, or a range identified by `InlineContentId` plus anchors; and
 - durable conversations targeted to explicit semantic context.
 
 Do not finalize the native provenance representation until dense-attribution size and realistic editing behavior have been measured. Persisting provenance, comments, or conversations requires an explicit Step 6 format-compatibility decision; do not silently add fields to version 1. Extend the Step 11 repository schema and contract tests in the same change so native export, IndexedDB reload, History materialization, and restore all preserve the new records.
@@ -1240,7 +1292,7 @@ Exit criteria:
 - inserted text never inherits the previous author's identity accidentally;
 - copied text follows a documented origin/derivation policy;
 - range deletion and restoration behavior is explicit;
-- snapshots carry anchors with the Yjs state they reference; and
+- snapshots carry anchors with the Yjs state they reference;
 - comments/discussions are overlays, not disguised manuscript Blocks; and
 - native export/import and IndexedDB reload preserve every durable overlay introduced by this step.
 
@@ -1278,7 +1330,7 @@ These are relatively generic:
 | `src/domain/json.ts` | Generic JSON cloning/comparison helpers |
 | `src/domain/tags.ts` and tests | Normalization, limits, case-insensitive identity |
 | `src/editor/sanitizeRichText.ts` and tests | Sanitization policy and hostile-input cases |
-| `src/editor/yjsEncoding.ts` | Base64/update helpers only; adapt them to the per-BlockContent snapshot contract |
+| `src/editor/yjsEncoding.ts` | Base64/update helpers only; adapt them to the per-InlineContent CollaborativeText value contract |
 | `src/application/serializedTaskQueue.ts` and tests | Generic serialization behavior if still needed |
 | `assets/app-icon.svg` | Visual asset |
 | `LICENSE` | Project license |
@@ -1306,7 +1358,7 @@ Rewrite these tests in the new vocabulary. Do not introduce `DocumentNode`, titl
 
 | Reference path | Use |
 |---|---|
-| `docs/PRODUCT_DOMAIN_MODEL.md` | Authoritative target ontology and open questions |
+| `docs/PRODUCT_DOMAIN_MODEL.md` | Rationale and open-question evidence; adapt the current-target ontology exactly as Step 1 requires |
 | `docs/DOCUMENT_FORMAT.md` | Existing History/restore/hash lessons; not the new format |
 | `docs/PERSISTENCE_DESIGN.md` | Gateway and atomicity lessons; not the new architecture |
 | `docs/SECURITY.md` | Untrusted rich text/file and offline constraints |
@@ -1345,7 +1397,7 @@ These encode the experimental host, storage, or title-plus-body ontology. Their 
 Prefer tests at the lowest meaningful boundary:
 
 1. pure domain invariant tests;
-2. headless InlineContent schema/update tests;
+2. headless CollaborativeText schema/update tests;
 3. operation/History tests;
 4. Markdown planning fixtures;
 5. native-format round-trip and hostile-input tests;
@@ -1373,7 +1425,7 @@ Avoid test-count targets. Require behavior and risk coverage.
 
 ### Gate A — Before interactive rich editing
 
-Headless Yjs is deliberately introduced in Step 3 because History, import, and serialization require canonical content. Do not attach Tiptap or React editor ownership until the Block kernel, headless InlineContent, History, Markdown importer, native codec, and read-only workspace are all usable.
+Headless Yjs is deliberately introduced in Step 3 because History, import, and serialization require canonical content. Do not attach Tiptap or React editor ownership until the Block kernel, headless CollaborativeText kernel, History, Markdown importer, native codec, and read-only workspace are all usable.
 
 ### Gate B — Before finalizing provenance storage
 
@@ -1384,7 +1436,7 @@ Require experiments covering:
 - overlapping formatting and provenance;
 - concurrent insertion boundaries;
 - paragraph/block splits;
-- copy/paste between BlockContents;
+- copy/paste between InlineContents;
 - deletion and restore; and
 - native export/import.
 
@@ -1415,9 +1467,9 @@ The scaffolding phase is complete when:
 - the recursive Block model is the only structural ontology;
 - all durable edits use attributed operations;
 - History can inspect and restore any stored revision;
-- native JSON round trips current and historical state;
+- within its documented limits, native JSON round trips current and historical state;
 - IndexedDB provides reload durability;
-- optional BlockContents and lenses can be exercised;
+- optional InlineContents and lenses can be exercised;
 - one active Yjs-backed editor preserves exact content;
 - tests cover loss, corruption, hostile import, and restoration;
 - the current documentation describes only the clean-slate application;
