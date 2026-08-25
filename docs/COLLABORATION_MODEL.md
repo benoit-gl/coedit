@@ -25,6 +25,8 @@ implementation order.
 - Product History consists of immutable, attributed Contributions. It is not
   reconstructed from Yjs updates, transactions, debounce boundaries, relay
   batches, wall-clock timestamps, or packet-arrival order.
+- Semantic checkpoints are ordinary Contributions. They must converge and
+  replicate like edits and restores.
 - Eventual consistency must cover the causal Contribution graph and internal
   collaborative state, not merely equal rendered text.
 - A permanent global numeric revision sequence is not part of the public
@@ -39,7 +41,7 @@ implementation order.
 This is a known family of distributed-systems solutions, but it is not
 “automatic.” CRDTs and causal change graphs provide the machinery; Coedit must
 still choose deterministic semantics for tree moves, deletion, restoration,
-acceptance, authorization, and retention.
+checkpointing, authorization, and retention.
 
 ## 2. Topology and ownership
 
@@ -140,6 +142,10 @@ to finalize locally. During the pragmatic relay-coordinated structural phase, a
 structural command can remain an explicitly provisional proposal and must not be
 announced as a durable Contribution/version until the relay accepts its order.
 
+Checkpoint creation uses the same flow. A checkpoint created locally is a
+semantic Contribution against the exact frontier observed by its author. It does
+not claim that the frontier is globally latest.
+
 ### Remote work
 
 ```text
@@ -189,8 +195,10 @@ Use these terms consistently:
 
 - **Contribution:** an immutable, attributed semantic action and graph node;
 - **Version:** a materializable causal frontier and its closure;
-- **History:** the causal Contribution graph; and
-- **VersionToken:** an opaque public identifier for a Version.
+- **History:** the causal Contribution graph;
+- **VersionToken:** an opaque public identifier for a Version; and
+- **Checkpoint:** a semantic Contribution whose resulting Version has document
+  material identical to its declared base/frontier.
 
 A conceptual replicated Contribution envelope contains:
 
@@ -219,7 +227,7 @@ under the same Contribution identity.
 
 `VersionToken` may internally encode or hash a canonical frontier. Public clients
 must treat it as opaque so the MVP's revision ID can later become a frontier
-without changing query, restore, or save workflows.
+without changing query, checkpoint, restore, or save workflows.
 
 ## 6. Why arrival order cannot be global History
 
@@ -240,7 +248,7 @@ a stable tie-breaker. That order is presentation only:
 
 - it is not version or Contribution identity;
 - a late concurrent event may appear between rows already displayed;
-- row numbers must not be restore or acceptance targets; and
+- row numbers must not be restore or checkpoint targets; and
 - the same causal graph, not the incidental arrival order, is authoritative.
 
 If the product later requires a final global sequence number assigned at commit
@@ -271,13 +279,16 @@ This implies convergence tests must compare Contribution sets/graphs, causal
 frontiers, CRDT state equivalence, and logical materializations. A screenshot or
 plain-text comparison cannot establish correctness.
 
-Checkpoints, update merging, caches, indexes, and compaction may differ between
-replicas. They are physical representations, not part of equality, as long as
-they preserve the same advertised causal graph and exact materialization
+Storage snapshots, update merging, caches, indexes, and compaction may differ
+between replicas. They are physical representations, not part of equality, as
+long as they preserve the same advertised causal graph and exact materialization
 behavior. Physical compaction must not make a user-visible Version impossible to
 identify, materialize, or restore unless a future explicit retention policy
 first changes that product promise; an advertised token is not silently
 invalidated.
+
+Semantic checkpoint Contributions are different. They are part of Product
+History and therefore must converge like any other Contribution.
 
 ## 8. CollaborativeText and the Block tree are different problems
 
@@ -341,7 +352,7 @@ dependencies arrive. The anchor is not automatically meaningful in another
 Y.Doc: copying text between InlineContents or Blocks must create new anchors
 according to an explicit provenance/copy policy. Moving an InlineContent while
 preserving its identity and Yjs state can preserve its anchors. Historical
-snapshots/checkpoints must keep anchors with the exact collaborative state they
+storage snapshots must keep anchors with the exact collaborative state they
 reference.
 
 ## 9. Frontend-facing History behavior
@@ -352,6 +363,7 @@ The frontend can:
 - list lightweight Contribution summaries without materializing historical
   documents and separately identify advertised Versions;
 - see attribution, semantic kind, affected targets, and concurrency;
+- identify checkpoint Contributions and their exact resulting Versions;
 - query the current frontier as an opaque `VersionToken`;
 - materialize any advertised token read-only;
 - restore a selected version through a new mutation; and
@@ -361,7 +373,7 @@ Raw Yjs updates, causal storage rows, tombstones, inbox/outbox entries, and rela
 packets never cross this boundary. The portable document is also opaque to the
 UX even when it contains causal and CRDT state.
 
-## 10. Restore, acceptance, and undo under concurrency
+## 10. Restore, checkpoints, and undo under concurrency
 
 Restore preserves its **product** semantics: it never rewinds or deletes History.
 It creates a new attributed compensating Contribution that targets a stable
@@ -379,10 +391,12 @@ must use documented deterministic merge semantics, expose a conflict, or perform
 a coordinated “restore for everyone.” The UX must not claim a globally exclusive
 reset without such coordination. The exact policy remains open.
 
-Acceptance targets an exact Version, never “the greatest sequence.” Later edits
-do not mutate that accepted target. Several incomparable accepted Versions can
-exist unless a later workflow policy or authority prevents them. The engine must
-surface or resolve this explicitly rather than guess from arrival order.
+A checkpoint targets the exact causal frontier from which it is authored. It is
+itself a new immutable Contribution and produces a new Version with logically
+identical document material. Later edits do not mutate that checkpoint Version.
+Several concurrent or incomparable checkpoints can exist without conflict. They
+are independent historical statements, not competing claims for one global
+"accepted" state.
 
 Local editor undo and product History restore are different operations. Undo may
 generate a compensating edit in current collaborative state; it must not delete
@@ -437,7 +451,7 @@ The future replication protocol will need, at minimum:
 - idempotent delivery and content-conflict detection;
 - acknowledgements plus durable outbox/inbox recovery;
 - authenticated authorization and resource limits;
-- dependency requests, catch-up, and checkpoint/bootstrap transfer;
+- dependency requests, catch-up, and bootstrap-snapshot transfer;
 - atomic envelopes for multi-target Contributions;
 - deterministic validation/rejection semantics; and
 - an explicit relationship between logical Contribution metadata and exact CRDT
@@ -455,6 +469,7 @@ The MVP does not implement networking. It does establish the following seams:
 - opaque `VersionToken` values rather than public sequence/head assumptions;
 - globally unique document, entity, command, Contribution, and contributor IDs;
 - atomic attributed command groups;
+- first-class checkpoint Contributions;
 - History listing, summary, exact materialization, and compensating restore;
 - change subscriptions followed by re-query;
 - opaque lossless serialization/opening;
@@ -470,16 +485,17 @@ and complete snapshots. Its contract tests and types must make those replaceable
 1. Build and validate the local-only MVP behind the engine boundary.
 2. Replace storage details behind that same contract as measurements require.
 3. Build an in-process two-engine replication test bus before using a network.
-4. Replicate immutable Contributions and Yjs text effects under duplication,
-   delay, reordering, partition, and reconnect.
+4. Replicate immutable Contributions, including checkpoint Contributions, and
+   Yjs text effects under duplication, delay, reordering, partition, and
+   reconnect.
 5. Add an authenticated relay, durable catch-up, and visible sync status.
 6. Initially coordinate structural command proposals through the relay before
    final durable publication, and state offline restrictions explicitly.
 7. Add the independent ephemeral presence channel.
 8. Implement fully offline Block-tree convergence only if product evidence
    justifies its complexity.
-9. Add checkpoints, deltas, structural sharing, and compaction without changing
-   frontend behavior.
+9. Add storage snapshots, deltas, structural sharing, and compaction without
+   changing frontend behavior.
 
 No network phase begins merely because Yjs text synchronization works. The
 History/convergence and structural-conflict gates must pass together.
@@ -499,9 +515,10 @@ History/convergence and structural-conflict gates must pass together.
 - concurrent insert, delete, and formatting operations;
 - every Block-tree conflict listed above, including cycles;
 - restore concurrent with unseen work;
-- incomparable concurrent acceptances;
+- concurrent checkpoints remain independently materializable and attributable;
 - unauthorized, revoked, malformed, and oversized remote records;
-- relay checkpoint/compaction preserves advertised History; and
+- relay bootstrap/compaction preserves advertised History and semantic
+  checkpoint Contributions; and
 - presence loss or reordering never changes durable state.
 
 ## 16. Explicitly unresolved decisions
@@ -511,8 +528,9 @@ History/convergence and structural-conflict gates must pass together.
 - exact `VersionToken` representation;
 - remote authorization and offline revocation policy;
 - restore behavior with unseen concurrent branches;
-- policy for incomparable accepted Versions;
 - History retention and CRDT tombstone garbage collection;
+- checkpoint labels or other optional checkpoint metadata beyond ordinary
+  Contribution context;
 - end-to-end encryption;
 - one Y.Doc per InlineContent versus subdocuments/aggregation;
 - document forks versus continuation under one document ID; and
