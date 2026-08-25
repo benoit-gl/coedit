@@ -1,0 +1,537 @@
+# Collaboration and replicated History model
+
+**Status:** Accepted post-MVP direction and compatibility constraints. Networked
+collaboration is not part of the MVP. Exact transport and replicated-tree
+algorithms remain future decisions.
+
+This document records how collaboration should fit around the document engine
+and what eventual consistency must mean for Coedit. It complements
+[`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md), which defines the local engine API,
+and [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md), which defines the current
+implementation order.
+
+## 1. Decision summary
+
+- Each editing client normally owns one local `DocumentEngine` replica for an
+  open document.
+- A UX talks only to its local engine through commands, queries, and change
+  subscriptions.
+- Engines synchronize through a private replication adapter, normally using an
+  authenticated relay/service. The network protocol is not part of the frontend
+  API or pure domain vocabulary.
+- The engine validates, integrates, and atomically publishes remote effects.
+  React never exchanges, interprets, or applies CRDT updates or remote
+  changesets.
+- Product History consists of immutable, attributed Contributions. It is not
+  reconstructed from Yjs updates, transactions, debounce boundaries, relay
+  batches, wall-clock timestamps, or packet-arrival order.
+- Eventual consistency must cover the causal Contribution graph and internal
+  collaborative state, not merely equal rendered text.
+- A permanent global numeric revision sequence is not part of the public
+  contract. Versions are identified by opaque tokens that may represent causal
+  frontiers.
+- Presence, cursors, selections, and typing indicators are ephemeral, lossy
+  collaboration state. They are not Contributions and are absent from portable
+  document History.
+- The MVP's single head, linear ledger, and optional full snapshots are a private
+  special case hidden behind the engine API.
+
+This is a known family of distributed-systems solutions, but it is not
+“automatic.” CRDTs and causal change graphs provide the machinery; Coedit must
+still choose deterministic semantics for tree moves, deletion, restoration,
+acceptance, authorization, and retention.
+
+## 2. Topology and ownership
+
+```text
++------+     commands / queries / events     +------------------+
+| UX A | <---------------------------------> | Local engine A   |
++------+                                     +--------+---------+
+                                                      |
+                                             private replication
+                                                      |
+                                             +--------+---------+
+                                             | adapter / outbox |
+                                             +--------+---------+
+                                                      |
+                                             authenticated relay
+                                                      |
+                                             +--------+---------+
+                                             | adapter / inbox  |
+                                             +--------+---------+
+                                                      |
++------+     commands / queries / events     +--------+---------+
+| UX B | <---------------------------------> | Local engine B   |
++------+                                     +------------------+
+```
+
+The relay may provide authentication, authorization, routing, persistence,
+deduplication, offline catch-up, quotas, acknowledgements, and optional ordering.
+It need not be the sole merge authority or the only component able to
+materialize a document.
+
+The replication adapter can be composed beside a pure engine core for testing.
+“The engines collaborate” describes the authority boundary: replication is
+below the UX and remote durable effects become engine state only after engine
+validation and atomic integration.
+
+### Alternatives not chosen as the default
+
+A single central engine shared by every UX can simplify ordering, but it makes
+offline work harder, adds interaction latency, and turns server availability
+into editor availability. It remains a possible deployment mode, not the
+foundation of the client API.
+
+Frontends exchanging changes directly would leak causal dependencies,
+idempotency, retry, authorization, CRDT state, and conflict handling into UI
+components. That is explicitly rejected for durable work. Presence rendering
+may be UX-adjacent, but its channel remains separate and ephemeral.
+
+## 3. Four distinct kinds of state
+
+| Layer | Purpose | Portable/product History? |
+|---|---|---|
+| Logical document | Blocks, InlineContents, tags, CollaborativeText, durable overlays | Yes |
+| Product History | Immutable attributed Contributions and materializable Versions | Yes |
+| Replication state | CRDT identities, tombstones/delete sets, causal metadata, state vectors | Only what exact recovery/convergence requires |
+| Presence | Online state, cursors, selections, typing indicators | No |
+
+These layers may be stored together internally, but their semantics must remain
+separate.
+
+CRDT updates provide convergence mechanics. Contributions preserve product
+meaning, attribution, summaries, and user-visible History. One Contribution may
+require several network frames, and one network frame may batch several
+Contributions. Neither changes the logical Contribution boundary.
+
+A Contribution that touches the Block tree and several InlineContents becomes
+visible atomically to engine queries. The replication ingress buffers incomplete
+payloads or missing dependencies rather than publishing a partial state.
+
+Internal tombstones and causal metadata do not violate the logical domain
+decision that live `Block` and `InlineContent` entities have no tombstone fields.
+They are private replication/storage machinery.
+
+Inbox/outbox acknowledgements, connection retries, and buffered dependency
+requests are transport bookkeeping, not a fifth kind of document truth. They may
+need restart-durable local storage, but need not travel in a portable document.
+An authored durable Contribution that has not yet synchronized is document state
+and must not be confused with its delivery bookkeeping.
+
+## 4. Local and remote change flows
+
+### Local work
+
+```text
+user intent
+  -> attributed, idempotent command against a VersionToken
+  -> engine validation and invariant checks
+  -> immutable Contribution + exact convergence effects
+  -> atomic local publication
+  -> change notification to the UX
+  -> replication outbox
+```
+
+The UX re-queries after the notification. It does not receive a raw replication
+payload to apply.
+
+This flow applies to changes the active convergence policy permits the replica
+to finalize locally. During the pragmatic relay-coordinated structural phase, a
+structural command can remain an explicitly provisional proposal and must not be
+announced as a durable Contribution/version until the relay accepts its order.
+
+### Remote work
+
+```text
+authenticated remote envelope
+  -> deduplication and causal-dependency check
+  -> schema, authorization, resource, and domain validation
+  -> private remote-integration path
+  -> preserve original Contribution ID, parents, attribution, and effects
+  -> atomic publication
+  -> change notification with origin "remote"
+```
+
+Remote work is not reissued as a new local user command, which would duplicate
+History and attribution. The local-command and remote-integration paths do share
+schema validation, invariants, limits, contribution verification, and atomic
+publication rules.
+
+Delivery is idempotent. An already integrated Contribution is a no-op; reusing
+its ID with different content is corruption. Missing parents are buffered or
+requested. Invalid, unauthorized, or over-limit records are rejected without
+partially changing visible state.
+
+## 5. Product History is a causal Contribution graph
+
+The local MVP may store a one-parent chain. Replicated History generalizes it to
+an immutable causal graph:
+
+```text
+        A
+       /
+G ----                   current frontier = {A, B}
+       \
+        B
+
+A -----\
+        >--- C           C observes and joins both branches;
+B -----/                 current frontier = {C}
+```
+
+`A` and `B` are concurrent Contributions based on `G`. Neither is “really
+second.” The combined version is the causal frontier `{A, B}` plus its causal
+closure. It is a named/materializable Version even though no synthetic merge
+Contribution or fake History row exists. `C` names both heads as parents and
+joins the graph.
+
+Use these terms consistently:
+
+- **Contribution:** an immutable, attributed semantic action and graph node;
+- **Version:** a materializable causal frontier and its closure;
+- **History:** the causal Contribution graph; and
+- **VersionToken:** an opaque public identifier for a Version.
+
+A conceptual replicated Contribution envelope contains:
+
+```text
+stable Contribution ID (and possibly a content hash)
+document ID
+causal parent frontier
+contributor identity
+originating replica identity
+schema/capability version
+semantic effect metadata
+exact convergence payload
+affected targets
+optional human summary
+authored wall-clock time for display only
+```
+
+The precise hash, signature, and wire encoding remain open. IDs must be globally
+unique and immutable; content-addressing is attractive but not yet selected.
+
+A human-authored summary deliberately stored on a Contribution is immutable,
+replicated metadata. A summary derived later by a local heuristic or LLM is a
+disposable projection unless a separate attributed command deliberately
+persists it. Replicas must not silently persist independent derived summaries
+under the same Contribution identity.
+
+`VersionToken` may internally encode or hash a canonical frontier. Public clients
+must treat it as opaque so the MVP's revision ID can later become a frontier
+without changing query, restore, or save workflows.
+
+## 6. Why arrival order cannot be global History
+
+Two replicas can receive the same concurrent events in different orders:
+
+```text
+Replica A observes: G -> A -> B
+Replica B observes: G -> B -> A
+```
+
+Both may converge to the same visible document while retaining incompatible
+claims about a supposedly permanent linear History. Packet order, local commit
+row number, and wall-clock timestamp therefore cannot define shared causal
+identity.
+
+A deterministic topological display order may be derived from causal order plus
+a stable tie-breaker. That order is presentation only:
+
+- it is not version or Contribution identity;
+- a late concurrent event may appear between rows already displayed;
+- row numbers must not be restore or acceptance targets; and
+- the same causal graph, not the incidental arrival order, is authoritative.
+
+If the product later requires a final global sequence number assigned at commit
+time, it needs coordination through a sequencer, consensus system, or other
+central authority. Offline Contributions would be provisional until accepted by
+that authority. This is a valid alternative, but it is a different availability
+tradeoff and is not silently provided by eventual consistency.
+
+## 7. Convergence contract
+
+Equal rendered text is necessary but insufficient. Two replicas might render
+identically while differing in CRDT identities, deletion history, relative
+anchors, or product History, causing later edits to diverge.
+
+Once two authorized replicas possess the same complete set of valid
+Contributions, they must have:
+
+1. the same immutable causal Contribution graph and metadata;
+2. collaborative-state-equivalent CRDT state, including identity, delete, and
+   anchor behavior, even if byte encodings differ;
+3. the same validated Block tree, ordering, tags, and CollaborativeText
+   projection;
+4. the same materialization for every advertised causal frontier; and
+5. the same durable current frontier: the canonical set of maximal integrated
+   heads.
+
+This implies convergence tests must compare Contribution sets/graphs, causal
+frontiers, CRDT state equivalence, and logical materializations. A screenshot or
+plain-text comparison cannot establish correctness.
+
+Checkpoints, update merging, caches, indexes, and compaction may differ between
+replicas. They are physical representations, not part of equality, as long as
+they preserve the same advertised causal graph and exact materialization
+behavior. Physical compaction must not make a user-visible Version impossible to
+identify, materialize, or restore unless a future explicit retention policy
+first changes that product promise; an advertised token is not silently
+invalidated.
+
+## 8. CollaborativeText and the Block tree are different problems
+
+Yjs provides commutative, associative, and idempotent document updates for
+concurrent rich-text changes. That does not automatically give the recursive
+Block tree safe move/delete/order semantics.
+
+For example:
+
+```text
+Replica A: move X under Y
+Replica B: move Y under X
+```
+
+Each operation is locally valid, but naïvely combining them creates a cycle.
+Other required structural cases include:
+
+- two concurrent moves of the same Block;
+- move versus delete;
+- editing content whose Block is concurrently deleted;
+- concurrent sibling insertion at the same position;
+- deleting a parent while another replica moves a descendant out;
+- concurrent tag or `childrenPresentation` changes; and
+- one atomic Contribution spanning structure and several text values.
+
+The current sequential structural reducer is a useful command language, not a
+replication algorithm. Applying structural commands in arbitrary network arrival
+order, or using naïve last-writer-wins parent pointers, is not acceptable.
+
+Two credible collaboration levels are retained:
+
+1. **Pragmatic first collaboration:** exchange Yjs text updates while structural
+   command proposals obtain relay ordering/acceptance before they become final
+   durable Contributions. Offline structural edits may be restricted, stored as
+   explicitly provisional proposals, or explicitly conflicted.
+2. **Fully offline structural collaboration:** adopt or implement a proven
+   replicated-tree/JSON algorithm with deterministic rules for move, order,
+   delete, cycles, and invariant preservation.
+
+The second level is a deliberate research and implementation phase, not an MVP
+assumption. The first still requires a causal envelope so an attributed command
+spanning multiple text values and structure publishes atomically.
+
+The relay never rewrites or rebases an already published immutable Contribution.
+If coordinated structure rejects a stale proposal, the originating engine may
+submit a newly identified command against the accepted frontier; it does not
+change the old record in place. Fully replicated structural effects can publish
+locally only after deterministic merge semantics exist.
+
+### Yjs document and anchor boundaries
+
+One Y.Doc per InlineContent is an initial private representation. A future
+replication adapter may multiplex many of them over one connection or replace
+the layout with subdocuments/another aggregation strategy without changing the
+public engine API.
+
+A Yjs relative position is anchored to CRDT item identities within its
+originating Y.Doc. Insertions before it do not require the application to
+recompute an integer offset, and concurrent updates can resolve it after their
+dependencies arrive. The anchor is not automatically meaningful in another
+Y.Doc: copying text between InlineContents or Blocks must create new anchors
+according to an explicit provenance/copy policy. Moving an InlineContent while
+preserving its identity and Yjs state can preserve its anchors. Historical
+snapshots/checkpoints must keep anchors with the exact collaborative state they
+reference.
+
+## 9. Frontend-facing History behavior
+
+The collaboration model preserves the same public behavior as the local MVP.
+The frontend can:
+
+- list lightweight Contribution summaries without materializing historical
+  documents and separately identify advertised Versions;
+- see attribution, semantic kind, affected targets, and concurrency;
+- query the current frontier as an opaque `VersionToken`;
+- materialize any advertised token read-only;
+- restore a selected version through a new mutation; and
+- subscribe to invalidation/change hints and re-query.
+
+Raw Yjs updates, causal storage rows, tombstones, inbox/outbox entries, and relay
+packets never cross this boundary. The portable document is also opaque to the
+UX even when it contains causal and CRDT state.
+
+## 10. Restore, acceptance, and undo under concurrency
+
+Restore preserves its **product** semantics: it never rewinds or deletes History.
+It creates a new attributed compensating Contribution that targets a stable
+`VersionToken` and declares the frontier from which it was authored.
+
+A replicated restore does not install an old Yjs snapshot or resurrect old CRDT
+state wholesale. It emits fresh deterministic text/tree effects relative to its
+declared base. The resulting logical material may equal the historical target
+while its hidden CRDT identities, deletes, and anchors differ in a way that is
+correct for the new causal context.
+
+A replica cannot unknowingly erase Contributions that exist only on a
+disconnected peer. When a restore later meets unseen concurrent work, the system
+must use documented deterministic merge semantics, expose a conflict, or perform
+a coordinated “restore for everyone.” The UX must not claim a globally exclusive
+reset without such coordination. The exact policy remains open.
+
+Acceptance targets an exact Version, never “the greatest sequence.” Later edits
+do not mutate that accepted target. Several incomparable accepted Versions can
+exist unless a later workflow policy or authority prevents them. The engine must
+surface or resolve this explicitly rather than guess from arrival order.
+
+Local editor undo and product History restore are different operations. Undo may
+generate a compensating edit in current collaborative state; it must not delete
+already replicated Contributions or rewrite the causal graph.
+
+## 11. Identity, authorization, and presence
+
+Keep these identities distinct:
+
+- account/security principal (`UserId` or `PrincipalId`);
+- durable attribution identity (`ContributorId`);
+- replica/device identity (`ReplicaId`);
+- browser/editor session identity (`SessionId`); and
+- transient transport connection identity.
+
+A user may have several replicas and sessions. An AI or automation Contributor
+may act under a human principal's authorization. Wall-clock timestamps are
+display metadata, not causality or authorization evidence.
+
+Contributor registration and identity metadata referenced by a Contribution
+must also converge: it is causally replicated document metadata or is backed by
+verifiable authorization claims available to every receiver. A remote
+Contribution whose contributor is not yet known is buffered or rejected; a
+replica never invents a local substitute identity.
+
+The relay and receiving engine validate document access, envelope authenticity,
+schema/capability versions, and resource limits. Offline work created before an
+authorization change may need to be provisional, quarantined, or rejected; that
+policy is open and must be visible rather than silently dropping work.
+
+Replicas must also converge on which envelopes are valid. Schema/capability and
+authorization decisions cannot depend on unsynchronized local clocks or
+different silent policy versions; they require verifiable context, replicated
+policy state, or relay finality. An incompatible replica stops or quarantines
+the affected records visibly instead of integrating a different valid set.
+
+Credentials, relay addresses, connection state, acknowledgements, retry queues,
+and presence do not enter portable document truth. Unsynchronized durable
+Contributions are document state and must survive restart; delivery bookkeeping
+is not product History.
+
+Presence uses a separate lossy channel. Dropped cursor or typing updates never
+create a Contribution, change a version, or affect save/recovery.
+
+## 12. Protocol capabilities required later
+
+The future replication protocol will need, at minimum:
+
+- document, replica, Contribution, update, and message identities;
+- schema and capability negotiation;
+- causal dependencies/frontiers and, where useful, CRDT state vectors;
+- idempotent delivery and content-conflict detection;
+- acknowledgements plus durable outbox/inbox recovery;
+- authenticated authorization and resource limits;
+- dependency requests, catch-up, and checkpoint/bootstrap transfer;
+- atomic envelopes for multi-target Contributions;
+- deterministic validation/rejection semantics; and
+- an explicit relationship between logical Contribution metadata and exact CRDT
+  or structural effects.
+
+These fields are private protocol concerns. They must not turn the UX-facing
+`VersionToken` into a structure the frontend interprets.
+
+## 13. What the MVP must preserve now
+
+The MVP does not implement networking. It does establish the following seams:
+
+- a deployment-neutral, headless engine boundary;
+- asynchronous commands and queries;
+- opaque `VersionToken` values rather than public sequence/head assumptions;
+- globally unique document, entity, command, Contribution, and contributor IDs;
+- atomic attributed command groups;
+- History listing, summary, exact materialization, and compensating restore;
+- change subscriptions followed by re-query;
+- opaque lossless serialization/opening;
+- separate durable and ephemeral state; and
+- no frontend dependency on snapshots, CRDT logs, a single parent, or a global
+  revision order.
+
+The private MVP implementation may still use one head, one parent per revision,
+and complete snapshots. Its contract tests and types must make those replaceable.
+
+## 14. Staged implementation path
+
+1. Build and validate the local-only MVP behind the engine boundary.
+2. Replace storage details behind that same contract as measurements require.
+3. Build an in-process two-engine replication test bus before using a network.
+4. Replicate immutable Contributions and Yjs text effects under duplication,
+   delay, reordering, partition, and reconnect.
+5. Add an authenticated relay, durable catch-up, and visible sync status.
+6. Initially coordinate structural command proposals through the relay before
+   final durable publication, and state offline restrictions explicitly.
+7. Add the independent ephemeral presence channel.
+8. Implement fully offline Block-tree convergence only if product evidence
+   justifies its complexity.
+9. Add checkpoints, deltas, structural sharing, and compaction without changing
+   frontend behavior.
+
+No network phase begins merely because Yjs text synchronization works. The
+History/convergence and structural-conflict gates must pass together.
+
+## 15. Required future tests
+
+- duplicate, delayed, missing, and out-of-order delivery;
+- dependency buffering and catch-up after partition;
+- the same Contribution ID with a conflicting payload;
+- offline edits followed by reconnect;
+- equal Contribution sets produce the same graph, frontiers, collaborative
+  state, and every advertised materialization;
+- identical rendering with different hidden CRDT state is detected as
+  insufficient;
+- atomic publication of a Contribution spanning structure and several
+  InlineContents;
+- concurrent insert, delete, and formatting operations;
+- every Block-tree conflict listed above, including cycles;
+- restore concurrent with unseen work;
+- incomparable concurrent acceptances;
+- unauthorized, revoked, malformed, and oversized remote records;
+- relay checkpoint/compaction preserves advertised History; and
+- presence loss or reordering never changes durable state.
+
+## 16. Explicitly unresolved decisions
+
+- relay-sequenced structure versus a fully replicated tree algorithm;
+- exact Contribution envelope, content hash, and signature scheme;
+- exact `VersionToken` representation;
+- remote authorization and offline revocation policy;
+- restore behavior with unseen concurrent branches;
+- policy for incomparable accepted Versions;
+- History retention and CRDT tombstone garbage collection;
+- end-to-end encryption;
+- one Y.Doc per InlineContent versus subdocuments/aggregation;
+- document forks versus continuation under one document ID; and
+- whether any workflow eventually requires a coordinated canonical sequence.
+
+## 17. Technical references
+
+- [Yjs document updates](https://docs.yjs.dev/api/document-updates) describes
+  update commutativity, associativity, idempotency, state vectors, and update
+  merging.
+- [Yjs Awareness](https://docs.yjs.dev/getting-started/adding-awareness)
+  separates ephemeral presence from persisted document state.
+- [Yjs guidance on one or multiple documents](https://docs.yjs.dev/api/faq)
+  motivates keeping the current per-InlineContent choice private.
+- [A highly-available move operation for replicated trees](https://martin.kleppmann.com/papers/move-op.pdf)
+  illustrates why replicated tree moves need an explicit algorithm.
+- [Automerge glossary](https://automerge.org/docs/reference/glossary/) and
+  [changes and History](https://automerge.org/automerge-swift/documentation/automerge/changesandhistory/)
+  provide examples of immutable changes, dependencies, heads, and materializing
+  versions from a change graph.
+- [Merkle-CRDTs](https://research.protocol.ai/publications/merkle-crdts-merkle-dags-meet-crdts/psaras2020.pdf)
+  is background on combining causal Merkle DAGs with CRDT state.
