@@ -10,9 +10,11 @@ Use these documents for those concerns:
 
 - [`MVP_CONTRACT.md`](MVP_CONTRACT.md) defines what the document-engine prototype must prove.
 - [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) defines component authority and the public engine boundary.
+- [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines detailed formatting, origin, clipboard, and comment-target behavior.
 - [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md) defines private MVP implementation contracts that are not owned by focused specifications.
 - [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md) defines Markdown interchange semantics.
 - [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md) defines the `.coedit` recovery format.
+- [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md) defines the incremental browser repository and recovery contract.
 - [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md) defines implementation order and phase gates.
 - [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md) defines post-MVP replication constraints.
 
@@ -58,11 +60,11 @@ Use several InlineContents only when several content values must coexist in one 
 
 Human users, imports, automation, and later AI collaborators use the same durable command and Contribution boundary. No collaborator gets a privileged persistence path.
 
-### 2.7 Formatting and provenance survive composition
+### 2.7 Text metadata follows its semantics
 
-Formatting and later provenance can target stable text ranges that survive ordinary editing and historical materialization. The logical range model is external to the collaborative text bytes.
+Formatting is intrinsic collaborative rich-text metadata. Origin provenance is protected content-native metadata that travels with the text but never inherits from neighboring content. Comments are external records with repairable text targets. Ordinary selections are transient.
 
-Formatting and provenance can share range-resolution concepts, but they have different edit, inheritance, and copy semantics.
+These concerns share atomic versioning where required, but they do not share one generic durable range abstraction.
 
 ### 2.8 Presentation is a projection
 
@@ -90,21 +92,23 @@ Block
 InlineContent
   id: InlineContentId
   tags: TagSet
-  text: CollaborativeText
-  formatting: RangeAnnotation<Formatting>[]
+  content: CollaborativeContent
 
-CollaborativeText
-  canonical collaborative text state
+CollaborativeContent
+  canonical text and hard breaks
+  intrinsic formatting marks
+  protected origin attribution
 
-RangeAnnotation<T>
-  start: TextAnchor
-  end: TextAnchor
-  value: T
+OriginRecord
+  id: OriginId
+  agentId: ContributorId
+  kind: human | imported | automation | ai | unknown
+  source and derivation references when applicable
 ```
 
-`InlineContent` is the independently addressable content entity owned by a Block. It owns identity, tags, one CollaborativeText value, and the external formatting ranges for that content.
+`InlineContent` is the independently addressable content entity owned by a Block. It owns identity, tags, and one CollaborativeContent value.
 
-`CollaborativeText` has no independent product identity, tags, lifecycle, or sharing relationship. A storage implementation can index text state by `InlineContentId`, but that index does not create another domain entity.
+`CollaborativeContent` has no independent product identity, tags, lifecycle, or sharing relationship. A storage implementation can index carrier state by `InlineContentId`, but that index does not create another domain entity.
 
 There is no current `BlockContent` entity. The preserved experimental branch used `BlockContent` as a separate identity layer. On `main`, `InlineContent` owns that identity and those tags directly.
 
@@ -120,11 +124,12 @@ The clean-slate model requires these invariants:
 4. Each Block ID is unique within the document.
 5. Each InlineContent ID is unique within the document.
 6. Each InlineContent belongs to exactly one Block.
-7. Each InlineContent owns exactly one CollaborativeText value.
-8. Each formatting range belongs to exactly one InlineContent.
-9. Sibling order is the order of the parent's `children` vector.
-10. InlineContent order is the order of the Block's `contents` vector.
-11. The live Block tree contains no cycle.
+7. Each InlineContent owns exactly one CollaborativeContent value.
+8. Every live text item and hard break has exactly one valid Origin.
+9. Formatting and Origin metadata belong to the same canonical content state as the text they describe.
+10. Sibling order is the order of the parent's `children` vector.
+11. InlineContent order is the order of the Block's `contents` vector.
+12. The live Block tree contains no cycle.
 
 The implementation specification defines initial size, depth, ID, and validation limits.
 
@@ -159,7 +164,7 @@ The same Block type supports all four cases. Do not create separate structural e
 
 A non-root Block with no InlineContents is a transparent grouping Block. It emits no heading, prose, or list-item text of its own. Its children render according to its `childrenPresentation`.
 
-An authored but empty section or list item owns one InlineContent whose CollaborativeText is empty. This preserves the distinction between an empty authored unit and a structural grouping container.
+An authored but empty section or list item owns one InlineContent whose CollaborativeContent is empty. This preserves the distinction between an empty authored unit and a structural grouping container.
 
 ### 3.6 Introductory prose uses child flow
 
@@ -171,7 +176,7 @@ When one section contains both body material and subsections, transparent groupi
 
 ### 4.1 InlineContent is the selectable content identity
 
-`InlineContent` provides the identity required for editing, tags, comments, future provenance targets, copies, and optional simultaneous representations.
+`InlineContent` provides the identity required for editing, tags, content Origin, external comment targets, copies, and optional simultaneous representations.
 
 Most Blocks can contain one InlineContent. Zero contents are valid for grouping Blocks. Additional InlineContents exist only when the product needs simultaneous material.
 
@@ -197,55 +202,35 @@ Block tags and InlineContent tags use the same normalization rules. Their owners
 
 A Block tag describes the semantic structural unit across its contents. An InlineContent tag describes one specific content value. Tags do not inherit or synchronize automatically between these owners.
 
-### 4.4 CollaborativeText is canonical text authority
+### 4.4 CollaborativeContent is canonical authored-content authority
 
-CollaborativeText is the canonical authored-text state. The initial implementation uses Yjs to support collaborative editing semantics.
+CollaborativeContent is the canonical state of authored text, hard breaks, intrinsic formatting, and protected origin attribution. HTML, plain text, ProseMirror JSON, rendered attribution runs, and Markdown are derived projections. They are not parallel authorities.
 
-HTML and plain text are derived projections. They are not parallel authorities.
+The carrier is private behind the document engine. Yjs stable v13 is the provisional implementation default, not a public domain type. The Elaboration carrier gate compares it with Automerge before carrier-dependent implementation and portable encoding are frozen.
 
-CollaborativeText does not itself make formatting marks the domain authority. The editor can use native mark mechanisms as a transient adapter representation, but durable formatting meaning belongs to the external range annotations on InlineContent.
+### 4.5 Formatting uses native marks
 
-### 4.5 Formatting is an external range model
+Initial formatting values include bold, italic, underline, strikethrough, inline code, and link with a safe destination.
 
-Formatting uses:
+Each mark has explicit start/end expansion behavior. Initial defaults expand bold, italic, underline, and strikethrough at both boundaries; inline code and links expand at neither boundary. Detailed insertion, overlap, replacement, and clearing semantics are defined in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`.
 
-```text
-RangeAnnotation<Formatting>
-  start: TextAnchor
-  end: TextAnchor
-  value: Formatting
-```
+Formatting marks commit atomically with the text they describe. There is no external formatting table or general-purpose formatting `TextAnchor`.
 
-Initial formatting values include:
+### 4.6 Origin provenance is protected content metadata
 
-- bold;
-- italic;
-- underline;
-- strikethrough;
-- inline code; and
-- link with a safe destination.
+Every live text item and hard break has one Origin. Origin identifies the human, imported source, automation, AI/software agent, or unknown source that created the logical material. It is distinct from the Contributor who later copies, moves, formats, pastes, or restores that material.
 
-`TextAnchor` is an opaque logical construct. Its concrete representation is intentionally unresolved at this time. Yjs relative positions remain one research candidate, not an accepted requirement.
+Origin never inherits from adjacent text. Ordinary formatting operations cannot create, alter, or erase it. A query or renderer can coalesce adjacent equal origins into display spans, but those spans are not durable `RangeAnnotation<Provenance>` entities.
 
-Before implementation begins, the Step 0 decision must define how TextAnchor behaves across insertion, deletion, replacement, split, merge, undo, redo, copy, and restore, and how text plus formatting updates commit atomically.
-
-Do not encode the unresolved choice indirectly by defining anchor identity as a character offset, ProseMirror position, Yjs item, or another implementation-specific type in current domain APIs.
-
-### 4.6 Formatting and provenance have different semantics
-
-Formatting often inherits across insertion boundaries. Provenance must attribute new text to the current contributor according to an explicit future policy.
-
-Copying formatted text normally preserves formatting. Future provenance copy behavior must separately define origin and derivation semantics.
-
-Shared range representation does not imply shared inheritance or copy rules.
+There is no separate restored-provenance category. Restore preserves historical Origin while its new Contribution identifies the restoring actor and target Version.
 
 ### 4.7 Copy and move preserve different identities
 
-Moving a Block or reordering an InlineContent preserves the InlineContent identity and its complete text/formatting state.
+Moving a Block or reordering an InlineContent preserves the InlineContent identity and its complete CollaborativeContent state.
 
-Copying an InlineContent entity creates a new InlineContent ID. The copy receives semantically equivalent text and formatting according to the accepted Step 3 copy semantics. Its collaborative text identities are independent where the chosen collaborative representation requires that distinction.
+Copying an InlineContent entity creates a new InlineContent ID and new carrier item identities. The copy receives semantically equivalent text and formatting, preserves same-document Origins, and records a copy Contribution with source/derivation references.
 
-Ordinary text copy/paste inserts content into the target InlineContent. It does not transfer the source InlineContent identity.
+Ordinary text copy/paste inserts content into the target InlineContent. It does not transfer the source InlineContent identity. A validated private Coedit clipboard representation preserves same-document Origins; ordinary external HTML or plain text receives imported or unknown Origin and never manufactures authorship for the paster.
 
 ## 5. History, Versions, Contributions, and Checkpoints
 
@@ -253,15 +238,15 @@ Ordinary text copy/paste inserts content into the target InlineContent. It does 
 
 Use these terms consistently:
 
-- **Contribution:** one immutable, attributed durable semantic mutation.
+- **Contribution:** one immutable, attributed durable semantic activity, including its acting Contributor, base/frontier, kind, optional semantic group, exact effect reference, affected targets, and optional source/derivation references.
 - **Version:** one materializable state of the document.
 - **History:** retained Contributions and materializable Versions.
 - **VersionToken:** the opaque public identifier for a Version.
 - **Checkpoint:** one semantic Contribution that marks an exact point in History and produces a new content-identical Version.
 
-The private MVP can implement a linear revision ledger and complete snapshots. These are implementation choices, not logical domain requirements.
+The private MVP can implement a linear revision ledger and use complete snapshots in bounded tests or an identified early prototype. The browser target uses immutable effects plus periodic recovery checkpoints. These are implementation choices, not logical domain requirements.
 
-Interactive editor physical edit captures are not semantic Checkpoints.
+Semantic editor groups and physical recovery checkpoints are not semantic Checkpoints.
 
 ### 5.2 Historical state is read-only
 
@@ -317,23 +302,21 @@ This requirement does not mean that every arbitrary Coedit tree is exactly repre
 
 ## 8. Comments, conversations, and provenance
 
-These capabilities are post-MVP experiments. Their domain direction remains important because the MVP must not block them.
+Minimum content Origin and its copy/restore invariants are part of the attributed-text foundation. Production provenance visualization, analytics, retention policy, authenticated claims, and signing remain later product phases.
 
-Comments and durable conversations are typed records associated with explicit semantic targets. They are not disguised manuscript Blocks or InlineContents.
+Comments and durable conversations are typed records associated with explicit `CommentTarget` values. They are not disguised manuscript Blocks or InlineContents. A CommentTarget combines stable carrier cursors and affinity with exact quote, prefix/suffix context, approximate position, and explicit attached/ambiguous/orphaned state. It never silently reattaches to an uncertain match.
 
-Future provenance uses range-level lineage and can reuse the `RangeAnnotation<T>` shape. Its mutation, copy, storage, and performance policies remain deferred.
-
-Do not add production provenance, comments, or durable discussions as hidden requirements of the strict document-engine MVP.
+Comments are the primary durable use case for a target outside the authored text. Ordinary selections and remote cursors remain transient. `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns the detailed behavior.
 
 ## 9. Contributor model and future AI collaboration
 
-Contributor identity is durable attribution identity. It is separate from a UI session, future security principal, replica/device, or network connection.
+Contributor identity is durable agent attribution identity. It is separate from a UI session, security principal, replica/device, network connection, or carrier client ID.
 
-The domain allows contributor kinds such as human, imported, automation, and AI. The strict MVP needs human and imported attribution.
+The domain allows contributor kinds such as human, imported, unknown, automation, and AI. The strict MVP needs human plus imported/unknown attribution.
 
 For MVP bootstrap, the UX can request a free-form human display name before document-session creation. This does not imply an account or persistent user-profile model.
 
-A later AI collaborator can query explicit Versions and submit ordinary attributed commands. AI does not get direct private-storage access or a special tree mutation path.
+A later AI collaborator queries explicit Versions and submits ordinary typed commands. AI-originated content is attributed to the software agent. Human acceptance is a separate Contribution and does not reattribute that content to the human. AI does not get direct private-storage or live-carrier access.
 
 ## 10. Workspace composition
 
@@ -359,9 +342,9 @@ The current ontology requires:
 2. one real root Block;
 3. no persisted `Idea`, `Heading`, `Body`, `Paragraph`, or `Leaf` entity types;
 4. Block-owned tags, child presentation, ordered InlineContents, and ordered child Blocks;
-5. InlineContent-owned identity, tags, collaborative text, and formatting ranges;
+5. InlineContent-owned identity, tags, and canonical CollaborativeContent;
 6. no current `BlockContent` entity;
-7. no independent product identity for CollaborativeText;
+7. no independent product identity for CollaborativeContent;
 8. contextual title/heading/prose/list-item rendering;
 9. parent-owned `childrenPresentation`;
 10. transparent contentless grouping Blocks;
@@ -376,25 +359,31 @@ The current ontology requires:
 19. semantic Checkpoints as attributed content-identical Version-producing Contributions;
 20. detached read-only historical viewing;
 21. append-only compensating restore;
-22. Contribution-level MVP authorship attribution;
-23. external range-based Formatting with opaque TextAnchor endpoints;
-24. co-versioning of collaborative text and any durable ranges that target it;
-25. one shared Block spine for initial lenses within a Version; and
-26. future AI through the ordinary engine boundary.
+22. Contribution-level MVP activity attribution;
+23. intrinsic native formatting marks with explicit boundary expansion;
+24. protected, non-inheriting content Origin distinct from Contribution actor;
+25. origin-preserving copy and restore with separate operation derivation;
+26. external repairable targets for comments rather than formatting or provenance;
+27. transient ordinary selections and presence;
+28. one shared Block spine for initial lenses within a Version;
+29. one logical collaborative document per Coedit document by default, hidden behind the engine; and
+30. future AI through the ordinary engine and provenance boundary.
 
 ## 12. Open questions
 
-The concrete `TextAnchor` representation is the only currently identified implementation-blocking Step 0 question.
+No product-domain question blocks Step 1. Yjs v13 versus Automerge is an explicit Elaboration implementation-qualification gate, not an unresolved domain decision.
 
-Post-MVP questions include:
+Post-MVP or pre-network questions include:
 
-- fine-grained provenance representation and mutation policy;
-- comments and conversation target scopes;
+- provenance visualization, retention, anonymization, and signed-claim policy;
+- exact comment repair confidence and conversation target scopes;
 - post-genesis Contributor registration;
 - History compaction and collaborative-text garbage collection after measurement;
 - durable named lenses;
-- simultaneous independently editable outlines; and
-- networked structural collaboration policy.
+- simultaneous independently editable outlines;
+- the exact concurrent Block-tree algorithm or relay-coordination policy;
+- exact same-region/structural conflict presentation during causal restore; and
+- remote authorization, revocation, encryption, and signing protocols.
 
 These questions must not be answered accidentally by MVP storage or editor shortcuts.
 
@@ -410,17 +399,17 @@ A future design is compatible with this domain direction only if it preserves th
 6. Tags remain generic while application conventions stay explicit and validated.
 7. Historical viewing is non-mutating and restore is append-only compensation.
 8. Durable mutations, including Checkpoints, are attributed Contributions.
-9. Formatting remains externally range-addressable and is co-versioned with the collaborative text it targets.
+9. Formatting is intrinsic, co-versioned with text, and has explicit boundary semantics.
 10. AI can be added later through the ordinary mutation boundary.
-11. Provenance can evolve to range-level lineage without replacing History.
+11. Content Origin remains distinct from Contribution activity and survives copy and restore.
 12. Local portability, verification, and recovery remain product constraints.
 13. UI layout and transient navigation do not leak into durable semantic state by accident.
 14. Private implementation choices do not become product concepts without an explicit decision.
 
 ## 14. Summary
 
-The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, canonical collaborative text, and external formatting ranges.
+The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and canonical CollaborativeContent containing text, native formatting, and protected Origin.
 
 History preserves earlier states. Semantic Checkpoints are ordinary attributed Contributions that create content-identical Versions. Markdown is reversible interchange for the canonical imported subset. `.coedit` is lossless recovery.
 
-The MVP is a document-engine prototype. It must validate these semantics without depending on AI, provenance, comments, networking, Tauri, Rust, or SQLite.
+The MVP is a document-engine prototype. It qualifies and preserves minimum Origin semantics without requiring a provenance UI, comments product, AI provider, networking, Tauri, Rust, or SQLite.

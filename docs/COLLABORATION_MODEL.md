@@ -7,6 +7,8 @@ algorithms remain future decisions.
 This document records how collaboration should fit around the document engine
 and what eventual consistency must mean for Coedit. It complements
 [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md), which defines the local engine API,
+[`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), which
+defines content attribution and comment-target behavior,
 and [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md), which defines the current
 implementation order.
 
@@ -23,8 +25,14 @@ implementation order.
   React never exchanges, interprets, or applies CRDT updates or remote
   changesets.
 - Product History consists of immutable, attributed Contributions. It is not
-  reconstructed from Yjs updates, transactions, debounce boundaries, relay
+  reconstructed from carrier updates, editor transactions, debounce boundaries, relay
   batches, wall-clock timestamps, or packet-arrival order.
+- One logical collaborative document normally contains the Block registry and
+  all InlineContents so structure, text, formatting, Origin, and Contribution
+  effects can publish atomically.
+- Content Origin answers who or what created material. Contribution actor
+  answers who performed the operation. Copy and restore preserve Origin while
+  recording the new actor and derivation.
 - Semantic checkpoints are ordinary Contributions. They must converge and
   replicate like edits and restores.
 - Eventual consistency must cover the causal Contribution graph and internal
@@ -93,7 +101,7 @@ may be UX-adjacent, but its channel remains separate and ephemeral.
 
 | Layer | Purpose | Portable/product History? |
 |---|---|---|
-| Logical document | Blocks, InlineContents, tags, CollaborativeText, durable overlays | Yes |
+| Logical document | Blocks, InlineContents, tags, CollaborativeContent, Origins, durable comments/overlays | Yes |
 | Product History | Immutable attributed Contributions and materializable Versions | Yes |
 | Replication state | CRDT identities, tombstones/delete sets, causal metadata, state vectors | Only what exact recovery/convergence requires |
 | Presence | Online state, cursors, selections, typing indicators | No |
@@ -101,7 +109,7 @@ may be UX-adjacent, but its channel remains separate and ephemeral.
 These layers may be stored together internally, but their semantics must remain
 separate.
 
-CRDT updates provide convergence mechanics. Contributions preserve product
+Carrier updates provide convergence mechanics. Contributions preserve product
 meaning, attribution, summaries, and user-visible History. One Contribution may
 require several network frames, and one network frame may batch several
 Contributions. Neither changes the logical Contribution boundary.
@@ -129,7 +137,7 @@ user intent
   -> attributed, idempotent command against a VersionToken
   -> engine validation and invariant checks
   -> immutable Contribution + exact convergence effects
-  -> atomic local publication
+  -> atomic repository commit and local publication
   -> change notification to the UX
   -> replication outbox
 ```
@@ -155,7 +163,7 @@ authenticated remote envelope
   -> private remote-integration path
   -> preserve original Contribution ID, parents, attribution, and effects
   -> atomic publication
-  -> change notification with origin "remote"
+  -> change notification with change source "remote"
 ```
 
 Remote work is not reissued as a new local user command, which would duplicate
@@ -204,14 +212,16 @@ A conceptual replicated Contribution envelope contains:
 
 ```text
 stable Contribution ID (and possibly a content hash)
+command ID and idempotency identity
 document ID
 causal parent frontier
-contributor identity
+acting Contributor identity and authenticated principal claim where applicable
 originating replica identity
 schema/capability version
-semantic effect metadata
-exact convergence payload
+semantic kind and optional semantic group ID for presentation
+exact convergence payload or verified content-addressed effect reference
 affected targets
+optional source Version, Origin, and derivation references
 optional human summary
 authored wall-clock time for display only
 ```
@@ -267,9 +277,9 @@ Once two authorized replicas possess the same complete set of valid
 Contributions, they must have:
 
 1. the same immutable causal Contribution graph and metadata;
-2. collaborative-state-equivalent CRDT state, including identity, delete, and
-   anchor behavior, even if byte encodings differ;
-3. the same validated Block tree, ordering, tags, and CollaborativeText
+2. collaborative-state-equivalent carrier state, including identity, delete,
+   formatting, Origin, and stable-cursor behavior, even if byte encodings differ;
+3. the same validated Block tree, ordering, tags, and CollaborativeContent
    projection;
 4. the same materialization for every advertised causal frontier; and
 5. the same durable current frontier: the canonical set of maximal integrated
@@ -290,11 +300,10 @@ invalidated.
 Semantic checkpoint Contributions are different. They are part of Product
 History and therefore must converge like any other Contribution.
 
-## 8. CollaborativeText and the Block tree are different problems
+## 8. CollaborativeContent and the Block tree are different problems
 
-Yjs provides commutative, associative, and idempotent document updates for
-concurrent rich-text changes. That does not automatically give the recursive
-Block tree safe move/delete/order semantics.
+The selected carrier must provide convergent rich-text changes. That does not
+automatically give the recursive Block tree safe move/delete/order semantics.
 
 For example:
 
@@ -320,7 +329,7 @@ order, or using naïve last-writer-wins parent pointers, is not acceptable.
 
 Two credible collaboration levels are retained:
 
-1. **Pragmatic first collaboration:** exchange Yjs text updates while structural
+1. **Pragmatic first collaboration:** exchange selected-carrier text effects while structural
    command proposals obtain relay ordering/acceptance before they become final
    durable Contributions. Offline structural edits may be restricted, stored as
    explicitly provisional proposals, or explicitly conflicted.
@@ -338,22 +347,24 @@ submit a newly identified command against the accepted frontier; it does not
 change the old record in place. Fully replicated structural effects can publish
 locally only after deterministic merge semantics exist.
 
-### Yjs document and anchor boundaries
+### Collaborative-document and annotation boundaries
 
-One Y.Doc per InlineContent is an initial private representation. A future
-replication adapter may multiplex many of them over one connection or replace
-the layout with subdocuments/another aggregation strategy without changing the
-public engine API.
+Use one logical collaborative document per Coedit document by default. It holds
+the normalized Block registry/order and all InlineContents so one transaction
+can publish structure, several text values, Origins, and Contribution effects
+atomically. An editor binds only one active InlineContent; the recursive Block
+tree is not a ProseMirror tree.
 
-A Yjs relative position is anchored to CRDT item identities within its
-originating Y.Doc. Insertions before it do not require the application to
-recompute an integer offset, and concurrent updates can resolve it after their
-dependencies arrive. The anchor is not automatically meaningful in another
-Y.Doc: copying text between InlineContents or Blocks must create new anchors
-according to an explicit provenance/copy policy. Moving an InlineContent while
-preserving its identity and Yjs state can preserve its anchors. Historical
-storage snapshots must keep anchors with the exact collaborative state they
-reference.
+This is a private carrier boundary, not a public `Y.Doc` or Automerge type.
+Subdocuments or sharding require measured evidence and must preserve atomic
+multi-target behavior and portable recovery.
+
+Formatting and Origin do not use external anchors. Future CommentTargets use
+carrier-stable cursors and explicit affinity as their primary location, combined
+with quote/prefix/suffix/position evidence for validated repair. Copying content
+creates new carrier identities; same-document copy retains Origins but comment
+targets do not silently migrate to the copy. Moving an InlineContent while
+preserving its identity and carrier state can preserve its comment cursors.
 
 ## 9. Frontend-facing History behavior
 
@@ -369,7 +380,7 @@ The frontend can:
 - restore a selected version through a new mutation; and
 - subscribe to invalidation/change hints and re-query.
 
-Raw Yjs updates, causal storage rows, tombstones, inbox/outbox entries, and relay
+Raw carrier updates, causal storage rows, tombstones, inbox/outbox entries, and relay
 packets never cross this boundary. The portable document is also opaque to the
 UX even when it contains causal and CRDT state.
 
@@ -379,17 +390,25 @@ Restore preserves its **product** semantics: it never rewinds or deletes History
 It creates a new attributed compensating Contribution that targets a stable
 `VersionToken` and declares the frontier from which it was authored.
 
-A replicated restore does not install an old Yjs snapshot or resurrect old CRDT
+A replicated restore does not install an old carrier snapshot or resurrect old CRDT
 state wholesale. It emits fresh deterministic text/tree effects relative to its
 declared base. The resulting logical material may equal the historical target
 while its hidden CRDT identities, deletes, and anchors differ in a way that is
 correct for the new causal context.
 
-A replica cannot unknowingly erase Contributions that exist only on a
-disconnected peer. When a restore later meets unseen concurrent work, the system
-must use documented deterministic merge semantics, expose a conflict, or perform
-a coordinated “restore for everyone.” The UX must not claim a globally exclusive
-reset without such coordination. The exact policy remains open.
+A restore command names target Version `T` and the author-observed frontier `B`.
+When applied to current merged frontier `H`, it compensates only effects known at
+`B` that differ from `T`; it does not delete material introduced outside `B`.
+Historically deleted material is inserted under fresh carrier identities while
+retaining its historical Origin. The restore Contribution records the actor,
+`T`, `B`, and its exact causal effect.
+
+Same-region or structural overlap that cannot be reconciled under deterministic
+semantics is surfaced as an explicit conflict. A separately authorized and
+coordinated "restore for everyone" can provide a global-reset workflow, but an
+ordinary restore never claims that effect or silently erases disconnected work.
+The exact text/structural overlap representation and UX must pass the pre-network
+gate before collaboration ships.
 
 A checkpoint targets the exact causal frontier from which it is authored. It is
 itself a new immutable Contribution and produces a new Version with logically
@@ -441,6 +460,12 @@ is not product History.
 Presence uses a separate lossy channel. Dropped cursor or typing updates never
 create a Contribution, change a version, or affect save/recovery.
 
+Provenance trust has three distinct levels: descriptive local Origin claims;
+authenticated engine/relay-enforced attribution; and future signed publication
+attestations. Carrier peer/client IDs never establish any of those identities.
+Stable attribution IDs reference separately managed profile/display data so
+retention and anonymization do not require rewriting content or causal identity.
+
 ## 12. Protocol capabilities required later
 
 The future replication protocol will need, at minimum:
@@ -453,6 +478,7 @@ The future replication protocol will need, at minimum:
 - authenticated authorization and resource limits;
 - dependency requests, catch-up, and bootstrap-snapshot transfer;
 - atomic envelopes for multi-target Contributions;
+- Origin, source, and derivation records plus their authorization rules;
 - deterministic validation/rejection semantics; and
 - an explicit relationship between logical Contribution metadata and exact CRDT
   or structural effects.
@@ -468,7 +494,9 @@ The MVP does not implement networking. It does establish the following seams:
 - asynchronous commands and queries;
 - opaque `VersionToken` values rather than public sequence/head assumptions;
 - globally unique document, entity, command, Contribution, and contributor IDs;
-- atomic attributed command groups;
+- atomic attributed commands whose Contributions may share a semantic group ID;
+- one logical collaborative document boundary with atomic structure-plus-content effects;
+- intrinsic formatting and protected, non-inheriting Origin semantics;
 - first-class checkpoint Contributions;
 - History listing, summary, exact materialization, and compensating restore;
 - change subscriptions followed by re-query;
@@ -477,27 +505,30 @@ The MVP does not implement networking. It does establish the following seams:
 - no frontend dependency on snapshots, CRDT logs, a single parent, or a global
   revision order.
 
-The private MVP implementation may still use one head, one parent per revision,
-and complete snapshots. Its contract tests and types must make those replaceable.
+The private MVP implementation may still use one head and one parent per
+private Version record. Complete snapshots are limited to bounded tests or an identified early
+prototype; the browser target uses immutable effects plus periodic physical
+checkpoints. Contract tests and types keep all of these private.
 
 ## 14. Staged implementation path
 
-1. Build and validate the local-only MVP behind the engine boundary.
-2. Replace storage details behind that same contract as measurements require.
-3. Build an in-process two-engine replication test bus before using a network.
-4. Replicate immutable Contributions, including checkpoint Contributions, and
-   Yjs text effects under duplication, delay, reordering, partition, and
+1. Qualify Yjs v13 against Automerge and retain the selected carrier suite as regression evidence.
+2. Build and validate the local-only MVP behind the engine and repository boundaries.
+3. Replace chunk/checkpoint details behind those same contracts as measurements require.
+4. Build an in-process two-engine replication test bus before using a network.
+5. Replicate immutable Contributions, including checkpoint Contributions, and
+   carrier effects under duplication, delay, reordering, partition, and
    reconnect.
-5. Add an authenticated relay, durable catch-up, and visible sync status.
-6. Initially coordinate structural command proposals through the relay before
+6. Add an authenticated relay, durable catch-up, and visible sync status.
+7. Initially coordinate structural command proposals through the relay before
    final durable publication, and state offline restrictions explicitly.
-7. Add the independent ephemeral presence channel.
-8. Implement fully offline Block-tree convergence only if product evidence
+8. Add the independent ephemeral presence channel.
+9. Implement fully offline Block-tree convergence only if product evidence
    justifies its complexity.
-9. Add storage snapshots, deltas, structural sharing, and compaction without
+10. Add or tune checkpoints, deltas, structural sharing, and compaction without
    changing frontend behavior.
 
-No network phase begins merely because Yjs text synchronization works. The
+No network phase begins merely because carrier text synchronization works. The
 History/convergence and structural-conflict gates must pass together.
 
 ## 15. Required future tests
@@ -513,6 +544,9 @@ History/convergence and structural-conflict gates must pass together.
 - atomic publication of a Contribution spanning structure and several
   InlineContents;
 - concurrent insert, delete, and formatting operations;
+- Origin never inherits or spoofs under concurrent insertion, copy, paste,
+  formatting clear, or restore;
+- stable CommentTarget cursors and explicit ambiguous/orphan behavior converge;
 - every Block-tree conflict listed above, including cycles;
 - restore concurrent with unseen work;
 - concurrent checkpoints remain independently materializable and attributable;
@@ -527,12 +561,12 @@ History/convergence and structural-conflict gates must pass together.
 - exact Contribution envelope, content hash, and signature scheme;
 - exact `VersionToken` representation;
 - remote authorization and offline revocation policy;
-- restore behavior with unseen concurrent branches;
+- exact same-region and structural conflict representation/UX for causal restore;
 - History retention and CRDT tombstone garbage collection;
 - checkpoint labels or other optional checkpoint metadata beyond ordinary
   Contribution context;
 - end-to-end encryption;
-- one Y.Doc per InlineContent versus subdocuments/aggregation;
+- criteria and migration for any future sharding of the one logical collaborative document;
 - document forks versus continuation under one document ID; and
 - whether any workflow eventually requires a coordinated canonical sequence.
 
@@ -543,8 +577,8 @@ History/convergence and structural-conflict gates must pass together.
   merging.
 - [Yjs Awareness](https://docs.yjs.dev/getting-started/adding-awareness)
   separates ephemeral presence from persisted document state.
-- [Yjs guidance on one or multiple documents](https://docs.yjs.dev/api/faq)
-  motivates keeping the current per-InlineContent choice private.
+- [Yjs relative positions](https://github.com/yjs/docs/blob/main/api/relative-positions.md)
+  provides stable carrier-local cursor semantics.
 - [A highly-available move operation for replicated trees](https://martin.kleppmann.com/papers/move-op.pdf)
   illustrates why replicated tree moves need an explicit algorithm.
 - [Automerge glossary](https://automerge.org/docs/reference/glossary/) and
@@ -553,3 +587,14 @@ History/convergence and structural-conflict gates must pass together.
   versions from a change graph.
 - [Merkle-CRDTs](https://research.protocol.ai/publications/merkle-crdts-merkle-dags-meet-crdts/psaras2020.pdf)
   is background on combining causal Merkle DAGs with CRDT state.
+- [Etherpad attributed text](https://docs.etherpad.org/api/changeset_library.html)
+  validates content origin stored with text plus a separate revision actor.
+- [W3C Web Annotation](https://www.w3.org/TR/annotation-model/) and
+  [Hypothesis anchoring](https://github.com/hypothesis/client/blob/main/src/annotator/anchoring/html.ts)
+  inform stable-cursor plus quote/context CommentTargets.
+- [Automerge rich text](https://automerge.org/docs/reference/documents/rich-text/)
+  and [Loro movable trees](https://www.loro.dev/docs/tutorial/tree) inform the
+  carrier and structural qualification gates.
+- [W3C PROV-DM](https://www.w3.org/TR/2013/REC-prov-dm-20130430/)
+  supplies the Entity/Activity/Agent and derivation distinctions used by Origin
+  and Contributions.

@@ -8,7 +8,7 @@ This document defines Markdown import, export, diagnostics, and the Markdown rou
 
 The input dialect is CommonMark plus GitHub Flavored Markdown (GFM). Markdown is an interchange and rendering format. It is not the lossless Coedit recovery format.
 
-`PRODUCT_DOMAIN_MODEL.md` controls domain meaning. `MVP_CONTRACT.md` controls the MVP proof boundary. `MVP_IMPLEMENTATION_SPEC.md` controls implementation details that are not defined here.
+`PRODUCT_DOMAIN_MODEL.md` controls domain meaning. `MVP_CONTRACT.md` controls the MVP proof boundary. `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` controls formatting and Origin behavior. `MVP_IMPLEMENTATION_SPEC.md` controls implementation details that are not defined here.
 
 ## 2. Core round-trip invariant
 
@@ -39,10 +39,10 @@ For Markdown round-trip verification, two Coedit documents are equivalent when t
 - the same `childrenPresentation` values;
 - the same number and order of InlineContents per Block;
 - the same application-significant tags created by Markdown import;
-- the same semantic inline text, hard breaks, formatting ranges, and safe link destinations; and
+- the same semantic inline text, hard breaks, intrinsic formatting marks, mark-boundary policies, and safe link destinations; and
 - the same importer normalization semantics where a source construct requires normalization.
 
-Generated IDs, Contributor IDs, Contribution IDs, VersionTokens, timestamps, Yjs internal identities, encoded update-byte order, and source-file metadata are not part of Markdown structural equivalence.
+Generated IDs, Contributor IDs, Origin IDs, Contribution IDs, VersionTokens, timestamps, carrier internal identities, encoded update-byte order, and source-file metadata are not part of Markdown structural equivalence.
 
 Exact comparison of collaborative state belongs to `.coedit` recovery, not to this Markdown interchange invariant.
 
@@ -56,7 +56,7 @@ Separate pure planning from engine mutation. The planner receives Markdown bytes
 
 The initial importer creates a new document. It does not merge Markdown into an already open document.
 
-The UX obtains a free-form human Contributor display name before document-session creation. Import creates an additional imported Contributor for the source. The import Contribution is attributed to that imported Contributor.
+The UX obtains a free-form human Contributor display name before document-session creation. Import creates an imported or unknown Origin agent/record for source material. The import Contribution is attributed to the human or system Contributor that performed the import; a source file is not impersonated as the operation actor. Available source name/hash and any separately supported author claims are derivation metadata.
 
 ## 5. Source handling
 
@@ -123,18 +123,18 @@ The Markdown interchange model supports:
 text                  -> text range
 hard break            -> hard break
 CommonMark soft break -> one ordinary space
-emphasis              -> italic Formatting range
-strong                -> bold Formatting range
-delete                -> strikethrough Formatting range
-inline code           -> inline-code Formatting range
-link                  -> link Formatting range with safe href
+emphasis              -> intrinsic italic mark
+strong                -> intrinsic bold mark
+delete                -> intrinsic strikethrough mark
+inline code           -> intrinsic inline-code mark
+link                  -> intrinsic link mark with safe href
 ```
 
-Formatting is a logical external `RangeAnnotation<Formatting>` over opaque `TextAnchor` endpoints. This specification does not choose the concrete TextAnchor representation.
-
-The importer and exporter must use the same logical formatting vocabulary. They must not make ProseMirror/Yjs marks a separate domain authority.
+The importer and exporter use the intrinsic formatting vocabulary and boundary defaults in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`. The selected collaborative carrier's native marks are canonical; ProseMirror and Markdown remain adapters/projections.
 
 Safe links are `http`, `https`, `mailto`, same-document fragments, and relative references. Reject control characters and unsafe explicit schemes from the formatting model.
+
+Raw HTML remains literal fallback under this contract and is never rendered with `innerHTML`. If a later design introduces a raw-HTML/HAST rendering path, apply an allowlist sanitizer such as `rehype-sanitize` after the last unsafe HAST transform. DOMPurify or equivalent remains the DOM/clipboard boundary sanitizer, not the Markdown structural parser.
 
 ## 9. Unsupported source preservation
 
@@ -202,7 +202,7 @@ Examples include:
 - application or user tags with no Markdown representation;
 - multiple simultaneously selected InlineContents for one Block;
 - a structural grouping that is valid Coedit but not produced by the Markdown importer;
-- future overlays such as comments, conversations, or provenance; and
+- future overlays such as comments or conversations; and
 - future presentation modes with no importer mapping.
 
 ## 12. Required round-trip tests
@@ -233,6 +233,10 @@ The test suite must include at least:
 
 Include one golden fixture that contains introductory paragraphs, a list, and subsections under the same heading. It must prove both importer grouping and exporter inversion.
 
+Origin and derivation are intrinsic Coedit metadata but deliberately absent from ordinary Markdown. Their omission does not make every Markdown export warn: Markdown is already declared non-lossless for these fields. If a caller explicitly requests provenance-preserving export, return a stable non-representability diagnostic rather than implying that Markdown preserves it.
+
+Re-imported Markdown receives new imported/unknown Origin. Origin equality is therefore intentionally outside the Markdown round-trip relation.
+
 ## 13. Non-goals
 
 Markdown interchange does not preserve:
@@ -244,6 +248,6 @@ Markdown interchange does not preserve:
 - command idempotency data;
 - exact CRDT identities or update bytes;
 - browser-storage metadata; or
-- future provenance/comments/discussions.
+- Origin/provenance, comments, or discussions.
 
 Use `.coedit` for lossless recovery of those capabilities.

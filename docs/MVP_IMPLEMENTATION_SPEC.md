@@ -1,6 +1,6 @@
 # MVP implementation specification
 
-**Status:** Accepted private MVP implementation contract; Step 3 remains blocked on the Step 0 `TextAnchor` decision.
+**Status:** Accepted private MVP implementation contract; carrier-dependent work is subject to the Step 3 qualification gate.
 
 **Applies to:** `SCAFFOLDING_PLAN.md`, Steps 1-12.
 
@@ -10,11 +10,13 @@ This document defines private implementation rules that are not owned by a more 
 
 Use these focused authorities first:
 
-- [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) for product ontology and logical range/formatting meaning;
+- [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) for product ontology and logical attributed-content meaning;
 - [`MVP_CONTRACT.md`](MVP_CONTRACT.md) for the MVP proof boundary;
 - [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) for public engine behavior and component authority;
+- [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for formatting, Origin, clipboard, and comment-target behavior;
 - [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md) for Markdown import/export and round-trip behavior;
 - [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md) for `.coedit` serialization and validation;
+- [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md) for IndexedDB repository, recovery, multi-tab, and quota behavior;
 - [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md) for verification strategy;
 - [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md) for post-MVP replication constraints; and
 - [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md) for work order and phase gates.
@@ -32,12 +34,16 @@ Use:
 - Vite;
 - Vitest;
 - Tiptap/ProseMirror as the interactive editor adapter;
-- Yjs for collaborative text state;
+- pinned stable Yjs v13 as the provisional collaborative-content carrier;
 - the Markdown parser stack specified in `MARKDOWN_INTERCHANGE.md`;
-- DOMPurify or an equivalently reviewed sanitizer; and
-- IndexedDB for browser-local artifact storage.
+- DOMPurify or an equivalently reviewed sanitizer at DOM/clipboard boundaries; and
+- IndexedDB for the browser-local engine repository.
 
 Pin the package manager and dependency versions when Step 1 creates the scaffold.
+
+Step 3 qualifies pinned Yjs v13 against pinned Automerge using the common suite in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`. Track Yjs v14 only after a stable release. Use Loro as a cursor/movable-tree benchmark, not a current production dependency. Do not make the provisional Yjs choice part of a public API or freeze carrier-specific `.coedit` bytes before qualification.
+
+The ProseMirror/Tiptap schema for one InlineContent is deliberately flat: text, hard breaks, and the supported inline marks. The recursive Coedit Block tree remains outside ProseMirror.
 
 Do not initially add:
 
@@ -77,8 +83,11 @@ src/
     restore.ts
 
   content/
-    collaborativeText.ts
+    collaborativeContent.ts
+    carrier.ts
     formatting.ts
+    origin.ts
+    clipboardFragment.ts
     projection.ts
 
   serialization/
@@ -90,6 +99,7 @@ src/
     repository.ts
     memoryRepository.ts
     indexedDbRepository.ts
+    checkpoint.ts
 
   application/
     DocumentEngine.ts
@@ -122,6 +132,7 @@ Use distinct branded TypeScript types for persisted identities. The MVP needs at
 - `ContributorId`;
 - `CommandId`;
 - `ContributionId`;
+- `OriginId`;
 - private `RevisionId`; and
 - optional `SessionId`.
 
@@ -200,7 +211,7 @@ type StructuralOperation =
     };
 ```
 
-`InlineContentValue` means the complete initial collaborative text plus formatting state required by the accepted Step 3 model. Its concrete TypeScript representation remains blocked on the `TextAnchor` decision.
+`InlineContentValue` means the complete initial carrier-neutral CollaborativeContent state required by the accepted Step 3 model: text/hard breaks, intrinsic marks, and protected Origin. Its private representation is finalized by the carrier qualification gate. At the public human-edit boundary, creation supplies visible content and formatting intent and the engine assigns Origin from the attributed command context. A complete pre-attributed value is accepted only by validated internal import, copy, restore, or remote-integration paths; it is not a client Origin-spoofing surface.
 
 Operation rules:
 
@@ -218,30 +229,23 @@ Operation rules:
 
 Do not add entity tombstones or lifecycle timestamps to the logical live entities. Do not add a primitive `RestoreBlock`; whole-Version restore belongs to History.
 
-## 6. Collaborative text and formatting boundary
+## 6. Attributed collaborative-content boundary
 
-Each InlineContent owns canonical collaborative text plus external formatting ranges.
+Each InlineContent owns canonical CollaborativeContent. The selected carrier stores visible text/hard breaks, intrinsic formatting marks, and protected Origin in one atomic collaborative state. HTML, plain text, ProseMirror JSON, and rendered Origin runs are derived. Do not persist any of them as a parallel authority.
 
-HTML and plain text are derived. Do not persist HTML as a parallel authority.
+Use one logical collaborative document per Coedit document so one engine transaction can span Block structure, several InlineContents, Origin records, and Contribution metadata. Bind the interactive editor only to the active InlineContent. Do not expose the logical document, carrier objects, raw updates, or client-supplied Origin setters through the public API.
 
-The interactive editor can use ProseMirror/Tiptap marks transiently as an adapter representation. Those marks are not the independent durable domain authority. Durable formatting is represented through the external range model in `PRODUCT_DOMAIN_MODEL.md`.
+Formatting follows the vocabulary and boundary defaults in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`. Carrier adapters translate those logical policies to native marks/attributes and must prove exact round trip. Clearing formatting cannot change Origin.
 
-The concrete `TextAnchor` representation, formatting-update operation shape, and exact collaborative-state verification method are not accepted yet. Step 0 must close those decisions before implementation begins.
+The trusted engine boundary assigns Origin for human typing, import, external paste, automation, and AI. Same-document internal copy and restore preserve existing Origins under fresh carrier item identities. Ordinary editor operations cannot forge another Contributor's Origin.
 
-Until then, do not specify or implement:
+Step 3 runs the same headless and ProseMirror-integrated suite against Yjs v13 and Automerge. Functional invariants are mandatory. Select Yjs when its protected, incremental Origin carrier passes without fragile full-state repair. Select Automerge only if its richer native model materially reduces custom code and its editor/storage integrations pass the same suite. Record the selected versions, dependency/license review, fixtures, measurements, and rejected-candidate rationale.
 
-- Yjs relative positions as the required anchor;
-- absolute character offsets as the required anchor;
-- ProseMirror document positions as the required anchor;
-- a mark-only persisted formatting model;
-- a generic `collaborativeStateEquivalent` algorithm based on Yjs internals; or
-- a final portable encoding for anchors.
-
-The accepted Step 3 decision must define a single atomic boundary for text and formatting changes so no committed Version can contain mismatched collaborative text and formatting anchors.
+Do not finalize the carrier codec, portable bytes, history effect encoding, editor transaction bridge, or compaction behavior before this gate passes.
 
 ## 7. Private MVP History
 
-`MVP_ARCHITECTURE.md` is the public engine contract. The local implementation can use a linear private ledger and full snapshots.
+`MVP_ARCHITECTURE.md` is the public engine contract. The local implementation can use a linear private ledger; bounded in-memory tests or an identified early prototype can use full snapshots.
 
 Private records can include:
 
@@ -249,7 +253,10 @@ Private records can include:
 - append-only Contribution records;
 - append-only revision records;
 - one moving private head; and
-- document-lifetime ID reservation sets.
+- document-lifetime ID reservation sets;
+- immutable Origin records;
+- exact carrier effect/update chunks; and
+- physical recovery checkpoints.
 
 Genesis has sequence zero and no Contribution.
 
@@ -257,9 +264,11 @@ A new document requires at least one human Contributor. For the MVP, the UX asks
 
 Contributor display names are trimmed, control-character-free text limited to 128 Unicode code points and 512 UTF-8 bytes.
 
-The domain vocabulary can retain Contributor kinds `human`, `imported`, `automation`, and `ai`, but strict MVP creation needs only human and imported identities. Post-genesis contributor registration is deferred.
+The domain vocabulary retains Contributor/agent kinds `human`, `imported`, `automation`, `ai`, and `unknown`. Strict MVP creation needs human plus imported/unknown identities sufficient for Origin records. A Markdown/file import Contribution is attributed to the human/system actor that performs it; its content points to imported/unknown Origin. Post-genesis interactive registration workflows remain deferred.
 
-Each successful durable command publishes one logical Contribution and one resulting private revision atomically.
+Each successful durable command publishes one logical Contribution, its exact effect/update, any new Origin records, one resulting private Version, and its successful command receipt atomically. Several Contributions can share a semantic group ID for presentation.
+
+The early in-memory implementation may use a full snapshot per Contribution under the existing bounds. The Step 11 browser target uses immutable effects/update chunks, periodic physical recovery checkpoints, and a small CAS head. Product History remains independent of either representation.
 
 Use globally unique `CommandId` values. Check a previously successful CommandId before stale-version rejection:
 
@@ -282,15 +291,17 @@ It must:
 4. advance the private head; and
 5. expose the resulting VersionToken through History.
 
-Do not use `checkpoint` for interactive editor safety captures.
+Do not use `checkpoint` for semantic editor groups or ordinary durable editor Contributions.
 
-Restore validates its expected current Version and historical target, then appends a new restore Contribution and resulting Version whose material matches the historical target. Restore never rewinds or deletes History.
+Restore validates its expected current Version and historical target, then appends a new restore Contribution. In the local single-writer MVP its resulting material matches the historical target. Reinserted content has fresh carrier identities and preserves historical Origin; the new Contribution records the restoring actor and target Version. Restore never rewinds or deletes History.
+
+The future replicated form is causal compensation against the frontier observed by the restoring actor and preserves unseen concurrent work. `COLLABORATION_MODEL.md` owns that extension.
 
 ## 9. Read isolation and notifications
 
 Queries, History pages, summaries, exact materializations, and editor-content reads return detached values.
 
-No frontend API exposes private `RevisionRecord`, archive objects, engine-owned byte arrays, live Y.Doc references, or storage collections.
+No frontend API exposes private `RevisionRecord`, archive objects, engine-owned byte arrays, live Y.Doc/Automerge references, or storage collections.
 
 After successful publication, emit one invalidation notification. Failed commands and exact idempotent retries emit none.
 
@@ -318,49 +329,26 @@ Structural editing uses only `DocumentEngine.execute`. React does not mutate rev
 
 Support create, move, nest, reorder, delete, tag, InlineContent selection/reordering, and `childrenPresentation` changes.
 
-## 11. Interactive editor semantic-group policy
+## 11. Interactive editor durability and semantic grouping
 
-Adapt the implemented preserved `BODY_CHECKPOINT_STRATEGY.md` behavior. In current vocabulary, call the physical durable units **edit captures**, not Checkpoints.
+Separate durable publication from human-readable grouping. Every submitted editor command that succeeds creates one immutable Contribution and Version and commits through the repository protocol. Adjacent Contributions can share one `semanticGroupId`; History can collapse them for presentation without rewriting physical History.
 
-One human-visible semantic edit group can contain several physical edit captures that share one `groupId`.
-
-Initial policy defaults:
-
-```ts
-interface EditGroupPolicy {
-  readonly batchCharacterThreshold: number;
-  readonly idleTimeoutMs: number;
-}
-
-const DEFAULT_EDIT_GROUP_POLICY = {
-  batchCharacterThreshold: 20,
-  idleTimeoutMs: 30_000,
-};
-```
-
-Keep a maximum of two detached pending edit captures.
+The editor may combine transient ProseMirror transactions before submission, but it must submit promptly at a minimal safe boundary and before a controlled transition can hide, replace, retarget, export, save, restore, or close the editor context.
 
 Accepted behavior:
 
-- count inserted grapheme clusters, not UTF-16 code units or raw key events;
-- before the threshold-triggering grapheme is accepted, capture the preceding dirty insertion segment and retain the same group ID;
-- first deletion after dirty insertion seals insertion before deletion;
-- first insertion after dirty deletion seals deletion before insertion;
-- repeated deletions remain in one deletion group;
-- real cursor/focus departure seals dirty work once;
-- clean navigation creates no capture;
-- accepted dirty activity resets the idle timer;
 - IME composition is not split mid-composition;
-- paste, cut, replacement, formatting, undo, and redo are atomic edits;
-- unrelated dirty work seals before an atomic edit;
-- the complete atomic edit result captures and seals before later ordinary work;
-- a controlled transition freezes editor state, captures required work, respects FIFO order, and drains required captures before the transition can hide, replace, retarget, export, save, restore, or close the editor context;
-- persistence/capture failure retains the exact failed immutable item for retry; and
-- backpressure visibly blocks unsafe additional changes at the two-capture bound.
+- paste, cut, selection replacement, formatting, undo, and redo are atomic editor actions;
+- unrelated dirty work is submitted before an atomic action;
+- insertion/deletion mode changes, idle, real focus/editor-owner departure, and controlled transitions seal the current semantic group;
+- clean navigation creates neither a command nor a Contribution;
+- submitted immutable commands retain FIFO order;
+- failure retains the exact detached command and editor work needed for retry;
+- degraded durability, quota, and conflict are visible;
+- no later command overtakes a failed head; and
+- typing is not blocked merely because two whole-artifact serializations are pending, because normal durability does not serialize the whole artifact.
 
-History can collapse contiguous edit Contributions that share one non-null semantic group ID for presentation. Grouping never rewrites or deletes physical History.
-
-The Step 3 atomic text+formatting representation must fit this policy. If the accepted `TextAnchor` model requires changing these semantics, stop and record that as a new design decision rather than changing them implicitly.
+Time, character, and memory thresholds are tunable UX/repository policy recorded with measurements. They are not product History semantics. The preserved 20-grapheme, 30-second, and two-pending-capture constants remain test evidence only.
 
 ## 12. Lenses and comparison
 
@@ -381,25 +369,27 @@ Markdown rendering belongs to `MARKDOWN_INTERCHANGE.md`.
 
 ## 13. Browser durability
 
-IndexedDB stores opaque `.coedit` artifacts plus local descriptors. It is not a second document repository.
+The browser composition root supplies the IndexedDB implementation of the engine repository port. It stores private immutable Contribution/effect/checkpoint records plus a small compare-and-swap head. The repository is not a second semantic document authority and the UX does not parse its records.
 
-The storage adapter does not parse private engine History or document records.
+Pre-encode and hash immutable records before opening one short IndexedDB transaction. Inside that transaction, check the expected head/generation, insert immutable records and the successful CommandId receipt, then advance the head atomically. Publish the in-memory candidate and notify only after commit.
 
-Repository saves use an expected previously stored VersionToken. Write the new artifact and new saved token atomically. A mismatch is a persistence conflict; do not silently overwrite another tab's work.
+A mismatch is a persistence conflict; do not silently overwrite another tab's work. `BroadcastChannel` can invalidate other tabs but is not an ordering authority. Use StorageManager persistence/quota capabilities where available, return typed failures, retain exact retry work, and offer explicit `.coedit` backup.
 
-UX dirty state is the comparison between the engine's current token and the token last transported successfully.
+Normal autosave does not assemble or rewrite a complete `.coedit` artifact. `BROWSER_PERSISTENCE.md` owns recovery, compaction, multi-tab, quota, and verification details.
+
+Portable-file dirty state is the comparison between the engine's current token and the token last transported successfully through explicit Save/export. Repository durability status separately compares the published engine Version with its committed repository head; they normally advance atomically.
 
 ## 14. Final infrastructure assessment
 
 After the strict MVP vertical slice works, measure before adopting new infrastructure.
 
-Before SQL, require evidence about document size, History growth, materialization latency, query needs, attachment needs, compaction, and atomicity limits.
+Before SQL or OPFS, require evidence about document size, update/chunk growth, recovery and materialization latency, query needs, attachment needs, compaction, and atomicity limits. Do not adopt PGlite, RxDB, SQLite-WASM, or `y-indexeddb` as a substitute for Coedit's semantic repository transaction.
 
-Before a native shell, require a concrete browser-inadequate need. The shell wraps the validated application; it does not redefine the document engine.
+Before a native shell, require a concrete browser-inadequate need. Tauri can wrap the validated application through the same ports; it does not redefine the document engine or recreate a Rust domain authority. Electron requires a demonstrated need for a bundled consistent Chromium runtime.
 
-Before networked collaboration, apply `COLLABORATION_MODEL.md` in full. Local linear History, full snapshots, and any one-Y.Doc-per-InlineContent arrangement are private MVP choices, not distributed-system contracts.
+Before networked collaboration, apply `COLLABORATION_MODEL.md` in full. Local linear History and bounded full snapshots are private MVP choices, not distributed-system contracts. One logical collaborative document per Coedit document is the default; sharding requires measured evidence and preservation of atomic multi-target Contributions.
 
-Provenance, comments, durable discussions, AI contributor registration, and collaboration are post-MVP experiments.
+Provenance visualization/analytics, comments, durable discussions, AI-provider integration, authenticated claims, signing, and collaboration are post-MVP phases. Minimum Origin carrier behavior is part of MVP qualification and recovery.
 
 ## 15. Reuse rule
 

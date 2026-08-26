@@ -1,218 +1,363 @@
 # `.coedit` portable document format
 
-**Status:** Accepted MVP portable-format contract.
+**Status:** Accepted logical recovery contract; exact carrier-specific version-1
+fields and golden bytes are frozen only after the Step 3 carrier qualification.
 
 ## 1. Purpose and authority
 
-This document defines the lossless portable format for the document-engine MVP.
+This document defines lossless portable recovery for the document-engine MVP.
 
-The user-facing extension is `.coedit`. The portable artifact is the recovery format for current document state, retained History, stable advertised Version identity, command idempotency, and all other durable MVP state.
+The user-facing extension is `.coedit`. A portable artifact retains current
+attributed content, every advertised retained Version, product History,
+Contributors and Origins, semantic Checkpoints, source/derivation information,
+stable public Version identity, and command idempotency within documented
+limits.
 
-`PRODUCT_DOMAIN_MODEL.md` controls domain meaning. `MVP_ARCHITECTURE.md` controls the public serialization boundary. This document controls the version-1 portable wire contract.
+[`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls domain meaning.
+[`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
+controls formatting and Origin behavior. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
+controls the public serialization boundary. This document controls portable
+logical records, validation, compatibility, and the version-1 container.
 
-The preserved SQLite `.coedit` format on `tauri-experimental-orphan` is historical evidence only. The shared extension identifies a Coedit document family; it does not make the old SQLite schema compatible with this format.
+The internal browser repository is separately specified by
+[`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Its stores and checkpoint
+layout are not the `.coedit` wire format.
 
-## 2. Public transport identity
+The preserved SQLite `.coedit` format on `tauri-experimental-orphan` is
+historical evidence only. The shared extension identifies a Coedit document
+family; it does not make the formats compatible.
 
-The accepted user-facing transport identity is:
+## 2. Public transport and freeze rule
+
+The user-facing transport identity is:
 
 ```text
 suggestedExtension: ".coedit"
 ```
 
-The public architecture keeps `mediaType` as opaque transport metadata. No specific MIME type is accepted yet, and the MVP format design does not depend on one.
+The public architecture keeps `mediaType` as opaque transport metadata until a
+media type is registered or deliberately selected.
 
-The version-1 bytes are UTF-8 JSON. The UX treats them as opaque.
+Version 1 uses one bounded UTF-8 JSON container with base64 for binary chunks if
+the carrier qualification confirms that the resource and performance limits are
+acceptable. JSON is a portable container, not the internal database layout or a
+permanent promise that all future versions remain monolithic JSON.
 
-## 3. Envelope
+Do not freeze `formatVersion: 1`, publish a version-1 fixture, or implement the
+Step 6 encoder until Step 3 has recorded:
 
-Use one JSON envelope with these logical fields:
+- the selected carrier and exact supported version range;
+- its canonical checkpoint and incremental-effect encodings;
+- logical-state and historical-materialization verification;
+- native formatting and Origin round-trip behavior;
+- garbage-collection/retention assumptions; and
+- the measured JSON/base64 size and load cost.
 
-```text
-format: "coedit-document"
-formatVersion: 1
-exportedAt
-documentId
-currentRevisionId
-contributors[]
-contributions[]
-revisions[]
-integrity: {
-  algorithm: "sha256"
-  digest: lowercase hexadecimal SHA-256
-}
-```
+This is an implementation qualification gate. It does not reopen the product
+semantics defined by current authorities.
 
-Do not store a duplicate current-document object. Current state is the snapshot named by `currentRevisionId`.
+## 3. Logical package
 
-`exportedAt` is transport metadata. It does not create a Version or Contribution.
-
-## 4. Private-history representation
-
-The MVP can use a private linear revision ledger with one full document snapshot per revision. This representation is a version-1 codec choice, not a public `DocumentEngine` contract.
-
-Revision zero is genesis and has no Contribution. Every later revision has exactly one Contribution. Every Contribution has exactly one resulting revision.
-
-The portable file must retain enough canonical request identity for a successful `CommandId` retry to remain idempotent after Save/Open.
-
-## 5. Snapshot wire form
-
-Keep the in-memory Block model recursive. Flatten each revision snapshot on the wire.
+The version-1 container represents these logical records. Exact JSON property
+names and binary sub-encodings are finalized by the carrier gate without
+changing their meaning:
 
 ```text
-rootBlockId
-blocks[]:
-  id
-  parentId | null
-  siblingIndex | null
-  tags[]
-  childrenPresentation
-  inlineContentIds[]
-
-inlineContents[]:
-  id
-  tags[]
-  collaborativeText
-  formatting[]
+PortableManifest
+  format: "coedit-document"
+  formatVersion: 1
+  exportedAt
+  documentId
+  currentVersionToken
+  currentFrontier/private head reference
+  carrier:
+    name
+    version
+    schemaVersion
+  contributors[]
+  origins[]
+  contributions[]
+  advertisedVersions[]
+  commandReceipts[]
+  chunks[]
+  integrity:
+    algorithm: "sha256"
+    digest
 ```
 
-Serialize Blocks in iterative depth-first pre-order and sibling-vector order.
+Each immutable Contribution record contains or references at least:
 
-Only the root has `parentId: null` and `siblingIndex: null`. Every other Block records its zero-based sibling index.
+```text
+contributionId
+commandId
+parent Version/frontier
+resulting Version/frontier
+acting ContributorId
+semantic kind
+optional semanticGroupId and human summary
+affected targets
+exact effect/update chunk references
+optional source Version and derivation references
+authored display timestamp
+```
 
-Retain InlineContent vector order in `inlineContentIds`. Serialize InlineContents in first ownership-appearance order.
+Each advertised Version maps one stable public `VersionToken` to the private
+frontier/checkpoint/effect information required to materialize it exactly.
+Clients never decode that mapping.
 
-The flat form is a serialization of the recursive model. It is not a second domain model.
+`exportedAt` is transport metadata. Assembling or transporting an artifact does
+not create a Contribution or Version.
 
-## 6. Collaborative text and formatting
+The package contains sufficient physical recovery checkpoints and immutable
+effects to reconstruct every advertised retained Version. Current state is the
+materialization named by `currentVersionToken`; it is not a second independent
+document object.
 
-The portable format must preserve the complete canonical CollaborativeText state required to reconstruct the MVP editor state exactly according to the accepted Step 3 design.
+## 4. Physical and semantic records stay distinct
 
-Formatting is stored as external `RangeAnnotation<Formatting>` data with opaque `TextAnchor` endpoints. The exact version-1 encoding of `TextAnchor` is intentionally **not yet defined** because Step 0 remains blocked on that design decision.
+A semantic **Checkpoint** is an attributed, content-identical Contribution in
+product History.
 
-Do not finalize or implement format version 1 until the `TextAnchor` representation is recorded. When that decision is made, update this document before Step 1 begins.
+A physical recovery checkpoint is a carrier/storage optimization used to bound
+replay. It has no Contributor, does not create a Version, and does not appear as
+a History action.
 
-The portable format must not encode formatting solely as a second, hidden ProseMirror/Yjs-mark authority when the domain authority is the external range model.
+Similarly, carrier updates/effects are not Product History by themselves. The
+portable package preserves the verified relationship between each semantic
+Contribution and its exact convergence effect.
+
+Complete snapshots per Contribution can be used by bounded early prototype
+fixtures, but version 1 must not require them if the selected carrier can provide
+immutable effects plus periodic checkpoints. A codec optimization cannot change
+which Versions are advertised or materializable.
+
+## 5. Canonical collaborative state
+
+One logical carrier checkpoint/update set reconstructs the Coedit document's
+Block registry/order and every InlineContent's CollaborativeContent. The format
+does not default to one independent carrier document or blob per InlineContent.
+
+Carrier state preserves exactly:
+
+- text and hard breaks;
+- intrinsic formatting marks and their boundary policies;
+- protected Origin references;
+- stable Block and InlineContent identities and ordering;
+- the private identities/tombstones required for accepted editing, restore, and
+  future comment-cursor behavior; and
+- atomic effects spanning structure and several InlineContents.
+
+A normalized Block/text/mark projection can be computed during validation. If
+stored as an index or diagnostic aid, it is derived and must be verified against
+the carrier state; it is never a competing authority.
+
+The format does not contain external formatting or provenance ranges.
+
+## 6. Origin, actor, and derivation
+
+The package preserves immutable Origin records and every reference from content
+to those records. Each record names its claimed agent kind/Contributor and any
+source or upstream Origin reference required by the current document.
+
+The Contribution that introduces, pastes, copies, restores, imports, formats,
+or accepts material separately names the acting Contributor. In particular:
+
+- internal copy and restore retain source Origin while recording the new actor;
+- restored material uses fresh carrier identities without a new `restored`
+  Origin category;
+- external material uses imported or unknown Origin unless a validated source
+  claim exists; and
+- a human accepting AI material does not replace its software-agent Origin.
+
+These records are descriptive attribution. SHA-256 integrity and local
+Contributor IDs are not authentication or a signature.
 
 ## 7. IDs and scalar wire rules
 
 Use these rules:
 
-- Persisted IDs are canonical lowercase UUID-v4 strings unless their authoritative type defines another opaque representation.
-- `VersionToken` is public and opaque. The portable codec retains the private information needed to reproduce advertised tokens after open.
-- Timestamps are canonical RFC 3339 UTC with millisecond precision: `YYYY-MM-DDTHH:mm:ss.sssZ`.
-- Import hashes are exactly 64 lowercase hexadecimal SHA-256 characters.
-- Optional properties are omitted when absent. Do not alternate silently between omitted and `null`.
-- Numeric fields that require integers must be safe JSON integers.
+- Persisted entity and record IDs are canonical lowercase UUID-v4 strings unless
+  their authoritative type defines another opaque representation.
+- `VersionToken` is public and opaque. The codec retains the private mapping
+  needed to reproduce every advertised token after open.
+- Timestamps are canonical RFC 3339 UTC with millisecond precision:
+  `YYYY-MM-DDTHH:mm:ss.sssZ`.
+- SHA-256 hashes are exactly 64 lowercase hexadecimal characters.
+- Optional properties are omitted when absent. Do not alternate silently
+  between omitted and `null`.
+- Required integer fields are safe JSON integers.
 - Unknown properties are rejected in format version 1.
+- Binary chunks use one exact base64 spelling selected by the final v1 codec;
+  alternate or non-canonical spellings are rejected.
 
-## 8. Contributor bootstrap
+## 8. Contributor and Origin bootstrap
 
-A blank document or Markdown-import session begins with a human Contributor supplied by the UX. For the MVP, the UX can request a free-form display name before document-session creation.
+A blank document or import session begins with a human Contributor supplied by
+the UX. This does not create an account or security-principal model.
 
-The portable file stores Contributor identity and display name as durable attribution data. It does not store a login account, security principal, or user profile.
+The MVP package preserves each document-local Contributor's stable ID, kind, and
+validated display name so History attribution survives Save/Open. Display names
+obey the scalar limits in `MVP_IMPLEMENTATION_SPEC.md`; they are descriptive
+metadata, not authenticated identity. A later separately managed profile can
+change presentation without changing stable attribution IDs.
 
-Markdown import can also create an imported Contributor before genesis so that the import Contribution can use that identity.
+Human editing creates human Origin records. Markdown/file import creates
+imported or unknown Origin for source content while the import Contribution is
+attributed to the human or system actor that performed the action. The source
+file is not impersonated as the actor.
 
-## 9. Checkpoints and edit captures
+Every content Origin reference and Contribution actor must resolve to a valid
+record under the accepted identity rules. A portable file cannot cause a local
+session identity, CRDT client ID, or transport connection to become a durable
+Contributor implicitly.
 
-A semantic **Checkpoint** is a History Contribution that produces a new content-identical Version. It is stored as an ordinary Contribution and resulting revision.
+## 9. Validation order
 
-Interactive editor safety captures or physical edit commits are not semantic Checkpoints. They can share a semantic edit-group identifier for History presentation. Do not call those records `checkpoint` in the new format or implementation APIs.
-
-The preserved edit-group policy is adapted into current vocabulary in `MVP_IMPLEMENTATION_SPEC.md`.
-
-## 10. Validation order
-
-Treat portable input as hostile. Validate in this order:
+Treat portable input as hostile. Validate a detached copy in this order:
 
 1. raw byte-size limit;
-2. JSON depth, duplicate keys, envelope identifier, exact supported version, known properties, collection limits, and safe-integer fields;
-3. encoded binary shape and decoded-size limits;
-4. corruption checksum over the still-untrusted payload;
-5. revision sequence, parent links, current pointer, and Contribution/revision one-to-one relationship;
-6. Contributor references, command-idempotency records, stable identity continuity, and prohibited ID reuse;
-7. Block topology, sibling indices, InlineContent ownership, tags, and structural limits;
-8. CollaborativeText schema and resource limits; and
-9. formatting ranges and `TextAnchor` validity according to the accepted Step 3 design.
+2. UTF-8, JSON depth, duplicate keys, envelope identifier, exact supported
+   version, known properties, collection limits, and safe integers;
+3. carrier name/version/schema support and encoded binary shape;
+4. per-chunk decoded-size limit and SHA-256 content address;
+5. envelope corruption digest over the still-untrusted canonical payload;
+6. unique IDs, immutable-record conflicts, command-idempotency records, and
+   prohibited ID reuse;
+7. Contribution graph/frontier acyclicity, parent/result references, retained
+   Version mappings, current pointer, and reachability;
+8. Contributor, Origin, source, derivation, effect, and checkpoint references;
+9. carrier checkpoint/effect schema, dependency closure, and resource limits;
+10. reconstructed Block topology, ownership, ordering, tags, and structural
+    limits;
+11. reconstructed text, hard breaks, marks, boundary policies, Origin coverage,
+    and safe link destinations; and
+12. History replay/materialization invariants.
 
-Validate a complete candidate engine before replacing the active engine.
+Validate a complete candidate engine before replacing the active engine or
+committing it to the browser repository.
 
-## 11. History verification
+## 10. History verification
 
-After shape validation, verify retained History from genesis in sequence order.
+Verify retained History from genesis/frontier dependencies rather than trusting
+array or packet order.
 
-For operation and Markdown-import Contributions, reapply their durable effects to the parent snapshot and verify that the resulting normalized document state matches the stored child snapshot according to the operation contracts.
+For each Contribution:
 
-For semantic Checkpoints, verify that document material is identical to the parent.
+- verify that its exact effect applies to its declared base/frontier;
+- verify the resulting Version/frontier mapping and affected targets;
+- verify acting Contributor, Origin, source, and derivation references;
+- verify semantic Checkpoints are content-identical to their declared base; and
+- verify successful CommandId records reproduce the original receipt and reject
+  conflicting reuse.
 
-For restore, verify that the resulting material matches the selected historical target according to the restore contract.
+For local single-writer restore, verify that visible material equals the selected
+target while restored items retain historical Origin and the restore
+Contribution names the new actor and target. A future replicated format verifies
+the causal compensation rules in `COLLABORATION_MODEL.md`, including preservation
+of work outside the restore author's observed frontier.
 
-Recompute affected targets and the document-lifetime reserved-ID set. Do not trust serialized derived claims.
+Recompute derived projection hashes, affected targets, indexes, and reserved-ID
+sets. Do not trust serialized derived claims.
 
-The exact collaborative-state comparison algorithm must follow the accepted Step 3 and `TextAnchor` design. Do not invent a Yjs-internal equivalence algorithm in this format document.
+## 11. Initial resource limits
 
-## 12. Initial resource limits
-
-Start with these version-1 limits:
+Start with these version-1 correctness limits, subject to confirmation by the
+carrier qualification measurements:
 
 - 64 MiB UTF-8 JSON;
 - JSON nesting depth 128;
-- 5,001 revisions including genesis;
+- 5,001 advertised Versions including genesis;
 - 5,000 Contributions;
-- 250,000 operations in one Contribution;
-- 1,000,000 operations in one archive;
-- 50,000 Blocks in any snapshot;
-- 50,000 InlineContents in any snapshot;
-- 8 MiB for one decoded CollaborativeText value or incoming text update; and
-- 48 MiB decoded binary data across the archive.
+- at most 64 parent/frontier references on one Contribution;
+- 250,000 semantic operations in one Contribution;
+- 1,000,000 semantic operations in one archive;
+- 50,000 Blocks in any materialization;
+- 50,000 InlineContents in any materialization;
+- 8 MiB for one decoded carrier checkpoint/effect chunk;
+- 48 MiB decoded binary chunk data across the archive; and
+- 1,000,000 Unicode code points in one InlineContent.
 
-The encoder preflights the same limits and final UTF-8 size. Return a typed limit error instead of creating a version-1 file that the decoder will reject.
+The encoder preflights the same limits and final UTF-8 size. Return a typed limit
+error instead of creating a version-1 file the decoder rejects. Do not truncate
+History, Origins, or document state to fit the format.
 
-Do not truncate History or document state to fit the format.
+If representative correct fixtures cannot fit or load within the recorded
+target-device budgets, change the container before declaring version 1 frozen;
+do not silently relax hostile-input bounds.
 
-## 13. Corruption checksum
+## 12. Integrity and chunk identity
 
-Use SHA-256 as a corruption checksum. Do not describe it as authentication or tamper-proofing.
+Use SHA-256 for corruption detection and content addressing. Do not describe it
+as authentication or tamper-proofing.
 
-Compute the digest over canonical UTF-8 JSON with the digest field omitted. Sort object keys recursively and retain array order.
+Each immutable binary chunk records the digest of its decoded canonical bytes.
+The envelope also records a digest over canonical UTF-8 JSON with the envelope
+digest field omitted. Sort object keys recursively and retain array order.
 
-Keep one checked-in fixture with canonical bytes and expected digest.
+After the carrier gate, check in:
 
-## 14. Serialization concurrency
+- one minimal canonical version-1 fixture;
+- one realistic attributed/history fixture;
+- their exact canonical bytes and digests; and
+- malformed/mis-hashed variants.
+
+## 13. Serialization concurrency
 
 Serialization is a non-mutating engine query against an expected VersionToken.
+It captures one stable retained frontier and the immutable records reachable
+under the requested History-retention contract.
 
-If the engine has advanced before serialization begins, return `VersionConflict`. Do not silently serialize a different Version.
+If the engine advanced before serialization begins, return `VersionConflict`.
+Do not silently serialize a different Version. Concurrent repository activity
+cannot cause a mixture of two heads in one artifact.
 
-The returned artifact identifies the Version it contains. The UX can compare that token with the token last transported successfully for dirty-state tracking.
+The returned artifact identifies the Version it contains. Explicit `.coedit`
+assembly can read immutable repository records, but normal browser autosave never
+serializes the complete artifact.
 
-## 15. Required verification
+## 14. Required verification
 
 At minimum, verify:
 
-- a realistic imported and edited engine round trips through `.coedit`;
-- current and historical state remain materializable;
-- semantic Checkpoint Contributions and their Versions survive;
+- realistic imported, edited, formatted, copied, and restored content round
+  trips;
+- exact current and historical materialization;
+- intrinsic formatting and boundary policies survive;
+- Origin, actor, and derivation remain distinct and exact;
+- semantic Checkpoints and physical recovery checkpoints remain distinct;
 - advertised VersionTokens remain stable after Save/Open;
 - successful CommandId retries remain idempotent after Save/Open;
-- Contributor identities survive;
-- current state comes from exactly one retained revision snapshot;
-- malformed, truncated, duplicate-key, unknown-property, or unsupported-version input fails;
-- corrupt checksum fails;
-- malformed topology, broken History links, missing Contributors, duplicate identities, and illegal ID reuse fail;
-- over-limit input fails before active-engine replacement;
+- missing, duplicate, unreachable, mis-hashed, or conflicting chunks fail;
+- malformed graph/frontiers, Contributor/Origin references, carrier state,
+  topology, ownership, marks, and safe links fail;
+- malformed, truncated, duplicate-key, unknown-property, or unsupported
+  container/carrier versions fail;
+- every documented resource limit fails safely when exceeded;
 - stale serialization returns no artifact;
-- caller mutation of input bytes after open starts cannot alter the candidate; and
+- caller mutation of input bytes after open starts cannot alter the candidate;
+- a failed open never replaces the active engine;
+- reconstruction from periodic checkpoint plus effects equals direct current and
+  historical materialization; and
 - every successful version-1 encode is accepted by the version-1 decoder.
 
-After the `TextAnchor` decision is recorded, add exact formatting/anchor round-trip and validation cases before Step 0 closes.
-
-## 16. Compatibility rule
+## 15. Compatibility and evolution
 
 Any durable schema change requires one of:
 
-- a proven backward-compatible version-1 change explicitly permitted by this document; or
-- a new format version with migration/compatibility rules.
+- a proven backward-compatible version-1 change explicitly permitted by the
+  final version-1 contract; or
+- a new format version with explicit migration and compatibility rules.
 
-Future provenance, comments, conversations, replicated causal state, attachments, or other durable post-MVP records do not enter format version 1 silently.
+A carrier name/version/schema change is not assumed binary-compatible. It needs
+a supported migration through carrier-neutral logical materialization or a new
+container version. Public engine APIs and product IDs must not expose carrier
+bytes merely to avoid that migration boundary.
+
+Future comments, conversations, authenticated claims, signatures, attachments,
+or replicated protocol records do not enter version 1 silently. Minimum Origin
+metadata is already part of the version-1 logical requirement.
+
+Measurements can justify a later manifest plus compressed binary chunks instead
+of monolithic JSON/base64. Such a container change can preserve the same logical
+records and product contract, but it still requires an explicit format version
+and migration decision.

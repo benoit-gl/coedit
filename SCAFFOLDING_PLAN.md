@@ -1,6 +1,6 @@
 # Coedit document-engine MVP scaffolding plan
 
-**Status:** Accepted implementation plan; Step 0 remains open.
+**Status:** Accepted implementation plan; Step 0 documentation baseline is complete.
 
 **Target branch:** `main`
 
@@ -17,9 +17,11 @@ Use the companion documents for authority:
 - [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md) defines product ontology and domain vocabulary.
 - [`docs/MVP_CONTRACT.md`](docs/MVP_CONTRACT.md) defines what the document-engine MVP must prove.
 - [`docs/MVP_ARCHITECTURE.md`](docs/MVP_ARCHITECTURE.md) defines component authority and the public engine boundary.
+- [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines attributed text, clipboard lineage, comment-target feasibility, and carrier qualification.
 - [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) defines concrete private MVP implementation rules that are not owned by a focused specification.
 - [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md) defines Markdown import, export, diagnostics, and round-trip behavior.
 - [`docs/PORTABLE_DOCUMENT_FORMAT.md`](docs/PORTABLE_DOCUMENT_FORMAT.md) defines the `.coedit` portable format.
+- [`docs/BROWSER_PERSISTENCE.md`](docs/BROWSER_PERSISTENCE.md) defines incremental browser persistence and recovery.
 - [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md) defines verification strategy and required evidence.
 - [`docs/COLLABORATION_MODEL.md`](docs/COLLABORATION_MODEL.md) defines post-MVP replication and convergence constraints.
 - [`docs/PRESERVED_BRANCH_RECONCILIATION.md`](docs/PRESERVED_BRANCH_RECONCILIATION.md) records how preserved decisions and reusable evidence were reconciled. It is supporting traceability, not a competing design authority.
@@ -39,7 +41,7 @@ The plan uses a RUP-inspired lifecycle. It does not require the complete Rationa
 | Construction | 7-11 | Build and verify the browser vertical slice. |
 | Transition and assessment | 12 | Measure the prototype and decide whether new infrastructure is justified. |
 
-Provenance, comments, durable discussions, AI integration, and networked collaboration are post-MVP work. They are not hidden completion criteria for this plan.
+Minimum protected Origin and lineage invariants are MVP foundation. Provenance visualization/analytics/authentication/signing, comments, durable discussions, AI-provider integration, and networked collaboration are post-MVP work. They are not hidden completion criteria for this plan.
 
 Do not implement a later-step subsystem only to prepare for possible future work. Add infrastructure when the current step requires it.
 
@@ -66,11 +68,15 @@ The baseline must contain:
 - `docs/PRODUCT_DOMAIN_MODEL.md`;
 - `docs/MVP_CONTRACT.md`;
 - `docs/MVP_ARCHITECTURE.md`;
+- `docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`;
 - `docs/MVP_IMPLEMENTATION_SPEC.md`;
 - `docs/MARKDOWN_INTERCHANGE.md`;
 - `docs/PORTABLE_DOCUMENT_FORMAT.md`;
+- `docs/BROWSER_PERSISTENCE.md`;
 - `docs/MVP_VERIFICATION_PLAN.md`;
-- `docs/COLLABORATION_MODEL.md`; and
+- `docs/COLLABORATION_MODEL.md`;
+- `docs/decisions/README.md` and
+  `docs/decisions/0001-collaborative-content-provenance-history.md`; and
 - `docs/PRESERVED_BRANCH_RECONCILIATION.md`.
 
 For every material design decision found in the preserved branch, classify it as one of:
@@ -82,7 +88,7 @@ For every material design decision found in the preserved branch, classify it as
 
 The reconciliation record must identify the current authority for retained, adapted, and superseded decisions. It must also identify any deferred decision that blocks implementation.
 
-The current known blocking decision is the concrete representation and update semantics of the opaque `TextAnchor` used by external formatting ranges. `TextAnchor` remains a domain-level opaque construct until that decision is recorded. Do not infer a Yjs-relative-position, offset, ProseMirror-position, or other representation from implementation convenience.
+The former `TextAnchor` blocker is resolved. Formatting uses native collaborative marks; Origin is protected content-native metadata; comments use future cursor-plus-quote targets; ordinary selections are transient. The accepted rationale is recorded in `docs/decisions/0001-collaborative-content-provenance-history.md`.
 
 **Exit gate:**
 
@@ -91,7 +97,7 @@ The current known blocking decision is the concrete representation and update se
 - no authoritative document silently contradicts a retained preserved decision; and
 - no unresolved implementation-blocking decision remains.
 
-This documentation PR can establish the Step 0 artifact set, but **Step 0 is not complete until the `TextAnchor` decision is recorded**. Do not begin Step 1 before that gate is closed.
+This documentation set establishes and closes the Step 0 authority baseline. Step 1 can begin. Carrier-dependent Step 3 implementation and `.coedit` version-1 freeze remain behind the separate Elaboration carrier-qualification gate.
 
 ### Step 1 — Establish the browser-only repository scaffold
 
@@ -113,23 +119,25 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) and [`d
 
 See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
-### Step 3 — Implement CollaborativeText and external formatting ranges
+### Step 3 — Qualify and implement attributed CollaborativeContent
 
-**Objective:** Establish canonical collaborative text plus the stable external formatting-range model before History, import, or serialization depends on text representation.
+**Objective:** Select the collaborative carrier and establish canonical text, hard breaks, intrinsic formatting, and protected Origin before History, import, editor integration, or serialization depends on its representation.
 
-**Outcome:** Headless code can create, validate, project, clone, edit, and serialize collaborative text together with formatting ranges that target opaque `TextAnchor` values.
+Run the same pinned headless and Tiptap/ProseMirror suite against stable Yjs v13 and Automerge. Track Yjs v14 only after stable release; use Loro as a cursor/movable-tree benchmark, not a current candidate. Record dependency/license review, adapter complexity, target devices and budgets, measurements, and the selection rationale.
 
-**Exit gate:** Realistic inline content and formatting work without React UI, DOM storage authority, or parallel HTML authority. The implemented `TextAnchor` design matches the Step 0 decision.
+**Outcome:** Headless code can create, validate, project, clone, edit, copy/paste, restore, and serialize CollaborativeContent. Formatting has explicit boundary policies; every live content item has protected non-inheriting Origin; one logical collaborative document can transact across structure and several InlineContents; future CommentTarget cursors are feasible.
 
-See [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md) and [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
+**Exit gate:** The common functional, concurrency, clipboard, restore, cursor, atomicity, portable, garbage-collection, and representative-growth suite passes. Select Yjs when its protected carrier works incrementally without fragile repair. Select Automerge only if it passes and materially removes custom machinery despite its integration maturity. Record the winner before carrier-dependent format fields or fixtures are frozen.
+
+See [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
 ### Step 4 — Establish first-class in-memory History
 
-**Objective:** Prove attributed Contributions, materializable Versions, semantic checkpoints, restore, idempotency, and version-conflict behavior behind the public engine boundary.
+**Objective:** Prove attributed Contributions, materializable Versions, semantic checkpoints, Origin/activity separation, restore, idempotency, and version-conflict behavior behind the public engine boundary.
 
 **Outcome:** The headless engine can commit structural and text work, query History, materialize exact Versions, create semantic checkpoints, and restore earlier material.
 
-**Exit gate:** History behavior is verified without React, IndexedDB, or file APIs. Failed or stale commands publish no partial state.
+**Exit gate:** History behavior is verified without React, IndexedDB, or file APIs. Failed or stale commands publish no partial state. Local restore uses fresh carrier identities, preserves historical Origin, and records the restoring actor and target Version.
 
 See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
@@ -147,9 +155,9 @@ See [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md).
 
 **Objective:** Prove lossless, validated, portable recovery for the capabilities built through Step 5.
 
-**Outcome:** The engine can serialize an opaque `.coedit` artifact and open it into a validated candidate engine.
+**Outcome:** After the Step 3 winner is recorded, the engine can assemble logical records and carrier chunks into an opaque bounded version-1 `.coedit` artifact and open it into a validated candidate engine.
 
-**Exit gate:** Current and historical material round trip within documented limits. Corrupt, hostile, unsupported, or inconsistent input fails without replacing the active document.
+**Exit gate:** Current and historical attributed material, Origins, Contributions, derivation, Checkpoints, stable VersionTokens, and idempotency round trip within documented limits. Corrupt, hostile, unsupported, missing/mis-hashed, or inconsistent input fails without replacing the active document.
 
 See [`docs/PORTABLE_DOCUMENT_FORMAT.md`](docs/PORTABLE_DOCUMENT_FORMAT.md).
 
@@ -175,11 +183,11 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 ### Step 9 — Integrate interactive InlineContent editing
 
-**Objective:** Connect one active editor to canonical text and formatting through the engine command boundary while preserving the semantic edit-group policy from the preserved implementation.
+**Objective:** Connect one active editor to canonical attributed content through the engine command boundary with prompt durable Contributions and separate human-readable grouping.
 
-**Outcome:** Headings, prose, and list items can be edited in place with attributed durable commits. Physical safety captures can occur inside one human-visible edit group without redefining the semantic History checkpoint concept.
+**Outcome:** Headings, prose, and list items can be edited in place with attributed durable commits. Several immutable Contributions can share one human-visible semantic group without redefining the semantic History Checkpoint concept.
 
-**Exit gate:** Editor ownership transitions do not lose text. Edit-group boundaries, failure recovery, History restore, and `.coedit` round trips preserve exact committed state.
+**Exit gate:** Editor ownership transitions do not lose text, formatting, or Origin. IME and atomic edit paths, prompt commit, semantic grouping, failure retry, internal/external clipboard, History restore, and `.coedit` round trips preserve exact committed state. No two-whole-artifact queue threshold blocks ordinary typing.
 
 See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
@@ -195,13 +203,13 @@ See [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md).
 
 ### Step 11 — Add browser durability
 
-**Objective:** Survive browser reload without making browser storage a second document authority.
+**Objective:** Survive browser reload through an incremental engine repository without making browser storage a second semantic authority.
 
-**Outcome:** Opaque `.coedit` artifacts can be stored, listed, reopened, and autosaved through browser storage adapters.
+**Outcome:** IndexedDB stores immutable Contribution/effect records, periodic physical recovery checkpoints, command receipts, local descriptors, and a small compare-and-swap head. Explicit `.coedit` Save/Open remains a separate portable workflow.
 
-**Exit gate:** Reload preserves the document and History. Failed or competing writes do not claim success or silently overwrite newer state.
+**Exit gate:** Reload preserves attributed content and History. Failure injection proves atomic record/head publication. Failed, quota-limited, or competing writes do not claim success or silently overwrite newer state; degraded durability and `.coedit` backup are visible.
 
-See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) and [`docs/PORTABLE_DOCUMENT_FORMAT.md`](docs/PORTABLE_DOCUMENT_FORMAT.md).
+See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) and [`docs/BROWSER_PERSISTENCE.md`](docs/BROWSER_PERSISTENCE.md).
 
 ### Step 12 — Reassess persistence and packaging
 
@@ -210,14 +218,14 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) and [`d
 Assess:
 
 - permanent database needs;
-- portable artifact representation and growth;
-- History snapshot, delta, and compaction needs;
+- portable JSON/base64 overhead and possible manifest/binary evolution;
+- Contribution/update chunk growth, physical checkpoint cadence, History materialization, and compaction needs;
 - native packaging and filesystem needs;
 - platform requirements;
 - validation placement; and
 - attachment and large-asset needs.
 
-**Exit gate:** Each adopted infrastructure change has measured justification and preserves the public engine boundary. Do not add Tauri, Rust, SQL, or another persistence model only to regain parity with the preserved experiment.
+**Exit gate:** Each adopted infrastructure change has measured justification and preserves the public engine, repository, and portable contracts. Do not add OPFS, Tauri, Rust, SQL, PGlite, RxDB, or another persistence model only to regain parity with the preserved experiment.
 
 See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
@@ -225,36 +233,40 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 ### Gate A — Step 0 authority baseline
 
-Do not start implementation while an implementation-blocking Step 0 decision is open. At present, the concrete `TextAnchor` representation is that blocker.
+Step 0 passes when the authority set, ADR rationale, and preserved-branch classifications are consistent and no normative external formatting/provenance anchor assumption remains. The current documentation records that decision; Step 1 can begin.
 
-### Gate B — Elaboration baseline
+### Gate B — Attributed-content carrier qualification
 
-Do not treat the architecture as executable until Steps 1-6 pass. At that point the project has a browser scaffold, pure domain, canonical collaborative text and external formatting ranges, first-class History, structured Markdown import, and lossless `.coedit` recovery.
+Do not freeze Step 3 implementation, carrier-dependent History effects, editor integration, or `.coedit` version 1 until the Yjs/Automerge common suite passes and the winner is recorded.
 
-### Gate C — Interactive rich editing
+### Gate C — Elaboration baseline
 
-Do not attach the interactive editor before Steps 2-7 are usable. The text/range model, History, import, portable format, and read-only workspace must exist first.
+Do not treat the architecture as executable until Steps 1-6 pass. At that point the project has a browser scaffold, pure domain, canonical attributed CollaborativeContent, first-class History, structured Markdown import, and lossless `.coedit` recovery.
 
-### Gate D — SQL or native packaging
+### Gate D — Interactive rich editing
+
+Do not attach the interactive editor before Steps 2-7 are usable. The attributed-content carrier, History, import, portable format, and read-only workspace must exist first.
+
+### Gate E — SQL or native packaging
 
 Do not adopt SQL or a native shell before Step 12 measurements show a concrete need. A native shell must wrap the validated application. It must not redefine the document engine.
 
-### Gate E — Networked collaboration
+### Gate F — Networked collaboration
 
 Networked collaboration is post-MVP. Before real clients connect, satisfy the preconditions in [`docs/COLLABORATION_MODEL.md`](docs/COLLABORATION_MODEL.md). The local MVP must not turn its private linear History or storage representation into a public distributed-system contract.
 
 ## 6. Post-MVP experiments
 
-After the strict document-engine MVP is complete, separate elaboration work can prototype:
+After the strict document-engine MVP is complete, use separately gated iterations:
 
-- range provenance;
-- comments and durable discussions;
-- additional contributor registration workflows, including AI identities;
-- AI collaboration through the ordinary engine boundary;
-- networked replication; and
-- native packaging or database changes justified by Step 12 measurements.
-
-Formatting-range behavior established for the MVP can inform provenance, but provenance must not be smuggled into the MVP through formatting implementation choices.
+1. provenance visualization/query, retention/anonymization, and authenticated identity;
+2. comments and durable discussions with cursor-plus-quote targets and explicit repair;
+3. an in-process two-engine causal replication bus and causal-restore conflicts;
+4. an authenticated relay, durable outbox/inbox, catch-up, and visible sync state;
+5. AI collaboration through explicit Versions and typed commands, with software-agent Origin and separate human acceptance;
+6. cross-document lineage exchange and private clipboard namespace/trust rules;
+7. signed publication/export attestations such as C2PA; and
+8. native packaging, a database change, or fully offline Block-tree replication only after its own evidence gate.
 
 ## 7. MVP completion
 
@@ -269,11 +281,11 @@ The plan is complete when the browser prototype satisfies the MVP contract and a
 - optional InlineContents and content lenses are usable;
 - selected Versions, lenses, and subtrees can export to Markdown with explicit diagnostics when exact structural interchange is not possible;
 - the opaque `.coedit` artifact provides lossless recovery within its documented limits;
-- IndexedDB provides browser reload durability without becoming a second document authority;
-- one active rich-text editor preserves canonical CollaborativeText and external formatting ranges;
-- semantic edit grouping preserves the accepted batching, transition, failure, and retry rules;
+- the incremental IndexedDB repository provides browser reload durability without becoming a second semantic authority;
+- one active rich-text editor preserves canonical text, intrinsic marks, and protected Origin;
+- semantic edit grouping remains separate from prompt durable Contributions and preserves controlled transition, failure, and retry rules;
 - verification covers data loss, hostile input, corruption, conflicts, History, checkpoints, restore, and interchange round trips;
 - current documentation describes the clean-slate application; and
 - no deferred infrastructure has been introduced without passing its decision gate.
 
-Completion produces an experimental document-engine foundation. It does not mean that AI, provenance, comments, networked collaboration, native packaging, or a production persistence design is complete.
+Completion produces an experimental document-engine foundation. It includes minimum Origin semantics and incremental browser durability; it does not mean that AI-provider integration, provenance UI/authentication/signing, comments, networked collaboration, native packaging, or a final retention/compaction design is complete.

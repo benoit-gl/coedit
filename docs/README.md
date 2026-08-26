@@ -9,9 +9,11 @@ These documents describe the clean-slate application on `main`. Each document ha
 | [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) | Logical product ontology and domain vocabulary |
 | [`MVP_CONTRACT.md`](MVP_CONTRACT.md) | Required proof boundary for the document-engine MVP |
 | [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) | Component authority, public engine behavior, and adapter workflows |
+| [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) | Intrinsic formatting, origin attribution, clipboard lineage, comment targets, and carrier qualification |
 | [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md) | Private MVP implementation rules that are not owned by a focused specification |
 | [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md) | Markdown import, export, diagnostics, and normalized round-trip behavior |
-| [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md) | Lossless `.coedit` version-1 wire format and hostile-input validation |
+| [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md) | Lossless `.coedit` logical recovery contract, gated version-1 container, and hostile-input validation |
+| [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md) | Incremental IndexedDB repository, recovery, multi-tab, quota, and backup behavior |
 | [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md) | MVP test strategy, risk coverage, and qualification evidence |
 | [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md) | Post-MVP replication, convergence, and causal History direction |
 | [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md) | RUP-inspired work order, phase gates, and completion criteria |
@@ -20,6 +22,8 @@ All current design authority is local to `main`.
 
 [`PRESERVED_BRANCH_RECONCILIATION.md`](PRESERVED_BRANCH_RECONCILIATION.md) is a supporting traceability record. It classifies material decisions from `tauri-experimental-orphan` as retained, adapted, superseded, or deferred. It also identifies selectively reusable code and tests. It is not a competing design authority.
 
+[`decisions/`](decisions/README.md) contains architecture decision records. An ADR preserves context, alternatives, and rationale; it does not override the direct authority listed above.
+
 ## Authority rules
 
 Use the document with direct authority for the subject.
@@ -27,6 +31,7 @@ Use the document with direct authority for the subject.
 - A private implementation type does not override `MVP_ARCHITECTURE.md`.
 - A codec or storage detail does not override `PRODUCT_DOMAIN_MODEL.md`.
 - A focused Markdown or `.coedit` specification overrides duplicated technical wording elsewhere.
+- `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns detailed attributed-text behavior; `BROWSER_PERSISTENCE.md` owns browser repository behavior.
 - `MVP_IMPLEMENTATION_SPEC.md` does not expand `MVP_CONTRACT.md`.
 - `SCAFFOLDING_PLAN.md` owns order and gates, not detailed technical behavior.
 - Local MVP shortcuts do not override `COLLABORATION_MODEL.md`.
@@ -35,11 +40,9 @@ When implementation evidence invalidates an accepted rule, update the responsibl
 
 ## Step 0 status
 
-The documentation set is not yet an implementation-ready Step 0 baseline.
+The documentation authority and preserved-decision reconciliation required by Step 0 are complete. Formatting is intrinsic collaborative metadata, origin provenance is protected content-native metadata, comments use explicit external targets, and ordinary selections remain transient. There is no general-purpose `TextAnchor` prerequisite for formatting or provenance.
 
-The concrete representation and update semantics of the opaque `TextAnchor` used by external formatting ranges remain open. The preserved branch treated Yjs relative positions as a plausible implementation, not a final decision. Do not infer an anchor representation from editor or CRDT convenience.
-
-Step 0 closes only after that decision is recorded in the relevant authoritative documents and verification plan.
+Implementation can begin with the browser scaffold and pure Block domain. Before carrier-dependent CollaborativeContent, History encoding, editor integration, or `.coedit` version 1 is frozen, the Elaboration carrier gate must qualify pinned Yjs v13 against Automerge using the common behavioral suite in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) and [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md). This is a bounded implementation-selection gate, not an open product-domain question.
 
 ## Preserved experimental evidence
 

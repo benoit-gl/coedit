@@ -2,7 +2,7 @@
 
 **Status:** Accepted clean-slate MVP direction.
 
-This document is authoritative for component ownership and the public document-engine boundary. Product ontology belongs in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Implementation order belongs in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md). Markdown interchange and `.coedit` wire details belong in focused specifications. Post-MVP replication belongs in [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md).
+This document is authoritative for component ownership and the public document-engine boundary. Product ontology belongs in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Implementation order belongs in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md). Attributed text, Markdown interchange, `.coedit`, and browser persistence details belong in their focused specifications. Post-MVP replication belongs in [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md).
 
 The document engine is a logical backend. In the MVP it runs locally in the browser process. It does not need to be a server, worker, native process, or separate package.
 
@@ -13,21 +13,21 @@ The prototype has two principal components:
 1. A headless document engine owns durable document state, validation, commands, queries, History, portable serialization, and change notification.
 2. A browser UX renders query results, gathers edits, invokes engine commands, and handles browser capabilities and transient interaction state.
 
-Markdown import/export, file transport, browser persistence, and future AI tools are adapters around this boundary. They are not alternate document authorities.
+Markdown import/export, file transport, the browser repository, clipboard handling, and future AI tools are adapters around this boundary. They are not alternate document authorities.
 
 ```text
 Browser UX ------------------+
 Markdown importer -----------|
 Markdown renderer -----------+--> public engine API --> Document engine
-Future AI tools -------------|                              |
-Portable storage transport --+                      private representation
-                                                   snapshots, deltas,
-                                                   indexes, caches
+Future AI tools -------------|                              |       |
+Portable file transport -----+                    repository port  portable codec
+                                                          |              |
+                                                 memory / IndexedDB    .coedit bytes
 ```
 
 The strict MVP can import Markdown, inspect and edit the Block tree and inline content, use lenses, inspect and restore History, create semantic Checkpoints, export Markdown, save/reopen `.coedit`, and survive browser reload.
 
-Tauri, Rust, SQLite, AI providers, provenance, comments, durable discussions, multi-user networking, attachments, and final History compaction are not MVP requirements.
+Tauri, Rust, SQLite, AI providers, provenance visualization, comments, durable discussions, multi-user networking, attachments, signed claims, and final History compaction are not MVP requirements. Minimum protected Origin metadata is an MVP foundation even though a provenance product is not.
 
 ## 2. Responsibility boundary
 
@@ -35,7 +35,7 @@ Tauri, Rust, SQLite, AI providers, provenance, comments, durable discussions, mu
 
 The engine owns:
 
-- `Block`, `InlineContent`, canonical collaborative text, formatting ranges, and tags;
+- `Block`, `InlineContent`, canonical CollaborativeContent, intrinsic formatting, protected Origin, and tags;
 - document and History invariants;
 - typed, attributed, version-checked, atomic command application;
 - stable document, content, Contribution, and Version identities;
@@ -44,8 +44,9 @@ The engine owns:
 - semantic Checkpoint creation;
 - compensating restore;
 - validation and lossless `.coedit` serialization;
-- change notifications after successful publication; and
-- private choices about snapshots, deltas, CRDT updates, indexes, caching, compaction, and storage representation.
+- change notifications after successful publication;
+- private choices about snapshots, deltas, CRDT updates, indexes, caching, compaction, and storage representation; and
+- atomic publication through a supplied in-memory or durable repository port.
 
 Every client-originated durable mutation enters through `execute`. No client receives a privileged persistence path.
 
@@ -55,12 +56,13 @@ The UX owns:
 
 - rendering query results and diagnostics;
 - selection, focus, disclosure, active lens, dialogs, and editor lifecycle;
-- gathering and batching user intent;
+- gathering and grouping user intent;
 - uncommitted editor drafts and composition state;
-- semantic edit-group coordination;
+- semantic edit-group presentation and controlled editor transitions;
 - file pickers, downloads, clipboard access, and browser-storage interactions;
 - obtaining a free-form human Contributor display name before new-session creation;
-- deciding where an opaque `.coedit` artifact is transported; and
+- deciding where an opaque `.coedit` artifact is transported;
+- presenting repository durability, quota, persistence, conflict, retry, and backup status; and
 - tracking the Version most recently transported successfully.
 
 The UX does not mutate returned domain objects, read a private ledger/archive, reconstruct History, parse `.coedit`, or apply raw replication state as durable truth.
@@ -69,9 +71,11 @@ The UX does not mutate returned domain objects, read a private ledger/archive, r
 
 Adapters translate between an external concern and the engine:
 
-- the Markdown importer plans ordinary typed operations;
+- the Markdown importer plans ordinary typed operations and imported Origin claims;
 - the Markdown renderer queries an explicit Version and emits Markdown plus diagnostics;
-- file, clipboard, and IndexedDB adapters transport opaque `.coedit` artifacts; and
+- file adapters transport opaque `.coedit` artifacts;
+- the browser repository persists private immutable engine records behind its port;
+- clipboard adapters validate private Coedit fragments and sanitize ordinary HTML; and
 - a future AI adapter queries explicit Versions and submits attributed commands.
 
 Authority, not deployment, defines the boundary.
@@ -95,6 +99,7 @@ interface Versioned<T> {
 interface ContributionContext {
   readonly contributorId: ContributorId;
   readonly sessionId?: SessionId;
+  readonly semanticGroupId?: SemanticGroupId;
   readonly summary?: string;
 }
 
@@ -164,7 +169,9 @@ An advertised VersionToken remains stable across a lossless `.coedit` Save/Open 
 
 Commands are typed, validated, attributed, atomic, and checked against an expected VersionToken.
 
-Each successful command publishes one logical Contribution and one resulting Version. A failed command publishes nothing.
+Each successful command atomically publishes one logical Contribution, its exact content/structure effect, any new Origin records, one resulting Version, and its successful idempotency receipt. When a durable repository is attached, publication occurs only after the repository transaction commits. A failed command publishes nothing.
+
+Several immutable Contributions can share a semantic group ID for History presentation. Grouping never changes their identities, Versions, or durability.
 
 Command idempotency survives `.coedit` Save/Open. A successful `CommandId` exact retry returns the original receipt and emits no new Contribution or notification. Reuse of the same CommandId with different canonical request content is an error.
 
@@ -203,18 +210,17 @@ Conceptually:
 ```ts
 interface EditorContentValue {
   readonly inlineContentId: InlineContentId;
-  readonly text: CollaborativeText;
-  readonly formatting: readonly RangeAnnotation<Formatting>[];
+  readonly content: DetachedCollaborativeContent;
 }
 ```
 
-The exact `TextAnchor` representation inside formatting ranges is intentionally unresolved until Step 0 closes.
+`DetachedCollaborativeContent` contains visible text/hard breaks, native formatting semantics, and protected Origin information required for correct editing. It is carrier-neutral at the public boundary.
 
-The editor adapter can reconstruct transient ProseMirror/Tiptap/Yjs state from this value. Mutating that local state does not mutate engine state.
+The editor adapter can reconstruct or bind transient ProseMirror/Tiptap/carrier state from this value or a controlled engine session. Mutating detached local state does not mutate engine state.
 
-A durable text/formatting commit must pass through `execute` and preserve the accepted atomic text-plus-formatting contract.
+A durable content commit must pass through `execute` and preserve the accepted atomic text-plus-formatting-plus-Origin contract. The client can request ordinary editing intent but cannot assign arbitrary Origin through formatting or raw carrier updates.
 
-Do not expose a live engine-owned Y.Doc or a formatting-only side channel.
+Do not expose a live engine-owned Y.Doc/Automerge object, a formatting-only side channel, or an Origin mutation side channel.
 
 ## 7. Change notification contract
 
@@ -225,7 +231,7 @@ Conceptually:
 ```ts
 interface DocumentChanged {
   readonly version: VersionToken;
-  readonly origins: readonly ("local" | "remote")[];
+  readonly changeSources: readonly ("local" | "remote")[];
   readonly causes: readonly ("edit" | "import" | "checkpoint" | "restore")[];
   readonly contributionIds: readonly ContributionId[];
   readonly affectedBlockIds: readonly BlockId[];
@@ -233,23 +239,24 @@ interface DocumentChanged {
 }
 ```
 
-The MVP need not emit `remote`. Implementations can coalesce notifications. Failed commands and exact idempotent retries emit none.
+The MVP need not emit the `remote` change source. Implementations can coalesce notifications. Failed commands and exact idempotent retries emit none.
 
 ## 8. Required workflows
 
 ### Interactive editing
 
 ```text
-UX holds transient editor state
-  -> semantic edit-group boundary requires a durable capture
-  -> UX submits one attributed command against observed VersionToken
-  -> engine validates text + formatting atomically
-  -> engine publishes one logical Contribution
+UX holds transient editor/composition state
+  -> a minimal safe editor action is ready for durable commit
+  -> UX submits one attributed command and semantic group ID against observed VersionToken
+  -> engine validates text + formatting + Origin atomically
+  -> repository commits immutable effect/Contribution + CAS head
+  -> engine publishes one logical Contribution and Version
   -> engine emits invalidation
   -> UX re-queries
 ```
 
-A physical editor edit capture is not a semantic History Checkpoint.
+IME is not split mid-composition, and paste/cut/replacement/formatting/undo/redo are atomic editor actions. Idle/focus/mode boundaries seal semantic groups; they do not create a second durability ledger. A physical recovery checkpoint is not a semantic History Checkpoint.
 
 If a commit fails, canonical state is unchanged and the UX retains recoverable transient work or presents an explicit retry/discard path.
 
@@ -291,10 +298,10 @@ For imported/canonical Markdown-representable structures, export/re-import must 
 ### `.coedit` Save and Open
 
 ```text
-UX flushes required editor work
+UX commits required editor work
   -> supplies observed VersionToken
   -> engine verifies expected Version
-  -> engine returns opaque .coedit bytes + metadata
+  -> engine assembles retained logical records into opaque .coedit bytes + metadata
   -> UX transports bytes
 ```
 
@@ -304,13 +311,15 @@ Open validates into a candidate engine. Only a successful open replaces the acti
 
 ### Browser durability
 
-IndexedDB stores opaque `.coedit` artifacts and local descriptors. It does not parse private engine state.
+The browser composition root supplies an IndexedDB repository to the engine. Normal commits append immutable Contribution/effect records and advance a small compare-and-swap head in one short transaction. Periodic physical checkpoints bound recovery. Explicit `.coedit` serialization is not the autosave path.
+
+The UX uses StorageManager capabilities where available, reports quota/persistence status, retains retryable work after failure, and offers explicit `.coedit` backup. `BROWSER_PERSISTENCE.md` owns detailed behavior.
 
 ## 9. Committed and transient state
 
 Serialization and export observe committed engine state.
 
-Before Save, export, navigation, restore, editor-owner transfer, or another operation that can invalidate active editor context, the UX must use the accepted controlled-transition policy: freeze, capture required work, drain required durable captures, then continue or expose a deliberate discard decision.
+Before Save, export, navigation, restore, editor-owner transfer, or another operation that can invalidate active editor context, the UX must use the accepted controlled-transition policy: freeze, submit required work, drain required durable commands, then continue or expose a deliberate discard decision.
 
 Selection, focus, disclosure, active lens, dialogs, presence, cursor state, retry UI, and unfinished input are transient unless a later feature explicitly makes them durable.
 
@@ -320,17 +329,17 @@ The public promise is:
 
 > Every retained Contribution can be listed and summarized. Every advertised retained VersionToken can be materialized exactly and restored through the engine API.
 
-A complete private snapshot per Contribution is acceptable for the MVP because it is simple to verify. It is not a public data type or long-term storage contract.
+A complete private snapshot per Contribution is acceptable only in bounded in-memory tests or an explicitly identified early prototype because it is simple to verify. It is not the Step 11 browser target, a public data type, or a long-term storage contract.
 
-The engine can later use structural sharing, deltas, incremental CRDT updates, caches, indexes, or compaction if it preserves the public contract.
+The browser target uses immutable Contributions/effect chunks, periodic canonical recovery checkpoints, and a small CAS head. The engine can change structural sharing, chunking, caches, indexes, checkpoint cadence, or compaction if it preserves the public contract and every advertised retained Version.
 
 ## 11. Compatibility with later consumers
 
-A future AI tool queries an explicit Version and submits an attributed command. It has no privileged mutation path.
+A future AI tool queries an explicit Version and submits typed attributed commands. AI content receives software-agent Origin; human acceptance is a separate Contribution. It has no privileged mutation or raw-carrier path.
 
 For collaboration, each UX talks to a local engine. Replication integrates remote work through private engine machinery and surfaces ordinary invalidation notifications.
 
-Product Contributions remain distinct from CRDT transport updates. `COLLABORATION_MODEL.md` defines the later distributed constraints.
+Product Contributions remain distinct from carrier transport effects. `COLLABORATION_MODEL.md` defines the later distributed constraints.
 
 ## 12. MVP architecture verification
 
@@ -339,6 +348,8 @@ The MVP must prove:
 - core commands, queries, History, and serialization require no React, file API, or IndexedDB;
 - interactive edits and Markdown import use the same validation, attribution, atomicity, and History boundary;
 - text and formatting cannot publish in mismatched state;
+- every live inserted content unit has one protected Origin, and ordinary formatting cannot alter it;
+- copy and restore preserve Origin while attributing their new Contributions to the acting Contributor;
 - semantic Checkpoints publish one attributed Contribution and one content-identical Version;
 - historical materialization is exact, detached, and read-only;
 - editor-content values are detached and cannot mutate engine state;
@@ -346,7 +357,9 @@ The MVP must prove:
 - `.coedit` serialization checks its expected Version;
 - a failed Save/Open does not claim success or replace the active engine;
 - `.coedit` round trip preserves current and historical behavior and command idempotency;
+- repository commit and CAS-head advancement are atomic, and failure publishes no partial in-memory state;
+- IndexedDB recovery, competing-tab conflict, quota denial, and explicit backup paths are verified;
 - Markdown imported documents satisfy the export/re-import normalized equivalence property; and
 - a different private History representation can pass the same public contract suite.
 
-The strict MVP deliberately does not prove network convergence, provenance, comments, or AI collaboration.
+The strict MVP deliberately does not prove network convergence, a provenance UI, comments, authenticated attribution, signed claims, or AI-provider collaboration. It does prove the minimum content-Origin invariants and carrier feasibility those capabilities require.

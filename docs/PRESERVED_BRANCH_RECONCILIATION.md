@@ -30,53 +30,57 @@ Use these classifications:
 | `.coedit` as the public document extension | retained | The clean-slate portable artifact uses `.coedit`. `PORTABLE_DOCUMENT_FORMAT.md` controls the new format; preserved SQLite bytes are not compatible. |
 | Append-only History and compensating restore | retained | Preserved semantic behavior remains. `PRODUCT_DOMAIN_MODEL.md`, `MVP_ARCHITECTURE.md`, and `MVP_IMPLEMENTATION_SPEC.md` control. |
 | Historical viewing is a non-mutating query | retained | Current architecture requires exact detached read-only materialization. `MVP_ARCHITECTURE.md` controls. |
-| Semantic text edit groups with physical safety captures | adapted | Retain the policy and behavior. Rename old physical "checkpoints" to **physical edit captures** so they cannot be confused with semantic History Checkpoints. `MVP_IMPLEMENTATION_SPEC.md` and `MVP_VERIFICATION_PLAN.md` control. |
-| 20-grapheme insertion threshold | retained | Retained as the initial semantic-group policy default. `MVP_IMPLEMENTATION_SPEC.md` controls; `MVP_VERIFICATION_PLAN.md` defines regression cases. |
-| 30-second idle seal | retained | Retained as the initial semantic-group policy default. |
-| Two detached pending body checkpoints high-water mark | adapted | Retained as two pending **physical edit captures**. The name changes; integrity/backpressure behavior does not. |
+| Semantic text edit groups with prompt durable commands | adapted | Preserve human-readable grouping and controlled transitions, but use immutable Contributions as the crash journal. Several Contributions can share a semantic group ID for presentation. `MVP_IMPLEMENTATION_SPEC.md`, `BROWSER_PERSISTENCE.md`, and `MVP_VERIFICATION_PLAN.md` control. |
+| 20-grapheme insertion threshold | superseded | Retained only as experimental tuning/test evidence. Character/time thresholds are measured UX policy, not durable semantics. |
+| 30-second idle seal | superseded | Retained only as experimental tuning/test evidence. Idle still seals a semantic group; the constant is not canonical. |
+| Two detached pending body checkpoints high-water mark | superseded | The exact retry/FIFO lesson remains, but normal durability is incremental and must not block typing merely because two complete artifact writes are pending. |
 | Atomic IME/paste/cut/format/undo/redo edit boundaries | retained | Retained in current edit-group behavior and verification. |
 | Controlled transition freeze/flush/drain before editor invalidation | retained | Retained. `MVP_ARCHITECTURE.md` owns the UX/engine boundary; implementation and tests are in the MVP implementation and verification specs. |
-| Exact retry of failed queued editor persistence work | retained | Retained for physical edit capture recovery. |
-| Formatting and provenance share a generic external range abstraction | retained | Current domain uses external `RangeAnnotation<T>` concepts. Formatting is required in the MVP; provenance is post-MVP. `PRODUCT_DOMAIN_MODEL.md` controls. |
-| Formatting and provenance have different mutation/inheritance semantics | retained | Retained. MVP implements formatting only; provenance rules remain deferred. |
-| Yjs relative positions as a plausible `TextAnchor` implementation | deferred | No concrete anchor representation is accepted yet. `TextAnchor` remains opaque. This is an implementation-blocking Step 0 decision. |
-| Formatting persisted only as ProseMirror/Yjs marks | superseded | This was introduced during the clean-slate documentation refactor without adequate reconciliation. The current direction restores external formatting ranges as domain authority. Editor-native marks can be a transient adapter representation only if consistent with the accepted Step 3 design. |
-| `collaborativeStateEquivalent` based on Yjs CRDT internals/delete sets | superseded | No such generic comparison is currently authoritative. Exact portable verification must follow the accepted Step 3/TextAnchor design. `PORTABLE_DOCUMENT_FORMAT.md` deliberately leaves this open until Step 0 closes. |
+| Exact retry of failed queued editor persistence work | adapted | Retain the exact detached command, effect data, and idempotency identity needed for repository retry; do not retain the old whole-body capture queue as an architectural boundary. |
+| Formatting and provenance share a generic external range abstraction | superseded | Formatting is intrinsic carrier metadata; Origin provenance is protected content-native metadata; comments alone use external repairable targets. `PRODUCT_DOMAIN_MODEL.md` and `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` control. |
+| Formatting and provenance have different mutation/inheritance semantics | adapted | Preserved as distinct intrinsic semantics: formatting follows explicit boundary policies, while Origin never inherits and cannot be cleared by formatting. |
+| Yjs relative positions as a plausible `TextAnchor` implementation | adapted | Retained only as one primary stable-cursor candidate for future CommentTargets. Formatting and Origin need no external anchor. |
+| Formatting persisted as ProseMirror/Yjs marks | adapted | Native carrier marks are now the canonical formatting representation. ProseMirror remains an adapter, and the recursive Block tree remains outside it. |
+| `collaborativeStateEquivalent` based on Yjs CRDT internals/delete sets | adapted | Carrier-specific equivalence is required in the common conformance suite, but it remains private and includes formatting, Origin, cursor, and historical behavior rather than defining public domain equality. |
 | Markdown import through structured parsing rather than regex | retained | `MARKDOWN_INTERCHANGE.md` controls. |
 | Markdown is not the native recovery format | retained | `.coedit` is lossless recovery; Markdown is interchange. |
 | Current Markdown import grouping for body plus subsections | adapted | Retained as the canonical Markdown-representable Coedit structure. Export must invert it. `MARKDOWN_INTERCHANGE.md` controls. |
 | Markdown export can be lossy | adapted | Arbitrary Coedit structures can still be non-representable, but every successfully imported Markdown document must satisfy the exact normalized Coedit round-trip invariant after export/re-import. |
 | Human Contributor exists at document bootstrap | adapted | MVP UX asks for a free-form human display name before session creation. No account/profile design is required. `MVP_IMPLEMENTATION_SPEC.md` controls. |
-| Imported Contributor identity | retained | Markdown import creates/uses an imported Contributor and attributes the import Contribution to it. |
+| Imported Contributor identity | adapted | Imported/unknown Origin identifies source material. The import Contribution identifies the human/system actor that performed the import; a source file is not impersonated as actor. |
 | Post-genesis Contributor registration for AI/automation | deferred | Not needed for strict MVP. Design with AI/provenance work later. |
-| Production provenance, comments, and durable discussions | deferred | Removed from strict MVP completion. They are post-MVP experiments. |
-| Full snapshot per revision | retained for MVP only | Allowed as a private simplicity choice, not a public domain or distributed contract. |
+| Production provenance, comments, and durable discussions | adapted/deferred | Minimum protected Origin and lineage invariants are MVP foundation. Provenance UI/analytics/authentication/signing, comments, and discussions remain later phases. |
+| Full snapshot per revision | adapted for bounded prototype only | Allowed for in-memory/early fixtures. The browser target is immutable effects plus periodic recovery checkpoints and a CAS head. |
 | Query-first History projection and grouped human-readable History | retained/adapted | Non-mutating queries and semantic edit-group presentation remain; physical rows are never rewritten by grouping. |
 | Native shell or SQL adoption because preserved branch used them | superseded | Infrastructure requires measured justification. The preserved implementation is evidence only. |
+| One Y.Doc per InlineContent | superseded | The default is one logical collaborative document per Coedit document for atomic structure-plus-content operations. Sharding requires measurement. |
+| Whole `.coedit` artifact as the normal IndexedDB autosave unit | superseded | `.coedit` is explicit portable recovery. Browser durability uses the incremental engine repository in `BROWSER_PERSISTENCE.md`. |
+| Yjs as an unqualified permanent carrier | adapted | Stable Yjs v13 is provisional and must pass the common gate against Automerge before carrier bytes are frozen. |
 
-## 3. Current blocking decision
+## 3. Closed blocker and current qualification gate
 
-### `TextAnchor` representation
+The former `TextAnchor` blocker is closed. The state-of-the-art review showed
+that one generic external range incorrectly combined three different concerns:
 
-The domain requires an opaque `TextAnchor` construct for external formatting ranges.
+- formatting is intrinsic carrier-native rich-text metadata;
+- Origin provenance is protected, non-inheriting content metadata; and
+- future comments use external targets with a stable cursor plus
+  quote/context/position repair evidence.
 
-The preserved branch identified Yjs relative positions as plausible, but did not establish them as the final durable contract. The clean-slate refactor later introduced Yjs/ProseMirror marks and a CRDT-internal equality contract without an explicit supersession decision. That change is withdrawn.
+Ordinary selection remains transient. No concrete anchor is therefore required
+before the browser scaffold or pure Block domain begins.
 
-Before Step 1 begins, research must select and document:
+Carrier-dependent implementation remains behind the Step 3 Elaboration gate.
+Pinned stable Yjs v13 and Automerge must run the same formatting, Origin,
+copy/paste/restore, cursor-feasibility, concurrency, atomicity, portable, and
+growth suite. Yjs is the provisional winner on integration maturity; Automerge
+replaces it only if it passes and materially removes custom machinery. Do not
+freeze carrier-specific `.coedit` version-1 bytes before that result is recorded.
 
-- the concrete `TextAnchor` representation;
-- how anchors behave across insertion, deletion, replacement, split, merge, undo, redo, copy, and restore;
-- how formatting range updates are expressed atomically with collaborative text updates;
-- how anchor validity and resource limits are checked;
-- how exact historical materialization preserves compatible anchor state; and
-- how format version 1 serializes and verifies anchors.
-
-Until then:
-
-- `TextAnchor` remains opaque;
-- no implementation may infer offsets, ProseMirror positions, Yjs relative positions, or another representation;
-- no generic `collaborativeStateEquivalent` algorithm is accepted; and
-- Step 0 remains open.
+This gate and its evidence are owned by
+`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `MVP_VERIFICATION_PLAN.md`, and
+`SCAFFOLDING_PLAN.md`. It is not an open product-domain decision and does not
+reopen Step 0.
 
 ## 4. Selective implementation reuse
 
@@ -89,7 +93,7 @@ The preserved branch can provide implementation or test evidence after current a
 | `src/domain/ids.ts` | Stable ID generation patterns after current branded-ID review. |
 | `src/domain/json.ts` | Generic JSON cloning/comparison helpers where still appropriate. |
 | `src/domain/tags.ts` and tests | Tag normalization and case-insensitive identity. |
-| `src/editor/sanitizeRichText.ts` and tests | Hostile rich-text/paste cases; adapt to current formatting authority. |
+| `src/editor/sanitizeRichText.ts` and tests | Hostile rich-text/paste cases; adapt to native marks, protected Origin, private fragments, and the DOM/clipboard sanitizer boundary. |
 | `src/editor/yjsEncoding.ts` | Binary/base64 utility evidence only. |
 | `src/application/serializedTaskQueue.ts` and tests | Serialized local mutation behavior if still useful. |
 | `LICENSE` | Project license. |
@@ -104,8 +108,8 @@ The preserved branch can provide implementation or test evidence after current a
 | `src/persistence/memoryGateway.ts` and tests | Atomic commit, detached History, and compensating restore lessons. |
 | `src/application/workspaceProjection.ts` and tests | Explicit live versus historical state. |
 | `src/application/draftTransition.ts` and tests | Freeze, flush, retry, and controlled-transition behavior. |
-| `src/editor/bodyCheckpointPolicy.ts` | Accepted text-group policy defaults. |
-| `src/editor/BodyEditBatchCoordinator.ts` and tests | Semantic grouping, physical capture, backpressure, failure, and retry behavior. |
+| `src/editor/bodyCheckpointPolicy.ts` | Evidence for measured edit-group tuning only; do not port the constants as architecture. |
+| `src/editor/BodyEditBatchCoordinator.ts` and tests | Preserve semantic grouping, FIFO, controlled transition, atomic edit, failure, and retry cases; replace the full-artifact/two-item backpressure policy. |
 | `src/editor/bodyEditTransaction.ts` and tests | Grapheme-aware input classification and atomic edit boundaries. |
 | `src/application/historyProjection.ts` and tests | Grouped History presentation without ledger rewriting. |
 | editor ownership and canvas interaction tests | Single-editor, focus, and keyboard behavior. |
@@ -140,8 +144,12 @@ Do not copy these preserved assumptions into the clean scaffold unless a current
 - old format-version-1 hashes or fixtures as the new wire contract;
 - direct snapshot/archive frontend APIs;
 - old package manifest or lockfile;
-- `LOCAL_FIRST_TREE_EDITOR_PLAN.md` as an active roadmap; or
-- the old AI proposal interface based on `nodeId + proposedHtml`.
+- `LOCAL_FIRST_TREE_EDITOR_PLAN.md` as an active roadmap;
+- the old AI proposal interface based on `nodeId + proposedHtml`;
+- one Y.Doc per InlineContent as the default boundary;
+- whole-artifact autosave and full snapshot per Contribution as target storage;
+- literal inline marker characters or generic external formatting/provenance ranges; or
+- raw HTML or raw carrier state as an AI mutation interface.
 
 ## 7. Maintenance rule
 

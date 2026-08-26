@@ -4,11 +4,11 @@
 
 This document defines what the Coedit MVP must prove. The MVP is a **document-engine prototype**, not a complete collaborative writing product.
 
-Detailed implementation rules are in [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md). Domain meaning remains in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Public authority boundaries remain in [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md). Markdown interchange is specified in [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md). Lossless recovery is specified in [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md). Implementation order remains in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md).
+Detailed implementation rules are in [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md). Domain meaning remains in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Public authority boundaries remain in [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md). Attributed text is specified in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md). Markdown interchange is specified in [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md). Lossless recovery is specified in [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md). Browser persistence is specified in [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Implementation order remains in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md).
 
 ## 1. Purpose
 
-The MVP must prove that Coedit can support one durable structured document through a headless document engine with clear authority, exact History, safe rich-text state, deterministic projections, reversible Markdown interchange for imported documents, and lossless `.coedit` recovery.
+The MVP must prove that Coedit can support one durable structured document through a headless document engine with clear authority, exact History, attributed collaborative rich text, deterministic projections, reversible Markdown interchange for imported documents, incremental browser durability, and lossless `.coedit` recovery.
 
 The prototype must make later AI and collaboration work possible without implementing those systems now.
 
@@ -22,7 +22,7 @@ The MVP must provide these capabilities:
 4. Edit headings, prose, and list items.
 5. Create, move, nest, reorder, and delete Blocks.
 6. Create, select, reorder, tag, and delete InlineContents.
-7. Edit canonical collaborative text and formatting through the engine command boundary.
+7. Edit canonical collaborative text, intrinsic formatting, and protected Origin through the engine command boundary.
 8. Use optional content-selection lenses, including a summary convention.
 9. List and summarize durable Contributions.
 10. Inspect an exact historical Version read-only.
@@ -34,7 +34,8 @@ The MVP must provide these capabilities:
 16. Re-import exported Markdown from the canonical Markdown-representable subset to an equivalent normalized Coedit document.
 17. Save a lossless opaque `.coedit` document.
 18. Reopen that `.coedit` document with equivalent current state and History.
-19. Persist `.coedit` documents in browser storage and survive a browser reload.
+19. Persist documents incrementally in browser storage and survive a browser reload.
+20. Qualify the selected collaborative-content carrier against the accepted formatting, Origin, clipboard, comment-target-feasibility, convergence, and growth suite before freezing carrier-dependent implementation or `.coedit` version 1.
 
 ## 3. Out of scope
 
@@ -43,7 +44,7 @@ The MVP does not require:
 - an AI provider or AI user experience;
 - networked multi-user collaboration;
 - presence, remote cursors, or typing indicators;
-- fine-grained provenance;
+- provenance visualization, analytics, authenticated identity, retention controls, or signed claims beyond the minimum Origin carrier;
 - comments or durable discussions;
 - post-genesis AI or automation Contributor registration;
 - attachments;
@@ -94,19 +95,21 @@ A **Checkpoint** is a first-class, attributed durable interaction. Creating a Ch
 
 A Checkpoint does not mean final, published, approved, or immutable. A document can have zero or many Checkpoints.
 
-Interactive editor safety captures are not semantic Checkpoints. They can be grouped for History presentation without redefining this concept.
+Semantic editor groups and physical recovery checkpoints are not semantic Checkpoints. They can support History presentation or storage recovery without redefining this concept.
 
-### 4.7 Canonical rich text and formatting
+### 4.7 Canonical attributed rich text
 
-Each InlineContent owns canonical collaborative text plus external formatting ranges. HTML and plain text are derived representations.
+Each InlineContent owns one canonical CollaborativeContent state containing text, hard breaks, intrinsic formatting marks, and protected Origin attribution. HTML, plain text, ProseMirror JSON, and attribution runs are derived representations.
 
-The logical formatting model uses `RangeAnnotation<Formatting>` with opaque `TextAnchor` endpoints. The concrete `TextAnchor` representation is a Step 0 implementation blocker and is not defined by this contract.
+Formatting has explicit insertion-boundary behavior. Every live text item and hard break has exactly one Origin; new Origin is assigned by the trusted engine/import boundary and never inherited from neighboring text. Formatting commands cannot erase or rewrite Origin.
 
-A live editor can hold transient adapter state, but canonical text and formatting changes become durable only through an engine command.
+Origin identifies who or what created the material. The Contribution identifies who performed the operation in this document. Copy and restore preserve Origin while recording the copy/restore actor and source/derivation separately.
+
+A live editor can hold transient adapter state, but canonical text, formatting, Origin, and Contribution effects become durable only through an engine command. Detailed behavior belongs to `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`.
 
 ### 4.8 Lossless portable recovery
 
-Within documented limits, the `.coedit` document contains enough information to reopen the document with equivalent current state, retained History, stable advertised Version identities, and command-idempotency behavior.
+Within documented limits, the `.coedit` document contains enough information to reopen the document with equivalent current attributed content, retained History and derivation, stable advertised Version identities, and command-idempotency behavior.
 
 Markdown is not the native recovery format.
 
@@ -122,7 +125,7 @@ The prototype must preserve these domain rules:
 - one real root Block exists and cannot be moved or deleted;
 - Blocks and InlineContents have stable, non-reused identities;
 - each InlineContent belongs to exactly one Block;
-- each InlineContent owns canonical collaborative text and external formatting ranges;
+- each InlineContent owns canonical CollaborativeContent with intrinsic formatting and protected Origin;
 - Block and InlineContent tags have independent ownership;
 - `childrenPresentation` belongs to the parent;
 - contentless non-root Blocks are transparent grouping containers;
@@ -147,7 +150,9 @@ The browser can render and inspect the resulting Block tree through engine queri
 
 A user can reorganize an imported document and edit rich inline content. Every durable structural, text, or formatting change uses an attributed command.
 
-The editor uses the accepted semantic edit-group policy. A failed or stale commit leaves canonical state unchanged and retains a recoverable UI draft or an explicit retry/discard path.
+New text receives the correct human/imported/unknown Origin. Clearing formatting preserves Origin. Same-document internal paste preserves source Origin while recording the paster; external paste does not import private Origin or falsely claim authorship.
+
+Durable commits happen promptly and can share a semantic group for History presentation. A failed or stale commit leaves canonical state unchanged and retains a recoverable UI draft or an explicit retry/discard path.
 
 ### Scenario C — History, Checkpoints, and restore
 
@@ -155,7 +160,7 @@ After several structural and text changes, the user can list History, inspect an
 
 The Checkpoint appears as one attributed Contribution and creates a new content-identical Version. Its resulting VersionToken remains available through History and can be materialized exactly.
 
-The restore appears as a new Contribution. Earlier History and Checkpoints remain intact.
+The restore appears as a new Contribution attributed to the restoring actor. Reinserted historical material receives new private carrier identities while preserving its historical Origin. Earlier History and Checkpoints remain intact.
 
 ### Scenario D — Optional contents and lenses
 
@@ -181,15 +186,15 @@ If an arbitrary edited Coedit selection is outside the canonical Markdown-repres
 
 A document with realistic content and History can serialize to an opaque `.coedit` artifact and reopen into a candidate engine.
 
-The round trip preserves current and historical behavior, Checkpoint Contributions and Versions, stable advertised VersionTokens, exact rich-text/formatting state required by the portable-format contract, and successful command-idempotency records.
+The round trip preserves current and historical behavior, Checkpoint Contributions and Versions, stable advertised VersionTokens, exact text/formatting/Origin state, Contribution actor and derivation, and successful command-idempotency records.
 
 Malformed or unsupported input does not replace the current engine.
 
 ### Scenario G — Browser reload
 
-A committed document can be stored as an opaque `.coedit` artifact in IndexedDB and reopened after reload.
+A committed document can be recovered from the engine's incremental IndexedDB repository after reload. Explicit `.coedit` Save/Open remains a separate portable workflow.
 
-A failed save does not report success. Competing browser writers do not silently overwrite each other when their expected saved Version differs.
+A failed repository commit does not report success or publish partial state. Competing browser writers do not silently overwrite each other when their expected durable head differs. Quota or persistence denial is visible and the user has an explicit `.coedit` backup path.
 
 ### Scenario H — Headless contract
 
@@ -199,4 +204,4 @@ Core commands, queries, History, Checkpoints, restore, Markdown adapters, and po
 
 The document-engine MVP is complete when all in-scope scenarios pass within documented limits and the browser prototype exposes the vertical slice without violating the engine authority boundary.
 
-Completion does not mean that the product is ready for AI, provenance, comments, or networked collaboration. It means that those later capabilities can be designed against a tested document engine instead of against UI state or an experimental storage layout.
+Completion does not mean that the product has a provenance explorer, comments, authenticated collaboration, an AI provider, signatures, or a final replicated-tree algorithm. It means their accepted invariants are protected by a tested attributed-content and document-engine foundation instead of UI state or an experimental storage layout.
