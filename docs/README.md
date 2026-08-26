@@ -10,6 +10,7 @@ These documents describe the clean-slate application on `main`. Each document ha
 | [`MVP_CONTRACT.md`](MVP_CONTRACT.md) | Required proof boundary for the document-engine MVP |
 | [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) | Component authority, public engine behavior, and adapter workflows |
 | [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) | Intrinsic formatting, origin attribution, clipboard lineage, comment targets, and carrier qualification |
+| [`CODING_STYLE.md`](CODING_STYLE.md) | Source structure, as-implemented TSDoc, lint/format/dependency tooling, command-line interface, and platform portability |
 | [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md) | Private MVP implementation rules that are not owned by a focused specification |
 | [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md) | Markdown import, export, diagnostics, and normalized round-trip behavior |
 | [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md) | Lossless `.coedit` logical recovery contract, gated version-1 container, and hostile-input validation |
@@ -32,6 +33,7 @@ Use the document with direct authority for the subject.
 - A codec or storage detail does not override `PRODUCT_DOMAIN_MODEL.md`.
 - A focused Markdown or `.coedit` specification overrides duplicated technical wording elsewhere.
 - `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns detailed attributed-text behavior; `BROWSER_PERSISTENCE.md` owns browser repository behavior.
+- `CODING_STYLE.md` owns source-level documentation, linting, formatting, architectural dependency checks, package commands, and developer-platform portability.
 - `MVP_IMPLEMENTATION_SPEC.md` does not expand `MVP_CONTRACT.md`.
 - `SCAFFOLDING_PLAN.md` owns order and gates, not detailed technical behavior.
 - Local MVP shortcuts do not override `COLLABORATION_MODEL.md`.
@@ -40,9 +42,14 @@ When implementation evidence invalidates an accepted rule, update the responsibl
 
 ## Step 0 status
 
-The documentation authority and preserved-decision reconciliation required by Step 0 are complete. Formatting is intrinsic collaborative metadata, origin provenance is protected content-native metadata, comments use explicit external targets, and ordinary selections remain transient. There is no general-purpose `TextAnchor` prerequisite for formatting or provenance.
+The documentation authority, coding/tooling agreement, and preserved-decision reconciliation required by Step 0 are complete. Formatting is intrinsic collaborative metadata, origin provenance is protected content-native metadata, comments use explicit external targets, and ordinary selections remain transient. There is no general-purpose `TextAnchor` prerequisite for formatting or provenance.
 
 Implementation can begin with the browser scaffold and pure Block domain. Before carrier-dependent CollaborativeContent, History encoding, editor integration, or `.coedit` version 1 is frozen, the Elaboration carrier gate must qualify pinned Yjs v13 against Automerge using the common behavioral suite in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) and [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md). This is a bounded implementation-selection gate, not an open product-domain question.
+
+Step 1 must establish the OS-neutral package commands and tooling in
+[`CODING_STYLE.md`](CODING_STYLE.md). Native Windows and Linux command-line
+builds are required; macOS is intended and must not be knowingly excluded.
+Future CI runs on Linux through the same commands. No CI workflow exists yet.
 
 ## Preserved experimental evidence
 

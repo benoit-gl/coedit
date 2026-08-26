@@ -18,6 +18,7 @@ Use the companion documents for authority:
 - [`docs/MVP_CONTRACT.md`](docs/MVP_CONTRACT.md) defines what the document-engine MVP must prove.
 - [`docs/MVP_ARCHITECTURE.md`](docs/MVP_ARCHITECTURE.md) defines component authority and the public engine boundary.
 - [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines attributed text, clipboard lineage, comment-target feasibility, and carrier qualification.
+- [`docs/CODING_STYLE.md`](docs/CODING_STYLE.md) defines source structure, TSDoc, linting, formatting, command-line interfaces, and developer-platform portability.
 - [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) defines concrete private MVP implementation rules that are not owned by a focused specification.
 - [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md) defines Markdown import, export, diagnostics, and round-trip behavior.
 - [`docs/PORTABLE_DOCUMENT_FORMAT.md`](docs/PORTABLE_DOCUMENT_FORMAT.md) defines the `.coedit` portable format.
@@ -53,6 +54,8 @@ Do not merge, rebase, reset, or commit to `tauri-experimental-orphan`. Inspect i
 
 Each implementation step must preserve the Step 0 documentation foundation. If implementation evidence invalidates an accepted rule, update the responsible authoritative document in the same change.
 
+All implementation and verification commands must preserve the cross-platform contract in `docs/CODING_STYLE.md`. Linux is the future CI environment; Windows remains a required native developer platform, and macOS is an intended supported platform.
+
 A preserved implementation choice is not automatically current authority. A new design is not accepted merely because it is more convenient. Material conflicts must be resolved explicitly through Step 0 traceability or a later recorded decision.
 
 ## 4. Ordered work
@@ -63,12 +66,14 @@ A preserved implementation choice is not automatically current authority. A new 
 
 The baseline must contain:
 
+- `README.md`;
 - `SCAFFOLDING_PLAN.md`;
 - `docs/README.md`;
 - `docs/PRODUCT_DOMAIN_MODEL.md`;
 - `docs/MVP_CONTRACT.md`;
 - `docs/MVP_ARCHITECTURE.md`;
 - `docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`;
+- `docs/CODING_STYLE.md`;
 - `docs/MVP_IMPLEMENTATION_SPEC.md`;
 - `docs/MARKDOWN_INTERCHANGE.md`;
 - `docs/PORTABLE_DOCUMENT_FORMAT.md`;
@@ -92,7 +97,7 @@ The former `TextAnchor` blocker is resolved. Formatting uses native collaborativ
 
 **Exit gate:**
 
-- an implementer can determine current ontology, MVP proof boundary, public engine authority, focused technical contracts, collaboration constraints, and work order from `main` only;
+- an implementer can determine current ontology, MVP proof boundary, public engine authority, focused technical contracts, coding/tooling rules, platform requirements, collaboration constraints, and work order from `main` only;
 - material preserved decisions have a traceable classification;
 - no authoritative document silently contradicts a retained preserved decision; and
 - no unresolved implementation-blocking decision remains.
@@ -101,13 +106,33 @@ This documentation set establishes and closes the Step 0 authority baseline. Ste
 
 ### Step 1 — Establish the browser-only repository scaffold
 
-**Objective:** Create the smallest browser application that proves the build and test toolchain.
+**Objective:** Create the smallest browser application that proves the build,
+test, lint, documentation, formatting, dependency, and cross-platform
+command-line toolchain.
 
-**Outcome:** The repository has the browser scaffold, project metadata, ignore rules, a root README, and one minimal page and test.
+**Outcome:** The repository has the browser scaffold, pinned Node.js and pnpm
+metadata, committed lockfile, ignore and text-normalization rules, ESLint flat
+configuration, Prettier, dependency-cruiser, TSDoc/TypeDoc validation, a root
+README, and one minimal documented page and test. Package scripts expose the
+canonical commands in `docs/CODING_STYLE.md` without OS-specific wrappers.
 
-**Exit gate:** Development, test, and production build paths work. The repository contains no generated tracked files. The root README points to the documentation index.
+**Exit gate:** A clean checkout completes `pnpm install --frozen-lockfile`,
+`pnpm check`, and `pnpm build` without prompts or tracked-file mutation in one
+native Windows environment and one Linux environment. `pnpm dev` and the
+explicit watch command are the only interactive paths. The repository contains
+no line-ending-only diffs, shell-specific required scripts, or CI-only build
+logic, and it tracks no generated build output. Only a generated contractual
+fixture or reviewed API report explicitly required by an authoritative
+specification may be tracked. The root README points to the documentation index
+and accurately lists the available commands. Record a macOS smoke run when a
+macOS environment is available; do not block Step 1 solely because it is not.
 
-See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
+There is no CI workflow requirement in Step 1. When CI is introduced, Linux runs
+the same frozen-install, check, and build commands.
+
+See [`docs/CODING_STYLE.md`](docs/CODING_STYLE.md),
+[`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md), and
+[`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
 ### Step 2 — Implement the pure Block domain
 
@@ -285,6 +310,7 @@ The plan is complete when the browser prototype satisfies the MVP contract and a
 - one active rich-text editor preserves canonical text, intrinsic marks, and protected Origin;
 - semantic edit grouping remains separate from prompt durable Contributions and preserves controlled transition, failure, and retry rules;
 - verification covers data loss, hostile input, corruption, conflicts, History, checkpoints, restore, and interchange round trips;
+- the canonical clean-checkout command sequence succeeds on required Windows and Linux environments, remains macOS-compatible by design, and is the only future Linux CI path;
 - current documentation describes the clean-slate application; and
 - no deferred infrastructure has been introduced without passing its decision gate.
 

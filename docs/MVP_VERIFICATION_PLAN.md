@@ -56,6 +56,45 @@ The accepted reconciliation closes Step 0. A separate Elaboration carrier gate m
 
 The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures. It records exact dependency versions, license review, adapter complexity, representative target devices, performance budgets, measurements, and the selection rationale. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
 
+### 4.1 Step 1 tooling and platform evidence
+
+Before Step 1 exits, verify the coding/tooling contract in `CODING_STYLE.md`.
+From clean checkouts, run this exact sequence:
+
+```text
+pnpm install --frozen-lockfile
+pnpm check
+pnpm build
+```
+
+Retain successful evidence from one native Windows environment and one Linux
+environment. The Linux environment can be native, a disposable VM, or a
+container; the Windows run must exercise native Windows package-script behavior
+rather than WSL. Run a macOS smoke check when hardware or a hosted environment is
+available, but absence of that optional evidence does not block Step 1.
+
+Verify that:
+
+- package, Node.js, and pnpm versions are pinned as specified;
+- the lockfile is committed and frozen installation does not change it;
+- `pnpm test` runs once and exits while only `pnpm test:watch` watches;
+- ESLint uses flat typed configuration and accepts zero warnings;
+- TSDoc syntax, exported-API documentation, internal links, documentation paths,
+  and exported-symbol references validate with warnings treated as failures;
+- Prettier check performs no write and repository text is UTF-8/LF;
+- dependency-cruiser rejects cycles and forbidden architectural edges;
+- import path spelling works on a case-sensitive Linux filesystem;
+- required scripts use no OS-specific shell, utility, path, symlink, permission,
+  environment-assignment, or glob assumption;
+- the production build performs no unexpected outbound request;
+- `pnpm check` and `pnpm build` are non-interactive and leave tracked source
+  unchanged; and
+- the root README documents commands and platform tiers accurately.
+
+There is no current CI pass to verify. When CI is added, its Linux job must call
+the same canonical sequence; a separate CI-only build or test path fails this
+contract.
+
 ## 5. Domain and structural verification
 
 Verify at least:

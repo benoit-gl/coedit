@@ -14,6 +14,7 @@ Use these focused authorities first:
 - [`MVP_CONTRACT.md`](MVP_CONTRACT.md) for the MVP proof boundary;
 - [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) for public engine behavior and component authority;
 - [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for formatting, Origin, clipboard, and comment-target behavior;
+- [`CODING_STYLE.md`](CODING_STYLE.md) for source structure, TSDoc, linting, formatting, dependency checks, package commands, and platform portability;
 - [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md) for Markdown import/export and round-trip behavior;
 - [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md) for `.coedit` serialization and validation;
 - [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md) for IndexedDB repository, recovery, multi-tab, and quota behavior;
@@ -39,7 +40,23 @@ Use:
 - DOMPurify or an equivalently reviewed sanitizer at DOM/clipboard boundaries; and
 - IndexedDB for the browser-local engine repository.
 
-Pin the package manager and dependency versions when Step 1 creates the scaffold.
+Step 1 pins the supported Node.js range and pnpm version in project metadata,
+commits the lockfile, and implements the canonical command set in
+`CODING_STYLE.md`. The same package scripts must work from native Windows and
+Linux command lines and remain macOS-compatible by design. They must not require
+an IDE, Bash on Windows, PowerShell on Unix, WSL, Docker, native packaging, or a
+CI-only wrapper.
+
+Use ESLint flat configuration with type-aware typescript-eslint, the accepted
+React, accessibility, and TSDoc plugins, and `eslint-config-prettier`. Run
+Prettier separately and dependency-cruiser as the architectural import/cycle
+check. Enable strict TypeScript and the reviewed additional compiler rules in
+`CODING_STYLE.md`. Add UTF-8/LF `.editorconfig` and `.gitattributes` policy so
+the required operating systems do not generate line-ending-only changes.
+
+There is no CI implementation in the current baseline. A future Linux CI
+process runs `pnpm install --frozen-lockfile`, `pnpm check`, and `pnpm build`;
+those commands cannot contain logic that works only in CI.
 
 Step 3 qualifies pinned Yjs v13 against pinned Automerge using the common suite in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`. Track Yjs v14 only after a stable release. Use Loro as a cursor/movable-tree benchmark, not a current production dependency. Do not make the provisional Yjs choice part of a public API or freeze carrier-specific `.coedit` bytes before qualification.
 
