@@ -11,7 +11,6 @@ rewriting history.
 
 ## Index
 
-| ADR | Status | Subject |
-|---|---|---|
+| ADR                                                                                                    | Status   | Subject                                                                                                   |
+| ------------------------------------------------------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------- |
 | [`0001-collaborative-content-provenance-history.md`](0001-collaborative-content-provenance-history.md) | Accepted | Intrinsic rich-text metadata, provenance, comments, causal History, persistence, and technology direction |
-

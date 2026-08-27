@@ -1,39 +1,45 @@
 # Coedit
 
-Coedit is currently at the documented clean-slate, pre-scaffold stage of a
-browser-first collaborative document engine.
+Coedit is a browser-first collaborative document engine. The repository now contains the Step 1 browser scaffold. The document domain is the next implementation step.
 
-The authoritative documentation index is [`docs/README.md`](docs/README.md).
-The ordered implementation plan is [`SCAFFOLDING_PLAN.md`](SCAFFOLDING_PLAN.md).
+The authoritative documentation index is [`docs/README.md`](docs/README.md). The ordered implementation plan is [`SCAFFOLDING_PLAN.md`](SCAFFOLDING_PLAN.md).
 
-## Development status
+## Requirements
 
-Application source and package metadata have not yet been scaffolded. The
-commands below are requirements for Step 1, not commands that are currently
-available in this checkout.
+Use Node.js `>=22.13.0 <25`. Node.js includes npm, which is the repository bootstrap interface. No global pnpm installation is required.
 
-The project must build and run from the command line on native Windows and Linux.
-macOS is an intended supported developer platform. Future CI will run on Linux,
-using the same package commands developers use locally; there is no CI workflow
-at present.
+The repository pins pnpm `11.24.0` in `package.json`. `npm run bootstrap` obtains that exact pnpm version through `npm exec` and uses it with the committed `pnpm-lock.yaml`. Do not use `npm install` for project dependencies.
 
-After Step 1, the canonical clean-checkout verification sequence will be:
+Windows and Linux are required native development platforms. macOS is an intended supported platform. The commands below use package scripts and do not require an OS-specific shell.
+
+## Commands
+
+- `npm run bootstrap` installs project dependencies through the pinned pnpm version.
+- `npm run dev` starts the Vite development server.
+- `npm run build` type-checks and builds the production browser application.
+- `npm run preview` serves the production build locally over HTTP.
+- `npm run test` runs the test suite once.
+- `npm run test:watch` starts the explicit test watcher.
+- `npm run typecheck` runs TypeScript checks.
+- `npm run lint` runs ESLint and accepts zero warnings.
+- `npm run lint:deps` runs dependency-cruiser architecture checks.
+- `npm run format` applies Prettier.
+- `npm run format:check` checks formatting without writing.
+- `npm run docs:check` validates TSDoc and TypeDoc input without writing generated documentation.
+- `npm run check` runs the complete non-interactive verification set.
+
+For a clean checkout, use:
 
 ```text
-pnpm install --frozen-lockfile
-pnpm check
-pnpm build
+npm run bootstrap
+npm run check
+npm run build
 ```
 
-`pnpm check` will cover formatting, type checking, semantic linting,
-architectural dependency rules, source-documentation validation, and tests. See
-[`docs/CODING_STYLE.md`](docs/CODING_STYLE.md) for the complete command,
-linting, formatting, documentation, and portability contract.
+After `npm run build`, use `npm run preview` to inspect `dist` in a browser. Do not open `dist/index.html` through `file://`; browsers block the ES modules in that mode. The build uses relative asset URLs so a static HTTP host can mount `dist` below an arbitrary URL prefix.
+
+See [`docs/CODING_STYLE.md`](docs/CODING_STYLE.md) for the complete engineering contract.
 
 ## Preserved experiment
 
-The earlier Tauri experiment remains on `tauri-experimental-orphan` as read-only
-evidence. Do not merge, rebase, reset, or commit to that branch. Consult
-[`docs/PRESERVED_BRANCH_RECONCILIATION.md`](docs/PRESERVED_BRANCH_RECONCILIATION.md)
-before reusing behavior or tests from it.
-
+The earlier Tauri experiment remains on `tauri-experimental-orphan` as read-only evidence. Do not merge, rebase, reset, or commit to that branch. Consult [`docs/PRESERVED_BRANCH_RECONCILIATION.md`](docs/PRESERVED_BRANCH_RECONCILIATION.md) before you reuse behavior or tests from it.

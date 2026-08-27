@@ -111,7 +111,10 @@ interface CommandRequest {
 }
 
 type DocumentCommand =
-  | { readonly kind: "operations"; readonly operations: readonly DocumentOperation[] }
+  | {
+      readonly kind: "operations";
+      readonly operations: readonly DocumentOperation[];
+    }
   | {
       readonly kind: "importMarkdown";
       readonly operations: readonly DocumentOperation[];
@@ -127,19 +130,35 @@ interface CommandReceipt {
 }
 
 interface DocumentEngine {
-  execute(request: CommandRequest): Promise<Result<CommandReceipt, CommandError>>;
+  execute(
+    request: CommandRequest,
+  ): Promise<Result<CommandReceipt, CommandError>>;
   currentVersion(): Promise<VersionToken>;
-  query(request: DocumentQuery): Promise<Result<Versioned<DocumentProjection>, QueryError>>;
-  listHistory(request: HistoryListQuery): Promise<Result<HistoryPage, QueryError>>;
-  summarizeChanges(request: ChangesetQuery): Promise<Result<ChangesetSummary, QueryError>>;
-  materialize(version: VersionToken): Promise<Result<Versioned<MaterializedDocument>, QueryError>>;
-  serializePortableDocument(request: SerializeRequest): Promise<Result<PortableDocument, SerializationError>>;
+  query(
+    request: DocumentQuery,
+  ): Promise<Result<Versioned<DocumentProjection>, QueryError>>;
+  listHistory(
+    request: HistoryListQuery,
+  ): Promise<Result<HistoryPage, QueryError>>;
+  summarizeChanges(
+    request: ChangesetQuery,
+  ): Promise<Result<ChangesetSummary, QueryError>>;
+  materialize(
+    version: VersionToken,
+  ): Promise<Result<Versioned<MaterializedDocument>, QueryError>>;
+  serializePortableDocument(
+    request: SerializeRequest,
+  ): Promise<Result<PortableDocument, SerializationError>>;
   subscribe(listener: DocumentChangedListener): Unsubscribe;
 }
 
 interface DocumentEngineFactory {
-  create(request: CreateDocumentRequest): Promise<Result<DocumentEngine, CreateError>>;
-  openPortableDocument(input: PortableDocumentInput): Promise<Result<DocumentEngine, OpenError>>;
+  create(
+    request: CreateDocumentRequest,
+  ): Promise<Result<DocumentEngine, CreateError>>;
+  openPortableDocument(
+    input: PortableDocumentInput,
+  ): Promise<Result<DocumentEngine, OpenError>>;
 }
 
 interface PortableDocument {

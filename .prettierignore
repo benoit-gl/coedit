@@ -1,0 +1,6 @@
+node_modules
+dist
+coverage
+docs/api
+pnpm-lock.yaml
+*.tsbuildinfo

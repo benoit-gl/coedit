@@ -1,7 +1,7 @@
 # Coding, documentation, and command-line standard
 
-**Status:** Accepted pre-scaffold engineering contract. Step 1 must implement
-and verify the configuration described here.
+**Status:** Accepted engineering contract. Step 1 implements and verifies the
+configuration described here.
 
 ## 1. Purpose and authority
 
@@ -183,6 +183,10 @@ Inline disable comments must name the smallest possible rule and include a
 reason. Unused disable directives are errors. File-wide disables and reductions
 of an error to a warning require a recorded exception in this document.
 
+ESLint must exclude generated build output, generated documentation, coverage,
+dependencies, and other generated artifacts from source linting. Do not change
+generated bundles only to satisfy source lint rules.
+
 ## 7. Automatic formatting and text normalization
 
 Use Prettier as a separate formatter. Do not run it as an ESLint rule. The
@@ -211,17 +215,19 @@ without an IDE.
 
 Platform tiers are:
 
-| Tier | Requirement |
-|---|---|
+| Tier    | Requirement                                                                                             |
+| ------- | ------------------------------------------------------------------------------------------------------- |
 | Windows | Required native developer platform. Commands work from PowerShell or `cmd.exe` through package scripts. |
-| Linux | Required developer and future CI platform. |
-| macOS | Intended supported developer platform; use the same commands and avoid known incompatibilities. |
+| Linux   | Required developer and future CI platform.                                                              |
+| macOS   | Intended supported developer platform; use the same commands and avoid known incompatibilities.         |
 
 Step 1 pins the Node.js runtime range and pnpm version in project metadata and
-commits the lockfile. A clean checkout uses the same package scripts on every
-platform. Do not require a global IDE extension, Bash on Windows, PowerShell on
-Unix, WSL, Docker, or a native compiler merely to build and test the browser
-application.
+commits the pnpm lockfile. Node.js and its bundled npm are the only required
+global runtime and package-management tools. A clean checkout starts with
+`npm run bootstrap`, which obtains the pinned pnpm version through `npm exec` and
+runs the frozen pnpm install. Do not require a global pnpm installation,
+Corepack, a global IDE extension, Bash on Windows, PowerShell on Unix, WSL,
+Docker, or a native compiler merely to build and test the browser application.
 
 Package scripts must invoke Node-based CLIs or cross-platform Node scripts. Do
 not depend on:
@@ -238,27 +244,40 @@ Use Node path/URL and filesystem APIs for custom automation. Prefer configuratio
 files and CLI arguments over environment variables; use a reviewed cross-platform
 helper only when an environment variable is genuinely necessary.
 
+The production browser build must not assume deployment at the URL root. Use a
+relative Vite base so generated asset URLs remain relative to the generated HTML.
+Keep production minification enabled and emit external source maps so browser
+devtools can map the production bundle back to the original source. Source maps
+are generated output and are not tracked or source-linted. Use `npm run preview`
+to inspect `dist` locally over HTTP. Direct `file://` execution is not a supported
+browser path because the build uses native ES modules.
+
 ## 9. Required package commands
 
-Step 1 must provide these non-OS-specific commands:
+Step 1 must provide these non-OS-specific commands. npm is the public command
+interface; pnpm remains the pinned dependency resolver and lockfile owner.
 
-| Command | Contract |
-|---|---|
-| `pnpm dev` | Starts the interactive Vite development server. |
-| `pnpm build` | Produces the production browser build non-interactively. |
-| `pnpm test` | Runs the complete default test suite once and exits. |
-| `pnpm test:watch` | Runs the explicitly interactive local test watcher. |
-| `pnpm typecheck` | Runs TypeScript checking without relying on a production emit. |
-| `pnpm lint` | Runs ESLint with zero warnings accepted. |
-| `pnpm lint:deps` | Runs dependency-cruiser architectural checks. |
-| `pnpm format` | Applies Prettier to supported files. |
-| `pnpm format:check` | Checks formatting without writing. |
-| `pnpm docs:check` | Validates TSDoc and generated API-reference inputs without tracking generated HTML. |
-| `pnpm check` | Runs all non-interactive format, type, lint, dependency, documentation, and test gates. |
+| Command                | Contract                                                                                |
+| ---------------------- | --------------------------------------------------------------------------------------- |
+| `npm run bootstrap`    | Obtains pinned pnpm through npm and performs the frozen dependency install.             |
+| `npm run dev`          | Starts the interactive Vite development server.                                         |
+| `npm run build`        | Produces the production browser build non-interactively.                                |
+| `npm run preview`      | Serves the production build locally over HTTP for interactive inspection.               |
+| `npm run test`         | Runs the complete default test suite once and exits.                                    |
+| `npm run test:watch`   | Runs the explicitly interactive local test watcher.                                     |
+| `npm run typecheck`    | Runs TypeScript checking without relying on a production emit.                          |
+| `npm run lint`         | Runs ESLint with zero warnings accepted.                                                |
+| `npm run lint:deps`    | Runs dependency-cruiser architectural checks.                                           |
+| `npm run format`       | Applies Prettier to supported files.                                                    |
+| `npm run format:check` | Checks formatting without writing.                                                      |
+| `npm run docs:check`   | Validates TSDoc and generated API-reference inputs without tracking generated HTML.     |
+| `npm run check`        | Runs all non-interactive format, type, lint, dependency, documentation, and test gates. |
 
-`pnpm install --frozen-lockfile`, `pnpm check`, and `pnpm build` are the canonical
-clean-checkout verification sequence. No command may prompt, enter watch mode,
-open a browser, or mutate tracked source during this sequence.
+`npm run bootstrap`, `npm run check`, and `npm run build` are the canonical
+clean-checkout verification sequence. The bootstrap command must use the exact
+pnpm version pinned by the project and must not require pnpm to be installed
+globally. No command may prompt, enter watch mode, open a browser, or mutate
+tracked source during this sequence.
 
 ## 10. CI and platform verification
 

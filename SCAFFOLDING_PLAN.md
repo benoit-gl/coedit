@@ -35,12 +35,12 @@ The complete experimental implementation remains on `tauri-experimental-orphan`.
 
 The plan uses a RUP-inspired lifecycle. It does not require the complete Rational Unified Process artifact set. Each implementation step is an iteration that must end in usable and verified evidence.
 
-| Phase | Steps | Purpose |
-|---|---:|---|
-| Inception | 0 | Reconcile scope, decisions, authority, and known design blockers. |
-| Elaboration | 1-6 | Establish executable architecture and retire the main technical risks. |
-| Construction | 7-11 | Build and verify the browser vertical slice. |
-| Transition and assessment | 12 | Measure the prototype and decide whether new infrastructure is justified. |
+| Phase                     | Steps | Purpose                                                                   |
+| ------------------------- | ----: | ------------------------------------------------------------------------- |
+| Inception                 |     0 | Reconcile scope, decisions, authority, and known design blockers.         |
+| Elaboration               |   1-6 | Establish executable architecture and retire the main technical risks.    |
+| Construction              |  7-11 | Build and verify the browser vertical slice.                              |
+| Transition and assessment |    12 | Measure the prototype and decide whether new infrastructure is justified. |
 
 Minimum protected Origin and lineage invariants are MVP foundation. Provenance visualization/analytics/authentication/signing, comments, durable discussions, AI-provider integration, and networked collaboration are post-MVP work. They are not hidden completion criteria for this plan.
 
@@ -111,24 +111,26 @@ test, lint, documentation, formatting, dependency, and cross-platform
 command-line toolchain.
 
 **Outcome:** The repository has the browser scaffold, pinned Node.js and pnpm
-metadata, committed lockfile, ignore and text-normalization rules, ESLint flat
-configuration, Prettier, dependency-cruiser, TSDoc/TypeDoc validation, a root
-README, and one minimal documented page and test. Package scripts expose the
-canonical commands in `docs/CODING_STYLE.md` without OS-specific wrappers.
+metadata, npm-based pnpm bootstrap, committed lockfile, ignore and
+text-normalization rules, ESLint flat configuration, Prettier,
+dependency-cruiser, TSDoc/TypeDoc validation, a root README, and one minimal
+documented page and test. Package scripts expose the canonical commands in
+`docs/CODING_STYLE.md` without OS-specific wrappers or a global pnpm
+prerequisite.
 
-**Exit gate:** A clean checkout completes `pnpm install --frozen-lockfile`,
-`pnpm check`, and `pnpm build` without prompts or tracked-file mutation in one
-native Windows environment and one Linux environment. `pnpm dev` and the
-explicit watch command are the only interactive paths. The repository contains
-no line-ending-only diffs, shell-specific required scripts, or CI-only build
-logic, and it tracks no generated build output. Only a generated contractual
-fixture or reviewed API report explicitly required by an authoritative
-specification may be tracked. The root README points to the documentation index
-and accurately lists the available commands. Record a macOS smoke run when a
-macOS environment is available; do not block Step 1 solely because it is not.
+**Exit gate:** A clean checkout completes `npm run bootstrap`, `npm run check`,
+and `npm run build` without prompts or tracked-file mutation in one native
+Windows environment and one Linux environment. `npm run dev`, `npm run preview`,
+and the explicit watch command are the interactive paths. The repository contains no
+line-ending-only diffs, shell-specific required scripts, or CI-only build logic,
+and it tracks no generated build output. Only a generated contractual fixture or
+reviewed API report explicitly required by an authoritative specification may be
+tracked. The root README points to the documentation index and accurately lists
+the available commands. Record a macOS smoke run when a macOS environment is
+available; do not block Step 1 solely because it is not.
 
 There is no CI workflow requirement in Step 1. When CI is introduced, Linux runs
-the same frozen-install, check, and build commands.
+the same bootstrap, check, and build commands.
 
 See [`docs/CODING_STYLE.md`](docs/CODING_STYLE.md),
 [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md), and
