@@ -1,0 +1,28 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src"],
+  "entryPointStrategy": "expand",
+  "exclude": ["**/*.test.ts", "**/*.test.tsx"],
+  "emit": "none",
+  "readme": "none",
+  "treatWarningsAsErrors": true,
+  "validation": {
+    "invalidLink": true,
+    "invalidPath": true,
+    "notDocumented": true,
+    "notExported": true,
+    "rewrittenLink": true
+  },
+  "requiredToBeDocumented": [
+    "Enum",
+    "EnumMember",
+    "Variable",
+    "Function",
+    "Class",
+    "Interface",
+    "Property",
+    "Method",
+    "Accessor",
+    "TypeAlias"
+  ]
+}

@@ -62,9 +62,9 @@ Before Step 1 exits, verify the coding/tooling contract in `CODING_STYLE.md`.
 From clean checkouts, run this exact sequence:
 
 ```text
-pnpm install --frozen-lockfile
-pnpm check
-pnpm build
+npm run bootstrap
+npm run check
+npm run build
 ```
 
 Retain successful evidence from one native Windows environment and one Linux
@@ -76,9 +76,12 @@ available, but absence of that optional evidence does not block Step 1.
 Verify that:
 
 - package, Node.js, and pnpm versions are pinned as specified;
+- npm is sufficient to bootstrap the exact pinned pnpm version, with no global
+  pnpm or Corepack prerequisite;
 - the lockfile is committed and frozen installation does not change it;
-- `pnpm test` runs once and exits while only `pnpm test:watch` watches;
-- ESLint uses flat typed configuration and accepts zero warnings;
+- `npm run test` runs once and exits while only `npm run test:watch` watches;
+- ESLint uses flat typed configuration, accepts zero warnings, and excludes
+  generated build output from source linting;
 - TSDoc syntax, exported-API documentation, internal links, documentation paths,
   and exported-symbol references validate with warnings treated as failures;
 - Prettier check performs no write and repository text is UTF-8/LF;
@@ -87,8 +90,13 @@ Verify that:
 - required scripts use no OS-specific shell, utility, path, symlink, permission,
   environment-assignment, or glob assumption;
 - the production build performs no unexpected outbound request;
-- `pnpm check` and `pnpm build` are non-interactive and leave tracked source
-  unchanged; and
+- the production build emits relative asset URLs, keeps JavaScript minified, and
+  emits usable external source maps for the JavaScript bundles;
+- `npm run preview` serves the production build locally over HTTP;
+- `npm run check` and `npm run build` are non-interactive and leave tracked
+  source unchanged;
+- after `npm run build` creates `dist`, a subsequent `npm run check` still passes
+  without linting generated bundle files; and
 - the root README documents commands and platform tiers accurately.
 
 There is no current CI pass to verify. When CI is added, its Linux job must call

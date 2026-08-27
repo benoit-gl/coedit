@@ -99,12 +99,12 @@ may be UX-adjacent, but its channel remains separate and ephemeral.
 
 ## 3. Four distinct kinds of state
 
-| Layer | Purpose | Portable/product History? |
-|---|---|---|
-| Logical document | Blocks, InlineContents, tags, CollaborativeContent, Origins, durable comments/overlays | Yes |
-| Product History | Immutable attributed Contributions and materializable Versions | Yes |
-| Replication state | CRDT identities, tombstones/delete sets, causal metadata, state vectors | Only what exact recovery/convergence requires |
-| Presence | Online state, cursors, selections, typing indicators | No |
+| Layer             | Purpose                                                                                | Portable/product History?                     |
+| ----------------- | -------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Logical document  | Blocks, InlineContents, tags, CollaborativeContent, Origins, durable comments/overlays | Yes                                           |
+| Product History   | Immutable attributed Contributions and materializable Versions                         | Yes                                           |
+| Replication state | CRDT identities, tombstones/delete sets, causal metadata, state vectors                | Only what exact recovery/convergence requires |
+| Presence          | Online state, cursors, selections, typing indicators                                   | No                                            |
 
 These layers may be stored together internally, but their semantics must remain
 separate.
@@ -526,7 +526,7 @@ checkpoints. Contract tests and types keep all of these private.
 9. Implement fully offline Block-tree convergence only if product evidence
    justifies its complexity.
 10. Add or tune checkpoints, deltas, structural sharing, and compaction without
-   changing frontend behavior.
+    changing frontend behavior.
 
 No network phase begins merely because carrier text synchronization works. The
 History/convergence and structural-conflict gates must pass together.

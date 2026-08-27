@@ -151,17 +151,17 @@ formatting never changes origin.
 
 Each operation follows these rules:
 
-| Operation | Content origin | Contribution actor and derivation |
-|---|---|---|
-| Human typing or replacement | New human Origin for newly inserted material | Acting human |
-| Markdown or external file import | Imported or unknown Origin with source metadata | Human/system actor that initiated the import; source is not impersonated as actor |
-| Same-document internal paste | Preserve each source Origin; new carrier items | Paster; derive from source content/Version |
-| External plain/HTML paste | New imported or unknown Origin | Paster; record external-paste activity and available source metadata |
-| Move | Preserve carrier state and Origin | Mover |
-| Entity copy | New entity and carrier item IDs; preserve Origins | Copier; derive from source entity/Version |
-| Restore | Fresh carrier item IDs for reinserted material; preserve historical Origins | Restoring actor; derive from target Version |
-| AI generation | AI/software-agent Origin | AI execution Contribution; later human acceptance is separate |
-| Formatting-only change | Preserve Origin | Formatting actor |
+| Operation                        | Content origin                                                              | Contribution actor and derivation                                                 |
+| -------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Human typing or replacement      | New human Origin for newly inserted material                                | Acting human                                                                      |
+| Markdown or external file import | Imported or unknown Origin with source metadata                             | Human/system actor that initiated the import; source is not impersonated as actor |
+| Same-document internal paste     | Preserve each source Origin; new carrier items                              | Paster; derive from source content/Version                                        |
+| External plain/HTML paste        | New imported or unknown Origin                                              | Paster; record external-paste activity and available source metadata              |
+| Move                             | Preserve carrier state and Origin                                           | Mover                                                                             |
+| Entity copy                      | New entity and carrier item IDs; preserve Origins                           | Copier; derive from source entity/Version                                         |
+| Restore                          | Fresh carrier item IDs for reinserted material; preserve historical Origins | Restoring actor; derive from target Version                                       |
+| AI generation                    | AI/software-agent Origin                                                    | AI execution Contribution; later human acceptance is separate                     |
+| Formatting-only change           | Preserve Origin                                                             | Formatting actor                                                                  |
 
 There is no `restored` origin kind. Restore is an activity, not an authorship
 category.

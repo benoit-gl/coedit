@@ -214,8 +214,15 @@ type StructuralOperation =
       readonly inlineContentId: InlineContentId;
       readonly index: number;
     }
-  | { readonly kind: "DeleteInlineContent"; readonly inlineContentId: InlineContentId }
-  | { readonly kind: "SetBlockTags"; readonly blockId: BlockId; readonly tags: readonly string[] }
+  | {
+      readonly kind: "DeleteInlineContent";
+      readonly inlineContentId: InlineContentId;
+    }
+  | {
+      readonly kind: "SetBlockTags";
+      readonly blockId: BlockId;
+      readonly tags: readonly string[];
+    }
   | {
       readonly kind: "SetInlineContentTags";
       readonly inlineContentId: InlineContentId;
