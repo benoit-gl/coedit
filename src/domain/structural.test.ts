@@ -408,9 +408,7 @@ function expectFailure(
 }
 
 function expectFailureResult(
-  result:
-    | ReturnType<typeof applyStructuralOperations>
-    | ReturnType<typeof validateDocument>,
+  result: ReturnType<typeof validateDocument>,
   kind: string,
 ): void {
   expect(result.ok).toBe(false);
