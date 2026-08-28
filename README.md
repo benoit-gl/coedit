@@ -1,6 +1,6 @@
 # Coedit
 
-Coedit is a browser-first collaborative document engine. The repository contains the completed Step 1 browser scaffold. Step 2, the pure Block domain, is ready for implementation.
+Coedit is a browser-first collaborative document engine. The repository contains the completed Step 1 browser scaffold and the Step 2 pure Block domain. Step 3, attributed CollaborativeContent qualification and implementation, is the next implementation step.
 
 The authoritative documentation index is [`docs/README.md`](docs/README.md). The ordered implementation plan is [`SCAFFOLDING_PLAN.md`](SCAFFOLDING_PLAN.md).
 
