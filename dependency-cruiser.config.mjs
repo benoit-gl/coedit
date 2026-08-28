@@ -19,6 +19,12 @@ export default {
       from: { pathNot: "\\.(?:test|spec)\\.[cm]?[jt]sx?$" },
       to: { path: "\\.(?:test|spec)\\.[cm]?[jt]sx?$" },
     },
+    {
+      name: "domain-does-not-depend-on-outer-source",
+      severity: "error",
+      from: { path: "^src/domain(?:/|$)" },
+      to: { path: "^src/(?!domain(?:/|$))" },
+    },
   ],
   options: {
     doNotFollow: { path: "node_modules" },

@@ -1,6 +1,6 @@
 # Coedit
 
-Coedit is a browser-first collaborative document engine. The repository contains the completed Step 1 browser scaffold. Step 2, the pure Block domain, is ready for implementation.
+Coedit is a browser-first collaborative document engine. The repository contains the completed Step 1 browser scaffold and the Step 2 pure Block domain. Step 3, attributed CollaborativeContent qualification and implementation, is the next implementation step.
 
 The authoritative documentation index is [`docs/README.md`](docs/README.md). The ordered implementation plan is [`SCAFFOLDING_PLAN.md`](SCAFFOLDING_PLAN.md).
 
@@ -38,7 +38,7 @@ npm run build
 
 After `npm run build`, use `npm run preview` to inspect `dist` in a browser. Do not open `dist/index.html` through `file://`; browsers block the ES modules in that mode. The build uses relative asset URLs so a static HTTP host can mount `dist` below an arbitrary URL prefix.
 
-See [`docs/CODING_STYLE.md`](docs/CODING_STYLE.md) for the complete engineering contract.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the contributor contract, definition of done, test requirements, and pull-request hygiene.
 
 ## Preserved experiment
 
