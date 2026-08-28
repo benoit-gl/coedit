@@ -1,0 +1,42 @@
+
+> coedit@0.1.0 check
+> npm run format:check && npm run typecheck && npm run lint && npm run lint:deps && npm run docs:check && npm run test
+
+
+> coedit@0.1.0 format:check
+> prettier --check .
+
+Checking formatting...
+All matched files use Prettier code style!
+
+> coedit@0.1.0 typecheck
+> tsc --noEmit
+
+
+> coedit@0.1.0 lint
+> eslint . --max-warnings 0
+
+
+/home/runner/work/coedit/coedit/src/domain/structural.test.ts
+  413:7  error  Union type constituent is duplicated with ReturnType<typeof applyStructuralOperations>  @typescript-eslint/no-duplicate-type-constituents
+
+✖ 1 problem (1 error, 0 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+
+
+CHECK_EXIT=1
+
+> coedit@0.1.0 build
+> tsc --noEmit && vite build
+
+[36mvite v7.3.6 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32m✓[39m 30 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mindex.html                 [39m[1m[2m  0.47 kB[22m[1m[22m[2m │ gzip:  0.29 kB[22m
+[2mdist/[22m[2massets/[22m[35mindex-DnB-uxMd.css  [39m[1m[2m  0.67 kB[22m[1m[22m[2m │ gzip:  0.43 kB[22m
+[2mdist/[22m[2massets/[22m[36mindex-D2C-34Jm.js   [39m[1m[2m193.71 kB[22m[1m[22m[2m │ gzip: 60.90 kB[22m[2m │ map: 911.52 kB[22m
+[32m✓ built in 979ms[39m
+
+BUILD_EXIT=0
