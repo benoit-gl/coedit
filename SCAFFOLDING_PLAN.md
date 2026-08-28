@@ -1,6 +1,6 @@
 # Coedit document-engine MVP scaffolding plan
 
-**Status:** Accepted implementation plan; Steps 0-1 are complete and Step 2 is ready for implementation.
+**Status:** Accepted implementation plan; Steps 0-2 are complete and Step 3 is next.
 
 **Target branch:** `main`
 
@@ -102,7 +102,7 @@ The former `TextAnchor` blocker is resolved. Formatting uses native collaborativ
 - no authoritative document silently contradicts a retained preserved decision; and
 - no unresolved implementation-blocking decision remains.
 
-This documentation set establishes and closes the Step 0 authority baseline. Step 1 subsequently established the browser scaffold. Step 2 can proceed; carrier-dependent Step 3 implementation and `.coedit` version-1 freeze remain behind the separate Elaboration carrier-qualification gate.
+This documentation set establishes and closes the Step 0 authority baseline. Steps 1 and 2 subsequently established the browser scaffold and pure Block domain. Step 3 is next; carrier-dependent implementation and `.coedit` version-1 freeze remain behind the separate Elaboration carrier-qualification gate.
 
 ### Step 1 — Establish the browser-only repository scaffold
 
@@ -140,7 +140,7 @@ See [`docs/CODING_STYLE.md`](docs/CODING_STYLE.md),
 
 **Objective:** Establish the recursive document structure and pure structural mutation model.
 
-**Outcome:** Tests can build and modify realistic Block trees through typed operations without React, Yjs, storage, or browser dependencies. Document/genesis construction creates the one real root outside the structural-operation model. InlineContents carry only a typed, opaque, valid empty `InlineContentValue`; structural code does not inspect content internals, and Step 3 expands that same type with attributed-content behavior.
+**Outcome:** Tests can build and modify realistic Block trees through typed operations without React, Yjs, storage, or browser dependencies. Document/genesis construction creates the one real root outside the structural-operation model. The root has no tags, InlineContents, or child Blocks at genesis. Durable entity UUID text uses one global namespace without type information in the UUID format. InlineContents carry only a typed, opaque, valid empty `InlineContentValue`; structural code does not inspect content internals, and Step 3 expands that same type with attributed-content behavior.
 
 **Exit gate:** Structural invariants, live-identity uniqueness, trusted ID allocation, root construction, empty InlineContent behavior, ordering, limits, and rollback behavior are verified at the domain boundary. Step 2 requires no lifetime-ID registry; History and portable validation later reject durable identity reuse across retained lifetimes.
 
@@ -260,7 +260,7 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 ### Gate A — Step 0 authority baseline
 
-Step 0 passes when the authority set, ADR rationale, and preserved-branch classifications are consistent and no normative external formatting/provenance anchor assumption remains. The current documentation records that decision, and Step 1 subsequently established the browser scaffold.
+Step 0 passes when the authority set, ADR rationale, and preserved-branch classifications are consistent and no normative external formatting/provenance anchor assumption remains. The current documentation records that decision, and Steps 1 and 2 subsequently established the browser scaffold and pure Block domain.
 
 ### Gate B — Attributed-content carrier qualification
 
