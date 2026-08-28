@@ -40,7 +40,7 @@ Use:
 - DOMPurify or an equivalently reviewed sanitizer at DOM/clipboard boundaries; and
 - IndexedDB for the browser-local engine repository.
 
-Step 1 pins the supported Node.js range and pnpm version in project metadata,
+The Step 1 scaffold pins the supported Node.js range and pnpm version in project metadata,
 commits the lockfile, and implements the canonical command set in
 `CODING_STYLE.md`. The same package scripts must work from native Windows and
 Linux command lines and remain macOS-compatible by design. They must not require
@@ -55,8 +55,8 @@ check. Enable strict TypeScript and the reviewed additional compiler rules in
 the required operating systems do not generate line-ending-only changes.
 
 There is no CI implementation in the current baseline. A future Linux CI
-process runs `pnpm install --frozen-lockfile`, `pnpm check`, and `pnpm build`;
-those commands cannot contain logic that works only in CI.
+process runs `npm run bootstrap`, `npm run check`, and `npm run build`; those
+commands cannot contain logic that works only in CI.
 
 Step 3 qualifies pinned Yjs v13 against pinned Automerge using the common suite in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`. Track Yjs v14 only after a stable release. Use Loro as a cursor/movable-tree benchmark, not a current production dependency. Do not make the provisional Yjs choice part of a public API or freeze carrier-specific `.coedit` bytes before qualification.
 
@@ -153,7 +153,11 @@ Use distinct branded TypeScript types for persisted identities. The MVP needs at
 - private `RevisionId`; and
 - optional `SessionId`.
 
-Persisted entity IDs use canonical lowercase UUID-v4 text at the wire boundary. Production generation uses Web Crypto. Tests inject valid deterministic ID sequences.
+All durable user-created and domain entity IDs use canonical lowercase UUID-v4 text at the wire boundary. Trusted construction or application code allocates IDs before it invokes pure domain behavior. Production allocation uses Web Crypto, tests inject valid deterministic sequences, and pure reducers never generate IDs.
+
+Step 2 rejects duplicate Block and InlineContent IDs in the live structural candidate. It does not keep deleted IDs, reserve submitted IDs, or maintain a lifetime-ID registry. After History exists, successful publication records enough retained identity use to reject reuse across retained lifetimes. Portable validation applies the same rule when opening a document. An ID supplied to a failed Step 2 operation group does not enter retained domain state.
+
+Identity reuse means assigning an existing durable ID to a different entity, record, or lifetime. Reusing a reference to the same immutable Origin record during copy or restore and exactly retrying the same successful `CommandId` are not identity reuse.
 
 Use one tag-normalization implementation for Block and InlineContent tags. Keep ownership separate.
 
@@ -181,6 +185,8 @@ All tree walks that can encounter user-controlled structure must be iterative an
 ## 5. Pure structural operations
 
 The logical entity shape is defined by `PRODUCT_DOMAIN_MODEL.md`.
+
+Create the initial document and its one real root through a trusted factory such as `createEmptyDocument(...)`. The factory receives already allocated durable IDs, validates the initial root, and returns a valid structural document. Root construction is not a structural operation. `CreateBlock` always creates a non-root child, so its `parentId` is required and must identify a live Block.
 
 Use these first structural operations:
 
@@ -235,7 +241,9 @@ type StructuralOperation =
     };
 ```
 
-`InlineContentValue` means the complete initial carrier-neutral CollaborativeContent state required by the accepted Step 3 model: text/hard breaks, intrinsic marks, and protected Origin. Its private representation is finalized by the carrier qualification gate. At the public human-edit boundary, creation supplies visible content and formatting intent and the engine assigns Origin from the attributed command context. A complete pre-attributed value is accepted only by validated internal import, copy, restore, or remote-integration paths; it is not a client Origin-spoofing surface.
+In Step 2, `InlineContentValue` is a typed, opaque, valid empty CollaborativeContent value. Obtain it through a typed trusted constructor rather than representing it with `{}`, `unknown`, raw text, or a partially attributed placeholder. Structural code can store, preserve, move, reorder, and delete it but must not inspect or manufacture content internals. This permits complete InlineContent structural behavior before a carrier is selected without creating partially valid attributed content.
+
+Step 3 expands the same `InlineContentValue` type with text, hard breaks, intrinsic marks, protected Origin, and carrier-neutral behavior. Its private carrier representation is finalized by the carrier qualification gate. At the public human-edit boundary, creation supplies visible content and formatting intent and the engine assigns Origin from the attributed command context. A complete pre-attributed value is accepted only by validated internal import, copy, restore, or remote-integration paths; it is not a client Origin-spoofing surface.
 
 Operation rules:
 
@@ -246,8 +254,9 @@ Operation rules:
 - operation groups apply sequentially to one detached candidate;
 - each operation sees the preceding operation result;
 - empty groups and no-effect operations are rejected;
-- reducers generate neither IDs nor clocks; and
-- a failed group publishes no state and reserves no new identity.
+- reducers generate neither IDs nor clocks;
+- reducers validate live identity uniqueness but keep no lifetime-ID registry; and
+- a failed group publishes no state and records no identity in retained domain state.
 
 `MoveInlineContent` only reorders within its current owner in the initial MVP. Cross-Block transfer can be expressed later through explicit product operations if required.
 
@@ -277,12 +286,12 @@ Private records can include:
 - append-only Contribution records;
 - append-only revision records;
 - one moving private head; and
-- document-lifetime ID reservation sets;
+- retained-lifetime ID-use indexes that reject durable identity reuse after successful publication;
 - immutable Origin records;
 - exact carrier effect/update chunks; and
 - physical recovery checkpoints.
 
-Genesis has sequence zero and no Contribution.
+Genesis has sequence zero, contains the initial root created by the document factory, and has no Contribution. The first successful user mutation after genesis creates the first Contribution and resulting Version.
 
 A new document requires at least one human Contributor. For the MVP, the UX asks for a free-form display name before session creation and supplies that Contributor to the engine factory. This does not create an account/profile model.
 

@@ -133,6 +133,10 @@ The clean-slate model requires these invariants:
 
 The implementation specification defines initial size, depth, ID, and validation limits.
 
+All durable user-created and domain entity identities use canonical lowercase UUID-v4 values. Trusted construction or application code allocates them; pure structural reducers never generate identities. The Step 2 domain rejects duplicate Block and InlineContent IDs in the live structure but keeps no lifetime-ID registry. Once History exists, it rejects reuse of an identity across retained lifetimes, and portable validation enforces the same rule when opening a document.
+
+Document/genesis construction creates the one real root through a trusted factory such as `createEmptyDocument(...)`. Root construction is not a structural mutation, and `CreateBlock` always creates a non-root child under a real parent. Genesis includes the initial root but no Contribution; the first successful user mutation creates the first Contribution.
+
 ### 3.3 Content role is contextual
 
 A Block does not persist a heading/body/list-item role. Incoming structural context determines how the selected InlineContent renders.
@@ -179,6 +183,8 @@ When one section contains both body material and subsections, transparent groupi
 `InlineContent` provides the identity required for editing, tags, content Origin, external comment targets, copies, and optional simultaneous representations.
 
 Most Blocks can contain one InlineContent. Zero contents are valid for grouping Blocks. Additional InlineContents exist only when the product needs simultaneous material.
+
+During Step 2, `InlineContentValue` is a typed, opaque, valid empty CollaborativeContent value. Structural operations can create, move, tag, reorder, and delete InlineContents without inspecting content internals. Step 3 expands the same type with text, hard breaks, formatting, Origin, and carrier-neutral behavior. No intermediate step creates partially valid attributed content.
 
 ### 4.2 No mandatory content role enum
 
@@ -371,7 +377,7 @@ The current ontology requires:
 
 ## 12. Open questions
 
-No product-domain question blocks Step 1. Yjs v13 versus Automerge is an explicit Elaboration implementation-qualification gate, not an unresolved domain decision.
+No product-domain question blocks Step 2. Its trusted identity allocation, root construction, and opaque valid-empty InlineContent boundary are fixed by the implementation specification. Yjs v13 versus Automerge is an explicit Step 3 Elaboration implementation-qualification gate, not an unresolved domain decision.
 
 Post-MVP or pre-network questions include:
 

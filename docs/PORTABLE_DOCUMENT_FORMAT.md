@@ -176,8 +176,10 @@ Contributor IDs are not authentication or a signature.
 
 Use these rules:
 
-- Persisted entity and record IDs are canonical lowercase UUID-v4 strings unless
-  their authoritative type defines another opaque representation.
+- Durable user-created and domain entity IDs are canonical lowercase UUID-v4
+  strings. Other persisted record IDs use the same representation unless their
+  authoritative type defines another opaque form. Trusted code allocates IDs;
+  pure reducers do not generate them.
 - `VersionToken` is public and opaque. The codec retains the private mapping
   needed to reproduce every advertised token after open.
 - Timestamps are canonical RFC 3339 UTC with millisecond precision:
@@ -189,6 +191,11 @@ Use these rules:
 - Unknown properties are rejected in format version 1.
 - Binary chunks use one exact base64 spelling selected by the final v1 codec;
   alternate or non-canonical spellings are rejected.
+
+Identity reuse means assigning an existing durable ID to a different entity,
+record, or lifetime. An ordinary reference to the same immutable record, such
+as an Origin retained by copy or restore, is not reuse. Neither is an exact
+idempotent retry of the same successful `CommandId`.
 
 ## 8. Contributor and Origin bootstrap
 
@@ -221,8 +228,8 @@ Treat portable input as hostile. Validate a detached copy in this order:
 3. carrier name/version/schema support and encoded binary shape;
 4. per-chunk decoded-size limit and SHA-256 content address;
 5. envelope corruption digest over the still-untrusted canonical payload;
-6. unique IDs, immutable-record conflicts, command-idempotency records, and
-   prohibited ID reuse;
+6. unique live IDs, immutable-record conflicts, command-idempotency records,
+   and prohibited durable identity reuse across retained lifetimes;
 7. Contribution graph/frontier acyclicity, parent/result references, retained
    Version mappings, current pointer, and reachability;
 8. Contributor, Origin, source, derivation, effect, and checkpoint references;
@@ -240,6 +247,10 @@ committing it to the browser repository.
 
 Verify retained History from genesis/frontier dependencies rather than trusting
 array or packet order.
+
+Genesis must contain the initial root and no Contribution. The first retained
+user mutation must be represented by the first Contribution rather than being
+folded into genesis.
 
 For each Contribution:
 

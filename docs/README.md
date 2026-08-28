@@ -40,13 +40,15 @@ Use the document with direct authority for the subject.
 
 When implementation evidence invalidates an accepted rule, update the responsible authority in the same change.
 
-## Step 0 status
+## Current implementation status
 
 The documentation authority, coding/tooling agreement, and preserved-decision reconciliation required by Step 0 are complete. Formatting is intrinsic collaborative metadata, origin provenance is protected content-native metadata, comments use explicit external targets, and ordinary selections remain transient. There is no general-purpose `TextAnchor` prerequisite for formatting or provenance.
 
-Step 1 establishes the browser scaffold. Step 2 implements the pure Block domain. Before carrier-dependent CollaborativeContent, History encoding, editor integration, or `.coedit` version 1 is frozen, the Elaboration carrier gate must qualify pinned Yjs v13 against Automerge using the common behavioral suite in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) and [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md). This is a bounded implementation-selection gate, not an open product-domain question.
+Step 1 has established the browser scaffold. Step 2, the pure Block domain, is ready for implementation. Trusted code supplies UUID-v4 durable identities, document/genesis construction creates the one real root outside structural mutations, and the Step 2 `InlineContentValue` is a typed, opaque, valid empty value. Pure reducers inspect none of its internals and keep no lifetime-ID registry. Step 3 expands the same type with text, hard breaks, formatting, Origin, and carrier-neutral behavior; History and portable validation reject durable identity reuse across retained lifetimes.
 
-Step 1 establishes the OS-neutral npm package-command interface and tooling in
+Before carrier-dependent CollaborativeContent, History encoding, editor integration, or `.coedit` version 1 is frozen, the Elaboration carrier gate must qualify pinned Yjs v13 against Automerge using the common behavioral suite in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) and [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md). This is a bounded implementation-selection gate, not an open product-domain question.
+
+Step 1 established the OS-neutral npm package-command interface and tooling in
 [`CODING_STYLE.md`](CODING_STYLE.md). npm bootstraps the pinned pnpm version, so
 no global pnpm installation is required. Native Windows and Linux command-line
 builds are required; macOS is intended and must not be knowingly excluded.

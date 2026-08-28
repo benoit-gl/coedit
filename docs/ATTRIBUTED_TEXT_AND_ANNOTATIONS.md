@@ -99,6 +99,11 @@ change placement, not authorship.
 
 ## 4. Canonical content rules
 
+An empty CollaborativeContent value is valid: it contains no live text items or
+hard breaks and therefore needs no partial formatting or Origin placeholder.
+Step 2 represents that state with the typed, opaque `InlineContentValue`; Step 3
+expands the same type with the complete carrier-neutral behavior below.
+
 1. Every live text item and hard break has exactly one valid `OriginId`.
 2. Formatting marks and origin attribution are part of the same canonical
    collaborative state and commit atomically with visible text.

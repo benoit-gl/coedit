@@ -1,6 +1,6 @@
 # Coedit document-engine MVP scaffolding plan
 
-**Status:** Accepted implementation plan; Step 0 documentation baseline is complete.
+**Status:** Accepted implementation plan; Steps 0-1 are complete and Step 2 is ready for implementation.
 
 **Target branch:** `main`
 
@@ -102,7 +102,7 @@ The former `TextAnchor` blocker is resolved. Formatting uses native collaborativ
 - no authoritative document silently contradicts a retained preserved decision; and
 - no unresolved implementation-blocking decision remains.
 
-This documentation set establishes and closes the Step 0 authority baseline. Step 1 can begin. Carrier-dependent Step 3 implementation and `.coedit` version-1 freeze remain behind the separate Elaboration carrier-qualification gate.
+This documentation set establishes and closes the Step 0 authority baseline. Step 1 subsequently established the browser scaffold. Step 2 can proceed; carrier-dependent Step 3 implementation and `.coedit` version-1 freeze remain behind the separate Elaboration carrier-qualification gate.
 
 ### Step 1 — Establish the browser-only repository scaffold
 
@@ -140,11 +140,11 @@ See [`docs/CODING_STYLE.md`](docs/CODING_STYLE.md),
 
 **Objective:** Establish the recursive document structure and pure structural mutation model.
 
-**Outcome:** Tests can build and modify realistic Block trees through typed operations without React, Yjs, storage, or browser dependencies.
+**Outcome:** Tests can build and modify realistic Block trees through typed operations without React, Yjs, storage, or browser dependencies. Document/genesis construction creates the one real root outside the structural-operation model. InlineContents carry only a typed, opaque, valid empty `InlineContentValue`; structural code does not inspect content internals, and Step 3 expands that same type with attributed-content behavior.
 
-**Exit gate:** Structural invariants, identity rules, ordering, limits, and rollback behavior are verified at the domain boundary.
+**Exit gate:** Structural invariants, live-identity uniqueness, trusted ID allocation, root construction, empty InlineContent behavior, ordering, limits, and rollback behavior are verified at the domain boundary. Step 2 requires no lifetime-ID registry; History and portable validation later reject durable identity reuse across retained lifetimes.
 
-See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
+See [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md), [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
 ### Step 3 — Qualify and implement attributed CollaborativeContent
 
@@ -260,7 +260,7 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 ### Gate A — Step 0 authority baseline
 
-Step 0 passes when the authority set, ADR rationale, and preserved-branch classifications are consistent and no normative external formatting/provenance anchor assumption remains. The current documentation records that decision; Step 1 can begin.
+Step 0 passes when the authority set, ADR rationale, and preserved-branch classifications are consistent and no normative external formatting/provenance anchor assumption remains. The current documentation records that decision, and Step 1 subsequently established the browser scaffold.
 
 ### Gate B — Attributed-content carrier qualification
 

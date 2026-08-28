@@ -257,7 +257,7 @@ decision after its integration matures or after a deliberate decision to build
 a custom adapter.
 
 This is an implementation qualification gate, not a reopened product-domain
-question. Step 1 scaffolding and the pure Block domain can proceed before it;
+question. Step 1 scaffolding is complete, and the pure Block domain can proceed before it;
 carrier-dependent implementation and portable-format freeze cannot.
 
 ## 5. Consequences

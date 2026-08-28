@@ -186,6 +186,8 @@ interface PortableDocumentInput {
 
 An advertised VersionToken remains stable across a lossless `.coedit` Save/Open round trip.
 
+The trusted document factory creates genesis with one real root from supplied durable IDs and no Contribution. Root creation is not a structural command. The first successful user mutation creates the first Contribution and resulting Version.
+
 Commands are typed, validated, attributed, atomic, and checked against an expected VersionToken.
 
 Each successful command atomically publishes one logical Contribution, its exact content/structure effect, any new Origin records, one resulting Version, and its successful idempotency receipt. When a durable repository is attached, publication occurs only after the repository transaction commits. A failed command publishes nothing.

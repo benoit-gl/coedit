@@ -107,10 +107,14 @@ contract.
 
 Verify at least:
 
-- exactly one root exists and cannot move or delete;
-- Block and InlineContent identities are unique and never reused after successful creation;
+- `createEmptyDocument(...)` or its equivalent creates exactly one root from trusted, supplied IDs;
+- the root is present in genesis, is never created by `CreateBlock`, and cannot move or delete;
+- pure reducers never generate IDs and reject duplicate Block and InlineContent IDs in the live candidate;
+- Step 2 keeps no lifetime-ID registry; retained-lifetime non-reuse is verified at the History and portable boundaries;
 - no Block has two parents;
 - no InlineContent has two owners;
+- Step 2 creates InlineContents only with the typed, opaque, valid empty `InlineContentValue` and never with partially valid attributed content;
+- structural operations never inspect `InlineContentValue` internals;
 - cycles are rejected;
 - vector order is exact;
 - invalid indices fail without mutation;
@@ -201,8 +205,10 @@ integration maturity risk.
 
 Verify at least:
 
-- genesis contains no Contribution;
-- one successful durable command creates exactly one logical Contribution and resulting Version;
+- genesis contains the initial root and no Contribution;
+- the first successful user mutation creates the first Contribution and resulting Version;
+- later successful durable commands each create exactly one logical Contribution and resulting Version;
+- assigning any durable ID from a retained lifetime to a different entity, record, or lifetime is rejected even when the original entity is no longer live;
 - a failed command publishes neither;
 - same-base concurrent commands produce one success and one conflict;
 - stale commands publish nothing;
@@ -274,7 +280,7 @@ Verify:
 - unknown carrier/schema, malformed base64/binary values, missing/mis-hashed chunks, and unreachable references fail;
 - malformed trees and ownership fail;
 - broken graph/frontier links and Contributor/Origin references fail;
-- identity reuse fails;
+- identity reuse across retained lifetimes fails;
 - all documented resource limits fail safely when exceeded;
 - a failed open never replaces the active engine;
 - stale serialization returns no artifact;

@@ -71,6 +71,8 @@ Every client-originated durable mutation enters through the asynchronous engine 
 
 A successful command creates one attributed Contribution and one resulting Version. A failed command publishes no partial state.
 
+Trusted document construction creates genesis with the initial root and no Contribution. Root construction is not a client structural mutation; the first successful user mutation creates the first Contribution.
+
 ### 4.3 Opaque public Versions
 
 Clients treat `VersionToken` as an opaque, document-scoped equality token. Clients do not decode or order it and do not depend on a numeric revision, one permanent head, or one parent.
@@ -101,6 +103,8 @@ Semantic editor groups and physical recovery checkpoints are not semantic Checkp
 
 Each InlineContent owns one canonical CollaborativeContent state containing text, hard breaks, intrinsic formatting marks, and protected Origin attribution. HTML, plain text, ProseMirror JSON, and attribution runs are derived representations.
 
+An empty CollaborativeContent value is valid and contains no partially initialized formatting or Origin metadata. Step 2 treats this value as typed and opaque; Step 3 expands the same type with the complete attributed-content behavior.
+
 Formatting has explicit insertion-boundary behavior. Every live text item and hard break has exactly one Origin; new Origin is assigned by the trusted engine/import boundary and never inherited from neighboring text. Formatting commands cannot erase or rewrite Origin.
 
 Origin identifies who or what created the material. The Contribution identifies who performed the operation in this document. Copy and restore preserve Origin while recording the copy/restore actor and source/derivation separately.
@@ -123,7 +127,8 @@ The prototype must preserve these domain rules:
 
 - one recursive Block type is the structural ontology;
 - one real root Block exists and cannot be moved or deleted;
-- Blocks and InlineContents have stable, non-reused identities;
+- trusted code allocates UUID-v4 durable identities and pure reducers never generate them;
+- Block and InlineContent identities are unique in live structure, while History and portable validation reject reuse across retained lifetimes;
 - each InlineContent belongs to exactly one Block;
 - each InlineContent owns canonical CollaborativeContent with intrinsic formatting and protected Origin;
 - Block and InlineContent tags have independent ownership;

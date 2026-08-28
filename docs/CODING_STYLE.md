@@ -1,7 +1,7 @@
 # Coding, documentation, and command-line standard
 
-**Status:** Accepted engineering contract. Step 1 implements and verifies the
-configuration described here.
+**Status:** Accepted engineering contract. The Step 1 tooling baseline implements
+the configuration described here.
 
 ## 1. Purpose and authority
 
