@@ -38,7 +38,7 @@ npm run build
 
 After `npm run build`, use `npm run preview` to inspect `dist` in a browser. Do not open `dist/index.html` through `file://`; browsers block the ES modules in that mode. The build uses relative asset URLs so a static HTTP host can mount `dist` below an arbitrary URL prefix.
 
-See [`docs/CODING_STYLE.md`](docs/CODING_STYLE.md) for the complete engineering contract.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the contributor contract, definition of done, test requirements, and pull-request hygiene.
 
 ## Preserved experiment
 
