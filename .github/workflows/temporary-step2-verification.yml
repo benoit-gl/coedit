@@ -16,10 +16,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: Bootstrap dependencies
+        run: npm run bootstrap
       - name: Apply TypeDoc documentation fix
         run: node .tmp-fix-step2-typedoc.mjs
       - name: Format changed source
-        run: npx prettier --write src/domain/ids.ts src/domain/tags.ts src/domain/structural.ts
+        run: ./node_modules/.bin/prettier --write src/domain/ids.ts src/domain/tags.ts src/domain/structural.ts
       - name: Commit TypeDoc documentation fix
         shell: bash
         run: |
@@ -31,8 +33,6 @@ jobs:
           git add -- src/domain/ids.ts src/domain/tags.ts src/domain/structural.ts
           git commit -m "docs: document Step 2 exported type fields"
           git push
-      - name: Bootstrap dependencies
-        run: npm run bootstrap
       - name: Verify repository
         run: npm run check
       - name: Build repository
