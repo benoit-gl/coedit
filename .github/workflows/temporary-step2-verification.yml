@@ -20,10 +20,6 @@ jobs:
         run: npm run bootstrap
       - name: Format repository
         run: npm run format
-      - name: Verify repository
-        run: npm run check
-      - name: Build repository
-        run: npm run build
       - name: Commit formatter changes
         shell: bash
         run: |
@@ -34,4 +30,26 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
           git commit -m "style: format Step 2 changes"
+          git push
+      - name: Capture repository check
+        shell: bash
+        run: |
+          set +e
+          npm run check > .step2-verification.log 2>&1
+          printf '\nCHECK_EXIT=%s\n' "$?" >> .step2-verification.log
+          exit 0
+      - name: Capture repository build
+        shell: bash
+        run: |
+          set +e
+          npm run build >> .step2-verification.log 2>&1
+          printf '\nBUILD_EXIT=%s\n' "$?" >> .step2-verification.log
+          exit 0
+      - name: Commit diagnostic output
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .step2-verification.log
+          git commit -m "chore: capture Step 2 verification output"
           git push
