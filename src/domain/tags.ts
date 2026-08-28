@@ -17,8 +17,18 @@ export interface TagValidationError {
 
 /** Result of tag normalization. */
 export type TagNormalizationResult =
-  | { readonly ok: true; readonly value: TagSet }
-  | { readonly ok: false; readonly error: TagValidationError };
+  | {
+      /** Indicates successful normalization. */
+      readonly ok: true;
+      /** Normalized duplicate-free tags. */
+      readonly value: TagSet;
+    }
+  | {
+      /** Indicates that tag validation failed. */
+      readonly ok: false;
+      /** Validation failure detail. */
+      readonly error: TagValidationError;
+    };
 
 /**
  * Normalizes tags for either Block or InlineContent ownership.

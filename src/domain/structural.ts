@@ -16,50 +16,85 @@ const MAX_BLOCK_DEPTH = 1_000;
 /** One atomic structural mutation in the Step 2 domain. */
 export type StructuralOperation =
   | {
+      /** Selects Block creation. */
       readonly kind: "CreateBlock";
+      /** Identity for the new non-root Block. */
       readonly blockId: BlockId;
+      /** Live parent that will own the new Block. */
       readonly parentId: BlockId;
+      /** Insertion index in the parent vector before insertion. */
       readonly index: number;
+      /** Tags to normalize and assign to the new Block. */
       readonly tags: readonly string[];
+      /** Presentation policy for the new Block's direct children. */
       readonly childrenPresentation: ChildrenPresentation;
     }
   | {
+      /** Selects Block movement. */
       readonly kind: "MoveBlock";
+      /** Live non-root Block to move. */
       readonly blockId: BlockId;
+      /** Live destination parent Block. */
       readonly parentId: BlockId;
+      /** Destination index after removal from the source parent. */
       readonly index: number;
     }
-  | { readonly kind: "DeleteBlock"; readonly blockId: BlockId }
   | {
-      readonly kind: "CreateInlineContent";
+      /** Selects Block subtree deletion. */
+      readonly kind: "DeleteBlock";
+      /** Live non-root Block whose subtree will be deleted. */
       readonly blockId: BlockId;
+    }
+  | {
+      /** Selects InlineContent creation. */
+      readonly kind: "CreateInlineContent";
+      /** Live Block that will own the new InlineContent. */
+      readonly blockId: BlockId;
+      /** Identity for the new InlineContent. */
       readonly inlineContentId: InlineContentId;
+      /** Insertion index in the owner vector before insertion. */
       readonly index: number;
+      /** Tags to normalize and assign to the new InlineContent. */
       readonly tags: readonly string[];
+      /** Typed opaque empty content value required by Step 2. */
       readonly content: InlineContentValue;
     }
   | {
+      /** Selects InlineContent reordering within its current owner. */
       readonly kind: "MoveInlineContent";
+      /** Live InlineContent to reorder. */
       readonly inlineContentId: InlineContentId;
+      /** Destination index after removal from the owner vector. */
       readonly index: number;
     }
   | {
+      /** Selects InlineContent deletion. */
       readonly kind: "DeleteInlineContent";
+      /** Live InlineContent to delete. */
       readonly inlineContentId: InlineContentId;
     }
   | {
+      /** Selects Block tag replacement. */
       readonly kind: "SetBlockTags";
+      /** Live Block whose tags will change. */
       readonly blockId: BlockId;
+      /** Complete replacement tag input. */
       readonly tags: readonly string[];
     }
   | {
+      /** Selects InlineContent tag replacement. */
       readonly kind: "SetInlineContentTags";
+      /** Live InlineContent whose tags will change. */
       readonly inlineContentId: InlineContentId;
+      /** Complete replacement tag input. */
       readonly tags: readonly string[];
     }
   | {
+      /** Selects child-presentation replacement. */
       readonly kind: "SetChildrenPresentation";
+      /** Live Block whose child presentation will change. */
       readonly blockId: BlockId;
+      /** Complete replacement child-presentation value. */
       readonly value: ChildrenPresentation;
     };
 
@@ -86,8 +121,18 @@ export interface StructuralError {
 
 /** Result of structural construction or mutation. */
 export type StructuralResult<T> =
-  | { readonly ok: true; readonly value: T }
-  | { readonly ok: false; readonly error: StructuralError };
+  | {
+      /** Indicates successful construction, validation, or mutation. */
+      readonly ok: true;
+      /** Successful result value. */
+      readonly value: T;
+    }
+  | {
+      /** Indicates an expected domain rejection. */
+      readonly ok: false;
+      /** Stable structural-domain failure detail. */
+      readonly error: StructuralError;
+    };
 
 /** Parameters for trusted genesis construction. */
 export interface CreateEmptyDocumentParameters {

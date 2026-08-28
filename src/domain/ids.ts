@@ -6,13 +6,20 @@ declare const blockIdBrand: unique symbol;
 declare const inlineContentIdBrand: unique symbol;
 
 /** Canonical durable identity for one Coedit document. */
-export type DocumentId = string & { readonly [documentIdBrand]: "DocumentId" };
+export type DocumentId = string & {
+  /** Compile-time brand only; not part of serialized UUID text. */
+  readonly [documentIdBrand]: "DocumentId";
+};
 
 /** Canonical durable identity for one Block. */
-export type BlockId = string & { readonly [blockIdBrand]: "BlockId" };
+export type BlockId = string & {
+  /** Compile-time brand only; not part of serialized UUID text. */
+  readonly [blockIdBrand]: "BlockId";
+};
 
 /** Canonical durable identity for one InlineContent. */
 export type InlineContentId = string & {
+  /** Compile-time brand only; not part of serialized UUID text. */
   readonly [inlineContentIdBrand]: "InlineContentId";
 };
 
