@@ -31,4 +31,8 @@ export type {
 } from "./structural.js";
 /** Shared tag normalization used by Block and InlineContent ownership. */
 export { normalizeTags } from "./tags.js";
-export type { TagNormalizationResult, TagSet, TagValidationError } from "./tags.js";
+export type {
+  TagNormalizationResult,
+  TagSet,
+  TagValidationError,
+} from "./tags.js";

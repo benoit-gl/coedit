@@ -138,7 +138,10 @@ export function applyStructuralOperations(
   operations: readonly StructuralOperation[],
 ): StructuralResult<StructuralDocument> {
   if (operations.length === 0) {
-    return failure("EmptyOperationGroup", "A structural operation group cannot be empty.");
+    return failure(
+      "EmptyOperationGroup",
+      "A structural operation group cannot be empty.",
+    );
   }
 
   const initialValidation = validateDocument(document);
@@ -162,9 +165,14 @@ export function applyStructuralOperations(
 }
 
 /** Validates all Step 2 live structural invariants and resource limits. */
-export function validateDocument(document: StructuralDocument): StructuralResult<StructuralDocument> {
+export function validateDocument(
+  document: StructuralDocument,
+): StructuralResult<StructuralDocument> {
   if (!isCanonicalUuidV4(document.id) || !isCanonicalUuidV4(document.root.id)) {
-    return failure("InvalidId", "Document and Block IDs must use canonical lowercase UUID-v4 text.");
+    return failure(
+      "InvalidId",
+      "Document and Block IDs must use canonical lowercase UUID-v4 text.",
+    );
   }
 
   const durableIds = new Set<string>([document.id]);
@@ -182,22 +190,37 @@ export function validateDocument(document: StructuralDocument): StructuralResult
     const { block, depth } = entry;
     blockCount += 1;
     if (blockCount > MAX_BLOCKS) {
-      return failure("LimitExceeded", `A document cannot exceed ${MAX_BLOCKS} live Blocks.`);
+      return failure(
+        "LimitExceeded",
+        `A document cannot exceed ${MAX_BLOCKS} live Blocks.`,
+      );
     }
     if (depth > MAX_BLOCK_DEPTH) {
-      return failure("LimitExceeded", `Block depth cannot exceed ${MAX_BLOCK_DEPTH}.`);
+      return failure(
+        "LimitExceeded",
+        `Block depth cannot exceed ${MAX_BLOCK_DEPTH}.`,
+      );
     }
     if (!isCanonicalUuidV4(block.id)) {
-      return failure("InvalidId", "Block IDs must use canonical lowercase UUID-v4 text.");
+      return failure(
+        "InvalidId",
+        "Block IDs must use canonical lowercase UUID-v4 text.",
+      );
     }
     if (durableIds.has(block.id)) {
-      return failure("DuplicateId", "Durable UUID text must be globally unique in the live document.");
+      return failure(
+        "DuplicateId",
+        "Durable UUID text must be globally unique in the live document.",
+      );
     }
     durableIds.add(block.id);
 
     const blockTags = normalizeTags(block.tags);
     if (!blockTags.ok || !sameStrings(block.tags, blockTags.value)) {
-      return failure("InvalidTags", "Stored Block tags must already be normalized and valid.");
+      return failure(
+        "InvalidTags",
+        "Stored Block tags must already be normalized and valid.",
+      );
     }
 
     for (const content of block.contents) {
@@ -209,15 +232,24 @@ export function validateDocument(document: StructuralDocument): StructuralResult
         );
       }
       if (!isCanonicalUuidV4(content.id)) {
-        return failure("InvalidId", "InlineContent IDs must use canonical lowercase UUID-v4 text.");
+        return failure(
+          "InvalidId",
+          "InlineContent IDs must use canonical lowercase UUID-v4 text.",
+        );
       }
       if (durableIds.has(content.id)) {
-        return failure("DuplicateId", "Durable UUID text must be globally unique in the live document.");
+        return failure(
+          "DuplicateId",
+          "Durable UUID text must be globally unique in the live document.",
+        );
       }
       durableIds.add(content.id);
       const contentTags = normalizeTags(content.tags);
       if (!contentTags.ok || !sameStrings(content.tags, contentTags.value)) {
-        return failure("InvalidTags", "Stored InlineContent tags must already be normalized and valid.");
+        return failure(
+          "InvalidTags",
+          "Stored InlineContent tags must already be normalized and valid.",
+        );
       }
     }
 
@@ -246,20 +278,38 @@ function applyOperation(
     case "CreateInlineContent":
       return createInlineContent(document, operation);
     case "MoveInlineContent":
-      return moveInlineContent(document, operation.inlineContentId, operation.index);
+      return moveInlineContent(
+        document,
+        operation.inlineContentId,
+        operation.index,
+      );
     case "DeleteInlineContent":
       return deleteInlineContent(document, operation.inlineContentId);
     case "SetBlockTags":
       return setBlockTags(document, operation.blockId, operation.tags);
     case "SetInlineContentTags":
-      return setInlineContentTags(document, operation.inlineContentId, operation.tags);
+      return setInlineContentTags(
+        document,
+        operation.inlineContentId,
+        operation.tags,
+      );
     case "SetChildrenPresentation":
-      return setChildrenPresentation(document, operation.blockId, operation.value);
+      return setChildrenPresentation(
+        document,
+        operation.blockId,
+        operation.value,
+      );
   }
 }
 
-type CreateBlockOperation = Extract<StructuralOperation, { readonly kind: "CreateBlock" }>;
-type MoveBlockOperation = Extract<StructuralOperation, { readonly kind: "MoveBlock" }>;
+type CreateBlockOperation = Extract<
+  StructuralOperation,
+  { readonly kind: "CreateBlock" }
+>;
+type MoveBlockOperation = Extract<
+  StructuralOperation,
+  { readonly kind: "MoveBlock" }
+>;
 type CreateInlineContentOperation = Extract<
   StructuralOperation,
   { readonly kind: "CreateInlineContent" }
@@ -301,17 +351,26 @@ function createBlock(
   operation: CreateBlockOperation,
 ): StructuralResult<MutableStructuralDocument> {
   if (!isCanonicalUuidV4(operation.blockId)) {
-    return failure("InvalidId", "Block IDs must use canonical lowercase UUID-v4 text.");
+    return failure(
+      "InvalidId",
+      "Block IDs must use canonical lowercase UUID-v4 text.",
+    );
   }
   if (hasDurableId(document, operation.blockId)) {
-    return failure("DuplicateId", "Durable UUID text must be globally unique in the live document.");
+    return failure(
+      "DuplicateId",
+      "Durable UUID text must be globally unique in the live document.",
+    );
   }
   const parent = findBlock(document.root, operation.parentId)?.block;
   if (parent === undefined) {
     return failure("NotFound", "CreateBlock requires a live parent Block.");
   }
   if (!isInsertionIndex(operation.index, parent.children.length)) {
-    return failure("InvalidIndex", "CreateBlock index is outside the insertion vector.");
+    return failure(
+      "InvalidIndex",
+      "CreateBlock index is outside the insertion vector.",
+    );
   }
   const tags = normalizeForOperation(operation.tags);
   if (!tags.ok) {
@@ -342,17 +401,31 @@ function moveBlock(
   if (destination === undefined) {
     return failure("NotFound", "MoveBlock requires a live destination parent.");
   }
-  if (source.block === destination || containsBlock(source.block, destination.id)) {
-    return failure("Cycle", "A Block cannot move into itself or one of its descendants.");
+  if (
+    source.block === destination ||
+    containsBlock(source.block, destination.id)
+  ) {
+    return failure(
+      "Cycle",
+      "A Block cannot move into itself or one of its descendants.",
+    );
   }
 
   const postRemovalLength =
-    source.parent === destination ? destination.children.length - 1 : destination.children.length;
+    source.parent === destination
+      ? destination.children.length - 1
+      : destination.children.length;
   if (!isInsertionIndex(operation.index, postRemovalLength)) {
-    return failure("InvalidIndex", "MoveBlock index is outside the post-removal destination vector.");
+    return failure(
+      "InvalidIndex",
+      "MoveBlock index is outside the post-removal destination vector.",
+    );
   }
   if (source.parent === destination && source.index === operation.index) {
-    return failure("NoEffect", "MoveBlock would preserve the existing sibling order.");
+    return failure(
+      "NoEffect",
+      "MoveBlock would preserve the existing sibling order.",
+    );
   }
 
   source.parent.children.splice(source.index, 1);
@@ -380,17 +453,29 @@ function createInlineContent(
   operation: CreateInlineContentOperation,
 ): StructuralResult<MutableStructuralDocument> {
   if (!isCanonicalUuidV4(operation.inlineContentId)) {
-    return failure("InvalidId", "InlineContent IDs must use canonical lowercase UUID-v4 text.");
+    return failure(
+      "InvalidId",
+      "InlineContent IDs must use canonical lowercase UUID-v4 text.",
+    );
   }
   if (hasDurableId(document, operation.inlineContentId)) {
-    return failure("DuplicateId", "Durable UUID text must be globally unique in the live document.");
+    return failure(
+      "DuplicateId",
+      "Durable UUID text must be globally unique in the live document.",
+    );
   }
   const block = findBlock(document.root, operation.blockId)?.block;
   if (block === undefined) {
-    return failure("NotFound", "CreateInlineContent requires a live owner Block.");
+    return failure(
+      "NotFound",
+      "CreateInlineContent requires a live owner Block.",
+    );
   }
   if (!isInsertionIndex(operation.index, block.contents.length)) {
-    return failure("InvalidIndex", "CreateInlineContent index is outside the insertion vector.");
+    return failure(
+      "InvalidIndex",
+      "CreateInlineContent index is outside the insertion vector.",
+    );
   }
   const tags = normalizeForOperation(operation.tags);
   if (!tags.ok) {
@@ -411,7 +496,10 @@ function moveInlineContent(
 ): StructuralResult<MutableStructuralDocument> {
   const source = findInlineContent(document.root, inlineContentId);
   if (source === undefined) {
-    return failure("NotFound", "MoveInlineContent requires a live InlineContent.");
+    return failure(
+      "NotFound",
+      "MoveInlineContent requires a live InlineContent.",
+    );
   }
   const postRemovalLength = source.owner.contents.length - 1;
   if (!isInsertionIndex(index, postRemovalLength)) {
@@ -421,7 +509,10 @@ function moveInlineContent(
     );
   }
   if (source.index === index) {
-    return failure("NoEffect", "MoveInlineContent would preserve the existing content order.");
+    return failure(
+      "NoEffect",
+      "MoveInlineContent would preserve the existing content order.",
+    );
   }
   source.owner.contents.splice(source.index, 1);
   source.owner.contents.splice(index, 0, source.content);
@@ -434,7 +525,10 @@ function deleteInlineContent(
 ): StructuralResult<MutableStructuralDocument> {
   const source = findInlineContent(document.root, inlineContentId);
   if (source === undefined) {
-    return failure("NotFound", "DeleteInlineContent requires a live InlineContent.");
+    return failure(
+      "NotFound",
+      "DeleteInlineContent requires a live InlineContent.",
+    );
   }
   source.owner.contents.splice(source.index, 1);
   return { ok: true, value: document };
@@ -454,7 +548,10 @@ function setBlockTags(
     return failure("InvalidTags", tags.error.message);
   }
   if (sameStrings(block.tags, tags.value)) {
-    return failure("NoEffect", "SetBlockTags would preserve the existing tags.");
+    return failure(
+      "NoEffect",
+      "SetBlockTags would preserve the existing tags.",
+    );
   }
   block.tags = [...tags.value];
   return { ok: true, value: document };
@@ -467,14 +564,20 @@ function setInlineContentTags(
 ): StructuralResult<MutableStructuralDocument> {
   const content = findInlineContent(document.root, inlineContentId)?.content;
   if (content === undefined) {
-    return failure("NotFound", "SetInlineContentTags requires a live InlineContent.");
+    return failure(
+      "NotFound",
+      "SetInlineContentTags requires a live InlineContent.",
+    );
   }
   const tags = normalizeForOperation(values);
   if (!tags.ok) {
     return failure("InvalidTags", tags.error.message);
   }
   if (sameStrings(content.tags, tags.value)) {
-    return failure("NoEffect", "SetInlineContentTags would preserve the existing tags.");
+    return failure(
+      "NoEffect",
+      "SetInlineContentTags would preserve the existing tags.",
+    );
   }
   content.tags = [...tags.value];
   return { ok: true, value: document };
@@ -487,27 +590,38 @@ function setChildrenPresentation(
 ): StructuralResult<MutableStructuralDocument> {
   const block = findBlock(document.root, blockId)?.block;
   if (block === undefined) {
-    return failure("NotFound", "SetChildrenPresentation requires a live Block.");
+    return failure(
+      "NotFound",
+      "SetChildrenPresentation requires a live Block.",
+    );
   }
   if (block.childrenPresentation === value) {
-    return failure("NoEffect", "SetChildrenPresentation would preserve the existing value.");
+    return failure(
+      "NoEffect",
+      "SetChildrenPresentation would preserve the existing value.",
+    );
   }
   block.childrenPresentation = value;
   return { ok: true, value: document };
 }
 
-function normalizeForOperation(values: readonly string[]): StructuralResult<TagSet> {
+function normalizeForOperation(
+  values: readonly string[],
+): StructuralResult<TagSet> {
   const result = normalizeTags(values);
   return result.ok
     ? { ok: true, value: result.value }
     : failure("InvalidTags", result.error.message);
 }
 
-function cloneDocument(document: StructuralDocument): MutableStructuralDocument {
+function cloneDocument(
+  document: StructuralDocument,
+): MutableStructuralDocument {
   const root = cloneBlockShell(document.root);
-  const stack: Array<{ readonly source: Block; readonly target: MutableBlock }> = [
-    { source: document.root, target: root },
-  ];
+  const stack: Array<{
+    readonly source: Block;
+    readonly target: MutableBlock;
+  }> = [{ source: document.root, target: root }];
 
   while (stack.length > 0) {
     const entry = stack.pop();
@@ -538,8 +652,13 @@ function cloneBlockShell(block: Block): MutableBlock {
   };
 }
 
-function findBlock(root: MutableBlock, blockId: BlockId): BlockLocation | undefined {
-  const stack: BlockLocation[] = [{ block: root, parent: undefined, index: undefined }];
+function findBlock(
+  root: MutableBlock,
+  blockId: BlockId,
+): BlockLocation | undefined {
+  const stack: BlockLocation[] = [
+    { block: root, parent: undefined, index: undefined },
+  ];
   while (stack.length > 0) {
     const location = stack.pop();
     if (location === undefined) {
@@ -548,7 +667,11 @@ function findBlock(root: MutableBlock, blockId: BlockId): BlockLocation | undefi
     if (location.block.id === blockId) {
       return location;
     }
-    for (let index = location.block.children.length - 1; index >= 0; index -= 1) {
+    for (
+      let index = location.block.children.length - 1;
+      index >= 0;
+      index -= 1
+    ) {
       const child = location.block.children[index];
       if (child !== undefined) {
         stack.push({ block: child, parent: location.block, index });
@@ -558,7 +681,10 @@ function findBlock(root: MutableBlock, blockId: BlockId): BlockLocation | undefi
   return undefined;
 }
 
-function findInlineContent(root: MutableBlock, id: InlineContentId): InlineLocation | undefined {
+function findInlineContent(
+  root: MutableBlock,
+  id: InlineContentId,
+): InlineLocation | undefined {
   const stack: MutableBlock[] = [root];
   while (stack.length > 0) {
     const block = stack.pop();
@@ -570,7 +696,11 @@ function findInlineContent(root: MutableBlock, id: InlineContentId): InlineLocat
     if (index >= 0 && content !== undefined) {
       return { content, owner: block, index };
     }
-    for (let childIndex = block.children.length - 1; childIndex >= 0; childIndex -= 1) {
+    for (
+      let childIndex = block.children.length - 1;
+      childIndex >= 0;
+      childIndex -= 1
+    ) {
       const child = block.children[childIndex];
       if (child !== undefined) {
         stack.push(child);
@@ -597,7 +727,10 @@ function containsBlock(root: MutableBlock, id: BlockId): boolean {
   return false;
 }
 
-function hasDurableId(document: MutableStructuralDocument, id: string): boolean {
+function hasDurableId(
+  document: MutableStructuralDocument,
+  id: string,
+): boolean {
   if (document.id === id) {
     return true;
   }
@@ -607,7 +740,10 @@ function hasDurableId(document: MutableStructuralDocument, id: string): boolean 
     if (block === undefined) {
       break;
     }
-    if (block.id === id || block.contents.some((content) => content.id === id)) {
+    if (
+      block.id === id ||
+      block.contents.some((content) => content.id === id)
+    ) {
       return true;
     }
     for (const child of block.children) {
@@ -621,10 +757,19 @@ function isInsertionIndex(index: number, length: number): boolean {
   return Number.isInteger(index) && index >= 0 && index <= length;
 }
 
-function sameStrings(left: readonly string[], right: readonly string[]): boolean {
-  return left.length === right.length && left.every((value, index) => value === right[index]);
+function sameStrings(
+  left: readonly string[],
+  right: readonly string[],
+): boolean {
+  return (
+    left.length === right.length &&
+    left.every((value, index) => value === right[index])
+  );
 }
 
-function failure<T>(kind: StructuralErrorKind, message: string): StructuralResult<T> {
+function failure<T>(
+  kind: StructuralErrorKind,
+  message: string,
+): StructuralResult<T> {
   return { ok: false, error: { kind, message } };
 }

@@ -11,7 +11,7 @@ rewriting history.
 
 ## Index
 
-| ADR                                                                                                    | Status   | Subject                                                                                                   |
-| ------------------------------------------------------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------- |
-| [`0001-collaborative-content-provenance-history.md`](0001-collaborative-content-provenance-history.md) | Accepted | Intrinsic rich-text metadata, provenance, comments, causal History, persistence, and technology direction |
-| [`0002-global-durable-identity-and-empty-genesis-root.md`](0002-global-durable-identity-and-empty-genesis-root.md) | Accepted | Global durable UUID namespace and completely empty engine-level genesis root |
+| ADR                                                                                                                | Status   | Subject                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------- |
+| [`0001-collaborative-content-provenance-history.md`](0001-collaborative-content-provenance-history.md)             | Accepted | Intrinsic rich-text metadata, provenance, comments, causal History, persistence, and technology direction |
+| [`0002-global-durable-identity-and-empty-genesis-root.md`](0002-global-durable-identity-and-empty-genesis-root.md) | Accepted | Global durable UUID namespace and completely empty engine-level genesis root                              |

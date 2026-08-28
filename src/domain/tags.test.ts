@@ -4,7 +4,12 @@ import { normalizeTags } from "./tags.js";
 
 describe("tag normalization", () => {
   it("normalizes NFKC and whitespace and preserves the first case spelling", () => {
-    const result = normalizeTags(["  Ｔopic   Alpha  ", "topic alpha", "", "Other"]);
+    const result = normalizeTags([
+      "  Ｔopic   Alpha  ",
+      "topic alpha",
+      "",
+      "Other",
+    ]);
 
     expect(result).toEqual({ ok: true, value: ["Topic Alpha", "Other"] });
   });

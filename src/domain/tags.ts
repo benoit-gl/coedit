@@ -28,7 +28,9 @@ export type TagNormalizationResult =
  * values are removed. Control characters and values beyond the documented
  * scalar, byte, or per-owner limits are rejected.
  */
-export function normalizeTags(values: readonly string[]): TagNormalizationResult {
+export function normalizeTags(
+  values: readonly string[],
+): TagNormalizationResult {
   const normalized: string[] = [];
   const seen = new Set<string>();
 
@@ -43,7 +45,9 @@ export function normalizeTags(values: readonly string[]): TagNormalizationResult
       continue;
     }
     if ([...candidate].length > MAX_CODE_POINTS) {
-      return invalid(`A tag cannot exceed ${MAX_CODE_POINTS} Unicode code points.`);
+      return invalid(
+        `A tag cannot exceed ${MAX_CODE_POINTS} Unicode code points.`,
+      );
     }
     if (utf8ByteLength(candidate) > MAX_UTF8_BYTES) {
       return invalid(`A tag cannot exceed ${MAX_UTF8_BYTES} UTF-8 bytes.`);

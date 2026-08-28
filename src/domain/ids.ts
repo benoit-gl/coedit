@@ -48,6 +48,8 @@ export function parseInlineContentId(value: string): InlineContentId {
 
 function assertCanonicalUuidV4(value: string): void {
   if (!isCanonicalUuidV4(value)) {
-    throw new TypeError("Durable IDs must use canonical lowercase UUID-v4 text.");
+    throw new TypeError(
+      "Durable IDs must use canonical lowercase UUID-v4 text.",
+    );
   }
 }

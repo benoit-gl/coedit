@@ -1,7 +1,9 @@
 import type { BlockId, DocumentId, InlineContentId } from "./ids.js";
 import type { TagSet } from "./tags.js";
 
-const emptyInlineContentValueBrand: unique symbol = Symbol("emptyInlineContentValue");
+const emptyInlineContentValueBrand: unique symbol = Symbol(
+  "emptyInlineContentValue",
+);
 
 /** Controls how a Block projects its direct children. */
 export type ChildrenPresentation = "sections" | "flow" | "bullets" | "numbers";

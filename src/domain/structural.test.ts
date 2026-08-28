@@ -112,7 +112,11 @@ describe("structural operations", () => {
       { kind: "MoveInlineContent", inlineContentId: secondContent, index: 0 },
       { kind: "MoveBlock", blockId: child, parentId: b, index: 0 },
       { kind: "SetBlockTags", blockId: b, tags: ["Container"] },
-      { kind: "SetInlineContentTags", inlineContentId: firstContent, tags: ["View:Primary"] },
+      {
+        kind: "SetInlineContentTags",
+        inlineContentId: firstContent,
+        tags: ["View:Primary"],
+      },
       { kind: "SetChildrenPresentation", blockId: b, value: "numbers" },
       { kind: "DeleteBlock", blockId: a },
     ];
@@ -122,9 +126,13 @@ describe("structural operations", () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.root.children.map((block) => block.id)).toEqual([b]);
-      expect(result.value.root.children[0]?.children.map((block) => block.id)).toEqual([child]);
+      expect(
+        result.value.root.children[0]?.children.map((block) => block.id),
+      ).toEqual([child]);
       expect(result.value.root.children[0]?.tags).toEqual(["Container"]);
-      expect(result.value.root.children[0]?.childrenPresentation).toBe("numbers");
+      expect(result.value.root.children[0]?.childrenPresentation).toBe(
+        "numbers",
+      );
     }
   });
 
@@ -146,7 +154,11 @@ describe("structural operations", () => {
     ]);
     expect(moved.ok).toBe(true);
     if (moved.ok) {
-      expect(moved.value.root.children.map((block) => block.id)).toEqual([b, c, a]);
+      expect(moved.value.root.children.map((block) => block.id)).toEqual([
+        b,
+        c,
+        a,
+      ]);
     }
 
     const noEffect = applyStructuralOperations(created.value, [
@@ -172,7 +184,11 @@ describe("structural operations", () => {
       throw new Error(created.error.message);
     }
 
-    expectFailure(created.value, [{ kind: "DeleteBlock", blockId: ROOT_ID }], "RootMutation");
+    expectFailure(
+      created.value,
+      [{ kind: "DeleteBlock", blockId: ROOT_ID }],
+      "RootMutation",
+    );
     expectFailure(
       created.value,
       [{ kind: "MoveBlock", blockId: parent, parentId: child, index: 0 }],
@@ -197,7 +213,9 @@ describe("structural operations", () => {
 
   it("enforces global UUID uniqueness across branded durable identity types", () => {
     const shared = uuid(50);
-    const created = applyStructuralOperations(emptyDocument(), [createBlock(parseBlockId(shared), 0)]);
+    const created = applyStructuralOperations(emptyDocument(), [
+      createBlock(parseBlockId(shared), 0),
+    ]);
     if (!created.ok) {
       throw new Error(created.error.message);
     }
@@ -311,7 +329,9 @@ describe("structural operations", () => {
 
 describe("live resource limits", () => {
   it("accepts 50,000 Blocks and rejects 50,001", () => {
-    const children = Array.from({ length: 49_999 }, (_, index) => flatBlock(index + 10_000));
+    const children = Array.from({ length: 49_999 }, (_, index) =>
+      flatBlock(index + 10_000),
+    );
     const boundary: StructuralDocument = {
       id: DOCUMENT_ID,
       root: { ...flatBlock(9_999), id: ROOT_ID, children },
@@ -388,7 +408,9 @@ function expectFailure(
 }
 
 function expectFailureResult(
-  result: ReturnType<typeof applyStructuralOperations> | ReturnType<typeof validateDocument>,
+  result:
+    | ReturnType<typeof applyStructuralOperations>
+    | ReturnType<typeof validateDocument>,
   kind: string,
 ): void {
   expect(result.ok).toBe(false);

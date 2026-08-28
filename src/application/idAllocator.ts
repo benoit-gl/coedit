@@ -26,6 +26,7 @@ export function createWebCryptoDurableIdAllocator(): DurableIdAllocator {
   return {
     createDocumentId: () => parseDocumentId(globalThis.crypto.randomUUID()),
     createBlockId: () => parseBlockId(globalThis.crypto.randomUUID()),
-    createInlineContentId: () => parseInlineContentId(globalThis.crypto.randomUUID()),
+    createInlineContentId: () =>
+      parseInlineContentId(globalThis.crypto.randomUUID()),
   };
 }
