@@ -14,6 +14,7 @@ Use these focused authorities first:
 - [`MVP_CONTRACT.md`](MVP_CONTRACT.md) for the MVP proof boundary;
 - [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) for public engine behavior and component authority;
 - [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for formatting, Origin, clipboard, and comment-target behavior;
+- [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md) for Step 3 flat Block placement, Block-local carrier state, structural concurrency, and position-order qualification;
 - [`CODING_STYLE.md`](CODING_STYLE.md) for source structure, TSDoc, linting, formatting, dependency checks, package commands, and platform portability;
 - [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md) for Markdown import/export and round-trip behavior;
 - [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md) for `.coedit` serialization and validation;
@@ -58,7 +59,7 @@ There is no CI implementation in the current baseline. A future Linux CI
 process runs `npm run bootstrap`, `npm run check`, and `npm run build`; those
 commands cannot contain logic that works only in CI.
 
-Step 3 qualifies pinned Yjs v13 against pinned Automerge using the common suite in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`. Track Yjs v14 only after a stable release. Use Loro as a cursor/movable-tree benchmark, not a current production dependency. Do not make the provisional Yjs choice part of a public API or freeze carrier-specific `.coedit` bytes before qualification.
+Step 3 qualifies pinned Yjs v13 against pinned Automerge using the common suites in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` and `STRUCTURAL_CARRIER_MODEL.md`. Track Yjs v14 only after a stable release. Use Loro as a cursor/movable-tree benchmark, not a current production dependency. Do not make the provisional Yjs choice part of a public API or freeze carrier-specific `.coedit` bytes before qualification.
 
 The ProseMirror/Tiptap schema for one InlineContent is deliberately flat: text, hard breaks, and the supported inline marks. The recursive Coedit Block tree remains outside ProseMirror.
 
@@ -262,17 +263,27 @@ Operation rules:
 
 Do not add entity tombstones or lifecycle timestamps to the logical live entities. Do not add a primitive `RestoreBlock`; whole-Version restore belongs to History.
 
-## 6. Attributed collaborative-content boundary
+## 6. Attributed collaborative-content and structural-carrier boundary
 
 Each InlineContent owns canonical CollaborativeContent. The selected carrier stores visible text/hard breaks, intrinsic formatting marks, and protected Origin in one atomic collaborative state. HTML, plain text, ProseMirror JSON, and rendered Origin runs are derived. Do not persist any of them as a parallel authority.
 
-Use one logical collaborative document per Coedit document so one engine transaction can span Block structure, several InlineContents, Origin records, and Contribution metadata. Bind the interactive editor only to the active InlineContent. Do not expose the logical document, carrier objects, raw updates, or client-supplied Origin setters through the public API.
+Use one logical collaborative document per Coedit document so one engine transaction can span Block structure, several InlineContents, Origin records, and Contribution metadata. Within that document, each `BlockId` owns one private carrier namespace for placement, a semantic activity marker, and Block-local payload. Do not create one independently committed Yjs or Automerge document per Block.
+
+`STRUCTURAL_CARRIER_MODEL.md` owns the exact Step 3 structural contract. In summary, placement is one atomic `{ position, depth }` value; structural commands map through projected preorder; a subtree move allocates fresh ordered positions and applies one depth delta; and normal allocation should avoid exact position collisions.
+
+A semantic payload mutation updates a carrier-private Block activity marker in the same logical carrier transaction or change. A semantic Block update that is concurrent with deletion of that same Block wins over deletion. The marker is not a product field, payload hash, public counter, or timestamp. Editing a descendant does not refresh each ancestor. The selected adapter can encode this rule differently for Yjs and Automerge.
+
+Do not hash the whole Block payload into placement metadata. A payload hash would make compatible structural moves and payload edits compete on one placement register and would not reliably describe the result of merged concurrent CRDT payload edits.
+
+Exact primary-position collisions are exceptional carrier cases. When insertion requires normalization of an existing collision run, that normalization is replicated as part of the structural Contribution that needs it. It is not a separate product operation or History action. Prefer deterministic normalization and suppression of normalization-only resurrection when they are inexpensive; record residual behavior if those properties would require disproportionate machinery.
+
+Bind the interactive editor only to the active InlineContent. Do not expose the logical document, carrier objects, raw updates, Block activity setters, or client-supplied Origin setters through the public API.
 
 Formatting follows the vocabulary and boundary defaults in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`. Carrier adapters translate those logical policies to native marks/attributes and must prove exact round trip. Clearing formatting cannot change Origin.
 
 The trusted engine boundary assigns Origin for human typing, import, external paste, automation, and AI. Same-document internal copy and restore preserve existing Origins under fresh carrier item identities. Ordinary editor operations cannot forge another Contributor's Origin.
 
-Step 3 runs the same headless and ProseMirror-integrated suite against Yjs v13 and Automerge. Functional invariants are mandatory. Select Yjs when its protected, incremental Origin carrier passes without fragile full-state repair. Select Automerge only if its richer native model materially reduces custom code and its editor/storage integrations pass the same suite. Record the selected versions, dependency/license review, fixtures, measurements, and rejected-candidate rationale.
+Step 3 runs the same headless and ProseMirror-integrated suites against Yjs v13 and Automerge. Functional invariants are mandatory. Select Yjs when its protected attributed-content and structural carrier passes without fragile full-state repair. Select Automerge only if its richer native model materially reduces custom code and its editor/storage integrations pass the same suites. Record the selected versions, dependency/license review, fixtures, measurements, and rejected-candidate rationale.
 
 Do not finalize the carrier codec, portable bytes, history effect encoding, editor transaction bridge, or compaction behavior before this gate passes.
 
