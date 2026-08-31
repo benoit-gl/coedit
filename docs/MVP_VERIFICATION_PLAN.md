@@ -54,7 +54,7 @@ The documented baseline closes the former `TextAnchor` blocker by assigning intr
 
 The accepted reconciliation closes Step 0. A separate Elaboration carrier gate must pass before Step 3 CollaborativeContent, carrier-dependent History effects, editor integration, or `.coedit` version 1 is frozen.
 
-The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures. It records exact dependency versions, license review, adapter complexity, representative target devices, performance budgets, measurements, and the selection rationale. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
+The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, representative target devices, performance budgets, measurements, and the selection rationale. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
 
 ### 4.1 Step 1 tooling and platform evidence
 
@@ -196,10 +196,37 @@ Verify:
 - 100,000-character content and 5,000-Contribution load, edit, growth,
   materialization, and portable-open behavior against recorded budgets.
 
+### 6.5 Structural carrier qualification
+
+Run the structural suite in `STRUCTURAL_CARRIER_MODEL.md` against both candidates.
+Verify at least:
+
+- one logical collaborative document contains the Block registry and Block-local
+  payload namespaces;
+- `CreateBlock` and `MoveBlock` map to projected preorder at first, middle, and
+  last child positions;
+- a moved subtree receives the correct depth delta, fresh ordered positions, and
+  preserves identity and internal order;
+- ordinary allocation avoids exact primary-position collisions where practical;
+- equal positions use the stable identity tie-break;
+- insertion inside two-way and multi-way collision runs preserves the previous
+  projected order and replicates required normalization;
+- concurrent moves to different destinations converge;
+- move versus delete keeps the moved Block alive;
+- payload update versus delete keeps the updated Block alive;
+- a payload mutation and its Block activity marker publish together;
+- descendant activity does not keep a deleted ancestor alive;
+- any residual normalization-versus-delete behavior is recorded;
+- concurrent subtree/run insertion measures non-interleaving behavior;
+- narrow-gap stress records key growth, comparison/sort cost, and serialized
+  carrier growth; and
+- duplicate, delayed, reordered, partitioned, and reconnected updates converge to
+  equal projected structure and logically equivalent carrier state.
+
 Functional invariants are mandatory and cannot be traded for a faster carrier.
 Select Yjs unless Automerge passes the same suite and materially reduces custom
-protected-metadata, heads, cursor, or storage machinery enough to outweigh its
-integration maturity risk.
+protected-metadata, structural, heads, cursor, or storage machinery enough to
+outweigh its integration maturity risk.
 
 ## 7. History verification
 
