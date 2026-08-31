@@ -153,7 +153,7 @@ See [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md), [`docs/MVP_I
 
 Run the same pinned headless and Tiptap/ProseMirror suite against stable Yjs v13 and Automerge. Track Yjs v14 only after stable release; use Loro as a cursor/movable-tree benchmark, not a current candidate. Record dependency/license review, adapter complexity, target devices and budgets, measurements, and the selection rationale.
 
-**Outcome:** Headless code can create, validate, project, clone, edit, copy/paste, restore, and serialize CollaborativeContent. Formatting has explicit boundary policies; every live content item has protected non-inheriting Origin. One logical collaborative document contains the flat Block carrier and Block-local payload namespaces, can transact across structure and several InlineContents, and supports the accepted semantic-update-over-delete behavior. Future CommentTarget cursors are feasible.
+**Outcome:** Headless code can create, validate, project, clone, edit, copy/paste, restore, and serialize CollaborativeContent. Formatting has explicit boundary policies; every live content item has protected non-inheriting Origin. One logical collaborative document contains the accepted flat Block carrier and Block-local logical payload namespaces, can transact across structure and several InlineContents, and supports semantic-update-over-delete through a carrier-qualified Block liveness effect. Future CommentTarget cursors are feasible.
 
 **Exit gate:** The common functional, structural, concurrency, clipboard, restore, cursor, atomicity, portable, garbage-collection, collision/ordering, and representative-growth suite passes. Select Yjs when its protected carrier works incrementally without fragile repair. Select Automerge only if it passes and materially removes custom machinery despite its integration maturity. Record the winner before carrier-dependent format fields or fixtures are frozen.
 
@@ -294,7 +294,7 @@ After the strict document-engine MVP is complete, use separately gated iteration
 5. AI collaboration through explicit Versions and typed commands, with software-agent Origin and separate human acceptance;
 6. cross-document lineage exchange and private clipboard namespace/trust rules;
 7. signed publication/export attestations such as C2PA; and
-8. native packaging, a database change, or fully offline Block-tree replication only after its own evidence gate.
+8. native packaging or a database change only after its own evidence gate.
 
 ## 7. MVP completion
 
