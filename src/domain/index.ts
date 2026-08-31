@@ -1,22 +1,53 @@
-/** Supported entry point for the pure Step 2 document domain. */
+/** Supported entry point for the pure document domain. */
 export {
   isCanonicalUuidV4,
   parseBlockId,
+  parseContributionId,
+  parseContributorId,
   parseDocumentId,
   parseInlineContentId,
+  parseOriginId,
 } from "./ids.js";
-/** Durable identity types used by the structural domain. */
-export type { BlockId, DocumentId, InlineContentId } from "./ids.js";
-/** Pure structural domain entity and presentation types. */
+export type {
+  BlockId,
+  ContributionId,
+  ContributorId,
+  DocumentId,
+  InlineContentId,
+  OriginId,
+} from "./ids.js";
+export {
+  cloneInlineContentValue,
+  contentLength,
+  createEmptyInlineContentValue,
+  validateInlineContentValue,
+} from "./content.js";
+export type {
+  ContentItem,
+  ContentValidationError,
+  ContentValidationErrorKind,
+  ContentValidationResult,
+  FormattingMark,
+  FormattingMarkKind,
+  HardBreakContentItem,
+  InlineContentValue,
+  InternalBlockLinkTarget,
+  InternalLinkRange,
+  LinkTarget,
+  MarkBoundaryPolicy,
+  OpaqueLinkTarget,
+  OpaqueLinkValue,
+  OriginKind,
+  OriginRecord,
+  StableRangeCursor,
+  TextContentItem,
+} from "./content.js";
 export type {
   Block,
   ChildrenPresentation,
   InlineContent,
-  InlineContentValue,
   StructuralDocument,
 } from "./model.js";
-export { createEmptyInlineContentValue } from "./model.js";
-/** Structural construction, mutation, validation, and failure contracts. */
 export {
   applyStructuralOperations,
   createEmptyDocument,
@@ -29,7 +60,6 @@ export type {
   StructuralOperation,
   StructuralResult,
 } from "./structural.js";
-/** Shared tag normalization used by Block and InlineContent ownership. */
 export { normalizeTags } from "./tags.js";
 export type {
   TagNormalizationResult,
