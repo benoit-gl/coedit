@@ -83,7 +83,10 @@ export function allocateCarrierPositionRun(
   runNonce: string,
 ): PositionResult {
   if (!isCanonicalUuidV4(runNonce)) {
-    return failure("InvalidNonce", "Position run nonce must be a canonical UUID-v4 value.");
+    return failure(
+      "InvalidNonce",
+      "Position run nonce must be a canonical UUID-v4 value.",
+    );
   }
   if (!Number.isSafeInteger(count) || count < 1 || count > MAX_RUN_LENGTH) {
     return failure(
@@ -95,14 +98,20 @@ export function allocateCarrierPositionRun(
     (lower !== undefined && !isValidCarrierPosition(lower)) ||
     (upper !== undefined && !isValidCarrierPosition(upper))
   ) {
-    return failure("InvalidPosition", "Position bounds must be valid carrier positions.");
+    return failure(
+      "InvalidPosition",
+      "Position bounds must be valid carrier positions.",
+    );
   }
   if (
     lower !== undefined &&
     upper !== undefined &&
     compareCarrierPositions(lower, upper) >= 0
   ) {
-    return failure("InvalidBounds", "Lower position must sort before upper position.");
+    return failure(
+      "InvalidBounds",
+      "Lower position must sort before upper position.",
+    );
   }
 
   const lowerDigits = lower?.digits;
@@ -118,12 +127,7 @@ export function allocateCarrierPositionRun(
     );
   }
 
-  const anchor = allocateDigitsBetween(
-    lowerDigits,
-    upperDigits,
-    runNonce,
-    0,
-  );
+  const anchor = allocateDigitsBetween(lowerDigits, upperDigits, runNonce, 0);
   if (anchor === undefined || anchor.length >= MAX_PATH_LENGTH) {
     return failure(
       "PathLimitExceeded",
@@ -133,7 +137,10 @@ export function allocateCarrierPositionRun(
 
   const stride = Math.floor(BASE / (count + 1));
   if (stride < 1) {
-    return failure("InvalidCount", "Structural run is too large for one anchor.");
+    return failure(
+      "InvalidCount",
+      "Structural run is too large for one anchor.",
+    );
   }
   const positions: CarrierPosition[] = [];
   for (let index = 1; index <= count; index += 1) {
@@ -202,8 +209,7 @@ function allocateDigitsBetween(
     prefix.push(lowerDigit);
     depth += 1;
     upperActive = false;
-    lowerActive =
-      lowerActive && lower !== undefined && depth < lower.length;
+    lowerActive = lowerActive && lower !== undefined && depth < lower.length;
   }
 
   return undefined;

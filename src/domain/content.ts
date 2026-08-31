@@ -55,12 +55,7 @@ export type MarkBoundaryPolicy = "none" | "start" | "end" | "both";
 
 /** Closed initial intrinsic formatting vocabulary. */
 export type FormattingMarkKind =
-  | "bold"
-  | "italic"
-  | "underline"
-  | "strikethrough"
-  | "inlineCode"
-  | "link";
+  "bold" | "italic" | "underline" | "strikethrough" | "inlineCode" | "link";
 
 /** Bounded JSON-like value that the document model preserves without interpretation. */
 export type OpaqueLinkValue =
@@ -195,7 +190,10 @@ export function validateInlineContentValue(
     value.marks.length > MAX_MARKS ||
     value.origins.length > MAX_ORIGINS
   ) {
-    return failure("LimitExceeded", "CollaborativeContent exceeds item limits.");
+    return failure(
+      "LimitExceeded",
+      "CollaborativeContent exceeds item limits.",
+    );
   }
 
   const origins = new Set<string>();
@@ -205,10 +203,16 @@ export function validateInlineContentValue(
       !isCanonicalUuidV4(origin.agentId) ||
       !isCanonicalUuidV4(origin.createdBy)
     ) {
-      return failure("InvalidId", "Origin records require canonical UUID-v4 IDs.");
+      return failure(
+        "InvalidId",
+        "Origin records require canonical UUID-v4 IDs.",
+      );
     }
     if (origins.has(origin.id)) {
-      return failure("DuplicateOrigin", "Origin IDs must be unique in content.");
+      return failure(
+        "DuplicateOrigin",
+        "Origin IDs must be unique in content.",
+      );
     }
     origins.add(origin.id);
   }
@@ -216,7 +220,10 @@ export function validateInlineContentValue(
   let textLength = 0;
   for (const item of value.items) {
     if (!isCanonicalUuidV4(item.originId) || !origins.has(item.originId)) {
-      return failure("MissingOrigin", "Every live content item needs a valid Origin.");
+      return failure(
+        "MissingOrigin",
+        "Every live content item needs a valid Origin.",
+      );
     }
     if (item.kind === "text") {
       if (
@@ -236,7 +243,10 @@ export function validateInlineContentValue(
       return failure("InvalidItem", "Unknown content item kind.");
     }
     if (textLength > MAX_TEXT_LENGTH) {
-      return failure("LimitExceeded", "CollaborativeContent exceeds the text limit.");
+      return failure(
+        "LimitExceeded",
+        "CollaborativeContent exceeds the text limit.",
+      );
     }
   }
 
@@ -248,7 +258,10 @@ export function validateInlineContentValue(
       mark.end <= mark.start ||
       mark.end > textLength
     ) {
-      return failure("InvalidMark", "Formatting mark range is outside content.");
+      return failure(
+        "InvalidMark",
+        "Formatting mark range is outside content.",
+      );
     }
     if (mark.kind === "link") {
       if (mark.target === undefined) {
@@ -285,7 +298,10 @@ function validateLinkTarget(
     }
     const encoded = JSON.stringify(target.metadata);
     if (new TextEncoder().encode(encoded).byteLength > MAX_OPAQUE_LINK_BYTES) {
-      return error("LimitExceeded", "Opaque link metadata exceeds its byte limit.");
+      return error(
+        "LimitExceeded",
+        "Opaque link metadata exceeds its byte limit.",
+      );
     }
     return undefined;
   }

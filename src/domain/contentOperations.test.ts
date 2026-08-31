@@ -72,7 +72,12 @@ describe("CollaborativeContent", () => {
       ["end", [1, 3], [0, 3]],
       ["both", [0, 3], [0, 3]],
     ] as const) {
-      const initial = insertText(createEmptyInlineContentValue(), 0, "ab", originA);
+      const initial = insertText(
+        createEmptyInlineContentValue(),
+        0,
+        "ab",
+        originA,
+      );
       expect(initial.ok).toBe(true);
       if (!initial.ok) continue;
       const marked = addFormattingMark(initial.value, {
@@ -87,23 +92,30 @@ describe("CollaborativeContent", () => {
       const atStart = insertText(marked.value, 0, "x", originB);
       expect(atStart.ok).toBe(true);
       if (atStart.ok) {
-        expect([atStart.value.marks[0]?.start, atStart.value.marks[0]?.end]).toEqual(
-          startExpected,
-        );
+        expect([
+          atStart.value.marks[0]?.start,
+          atStart.value.marks[0]?.end,
+        ]).toEqual(startExpected);
       }
 
       const atEnd = insertText(marked.value, 2, "x", originB);
       expect(atEnd.ok).toBe(true);
       if (atEnd.ok) {
-        expect([atEnd.value.marks[0]?.start, atEnd.value.marks[0]?.end]).toEqual(
-          endExpected,
-        );
+        expect([
+          atEnd.value.marks[0]?.start,
+          atEnd.value.marks[0]?.end,
+        ]).toEqual(endExpected);
       }
     }
   });
 
   it("preserves Origin when formatting is added or cleared", () => {
-    const initial = insertText(createEmptyInlineContentValue(), 0, "abc", originA);
+    const initial = insertText(
+      createEmptyInlineContentValue(),
+      0,
+      "abc",
+      originA,
+    );
     expect(initial.ok).toBe(true);
     if (!initial.ok) return;
     const marked = addFormattingMark(initial.value, {
@@ -123,7 +135,12 @@ describe("CollaborativeContent", () => {
   });
 
   it("accepts opaque and document-local internal link targets", () => {
-    const initial = insertText(createEmptyInlineContentValue(), 0, "abc", originA);
+    const initial = insertText(
+      createEmptyInlineContentValue(),
+      0,
+      "abc",
+      originA,
+    );
     expect(initial.ok).toBe(true);
     if (!initial.ok) return;
 
@@ -168,7 +185,12 @@ describe("CollaborativeContent", () => {
     };
     expect(validateInlineContentValue(invalid).ok).toBe(false);
 
-    const initial = insertText(createEmptyInlineContentValue(), 0, "abc", originA);
+    const initial = insertText(
+      createEmptyInlineContentValue(),
+      0,
+      "abc",
+      originA,
+    );
     expect(initial.ok).toBe(true);
     if (!initial.ok) return;
     const deleted = deleteContentRange(initial.value, 1, 2);
@@ -183,7 +205,12 @@ describe("CollaborativeContent", () => {
   });
 
   it("uses UTF-16 logical offsets for surrogate pairs", () => {
-    const initial = insertText(createEmptyInlineContentValue(), 0, "a😀b", originA);
+    const initial = insertText(
+      createEmptyInlineContentValue(),
+      0,
+      "a😀b",
+      originA,
+    );
     expect(initial.ok).toBe(true);
     if (!initial.ok) return;
     const inserted = insertText(initial.value, 3, "x", originB);

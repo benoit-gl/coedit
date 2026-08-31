@@ -19,8 +19,12 @@ describe("carrier positions", () => {
     if (!result.ok) return;
 
     expect(result.value.every(isValidCarrierPosition)).toBe(true);
-    expect(compareCarrierPositions(result.value[0]!, result.value[1]!)).toBeLessThan(0);
-    expect(compareCarrierPositions(result.value[1]!, result.value[2]!)).toBeLessThan(0);
+    expect(
+      compareCarrierPositions(result.value[0]!, result.value[1]!),
+    ).toBeLessThan(0);
+    expect(
+      compareCarrierPositions(result.value[1]!, result.value[2]!),
+    ).toBeLessThan(0);
     expect(carrierRunAnchor(result.value[0]!)).toEqual(
       carrierRunAnchor(result.value[2]!),
     );
@@ -40,8 +44,12 @@ describe("carrier positions", () => {
     expect(middle.ok).toBe(true);
     if (!middle.ok) return;
 
-    expect(compareCarrierPositions(first.value[0]!, middle.value[0]!)).toBeLessThan(0);
-    expect(compareCarrierPositions(middle.value[0]!, first.value[1]!)).toBeLessThan(0);
+    expect(
+      compareCarrierPositions(first.value[0]!, middle.value[0]!),
+    ).toBeLessThan(0);
+    expect(
+      compareCarrierPositions(middle.value[0]!, first.value[1]!),
+    ).toBeLessThan(0);
   });
 
   it("keeps independently allocated runs contiguous when their anchors differ", () => {
@@ -60,7 +68,9 @@ describe("carrier positions", () => {
     if (!run.ok) return;
 
     for (let index = 1; index < run.value.length; index += 1) {
-      expect(compareCarrierPositions(run.value[index - 1]!, run.value[index]!)).toBeLessThan(0);
+      expect(
+        compareCarrierPositions(run.value[index - 1]!, run.value[index]!),
+      ).toBeLessThan(0);
     }
     expect(compareCarrierPositions(lower!, run.value[0]!)).toBeLessThan(0);
     expect(compareCarrierPositions(run.value.at(-1)!, upper!)).toBeLessThan(0);
