@@ -80,7 +80,9 @@ function isFormattingMarkKind(value: unknown): value is FormattingMarkKind {
 }
 
 function isBoundaryPolicy(value: unknown): value is MarkBoundaryPolicy {
-  return value === "none" || value === "start" || value === "end" || value === "both";
+  return (
+    value === "none" || value === "start" || value === "end" || value === "both"
+  );
 }
 
 function isLinkTarget(value: unknown): value is LinkTarget {
@@ -90,7 +92,11 @@ function isLinkTarget(value: unknown): value is LinkTarget {
   if (value.kind === "opaque") {
     return isOpaqueValue(value.metadata, 0);
   }
-  if (value.kind !== "block" || typeof value.blockId !== "string" || !isCanonicalUuidV4(value.blockId)) {
+  if (
+    value.kind !== "block" ||
+    typeof value.blockId !== "string" ||
+    !isCanonicalUuidV4(value.blockId)
+  ) {
     return false;
   }
   const range = value.range;
@@ -136,11 +142,18 @@ function isApproximatePosition(value: unknown): boolean {
   );
 }
 
-function isOpaqueValue(value: unknown, depth: number): value is OpaqueLinkValue {
+function isOpaqueValue(
+  value: unknown,
+  depth: number,
+): value is OpaqueLinkValue {
   if (depth > 8) {
     return false;
   }
-  if (value === null || typeof value === "boolean" || typeof value === "string") {
+  if (
+    value === null ||
+    typeof value === "boolean" ||
+    typeof value === "string"
+  ) {
     return true;
   }
   if (typeof value === "number") {
