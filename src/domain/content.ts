@@ -14,28 +14,46 @@ const MAX_TEXT_LENGTH = 100_000;
 const MAX_OPAQUE_LINK_BYTES = 8_192;
 const MAX_OPAQUE_LINK_DEPTH = 8;
 
+/** Classifies the source that first created one logical content unit. */
 export type OriginKind = "human" | "imported" | "automation" | "ai" | "unknown";
 
+/** Immutable attribution for one authorship or source event. */
 export interface OriginRecord {
+  /** Stable document-scoped Origin identity. */
   readonly id: OriginId;
+  /** Durable identity of the creating agent or source representative. */
   readonly agentId: ContributorId;
+  /** Source category used by provenance projection. */
   readonly kind: OriginKind;
+  /** Contribution that first published this Origin. */
   readonly createdBy: ContributionId;
 }
 
+/** One visible text run that has exactly one protected Origin. */
 export interface TextContentItem {
+  /** Selects visible text. */
   readonly kind: "text";
+  /** Non-empty text without hard-break characters. */
   readonly text: string;
+  /** Protected Origin for every UTF-16 code unit in this run. */
   readonly originId: OriginId;
 }
 
+/** One hard break that has exactly one protected Origin. */
 export interface HardBreakContentItem {
+  /** Selects a hard break. */
   readonly kind: "hardBreak";
+  /** Protected Origin for this hard break. */
   readonly originId: OriginId;
 }
 
+/** One carrier-neutral logical content item. */
 export type ContentItem = TextContentItem | HardBreakContentItem;
+
+/** Controls whether inserted content joins a mark at either boundary. */
 export type MarkBoundaryPolicy = "none" | "start" | "end" | "both";
+
+/** Closed initial intrinsic formatting vocabulary. */
 export type FormattingMarkKind =
   | "bold"
   | "italic"
@@ -44,6 +62,7 @@ export type FormattingMarkKind =
   | "inlineCode"
   | "link";
 
+/** Bounded JSON-like value that the document model preserves without interpretation. */
 export type OpaqueLinkValue =
   | null
   | boolean
@@ -52,52 +71,85 @@ export type OpaqueLinkValue =
   | readonly OpaqueLinkValue[]
   | { readonly [key: string]: OpaqueLinkValue };
 
+/** Opaque serialized cursor value owned by one carrier adapter. */
 export type StableRangeCursor = string;
 
+/** Optional passage refinement inside the Block named by an internal link. */
 export interface InternalLinkRange {
+  /** InlineContent that owns the target passage. */
   readonly inlineContentId: InlineContentId;
+  /** Stable carrier cursor for the start boundary. */
   readonly startCursor: StableRangeCursor;
+  /** Stable carrier cursor for the end boundary. */
   readonly endCursor: StableRangeCursor;
+  /** Cursor affinity for the start boundary. */
   readonly startAffinity: "before" | "after";
+  /** Cursor affinity for the end boundary. */
   readonly endAffinity: "before" | "after";
+  /** Quote and context evidence used when stable cursors do not resolve. */
   readonly quote: {
+    /** Exact visible target text. */
     readonly exact: string;
+    /** Visible context immediately before the target. */
     readonly prefix: string;
+    /** Visible context immediately after the target. */
     readonly suffix: string;
   };
+  /** Optional fallback offset hint. It is not authoritative. */
   readonly approximatePosition?: {
+    /** Approximate start offset. */
     readonly start: number;
+    /** Approximate end offset. */
     readonly end: number;
   };
 }
 
+/** Inert presentation-owned link target. */
 export interface OpaqueLinkTarget {
+  /** Selects opaque presentation metadata. */
   readonly kind: "opaque";
+  /** Bounded metadata preserved exactly by the document engine. */
   readonly metadata: OpaqueLinkValue;
 }
 
+/** Typed same-document Block link with an optional passage refinement. */
 export interface InternalBlockLinkTarget {
+  /** Selects a document-local Block target. */
   readonly kind: "block";
+  /** Primary durable target Block. */
   readonly blockId: BlockId;
+  /** Optional passage refinement inside the target Block. */
   readonly range?: InternalLinkRange;
 }
 
+/** Target carried by an intrinsic link mark. */
 export type LinkTarget = OpaqueLinkTarget | InternalBlockLinkTarget;
 
+/** One intrinsic formatting span over UTF-16 logical offsets. */
 export interface FormattingMark {
+  /** Formatting kind. */
   readonly kind: FormattingMarkKind;
+  /** Inclusive start offset. */
   readonly start: number;
+  /** Exclusive end offset. */
   readonly end: number;
+  /** Insertion behavior at the mark boundaries. */
   readonly boundaryPolicy: MarkBoundaryPolicy;
+  /** Required only for a link mark. */
   readonly target?: LinkTarget;
 }
 
+/** Detached carrier-neutral canonical CollaborativeContent value. */
 export interface InlineContentValue {
+  /** Ordered visible text and hard-break runs. */
   readonly items: readonly ContentItem[];
+  /** Intrinsic formatting spans over the flattened visible content. */
   readonly marks: readonly FormattingMark[];
+  /** Immutable Origin records referenced by live items. */
   readonly origins: readonly OriginRecord[];
 }
 
+/** Stable classification for content validation failure. */
 export type ContentValidationErrorKind =
   | "InvalidId"
   | "DuplicateOrigin"
@@ -107,11 +159,15 @@ export type ContentValidationErrorKind =
   | "InvalidLinkTarget"
   | "LimitExceeded";
 
+/** Expected carrier-neutral content validation failure. */
 export interface ContentValidationError {
+  /** Stable machine-readable failure kind. */
   readonly kind: ContentValidationErrorKind;
+  /** Human-readable diagnostic detail. */
   readonly message: string;
 }
 
+/** Result of complete CollaborativeContent validation. */
 export type ContentValidationResult =
   | { readonly ok: true; readonly value: InlineContentValue }
   | { readonly ok: false; readonly error: ContentValidationError };
@@ -121,7 +177,7 @@ export function createEmptyInlineContentValue(): InlineContentValue {
   return Object.freeze({ items: [], marks: [], origins: [] });
 }
 
-/** Returns the logical offset length. A hard break occupies one offset. */
+/** Returns the logical UTF-16 offset length. A hard break occupies one offset. */
 export function contentLength(value: InlineContentValue): number {
   let length = 0;
   for (const item of value.items) {
@@ -217,7 +273,9 @@ export function cloneInlineContentValue(
   return structuredClone(value) as InlineContentValue;
 }
 
-function validateLinkTarget(target: LinkTarget): ContentValidationError | undefined {
+function validateLinkTarget(
+  target: LinkTarget,
+): ContentValidationError | undefined {
   if (target.kind === "opaque") {
     if (!isOpaqueValue(target.metadata, 0)) {
       return error(
