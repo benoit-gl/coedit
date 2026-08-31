@@ -20,7 +20,7 @@ import { decodeMarkKey, encodeMarkKey } from "./markCodec.js";
 const TEXT_PATH = ["text"] as const;
 const ORIGIN_MARK = "__coedit_origin";
 
-interface AutomergeContentState {
+interface AutomergeContentState extends Record<string, unknown> {
   text: string;
   origins: Record<string, string>;
 }
