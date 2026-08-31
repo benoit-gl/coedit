@@ -360,8 +360,9 @@ function isOpaqueValue(value: OpaqueLinkValue, depth: number): boolean {
   if (Array.isArray(value)) {
     return value.every((entry) => isOpaqueValue(entry, depth + 1));
   }
-  for (const key of Object.keys(value)) {
-    const entry = value[key];
+  const record = value as { readonly [key: string]: OpaqueLinkValue };
+  for (const key of Object.keys(record)) {
+    const entry = record[key];
     if (key.length === 0 || !isOpaqueValue(entry, depth + 1)) {
       return false;
     }
