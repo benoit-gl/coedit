@@ -82,7 +82,9 @@ export class YjsContentCarrier implements ContentCarrier {
 
     for (const operation of this.text.toDelta()) {
       if (typeof operation.insert !== "string") {
-        throw new TypeError("The Step 3 Yjs carrier accepts text and hard breaks only.");
+        throw new TypeError(
+          "The Step 3 Yjs carrier accepts text and hard breaks only.",
+        );
       }
       const attributes = operation.attributes ?? {};
       const originValue = attributes[ORIGIN_ATTRIBUTE];
@@ -190,7 +192,9 @@ export class YjsContentCarrier implements ContentCarrier {
     const serializedOrigin = JSON.stringify(origin);
     const existing = this.origins.get(origin.id);
     if (existing !== undefined && existing !== serializedOrigin) {
-      throw new TypeError("An OriginId cannot identify conflicting attribution.");
+      throw new TypeError(
+        "An OriginId cannot identify conflicting attribution.",
+      );
     }
 
     this.document.transact(() => {
