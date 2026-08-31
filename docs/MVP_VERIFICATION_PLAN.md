@@ -54,7 +54,7 @@ The documented baseline closes the former `TextAnchor` blocker by assigning intr
 
 The accepted reconciliation closes Step 0. A separate Elaboration carrier gate must pass before Step 3 CollaborativeContent, carrier-dependent History effects, editor integration, or `.coedit` version 1 is frozen.
 
-The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures. It records exact dependency versions, license review, adapter complexity, representative target devices, performance budgets, measurements, and the selection rationale. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
+The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, representative target devices, performance budgets, measurements, and the selection rationale. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
 
 ### 4.1 Step 1 tooling and platform evidence
 
@@ -196,10 +196,45 @@ Verify:
 - 100,000-character content and 5,000-Contribution load, edit, growth,
   materialization, and portable-open behavior against recorded budgets.
 
+### 6.5 Structural carrier qualification
+
+Run the complete structural suite in `STRUCTURAL_CARRIER_MODEL.md` against both
+candidates. This section records the high-risk acceptance cases; it does not
+replace that authority.
+
+Verify at least:
+
+- `CreateBlock` and `MoveBlock` map to projected preorder at first, middle, and
+  last child positions;
+- a moved subtree receives the correct depth delta, fresh ordered positions, and
+  preserves identity and internal order;
+- concurrent moves to different destinations converge;
+- move versus delete keeps the moved Block alive after full peer convergence;
+- payload update versus delete keeps the updated Block alive after full peer
+  convergence;
+- move and payload-update liveness effects participate directly in the replicated
+  conflict that determines Block existence;
+- a nested-only activity representation is rejected when deletion of its
+  enclosing entry can discard the activity before existence resolution;
+- payload mutation, logical activity, and required liveness effect publish in one
+  logical carrier change;
+- update-over-delete behavior survives the candidate's supported
+  serialization/reload and garbage-collection or compaction path;
+- descendant activity does not keep a deleted ancestor alive;
+- ordinary allocation avoids exact primary-position collisions where practical;
+- insertion inside two-way and multi-way collision runs preserves the previous
+  projected order and replicates required normalization;
+- any residual normalization-versus-delete behavior is recorded;
+- concurrent subtree/run insertion measures non-interleaving behavior;
+- narrow-gap stress records key growth, comparison/sort cost, and serialized
+  carrier growth; and
+- duplicate, delayed, reordered, partitioned, and reconnected updates converge to
+  equal projected structure and logically equivalent carrier state.
+
 Functional invariants are mandatory and cannot be traded for a faster carrier.
 Select Yjs unless Automerge passes the same suite and materially reduces custom
-protected-metadata, heads, cursor, or storage machinery enough to outweigh its
-integration maturity risk.
+protected-metadata, structural, heads, cursor, or storage machinery enough to
+outweigh its integration maturity risk.
 
 ## 7. History verification
 
@@ -340,17 +375,17 @@ Before real clients connect, qualify:
   partition, reconnect, and conflicting-ID cases;
 - convergence of Contribution graph/frontier, hidden carrier state, Block tree,
   formatting/Origin projection, and every advertised materialization;
+- the accepted flat structural carrier and Block liveness semantics when effects
+  travel through the causal Contribution envelope;
 - causal restore that compensates only work observed by its author, preserves
   unseen concurrent inserts, and surfaces unresolved overlap;
-- relay-coordinated provisional structural proposals or a separately qualified
-  replicated-tree algorithm;
 - restart-safe outbox/inbox, catch-up, bootstrap, authorization/schema/limit
   rejection, and quarantine; and
 - checkpoint/compaction that preserves retained Versions, Origins, and comment
   target behavior.
 
-Carrier text synchronization alone cannot pass this gate. History/convergence and
-the selected structural-conflict policy pass together.
+Carrier convergence alone cannot pass this gate. History, transport,
+authorization, restore, and structural integration must pass together.
 
 ## 15. Later feature gates
 
@@ -363,8 +398,6 @@ the selected structural-conflict policy pass together.
   source accessibility/privacy, and spoof resistance.
 - **Signed publication:** local assertion versus authenticated enforcement versus
   C2PA/equivalent export attestation, including tamper/key/revocation tests.
-- **Fully offline Block tree:** deterministic move/order/delete/cycle semantics
-  and the complete convergence suite.
 - **Storage/platform replacement:** measured evidence plus the existing
   engine/repository/portable contract suite for OPFS, SQL, or a native shell.
 

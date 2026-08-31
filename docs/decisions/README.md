@@ -15,3 +15,4 @@ rewriting history.
 | ------------------------------------------------------------------------------------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------- |
 | [`0001-collaborative-content-provenance-history.md`](0001-collaborative-content-provenance-history.md)             | Accepted | Intrinsic rich-text metadata, provenance, comments, causal History, persistence, and technology direction |
 | [`0002-global-durable-identity-and-empty-genesis-root.md`](0002-global-durable-identity-and-empty-genesis-root.md) | Accepted | Global durable UUID namespace and completely empty engine-level genesis root                              |
+| [`0003-flat-structural-placement.md`](0003-flat-structural-placement.md)                                             | Accepted | Flat Block placement, recoverable structural convergence, and position-allocation qualification          |

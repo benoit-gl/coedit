@@ -18,6 +18,7 @@ Use the companion documents for authority:
 - [`docs/MVP_CONTRACT.md`](docs/MVP_CONTRACT.md) defines what the document-engine MVP must prove.
 - [`docs/MVP_ARCHITECTURE.md`](docs/MVP_ARCHITECTURE.md) defines component authority and the public engine boundary.
 - [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines attributed text, clipboard lineage, comment-target feasibility, and carrier qualification.
+- [`docs/STRUCTURAL_CARRIER_MODEL.md`](docs/STRUCTURAL_CARRIER_MODEL.md) defines Step 3 Block placement, Block-local carrier state, structural concurrency, and position-order qualification.
 - [`docs/CODING_STYLE.md`](docs/CODING_STYLE.md) defines source structure, TSDoc, linting, formatting, command-line interfaces, and developer-platform portability.
 - [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) defines concrete private MVP implementation rules that are not owned by a focused specification.
 - [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md) defines Markdown import, export, diagnostics, and round-trip behavior.
@@ -148,15 +149,15 @@ See [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md), [`docs/MVP_I
 
 ### Step 3 — Qualify and implement attributed CollaborativeContent
 
-**Objective:** Select the collaborative carrier and establish canonical text, hard breaks, intrinsic formatting, and protected Origin before History, import, editor integration, or serialization depends on its representation.
+**Objective:** Select the collaborative carrier and establish canonical text, hard breaks, intrinsic formatting, protected Origin, and the structural carrier before History, import, editor integration, or serialization depends on their representation.
 
 Run the same pinned headless and Tiptap/ProseMirror suite against stable Yjs v13 and Automerge. Track Yjs v14 only after stable release; use Loro as a cursor/movable-tree benchmark, not a current candidate. Record dependency/license review, adapter complexity, target devices and budgets, measurements, and the selection rationale.
 
-**Outcome:** Headless code can create, validate, project, clone, edit, copy/paste, restore, and serialize CollaborativeContent. Formatting has explicit boundary policies; every live content item has protected non-inheriting Origin; one logical collaborative document can transact across structure and several InlineContents; future CommentTarget cursors are feasible.
+**Outcome:** Headless code can create, validate, project, clone, edit, copy/paste, restore, and serialize CollaborativeContent. Formatting has explicit boundary policies; every live content item has protected non-inheriting Origin. One logical collaborative document contains the accepted flat Block carrier and Block-local logical payload namespaces, can transact across structure and several InlineContents, and supports semantic-update-over-delete through a carrier-qualified Block liveness effect. Future CommentTarget cursors are feasible.
 
-**Exit gate:** The common functional, concurrency, clipboard, restore, cursor, atomicity, portable, garbage-collection, and representative-growth suite passes. Select Yjs when its protected carrier works incrementally without fragile repair. Select Automerge only if it passes and materially removes custom machinery despite its integration maturity. Record the winner before carrier-dependent format fields or fixtures are frozen.
+**Exit gate:** The common functional, structural, concurrency, clipboard, restore, cursor, atomicity, portable, garbage-collection, collision/ordering, and representative-growth suite passes. Select Yjs when its protected carrier works incrementally without fragile repair. Select Automerge only if it passes and materially removes custom machinery despite its integration maturity. Record the winner before carrier-dependent format fields or fixtures are frozen.
 
-See [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
+See [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), [`docs/STRUCTURAL_CARRIER_MODEL.md`](docs/STRUCTURAL_CARRIER_MODEL.md), [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
 ### Step 4 — Establish first-class in-memory History
 
@@ -264,7 +265,7 @@ Step 0 passes when the authority set, ADR rationale, and preserved-branch classi
 
 ### Gate B — Attributed-content carrier qualification
 
-Do not freeze Step 3 implementation, carrier-dependent History effects, editor integration, or `.coedit` version 1 until the Yjs/Automerge common suite passes and the winner is recorded.
+Do not freeze Step 3 implementation, carrier-dependent History effects, editor integration, or `.coedit` version 1 until the Yjs/Automerge common suite passes and the winner is recorded. The gate includes the attributed-content and structural-carrier suites.
 
 ### Gate C — Elaboration baseline
 
@@ -293,7 +294,7 @@ After the strict document-engine MVP is complete, use separately gated iteration
 5. AI collaboration through explicit Versions and typed commands, with software-agent Origin and separate human acceptance;
 6. cross-document lineage exchange and private clipboard namespace/trust rules;
 7. signed publication/export attestations such as C2PA; and
-8. native packaging, a database change, or fully offline Block-tree replication only after its own evidence gate.
+8. native packaging or a database change only after its own evidence gate.
 
 ## 7. MVP completion
 

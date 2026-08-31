@@ -1,7 +1,7 @@
 # Collaboration and replicated History model
 
 **Status:** Accepted post-MVP direction and compatibility constraints. Networked
-collaboration is not part of the MVP. Exact transport and replicated-tree
+collaboration is not part of the MVP. Exact transport and causal-envelope
 algorithms remain future decisions.
 
 This document records how collaboration should fit around the document engine
@@ -9,6 +9,8 @@ and what eventual consistency must mean for Coedit. It complements
 [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md), which defines the local engine API,
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), which
 defines content attribution and comment-target behavior,
+[`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md), which defines the
+accepted Block carrier and structural merge semantics,
 and [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md), which defines the current
 implementation order.
 
@@ -25,11 +27,15 @@ implementation order.
   React never exchanges, interprets, or applies CRDT updates or remote
   changesets.
 - Product History consists of immutable, attributed Contributions. It is not
-  reconstructed from carrier updates, editor transactions, debounce boundaries, relay
-  batches, wall-clock timestamps, or packet-arrival order.
+  reconstructed from carrier updates, editor transactions, debounce boundaries,
+  relay batches, wall-clock timestamps, or packet-arrival order.
 - One logical collaborative document normally contains the Block registry and
   all InlineContents so structure, text, formatting, Origin, and Contribution
   effects can publish atomically.
+- Block structure uses the accepted flat placement carrier in
+  `STRUCTURAL_CARRIER_MODEL.md`: one placement per `BlockId`, preorder-plus-depth
+  projection, Block-local payload state, and semantic-update-over-delete
+  behavior.
 - Content Origin answers who or what created material. Contribution actor
   answers who performed the operation. Copy and restore preserve Origin while
   recording the new actor and derivation.
@@ -48,8 +54,8 @@ implementation order.
 
 This is a known family of distributed-systems solutions, but it is not
 “automatic.” CRDTs and causal change graphs provide the machinery; Coedit must
-still choose deterministic semantics for tree moves, deletion, restoration,
-checkpointing, authorization, and retention.
+still define transport, causal publication, restoration, checkpointing,
+authorization, retention, and failure handling explicitly.
 
 ## 2. Topology and ownership
 
@@ -103,7 +109,7 @@ may be UX-adjacent, but its channel remains separate and ephemeral.
 | ----------------- | -------------------------------------------------------------------------------------- | --------------------------------------------- |
 | Logical document  | Blocks, InlineContents, tags, CollaborativeContent, Origins, durable comments/overlays | Yes                                           |
 | Product History   | Immutable attributed Contributions and materializable Versions                         | Yes                                           |
-| Replication state | CRDT identities, tombstones/delete sets, causal metadata, state vectors                | Only what exact recovery/convergence requires |
+| Replication state | CRDT identities, placements, activity markers, tombstones/delete sets, causal metadata | Only what exact recovery/convergence requires |
 | Presence          | Online state, cursors, selections, typing indicators                                   | No                                            |
 
 These layers may be stored together internally, but their semantics must remain
@@ -118,9 +124,9 @@ A Contribution that touches the Block tree and several InlineContents becomes
 visible atomically to engine queries. The replication ingress buffers incomplete
 payloads or missing dependencies rather than publishing a partial state.
 
-Internal tombstones and causal metadata do not violate the logical domain
-decision that live `Block` and `InlineContent` entities have no tombstone fields.
-They are private replication/storage machinery.
+Internal placements, activity markers, tombstones, and causal metadata do not
+violate the logical domain decision that live `Block` and `InlineContent`
+entities have no carrier fields. They are private replication/storage machinery.
 
 Inbox/outbox acknowledgements, connection retries, and buffered dependency
 requests are transport bookkeeping, not a fifth kind of document truth. They may
@@ -145,10 +151,10 @@ user intent
 The UX re-queries after the notification. It does not receive a raw replication
 payload to apply.
 
-This flow applies to changes the active convergence policy permits the replica
-to finalize locally. During the pragmatic relay-coordinated structural phase, a
-structural command can remain an explicitly provisional proposal and must not be
-announced as a durable Contribution/version until the relay accepts its order.
+Before networked collaboration ships, Step 3 carrier behavior is necessary but
+not sufficient to permit offline publication. The pre-network gate must also
+prove the exact causal envelope, dependency handling, authorization, limits,
+restart-safe transport, and atomic integration behavior.
 
 Checkpoint creation uses the same flow. A checkpoint created locally is a
 semantic Contribution against the exact frontier observed by its author. It does
@@ -277,8 +283,9 @@ Once two authorized replicas possess the same complete set of valid
 Contributions, they must have:
 
 1. the same immutable causal Contribution graph and metadata;
-2. collaborative-state-equivalent carrier state, including identity, delete,
-   formatting, Origin, and stable-cursor behavior, even if byte encodings differ;
+2. collaborative-state-equivalent carrier state, including identity, placement,
+   Block activity, delete, formatting, Origin, and stable-cursor behavior, even
+   if byte encodings differ;
 3. the same validated Block tree, ordering, tags, and CollaborativeContent
    projection;
 4. the same materialization for every advertised causal frontier; and
@@ -300,58 +307,58 @@ invalidated.
 Semantic checkpoint Contributions are different. They are part of Product
 History and therefore must converge like any other Contribution.
 
-## 8. CollaborativeContent and the Block tree are different problems
+## 8. CollaborativeContent and Block structure use one carrier boundary
 
-The selected carrier must provide convergent rich-text changes. That does not
-automatically give the recursive Block tree safe move/delete/order semantics.
+Convergent rich-text changes and structural placement have different semantics,
+but Step 3 qualifies them inside one logical collaborative document.
+`STRUCTURAL_CARRIER_MODEL.md` owns the structural contract.
 
-For example:
+The accepted structural representation uses one Block-local namespace per
+`BlockId` with one atomic `{ position, depth }` placement, a private semantic
+activity marker, and Block-local payload. The recursive tree is projected by
+global position plus depth. There is no authoritative replicated parent pointer.
+This projection makes every surviving Block visible exactly once and prevents a
+structural cycle in the projected tree.
 
-```text
-Replica A: move X under Y
-Replica B: move Y under X
-```
+Structural commands map to preorder placement. A new or moved Block root receives
+`parent.depth + 1`; insertion follows the complete previous sibling subtree. A
+subtree move allocates a fresh ordered run and applies one depth delta while
+preserving Block identity and relative order.
 
-Each operation is locally valid, but naïvely combining them creates a cycle.
-Other required structural cases include:
+The accepted concurrency preference is non-destructive:
 
-- two concurrent moves of the same Block;
-- move versus delete;
-- editing content whose Block is concurrently deleted;
-- concurrent sibling insertion at the same position;
-- deleting a parent while another replica moves a descendant out;
-- concurrent tag or `childrenPresentation` changes; and
-- one atomic Contribution spanning structure and several text values.
+- a move concurrent with deletion of the same Block keeps the moved Block alive;
+- a semantic payload update concurrent with deletion of the same Block keeps the
+  updated Block alive;
+- payload mutation updates the Block's private activity marker in the same
+  logical carrier change; and
+- activity is local to the Block that changed, so editing a descendant does not
+  keep every ancestor alive.
 
-The current sequential structural reducer is a useful command language, not a
-replication algorithm. Applying structural commands in arbitrary network arrival
-order, or using naïve last-writer-wins parent pointers, is not acceptable.
+If a parent is deleted while a descendant survives, the flat projection can place
+the descendant under another preceding shallower Block. Visible repairable
+mis-parenting is preferred over unreachable surviving content.
 
-Two credible collaboration levels are retained:
+Position allocation should avoid exact primary-position collisions. Stable
+identity supplies a deterministic tie-break if a collision occurs. Insertion
+inside an existing collision run can require replicated normalization of later
+placements before the dependent insertion. Normalization is a private effect of
+the structural Contribution, not a separate product move or History action.
+Deterministic normalization and suppression of normalization-only resurrection
+are preferred when inexpensive, but residual behavior can be accepted and
+recorded because exact collisions should be exceptional.
 
-1. **Pragmatic first collaboration:** exchange selected-carrier text effects while structural
-   command proposals obtain relay ordering/acceptance before they become final
-   durable Contributions. Offline structural edits may be restricted, stored as
-   explicitly provisional proposals, or explicitly conflicted.
-2. **Fully offline structural collaboration:** adopt or implement a proven
-   replicated-tree/JSON algorithm with deterministic rules for move, order,
-   delete, cycles, and invariant preservation.
-
-The second level is a deliberate research and implementation phase, not an MVP
-assumption. The first still requires a causal envelope so an attributed command
-spanning multiple text values and structure publishes atomically.
-
-The relay never rewrites or rebases an already published immutable Contribution.
-If coordinated structure rejects a stale proposal, the originating engine may
-submit a newly identified command against the accepted frontier; it does not
-change the old record in place. Fully replicated structural effects can publish
-locally only after deterministic merge semantics exist.
+These accepted carrier semantics close the former representation-level questions
+for Step 3. They do not by themselves complete the network protocol. Before real
+clients connect, the system must still qualify causal Contribution envelopes,
+transport, dependency buffering, authorization, restart recovery, hostile input,
+restore overlap, and exact integration rules.
 
 ### Collaborative-document and annotation boundaries
 
 Use one logical collaborative document per Coedit document by default. It holds
-the normalized Block registry/order and all InlineContents so one transaction
-can publish structure, several text values, Origins, and Contribution effects
+the Block registry and Block-local payload namespaces so one transaction can
+publish structure, several text values, Origins, and Contribution effects
 atomically. An editor binds only one active InlineContent; the recursive Block
 tree is not a ProseMirror tree.
 
@@ -380,9 +387,10 @@ The frontend can:
 - restore a selected version through a new mutation; and
 - subscribe to invalidation/change hints and re-query.
 
-Raw carrier updates, causal storage rows, tombstones, inbox/outbox entries, and relay
-packets never cross this boundary. The portable document is also opaque to the
-UX even when it contains causal and CRDT state.
+Raw carrier updates, causal storage rows, placements, activity markers,
+tombstones, inbox/outbox entries, and relay packets never cross this boundary.
+The portable document is also opaque to the UX even when it contains causal and
+CRDT state.
 
 ## 10. Restore, checkpoints, and undo under concurrency
 
@@ -496,6 +504,7 @@ The MVP does not implement networking. It does establish the following seams:
 - globally unique document, entity, command, Contribution, and contributor IDs;
 - atomic attributed commands whose Contributions may share a semantic group ID;
 - one logical collaborative document boundary with atomic structure-plus-content effects;
+- the accepted flat Block placement and Block activity compatibility contract;
 - intrinsic formatting and protected, non-inheriting Origin semantics;
 - first-class checkpoint Contributions;
 - History listing, summary, exact materialization, and compensating restore;
@@ -512,24 +521,24 @@ checkpoints. Contract tests and types keep all of these private.
 
 ## 14. Staged implementation path
 
-1. Qualify Yjs v13 against Automerge and retain the selected carrier suite as regression evidence.
+1. Qualify Yjs v13 against Automerge with the attributed-content and structural
+   carrier suites, then retain the selected carrier suite as regression evidence.
 2. Build and validate the local-only MVP behind the engine and repository boundaries.
 3. Replace chunk/checkpoint details behind those same contracts as measurements require.
 4. Build an in-process two-engine replication test bus before using a network.
 5. Replicate immutable Contributions, including checkpoint Contributions, and
    carrier effects under duplication, delay, reordering, partition, and
    reconnect.
-6. Add an authenticated relay, durable catch-up, and visible sync status.
-7. Initially coordinate structural command proposals through the relay before
-   final durable publication, and state offline restrictions explicitly.
+6. Prove that the accepted structural carrier and Block activity semantics remain
+   correct when effects travel through the causal Contribution envelope.
+7. Add an authenticated relay, durable catch-up, and visible sync status.
 8. Add the independent ephemeral presence channel.
-9. Implement fully offline Block-tree convergence only if product evidence
-   justifies its complexity.
-10. Add or tune checkpoints, deltas, structural sharing, and compaction without
-    changing frontend behavior.
+9. Add or tune checkpoints, deltas, structural sharing, and compaction without
+   changing frontend behavior.
 
-No network phase begins merely because carrier text synchronization works. The
-History/convergence and structural-conflict gates must pass together.
+No network phase begins merely because carrier convergence works. The
+History/convergence, transport, authorization, restore, and structural gates must
+pass together.
 
 ## 15. Required future tests
 
@@ -543,11 +552,14 @@ History/convergence and structural-conflict gates must pass together.
   insufficient;
 - atomic publication of a Contribution spanning structure and several
   InlineContents;
-- concurrent insert, delete, and formatting operations;
+- concurrent insert, delete, formatting, Block move, and Block payload-update
+  operations;
+- semantic Block update versus delete keeps the updated Block alive;
+- collision normalization remains a private carrier effect of its structural
+  Contribution and converges under delayed/reordered delivery;
 - Origin never inherits or spoofs under concurrent insertion, copy, paste,
   formatting clear, or restore;
 - stable CommentTarget cursors and explicit ambiguous/orphan behavior converge;
-- every Block-tree conflict listed above, including cycles;
 - restore concurrent with unseen work;
 - concurrent checkpoints remain independently materializable and attributable;
 - unauthorized, revoked, malformed, and oversized remote records;
@@ -557,7 +569,6 @@ History/convergence and structural-conflict gates must pass together.
 
 ## 16. Explicitly unresolved decisions
 
-- relay-sequenced structure versus a fully replicated tree algorithm;
 - exact Contribution envelope, content hash, and signature scheme;
 - exact `VersionToken` representation;
 - remote authorization and offline revocation policy;
@@ -570,6 +581,10 @@ History/convergence and structural-conflict gates must pass together.
 - document forks versus continuation under one document ID; and
 - whether any workflow eventually requires a coordinated canonical sequence.
 
+The flat Block carrier, command-to-placement mapping, semantic-update-over-delete
+preference, and exceptional collision-normalization policy are no longer
+unresolved replication choices. `STRUCTURAL_CARRIER_MODEL.md` owns those rules.
+
 ## 17. Technical references
 
 - [Yjs document updates](https://docs.yjs.dev/api/document-updates) describes
@@ -580,7 +595,8 @@ History/convergence and structural-conflict gates must pass together.
 - [Yjs relative positions](https://github.com/yjs/docs/blob/main/api/relative-positions.md)
   provides stable carrier-local cursor semantics.
 - [A highly-available move operation for replicated trees](https://martin.kleppmann.com/papers/move-op.pdf)
-  illustrates why replicated tree moves need an explicit algorithm.
+  illustrates the broader replicated-tree problem and alternatives to Coedit's
+  accepted flat placement projection.
 - [Automerge glossary](https://automerge.org/docs/reference/glossary/) and
   [changes and History](https://automerge.org/automerge-swift/documentation/automerge/changesandhistory/)
   provide examples of immutable changes, dependencies, heads, and materializing
