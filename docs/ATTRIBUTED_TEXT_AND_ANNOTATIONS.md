@@ -6,8 +6,8 @@ the Elaboration qualification gate.
 ## 1. Purpose and authority
 
 This document defines the detailed behavior of InlineContent text, intrinsic
-formatting, origin attribution, copy/paste/restore lineage, future comment
-targets, and transient selections.
+formatting, origin attribution, link targets, copy/paste/restore lineage, future
+comment targets, and transient selections.
 
 [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls product meaning.
 [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) controls the public engine boundary.
@@ -24,6 +24,7 @@ The strict MVP and its carrier qualification must implement:
 
 - canonical collaborative text and hard breaks;
 - intrinsic formatting marks with explicit boundary behavior;
+- opaque link metadata and document-local Block link targets;
 - protected, non-inheriting origin attribution;
 - human, imported, and unknown origin records;
 - origin-preserving same-document copy and restore;
@@ -31,8 +32,9 @@ The strict MVP and its carrier qualification must implement:
 - validated internal and external clipboard behavior; and
 - exact `.coedit` recovery of that state.
 
-The carrier gate also proves that stable comment targets are feasible. It does
-not require a comment UI or durable Comment records in the strict MVP.
+The carrier gate also proves that stable range targeting for internal links and
+future comment targets is feasible. It does not require a comment UI or durable
+Comment records in the strict MVP.
 
 Post-MVP capabilities include provenance visualization and queries, production
 identity and authorization, cross-document origin-catalog exchange, AI-provider
@@ -46,6 +48,10 @@ Use these terms consistently:
 - **CollaborativeContent:** the carrier-neutral canonical state of text, hard
   breaks, formatting, and origin attribution owned by one InlineContent.
 - **Formatting mark:** intrinsic rich-text presentation metadata.
+- **Opaque link metadata:** inert formatting metadata that the document model
+  preserves but does not interpret.
+- **Internal Block link:** a document-local link target identified by `BlockId`,
+  with an optional text-range refinement inside that Block.
 - **Origin:** immutable attribution describing the agent or source that first
   created a logical content unit.
 - **Contribution actor:** the Contributor that performed a durable operation in
@@ -131,7 +137,62 @@ The initial formatting vocabulary is:
 - underline;
 - strikethrough;
 - inline code; and
-- link with one validated safe destination.
+- link.
+
+A link mark carries one carrier-neutral target value. The target is one of:
+
+```text
+OpaqueLinkTarget
+  metadata: opaque bounded value
+
+InternalBlockLinkTarget
+  blockId: BlockId
+  range?:
+    inlineContentId: InlineContentId
+    startCursor
+    endCursor
+    startAffinity: before | after
+    endAffinity: before | after
+    quote:
+      exact
+      prefix
+      suffix
+    approximatePosition?: { start, end }
+```
+
+Opaque link metadata is inert document data. The document model validates only
+its carrier shape and resource limits. It does not interpret the metadata as a
+URL, URI, command, citation, or another application concept. The presentation or
+integration layer decides whether and how to interpret or activate it.
+
+An internal Block link is a document-local typed reference. `blockId` is the
+primary target. The optional range refines navigation to text inside one
+InlineContent owned by that Block. The range uses the same stable-cursor,
+affinity, quote/context, and approximate-position mechanics used by
+`CommentTarget`; this behavioral reuse does not create a generic durable range
+entity or make comments intrinsic formatting.
+
+Internal link resolution follows these rules:
+
+1. Resolve `blockId` in the selected document Version.
+2. If the Block does not resolve, keep the link as valid canonical content and
+   report an unresolved target to the presentation layer.
+3. If no range is present, the resolved Block is the complete target.
+4. If a range is present, first try its stable cursors and then its quote/context
+   fallback within the named InlineContent and Block.
+5. If the range is ambiguous or orphaned but the Block still resolves, fall back
+   to the Block target. Do not silently attach the range to another Block or
+   InlineContent.
+
+Deleting a target Block does not rewrite, delete, or invalidate incoming link
+marks. The target reference can remain unresolved in current material and can
+resolve in a historical Version where that Block exists. A Block target creates
+no ownership relationship and does not prevent Block deletion.
+
+Internal Block targets are document-local. Same-document copy and restore can
+preserve them. Cross-document import or paste must not bind a source `BlockId` to
+a coincidentally equal target-document ID without an explicit future mapping
+protocol.
 
 Every mark instance has one logical insertion-boundary policy:
 
@@ -149,8 +210,8 @@ adapters must preserve the logical policy even if their native vocabulary uses
 different names.
 
 Formatting commands must define behavior for empty selections, overlapping
-marks, replacement, hard breaks, excluded marks, and safe link changes. Clearing
-formatting never changes origin.
+marks, replacement, hard breaks, excluded marks, and link-target changes.
+Clearing formatting never changes origin.
 
 ## 6. Origin and activity behavior
 
@@ -194,9 +255,11 @@ source relationship before use.
 
 The strict MVP preserves Origins from a private fragment only when its source
 `DocumentId` matches the target document and every referenced Origin resolves
-without conflict. A fragment from another document follows the external
-imported/unknown path until the post-MVP cross-document origin-catalog protocol
-is implemented.
+without conflict. Same-document private fragments can also preserve typed
+internal Block link targets. A fragment from another document follows the
+external imported/unknown path until the post-MVP cross-document origin-catalog
+and internal-link mapping protocols are implemented; it must not rebind source
+Block IDs by UUID coincidence.
 
 Ordinary HTML/plain representations omit private Origins, comments, History,
 and identity records. An external paste never receives internal-Origin behavior
@@ -204,8 +267,9 @@ merely because its HTML resembles Coedit output.
 
 Use DOMPurify or an equivalently reviewed allowlist sanitizer at the clipboard
 DOM boundary. ProseMirror schema filtering is defense in depth, not the sole
-sanitizer. Unsafe link schemes and control characters are rejected before a link
-mark enters canonical content.
+sanitizer. Link metadata remains inert in canonical content; any presentation
+layer that emits an active HTML link or navigation action validates its own
+interpretation before activation.
 
 ## 8. Restore and deletion
 
@@ -256,6 +320,12 @@ Resolution order is:
 4. attach only when one result satisfies the accepted confidence policy;
 5. otherwise return `ambiguous` or `orphaned` and require explicit repair.
 
+Internal Block-link range refinement uses the same targeting mechanics but not
+the same lifecycle. A comment is an external record whose attachment state can
+require explicit repair. An internal link is intrinsic formatting whose
+`BlockId` remains the primary target; an unresolved optional range falls back to
+that Block when possible.
+
 Exact confidence thresholds and the comment repair UX are a post-MVP decision.
 The carrier gate only requires that these states and behaviors are implementable
 without an external formatting/provenance anchor model.
@@ -305,14 +375,18 @@ Both candidates must run the same qualification suite before selection. At
 minimum it covers:
 
 - all formatting boundary policies and overlapping marks;
+- exact preservation of opaque link metadata without document-model
+  interpretation;
+- internal Block links with and without range refinement, including missing
+  Blocks and ambiguous/orphaned ranges;
 - origin non-inheritance and protection from ordinary client commands;
 - concurrent insertion, deletion, replacement, and formatting at identical and
   adjacent boundaries;
 - split, merge, hard break, IME, cut, paste, undo, and redo;
 - same-document copy and restore lineage;
 - external clipboard stripping and imported/unknown Origin assignment;
-- stable comment-cursor feasibility through edits, deletion, reload, and
-  compaction;
+- stable cursor feasibility for internal link ranges and future comment targets
+  through edits, deletion, reload, and compaction;
 - one transaction spanning Block structure and several InlineContents;
 - duplicate, delayed, reordered, partitioned, and reconnected updates;
 - exact portable round trip and historical materialization; and
@@ -336,6 +410,9 @@ fixtures as regression tests. In addition, prove:
 - malformed or oversized carrier input leaves the base unchanged;
 - caller mutation of detached input cannot mutate engine state;
 - a failed command publishes no text, mark, Origin, Contribution, or Version;
+- opaque link metadata round trips without document-model interpretation;
+- same-document internal Block links preserve their `BlockId` and optional range
+  refinement through copy, restore, and carrier round trip;
 - `.coedit` preserves intrinsic formatting, Origins, Contributors,
   Contributions, and derivation exactly;
 - Markdown compares visible semantic marks but intentionally excludes Origin
