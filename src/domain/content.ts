@@ -283,7 +283,7 @@ export function validateInlineContentValue(
 export function cloneInlineContentValue(
   value: InlineContentValue,
 ): InlineContentValue {
-  return structuredClone(value) as InlineContentValue;
+  return structuredClone(value);
 }
 
 function validateLinkTarget(
@@ -360,9 +360,13 @@ function isOpaqueValue(value: OpaqueLinkValue, depth: number): boolean {
   if (Array.isArray(value)) {
     return value.every((entry) => isOpaqueValue(entry, depth + 1));
   }
-  return Object.entries(value).every(
-    ([key, entry]) => key.length > 0 && isOpaqueValue(entry, depth + 1),
-  );
+  for (const key of Object.keys(value)) {
+    const entry = value[key];
+    if (key.length === 0 || !isOpaqueValue(entry, depth + 1)) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function error(
