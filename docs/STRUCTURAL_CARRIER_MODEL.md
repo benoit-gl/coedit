@@ -50,8 +50,8 @@ Use one logical collaborative document per Coedit document. Do not create a
 separate Yjs document, Automerge document, or other independently committed CRDT
 universe for each Block.
 
-Within that collaborative document, give each Block one Block-local carrier
-namespace keyed by its durable `BlockId`:
+Within that collaborative document, give each Block one Block-local logical
+carrier namespace keyed by its durable `BlockId`:
 
 ```text
 BlockId -> BlockCarrierEntry
@@ -63,15 +63,23 @@ BlockCarrierEntry = {
 }
 ```
 
+This shape is a logical decomposition, not a required physical nesting layout.
+The selected adapter can store the values at different carrier levels when that
+is necessary to implement the required merge semantics. In particular, a Block
+liveness effect can need to participate at the same replicated conflict boundary
+as Block existence instead of living only inside a nested value that disappears
+when the outer Block entry is deleted.
+
 `payload` is the Block-local namespace for replicated Block data. It can contain
 Block tags, `childrenPresentation`, InlineContents, their canonical collaborative
 content, and adapter-private metadata. Exact nesting is an implementation choice.
 The `BlockId` namespace does not create another product entity.
 
-`activity` is a carrier-private semantic-update marker. It records that the Block
-received a semantic update. It does not describe the payload and is not a public
-counter, timestamp, or payload hash. The exact marker encoding is a carrier
-qualification choice.
+`activity` is the logical carrier-private semantic-update marker. It records that
+the Block received a semantic update. It does not describe the payload and is not
+a public counter, timestamp, or payload hash. Its physical representation can be
+a separate liveness effect if the selected carrier requires one. The exact
+encoding is a carrier qualification choice.
 
 `placement` contains two logical values:
 
@@ -92,9 +100,9 @@ The root has these special rules:
 - its placement is immutable; and
 - it cannot be deleted or moved.
 
-The carrier map key is the durable `BlockId`. This gives one canonical live
-placement register per Block identity and avoids representing the same Block as
-several independent list items.
+The durable `BlockId` identifies one canonical live structural placement per
+Block identity. The physical carrier must not represent the same Block as several
+independent live list items.
 
 `position` and `depth` form one logical placement value. A move replaces the
 complete placement. The carrier adapter must not expose a merge result that
@@ -185,24 +193,36 @@ The required semantic preference is non-destructive:
 > A semantic update of a Block that is concurrent with deletion of that same
 > Block wins over the deletion.
 
-A structural move is a semantic Block update because it replaces `Placement`.
-A semantic payload mutation must also update the Block's `activity` marker in the
-same logical carrier transaction or change. This rule lets a payload edit compete
-with deletion of the Block without coupling the payload contents to `Placement`.
+Every semantic Block update must therefore emit a carrier effect that participates
+directly in the replicated conflict that determines whether that `BlockId` is
+live. This is the Block liveness effect. It is a carrier mechanism, not another
+product operation or logical entity.
 
-The activity marker is local to the Block that changed. Editing a descendant does
-not update each ancestor. If a parent is deleted while a descendant receives a
-concurrent semantic update, the descendant can survive and project at another
-visible location under the safety rule.
+A structural move is a semantic Block update. Its placement replacement can serve
+as the liveness effect only when it participates directly in the same existence
+conflict as deletion. Otherwise, the adapter must emit a separate carrier-private
+liveness effect in the same logical change.
+
+A semantic payload mutation must update the logical Block activity marker and
+emit the required liveness effect in the same logical carrier transaction or
+change. A nested activity mutation is insufficient when deletion of its enclosing
+Block entry can discard that mutation before it participates in the existence
+conflict.
+
+The activity/liveness effect is local to the Block that changed. Editing a
+descendant does not update each ancestor. If a parent is deleted while a
+descendant receives a concurrent semantic update, the descendant can survive and
+project at another visible location under the safety rule.
 
 A subtree delete applies delete effects to the target Block and the descendants
 observed by that delete. A concurrent semantic update can keep an affected Block
 alive independently of its ancestors.
 
 The carrier adapter must prove the exact effect that implements update-over-delete
-semantics. Do not rely on an undocumented last-writer rule or on writing the same
-payload value again. Yjs and Automerge can use different private encodings if
-they preserve the same logical result.
+semantics. Do not rely on an undocumented last-writer rule, on writing the same
+payload value again, or on a nested mutation that can vanish with its enclosing
+entry. Yjs and Automerge can use different private encodings if they preserve the
+same logical result.
 
 Position normalization described below is allocator work, not user intent. When
 it is inexpensive, an adapter should avoid letting normalization alone defeat a
@@ -295,7 +315,7 @@ therefore contain the Block registry and the Block-local payload namespaces that
 the Contribution can affect.
 
 Do not create a separate product operation class for collision normalization,
-activity-marker refresh, or other carrier-internal effects. The adapter can
+activity/liveness refresh, or other carrier-internal effects. The adapter can
 organize those effects as private implementation helpers.
 
 ## 11. History and recovery
@@ -320,7 +340,7 @@ candidates. At minimum verify:
 
 - root immutability and root-first projection;
 - one visible placement per live `BlockId`;
-- one Block-local payload namespace inside one logical collaborative document;
+- one Block-local logical payload namespace inside one collaborative document;
 - deterministic projection from `position` and `depth`;
 - non-sequential depth behavior;
 - preorder command-to-placement mapping at the first, middle, and last child
@@ -328,9 +348,17 @@ candidates. At minimum verify:
 - subtree move with the correct depth delta, identity preservation, and internal
   order preservation;
 - concurrent move of one Block to different destinations;
-- concurrent move versus delete, with move winning;
+- concurrent move versus delete, with move winning after full peer convergence;
 - concurrent payload update versus delete, with the payload update keeping that
-  Block alive;
+  Block alive after full peer convergence;
+- move and payload-update liveness effects participate directly in the replicated
+  conflict that determines Block existence;
+- a nested-only activity representation is rejected if deletion of its enclosing
+  entry can discard the activity before existence resolution;
+- payload mutation, logical activity update, and required liveness effect publish
+  together;
+- update-over-delete behavior survives the candidate's supported
+  serialization/reload and garbage-collection or compaction path;
 - descendant activity does not keep a deleted ancestor alive;
 - concurrent insertion into one destination gap;
 - collision avoidance during ordinary allocation;
@@ -342,7 +370,6 @@ candidates. At minimum verify:
 - non-interleaving behavior or measured residual interleaving;
 - all-or-none publication of a multi-Block placement change;
 - all-or-none publication of structure plus several InlineContent changes;
-- a payload mutation and its Block activity marker publish together;
 - repeated narrow-gap insertion and move stress;
 - maximum and average position-key length;
 - comparison/sort cost and serialized carrier growth; and
@@ -356,9 +383,9 @@ when those later steps are implemented.
 ## 13. What remains open
 
 Step 3 must still select or implement the concrete position allocator and prove
-its behavior. The exact encoded `Placement` scalar, activity-marker encoding,
-payload nesting, carrier transaction format, and adapter-private metadata are
-implementation decisions.
+its behavior. The exact encoded `Placement` scalar, activity/liveness encoding,
+payload nesting, existence-conflict mapping, carrier transaction format, and
+adapter-private metadata are implementation decisions.
 
 Network transport, authorization, causal envelope encoding, retained-History
 storage, and the complete post-MVP offline structural-conflict UX remain outside
