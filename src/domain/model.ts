@@ -2,6 +2,9 @@ import type { BlockId, DocumentId, InlineContentId } from "./ids.js";
 import type { InlineContentValue } from "./content.js";
 import type { TagSet } from "./tags.js";
 
+export { createEmptyInlineContentValue } from "./content.js";
+export type { InlineContentValue } from "./content.js";
+
 /** Controls how a Block projects its direct children. */
 export type ChildrenPresentation = "sections" | "flow" | "bullets" | "numbers";
 
