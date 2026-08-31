@@ -42,7 +42,9 @@ export class AutomergeContentCarrier implements ContentCarrier {
   /** Inserts visible text and overrides inherited Origin with the explicit Origin. */
   public insertText(offset: number, text: string, origin: OriginRecord): void {
     if (text.length === 0 || text.includes("\n") || text.includes("\r")) {
-      throw new TypeError("Inserted visible text must be non-empty and contain no hard break.");
+      throw new TypeError(
+        "Inserted visible text must be non-empty and contain no hard break.",
+      );
     }
     this.insertString(offset, text, origin);
   }
@@ -63,7 +65,12 @@ export class AutomergeContentCarrier implements ContentCarrier {
       return;
     }
     this.document = Automerge.change(this.document, (draft) => {
-      Automerge.splice(draft, [...TEXT_PATH], startScalar, endScalar - startScalar);
+      Automerge.splice(
+        draft,
+        [...TEXT_PATH],
+        startScalar,
+        endScalar - startScalar,
+      );
     });
   }
 
@@ -131,12 +138,7 @@ export class AutomergeContentCarrier implements ContentCarrier {
   /** Creates one Automerge cursor after UTF-16 to scalar translation. */
   public createCursor(offset: number, affinity: "before" | "after"): string {
     const scalar = utf16ToScalarIndex(this.document.text, offset);
-    return Automerge.getCursor(
-      this.document,
-      [...TEXT_PATH],
-      scalar,
-      affinity,
-    );
+    return Automerge.getCursor(this.document, [...TEXT_PATH], scalar, affinity);
   }
 
   /** Resolves one Automerge cursor and translates it back to a UTF-16 offset. */
@@ -163,7 +165,9 @@ export class AutomergeContentCarrier implements ContentCarrier {
     const serializedOrigin = JSON.stringify(origin);
     const existing = this.document.origins[origin.id];
     if (existing !== undefined && existing !== serializedOrigin) {
-      throw new TypeError("An OriginId cannot identify conflicting attribution.");
+      throw new TypeError(
+        "An OriginId cannot identify conflicting attribution.",
+      );
     }
 
     this.document = Automerge.change(this.document, (draft) => {
@@ -215,11 +219,15 @@ function projectItems(
       mark.end <= scalar ||
       typeof mark.value !== "string"
     ) {
-      throw new TypeError("Every live Automerge text unit must carry one Origin.");
+      throw new TypeError(
+        "Every live Automerge text unit must carry one Origin.",
+      );
     }
     const next = originMarks[markIndex + 1];
     if (next !== undefined && next.start <= scalar && next.end > scalar) {
-      throw new TypeError("A live Automerge text unit must not carry conflicting Origins.");
+      throw new TypeError(
+        "A live Automerge text unit must not carry conflicting Origins.",
+      );
     }
     const originId = parseOriginId(mark.value);
     const character = characters[scalar]!;
