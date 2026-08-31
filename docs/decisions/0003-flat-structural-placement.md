@@ -57,9 +57,9 @@ tree from global order plus depth:
 BlockId -> { position, depth }
 ```
 
-The carrier map key provides structural uniqueness. There is no authoritative
-parent reference that can dangle. Every surviving Block remains somewhere in the
-global sequence.
+The durable `BlockId` identifies one logical live placement. There is no
+authoritative parent reference that can dangle. Every surviving Block remains
+somewhere in the global sequence.
 
 ## Decision
 
@@ -84,14 +84,20 @@ move preserves relative order and descendant depth differences while allocating
 fresh destination positions.
 
 Use one logical collaborative document per Coedit document. Within it, each
-`BlockId` owns one private carrier namespace containing placement, payload, and a
-small semantic-activity marker. Payload can contain Block scalars and its
-InlineContents without creating a separate collaborative document per Block.
+`BlockId` has one logical carrier namespace for placement, payload, and semantic
+activity. This logical decomposition does not require one physical nested carrier
+object per Block. The adapter can place liveness state at the carrier level where
+it can compete correctly with Block deletion.
 
-A semantic update to a Block wins over a concurrent delete of that Block. A move
-expresses activity through its replacement placement. A payload mutation updates
-the Block activity marker in the same logical carrier change. Descendant activity
-does not keep each ancestor alive.
+A semantic update to a Block wins over a concurrent delete of that Block. Every
+semantic update must therefore produce a carrier-private liveness effect that
+participates directly in the replicated conflict that determines whether the
+Block is live. A move can use its placement replacement for this purpose only
+when that replacement participates in the same existence conflict. A payload
+mutation updates logical activity and its required liveness effect in the same
+logical carrier change. A nested activity mutation is not sufficient if deletion
+of its enclosing entry can discard it before existence resolution. Descendant
+activity does not keep each ancestor alive.
 
 Do not put a whole-payload hash into `Placement`. That would make compatible
 payload edits and moves compete on one register, and a merged CRDT payload can
@@ -123,13 +129,14 @@ Qualification records any residual behavior.
 
 ## Rationale
 
-The representation makes the preferred failure mode a structural property:
-`BlockId` remains a live map key with a position, so the Block remains reachable
-without a parent-repair layer.
+The representation makes the preferred failure mode a structural property: a
+surviving Block has a placement, so the Block remains reachable without a
+parent-repair layer.
 
-It also keeps the carrier representation flat. The recursive product tree remains
-a deterministic projection rather than a second collaborative object graph.
-This reduces the number of structural invariants that the carrier must preserve.
+It also keeps the carrier representation flat at the logical structural level.
+The recursive product tree remains a deterministic projection rather than a
+second collaborative object graph. This reduces the number of structural
+invariants that the carrier must preserve.
 
 Using preorder plus depth gives one direct mapping from the existing Step 2 tree
 commands to the carrier without creating an authoritative parent pointer. The
@@ -147,10 +154,12 @@ adjacency semantically significant. This is a known CRDT sequence problem, so
 Step 3 must qualify existing non-interleaving approaches rather than invent a
 Coedit-specific percentage heuristic as normative behavior.
 
-The Block activity marker keeps liveness semantics separate from payload
-contents. It allows a concurrent text/tag/content update to compete with deletion
-without hashing or copying the complete payload into placement metadata. The
-exact marker representation stays private to each carrier adapter.
+The Block activity/liveness mechanism keeps liveness semantics separate from
+payload contents. It allows a concurrent text/tag/content update to compete with
+deletion without hashing or copying the complete payload into placement metadata.
+Requiring the effect to participate at the Block existence-conflict boundary also
+avoids relying on nested carrier mutations that a delete can discard. The exact
+representation stays private to each carrier adapter.
 
 Deep Product History remains the recovery mechanism for disruptive merges. A
 future UX can identify large remote structural changes and guide the user to
@@ -163,21 +172,21 @@ required.
   and Automerge.
 - Step 3 must qualify one logical collaborative document with Block-local payload
   namespaces and atomic structure-plus-content changes.
-- Payload mutations require a carrier-private Block activity effect so a semantic
-  update can win over a concurrent Block delete.
+- Every semantic Block mutation needs a carrier-private liveness effect that
+  participates directly in Block existence resolution.
 - The carrier adapter needs a dense-order allocator with normal collision
   avoidance and a stable identity tie-break.
 - Exceptional exact-position collisions can require replicated normalization
   before insertion.
 - Structural tests must include command-to-placement mapping, concurrent move,
-  payload-update/delete, collision normalization, subtree/run movement,
-  interleaving, and key-growth stress.
+  payload-update/delete, liveness-boundary behavior, collision normalization,
+  subtree/run movement, interleaving, and key-growth stress.
 - The Step 2 recursive tree remains the logical product model and command
-  language; the flat carrier state is private representation.
+  language; flat carrier state is private representation.
 - Exact network transport and complete post-MVP structural-conflict UX remain
   deferred.
-- The final position algorithm and activity-marker encoding are not frozen until
-  qualification evidence exists.
+- The final position algorithm and activity/liveness encoding are not frozen
+  until qualification evidence exists.
 
 ## Authority
 
