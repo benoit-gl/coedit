@@ -363,7 +363,11 @@ function isOpaqueValue(value: OpaqueLinkValue, depth: number): boolean {
   const record = value as { readonly [key: string]: OpaqueLinkValue };
   for (const key of Object.keys(record)) {
     const entry = record[key];
-    if (key.length === 0 || !isOpaqueValue(entry, depth + 1)) {
+    if (
+      entry === undefined ||
+      key.length === 0 ||
+      !isOpaqueValue(entry, depth + 1)
+    ) {
       return false;
     }
   }
