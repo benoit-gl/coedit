@@ -10,6 +10,7 @@ These documents describe the clean-slate application on `main`. Each document ha
 | [`MVP_CONTRACT.md`](MVP_CONTRACT.md)                                       | Required proof boundary for the document-engine MVP                                                                      |
 | [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)                               | Component authority, public engine behavior, and adapter workflows                                                       |
 | [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) | Intrinsic formatting, origin attribution, clipboard lineage, comment targets, and carrier qualification                  |
+| [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md)               | Step 3 flat Block placement, tree projection, structural concurrency policy, and position-order qualification            |
 | [`CODING_STYLE.md`](CODING_STYLE.md)                                       | Source structure, as-implemented TSDoc, lint/format/dependency tooling, command-line interface, and platform portability |
 | [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md)                 | Private MVP implementation rules that are not owned by a focused specification                                           |
 | [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md)                       | Markdown import, export, diagnostics, and normalized round-trip behavior                                                 |
@@ -32,7 +33,7 @@ Use the document with direct authority for the subject.
 - A private implementation type does not override `MVP_ARCHITECTURE.md`.
 - A codec or storage detail does not override `PRODUCT_DOMAIN_MODEL.md`.
 - A focused Markdown or `.coedit` specification overrides duplicated technical wording elsewhere.
-- `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns detailed attributed-text behavior; `BROWSER_PERSISTENCE.md` owns browser repository behavior.
+- `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns detailed attributed-text behavior; `STRUCTURAL_CARRIER_MODEL.md` owns Step 3 Block placement and structural carrier qualification; `BROWSER_PERSISTENCE.md` owns browser repository behavior.
 - `CODING_STYLE.md` owns source-level documentation, linting, formatting, architectural dependency checks, package commands, and developer-platform portability.
 - `MVP_IMPLEMENTATION_SPEC.md` does not expand `MVP_CONTRACT.md`.
 - `SCAFFOLDING_PLAN.md` owns order and gates, not detailed technical behavior.
@@ -48,7 +49,9 @@ Steps 1 and 2 are implemented. Step 2 provides the pure recursive Block domain, 
 
 Durable user-created and domain entity UUID text uses one global namespace. The same UUID text cannot identify two different live durable entities, even across different branded TypeScript ID types. UUID text contains no required type discriminator. Step 2 keeps no lifetime-ID registry; History and portable validation later reject durable identity reuse across retained lifetimes. [`decisions/0002-global-durable-identity-and-empty-genesis-root.md`](decisions/0002-global-durable-identity-and-empty-genesis-root.md) records the accepted rationale.
 
-Step 3 is the next implementation step. Before carrier-dependent CollaborativeContent, History encoding, editor integration, or `.coedit` version 1 is frozen, the Elaboration carrier gate must qualify pinned Yjs v13 against Automerge using the common behavioral suite in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) and [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md). This is a bounded implementation-selection gate, not an open product-domain question.
+Step 3 is the next implementation step. The structural carrier direction is now explicit: use one flat placement register per `BlockId`, containing a sortable position and depth, then project the recursive tree deterministically. The design prefers visible, repairable mis-parenting over unreachable surviving content and requires concurrent move to beat delete for the same Block. The exact dense-order allocator and non-interleaving run behavior remain Step 3 qualification choices. [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md) is the direct authority, and [`decisions/0003-flat-structural-placement.md`](decisions/0003-flat-structural-placement.md) records the rationale.
+
+Before carrier-dependent CollaborativeContent, History encoding, editor integration, or `.coedit` version 1 is frozen, the Elaboration carrier gate must qualify pinned Yjs v13 against Automerge using the common behavioral suite in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md), and [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md). This is a bounded implementation-selection gate, not an open product-domain question.
 
 Step 1 established the OS-neutral npm package-command interface and tooling in
 [`CODING_STYLE.md`](CODING_STYLE.md). npm bootstraps the pinned pnpm version, so
