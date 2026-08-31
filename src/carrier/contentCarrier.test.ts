@@ -33,7 +33,9 @@ for (const factory of factories) {
     it("round trips empty content", () => {
       const carrier = factory.create();
       expect(carrier.snapshot()).toEqual({ items: [], marks: [], origins: [] });
-      expect(factory.load(carrier.encode()).snapshot()).toEqual(carrier.snapshot());
+      expect(factory.load(carrier.encode()).snapshot()).toEqual(
+        carrier.snapshot(),
+      );
     });
 
     it("assigns explicit non-inheriting Origin to text and hard breaks", () => {
@@ -104,11 +106,13 @@ for (const factory of factories) {
       carrier.addMark(opaque);
       carrier.addMark(internal);
 
-      expect(sortedMarks(carrier.snapshot())).toEqual(sortedMarks({
-        items: [],
-        origins: [],
-        marks: [opaque, internal],
-      }));
+      expect(sortedMarks(carrier.snapshot())).toEqual(
+        sortedMarks({
+          items: [],
+          origins: [],
+          marks: [opaque, internal],
+        }),
+      );
       expect(sortedMarks(factory.load(carrier.encode()).snapshot())).toEqual(
         sortedMarks(carrier.snapshot()),
       );
@@ -129,9 +133,9 @@ for (const factory of factories) {
       left.mergeEncoded(rightUpdate);
 
       expect(normalize(left.snapshot())).toEqual(normalize(right.snapshot()));
-      expect(new Set(left.snapshot().items.map((item) => item.originId))).toEqual(
-        new Set([originA.id, originB.id, originC.id]),
-      );
+      expect(
+        new Set(left.snapshot().items.map((item) => item.originId)),
+      ).toEqual(new Set([originA.id, originB.id, originC.id]));
     });
 
     it("converges independent concurrent formatting marks", () => {
@@ -158,10 +162,12 @@ for (const factory of factories) {
       right.mergeEncoded(leftState);
 
       expect(normalize(left.snapshot())).toEqual(normalize(right.snapshot()));
-      expect(left.snapshot().marks.map((mark) => mark.kind).sort()).toEqual([
-        "bold",
-        "italic",
-      ]);
+      expect(
+        left
+          .snapshot()
+          .marks.map((mark) => mark.kind)
+          .sort(),
+      ).toEqual(["bold", "italic"]);
       expect(left.snapshot().items).toEqual(base.snapshot().items);
     });
 
@@ -222,7 +228,9 @@ function normalize(value: InlineContentValue): InlineContentValue {
   return {
     items: value.items,
     marks: sortedMarks(value),
-    origins: [...value.origins].sort((left, right) => left.id.localeCompare(right.id)),
+    origins: [...value.origins].sort((left, right) =>
+      left.id.localeCompare(right.id),
+    ),
   };
 }
 
