@@ -1,7 +1,7 @@
 # Structural carrier model
 
 **Status:** Accepted Step 3 structural carrier contract; exact position-allocation
-algorithm remains a qualification decision.
+algorithm and carrier encoding remain qualification decisions.
 
 **Applies to:** `SCAFFOLDING_PLAN.md`, Step 3, and future replicated structural
 editing.
@@ -41,18 +41,39 @@ concurrent structural work. A generic CRDT map or sequence does not know Coedit'
 requirements for one visible Block identity, deterministic order, and recoverable
 behavior after conflicting moves or deletes.
 
-The Step 3 representation must also avoid fixing a full post-MVP replicated-tree
-algorithm before qualification evidence exists.
+The Step 3 representation must also avoid fixing a full network protocol or
+post-MVP conflict UX before qualification evidence exists.
 
 ## 3. Accepted logical carrier representation
 
-Represent live Block placement as one carrier map entry per `BlockId`:
+Use one logical collaborative document per Coedit document. Do not create a
+separate Yjs document, Automerge document, or other independently committed CRDT
+universe for each Block.
+
+Within that collaborative document, give each Block one Block-local carrier
+namespace keyed by its durable `BlockId`:
 
 ```text
-BlockId -> Placement
+BlockId -> BlockCarrierEntry
+
+BlockCarrierEntry = {
+  placement,
+  activity,
+  payload
+}
 ```
 
-A `Placement` contains two logical values:
+`payload` is the Block-local namespace for replicated Block data. It can contain
+Block tags, `childrenPresentation`, InlineContents, their canonical collaborative
+content, and adapter-private metadata. Exact nesting is an implementation choice.
+The `BlockId` namespace does not create another product entity.
+
+`activity` is a carrier-private semantic-update marker. It records that the Block
+received a semantic update. It does not describe the payload and is not a public
+counter, timestamp, or payload hash. The exact marker encoding is a carrier
+qualification choice.
+
+`placement` contains two logical values:
 
 ```text
 Placement = {
@@ -79,6 +100,11 @@ several independent list items.
 complete placement. The carrier adapter must not expose a merge result that
 combines `position` from one concurrent move with `depth` from another.
 
+Do not put a hash of the whole Block payload into `Placement`. A whole-payload
+hash would make an otherwise compatible move and payload edit compete on the
+same placement register. A merged CRDT payload can also differ from every hash
+that concurrent writers observed before convergence.
+
 ## 4. Tree projection
 
 Project the logical Block tree by sorting all live non-root placements by
@@ -101,8 +127,37 @@ Depth values do not need to increase by one. For example:
 projects `B` directly under `A`. No anonymous depth-2 Block exists.
 
 The projection must be deterministic for the same complete carrier state.
+Because parentage is derived from preceding shallower Blocks, the projected tree
+cannot contain a structural cycle.
 
-## 5. Safety preference
+## 5. Command-to-placement mapping
+
+The Step 2 structural command language remains the product-level mutation
+language. Map `CreateBlock(parentId, index)` and `MoveBlock(parentId, index)` to
+flat placement by using preorder tree order.
+
+For a destination parent `P`:
+
+1. The destination Block root has depth `P.depth + 1`.
+2. If the destination child index is `0`, the destination run starts immediately
+   after `P` in projected preorder.
+3. Otherwise, the destination run starts after the complete subtree of the
+   previous sibling at `index - 1`.
+4. The upper bound is the next sibling when one exists. At the end of the child
+   vector, the upper bound is the first Block after `P`'s complete subtree, or
+   the end of the document order.
+5. Allocate the moved or created Block run inside that destination interval.
+
+A subtree move applies one depth delta to the moved subtree so its root has the
+required destination depth. It preserves descendant depth differences, Block
+identities, and projected relative order. Allocate fresh ordered destination
+positions for the moved run. Do not carry old position prefixes into the new
+run.
+
+A Block creation is a run of one Block. A subtree move can contain many Blocks.
+The published command is all-or-none at the engine boundary.
+
+## 6. Safety preference
 
 Every surviving Block must remain visible exactly once in the projected tree.
 
@@ -123,20 +178,40 @@ Do not add a parent hint unless qualification proves that it provides a concrete
 recovery benefit that cannot be obtained from History and the visible
 projection.
 
-## 6. Delete and move concurrency
+## 7. Block update and delete concurrency
 
 The required semantic preference is non-destructive:
 
-> A concurrent placement change of a Block wins over deletion of that same Block.
+> A semantic update of a Block that is concurrent with deletion of that same
+> Block wins over the deletion.
 
-This rule applies to structural placement concurrency. It does not imply that any
-unrelated content edit automatically resurrects a deleted Block.
+A structural move is a semantic Block update because it replaces `Placement`.
+A semantic payload mutation must also update the Block's `activity` marker in the
+same logical carrier transaction or change. This rule lets a payload edit compete
+with deletion of the Block without coupling the payload contents to `Placement`.
 
-The Yjs and Automerge qualification adapters must prove the exact carrier effect
-that implements this rule. Do not assume undocumented last-writer behavior is a
-product contract.
+The activity marker is local to the Block that changed. Editing a descendant does
+not update each ancestor. If a parent is deleted while a descendant receives a
+concurrent semantic update, the descendant can survive and project at another
+visible location under the safety rule.
 
-## 7. Position-order requirements
+A subtree delete applies delete effects to the target Block and the descendants
+observed by that delete. A concurrent semantic update can keep an affected Block
+alive independently of its ancestors.
+
+The carrier adapter must prove the exact effect that implements update-over-delete
+semantics. Do not rely on an undocumented last-writer rule or on writing the same
+payload value again. Yjs and Automerge can use different private encodings if
+they preserve the same logical result.
+
+Position normalization described below is allocator work, not user intent. When
+it is inexpensive, an adapter should avoid letting normalization alone defeat a
+concurrent semantic delete. This is a preferred property, not a mandatory
+invariant. If preserving that distinction requires disproportionate machinery,
+qualification must document the residual case where normalization can keep a
+Block alive.
+
+## 8. Position-order requirements
 
 The position scheme is not frozen by this document. Step 3 must qualify an
 established dense-order technique instead of inventing an ad hoc alphabetic
@@ -146,18 +221,21 @@ The selected scheme must provide these properties:
 
 1. **Dense allocation.** A new position can normally be generated between two
    existing positions without relabeling unrelated Blocks.
-2. **Deterministic convergence.** Equal or concurrent primary positions have a
+2. **Collision avoidance.** Normal allocation must use algorithm-native unique
+   identifiers, jitter, or an equivalent technique so exact primary-position
+   collisions are exceptional rather than routine.
+3. **Deterministic convergence.** Equal or concurrent primary positions have a
    deterministic total order. Stable `BlockId` is an acceptable final
    tie-breaker.
-3. **Practical key growth.** Repeated insertion or movement into narrow gaps must
+4. **Practical key growth.** Repeated insertion or movement into narrow gaps must
    stay within measured storage and comparison budgets. No fixed theoretical
    upper bound is required, but pathological growth must be measured.
-4. **Fresh placement on move.** A move allocates a fresh destination position. It
+5. **Fresh placement on move.** A move allocates a fresh destination position. It
    does not append historical prefixes to the old position.
-5. **Run allocation.** A subtree or another ordered Block run receives a fresh
+6. **Run allocation.** A subtree or another ordered Block run receives a fresh
    ordered set of destination positions. The old positions do not accumulate in
    the new keys.
-6. **Non-interleaving.** Blocks placed together by one structural operation must
+7. **Non-interleaving.** Blocks placed together by one structural operation must
    preserve their internal order and should remain contiguous relative to a
    concurrent run placed at the same logical destination. If the selected
    algorithm cannot guarantee this property, qualification must measure and
@@ -172,14 +250,39 @@ Do not specify a fixed percentage of the destination gap, such as 10 percent or
 heuristic, but the requirement is non-interleaving behavior, not one numerical
 mechanism.
 
-## 8. Structural operation semantics
+## 9. Exact-position collision normalization
 
-The Step 2 structural command language remains the product-level mutation
-language. The carrier representation is a private implementation of its logical
-result.
+The stable-identity tie-break makes an exact primary-position collision readable
+and deterministic. It does not create a dense primary-position gap between the
+colliding Blocks. Normal allocation must avoid this case when practical.
+
+If a requested insertion must occur inside an exact-position collision run, the
+allocator can first reposition the minimum necessary later part of that run. The
+normalization must preserve the projected order that existed before the
+insertion and must create a usable destination interval for the new Block or run.
+This rule applies to collisions of two or more Blocks.
+
+Normalization changes replicated carrier state. It is not local-only repair. If
+normalization and insertion can publish in one carrier transaction or change,
+use that form. If the carrier requires separate changes, the insertion must have
+a causal dependency on the required normalization so a peer does not interpret
+the insertion before the destination interval exists.
+
+Normalization does not represent a user-requested `MoveBlock` and does not create
+a separate product History action. It is an internal effect of the structural
+Contribution that required the new position.
+
+Deterministic normalization and suppression of normalization-only resurrection
+are desirable when they are inexpensive. They are not hard product requirements
+because exact collisions are expected to be exceptional. Qualification must
+record any residual behavior when concurrent normalizations or normalization
+versus delete produce different but valid carrier effects.
+
+## 10. Structural operation semantics
 
 A `MoveBlock` does not need a carrier-native list `move()` primitive. It needs one
-atomic logical replacement of the target Block's complete `Placement`.
+atomic logical replacement of the target Block's complete `Placement` and fresh
+ordered placement for the moved subtree run.
 
 A subtree move preserves the identities and relative logical order of all Blocks
 in the subtree. Qualification may implement this as one carrier transaction or
@@ -187,9 +290,15 @@ change containing several placement assignments, but the published operation is
 all-or-none at the engine boundary.
 
 The same atomic-publication rule applies to one Contribution that spans Block
-structure and several InlineContents.
+structure and several InlineContents. One logical collaborative document must
+therefore contain the Block registry and the Block-local payload namespaces that
+the Contribution can affect.
 
-## 9. History and recovery
+Do not create a separate product operation class for collision normalization,
+activity-marker refresh, or other carrier-internal effects. The adapter can
+organize those effects as private implementation helpers.
+
+## 11. History and recovery
 
 Do not introduce a second automatic recovery-point mechanism for disruptive
 remote structural integration.
@@ -204,25 +313,36 @@ surface a disruptive-change warning and direct the user to the relevant before
 and after Versions. Detection and presentation are separate from the durable
 History mechanism.
 
-## 10. Step 3 qualification requirements
+## 12. Step 3 qualification requirements
 
 Run the same structural carrier suite against the pinned Yjs and Automerge
 candidates. At minimum verify:
 
 - root immutability and root-first projection;
 - one visible placement per live `BlockId`;
+- one Block-local payload namespace inside one logical collaborative document;
 - deterministic projection from `position` and `depth`;
 - non-sequential depth behavior;
+- preorder command-to-placement mapping at the first, middle, and last child
+  positions;
+- subtree move with the correct depth delta, identity preservation, and internal
+  order preservation;
 - concurrent move of one Block to different destinations;
 - concurrent move versus delete, with move winning;
+- concurrent payload update versus delete, with the payload update keeping that
+  Block alive;
+- descendant activity does not keep a deleted ancestor alive;
 - concurrent insertion into one destination gap;
+- collision avoidance during ordinary allocation;
 - exact-position collision and deterministic `BlockId` tie-break;
-- insertion between Blocks that previously collided;
-- subtree move with identity and internal-order preservation;
+- insertion inside two-way and multi-way exact-position collision runs;
+- replicated collision normalization and its dependency on insertion;
+- any residual normalization-versus-delete behavior;
 - concurrent subtree/run moves into one destination gap;
 - non-interleaving behavior or measured residual interleaving;
 - all-or-none publication of a multi-Block placement change;
 - all-or-none publication of structure plus several InlineContent changes;
+- a payload mutation and its Block activity marker publish together;
 - repeated narrow-gap insertion and move stress;
 - maximum and average position-key length;
 - comparison/sort cost and serialized carrier growth; and
@@ -233,11 +353,12 @@ Use qualification surrogates for later History, restore, and portable-format
 machinery that does not exist in Step 3. Repeat the real cross-subsystem tests
 when those later steps are implemented.
 
-## 11. What remains open
+## 13. What remains open
 
 Step 3 must still select or implement the concrete position allocator and prove
-its behavior. The exact encoded `Placement` scalar, carrier transaction format,
-and adapter-private metadata are implementation decisions.
+its behavior. The exact encoded `Placement` scalar, activity-marker encoding,
+payload nesting, carrier transaction format, and adapter-private metadata are
+implementation decisions.
 
 Network transport, authorization, causal envelope encoding, retained-History
 storage, and the complete post-MVP offline structural-conflict UX remain outside
