@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest";
 import { parseBlockId } from "../domain/ids.js";
 import type { BlockId } from "../domain/ids.js";
 import { automergeStructuralCarrierFactory } from "./automergeStructuralCarrier.js";
-import type { StructuralCarrierFactory, StructuralPlacement } from "./structuralCarrier.js";
+import type {
+  StructuralCarrierFactory,
+  StructuralPlacement,
+} from "./structuralCarrier.js";
 import { projectStructuralSnapshot } from "./structuralCarrier.js";
 import { yjsStructuralCarrierFactory } from "./yjsStructuralCarrier.js";
 
@@ -28,20 +31,20 @@ for (const factory of [
       });
 
       expect(
-        projectStructuralSnapshot(carrier.snapshot()).map(({ blockId, parentId, depth }) => ({
-          blockId,
-          parentId,
-          depth,
-        })),
+        projectStructuralSnapshot(carrier.snapshot()).map(
+          ({ blockId, parentId, depth }) => ({
+            blockId,
+            parentId,
+            depth,
+          }),
+        ),
       ).toEqual([
         { blockId: rootId, parentId: undefined, depth: 0 },
         { blockId: blockA, parentId: rootId, depth: 1 },
         { blockId: blockB, parentId: blockA, depth: 3 },
         { blockId: blockC, parentId: rootId, depth: 1 },
       ]);
-      expect(() =>
-        carrier.applyChange({ deletes: [rootId] }),
-      ).toThrow(/root/u);
+      expect(() => carrier.applyChange({ deletes: [rootId] })).toThrow(/root/u);
     });
 
     it("moves an ordered subtree run atomically with one depth delta", () => {
@@ -60,9 +63,9 @@ for (const factory of [
         blockA,
         blockB,
       ]);
-      expect(projected.find((entry) => entry.blockId === blockB)?.parentId).toBe(
-        blockA,
-      );
+      expect(
+        projected.find((entry) => entry.blockId === blockB)?.parentId,
+      ).toBe(blockA);
     });
 
     it("converges concurrent moves of one Block to one deterministic placement", () => {
@@ -100,7 +103,9 @@ for (const factory of [
       });
       converge(left, right);
 
-      const entry = left.snapshot().entries.find((value) => value.blockId === blockA);
+      const entry = left
+        .snapshot()
+        .entries.find((value) => value.blockId === blockA);
       expect(entry?.live).toBe(true);
       expect(entry?.payload.childrenPresentation).toBe("sections");
       expect(left.snapshot()).toEqual(right.snapshot());
@@ -141,15 +146,16 @@ for (const factory of [
       converge(left, right);
 
       const snapshot = left.snapshot();
-      expect(snapshot.entries.find((entry) => entry.blockId === blockA)?.live).toBe(
-        false,
-      );
-      expect(snapshot.entries.find((entry) => entry.blockId === blockB)?.live).toBe(
-        true,
-      );
       expect(
-        projectStructuralSnapshot(snapshot).find((entry) => entry.blockId === blockB)
-          ?.parentId,
+        snapshot.entries.find((entry) => entry.blockId === blockA)?.live,
+      ).toBe(false);
+      expect(
+        snapshot.entries.find((entry) => entry.blockId === blockB)?.live,
+      ).toBe(true);
+      expect(
+        projectStructuralSnapshot(snapshot).find(
+          (entry) => entry.blockId === blockB,
+        )?.parentId,
       ).toBe(rootId);
     });
 
@@ -173,7 +179,9 @@ for (const factory of [
         ],
       });
 
-      const entry = carrier.snapshot().entries.find((value) => value.blockId === blockA);
+      const entry = carrier
+        .snapshot()
+        .entries.find((value) => value.blockId === blockA);
       expect(entry).toMatchObject({
         live: true,
         payload: { "inline:first": "alpha", "inline:second": "beta" },
@@ -189,11 +197,11 @@ for (const factory of [
         ],
       });
 
-      expect(projectStructuralSnapshot(carrier.snapshot()).map((entry) => entry.blockId)).toEqual([
-        rootId,
-        blockA,
-        blockB,
-      ]);
+      expect(
+        projectStructuralSnapshot(carrier.snapshot()).map(
+          (entry) => entry.blockId,
+        ),
+      ).toEqual([rootId, blockA, blockB]);
     });
 
     it("survives complete reload and duplicate replicated delivery", () => {

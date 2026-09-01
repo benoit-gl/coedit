@@ -48,7 +48,9 @@ export class AutomergeStructuralCarrier implements StructuralCarrier {
         },
       });
     } else {
-      throw new TypeError("Structural carrier creation requires a root identity.");
+      throw new TypeError(
+        "Structural carrier creation requires a root identity.",
+      );
     }
     parseBlockId(this.document.rootId);
   }
@@ -59,7 +61,9 @@ export class AutomergeStructuralCarrier implements StructuralCarrier {
     this.document = Automerge.change(this.document, (draft) => {
       for (const blockId of change.deletes ?? []) {
         if (blockId === rootId) {
-          throw new TypeError("The structural root cannot be moved or deleted.");
+          throw new TypeError(
+            "The structural root cannot be moved or deleted.",
+          );
         }
         const entry = requireDraftEntry(draft, blockId);
         for (const token of Object.keys(entry.liveness)) {
@@ -70,7 +74,9 @@ export class AutomergeStructuralCarrier implements StructuralCarrier {
       }
       for (const update of change.placements ?? []) {
         if (update.blockId === rootId) {
-          throw new TypeError("The structural root cannot be moved or deleted.");
+          throw new TypeError(
+            "The structural root cannot be moved or deleted.",
+          );
         }
         const entry = requireOrCreateDraftEntry(draft, update.blockId);
         entry.placement = encodeStructuralPlacement(update.placement);
@@ -137,7 +143,9 @@ function requireDraftEntry(
 ): AutomergeStructuralEntry {
   const entry = draft.blocks[blockId];
   if (entry === undefined) {
-    throw new TypeError("Structural update requires an existing Block namespace.");
+    throw new TypeError(
+      "Structural update requires an existing Block namespace.",
+    );
   }
   return entry;
 }

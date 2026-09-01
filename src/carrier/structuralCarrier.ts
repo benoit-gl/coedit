@@ -105,9 +105,13 @@ export interface StructuralCarrierFactory {
 }
 
 /** Serializes one placement as one scalar carrier register value. */
-export function encodeStructuralPlacement(placement: StructuralPlacement): string {
+export function encodeStructuralPlacement(
+  placement: StructuralPlacement,
+): string {
   if (!Number.isSafeInteger(placement.depth) || placement.depth < 0) {
-    throw new TypeError("Structural placement depth must be a non-negative integer.");
+    throw new TypeError(
+      "Structural placement depth must be a non-negative integer.",
+    );
   }
   return JSON.stringify(placement);
 }
@@ -130,7 +134,9 @@ export function decodeStructuralPlacement(value: string): StructuralPlacement {
   const run = position.run;
   const member = position.member;
   if (
-    !digits.every((digit) => Number.isSafeInteger(digit) && digit >= 0 && digit < 65_536) ||
+    !digits.every(
+      (digit) => Number.isSafeInteger(digit) && digit >= 0 && digit < 65_536,
+    ) ||
     typeof run !== "string" ||
     run.length === 0 ||
     !Number.isSafeInteger(member) ||
@@ -146,18 +152,29 @@ export function decodeStructuralPlacement(value: string): StructuralPlacement {
 export function projectStructuralSnapshot(
   snapshot: StructuralCarrierSnapshot,
 ): readonly ProjectedStructuralBlock[] {
-  const root = snapshot.entries.find((entry) => entry.blockId === snapshot.rootId);
+  const root = snapshot.entries.find(
+    (entry) => entry.blockId === snapshot.rootId,
+  );
   if (root === undefined || !root.live) {
     throw new TypeError("Structural carrier root must remain live.");
   }
 
   const live = snapshot.entries
     .filter(
-      (entry): entry is StructuralCarrierEntrySnapshot & { readonly placement: StructuralPlacement } =>
-        entry.live && entry.blockId !== snapshot.rootId && entry.placement !== undefined,
+      (
+        entry,
+      ): entry is StructuralCarrierEntrySnapshot & {
+        readonly placement: StructuralPlacement;
+      } =>
+        entry.live &&
+        entry.blockId !== snapshot.rootId &&
+        entry.placement !== undefined,
     )
     .sort((left, right) => {
-      const order = compareCarrierPositions(left.placement.position, right.placement.position);
+      const order = compareCarrierPositions(
+        left.placement.position,
+        right.placement.position,
+      );
       return order === 0 ? left.blockId.localeCompare(right.blockId) : order;
     });
 
@@ -169,7 +186,10 @@ export function projectStructuralSnapshot(
   ];
 
   for (const entry of live) {
-    while ((stack.at(-1)?.depth ?? 0) >= entry.placement.depth && stack.length > 1) {
+    while (
+      (stack.at(-1)?.depth ?? 0) >= entry.placement.depth &&
+      stack.length > 1
+    ) {
       stack.pop();
     }
     const parent = stack.at(-1) ?? { blockId: snapshot.rootId, depth: 0 };

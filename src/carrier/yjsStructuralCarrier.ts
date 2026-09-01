@@ -76,7 +76,9 @@ export class YjsStructuralCarrier implements StructuralCarrier {
           ? decodeStructuralPlacement(placementValue)
           : undefined;
       const payload = Object.fromEntries(this.payload(entry).entries());
-      const live = [...this.liveness(entry).values()].some((value) => value === true);
+      const live = [...this.liveness(entry).values()].some(
+        (value) => value === true,
+      );
       entries.push({ blockId, placement, payload, live });
     }
     entries.sort((left, right) => left.blockId.localeCompare(right.blockId));
@@ -136,7 +138,9 @@ export class YjsStructuralCarrier implements StructuralCarrier {
   private requireEntry(blockId: BlockId): Y.Map<unknown> {
     const entry = this.blocks.get(blockId);
     if (entry === undefined) {
-      throw new TypeError("Structural update requires an existing Block namespace.");
+      throw new TypeError(
+        "Structural update requires an existing Block namespace.",
+      );
     }
     return entry;
   }
