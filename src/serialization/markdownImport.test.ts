@@ -45,7 +45,9 @@ describe("planMarkdownImport", () => {
   it("constructs the canonical mixed body plus subsection shape", () => {
     const fixture = createFixture();
     const result = planMarkdownImport({
-      bytes: encoder.encode("# Title\n\nIntro paragraph.\n\n## Section\n\nBody."),
+      bytes: encoder.encode(
+        "# Title\n\nIntro paragraph.\n\n## Section\n\nBody.",
+      ),
       rootBlockId: fixture.rootId,
       origin: importedOrigin,
       ids: fixture.ids,
@@ -57,7 +59,10 @@ describe("planMarkdownImport", () => {
       return;
     }
     expect(result.value.source).toEqual({ sourceName: "essay.md" });
-    const applied = applyStructuralOperations(fixture.document, result.value.operations);
+    const applied = applyStructuralOperations(
+      fixture.document,
+      result.value.operations,
+    );
     expect(applied.ok).toBe(true);
     if (!applied.ok) {
       return;
@@ -76,7 +81,7 @@ describe("planMarkdownImport", () => {
   it("preserves arbitrary Markdown link destinations as opaque metadata", () => {
     const fixture = createFixture();
     const result = planMarkdownImport({
-      bytes: encoder.encode("[Run](javascript:alert(1) \"demo\")"),
+      bytes: encoder.encode('[Run](javascript:alert(1) "demo")'),
       rootBlockId: fixture.rootId,
       origin: importedOrigin,
       ids: fixture.ids,
@@ -160,7 +165,10 @@ describe("planMarkdownImport", () => {
       "ordered-list-start-normalized",
       "task-marker-literalized",
     ]);
-    const applied = applyStructuralOperations(fixture.document, result.value.operations);
+    const applied = applyStructuralOperations(
+      fixture.document,
+      result.value.operations,
+    );
     expect(applied.ok).toBe(true);
     if (!applied.ok) {
       return;
@@ -189,24 +197,30 @@ describe("planMarkdownImport", () => {
     ["ATTRIBUTED_TEXT_AND_ANNOTATIONS.md", attributedText],
     ["STRUCTURAL_CARRIER_MODEL.md", structuralCarrier],
     ["MVP_IMPLEMENTATION_SPEC.md", implementationSpec],
-  ])("plans representative project documentation: %s", (sourceName, markdown) => {
-    const fixture = createFixture();
-    const result = planMarkdownImport({
-      bytes: encoder.encode(markdown),
-      rootBlockId: fixture.rootId,
-      origin: importedOrigin,
-      ids: fixture.ids,
-      source: { sourceName },
-    });
+  ])(
+    "plans representative project documentation: %s",
+    (sourceName, markdown) => {
+      const fixture = createFixture();
+      const result = planMarkdownImport({
+        bytes: encoder.encode(markdown),
+        rootBlockId: fixture.rootId,
+        origin: importedOrigin,
+        ids: fixture.ids,
+        source: { sourceName },
+      });
 
-    expect(result.ok).toBe(true);
-    if (!result.ok) {
-      return;
-    }
-    expect(result.value.operations.length).toBeGreaterThan(20);
-    const applied = applyStructuralOperations(fixture.document, result.value.operations);
-    expect(applied.ok).toBe(true);
-  });
+      expect(result.ok).toBe(true);
+      if (!result.ok) {
+        return;
+      }
+      expect(result.value.operations.length).toBeGreaterThan(20);
+      const applied = applyStructuralOperations(
+        fixture.document,
+        result.value.operations,
+      );
+      expect(applied.ok).toBe(true);
+    },
+  );
 });
 
 function createFixture(): FixtureContext {
