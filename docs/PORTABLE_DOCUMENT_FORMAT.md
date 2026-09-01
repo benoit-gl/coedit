@@ -237,7 +237,7 @@ Treat portable input as hostile. Validate a detached copy in this order:
 10. reconstructed Block topology, ownership, ordering, tags, and structural
     limits;
 11. reconstructed text, hard breaks, marks, boundary policies, Origin coverage,
-    and safe link destinations; and
+    opaque link-metadata shape/resource bounds, and typed internal-link shape; and
 12. History replay/materialization invariants.
 
 Validate a complete candidate engine before replacing the active engine or
@@ -292,9 +292,10 @@ The encoder preflights the same limits and final UTF-8 size. Return a typed limi
 error instead of creating a version-1 file the decoder rejects. Do not truncate
 History, Origins, or document state to fit the format.
 
-If representative correct fixtures cannot fit or load within the recorded
-target-device budgets, change the container before declaring version 1 frozen;
-do not silently relax hostile-input bounds.
+If representative correct fixtures cannot fit or load acceptably on the recorded
+qualification environment, change the container before declaring version 1 frozen.
+Treat these measurements as format-capacity evidence, not as a general hardware
+performance promise, and do not silently relax hostile-input bounds.
 
 ## 12. Integrity and chunk identity
 
@@ -340,7 +341,7 @@ At minimum, verify:
 - successful CommandId retries remain idempotent after Save/Open;
 - missing, duplicate, unreachable, mis-hashed, or conflicting chunks fail;
 - malformed graph/frontiers, Contributor/Origin references, carrier state,
-  topology, ownership, marks, and safe links fail;
+  topology, ownership, marks, opaque link metadata, and typed internal links fail;
 - malformed, truncated, duplicate-key, unknown-property, or unsupported
   container/carrier versions fail;
 - every documented resource limit fails safely when exceeded;
