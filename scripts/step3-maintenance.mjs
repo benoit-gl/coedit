@@ -5,7 +5,9 @@ async function replaceIn(path, replacements) {
   for (const [from, to] of replacements) {
     if (!text.includes(from)) {
       if (!text.includes(to)) {
-        throw new Error(`Expected text not found in ${path}: ${from.slice(0, 80)}`);
+        throw new Error(
+          `Expected text not found in ${path}: ${from.slice(0, 80)}`,
+        );
       }
       continue;
     }
@@ -100,10 +102,7 @@ await replaceIn("docs/MARKDOWN_INTERCHANGE.md", [
     "- the same application-significant tags created by Markdown import;\n- the same semantic inline text, hard breaks, intrinsic formatting marks, mark-boundary policies, and safe link destinations; and",
     "- the same semantic inline text, hard breaks, intrinsic formatting marks, mark-boundary policies, and preserved link metadata; and",
   ],
-  [
-    "- 1,000,000 Unicode code points in one InlineContent; and\n",
-    "",
-  ],
+  ["- 1,000,000 Unicode code points in one InlineContent; and\n", ""],
   [
     "link                  -> intrinsic link mark with safe href",
     "link                  -> intrinsic link mark with opaque destination metadata",
@@ -116,14 +115,8 @@ await replaceIn("docs/MARKDOWN_INTERCHANGE.md", [
     "When a source node has a usable normalized source slice, preserve that exact slice as plain text in one terminal InlineContent tagged `import:markdown-literal`. Produce a warning that identifies the lost presentation.",
     "When a source node has a usable normalized source slice, preserve that exact slice as plain authored text and produce a warning that identifies the lost presentation. Do not add a durable tag whose only meaning is that the current Markdown importer could not represent the original syntax. For an unsupported block node, preserve the complete source slice in one terminal InlineContent. For an unsupported inline node, preserve that node's source slice as literal text inside the containing InlineContent.",
   ],
-  [
-    "- unsafe links.\n",
-    "",
-  ],
-  [
-    "- `unsafe-link-literalized`;\n",
-    "",
-  ],
+  ["- unsafe links.\n", ""],
+  ["- `unsafe-link-literalized`;\n", ""],
   [
     "- unsafe links and unsupported inline constructs.\n",
     "- opaque link destinations and unsupported inline constructs.\n",

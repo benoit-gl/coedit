@@ -135,7 +135,7 @@ then retain it as a production regression suite for the winner.
 
 Verify:
 
-- empty and realistic rich text, hard breaks, overlapping marks, and safe links;
+- empty and realistic rich text, hard breaks, overlapping marks, opaque link metadata, and typed internal Block links;
 - bold, italic, underline, strikethrough, inline-code, and link toggle/clear;
 - `none`, `start`, `end`, and `both` boundary expansion at the exact start and end;
 - replacement, empty selection, mark exclusion, split, merge, and hard break;
@@ -193,8 +193,7 @@ Verify:
   orphaned future comment targets without silent ambiguous reattachment;
 - retained Version and cursor behavior after the candidate's supported
   garbage-collection/compaction cycle; and
-- 100,000-character content and 5,000-Contribution load, edit, growth,
-  materialization, and portable-open behavior against recorded budgets.
+- representative 100,000-code-point content and 5,000-Contribution load, edit, growth, materialization, and portable-open behavior. The 100,000-code-point fixture is a qualification workload, not a domain validity limit. Run smaller growth points as well so results expose local, linear, or worse scaling.
 
 ### 6.5 Structural carrier qualification
 
@@ -297,7 +296,7 @@ Markdown A -> Coedit X -> Markdown B -> Coedit Y
 
 Verify `X` and `Y` with the documented Markdown equivalence relation.
 
-The suite must also verify stable diagnostics for normalization, literal fallback, unsafe links, unsupported nodes, malformed input, and resource limits.
+The suite must also verify stable diagnostics for normalization, unsupported-source literal preservation, unsupported nodes, malformed input, and importer resource limits. Link destinations are preserved as opaque metadata and are not classified as safe or unsafe by the importer.
 
 Do not compare source Markdown text for equality. Canonical export spelling is allowed.
 

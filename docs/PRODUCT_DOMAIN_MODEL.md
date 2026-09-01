@@ -216,7 +216,7 @@ The carrier is private behind the document engine. Yjs stable v13 is the provisi
 
 ### 4.5 Formatting uses native marks
 
-Initial formatting values include bold, italic, underline, strikethrough, inline code, and link with a safe destination.
+Initial formatting values include bold, italic, underline, strikethrough, inline code, and link with a carrier-neutral target. Ordinary link metadata is opaque to the document model; typed internal Block links are interpreted only according to the focused attributed-text contract.
 
 Each mark has explicit start/end expansion behavior. Initial defaults expand bold, italic, underline, and strikethrough at both boundaries; inline code and links expand at neither boundary. Detailed insertion, overlap, replacement, and clearing semantics are defined in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`.
 

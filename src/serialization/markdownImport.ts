@@ -150,7 +150,11 @@ interface PlanningContext {
 
 interface InlineBuilder {
   readonly items: Array<
-    | { readonly kind: "text"; readonly text: string; readonly originId: OriginRecord["id"] }
+    | {
+        readonly kind: "text";
+        readonly text: string;
+        readonly originId: OriginRecord["id"];
+      }
     | { readonly kind: "hardBreak"; readonly originId: OriginRecord["id"] }
   >;
   readonly marks: FormattingMark[];
@@ -173,7 +177,11 @@ export function planMarkdownImport(
   try {
     decoded = new TextDecoder("utf-8", { fatal: true }).decode(request.bytes);
   } catch {
-    return rejected("InvalidEncoding", "Markdown source must be valid UTF-8.", []);
+    return rejected(
+      "InvalidEncoding",
+      "Markdown source must be valid UTF-8.",
+      [],
+    );
   }
 
   const source = normalizeSource(decoded);
@@ -186,7 +194,11 @@ export function planMarkdownImport(
   try {
     tree = unified().use(remarkParse).use(remarkGfm).parse(source) as Root;
   } catch {
-    return rejected("UnsupportedSource", "Markdown parser rejected the source.", []);
+    return rejected(
+      "UnsupportedSource",
+      "Markdown parser rejected the source.",
+      [],
+    );
   }
 
   const astLimit = validateAstLimits(tree);
@@ -238,7 +250,11 @@ export function planMarkdownImport(
   };
 }
 
-function planRoot(tree: Root, rootBlock: PlannedBlock, context: PlanningContext): void {
+function planRoot(
+  tree: Root,
+  rootBlock: PlannedBlock,
+  context: PlanningContext,
+): void {
   const children = tree.children;
   let startIndex = 0;
   let rootHeadingDepth = 0;
@@ -321,7 +337,10 @@ function diagnoseSkippedHeading(
   );
 }
 
-function createSection(heading: Heading, context: PlanningContext): SectionPlan {
+function createSection(
+  heading: Heading,
+  context: PlanningContext,
+): SectionPlan {
   const block = createBlock(context, "flow");
   block.contents.push(createInlineContent(heading.children, context));
   return {
@@ -347,7 +366,9 @@ function finalizeSection(section: SectionPlan, context: PlanningContext): void {
   }
   if (section.subsections.length > 0) {
     section.block.childrenPresentation = "sections";
-    section.block.children.push(...section.subsections.map((child) => child.block));
+    section.block.children.push(
+      ...section.subsections.map((child) => child.block),
+    );
     return;
   }
   section.block.childrenPresentation = "flow";
@@ -365,15 +386,26 @@ function planBodyNode(node: Content, context: PlanningContext): PlannedBlock[] {
   }
 }
 
-function planParagraph(node: Paragraph, context: PlanningContext): PlannedBlock {
+function planParagraph(
+  node: Paragraph,
+  context: PlanningContext,
+): PlannedBlock {
   const block = createBlock(context, "flow");
   block.contents.push(createInlineContent(node.children, context));
   return block;
 }
 
 function planList(node: List, context: PlanningContext): PlannedBlock {
-  const group = createBlock(context, node.ordered === true ? "numbers" : "bullets");
-  if (node.ordered === true && node.start !== null && node.start !== undefined && node.start !== 1) {
+  const group = createBlock(
+    context,
+    node.ordered === true ? "numbers" : "bullets",
+  );
+  if (
+    node.ordered === true &&
+    node.start !== null &&
+    node.start !== undefined &&
+    node.start !== 1
+  ) {
     context.diagnostics.push(
       diagnostic(
         "ordered-list-start-normalized",
@@ -436,7 +468,10 @@ function taskPrefix(node: ListItem, context: PlanningContext): string {
   return node.checked ? "[x] " : "[ ] ";
 }
 
-function planUnsupportedBlock(node: Content, context: PlanningContext): PlannedBlock {
+function planUnsupportedBlock(
+  node: Content,
+  context: PlanningContext,
+): PlannedBlock {
   const sourceSlice = requireSourceSlice(node, context);
   const block = createBlock(context, "flow");
   block.contents.push(createLiteralInlineContent(sourceSlice, context));
@@ -689,7 +724,10 @@ function emitChildren(
   }
 }
 
-function requireSourceSlice(node: Content | PhrasingContent, context: PlanningContext): string {
+function requireSourceSlice(
+  node: Content | PhrasingContent,
+  context: PlanningContext,
+): string {
   const location = sourceLocation(node);
   if (location === undefined) {
     context.diagnostics.push({
@@ -752,9 +790,10 @@ function sourceLocation(
 
 function validateAstLimits(root: Root): string | undefined {
   let count = 0;
-  const stack: Array<{ readonly node: Root | Content | PhrasingContent; readonly depth: number }> = [
-    { node: root, depth: 1 },
-  ];
+  const stack: Array<{
+    readonly node: Root | Content | PhrasingContent;
+    readonly depth: number;
+  }> = [{ node: root, depth: 1 }];
   while (stack.length > 0) {
     const current = stack.pop();
     if (current === undefined) {
@@ -768,7 +807,11 @@ function validateAstLimits(root: Root): string | undefined {
       return `Markdown source nesting cannot exceed ${MAX_SOURCE_DEPTH}.`;
     }
     if ("children" in current.node && Array.isArray(current.node.children)) {
-      for (let index = current.node.children.length - 1; index >= 0; index -= 1) {
+      for (
+        let index = current.node.children.length - 1;
+        index >= 0;
+        index -= 1
+      ) {
         const child = current.node.children[index];
         if (child !== undefined) {
           stack.push({

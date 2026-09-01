@@ -46,6 +46,12 @@ If a future feature must retain exact unsupported source syntax for later round-
 
 Origin and Contributor records can preserve descriptive attribution facts. Authentication, authorization, signature validity, and security-principal decisions remain separate concerns. A descriptive Origin claim does not become authenticated because it is canonical document state.
 
+### Implementation capacity
+
+An arbitrary maximum text or payload size is not a canonical document invariant only because the current carrier or runtime has a practical limit. Carrier, parser, codec, browser, and storage implementations can enforce explicit resource/capacity limits at their boundaries. Qualification records the tested envelope. Representative performance fixtures do not become validity limits.
+
+For Step 3, 100,000 code points is a deliberately demanding content-performance fixture. It is not the largest semantically valid InlineContent.
+
 ### Carrier semantic activity
 
 The product or command-to-carrier mapping tells the carrier which effects represent semantic Block updates. Carrier code must not inspect arbitrary payload fields and infer whether a change is semantically important. Internal normalization and allocator effects remain distinct from user semantic intent where the structural contract requires that distinction.
@@ -56,6 +62,7 @@ The product or command-to-carrier mapping tells the carrier which effects repres
 - Adapter diagnostics are not persisted automatically.
 - Security policy is enforced where inert data becomes an active capability or external action.
 - Opaque metadata can still have size, depth, type, and canonical-shape limits.
+- Implementation capacity and hostile-input resource guards remain explicit boundary constraints rather than arbitrary domain semantics.
 - Tags remain generic authored/application metadata. They must not become a hidden channel for adapter bookkeeping unless a documented durable workflow owns that convention.
 - Source-format syntax and parser classifications remain interchange concerns unless the product explicitly promotes them to durable document concepts.
 - Future work should apply the three-question design test before adding new durable enums, flags, tags, classifications, or validation judgments.

@@ -10,7 +10,6 @@ import { isCanonicalUuidV4 } from "./ids.js";
 const MAX_ITEMS = 100_000;
 const MAX_MARKS = 100_000;
 const MAX_ORIGINS = 50_000;
-const MAX_TEXT_LENGTH = 100_000;
 const MAX_OPAQUE_LINK_BYTES = 8_192;
 const MAX_OPAQUE_LINK_DEPTH = 8;
 
@@ -242,12 +241,6 @@ export function validateInlineContentValue(
     } else {
       return failure("InvalidItem", "Unknown content item kind.");
     }
-    if (textLength > MAX_TEXT_LENGTH) {
-      return failure(
-        "LimitExceeded",
-        "CollaborativeContent exceeds the text limit.",
-      );
-    }
   }
 
   for (const mark of value.marks) {
@@ -360,13 +353,12 @@ function isOpaqueValue(value: OpaqueLinkValue, depth: number): boolean {
   if (Array.isArray(value)) {
     return value.every((entry) => isOpaqueValue(entry, depth + 1));
   }
-  const record = value as { readonly [key: string]: OpaqueLinkValue };
+  const record = value as Readonly<Record<string, unknown>>;
   for (const key of Object.keys(record)) {
     const entry = record[key];
     if (
-      entry === undefined ||
       key.length === 0 ||
-      !isOpaqueValue(entry, depth + 1)
+      !isOpaqueValue(entry as OpaqueLinkValue, depth + 1)
     ) {
       return false;
     }

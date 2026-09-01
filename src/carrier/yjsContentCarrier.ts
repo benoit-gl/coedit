@@ -25,6 +25,11 @@ const CONTENT_NAME = "content";
 const ORIGINS_NAME = "origins";
 const ORIGIN_ATTRIBUTE = "coedit:origin";
 
+interface YTextDeltaOperation {
+  readonly insert: string;
+  readonly attributes?: Readonly<Record<string, unknown>>;
+}
+
 /** Headless Yjs v13 qualification adapter for one CollaborativeContent value. */
 export class YjsContentCarrier implements ContentCarrier {
   public readonly candidate = "yjs" as const;
@@ -80,7 +85,9 @@ export class YjsContentCarrier implements ContentCarrier {
     const openMarks = new Map<string, number>();
     let offset = 0;
 
-    for (const operation of this.text.toDelta()) {
+    const delta =
+      this.text.toDelta() as unknown as readonly YTextDeltaOperation[];
+    for (const operation of delta) {
       if (typeof operation.insert !== "string") {
         throw new TypeError(
           "The Step 3 Yjs carrier accepts text and hard breaks only.",
