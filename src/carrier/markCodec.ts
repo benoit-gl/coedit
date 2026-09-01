@@ -30,6 +30,7 @@ export function encodeMarkKey(mark: FormattingMark): string {
 }
 
 /** Decodes and validates one private semantic formatting carrier key. */
+/** Decodes and validates one private semantic formatting carrier key. */
 export function decodeMarkKey(key: string): EncodedMarkDescriptor | undefined {
   if (!key.startsWith(MARK_PREFIX)) {
     return undefined;
@@ -58,6 +59,7 @@ export function decodeMarkKey(key: string): EncodedMarkDescriptor | undefined {
   return { kind, boundaryPolicy, target: targetValue };
 }
 
+/** Tests whether an insertion at one offset inherits a formatting mark. */
 /** Tests whether an insertion at one offset inherits a formatting mark. */
 export function markAppliesAtInsertion(
   mark: FormattingMark,
