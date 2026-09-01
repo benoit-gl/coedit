@@ -6,62 +6,20 @@ on:
       - impl/step-3-collaborative-content
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   validate:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: impl/step-3-collaborative-content
       - uses: actions/setup-node@v4
         with:
           node-version: 22.16.0
       - name: Install exact pnpm
         run: npm install --global pnpm@11.24.0
-      - name: Add Step 3 qualification dependencies
-        run: >-
-          pnpm add
-          yjs@13.6.32
-          @automerge/automerge@3.4.1
-          @tiptap/core@3.30.5
-          @tiptap/pm@3.30.5
-          y-prosemirror@1.3.7
-          @automerge/prosemirror@0.2.0
-          unified@11.0.5
-          remark-parse@11.0.0
-          remark-gfm@4.0.1
-      - name: Add Markdown type dependency
-        run: pnpm add --save-dev @types/mdast@4.0.4
-      - name: Apply Automerge carrier correction
-        run: node scripts/step3-carrier-fix.mjs
-      - name: Format changed Step 3 material
-        run: >-
-          pnpm exec prettier --write
-          package.json
-          pnpm-lock.yaml
-          src/domain
-          src/carrier
-          src/serialization
-          scripts/step3-carrier-fix.mjs
-          docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md
-          docs/MARKDOWN_INTERCHANGE.md
-          docs/MVP_ARCHITECTURE.md
-          docs/MVP_VERIFICATION_PLAN.md
-          docs/PORTABLE_DOCUMENT_FORMAT.md
-          docs/PRODUCT_DOMAIN_MODEL.md
-          docs/decisions
-      - name: Commit carrier correction
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add package.json pnpm-lock.yaml src/domain src/carrier src/serialization scripts/step3-carrier-fix.mjs docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md docs/MARKDOWN_INTERCHANGE.md docs/MVP_ARCHITECTURE.md docs/MVP_VERIFICATION_PLAN.md docs/PORTABLE_DOCUMENT_FORMAT.md docs/PRODUCT_DOMAIN_MODEL.md docs/decisions
-          if ! git diff --cached --quiet; then
-            git commit -m "Correct Automerge code-unit indexing"
-            git push origin HEAD:impl/step-3-collaborative-content
-          fi
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
       - name: Check
         run: pnpm check
       - name: Build
