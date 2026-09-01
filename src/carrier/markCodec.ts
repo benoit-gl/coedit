@@ -9,12 +9,17 @@ import { isCanonicalUuidV4 } from "../domain/ids.js";
 
 const MARK_PREFIX = "coedit:mark:";
 
-interface EncodedMarkDescriptor {
+/** Carrier-private semantic descriptor encoded in one independent mark key. */
+export interface EncodedMarkDescriptor {
+  /** Intrinsic formatting kind. */
   readonly kind: FormattingMarkKind;
+  /** Canonical insertion-boundary behavior. */
   readonly boundaryPolicy: MarkBoundaryPolicy;
+  /** Link target when the descriptor represents a link. */
   readonly target?: LinkTarget;
 }
 
+/** Encodes one semantic formatting descriptor as an independent carrier key. */
 export function encodeMarkKey(mark: FormattingMark): string {
   const descriptor: EncodedMarkDescriptor = {
     kind: mark.kind,
@@ -24,6 +29,7 @@ export function encodeMarkKey(mark: FormattingMark): string {
   return MARK_PREFIX + encodeURIComponent(JSON.stringify(descriptor));
 }
 
+/** Decodes and validates one private semantic formatting carrier key. */
 export function decodeMarkKey(key: string): EncodedMarkDescriptor | undefined {
   if (!key.startsWith(MARK_PREFIX)) {
     return undefined;
@@ -52,6 +58,7 @@ export function decodeMarkKey(key: string): EncodedMarkDescriptor | undefined {
   return { kind, boundaryPolicy, target: targetValue };
 }
 
+/** Tests whether an insertion at one offset inherits a formatting mark. */
 export function markAppliesAtInsertion(
   mark: FormattingMark,
   offset: number,

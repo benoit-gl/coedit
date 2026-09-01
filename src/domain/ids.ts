@@ -9,23 +9,35 @@ declare const contributionIdBrand: unique symbol;
 declare const originIdBrand: unique symbol;
 
 /** Canonical durable identity for one Coedit document. */
-export type DocumentId = string & { readonly [documentIdBrand]: "DocumentId" };
+export type DocumentId = string & {
+  /** Nominal brand for a validated DocumentId. */
+  readonly [documentIdBrand]: "DocumentId";
+};
 /** Canonical durable identity for one Block. */
-export type BlockId = string & { readonly [blockIdBrand]: "BlockId" };
+export type BlockId = string & {
+  /** Nominal brand for a validated BlockId. */
+  readonly [blockIdBrand]: "BlockId";
+};
 /** Canonical durable identity for one InlineContent. */
 export type InlineContentId = string & {
+  /** Nominal brand for a validated InlineContentId. */
   readonly [inlineContentIdBrand]: "InlineContentId";
 };
 /** Canonical durable identity for one Contributor. */
 export type ContributorId = string & {
+  /** Nominal brand for a validated ContributorId. */
   readonly [contributorIdBrand]: "ContributorId";
 };
 /** Canonical durable identity for one Contribution. */
 export type ContributionId = string & {
+  /** Nominal brand for a validated ContributionId. */
   readonly [contributionIdBrand]: "ContributionId";
 };
 /** Canonical document-scoped identity for one Origin record. */
-export type OriginId = string & { readonly [originIdBrand]: "OriginId" };
+export type OriginId = string & {
+  /** Nominal brand for a validated OriginId. */
+  readonly [originIdBrand]: "OriginId";
+};
 
 /** Tests whether text is a canonical lowercase UUID-v4 value. */
 export function isCanonicalUuidV4(value: string): boolean {

@@ -5,7 +5,9 @@ async function replaceIn(path, replacements) {
   for (const [from, to] of replacements) {
     if (!text.includes(from)) {
       if (!text.includes(to)) {
-        throw new Error(`Expected text not found in ${path}: ${from.slice(0, 100)}`);
+        throw new Error(
+          `Expected text not found in ${path}: ${from.slice(0, 100)}`,
+        );
       }
       continue;
     }

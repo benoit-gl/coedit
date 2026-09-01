@@ -32,8 +32,18 @@ export interface PositionError {
 
 /** Result of one position allocation. */
 export type PositionResult =
-  | { readonly ok: true; readonly value: readonly CarrierPosition[] }
-  | { readonly ok: false; readonly error: PositionError };
+  | {
+      /** Indicates successful position allocation. */
+      readonly ok: true;
+      /** Fresh ordered carrier positions. */
+      readonly value: readonly CarrierPosition[];
+    }
+  | {
+      /** Indicates an expected allocation rejection. */
+      readonly ok: false;
+      /** Stable allocation failure detail. */
+      readonly error: PositionError;
+    };
 
 /** Compares two positions in projected structural order. */
 export function compareCarrierPositions(

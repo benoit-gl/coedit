@@ -160,8 +160,18 @@ export interface ContentValidationError {
 
 /** Result of complete CollaborativeContent validation. */
 export type ContentValidationResult =
-  | { readonly ok: true; readonly value: InlineContentValue }
-  | { readonly ok: false; readonly error: ContentValidationError };
+  | {
+      /** Indicates valid canonical content. */
+      readonly ok: true;
+      /** Validated detached content value. */
+      readonly value: InlineContentValue;
+    }
+  | {
+      /** Indicates an expected validation rejection. */
+      readonly ok: false;
+      /** Stable validation failure detail. */
+      readonly error: ContentValidationError;
+    };
 
 /** Creates a detached valid empty CollaborativeContent value. */
 export function createEmptyInlineContentValue(): InlineContentValue {

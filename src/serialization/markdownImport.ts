@@ -118,8 +118,18 @@ export interface MarkdownImportError {
 
 /** Result of pure Markdown import planning. */
 export type MarkdownImportPlanResult =
-  | { readonly ok: true; readonly value: MarkdownImportPlan }
-  | { readonly ok: false; readonly error: MarkdownImportError };
+  | {
+      /** Indicates successful pure import planning. */
+      readonly ok: true;
+      /** Complete operation and diagnostic plan. */
+      readonly value: MarkdownImportPlan;
+    }
+  | {
+      /** Indicates an expected import-planning rejection. */
+      readonly ok: false;
+      /** Stable import failure detail. */
+      readonly error: MarkdownImportError;
+    };
 
 interface PlannedInlineContent {
   readonly id: InlineContentId;

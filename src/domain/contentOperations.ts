@@ -20,14 +20,26 @@ export type ContentEditErrorKind =
 
 /** Expected CollaborativeContent edit failure. */
 export interface ContentEditError {
+  /** Stable machine-readable edit failure kind. */
   readonly kind: ContentEditErrorKind;
+  /** Human-readable edit failure detail. */
   readonly message: string;
 }
 
 /** Result of one carrier-neutral CollaborativeContent edit. */
 export type ContentEditResult =
-  | { readonly ok: true; readonly value: InlineContentValue }
-  | { readonly ok: false; readonly error: ContentEditError };
+  | {
+      /** Indicates a successful detached edit. */
+      readonly ok: true;
+      /** New validated content value. */
+      readonly value: InlineContentValue;
+    }
+  | {
+      /** Indicates an expected edit rejection. */
+      readonly ok: false;
+      /** Stable edit failure detail. */
+      readonly error: ContentEditError;
+    };
 
 /** Inserts visible text with one explicitly supplied Origin. */
 export function insertText(
