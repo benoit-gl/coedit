@@ -6,13 +6,16 @@ on:
       - impl/step-3-collaborative-content
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   validate:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: impl/step-3-collaborative-content
       - uses: actions/setup-node@v4
         with:
           node-version: 22.16.0
@@ -20,6 +23,22 @@ jobs:
         run: npm install --global pnpm@11.24.0
       - name: Install locked dependencies
         run: pnpm install --frozen-lockfile
+      - name: Format structural qualification files
+        run: >-
+          pnpm exec prettier --write
+          src/carrier/structuralCarrier.ts
+          src/carrier/yjsStructuralCarrier.ts
+          src/carrier/automergeStructuralCarrier.ts
+          src/carrier/structuralCarrier.test.ts
+      - name: Commit structural formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/carrier/structuralCarrier.ts src/carrier/yjsStructuralCarrier.ts src/carrier/automergeStructuralCarrier.ts src/carrier/structuralCarrier.test.ts
+          if ! git diff --cached --quiet; then
+            git commit -m "Format structural carrier qualification"
+            git push origin HEAD:impl/step-3-collaborative-content
+          fi
       - name: Check
         run: pnpm check
       - name: Build
