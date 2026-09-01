@@ -72,6 +72,15 @@ export class AutomergeStructuralCarrier implements StructuralCarrier {
           }
         }
       }
+      for (const update of change.normalizations ?? []) {
+        if (update.blockId === rootId) {
+          throw new TypeError(
+            "The structural root cannot be moved or deleted.",
+          );
+        }
+        const entry = requireDraftEntry(draft, update.blockId);
+        entry.placement = encodeStructuralPlacement(update.placement);
+      }
       for (const update of change.placements ?? []) {
         if (update.blockId === rootId) {
           throw new TypeError(
