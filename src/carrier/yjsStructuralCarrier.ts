@@ -79,7 +79,12 @@ export class YjsStructuralCarrier implements StructuralCarrier {
       const live = [...this.liveness(entry).values()].some(
         (value) => value === true,
       );
-      entries.push({ blockId, placement, payload, live });
+      entries.push({
+        blockId,
+        ...(placement === undefined ? {} : { placement }),
+        payload,
+        live,
+      });
     }
     entries.sort((left, right) => left.blockId.localeCompare(right.blockId));
     return {
