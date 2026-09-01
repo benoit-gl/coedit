@@ -1,0 +1,26 @@
+name: Step 3 temporary validation
+
+on:
+  push:
+    branches:
+      - impl/step-3-collaborative-content
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.16.0
+      - name: Install exact pnpm
+        run: npm install --global pnpm@11.24.0
+      - name: Install locked dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Check
+        run: pnpm check
+      - name: Build
+        run: pnpm build
