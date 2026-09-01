@@ -20,6 +20,14 @@ export interface StructuralPlacementUpdate {
   readonly liveToken: string;
 }
 
+/** One carrier-private placement rewrite that is not semantic Block activity. */
+export interface StructuralNormalizationUpdate {
+  /** Existing Block whose collision position is normalized. */
+  readonly blockId: BlockId;
+  /** Fresh complete placement that preserves projected meaning. */
+  readonly placement: StructuralPlacement;
+}
+
 /** One Block-local payload update with a fresh liveness token. */
 export interface StructuralPayloadUpdate {
   /** Existing Block whose payload changes. */
@@ -34,8 +42,10 @@ export interface StructuralPayloadUpdate {
 
 /** One atomic logical carrier change used by structural qualification. */
 export interface StructuralCarrierChange {
-  /** Placement mutations that publish in this carrier transaction/change. */
+  /** Semantic placement mutations that publish in this carrier transaction/change. */
   readonly placements?: readonly StructuralPlacementUpdate[];
+  /** Carrier-private collision normalization that must not refresh liveness. */
+  readonly normalizations?: readonly StructuralNormalizationUpdate[];
   /** Payload mutations that publish in this carrier transaction/change. */
   readonly payloads?: readonly StructuralPayloadUpdate[];
   /** Blocks whose currently observed live tokens are retired. */
