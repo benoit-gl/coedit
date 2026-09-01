@@ -54,7 +54,7 @@ The documented baseline closes the former `TextAnchor` blocker by assigning intr
 
 The accepted reconciliation closes Step 0. A separate Elaboration carrier gate must pass before Step 3 CollaborativeContent, carrier-dependent History effects, editor integration, or `.coedit` version 1 is frozen.
 
-The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, representative target devices, performance budgets, measurements, and the selection rationale. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
+The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, the actual qualification hardware/software environment, measurements, scaling behavior, and the selection rationale. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
 
 ### 4.1 Step 1 tooling and platform evidence
 
@@ -195,7 +195,17 @@ Verify:
   garbage-collection/compaction cycle; and
 - representative 100,000-code-point content and 5,000-Contribution load, edit, growth, materialization, and portable-open behavior. The 100,000-code-point fixture is a qualification workload, not a domain validity limit. Run smaller growth points as well so results expose local, linear, or worse scaling.
 
-### 6.5 Structural carrier qualification
+### 6.5 Performance qualification
+
+Use paired, same-machine measurements for Yjs and Automerge and record OS, Node/browser versions, CPU, RAM, and exact carrier/library versions. Warm up each case and repeat it. Record median and tail latency rather than one stopwatch value.
+
+Separate visible editor feedback from canonical local-model publication. Visible typing feedback is the critical hot path and must not wait for persistence, History materialization, network/replica delivery, or another slow subsystem. Normal local text editing must reach canonical local collaborative state and project back within 50 ms on the qualification environment. This limit is not a general hardware performance promise.
+
+Exercise ordinary typing, delete/backspace, insertion at start/middle/end, selection replacement, hard breaks, formatting, mark boundaries, and Unicode. Use smaller growth points plus the representative 100,000-code-point fixture and multiple InlineContents. Detect accidental whole-document scans or reconstruction on a normal keystroke; whole-document work on routine typing is disqualifying even when one test runner is fast enough to hide the cost.
+
+Measure Block create, move, subtree move, delete, and structure-plus-multiple-InlineContent atomic changes separately. Characterize open/reload, carrier serialization, checkpoint-state capture, historical materialization, export, convergence workloads, serialized-state growth, and supported garbage collection/compaction. Repeat critical measurements after reload/compaction. Deliberately slow persistence and replica delivery in browser tests; local typing must remain responsive.
+
+### 6.6 Structural carrier qualification
 
 Run the complete structural suite in `STRUCTURAL_CARRIER_MODEL.md` against both
 candidates. This section records the high-risk acceptance cases; it does not

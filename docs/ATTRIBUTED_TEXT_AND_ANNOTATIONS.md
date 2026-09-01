@@ -392,10 +392,15 @@ minimum it covers:
 - exact portable round trip and historical materialization; and
 - representative growth and load behavior.
 
-Functional invariants are mandatory. Before running performance qualification,
-record representative target devices and budgets for open, ordinary edit,
-checkpoint, history materialization, and export. Results and dependency/license
-review are retained as qualification evidence.
+Functional invariants are mandatory. Performance qualification records the actual
+hardware and software environment used for each run. Normal local text editing must
+update canonical local collaborative state within 50 ms on that qualification
+environment. Measure visible editor feedback separately and keep it in the tightest
+practical loop; routine carrier, persistence, History, or replica work must not block
+visible local feedback. Open, reload, checkpoint, historical materialization, export,
+and other non-keystroke-critical operations are characterization data at this stage,
+not general fixed hardware promises. Retain median and tail measurements, scaling
+results, and dependency/license review as qualification evidence.
 
 Select Yjs when the protected Origin carrier passes without fragile full-state
 reconstruction or editor repair. Select Automerge only if its native rich-text,

@@ -292,9 +292,10 @@ The encoder preflights the same limits and final UTF-8 size. Return a typed limi
 error instead of creating a version-1 file the decoder rejects. Do not truncate
 History, Origins, or document state to fit the format.
 
-If representative correct fixtures cannot fit or load within the recorded
-target-device budgets, change the container before declaring version 1 frozen;
-do not silently relax hostile-input bounds.
+If representative correct fixtures cannot fit or load acceptably on the recorded
+qualification environment, change the container before declaring version 1 frozen.
+Treat these measurements as format-capacity evidence, not as a general hardware
+performance promise, and do not silently relax hostile-input bounds.
 
 ## 12. Integrity and chunk identity
 

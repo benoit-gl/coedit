@@ -192,7 +192,7 @@ export function planMarkdownImport(
 
   let tree: Root;
   try {
-    tree = unified().use(remarkParse).use(remarkGfm).parse(source) as Root;
+    tree = unified().use(remarkParse).use(remarkGfm).parse(source);
   } catch {
     return rejected(
       "UnsupportedSource",
@@ -376,14 +376,13 @@ function finalizeSection(section: SectionPlan, context: PlanningContext): void {
 }
 
 function planBodyNode(node: Content, context: PlanningContext): PlannedBlock[] {
-  switch (node.type) {
-    case "paragraph":
-      return [planParagraph(node, context)];
-    case "list":
-      return [planList(node, context)];
-    default:
-      return [planUnsupportedBlock(node, context)];
+  if (node.type === "paragraph") {
+    return [planParagraph(node, context)];
   }
+  if (node.type === "list") {
+    return [planList(node, context)];
+  }
+  return [planUnsupportedBlock(node, context)];
 }
 
 function planParagraph(
@@ -541,42 +540,45 @@ function appendInlineNode(
   node: PhrasingContent,
   context: PlanningContext,
 ): void {
-  switch (node.type) {
-    case "text":
-      appendText(builder, node.value.replace(/\r?\n/gu, " "), context.origin);
-      return;
-    case "break":
-      appendBreak(builder, node, context.origin);
-      return;
-    case "emphasis":
-      appendContainerMark(builder, node, "italic", "both", context);
-      return;
-    case "strong":
-      appendContainerMark(builder, node, "bold", "both", context);
-      return;
-    case "delete":
-      appendContainerMark(builder, node, "strikethrough", "both", context);
-      return;
-    case "inlineCode":
-      appendInlineCode(builder, node, context.origin);
-      return;
-    case "link":
-      appendLink(builder, node, context);
-      return;
-    default: {
-      const sourceSlice = requireSourceSlice(node, context);
-      appendText(builder, sourceSlice, context.origin);
-      context.diagnostics.push(
-        diagnostic(
-          "unsupported-node-literalized",
-          "warning",
-          "Unsupported inline Markdown construct was preserved as plain text.",
-          node,
-          "preserved",
-        ),
-      );
-    }
+  if (node.type === "text") {
+    appendText(builder, node.value.replace(/\r?\n/gu, " "), context.origin);
+    return;
   }
+  if (node.type === "break") {
+    appendBreak(builder, node, context.origin);
+    return;
+  }
+  if (node.type === "emphasis") {
+    appendContainerMark(builder, node, "italic", "both", context);
+    return;
+  }
+  if (node.type === "strong") {
+    appendContainerMark(builder, node, "bold", "both", context);
+    return;
+  }
+  if (node.type === "delete") {
+    appendContainerMark(builder, node, "strikethrough", "both", context);
+    return;
+  }
+  if (node.type === "inlineCode") {
+    appendInlineCode(builder, node, context.origin);
+    return;
+  }
+  if (node.type === "link") {
+    appendLink(builder, node, context);
+    return;
+  }
+  const sourceSlice = requireSourceSlice(node, context);
+  appendText(builder, sourceSlice, context.origin);
+  context.diagnostics.push(
+    diagnostic(
+      "unsupported-node-literalized",
+      "warning",
+      "Unsupported inline Markdown construct was preserved as plain text.",
+      node,
+      "preserved",
+    ),
+  );
 }
 
 function appendBreak(
@@ -815,7 +817,7 @@ function validateAstLimits(root: Root): string | undefined {
         const child = current.node.children[index];
         if (child !== undefined) {
           stack.push({
-            node: child as Content | PhrasingContent,
+            node: child,
             depth: current.depth + 1,
           });
         }

@@ -67,7 +67,7 @@ The initial import limits are:
 
 - 10 MiB UTF-8 source;
 - 200,000 Markdown AST nodes;
-- 50,000 generated Blocks;
+- 50,000 Blocks in the candidate imported document, including the root;
 - source nesting depth 100;
 - source name at most 255 Unicode code points and 1 KiB UTF-8.
 
@@ -222,7 +222,7 @@ The test suite must include at least:
 - mixed introductory body plus subsections;
 - ordered, unordered, and nested lists;
 - empty headings and empty list items;
-- emphasis, strong, strikethrough, inline code, hard breaks, and safe links;
+- emphasis, strong, strikethrough, inline code, hard breaks, and links with opaque destination metadata;
 - task markers and non-one ordered-list starts;
 - unsupported block constructs that use literal fallback; and
 - opaque link destinations and unsupported inline constructs.

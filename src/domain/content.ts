@@ -7,9 +7,6 @@ import type {
 } from "./ids.js";
 import { isCanonicalUuidV4 } from "./ids.js";
 
-const MAX_ITEMS = 100_000;
-const MAX_MARKS = 100_000;
-const MAX_ORIGINS = 50_000;
 const MAX_OPAQUE_LINK_BYTES = 8_192;
 const MAX_OPAQUE_LINK_DEPTH = 8;
 
@@ -184,17 +181,6 @@ export function contentLength(value: InlineContentValue): number {
 export function validateInlineContentValue(
   value: InlineContentValue,
 ): ContentValidationResult {
-  if (
-    value.items.length > MAX_ITEMS ||
-    value.marks.length > MAX_MARKS ||
-    value.origins.length > MAX_ORIGINS
-  ) {
-    return failure(
-      "LimitExceeded",
-      "CollaborativeContent exceeds item limits.",
-    );
-  }
-
   const origins = new Set<string>();
   for (const origin of value.origins) {
     if (
@@ -336,7 +322,10 @@ function validateLinkTarget(
   return undefined;
 }
 
-function isOpaqueValue(value: OpaqueLinkValue, depth: number): boolean {
+function isOpaqueValue(
+  value: unknown,
+  depth: number,
+): value is OpaqueLinkValue {
   if (depth > MAX_OPAQUE_LINK_DEPTH) {
     return false;
   }
@@ -356,10 +345,7 @@ function isOpaqueValue(value: OpaqueLinkValue, depth: number): boolean {
   const record = value as Readonly<Record<string, unknown>>;
   for (const key of Object.keys(record)) {
     const entry = record[key];
-    if (
-      key.length === 0 ||
-      !isOpaqueValue(entry as OpaqueLinkValue, depth + 1)
-    ) {
+    if (key.length === 0 || !isOpaqueValue(entry, depth + 1)) {
       return false;
     }
   }
