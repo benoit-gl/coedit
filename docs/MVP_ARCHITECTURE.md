@@ -80,6 +80,22 @@ Adapters translate between an external concern and the engine:
 
 Authority, not deployment, defines the boundary.
 
+### 2.4 Semantic interpretation and capacity boundaries
+
+Canonical document state stores durable document facts and accepted product semantics. Adapters and consumers derive judgments that depend on current source syntax, host capabilities, security policy, renderer behavior, or implementation capacity.
+
+Before a new classification becomes durable state, ask:
+
+1. Is it an objective fact about the document, or a judgment made by the current adapter, environment, policy, or implementation?
+2. Would it still mean the same thing in another renderer, host, importer version, security policy, or future application?
+3. Is there a real document workflow that requires it to survive independently of the component that derived it?
+
+A contextual classification that can change with the consumer and has no durable workflow normally remains a diagnostic, projection result, activation decision, or other boundary result. ADR 0005 records the rationale and examples.
+
+The same rule applies to capacity. The domain does not impose an arbitrary text or payload-size ceiling only because one carrier, parser, codec, browser, or storage implementation needs a resource guard. Boundary implementations can reject work they cannot process safely and must return explicit resource/capacity failure. Qualification records the tested envelope. Such an implementation limit does not make larger content semantically invalid.
+
+Resource protection remains mandatory for hostile external inputs. Parser byte limits, nesting limits, archive bounds, opaque-metadata bounds, and similar guards protect the consuming implementation without redefining document ontology.
+
 ## 3. Public engine behavior
 
 The public API promises behavior rather than storage layout. It is asynchronous from the start.

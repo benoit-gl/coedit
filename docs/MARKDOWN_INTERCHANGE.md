@@ -38,8 +38,7 @@ For Markdown round-trip verification, two Coedit documents are equivalent when t
 - the same sibling order;
 - the same `childrenPresentation` values;
 - the same number and order of InlineContents per Block;
-- the same application-significant tags created by Markdown import;
-- the same semantic inline text, hard breaks, intrinsic formatting marks, mark-boundary policies, and safe link destinations; and
+- the same semantic inline text, hard breaks, intrinsic formatting marks, mark-boundary policies, and preserved link metadata; and
 - the same importer normalization semantics where a source construct requires normalization.
 
 Generated IDs, Contributor IDs, Origin IDs, Contribution IDs, VersionTokens, timestamps, carrier internal identities, encoded update-byte order, and source-file metadata are not part of Markdown structural equivalence.
@@ -68,9 +67,8 @@ The initial import limits are:
 
 - 10 MiB UTF-8 source;
 - 200,000 Markdown AST nodes;
-- 50,000 generated Blocks;
+- 50,000 Blocks in the candidate imported document, including the root;
 - source nesting depth 100;
-- 1,000,000 Unicode code points in one InlineContent; and
 - source name at most 255 Unicode code points and 1 KiB UTF-8.
 
 Invalid UTF-8 or an exceeded limit rejects the import before the active document is replaced.
@@ -127,12 +125,12 @@ emphasis              -> intrinsic italic mark
 strong                -> intrinsic bold mark
 delete                -> intrinsic strikethrough mark
 inline code           -> intrinsic inline-code mark
-link                  -> intrinsic link mark with safe href
+link                  -> intrinsic link mark with opaque destination metadata
 ```
 
 The importer and exporter use the intrinsic formatting vocabulary and boundary defaults in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`. The selected collaborative carrier's native marks are canonical; ProseMirror and Markdown remain adapters/projections.
 
-Safe links are `http`, `https`, `mailto`, same-document fragments, and relative references. Reject control characters and unsafe explicit schemes from the formatting model.
+Markdown link destinations are preserved as opaque bounded link metadata. The importer does not classify destinations as safe or unsafe and does not decide whether they are URLs, commands, citations, or activatable targets. A renderer or integration that activates the metadata applies its own policy at that boundary.
 
 Raw HTML remains literal fallback under this contract and is never rendered with `innerHTML`. If a later design introduces a raw-HTML/HAST rendering path, apply an allowlist sanitizer such as `rehype-sanitize` after the last unsafe HAST transform. DOMPurify or equivalent remains the DOM/clipboard boundary sanitizer, not the Markdown structural parser.
 
@@ -140,7 +138,7 @@ Raw HTML remains literal fallback under this contract and is never rendered with
 
 Unsupported source must not disappear silently.
 
-When a source node has a usable normalized source slice, preserve that exact slice as plain text in one terminal InlineContent tagged `import:markdown-literal`. Produce a warning that identifies the lost presentation.
+When a source node has a usable normalized source slice, preserve that exact slice as plain authored text and produce a warning that identifies the lost presentation. Do not add a durable tag whose only meaning is that the current Markdown importer could not represent the original syntax. For an unsupported block node, preserve the complete source slice in one terminal InlineContent. For an unsupported inline node, preserve that node's source slice as literal text inside the containing InlineContent.
 
 Initially apply this fallback to:
 
@@ -152,7 +150,6 @@ Initially apply this fallback to:
 - thematic breaks;
 - unknown block constructs;
 - unsupported inline constructs; and
-- unsafe links.
 
 If an unsupported source node has no usable source offsets, reject the import with `unsupported-node-without-source`.
 
@@ -181,7 +178,6 @@ Initial codes include:
 - `heading-level-skipped`;
 - `ordered-list-start-normalized`;
 - `task-marker-literalized`;
-- `unsafe-link-literalized`;
 - `unsupported-node-literalized`; and
 - `unsupported-node-without-source`.
 
@@ -226,10 +222,10 @@ The test suite must include at least:
 - mixed introductory body plus subsections;
 - ordered, unordered, and nested lists;
 - empty headings and empty list items;
-- emphasis, strong, strikethrough, inline code, hard breaks, and safe links;
+- emphasis, strong, strikethrough, inline code, hard breaks, and links with opaque destination metadata;
 - task markers and non-one ordered-list starts;
 - unsupported block constructs that use literal fallback; and
-- unsafe links and unsupported inline constructs.
+- opaque link destinations and unsupported inline constructs.
 
 Include one golden fixture that contains introductory paragraphs, a list, and subsections under the same heading. It must prove both importer grouping and exporter inversion.
 
