@@ -1,26 +1,24 @@
-import type { CarrierPosition, PositionError } from "./position.js";
-import {
-  allocateCarrierPositionRun,
-  compareCarrierPositions,
-  isValidCarrierPosition,
+import type {
+  StructuralPositionAllocationError,
+  StructuralPositionAllocator,
 } from "./position.js";
 
-/** One replicated placement rewrite required to open an exact collision gap. */
-export interface PositionNormalizationUpdate {
+/** One replicated placement rewrite required to open a primary-position collision gap. */
+export interface PositionNormalizationUpdate<Position> {
   /** Index in the pre-normalization projected order. */
   readonly index: number;
   /** Fresh position that preserves the previous projected order. */
-  readonly position: CarrierPosition;
+  readonly position: Position;
 }
 
-/** Successful exact-position collision normalization plan. */
-export interface PositionNormalizationPlan {
+/** Successful primary-position collision normalization plan. */
+export interface PositionNormalizationPlan<Position> {
   /** Minimum later part of the collision run that must move. */
-  readonly updates: readonly PositionNormalizationUpdate[];
+  readonly updates: readonly PositionNormalizationUpdate<Position>[];
   /** Existing lower bound retained by normalization. */
-  readonly insertionLower: CarrierPosition;
+  readonly insertionLower: Position;
   /** Fresh first moved position that becomes the insertion upper bound. */
-  readonly insertionUpper: CarrierPosition;
+  readonly insertionUpper: Position;
 }
 
 /** Expected collision-normalization failure. */
@@ -31,16 +29,16 @@ export interface PositionNormalizationError {
   /** Human-readable failure detail. */
   readonly message: string;
   /** Underlying allocator error when allocation failed. */
-  readonly allocationError?: PositionError;
+  readonly allocationError?: StructuralPositionAllocationError;
 }
 
-/** Result of planning one replicated exact-position collision normalization. */
-export type PositionNormalizationResult =
+/** Result of planning one replicated primary-position collision normalization. */
+export type PositionNormalizationResult<Position> =
   | {
       /** Indicates successful normalization planning. */
       readonly ok: true;
       /** Replicated placement rewrites and resulting insertion bounds. */
-      readonly value: PositionNormalizationPlan;
+      readonly value: PositionNormalizationPlan<Position>;
     }
   | {
       /** Indicates an expected normalization rejection. */
@@ -50,18 +48,21 @@ export type PositionNormalizationResult =
     };
 
 /**
- * Plans the minimum later-run rewrite needed to insert inside an exact path collision.
+ * Plans the minimum later-run rewrite needed to insert inside a primary collision.
  *
  * @remarks
  * `insertionIndex` identifies the later existing item. The item immediately before it
- * remains in place. Every consecutive later item with the same primary path receives
- * a fresh ordered position between the retained lower item and the next distinct path.
+ * remains in place. Every consecutive later item at the same primary position receives
+ * a fresh ordered position between the retained lower item and the next distinct primary
+ * position. The structural algorithm uses only the allocator abstraction and never
+ * inspects the candidate-private position representation.
  */
-export function planExactPositionCollisionNormalization(
-  ordered: readonly CarrierPosition[],
+export function planPositionCollisionNormalization<Position, AllocationContext>(
+  allocator: StructuralPositionAllocator<Position, AllocationContext>,
+  ordered: readonly Position[],
   insertionIndex: number,
-  runNonce: string,
-): PositionNormalizationResult {
+  allocationContext: AllocationContext,
+): PositionNormalizationResult<Position> {
   if (
     !Number.isSafeInteger(insertionIndex) ||
     insertionIndex < 1 ||
@@ -72,19 +73,10 @@ export function planExactPositionCollisionNormalization(
       "Collision insertion index is outside an internal boundary.",
     );
   }
-  for (let index = 0; index < ordered.length; index += 1) {
-    const current = ordered[index];
-    if (current === undefined || !isValidCarrierPosition(current)) {
-      return failure(
-        "InvalidOrder",
-        "Collision normalization requires valid positions.",
-      );
-    }
-    const previous = ordered[index - 1];
-    if (
-      previous !== undefined &&
-      compareCarrierPositions(previous, current) > 0
-    ) {
+  for (let index = 1; index < ordered.length; index += 1) {
+    const previous = ordered[index - 1]!;
+    const current = ordered[index]!;
+    if (allocator.compare(previous, current) > 0) {
       return failure(
         "InvalidOrder",
         "Collision normalization input must already be sorted.",
@@ -94,25 +86,28 @@ export function planExactPositionCollisionNormalization(
 
   const lower = ordered[insertionIndex - 1]!;
   const firstLater = ordered[insertionIndex]!;
-  if (!samePrimaryPath(lower, firstLater)) {
+  if (allocator.comparePrimary(lower, firstLater) !== 0) {
     return failure(
       "NoCollision",
-      "Requested insertion boundary is not an exact path collision.",
+      "Requested insertion boundary is not a primary-position collision.",
     );
   }
 
   let end = insertionIndex + 1;
-  while (end < ordered.length && samePrimaryPath(lower, ordered[end]!)) {
+  while (
+    end < ordered.length &&
+    allocator.comparePrimary(lower, ordered[end]!) === 0
+  ) {
     end += 1;
   }
   const upper = ordered[end];
   const movedCount = end - insertionIndex;
-  const allocation = allocateCarrierPositionRun(
+  const allocation = allocator.allocateRun({
     lower,
-    upper,
-    movedCount,
-    runNonce,
-  );
+    ...(upper === undefined ? {} : { upper }),
+    count: movedCount,
+    context: allocationContext,
+  });
   if (!allocation.ok) {
     return {
       ok: false,
@@ -139,19 +134,9 @@ export function planExactPositionCollisionNormalization(
   };
 }
 
-function samePrimaryPath(
-  left: CarrierPosition,
-  right: CarrierPosition,
-): boolean {
-  return (
-    left.digits.length === right.digits.length &&
-    left.digits.every((digit, index) => digit === right.digits[index])
-  );
-}
-
 function failure(
   kind: PositionNormalizationError["kind"],
   message: string,
-): Extract<PositionNormalizationResult, { readonly ok: false }> {
+): Extract<PositionNormalizationResult<never>, { readonly ok: false }> {
   return { ok: false, error: { kind, message } };
 }

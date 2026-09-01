@@ -1,6 +1,7 @@
 import * as Y from "yjs";
 
 import type { BlockId } from "../domain/ids.js";
+import type { StructuralPositionCodec } from "./position.js";
 import { parseBlockId } from "../domain/ids.js";
 import type {
   StructuralCarrier,
@@ -22,15 +23,23 @@ const LIVENESS_KEY = "liveness";
 const ROOT_TOKEN = "__root__";
 
 /** Yjs v13 candidate for the accepted flat structural carrier contract. */
-export class YjsStructuralCarrier implements StructuralCarrier {
+export class YjsStructuralCarrier<
+  Position,
+> implements StructuralCarrier<Position> {
   public readonly candidate = "yjs" as const;
 
+  private readonly positionCodec: StructuralPositionCodec<Position>;
   private readonly document: Y.Doc;
   private readonly metadata: Y.Map<string>;
   private readonly blocks: Y.Map<Y.Map<unknown>>;
 
   /** Creates structural genesis or reloads one complete encoded state. */
-  public constructor(rootId?: BlockId, encoded?: Uint8Array) {
+  public constructor(
+    positionCodec: StructuralPositionCodec<Position>,
+    rootId?: BlockId,
+    encoded?: Uint8Array,
+  ) {
+    this.positionCodec = positionCodec;
     this.document = new Y.Doc();
     this.metadata = this.document.getMap<string>(ROOT_ID_NAME);
     this.blocks = this.document.getMap<Y.Map<unknown>>(BLOCKS_NAME);
@@ -46,7 +55,7 @@ export class YjsStructuralCarrier implements StructuralCarrier {
   }
 
   /** Applies one all-or-none structural carrier transaction. */
-  public applyChange(change: StructuralCarrierChange): void {
+  public applyChange(change: StructuralCarrierChange<Position>): void {
     this.document.transact(() => {
       for (const blockId of change.deletes ?? []) {
         this.retireObservedTokens(blockId);
@@ -54,12 +63,18 @@ export class YjsStructuralCarrier implements StructuralCarrier {
       for (const update of change.normalizations ?? []) {
         this.assertNonRoot(update.blockId);
         const entry = this.requireEntry(update.blockId);
-        entry.set(PLACEMENT_KEY, encodeStructuralPlacement(update.placement));
+        entry.set(
+          PLACEMENT_KEY,
+          encodeStructuralPlacement(update.placement, this.positionCodec),
+        );
       }
       for (const update of change.placements ?? []) {
         this.assertNonRoot(update.blockId);
         const entry = this.requireOrCreateEntry(update.blockId);
-        entry.set(PLACEMENT_KEY, encodeStructuralPlacement(update.placement));
+        entry.set(
+          PLACEMENT_KEY,
+          encodeStructuralPlacement(update.placement, this.positionCodec),
+        );
         this.liveness(entry).set(update.liveToken, true);
       }
       for (const update of change.payloads ?? []) {
@@ -71,14 +86,14 @@ export class YjsStructuralCarrier implements StructuralCarrier {
   }
 
   /** Projects detached physical namespaces, including tombstones. */
-  public snapshot(): StructuralCarrierSnapshot {
-    const entries: StructuralCarrierEntrySnapshot[] = [];
+  public snapshot(): StructuralCarrierSnapshot<Position> {
+    const entries: StructuralCarrierEntrySnapshot<Position>[] = [];
     for (const [rawBlockId, entry] of this.blocks.entries()) {
       const blockId = parseBlockId(rawBlockId);
       const placementValue = entry.get(PLACEMENT_KEY);
       const placement =
         typeof placementValue === "string"
-          ? decodeStructuralPlacement(placementValue)
+          ? decodeStructuralPlacement(placementValue, this.positionCodec)
           : undefined;
       const payload = Object.fromEntries(this.payload(entry).entries());
       const live = [...this.liveness(entry).values()].some(
@@ -178,9 +193,14 @@ export class YjsStructuralCarrier implements StructuralCarrier {
   }
 }
 
-/** Factory for the common Yjs structural qualification suite. */
-export const yjsStructuralCarrierFactory: StructuralCarrierFactory = {
-  candidate: "yjs",
-  create: (rootId) => new YjsStructuralCarrier(rootId),
-  load: (encoded) => new YjsStructuralCarrier(undefined, encoded),
-};
+/** Creates a Yjs structural carrier factory for one opaque position codec. */
+export function createYjsStructuralCarrierFactory<Position>(
+  positionCodec: StructuralPositionCodec<Position>,
+): StructuralCarrierFactory<Position> {
+  return {
+    candidate: "yjs",
+    create: (rootId) => new YjsStructuralCarrier(positionCodec, rootId),
+    load: (encoded) =>
+      new YjsStructuralCarrier(positionCodec, undefined, encoded),
+  };
+}

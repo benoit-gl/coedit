@@ -1,6 +1,7 @@
 import * as Automerge from "@automerge/automerge";
 
 import type { BlockId } from "../domain/ids.js";
+import type { StructuralPositionCodec } from "./position.js";
 import { parseBlockId } from "../domain/ids.js";
 import type {
   StructuralCarrier,
@@ -28,13 +29,21 @@ interface AutomergeStructuralState extends Record<string, unknown> {
 }
 
 /** Automerge v3 candidate for the accepted flat structural carrier contract. */
-export class AutomergeStructuralCarrier implements StructuralCarrier {
+export class AutomergeStructuralCarrier<
+  Position,
+> implements StructuralCarrier<Position> {
   public readonly candidate = "automerge" as const;
 
+  private readonly positionCodec: StructuralPositionCodec<Position>;
   private document: Automerge.Doc<AutomergeStructuralState>;
 
   /** Creates structural genesis or reloads one complete encoded state. */
-  public constructor(rootId?: BlockId, encoded?: Uint8Array) {
+  public constructor(
+    positionCodec: StructuralPositionCodec<Position>,
+    rootId?: BlockId,
+    encoded?: Uint8Array,
+  ) {
+    this.positionCodec = positionCodec;
     if (encoded !== undefined) {
       this.document = Automerge.load<AutomergeStructuralState>(encoded);
     } else if (rootId !== undefined) {
@@ -56,7 +65,7 @@ export class AutomergeStructuralCarrier implements StructuralCarrier {
   }
 
   /** Applies one all-or-none Automerge structural change. */
-  public applyChange(change: StructuralCarrierChange): void {
+  public applyChange(change: StructuralCarrierChange<Position>): void {
     const rootId = this.document.rootId;
     this.document = Automerge.change(this.document, (draft) => {
       for (const blockId of change.deletes ?? []) {
@@ -79,7 +88,10 @@ export class AutomergeStructuralCarrier implements StructuralCarrier {
           );
         }
         const entry = requireDraftEntry(draft, update.blockId);
-        entry.placement = encodeStructuralPlacement(update.placement);
+        entry.placement = encodeStructuralPlacement(
+          update.placement,
+          this.positionCodec,
+        );
       }
       for (const update of change.placements ?? []) {
         if (update.blockId === rootId) {
@@ -88,7 +100,10 @@ export class AutomergeStructuralCarrier implements StructuralCarrier {
           );
         }
         const entry = requireOrCreateDraftEntry(draft, update.blockId);
-        entry.placement = encodeStructuralPlacement(update.placement);
+        entry.placement = encodeStructuralPlacement(
+          update.placement,
+          this.positionCodec,
+        );
         entry.liveness[update.liveToken] = true;
       }
       for (const update of change.payloads ?? []) {
@@ -100,15 +115,20 @@ export class AutomergeStructuralCarrier implements StructuralCarrier {
   }
 
   /** Projects detached physical namespaces, including tombstones. */
-  public snapshot(): StructuralCarrierSnapshot {
-    const entries: StructuralCarrierEntrySnapshot[] = [];
+  public snapshot(): StructuralCarrierSnapshot<Position> {
+    const entries: StructuralCarrierEntrySnapshot<Position>[] = [];
     for (const [rawBlockId, entry] of Object.entries(this.document.blocks)) {
       const blockId = parseBlockId(rawBlockId);
       entries.push({
         blockId,
         ...(entry.placement === undefined
           ? {}
-          : { placement: decodeStructuralPlacement(entry.placement) }),
+          : {
+              placement: decodeStructuralPlacement(
+                entry.placement,
+                this.positionCodec,
+              ),
+            }),
         payload: structuredClone(entry.payload),
         live: Object.values(entry.liveness).some((value) => value === true),
       });
@@ -135,12 +155,17 @@ export class AutomergeStructuralCarrier implements StructuralCarrier {
   }
 }
 
-/** Factory for the common Automerge structural qualification suite. */
-export const automergeStructuralCarrierFactory: StructuralCarrierFactory = {
-  candidate: "automerge",
-  create: (rootId) => new AutomergeStructuralCarrier(rootId),
-  load: (encoded) => new AutomergeStructuralCarrier(undefined, encoded),
-};
+/** Creates an Automerge structural carrier factory for one opaque position codec. */
+export function createAutomergeStructuralCarrierFactory<Position>(
+  positionCodec: StructuralPositionCodec<Position>,
+): StructuralCarrierFactory<Position> {
+  return {
+    candidate: "automerge",
+    create: (rootId) => new AutomergeStructuralCarrier(positionCodec, rootId),
+    load: (encoded) =>
+      new AutomergeStructuralCarrier(positionCodec, undefined, encoded),
+  };
+}
 
 function requireDraftEntry(
   draft: Automerge.ChangeFn<AutomergeStructuralState> extends (

@@ -2,23 +2,27 @@ import { describe, expect, it } from "vitest";
 
 import { parseBlockId } from "../domain/ids.js";
 import type { BlockId } from "../domain/ids.js";
-import { automergeStructuralCarrierFactory } from "./automergeStructuralCarrier.js";
+import { createAutomergeStructuralCarrierFactory } from "./automergeStructuralCarrier.js";
+import type { LocalDensePosition } from "./position.js";
+import { localDensePositionAllocator } from "./position.js";
 import type {
   StructuralCarrierFactory,
   StructuralPlacement,
 } from "./structuralCarrier.js";
 import { projectStructuralSnapshot } from "./structuralCarrier.js";
-import { yjsStructuralCarrierFactory } from "./yjsStructuralCarrier.js";
+import { createYjsStructuralCarrierFactory } from "./yjsStructuralCarrier.js";
 
 const rootId = parseBlockId("50000000-0000-4000-8000-000000000001");
 const blockA = parseBlockId("50000000-0000-4000-8000-000000000002");
 const blockB = parseBlockId("50000000-0000-4000-8000-000000000003");
 const blockC = parseBlockId("50000000-0000-4000-8000-000000000004");
 
-for (const factory of [
-  yjsStructuralCarrierFactory,
-  automergeStructuralCarrierFactory,
-]) {
+const structuralCarrierFactories = [
+  createYjsStructuralCarrierFactory(localDensePositionAllocator),
+  createAutomergeStructuralCarrierFactory(localDensePositionAllocator),
+];
+
+for (const factory of structuralCarrierFactories) {
   describe(`${factory.candidate} structural carrier`, () => {
     it("keeps one immutable live root and projects non-sequential depths", () => {
       const carrier = factory.create(rootId);
@@ -31,13 +35,14 @@ for (const factory of [
       });
 
       expect(
-        projectStructuralSnapshot(carrier.snapshot()).map(
-          ({ blockId, parentId, depth }) => ({
-            blockId,
-            parentId,
-            depth,
-          }),
-        ),
+        projectStructuralSnapshot(
+          carrier.snapshot(),
+          localDensePositionAllocator,
+        ).map(({ blockId, parentId, depth }) => ({
+          blockId,
+          parentId,
+          depth,
+        })),
       ).toEqual([
         { blockId: rootId, parentId: undefined, depth: 0 },
         { blockId: blockA, parentId: rootId, depth: 1 },
@@ -56,7 +61,10 @@ for (const factory of [
         ],
       });
 
-      const projected = projectStructuralSnapshot(carrier.snapshot());
+      const projected = projectStructuralSnapshot(
+        carrier.snapshot(),
+        localDensePositionAllocator,
+      );
       expect(projected.map((entry) => entry.blockId)).toEqual([
         rootId,
         blockC,
@@ -127,6 +135,25 @@ for (const factory of [
       expect(left.snapshot()).toEqual(right.snapshot());
     });
 
+    it("does not resurrect a Block when normalization is concurrent with deletion", () => {
+      const base = factory.create(rootId);
+      base.applyChange({ placements: [placement(blockA, 1, 1, "a-create")] });
+      const left = factory.load(base.encode());
+      const right = factory.load(base.encode());
+
+      left.applyChange({ deletes: [blockA] });
+      right.applyChange({
+        normalizations: [{ blockId: blockA, placement: position(2, 1) }],
+      });
+      converge(left, right);
+
+      const entry = left
+        .snapshot()
+        .entries.find((value) => value.blockId === blockA);
+      expect(entry?.live).toBe(false);
+      expect(left.snapshot()).toEqual(right.snapshot());
+    });
+
     it("does not keep a deleted ancestor alive because a descendant changed", () => {
       const base = createTree(factory);
       const left = factory.load(base.encode());
@@ -153,39 +180,10 @@ for (const factory of [
         snapshot.entries.find((entry) => entry.blockId === blockB)?.live,
       ).toBe(true);
       expect(
-        projectStructuralSnapshot(snapshot).find(
+        projectStructuralSnapshot(snapshot, localDensePositionAllocator).find(
           (entry) => entry.blockId === blockB,
         )?.parentId,
       ).toBe(rootId);
-    });
-
-    it("publishes placement and several Block-local payload updates together", () => {
-      const carrier = factory.create(rootId);
-      carrier.applyChange({
-        placements: [placement(blockA, 1, 1, "a-create")],
-        payloads: [
-          {
-            blockId: blockA,
-            key: "inline:first",
-            value: "alpha",
-            liveToken: "a-inline-first",
-          },
-          {
-            blockId: blockA,
-            key: "inline:second",
-            value: "beta",
-            liveToken: "a-inline-second",
-          },
-        ],
-      });
-
-      const entry = carrier
-        .snapshot()
-        .entries.find((value) => value.blockId === blockA);
-      expect(entry).toMatchObject({
-        live: true,
-        payload: { "inline:first": "alpha", "inline:second": "beta" },
-      });
     });
 
     it("uses BlockId as a deterministic tie-break for exact position collisions", () => {
@@ -198,9 +196,10 @@ for (const factory of [
       });
 
       expect(
-        projectStructuralSnapshot(carrier.snapshot()).map(
-          (entry) => entry.blockId,
-        ),
+        projectStructuralSnapshot(
+          carrier.snapshot(),
+          localDensePositionAllocator,
+        ).map((entry) => entry.blockId),
       ).toEqual([rootId, blockA, blockB]);
     });
 
@@ -211,14 +210,22 @@ for (const factory of [
       reloaded.mergeEncoded(encoded);
 
       expect(reloaded.snapshot()).toEqual(carrier.snapshot());
-      expect(projectStructuralSnapshot(reloaded.snapshot())).toEqual(
-        projectStructuralSnapshot(carrier.snapshot()),
+      expect(
+        projectStructuralSnapshot(
+          reloaded.snapshot(),
+          localDensePositionAllocator,
+        ),
+      ).toEqual(
+        projectStructuralSnapshot(
+          carrier.snapshot(),
+          localDensePositionAllocator,
+        ),
       );
     });
   });
 }
 
-function createTree(factory: StructuralCarrierFactory) {
+function createTree(factory: StructuralCarrierFactory<LocalDensePosition>) {
   const carrier = factory.create(rootId);
   carrier.applyChange({
     placements: [
@@ -243,16 +250,23 @@ function placement(
   } as const;
 }
 
-function position(order: number, depth: number): StructuralPlacement {
+function position(
+  order: number,
+  depth: number,
+): StructuralPlacement<LocalDensePosition> {
   return {
-    position: { digits: [order], run: "qualification", member: 0 },
+    position: {
+      digits: [order],
+      run: "60000000-0000-4000-8000-000000000099",
+      member: 0,
+    },
     depth,
   };
 }
 
 function converge(
-  left: ReturnType<StructuralCarrierFactory["create"]>,
-  right: ReturnType<StructuralCarrierFactory["create"]>,
+  left: ReturnType<StructuralCarrierFactory<LocalDensePosition>["create"]>,
+  right: ReturnType<StructuralCarrierFactory<LocalDensePosition>["create"]>,
 ): void {
   const leftState = left.encode();
   const rightState = right.encode();

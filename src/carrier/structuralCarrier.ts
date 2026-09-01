@@ -1,31 +1,33 @@
 import type { BlockId } from "../domain/ids.js";
-import type { CarrierPosition } from "./position.js";
-import { compareCarrierPositions } from "./position.js";
+import type {
+  StructuralPositionCodec,
+  StructuralPositionOrdering,
+} from "./position.js";
 
 /** Atomic carrier-private structural placement. */
-export interface StructuralPlacement {
-  /** Dense carrier-private preorder position. */
-  readonly position: CarrierPosition;
+export interface StructuralPlacement<Position> {
+  /** Opaque allocator-private preorder position. */
+  readonly position: Position;
   /** Flat preorder depth. Root depth is zero. */
   readonly depth: number;
 }
 
 /** One semantic placement update with a fresh liveness token. */
-export interface StructuralPlacementUpdate {
+export interface StructuralPlacementUpdate<Position> {
   /** Existing or newly created Block. */
   readonly blockId: BlockId;
   /** Complete replacement placement. */
-  readonly placement: StructuralPlacement;
+  readonly placement: StructuralPlacement<Position>;
   /** Fresh token proving semantic activity for this Block. */
   readonly liveToken: string;
 }
 
 /** One carrier-private placement rewrite that is not semantic Block activity. */
-export interface StructuralNormalizationUpdate {
+export interface StructuralNormalizationUpdate<Position> {
   /** Existing Block whose collision position is normalized. */
   readonly blockId: BlockId;
   /** Fresh complete placement that preserves projected meaning. */
-  readonly placement: StructuralPlacement;
+  readonly placement: StructuralPlacement<Position>;
 }
 
 /** One Block-local payload update with a fresh liveness token. */
@@ -41,11 +43,11 @@ export interface StructuralPayloadUpdate {
 }
 
 /** One atomic logical carrier change used by structural qualification. */
-export interface StructuralCarrierChange {
+export interface StructuralCarrierChange<Position> {
   /** Semantic placement mutations that publish in this carrier transaction/change. */
-  readonly placements?: readonly StructuralPlacementUpdate[];
+  readonly placements?: readonly StructuralPlacementUpdate<Position>[];
   /** Carrier-private collision normalization that must not refresh liveness. */
-  readonly normalizations?: readonly StructuralNormalizationUpdate[];
+  readonly normalizations?: readonly StructuralNormalizationUpdate<Position>[];
   /** Payload mutations that publish in this carrier transaction/change. */
   readonly payloads?: readonly StructuralPayloadUpdate[];
   /** Blocks whose currently observed live tokens are retired. */
@@ -53,11 +55,11 @@ export interface StructuralCarrierChange {
 }
 
 /** Detached snapshot of one Block carrier namespace. */
-export interface StructuralCarrierEntrySnapshot {
+export interface StructuralCarrierEntrySnapshot<Position> {
   /** Durable Block identity. */
   readonly blockId: BlockId;
   /** Current complete placement when one has been published. */
-  readonly placement?: StructuralPlacement;
+  readonly placement?: StructuralPlacement<Position>;
   /** Detached Block-local qualification payload. */
   readonly payload: Readonly<Record<string, string>>;
   /** True when at least one replicated liveness token remains live. */
@@ -65,11 +67,11 @@ export interface StructuralCarrierEntrySnapshot {
 }
 
 /** Detached complete structural carrier state. */
-export interface StructuralCarrierSnapshot {
+export interface StructuralCarrierSnapshot<Position> {
   /** Immutable root identity. */
   readonly rootId: BlockId;
   /** All physical Block namespaces, including tombstoned entries. */
-  readonly entries: readonly StructuralCarrierEntrySnapshot[];
+  readonly entries: readonly StructuralCarrierEntrySnapshot<Position>[];
 }
 
 /** One projected live Block in deterministic preorder. */
@@ -85,15 +87,15 @@ export interface ProjectedStructuralBlock {
 }
 
 /** Common headless contract used to qualify the flat structural carrier. */
-export interface StructuralCarrier {
+export interface StructuralCarrier<Position> {
   /** Candidate name used in qualification output. */
   readonly candidate: "yjs" | "automerge";
 
   /** Applies one all-or-none carrier change. */
-  applyChange(change: StructuralCarrierChange): void;
+  applyChange(change: StructuralCarrierChange<Position>): void;
 
   /** Projects a detached complete carrier snapshot. */
-  snapshot(): StructuralCarrierSnapshot;
+  snapshot(): StructuralCarrierSnapshot<Position>;
 
   /** Encodes all replicated structural state. */
   encode(): Uint8Array;
@@ -103,31 +105,38 @@ export interface StructuralCarrier {
 }
 
 /** Factory used by the common structural carrier qualification suite. */
-export interface StructuralCarrierFactory {
+export interface StructuralCarrierFactory<Position> {
   /** Candidate name. */
-  readonly candidate: StructuralCarrier["candidate"];
+  readonly candidate: StructuralCarrier<Position>["candidate"];
 
   /** Creates genesis with one immutable live root. */
-  create(rootId: BlockId): StructuralCarrier;
+  create(rootId: BlockId): StructuralCarrier<Position>;
 
   /** Reloads complete carrier state. */
-  load(encoded: Uint8Array): StructuralCarrier;
+  load(encoded: Uint8Array): StructuralCarrier<Position>;
 }
 
-/** Serializes one placement as one scalar carrier register value. */
-export function encodeStructuralPlacement(
-  placement: StructuralPlacement,
+/** Serializes one placement without inspecting allocator-private position data. */
+export function encodeStructuralPlacement<Position>(
+  placement: StructuralPlacement<Position>,
+  codec: StructuralPositionCodec<Position>,
 ): string {
   if (!Number.isSafeInteger(placement.depth) || placement.depth < 0) {
     throw new TypeError(
       "Structural placement depth must be a non-negative integer.",
     );
   }
-  return JSON.stringify(placement);
+  return JSON.stringify({
+    position: codec.encode(placement.position),
+    depth: placement.depth,
+  });
 }
 
-/** Parses one complete scalar placement register. */
-export function decodeStructuralPlacement(value: string): StructuralPlacement {
+/** Parses one placement without binding the structural carrier to a position encoding. */
+export function decodeStructuralPlacement<Position>(
+  value: string,
+  codec: StructuralPositionCodec<Position>,
+): StructuralPlacement<Position> {
   const parsed: unknown = JSON.parse(value);
   if (!isRecord(parsed)) {
     throw new TypeError("Structural placement must be an object.");
@@ -137,30 +146,16 @@ export function decodeStructuralPlacement(value: string): StructuralPlacement {
   if (!Number.isSafeInteger(depth) || typeof depth !== "number" || depth < 0) {
     throw new TypeError("Structural placement depth is invalid.");
   }
-  if (!isRecord(position) || !Array.isArray(position.digits)) {
-    throw new TypeError("Structural placement position is invalid.");
+  if (typeof position !== "string") {
+    throw new TypeError("Structural placement position encoding is invalid.");
   }
-  const digits = position.digits;
-  const run = position.run;
-  const member = position.member;
-  if (
-    !digits.every(
-      (digit) => Number.isSafeInteger(digit) && digit >= 0 && digit < 65_536,
-    ) ||
-    typeof run !== "string" ||
-    run.length === 0 ||
-    !Number.isSafeInteger(member) ||
-    typeof member !== "number" ||
-    member < 0
-  ) {
-    throw new TypeError("Structural placement position fields are invalid.");
-  }
-  return { position: { digits, run, member }, depth };
+  return { position: codec.decode(position), depth };
 }
 
 /** Projects the accepted deterministic tree from one complete carrier snapshot. */
-export function projectStructuralSnapshot(
-  snapshot: StructuralCarrierSnapshot,
+export function projectStructuralSnapshot<Position>(
+  snapshot: StructuralCarrierSnapshot<Position>,
+  ordering: StructuralPositionOrdering<Position>,
 ): readonly ProjectedStructuralBlock[] {
   const root = snapshot.entries.find(
     (entry) => entry.blockId === snapshot.rootId,
@@ -173,15 +168,15 @@ export function projectStructuralSnapshot(
     .filter(
       (
         entry,
-      ): entry is StructuralCarrierEntrySnapshot & {
-        readonly placement: StructuralPlacement;
+      ): entry is StructuralCarrierEntrySnapshot<Position> & {
+        readonly placement: StructuralPlacement<Position>;
       } =>
         entry.live &&
         entry.blockId !== snapshot.rootId &&
         entry.placement !== undefined,
     )
     .sort((left, right) => {
-      const order = compareCarrierPositions(
+      const order = ordering.compare(
         left.placement.position,
         right.placement.position,
       );

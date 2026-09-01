@@ -151,6 +151,85 @@ for (const factory of factories) {
       expect(visibleText(left.snapshot())).toBe("abc");
     });
 
+    it("removes formatting without changing protected Origin", () => {
+      const carrier = factory.create();
+      const bold: FormattingMark = { kind: "bold", boundaryPolicy: "both" };
+      carrier.insertText(0, "abc", originA);
+      carrier.addMark(0, 3, bold);
+      carrier.removeMark(1, 2, bold);
+
+      const snapshot = carrier.snapshot();
+      expect(hasMarkAt(snapshot, 0, "bold")).toBe(true);
+      expect(hasMarkAt(snapshot, 1, "bold")).toBe(false);
+      expect(hasMarkAt(snapshot, 2, "bold")).toBe(true);
+      expect(snapshot.items.every((item) => item.originId === originA.id)).toBe(
+        true,
+      );
+    });
+
+    it("applies replacement and formatting as one ordered carrier batch", () => {
+      const carrier = factory.create();
+      const italic: FormattingMark = {
+        kind: "italic",
+        boundaryPolicy: "none",
+      };
+      carrier.insertText(0, "abc", originA);
+
+      carrier.applyOperations([
+        {
+          kind: "deleteRange",
+          startRuntimeUtf16Offset: 1,
+          endRuntimeUtf16Offset: 2,
+        },
+        {
+          kind: "insertText",
+          runtimeUtf16Offset: 1,
+          text: "XY",
+          origin: originB,
+        },
+        {
+          kind: "addMark",
+          startRuntimeUtf16Offset: 1,
+          endRuntimeUtf16Offset: 3,
+          mark: italic,
+        },
+      ]);
+
+      expect(carrier.snapshot().items).toEqual([
+        { kind: "text", text: "a", originId: originA.id, marks: [] },
+        {
+          kind: "text",
+          text: "XY",
+          originId: originB.id,
+          marks: [italic],
+        },
+        { kind: "text", text: "c", originId: originA.id, marks: [] },
+      ]);
+    });
+
+    it("rejects an invalid carrier batch without partial publication", () => {
+      const carrier = factory.create();
+      carrier.insertText(0, "abc", originA);
+      const before = carrier.snapshot();
+
+      expect(() =>
+        carrier.applyOperations([
+          {
+            kind: "insertText",
+            runtimeUtf16Offset: 1,
+            text: "x",
+            origin: originB,
+          },
+          {
+            kind: "deleteRange",
+            startRuntimeUtf16Offset: 0,
+            endRuntimeUtf16Offset: 99,
+          },
+        ]),
+      ).toThrow();
+      expect(carrier.snapshot()).toEqual(before);
+    });
+
     it("keeps stable cursors attached through preceding edits and reload", () => {
       const carrier = factory.create();
       carrier.insertText(0, "ac", originA);

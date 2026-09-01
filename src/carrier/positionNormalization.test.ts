@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  allocateCarrierPositionRun,
-  compareCarrierPositions,
-} from "./position.js";
-import { planExactPositionCollisionNormalization } from "./positionNormalization.js";
+import type { LocalDensePosition } from "./position.js";
+import { localDensePositionAllocator } from "./position.js";
+import { planPositionCollisionNormalization } from "./positionNormalization.js";
 
 const runA = "60000000-0000-4000-8000-000000000001";
 const runB = "60000000-0000-4000-8000-000000000002";
@@ -12,16 +10,31 @@ const runC = "60000000-0000-4000-8000-000000000003";
 const normalizeRun = "60000000-0000-4000-8000-000000000004";
 const insertRun = "60000000-0000-4000-8000-000000000005";
 
-describe("planExactPositionCollisionNormalization", () => {
-  it("moves only the later part of a two-way exact collision and opens a gap", () => {
+function allocate(
+  lower: LocalDensePosition | undefined,
+  upper: LocalDensePosition | undefined,
+  count: number,
+  runNonce: string,
+) {
+  return localDensePositionAllocator.allocateRun({
+    ...(lower === undefined ? {} : { lower }),
+    ...(upper === undefined ? {} : { upper }),
+    count,
+    context: { runNonce },
+  });
+}
+
+describe("planPositionCollisionNormalization", () => {
+  it("moves only the later part of a two-way primary collision and opens a gap", () => {
     const lower = { digits: [100, 100], run: runA, member: 1 } as const;
     const collided = { digits: [100, 100], run: runB, member: 1 } as const;
     const upper = { digits: [200, 100], run: runC, member: 1 } as const;
 
-    const result = planExactPositionCollisionNormalization(
+    const result = planPositionCollisionNormalization(
+      localDensePositionAllocator,
       [lower, collided, upper],
       1,
-      normalizeRun,
+      { runNonce: normalizeRun },
     );
     expect(result.ok).toBe(true);
     if (!result.ok) {
@@ -29,13 +42,13 @@ describe("planExactPositionCollisionNormalization", () => {
     }
     expect(result.value.updates).toHaveLength(1);
     expect(
-      compareCarrierPositions(lower, result.value.insertionUpper),
+      localDensePositionAllocator.compare(lower, result.value.insertionUpper),
     ).toBeLessThan(0);
     expect(
-      compareCarrierPositions(result.value.insertionUpper, upper),
+      localDensePositionAllocator.compare(result.value.insertionUpper, upper),
     ).toBeLessThan(0);
 
-    const insertion = allocateCarrierPositionRun(
+    const insertion = allocate(
       result.value.insertionLower,
       result.value.insertionUpper,
       1,
@@ -54,10 +67,11 @@ describe("planExactPositionCollisionNormalization", () => {
       member: 1,
     } as const;
 
-    const result = planExactPositionCollisionNormalization(
+    const result = planPositionCollisionNormalization(
+      localDensePositionAllocator,
       [first, second, third, upper],
       1,
-      normalizeRun,
+      { runNonce: normalizeRun },
     );
     expect(result.ok).toBe(true);
     if (!result.ok) {
@@ -65,24 +79,28 @@ describe("planExactPositionCollisionNormalization", () => {
     }
     expect(result.value.updates.map((update) => update.index)).toEqual([1, 2]);
     expect(
-      compareCarrierPositions(
+      localDensePositionAllocator.compare(
         result.value.updates[0]!.position,
         result.value.updates[1]!.position,
       ),
     ).toBeLessThan(0);
     expect(
-      compareCarrierPositions(result.value.updates[1]!.position, upper),
+      localDensePositionAllocator.compare(
+        result.value.updates[1]!.position,
+        upper,
+      ),
     ).toBeLessThan(0);
   });
 
-  it("rejects a boundary that does not contain an exact primary-path collision", () => {
-    const result = planExactPositionCollisionNormalization(
+  it("rejects a boundary that does not contain a primary-position collision", () => {
+    const result = planPositionCollisionNormalization(
+      localDensePositionAllocator,
       [
         { digits: [100, 100], run: runA, member: 1 },
         { digits: [150, 100], run: runB, member: 1 },
       ],
       1,
-      normalizeRun,
+      { runNonce: normalizeRun },
     );
     expect(result).toMatchObject({ ok: false, error: { kind: "NoCollision" } });
   });
