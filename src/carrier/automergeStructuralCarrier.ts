@@ -163,5 +163,5 @@ function requireOrCreateDraftEntry(
     return existing;
   }
   draft.blocks[blockId] = { payload: {}, liveness: {} };
-  return draft.blocks[blockId]!;
+  return draft.blocks[blockId];
 }
