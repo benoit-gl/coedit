@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { allocateCarrierPositionRun, compareCarrierPositions } from "./position.js";
+import {
+  allocateCarrierPositionRun,
+  compareCarrierPositions,
+} from "./position.js";
 import { planExactPositionCollisionNormalization } from "./positionNormalization.js";
 
 const runA = "60000000-0000-4000-8000-000000000001";
@@ -25,8 +28,12 @@ describe("planExactPositionCollisionNormalization", () => {
       return;
     }
     expect(result.value.updates).toHaveLength(1);
-    expect(compareCarrierPositions(lower, result.value.insertionUpper)).toBeLessThan(0);
-    expect(compareCarrierPositions(result.value.insertionUpper, upper)).toBeLessThan(0);
+    expect(
+      compareCarrierPositions(lower, result.value.insertionUpper),
+    ).toBeLessThan(0);
+    expect(
+      compareCarrierPositions(result.value.insertionUpper, upper),
+    ).toBeLessThan(0);
 
     const insertion = allocateCarrierPositionRun(
       result.value.insertionLower,

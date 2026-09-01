@@ -3,7 +3,7 @@ name: Step 3 temporary validation
 on:
   push:
     branches:
-      - impl/step-3-collaborative-content
+      - impl/step-3-collaborative-content-stacked
 
 permissions:
   contents: read
@@ -16,11 +16,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22.16.0
-      - name: Install exact pnpm
-        run: npm install --global pnpm@11.24.0
-      - name: Install locked dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Bootstrap
+        run: npm run bootstrap
       - name: Check
-        run: pnpm check
+        run: npm run check
       - name: Build
-        run: pnpm build
+        run: npm run build

@@ -9,19 +9,30 @@ export interface ContentCarrier {
   /** Candidate name used in qualification output. */
   readonly candidate: "yjs" | "automerge";
 
-  /** Inserts visible text with one explicit protected Origin. */
-  insertText(offset: number, text: string, origin: OriginRecord): void;
+  /** Inserts visible text at one candidate-runtime UTF-16 boundary. */
+  insertText(
+    runtimeUtf16Offset: number,
+    text: string,
+    origin: OriginRecord,
+  ): void;
 
-  /** Inserts one hard break with one explicit protected Origin. */
-  insertHardBreak(offset: number, origin: OriginRecord): void;
+  /** Inserts one hard break at one candidate-runtime UTF-16 boundary. */
+  insertHardBreak(runtimeUtf16Offset: number, origin: OriginRecord): void;
 
-  /** Deletes a logical UTF-16 offset range. */
-  deleteRange(start: number, end: number): void;
+  /** Deletes one candidate-runtime UTF-16 range. */
+  deleteRange(
+    startRuntimeUtf16Offset: number,
+    endRuntimeUtf16Offset: number,
+  ): void;
 
-  /** Adds one intrinsic formatting mark. */
-  addMark(mark: FormattingMark): void;
+  /** Adds one intrinsic mark over one transient candidate-runtime UTF-16 range. */
+  addMark(
+    startRuntimeUtf16Offset: number,
+    endRuntimeUtf16Offset: number,
+    mark: FormattingMark,
+  ): void;
 
-  /** Projects a detached carrier-neutral canonical value. */
+  /** Projects a detached range-free carrier-neutral canonical value. */
   snapshot(): InlineContentValue;
 
   /** Encodes all current replicated state for transport or reload. */
@@ -30,10 +41,13 @@ export interface ContentCarrier {
   /** Merges encoded replicated state from another replica. */
   mergeEncoded(encoded: Uint8Array): void;
 
-  /** Creates one stable carrier cursor at a UTF-16 offset. */
-  createCursor(offset: number, affinity: "before" | "after"): string;
+  /** Creates one stable carrier cursor from a candidate-runtime UTF-16 position. */
+  createCursor(
+    runtimeUtf16Offset: number,
+    affinity: "before" | "after",
+  ): string;
 
-  /** Resolves one stable carrier cursor to a UTF-16 offset when possible. */
+  /** Resolves one stable cursor to the candidate runtime's UTF-16 position. */
   resolveCursor(cursor: string): number | undefined;
 }
 

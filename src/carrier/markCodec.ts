@@ -5,33 +5,22 @@ import type {
   MarkBoundaryPolicy,
   OpaqueLinkValue,
 } from "../domain/content.js";
+import { validateFormattingMark } from "../domain/content.js";
 import { isCanonicalUuidV4 } from "../domain/ids.js";
 
 const MARK_PREFIX = "coedit:mark:";
 
-/** Carrier-private semantic descriptor encoded in one independent mark key. */
-export interface EncodedMarkDescriptor {
-  /** Intrinsic formatting kind. */
-  readonly kind: FormattingMarkKind;
-  /** Canonical insertion-boundary behavior. */
-  readonly boundaryPolicy: MarkBoundaryPolicy;
-  /** Link target when the descriptor represents a link. */
-  readonly target?: LinkTarget;
-}
-
 /** Encodes one semantic formatting descriptor as an independent carrier key. */
 export function encodeMarkKey(mark: FormattingMark): string {
-  const descriptor: EncodedMarkDescriptor = {
-    kind: mark.kind,
-    boundaryPolicy: mark.boundaryPolicy,
-    ...(mark.target === undefined ? {} : { target: mark.target }),
-  };
-  return MARK_PREFIX + encodeURIComponent(JSON.stringify(descriptor));
+  const validationError = validateFormattingMark(mark);
+  if (validationError !== undefined) {
+    throw new TypeError(validationError.message);
+  }
+  return MARK_PREFIX + encodeURIComponent(JSON.stringify(mark));
 }
 
 /** Decodes and validates one private semantic formatting carrier key. */
-/** Decodes and validates one private semantic formatting carrier key. */
-export function decodeMarkKey(key: string): EncodedMarkDescriptor | undefined {
+export function decodeMarkKey(key: string): FormattingMark | undefined {
   if (!key.startsWith(MARK_PREFIX)) {
     return undefined;
   }
@@ -50,31 +39,18 @@ export function decodeMarkKey(key: string): EncodedMarkDescriptor | undefined {
     return undefined;
   }
   const targetValue = parsed.target;
+  let candidate: FormattingMark;
   if (targetValue === undefined) {
-    return kind === "link" ? undefined : { kind, boundaryPolicy };
+    candidate = { kind, boundaryPolicy };
+  } else {
+    if (kind !== "link" || !isLinkTarget(targetValue)) {
+      return undefined;
+    }
+    candidate = { kind, boundaryPolicy, target: targetValue };
   }
-  if (kind !== "link" || !isLinkTarget(targetValue)) {
-    return undefined;
-  }
-  return { kind, boundaryPolicy, target: targetValue };
-}
-
-/** Tests whether an insertion at one offset inherits a formatting mark. */
-/** Tests whether an insertion at one offset inherits a formatting mark. */
-export function markAppliesAtInsertion(
-  mark: FormattingMark,
-  offset: number,
-): boolean {
-  if (offset > mark.start && offset < mark.end) {
-    return true;
-  }
-  if (offset === mark.start) {
-    return mark.boundaryPolicy === "start" || mark.boundaryPolicy === "both";
-  }
-  if (offset === mark.end) {
-    return mark.boundaryPolicy === "end" || mark.boundaryPolicy === "both";
-  }
-  return false;
+  return validateFormattingMark(candidate) === undefined
+    ? candidate
+    : undefined;
 }
 
 function isFormattingMarkKind(value: unknown): value is FormattingMarkKind {
@@ -108,47 +84,7 @@ function isLinkTarget(value: unknown): value is LinkTarget {
   ) {
     return false;
   }
-  const range = value.range;
-  if (range === undefined) {
-    return true;
-  }
-  if (!isRecord(range)) {
-    return false;
-  }
-  return (
-    typeof range.inlineContentId === "string" &&
-    isCanonicalUuidV4(range.inlineContentId) &&
-    typeof range.startCursor === "string" &&
-    range.startCursor.length > 0 &&
-    typeof range.endCursor === "string" &&
-    range.endCursor.length > 0 &&
-    (range.startAffinity === "before" || range.startAffinity === "after") &&
-    (range.endAffinity === "before" || range.endAffinity === "after") &&
-    isQuote(range.quote) &&
-    isApproximatePosition(range.approximatePosition)
-  );
-}
-
-function isQuote(value: unknown): boolean {
-  return (
-    isRecord(value) &&
-    typeof value.exact === "string" &&
-    typeof value.prefix === "string" &&
-    typeof value.suffix === "string"
-  );
-}
-
-function isApproximatePosition(value: unknown): boolean {
-  return (
-    value === undefined ||
-    (isRecord(value) &&
-      Number.isSafeInteger(value.start) &&
-      Number.isSafeInteger(value.end) &&
-      typeof value.start === "number" &&
-      typeof value.end === "number" &&
-      value.start >= 0 &&
-      value.end >= value.start)
-  );
+  return true;
 }
 
 function isOpaqueValue(

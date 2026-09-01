@@ -26,7 +26,8 @@ export interface PositionNormalizationPlan {
 /** Expected collision-normalization failure. */
 export interface PositionNormalizationError {
   /** Stable machine-readable failure kind. */
-  readonly kind: "InvalidOrder" | "InvalidIndex" | "NoCollision" | "AllocationFailed";
+  readonly kind:
+    "InvalidOrder" | "InvalidIndex" | "NoCollision" | "AllocationFailed";
   /** Human-readable failure detail. */
   readonly message: string;
   /** Underlying allocator error when allocation failed. */
@@ -66,23 +67,38 @@ export function planExactPositionCollisionNormalization(
     insertionIndex < 1 ||
     insertionIndex >= ordered.length
   ) {
-    return failure("InvalidIndex", "Collision insertion index is outside an internal boundary.");
+    return failure(
+      "InvalidIndex",
+      "Collision insertion index is outside an internal boundary.",
+    );
   }
   for (let index = 0; index < ordered.length; index += 1) {
     const current = ordered[index];
     if (current === undefined || !isValidCarrierPosition(current)) {
-      return failure("InvalidOrder", "Collision normalization requires valid positions.");
+      return failure(
+        "InvalidOrder",
+        "Collision normalization requires valid positions.",
+      );
     }
     const previous = ordered[index - 1];
-    if (previous !== undefined && compareCarrierPositions(previous, current) > 0) {
-      return failure("InvalidOrder", "Collision normalization input must already be sorted.");
+    if (
+      previous !== undefined &&
+      compareCarrierPositions(previous, current) > 0
+    ) {
+      return failure(
+        "InvalidOrder",
+        "Collision normalization input must already be sorted.",
+      );
     }
   }
 
   const lower = ordered[insertionIndex - 1]!;
   const firstLater = ordered[insertionIndex]!;
   if (!samePrimaryPath(lower, firstLater)) {
-    return failure("NoCollision", "Requested insertion boundary is not an exact path collision.");
+    return failure(
+      "NoCollision",
+      "Requested insertion boundary is not an exact path collision.",
+    );
   }
 
   let end = insertionIndex + 1;
@@ -91,13 +107,19 @@ export function planExactPositionCollisionNormalization(
   }
   const upper = ordered[end];
   const movedCount = end - insertionIndex;
-  const allocation = allocateCarrierPositionRun(lower, upper, movedCount, runNonce);
+  const allocation = allocateCarrierPositionRun(
+    lower,
+    upper,
+    movedCount,
+    runNonce,
+  );
   if (!allocation.ok) {
     return {
       ok: false,
       error: {
         kind: "AllocationFailed",
-        message: "Could not allocate replacement positions for the collision run.",
+        message:
+          "Could not allocate replacement positions for the collision run.",
         allocationError: allocation.error,
       },
     };
@@ -117,7 +139,10 @@ export function planExactPositionCollisionNormalization(
   };
 }
 
-function samePrimaryPath(left: CarrierPosition, right: CarrierPosition): boolean {
+function samePrimaryPath(
+  left: CarrierPosition,
+  right: CarrierPosition,
+): boolean {
   return (
     left.digits.length === right.digits.length &&
     left.digits.every((digit, index) => digit === right.digits[index])

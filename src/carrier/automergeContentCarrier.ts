@@ -40,50 +40,80 @@ export class AutomergeContentCarrier implements ContentCarrier {
   }
 
   /** Inserts visible text and overrides inherited Origin with the explicit Origin. */
-  public insertText(offset: number, text: string, origin: OriginRecord): void {
+  public insertText(
+    runtimeUtf16Offset: number,
+    text: string,
+    origin: OriginRecord,
+  ): void {
     if (text.length === 0 || text.includes("\n") || text.includes("\r")) {
       throw new TypeError(
         "Inserted visible text must be non-empty and contain no hard break.",
       );
     }
-    this.insertString(offset, text, origin);
+    this.insertString(runtimeUtf16Offset, text, origin);
   }
 
   /** Inserts one hard break and gives it the explicit Origin. */
-  public insertHardBreak(offset: number, origin: OriginRecord): void {
-    this.insertString(offset, "\n", origin);
+  public insertHardBreak(
+    runtimeUtf16Offset: number,
+    origin: OriginRecord,
+  ): void {
+    this.insertString(runtimeUtf16Offset, "\n", origin);
   }
 
-  /** Deletes one UTF-16/code-unit logical range. */
-  public deleteRange(start: number, end: number): void {
-    assertRange(start, end, this.document.text.length);
-    if (start === end) {
+  /** Deletes one candidate-runtime UTF-16 range. */
+  public deleteRange(
+    startRuntimeUtf16Offset: number,
+    endRuntimeUtf16Offset: number,
+  ): void {
+    assertRange(
+      startRuntimeUtf16Offset,
+      endRuntimeUtf16Offset,
+      this.document.text.length,
+    );
+    if (startRuntimeUtf16Offset === endRuntimeUtf16Offset) {
       return;
     }
     this.document = Automerge.change(this.document, (draft) => {
-      Automerge.splice(draft, [...TEXT_PATH], start, end - start);
+      Automerge.splice(
+        draft,
+        [...TEXT_PATH],
+        startRuntimeUtf16Offset,
+        endRuntimeUtf16Offset - startRuntimeUtf16Offset,
+      );
     });
   }
 
   /** Adds one native Automerge rich-text mark with the canonical boundary policy. */
-  public addMark(mark: FormattingMark): void {
-    assertRange(mark.start, mark.end, this.document.text.length);
-    const { start, end } = mark;
-    if (end <= start) {
+  public addMark(
+    startRuntimeUtf16Offset: number,
+    endRuntimeUtf16Offset: number,
+    mark: FormattingMark,
+  ): void {
+    assertRange(
+      startRuntimeUtf16Offset,
+      endRuntimeUtf16Offset,
+      this.document.text.length,
+    );
+    if (endRuntimeUtf16Offset <= startRuntimeUtf16Offset) {
       throw new RangeError("A formatting mark must cover visible content.");
     }
     this.document = Automerge.change(this.document, (draft) => {
       Automerge.mark(
         draft,
         [...TEXT_PATH],
-        { start, end, expand: toAutomergeExpansion(mark.boundaryPolicy) },
+        {
+          start: startRuntimeUtf16Offset,
+          end: endRuntimeUtf16Offset,
+          expand: toAutomergeExpansion(mark.boundaryPolicy),
+        },
         encodeMarkKey(mark),
         true,
       );
     });
   }
 
-  /** Projects detached canonical content from Automerge text and marks. */
+  /** Projects detached range-free content from Automerge text and marks. */
   public snapshot(): InlineContentValue {
     const rawMarks = Automerge.marks(this.document, [...TEXT_PATH]);
     const originMarks = rawMarks
@@ -91,28 +121,27 @@ export class AutomergeContentCarrier implements ContentCarrier {
         (mark) => mark.name === ORIGIN_MARK && typeof mark.value === "string",
       )
       .sort((left, right) => left.start - right.start || left.end - right.end);
-    const items = projectItems(this.document.text, originMarks);
-    const marks: FormattingMark[] = [];
-
-    for (const mark of rawMarks) {
-      if (mark.name === ORIGIN_MARK || mark.value !== true) {
-        continue;
-      }
-      const descriptor = decodeMarkKey(mark.name);
-      if (descriptor === undefined) {
-        continue;
-      }
-      marks.push({
-        ...descriptor,
-        start: mark.start,
-        end: mark.end,
-      });
-    }
+    const formattingMarks = rawMarks
+      .filter((mark) => mark.name !== ORIGIN_MARK && mark.value === true)
+      .map((mark) => ({ mark, descriptor: decodeMarkKey(mark.name) }))
+      .filter(
+        (
+          entry,
+        ): entry is {
+          readonly mark: Automerge.Mark;
+          readonly descriptor: FormattingMark;
+        } => entry.descriptor !== undefined,
+      );
+    const items = projectItems(
+      this.document.text,
+      originMarks,
+      formattingMarks,
+    );
 
     const origins = Object.values(this.document.origins)
       .map(parseStoredOrigin)
       .sort((left, right) => left.id.localeCompare(right.id));
-    return structuredClone({ items, marks, origins });
+    return structuredClone({ items, origins });
   }
 
   /** Saves complete Automerge state. */
@@ -126,13 +155,21 @@ export class AutomergeContentCarrier implements ContentCarrier {
     this.document = Automerge.merge(this.document, remote);
   }
 
-  /** Creates one Automerge cursor at a UTF-16/code-unit offset. */
-  public createCursor(offset: number, affinity: "before" | "after"): string {
-    assertOffset(offset, this.document.text.length);
-    return Automerge.getCursor(this.document, [...TEXT_PATH], offset, affinity);
+  /** Creates one Automerge cursor at a candidate-runtime UTF-16 offset. */
+  public createCursor(
+    runtimeUtf16Offset: number,
+    affinity: "before" | "after",
+  ): string {
+    assertOffset(runtimeUtf16Offset, this.document.text.length);
+    return Automerge.getCursor(
+      this.document,
+      [...TEXT_PATH],
+      runtimeUtf16Offset,
+      affinity,
+    );
   }
 
-  /** Resolves one Automerge cursor to a UTF-16/code-unit offset. */
+  /** Resolves one Automerge cursor to a candidate-runtime UTF-16 offset. */
   public resolveCursor(cursor: string): number | undefined {
     try {
       return Automerge.getCursorPosition(this.document, [...TEXT_PATH], cursor);
@@ -142,11 +179,11 @@ export class AutomergeContentCarrier implements ContentCarrier {
   }
 
   private insertString(
-    offset: number,
+    runtimeUtf16Offset: number,
     inserted: string,
     origin: OriginRecord,
   ): void {
-    assertOffset(offset, this.document.text.length);
+    assertOffset(runtimeUtf16Offset, this.document.text.length);
     const insertedUnits = inserted.length;
     const serializedOrigin = JSON.stringify(origin);
     const existing = this.document.origins[origin.id];
@@ -160,13 +197,13 @@ export class AutomergeContentCarrier implements ContentCarrier {
       if (existing === undefined) {
         draft.origins[origin.id] = serializedOrigin;
       }
-      Automerge.splice(draft, [...TEXT_PATH], offset, 0, inserted);
+      Automerge.splice(draft, [...TEXT_PATH], runtimeUtf16Offset, 0, inserted);
       Automerge.mark(
         draft,
         [...TEXT_PATH],
         {
-          start: offset,
-          end: offset + insertedUnits,
+          start: runtimeUtf16Offset,
+          end: runtimeUtf16Offset + insertedUnits,
           expand: "none",
         },
         ORIGIN_MARK,
@@ -183,43 +220,68 @@ export const automergeContentCarrierFactory: ContentCarrierFactory = {
   load: (encoded) => new AutomergeContentCarrier(encoded),
 };
 
+interface DecodedAutomergeFormattingMark {
+  readonly mark: Automerge.Mark;
+  readonly descriptor: FormattingMark;
+}
+
 function projectItems(
   text: string,
   originMarks: readonly Automerge.Mark[],
+  formattingMarks: readonly DecodedAutomergeFormattingMark[],
 ): ContentItem[] {
   const items: ContentItem[] = [];
-  let markIndex = 0;
+  let originIndex = 0;
 
-  for (let offset = 0; offset < text.length; offset += 1) {
+  for (
+    let runtimeUtf16Offset = 0;
+    runtimeUtf16Offset < text.length;
+    runtimeUtf16Offset += 1
+  ) {
     while (
-      markIndex < originMarks.length &&
-      (originMarks[markIndex]?.end ?? 0) <= offset
+      originIndex < originMarks.length &&
+      (originMarks[originIndex]?.end ?? 0) <= runtimeUtf16Offset
     ) {
-      markIndex += 1;
+      originIndex += 1;
     }
-    const mark = originMarks[markIndex];
+    const originMark = originMarks[originIndex];
     if (
-      mark === undefined ||
-      mark.start > offset ||
-      mark.end <= offset ||
-      typeof mark.value !== "string"
+      originMark === undefined ||
+      originMark.start > runtimeUtf16Offset ||
+      originMark.end <= runtimeUtf16Offset ||
+      typeof originMark.value !== "string"
     ) {
       throw new TypeError(
         "Every live Automerge text unit must carry one Origin.",
       );
     }
-    const next = originMarks[markIndex + 1];
-    if (next !== undefined && next.start <= offset && next.end > offset) {
+    const nextOrigin = originMarks[originIndex + 1];
+    if (
+      nextOrigin !== undefined &&
+      nextOrigin.start <= runtimeUtf16Offset &&
+      nextOrigin.end > runtimeUtf16Offset
+    ) {
       throw new TypeError(
         "A live Automerge text unit must not carry conflicting Origins.",
       );
     }
-    const originId = parseOriginId(mark.value);
-    const codeUnit = text.slice(offset, offset + 1);
+
+    const marks = formattingMarks
+      .filter(
+        (entry) =>
+          entry.mark.start <= runtimeUtf16Offset &&
+          entry.mark.end > runtimeUtf16Offset,
+      )
+      .map((entry) => entry.descriptor)
+      .sort((left, right) =>
+        encodeMarkKey(left).localeCompare(encodeMarkKey(right)),
+      );
+    const originId = parseOriginId(originMark.value);
+    const codeUnit = text.slice(runtimeUtf16Offset, runtimeUtf16Offset + 1);
     if (codeUnit === "\n") {
-      items.push({ kind: "hardBreak", originId });
+      items.push({ kind: "hardBreak", originId, marks });
     } else {
-      appendText(items, codeUnit, originId);
+      appendText(items, codeUnit, originId, marks);
     }
   }
   return items;
@@ -229,22 +291,28 @@ function appendText(
   items: ContentItem[],
   text: string,
   originId: ReturnType<typeof parseOriginId>,
+  marks: readonly FormattingMark[],
 ): void {
   const previous = items.at(-1);
-  if (previous?.kind === "text" && previous.originId === originId) {
+  if (
+    previous?.kind === "text" &&
+    previous.originId === originId &&
+    JSON.stringify(previous.marks) === JSON.stringify(marks)
+  ) {
     items[items.length - 1] = {
       kind: "text",
       text: previous.text + text,
       originId,
+      marks: previous.marks,
     };
     return;
   }
-  items.push({ kind: "text", text, originId });
+  items.push({ kind: "text", text, originId, marks });
 }
 
 function assertOffset(offset: number, length: number): void {
   if (!Number.isSafeInteger(offset) || offset < 0 || offset > length) {
-    throw new RangeError("Carrier offset is outside content.");
+    throw new RangeError("Carrier runtime UTF-16 offset is outside content.");
   }
 }
 

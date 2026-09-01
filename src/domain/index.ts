@@ -18,8 +18,8 @@ export type {
 } from "./ids.js";
 export {
   cloneInlineContentValue,
-  contentLength,
   createEmptyInlineContentValue,
+  validateFormattingMark,
   validateInlineContentValue,
 } from "./content.js";
 export type {
@@ -42,18 +42,6 @@ export type {
   StableRangeCursor,
   TextContentItem,
 } from "./content.js";
-export {
-  addFormattingMark,
-  clearFormattingRange,
-  deleteContentRange,
-  insertHardBreak,
-  insertText,
-} from "./contentOperations.js";
-export type {
-  ContentEditError,
-  ContentEditErrorKind,
-  ContentEditResult,
-} from "./contentOperations.js";
 export type {
   Block,
   ChildrenPresentation,

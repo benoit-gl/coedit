@@ -32,7 +32,7 @@ for (const factory of factories) {
   describe(`${factory.candidate} CollaborativeContent carrier`, () => {
     it("round trips empty content", () => {
       const carrier = factory.create();
-      expect(carrier.snapshot()).toEqual({ items: [], marks: [], origins: [] });
+      expect(carrier.snapshot()).toEqual({ items: [], origins: [] });
       expect(factory.load(carrier.encode()).snapshot()).toEqual(
         carrier.snapshot(),
       );
@@ -45,27 +45,29 @@ for (const factory of factories) {
       carrier.insertHardBreak(3, originC);
 
       expect(carrier.snapshot().items).toEqual([
-        { kind: "text", text: "a", originId: originA.id },
-        { kind: "text", text: "b", originId: originB.id },
-        { kind: "text", text: "c", originId: originA.id },
-        { kind: "hardBreak", originId: originC.id },
+        { kind: "text", text: "a", originId: originA.id, marks: [] },
+        { kind: "text", text: "b", originId: originB.id, marks: [] },
+        { kind: "text", text: "c", originId: originA.id, marks: [] },
+        { kind: "hardBreak", originId: originC.id, marks: [] },
       ]);
     });
 
     it("preserves all four mark insertion-boundary policies", () => {
-      for (const [policy, startRange, endRange] of [
-        ["none", [1, 3], [0, 2]],
-        ["start", [0, 3], [0, 2]],
-        ["end", [1, 3], [0, 3]],
-        ["both", [0, 3], [0, 3]],
+      for (const [policy, atStart, atEnd] of [
+        ["none", false, false],
+        ["start", true, false],
+        ["end", false, true],
+        ["both", true, true],
       ] as const) {
         const startCarrier = markedCarrier(factory, policy);
         startCarrier.insertText(0, "x", originB);
-        expect(markRange(startCarrier.snapshot(), "bold")).toEqual(startRange);
+        expect(hasMarkAt(startCarrier.snapshot(), 0, "bold")).toBe(atStart);
+        expect(hasMarkAt(startCarrier.snapshot(), 1, "bold")).toBe(true);
 
         const endCarrier = markedCarrier(factory, policy);
         endCarrier.insertText(2, "x", originB);
-        expect(markRange(endCarrier.snapshot(), "bold")).toEqual(endRange);
+        expect(hasMarkAt(endCarrier.snapshot(), 1, "bold")).toBe(true);
+        expect(hasMarkAt(endCarrier.snapshot(), 2, "bold")).toBe(atEnd);
       }
     });
 
@@ -74,8 +76,6 @@ for (const factory of factories) {
       carrier.insertText(0, "links", originA);
       const opaque: FormattingMark = {
         kind: "link",
-        start: 0,
-        end: 2,
         boundaryPolicy: "none",
         target: {
           kind: "opaque",
@@ -84,8 +84,6 @@ for (const factory of factories) {
       };
       const internal: FormattingMark = {
         kind: "link",
-        start: 2,
-        end: 5,
         boundaryPolicy: "none",
         target: {
           kind: "block",
@@ -103,18 +101,15 @@ for (const factory of factories) {
           },
         },
       };
-      carrier.addMark(opaque);
-      carrier.addMark(internal);
+      carrier.addMark(0, 2, opaque);
+      carrier.addMark(2, 5, internal);
 
-      expect(sortedMarks(carrier.snapshot())).toEqual(
-        sortedMarks({
-          items: [],
-          origins: [],
-          marks: [opaque, internal],
-        }),
-      );
-      expect(sortedMarks(factory.load(carrier.encode()).snapshot())).toEqual(
-        sortedMarks(carrier.snapshot()),
+      expect(marksAt(carrier.snapshot(), 0)).toEqual([opaque]);
+      expect(marksAt(carrier.snapshot(), 1)).toEqual([opaque]);
+      expect(marksAt(carrier.snapshot(), 2)).toEqual([internal]);
+      expect(marksAt(carrier.snapshot(), 4)).toEqual([internal]);
+      expect(factory.load(carrier.encode()).snapshot()).toEqual(
+        carrier.snapshot(),
       );
     });
 
@@ -143,18 +138,8 @@ for (const factory of factories) {
       base.insertText(0, "abc", originA);
       const left = factory.load(base.encode());
       const right = factory.load(base.encode());
-      left.addMark({
-        kind: "bold",
-        start: 0,
-        end: 2,
-        boundaryPolicy: "both",
-      });
-      right.addMark({
-        kind: "italic",
-        start: 1,
-        end: 3,
-        boundaryPolicy: "both",
-      });
+      left.addMark(0, 2, { kind: "bold", boundaryPolicy: "both" });
+      right.addMark(1, 3, { kind: "italic", boundaryPolicy: "both" });
 
       const leftState = left.encode();
       const rightState = right.encode();
@@ -162,13 +147,8 @@ for (const factory of factories) {
       right.mergeEncoded(leftState);
 
       expect(normalize(left.snapshot())).toEqual(normalize(right.snapshot()));
-      expect(
-        left
-          .snapshot()
-          .marks.map((mark) => mark.kind)
-          .sort(),
-      ).toEqual(["bold", "italic"]);
-      expect(left.snapshot().items).toEqual(base.snapshot().items);
+      expect(uniqueMarkKinds(left.snapshot())).toEqual(["bold", "italic"]);
+      expect(visibleText(left.snapshot())).toBe("abc");
     });
 
     it("keeps stable cursors attached through preceding edits and reload", () => {
@@ -182,14 +162,14 @@ for (const factory of factories) {
       expect(reloaded.resolveCursor(cursor)).toBe(2);
     });
 
-    it("translates UTF-16 editor offsets without moving an emoji boundary", () => {
+    it("keeps UTF-16 confined to the candidate runtime boundary", () => {
       const carrier = factory.create();
       carrier.insertText(0, "a😀b", originA);
       carrier.insertText(3, "x", originB);
       expect(carrier.snapshot().items).toEqual([
-        { kind: "text", text: "a😀", originId: originA.id },
-        { kind: "text", text: "x", originId: originB.id },
-        { kind: "text", text: "b", originId: originA.id },
+        { kind: "text", text: "a😀", originId: originA.id, marks: [] },
+        { kind: "text", text: "x", originId: originB.id, marks: [] },
+        { kind: "text", text: "b", originId: originA.id, marks: [] },
       ]);
     });
   });
@@ -201,40 +181,55 @@ function markedCarrier(
 ): ContentCarrier {
   const carrier = factory.create();
   carrier.insertText(0, "ab", originA);
-  carrier.addMark({
-    kind: "bold",
-    start: 0,
-    end: 2,
-    boundaryPolicy,
-  });
+  carrier.addMark(0, 2, { kind: "bold", boundaryPolicy });
   return carrier;
 }
 
-function markRange(
+function marksAt(
   value: InlineContentValue,
-  kind: FormattingMark["kind"],
-): readonly [number | undefined, number | undefined] {
-  const mark = value.marks.find((entry) => entry.kind === kind);
-  return [mark?.start, mark?.end];
+  runtimeUtf16Offset: number,
+): readonly FormattingMark[] {
+  let current = 0;
+  for (const item of value.items) {
+    const length = item.kind === "text" ? item.text.length : 1;
+    if (
+      runtimeUtf16Offset >= current &&
+      runtimeUtf16Offset < current + length
+    ) {
+      return item.marks;
+    }
+    current += length;
+  }
+  return [];
 }
 
-function sortedMarks(value: InlineContentValue): readonly FormattingMark[] {
-  return [...value.marks].sort(
-    (left, right) =>
-      left.start - right.start ||
-      left.end - right.end ||
-      left.kind.localeCompare(right.kind) ||
-      left.boundaryPolicy.localeCompare(right.boundaryPolicy) ||
-      JSON.stringify(left.target ?? null).localeCompare(
-        JSON.stringify(right.target ?? null),
-      ),
-  );
+function hasMarkAt(
+  value: InlineContentValue,
+  runtimeUtf16Offset: number,
+  kind: FormattingMark["kind"],
+): boolean {
+  return marksAt(value, runtimeUtf16Offset).some((mark) => mark.kind === kind);
+}
+
+function uniqueMarkKinds(
+  value: InlineContentValue,
+): readonly FormattingMark["kind"][] {
+  return [
+    ...new Set(
+      value.items.flatMap((item) => item.marks.map((mark) => mark.kind)),
+    ),
+  ].sort();
+}
+
+function visibleText(value: InlineContentValue): string {
+  return value.items
+    .map((item) => (item.kind === "text" ? item.text : "\n"))
+    .join("");
 }
 
 function normalize(value: InlineContentValue): InlineContentValue {
   return {
     items: value.items,
-    marks: sortedMarks(value),
     origins: [...value.origins].sort((left, right) =>
       left.id.localeCompare(right.id),
     ),

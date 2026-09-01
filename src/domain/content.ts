@@ -25,27 +25,6 @@ export interface OriginRecord {
   readonly createdBy: ContributionId;
 }
 
-/** One visible text run that has exactly one protected Origin. */
-export interface TextContentItem {
-  /** Selects visible text. */
-  readonly kind: "text";
-  /** Non-empty text without hard-break characters. */
-  readonly text: string;
-  /** Protected Origin for every UTF-16 code unit in this run. */
-  readonly originId: OriginId;
-}
-
-/** One hard break that has exactly one protected Origin. */
-export interface HardBreakContentItem {
-  /** Selects a hard break. */
-  readonly kind: "hardBreak";
-  /** Protected Origin for this hard break. */
-  readonly originId: OriginId;
-}
-
-/** One carrier-neutral logical content item. */
-export type ContentItem = TextContentItem | HardBreakContentItem;
-
 /** Controls whether inserted content joins a mark at either boundary. */
 export type MarkBoundaryPolicy = "none" | "start" | "end" | "both";
 
@@ -86,11 +65,11 @@ export interface InternalLinkRange {
     /** Visible context immediately after the target. */
     readonly suffix: string;
   };
-  /** Optional fallback offset hint. It is not authoritative. */
+  /** Optional fallback position hint. It is not authoritative. */
   readonly approximatePosition?: {
-    /** Approximate start offset. */
+    /** Approximate start position in the owning interchange coordinate. */
     readonly start: number;
-    /** Approximate end offset. */
+    /** Approximate end position in the owning interchange coordinate. */
     readonly end: number;
   };
 }
@@ -116,26 +95,45 @@ export interface InternalBlockLinkTarget {
 /** Target carried by an intrinsic link mark. */
 export type LinkTarget = OpaqueLinkTarget | InternalBlockLinkTarget;
 
-/** One intrinsic formatting span over UTF-16 logical offsets. */
+/** One intrinsic formatting descriptor with no document-level numeric range. */
 export interface FormattingMark {
   /** Formatting kind. */
   readonly kind: FormattingMarkKind;
-  /** Inclusive start offset. */
-  readonly start: number;
-  /** Exclusive end offset. */
-  readonly end: number;
-  /** Insertion behavior at the mark boundaries. */
+  /** Insertion behavior at the logical mark boundaries. */
   readonly boundaryPolicy: MarkBoundaryPolicy;
   /** Required only for a link mark. */
   readonly target?: LinkTarget;
 }
 
+/** One visible text run with one protected Origin and one formatting set. */
+export interface TextContentItem {
+  /** Selects visible text. */
+  readonly kind: "text";
+  /** Non-empty authored Unicode text without hard-break characters. */
+  readonly text: string;
+  /** Protected Origin for this attributed run. */
+  readonly originId: OriginId;
+  /** Intrinsic formatting active for the complete attributed run. */
+  readonly marks: readonly FormattingMark[];
+}
+
+/** One hard break with one protected Origin and one formatting set. */
+export interface HardBreakContentItem {
+  /** Selects a hard break. */
+  readonly kind: "hardBreak";
+  /** Protected Origin for this hard break. */
+  readonly originId: OriginId;
+  /** Intrinsic formatting active for this hard break. */
+  readonly marks: readonly FormattingMark[];
+}
+
+/** One carrier-neutral attributed content run. */
+export type ContentItem = TextContentItem | HardBreakContentItem;
+
 /** Detached carrier-neutral canonical CollaborativeContent value. */
 export interface InlineContentValue {
-  /** Ordered visible text and hard-break runs. */
+  /** Ordered attributed text runs and hard breaks. */
   readonly items: readonly ContentItem[];
-  /** Intrinsic formatting spans over the flattened visible content. */
-  readonly marks: readonly FormattingMark[];
   /** Immutable Origin records referenced by live items. */
   readonly origins: readonly OriginRecord[];
 }
@@ -175,16 +173,7 @@ export type ContentValidationResult =
 
 /** Creates a detached valid empty CollaborativeContent value. */
 export function createEmptyInlineContentValue(): InlineContentValue {
-  return Object.freeze({ items: [], marks: [], origins: [] });
-}
-
-/** Returns the logical UTF-16 offset length. A hard break occupies one offset. */
-export function contentLength(value: InlineContentValue): number {
-  let length = 0;
-  for (const item of value.items) {
-    length += item.kind === "text" ? item.text.length : 1;
-  }
-  return length;
+  return Object.freeze({ items: [], origins: [] });
 }
 
 /** Validates the complete detached canonical value without mutation. */
@@ -212,7 +201,6 @@ export function validateInlineContentValue(
     origins.add(origin.id);
   }
 
-  let textLength = 0;
   for (const item of value.items) {
     if (!isCanonicalUuidV4(item.originId) || !origins.has(item.originId)) {
       return failure(
@@ -231,37 +219,15 @@ export function validateInlineContentValue(
           "Text items must be non-empty and contain no hard-break characters.",
         );
       }
-      textLength += item.text.length;
-    } else if (item.kind === "hardBreak") {
-      textLength += 1;
-    } else {
+    } else if (item.kind !== "hardBreak") {
       return failure("InvalidItem", "Unknown content item kind.");
     }
-  }
 
-  for (const mark of value.marks) {
-    if (
-      !Number.isSafeInteger(mark.start) ||
-      !Number.isSafeInteger(mark.end) ||
-      mark.start < 0 ||
-      mark.end <= mark.start ||
-      mark.end > textLength
-    ) {
-      return failure(
-        "InvalidMark",
-        "Formatting mark range is outside content.",
-      );
-    }
-    if (mark.kind === "link") {
-      if (mark.target === undefined) {
-        return failure("InvalidLinkTarget", "Link marks require one target.");
+    for (const mark of item.marks) {
+      const markError = validateFormattingMark(mark);
+      if (markError !== undefined) {
+        return { ok: false, error: markError };
       }
-      const targetError = validateLinkTarget(mark.target);
-      if (targetError !== undefined) {
-        return { ok: false, error: targetError };
-      }
-    } else if (mark.target !== undefined) {
-      return failure("InvalidMark", "Only link marks can carry a target.");
     }
   }
 
@@ -273,6 +239,39 @@ export function cloneInlineContentValue(
   value: InlineContentValue,
 ): InlineContentValue {
   return structuredClone(value);
+}
+
+/** Validates one range-free intrinsic formatting descriptor. */
+export function validateFormattingMark(
+  mark: FormattingMark,
+): ContentValidationError | undefined {
+  if (
+    mark.kind !== "bold" &&
+    mark.kind !== "italic" &&
+    mark.kind !== "underline" &&
+    mark.kind !== "strikethrough" &&
+    mark.kind !== "inlineCode" &&
+    mark.kind !== "link"
+  ) {
+    return error("InvalidMark", "Unknown formatting mark kind.");
+  }
+  if (
+    mark.boundaryPolicy !== "none" &&
+    mark.boundaryPolicy !== "start" &&
+    mark.boundaryPolicy !== "end" &&
+    mark.boundaryPolicy !== "both"
+  ) {
+    return error("InvalidMark", "Formatting boundary policy is invalid.");
+  }
+  if (mark.kind === "link") {
+    if (mark.target === undefined) {
+      return error("InvalidLinkTarget", "Link marks require one target.");
+    }
+    return validateLinkTarget(mark.target);
+  }
+  return mark.target === undefined
+    ? undefined
+    : error("InvalidMark", "Only link marks can carry a target.");
 }
 
 function validateLinkTarget(
@@ -351,6 +350,9 @@ function isOpaqueValue(
   }
   if (Array.isArray(value)) {
     return value.every((entry) => isOpaqueValue(entry, depth + 1));
+  }
+  if (typeof value !== "object" || value === null) {
+    return false;
   }
   const record = value as Readonly<Record<string, unknown>>;
   for (const key of Object.keys(record)) {

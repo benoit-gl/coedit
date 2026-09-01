@@ -15,11 +15,7 @@ import type {
   ContentCarrier,
   ContentCarrierFactory,
 } from "./contentCarrier.js";
-import {
-  decodeMarkKey,
-  encodeMarkKey,
-  markAppliesAtInsertion,
-} from "./markCodec.js";
+import { decodeMarkKey, encodeMarkKey } from "./markCodec.js";
 
 const CONTENT_NAME = "content";
 const ORIGINS_NAME = "origins";
@@ -49,42 +45,70 @@ export class YjsContentCarrier implements ContentCarrier {
   }
 
   /** Inserts visible text with explicit Origin and explicit active formatting. */
-  public insertText(offset: number, text: string, origin: OriginRecord): void {
-    this.insertString(offset, text, origin);
+  public insertText(
+    runtimeUtf16Offset: number,
+    text: string,
+    origin: OriginRecord,
+  ): void {
+    if (text.length === 0 || text.includes("\n") || text.includes("\r")) {
+      throw new TypeError(
+        "Inserted visible text must be non-empty and contain no hard break.",
+      );
+    }
+    this.insertString(runtimeUtf16Offset, text, origin);
   }
 
   /** Inserts one hard break with explicit Origin and explicit active formatting. */
-  public insertHardBreak(offset: number, origin: OriginRecord): void {
-    this.insertString(offset, "\n", origin);
+  public insertHardBreak(
+    runtimeUtf16Offset: number,
+    origin: OriginRecord,
+  ): void {
+    this.insertString(runtimeUtf16Offset, "\n", origin);
   }
 
-  /** Deletes a UTF-16 range. */
-  public deleteRange(start: number, end: number): void {
-    assertRange(start, end, this.text.length);
-    if (start === end) {
+  /** Deletes a candidate-runtime UTF-16 range. */
+  public deleteRange(
+    startRuntimeUtf16Offset: number,
+    endRuntimeUtf16Offset: number,
+  ): void {
+    assertRange(
+      startRuntimeUtf16Offset,
+      endRuntimeUtf16Offset,
+      this.text.length,
+    );
+    if (startRuntimeUtf16Offset === endRuntimeUtf16Offset) {
       return;
     }
-    this.text.delete(start, end - start);
+    this.text.delete(
+      startRuntimeUtf16Offset,
+      endRuntimeUtf16Offset - startRuntimeUtf16Offset,
+    );
   }
 
   /** Adds one intrinsic mark without touching the protected Origin attribute. */
-  public addMark(mark: FormattingMark): void {
-    assertRange(mark.start, mark.end, this.text.length);
-    if (mark.start === mark.end) {
+  public addMark(
+    startRuntimeUtf16Offset: number,
+    endRuntimeUtf16Offset: number,
+    mark: FormattingMark,
+  ): void {
+    assertRange(
+      startRuntimeUtf16Offset,
+      endRuntimeUtf16Offset,
+      this.text.length,
+    );
+    if (startRuntimeUtf16Offset === endRuntimeUtf16Offset) {
       throw new RangeError("A formatting mark must cover visible content.");
     }
-    this.text.format(mark.start, mark.end - mark.start, {
-      [encodeMarkKey(mark)]: true,
-    });
+    this.text.format(
+      startRuntimeUtf16Offset,
+      endRuntimeUtf16Offset - startRuntimeUtf16Offset,
+      { [encodeMarkKey(mark)]: true },
+    );
   }
 
-  /** Projects a detached carrier-neutral value from Y.Text attributes. */
+  /** Projects detached range-free content from Y.Text attributes. */
   public snapshot(): InlineContentValue {
     const items: ContentItem[] = [];
-    const marks: FormattingMark[] = [];
-    const openMarks = new Map<string, number>();
-    let offset = 0;
-
     const delta =
       this.text.toDelta() as unknown as readonly YTextDeltaOperation[];
     for (const operation of delta) {
@@ -98,47 +122,18 @@ export class YjsContentCarrier implements ContentCarrier {
       if (typeof originValue !== "string") {
         throw new TypeError("Every live Yjs text unit must carry one Origin.");
       }
-      const originId = parseOriginId(originValue);
-      appendItems(items, operation.insert, originId);
-
-      const activeKeys = new Set<string>();
-      for (const [key, value] of Object.entries(attributes)) {
-        if (key === ORIGIN_ATTRIBUTE || value !== true) {
-          continue;
-        }
-        const descriptor = decodeMarkKey(key);
-        if (descriptor === undefined) {
-          continue;
-        }
-        activeKeys.add(key);
-        const openIndex = openMarks.get(key);
-        if (openIndex === undefined) {
-          marks.push({
-            ...descriptor,
-            start: offset,
-            end: offset + operation.insert.length,
-          });
-          openMarks.set(key, marks.length - 1);
-        } else {
-          marks[openIndex] = {
-            ...marks[openIndex]!,
-            end: offset + operation.insert.length,
-          };
-        }
-      }
-
-      for (const key of [...openMarks.keys()]) {
-        if (!activeKeys.has(key)) {
-          openMarks.delete(key);
-        }
-      }
-      offset += operation.insert.length;
+      appendItems(
+        items,
+        operation.insert,
+        parseOriginId(originValue),
+        formattingFromAttributes(attributes),
+      );
     }
 
     const origins = [...this.origins.values()]
       .map(parseStoredOrigin)
       .sort((left, right) => left.id.localeCompare(right.id));
-    return structuredClone({ items, marks, origins });
+    return structuredClone({ items, origins });
   }
 
   /** Encodes complete Yjs state. */
@@ -152,11 +147,14 @@ export class YjsContentCarrier implements ContentCarrier {
   }
 
   /** Creates a serialized Yjs relative position. */
-  public createCursor(offset: number, affinity: "before" | "after"): string {
-    assertOffset(offset, this.text.length);
+  public createCursor(
+    runtimeUtf16Offset: number,
+    affinity: "before" | "after",
+  ): string {
+    assertOffset(runtimeUtf16Offset, this.text.length);
     const relative = Y.createRelativePositionFromTypeIndex(
       this.text,
-      offset,
+      runtimeUtf16Offset,
       affinity === "before" ? -1 : 0,
     );
     return bytesToBase64(Y.encodeRelativePosition(relative));
@@ -178,23 +176,18 @@ export class YjsContentCarrier implements ContentCarrier {
   }
 
   private insertString(
-    offset: number,
+    runtimeUtf16Offset: number,
     inserted: string,
     origin: OriginRecord,
   ): void {
-    assertOffset(offset, this.text.length);
+    assertOffset(runtimeUtf16Offset, this.text.length);
     if (inserted.length === 0) {
       throw new TypeError("Inserted carrier text must not be empty.");
     }
-    const snapshot = this.snapshot();
     const attributes: Record<string, string | boolean> = {
       [ORIGIN_ATTRIBUTE]: origin.id,
+      ...this.markAttributesAtInsertion(runtimeUtf16Offset),
     };
-    for (const mark of snapshot.marks) {
-      if (markAppliesAtInsertion(mark, offset)) {
-        attributes[encodeMarkKey(mark)] = true;
-      }
-    }
 
     const serializedOrigin = JSON.stringify(origin);
     const existing = this.origins.get(origin.id);
@@ -208,8 +201,51 @@ export class YjsContentCarrier implements ContentCarrier {
       if (existing === undefined) {
         this.origins.set(origin.id, serializedOrigin);
       }
-      this.text.insert(offset, inserted, attributes);
+      this.text.insert(runtimeUtf16Offset, inserted, attributes);
     });
+  }
+
+  private markAttributesAtInsertion(
+    runtimeUtf16Offset: number,
+  ): Readonly<Record<string, boolean>> {
+    const delta =
+      this.text.toDelta() as unknown as readonly YTextDeltaOperation[];
+    const left =
+      runtimeUtf16Offset === 0
+        ? new Set<string>()
+        : markKeysAtRuntimeOffset(delta, runtimeUtf16Offset - 1);
+    const right =
+      runtimeUtf16Offset === this.text.length
+        ? new Set<string>()
+        : markKeysAtRuntimeOffset(delta, runtimeUtf16Offset);
+    const result: Record<string, boolean> = {};
+
+    for (const key of new Set([...left, ...right])) {
+      const descriptor = decodeMarkKey(key);
+      if (descriptor === undefined) {
+        continue;
+      }
+      if (left.has(key) && right.has(key)) {
+        result[key] = true;
+        continue;
+      }
+      if (
+        right.has(key) &&
+        (descriptor.boundaryPolicy === "start" ||
+          descriptor.boundaryPolicy === "both")
+      ) {
+        result[key] = true;
+        continue;
+      }
+      if (
+        left.has(key) &&
+        (descriptor.boundaryPolicy === "end" ||
+          descriptor.boundaryPolicy === "both")
+      ) {
+        result[key] = true;
+      }
+    }
+    return result;
   }
 }
 
@@ -220,10 +256,53 @@ export const yjsContentCarrierFactory: ContentCarrierFactory = {
   load: (encoded) => new YjsContentCarrier(encoded),
 };
 
+function formattingFromAttributes(
+  attributes: Readonly<Record<string, unknown>>,
+): FormattingMark[] {
+  const marks: FormattingMark[] = [];
+  for (const [key, value] of Object.entries(attributes)) {
+    if (key === ORIGIN_ATTRIBUTE || value !== true) {
+      continue;
+    }
+    const mark = decodeMarkKey(key);
+    if (mark !== undefined) {
+      marks.push(mark);
+    }
+  }
+  return marks.sort((left, right) =>
+    encodeMarkKey(left).localeCompare(encodeMarkKey(right)),
+  );
+}
+
+function markKeysAtRuntimeOffset(
+  delta: readonly YTextDeltaOperation[],
+  runtimeUtf16Offset: number,
+): Set<string> {
+  let current = 0;
+  for (const operation of delta) {
+    const end = current + operation.insert.length;
+    if (runtimeUtf16Offset >= current && runtimeUtf16Offset < end) {
+      return new Set(
+        Object.entries(operation.attributes ?? {})
+          .filter(
+            ([key, value]) =>
+              key !== ORIGIN_ATTRIBUTE &&
+              value === true &&
+              decodeMarkKey(key) !== undefined,
+          )
+          .map(([key]) => key),
+      );
+    }
+    current = end;
+  }
+  return new Set<string>();
+}
+
 function appendItems(
   items: ContentItem[],
   inserted: string,
   originId: ReturnType<typeof parseOriginId>,
+  marks: readonly FormattingMark[],
 ): void {
   let textStart = 0;
   for (let index = 0; index <= inserted.length; index += 1) {
@@ -231,10 +310,14 @@ function appendItems(
       continue;
     }
     if (index > textStart) {
-      appendText(items, inserted.slice(textStart, index), originId);
+      appendText(items, inserted.slice(textStart, index), originId, marks);
     }
     if (index < inserted.length) {
-      items.push({ kind: "hardBreak", originId });
+      items.push({
+        kind: "hardBreak",
+        originId,
+        marks: structuredClone(marks),
+      });
     }
     textStart = index + 1;
   }
@@ -244,17 +327,35 @@ function appendText(
   items: ContentItem[],
   text: string,
   originId: ReturnType<typeof parseOriginId>,
+  marks: readonly FormattingMark[],
 ): void {
   const previous = items.at(-1);
-  if (previous?.kind === "text" && previous.originId === originId) {
+  if (
+    previous?.kind === "text" &&
+    previous.originId === originId &&
+    sameFormatting(previous.marks, marks)
+  ) {
     items[items.length - 1] = {
       kind: "text",
       text: previous.text + text,
       originId,
+      marks: previous.marks,
     };
     return;
   }
-  items.push({ kind: "text", text, originId });
+  items.push({
+    kind: "text",
+    text,
+    originId,
+    marks: structuredClone(marks),
+  });
+}
+
+function sameFormatting(
+  left: readonly FormattingMark[],
+  right: readonly FormattingMark[],
+): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 function parseStoredOrigin(serialized: string): OriginRecord {
@@ -292,7 +393,7 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
 
 function assertOffset(offset: number, length: number): void {
   if (!Number.isSafeInteger(offset) || offset < 0 || offset > length) {
-    throw new RangeError("Carrier offset is outside content.");
+    throw new RangeError("Carrier runtime UTF-16 offset is outside content.");
   }
 }
 
