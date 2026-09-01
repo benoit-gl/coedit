@@ -51,6 +51,11 @@ export class YjsStructuralCarrier implements StructuralCarrier {
       for (const blockId of change.deletes ?? []) {
         this.retireObservedTokens(blockId);
       }
+      for (const update of change.normalizations ?? []) {
+        this.assertNonRoot(update.blockId);
+        const entry = this.requireEntry(update.blockId);
+        entry.set(PLACEMENT_KEY, encodeStructuralPlacement(update.placement));
+      }
       for (const update of change.placements ?? []) {
         this.assertNonRoot(update.blockId);
         const entry = this.requireOrCreateEntry(update.blockId);
