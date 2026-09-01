@@ -54,30 +54,21 @@ export class AutomergeContentCarrier implements ContentCarrier {
     this.insertString(offset, "\n", origin);
   }
 
-  /** Deletes one UTF-16 logical range after translating it to scalar offsets. */
+  /** Deletes one UTF-16/code-unit logical range. */
   public deleteRange(start: number, end: number): void {
-    const startScalar = utf16ToScalarIndex(this.document.text, start);
-    const endScalar = utf16ToScalarIndex(this.document.text, end);
-    if (endScalar < startScalar) {
-      throw new RangeError("Carrier range end must not precede its start.");
-    }
-    if (endScalar === startScalar) {
+    assertRange(start, end, this.document.text.length);
+    if (start === end) {
       return;
     }
     this.document = Automerge.change(this.document, (draft) => {
-      Automerge.splice(
-        draft,
-        [...TEXT_PATH],
-        startScalar,
-        endScalar - startScalar,
-      );
+      Automerge.splice(draft, [...TEXT_PATH], start, end - start);
     });
   }
 
   /** Adds one native Automerge rich-text mark with the canonical boundary policy. */
   public addMark(mark: FormattingMark): void {
-    const start = utf16ToScalarIndex(this.document.text, mark.start);
-    const end = utf16ToScalarIndex(this.document.text, mark.end);
+    assertRange(mark.start, mark.end, this.document.text.length);
+    const { start, end } = mark;
     if (end <= start) {
       throw new RangeError("A formatting mark must cover visible content.");
     }
@@ -113,8 +104,8 @@ export class AutomergeContentCarrier implements ContentCarrier {
       }
       marks.push({
         ...descriptor,
-        start: scalarToUtf16Index(this.document.text, mark.start),
-        end: scalarToUtf16Index(this.document.text, mark.end),
+        start: mark.start,
+        end: mark.end,
       });
     }
 
@@ -135,21 +126,16 @@ export class AutomergeContentCarrier implements ContentCarrier {
     this.document = Automerge.merge(this.document, remote);
   }
 
-  /** Creates one Automerge cursor after UTF-16 to scalar translation. */
+  /** Creates one Automerge cursor at a UTF-16/code-unit offset. */
   public createCursor(offset: number, affinity: "before" | "after"): string {
-    const scalar = utf16ToScalarIndex(this.document.text, offset);
-    return Automerge.getCursor(this.document, [...TEXT_PATH], scalar, affinity);
+    assertOffset(offset, this.document.text.length);
+    return Automerge.getCursor(this.document, [...TEXT_PATH], offset, affinity);
   }
 
-  /** Resolves one Automerge cursor and translates it back to a UTF-16 offset. */
+  /** Resolves one Automerge cursor to a UTF-16/code-unit offset. */
   public resolveCursor(cursor: string): number | undefined {
     try {
-      const scalar = Automerge.getCursorPosition(
-        this.document,
-        [...TEXT_PATH],
-        cursor,
-      );
-      return scalarToUtf16Index(this.document.text, scalar);
+      return Automerge.getCursorPosition(this.document, [...TEXT_PATH], cursor);
     } catch {
       return undefined;
     }
@@ -160,8 +146,8 @@ export class AutomergeContentCarrier implements ContentCarrier {
     inserted: string,
     origin: OriginRecord,
   ): void {
-    const scalarOffset = utf16ToScalarIndex(this.document.text, offset);
-    const insertedScalars = [...inserted].length;
+    assertOffset(offset, this.document.text.length);
+    const insertedUnits = inserted.length;
     const serializedOrigin = JSON.stringify(origin);
     const existing = this.document.origins[origin.id];
     if (existing !== undefined && existing !== serializedOrigin) {
@@ -174,13 +160,13 @@ export class AutomergeContentCarrier implements ContentCarrier {
       if (existing === undefined) {
         draft.origins[origin.id] = serializedOrigin;
       }
-      Automerge.splice(draft, [...TEXT_PATH], scalarOffset, 0, inserted);
+      Automerge.splice(draft, [...TEXT_PATH], offset, 0, inserted);
       Automerge.mark(
         draft,
         [...TEXT_PATH],
         {
-          start: scalarOffset,
-          end: scalarOffset + insertedScalars,
+          start: offset,
+          end: offset + insertedUnits,
           expand: "none",
         },
         ORIGIN_MARK,
@@ -201,22 +187,21 @@ function projectItems(
   text: string,
   originMarks: readonly Automerge.Mark[],
 ): ContentItem[] {
-  const characters = [...text];
   const items: ContentItem[] = [];
   let markIndex = 0;
 
-  for (let scalar = 0; scalar < characters.length; scalar += 1) {
+  for (let offset = 0; offset < text.length; offset += 1) {
     while (
       markIndex < originMarks.length &&
-      (originMarks[markIndex]?.end ?? 0) <= scalar
+      (originMarks[markIndex]?.end ?? 0) <= offset
     ) {
       markIndex += 1;
     }
     const mark = originMarks[markIndex];
     if (
       mark === undefined ||
-      mark.start > scalar ||
-      mark.end <= scalar ||
+      mark.start > offset ||
+      mark.end <= offset ||
       typeof mark.value !== "string"
     ) {
       throw new TypeError(
@@ -224,17 +209,17 @@ function projectItems(
       );
     }
     const next = originMarks[markIndex + 1];
-    if (next !== undefined && next.start <= scalar && next.end > scalar) {
+    if (next !== undefined && next.start <= offset && next.end > offset) {
       throw new TypeError(
         "A live Automerge text unit must not carry conflicting Origins.",
       );
     }
     const originId = parseOriginId(mark.value);
-    const character = characters[scalar]!;
-    if (character === "\n") {
+    const codeUnit = text.slice(offset, offset + 1);
+    if (codeUnit === "\n") {
       items.push({ kind: "hardBreak", originId });
     } else {
-      appendText(items, character, originId);
+      appendText(items, codeUnit, originId);
     }
   }
   return items;
@@ -257,42 +242,18 @@ function appendText(
   items.push({ kind: "text", text, originId });
 }
 
-function utf16ToScalarIndex(text: string, offset: number): number {
-  if (!Number.isSafeInteger(offset) || offset < 0 || offset > text.length) {
-    throw new RangeError("UTF-16 offset is outside Automerge text.");
+function assertOffset(offset: number, length: number): void {
+  if (!Number.isSafeInteger(offset) || offset < 0 || offset > length) {
+    throw new RangeError("Carrier offset is outside content.");
   }
-  let utf16 = 0;
-  let scalar = 0;
-  for (const character of text) {
-    if (utf16 === offset) {
-      return scalar;
-    }
-    utf16 += character.length;
-    scalar += 1;
-    if (utf16 > offset) {
-      throw new RangeError("UTF-16 offset splits one Unicode scalar value.");
-    }
-  }
-  return scalar;
 }
 
-function scalarToUtf16Index(text: string, scalarIndex: number): number {
-  if (!Number.isSafeInteger(scalarIndex) || scalarIndex < 0) {
-    throw new RangeError("Scalar offset is invalid.");
+function assertRange(start: number, end: number, length: number): void {
+  assertOffset(start, length);
+  assertOffset(end, length);
+  if (end < start) {
+    throw new RangeError("Carrier range end must not precede its start.");
   }
-  let utf16 = 0;
-  let scalar = 0;
-  for (const character of text) {
-    if (scalar === scalarIndex) {
-      return utf16;
-    }
-    utf16 += character.length;
-    scalar += 1;
-  }
-  if (scalar !== scalarIndex) {
-    throw new RangeError("Scalar offset is outside Automerge text.");
-  }
-  return utf16;
 }
 
 function toAutomergeExpansion(

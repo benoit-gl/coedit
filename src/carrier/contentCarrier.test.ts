@@ -219,8 +219,15 @@ function markRange(
 }
 
 function sortedMarks(value: InlineContentValue): readonly FormattingMark[] {
-  return [...value.marks].sort((left, right) =>
-    JSON.stringify(left).localeCompare(JSON.stringify(right)),
+  return [...value.marks].sort(
+    (left, right) =>
+      left.start - right.start ||
+      left.end - right.end ||
+      left.kind.localeCompare(right.kind) ||
+      left.boundaryPolicy.localeCompare(right.boundaryPolicy) ||
+      JSON.stringify(left.target ?? null).localeCompare(
+        JSON.stringify(right.target ?? null),
+      ),
   );
 }
 

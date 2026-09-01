@@ -4,7 +4,9 @@ async function replaceIn(path, replacements) {
   let text = await readFile(path, "utf8");
   for (const [from, to] of replacements) {
     if (!text.includes(from)) {
-      throw new Error(`Expected text not found in ${path}: ${from.slice(0, 120)}`);
+      throw new Error(
+        `Expected text not found in ${path}: ${from.slice(0, 120)}`,
+      );
     }
     text = text.replace(from, to);
   }
