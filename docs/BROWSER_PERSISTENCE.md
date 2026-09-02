@@ -143,12 +143,12 @@ Contribution or Version.
 
 Compaction can replace private replay paths only after a new checkpoint is fully
 written and validated. It cannot silently make an advertised retained
-VersionToken, semantic Checkpoint, Origin, or future CommentTarget behavior
+VersionToken, semantic Checkpoint, Origin, durable Range behavior, or future comment-holder behavior
 unavailable. A future retention policy must explicitly change the product
 promise before such data can be discarded.
 
 Complete snapshots per Contribution are permitted in bounded in-memory tests or
-an explicitly identified early prototype. They are not the Step 11 target and
+an explicitly identified early prototype. They are not the Step 13 target and
 must not become the public History or portable-format abstraction.
 
 ## 8. Multi-tab behavior
@@ -179,7 +179,7 @@ success. The application preserves retryable work and offers explicit `.coedit`
 export/backup while sufficient committed state remains available.
 
 The UX should warn before measured usage approaches a browser-specific safe
-margin. The exact warning threshold is a Step 12 measurement outcome, not a
+margin. The exact warning threshold is a Step 14 measurement outcome, not a
 portable document limit.
 
 ## 10. `.coedit` separation

@@ -4,11 +4,11 @@
 
 This document defines what the Coedit MVP must prove. The MVP is a **document-engine prototype**, not a complete collaborative writing product.
 
-Detailed implementation rules are in [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md). Domain meaning remains in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Public authority boundaries remain in [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md). Attributed text is specified in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md). Markdown interchange is specified in [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md). Lossless recovery is specified in [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md). Browser persistence is specified in [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Implementation order remains in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md).
+Detailed implementation rules are in [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md). Domain meaning remains in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Public authority boundaries remain in [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md). Attributed text is specified in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md). Durable Range behavior is specified in [`RANGE_MODEL.md`](RANGE_MODEL.md). Markdown interchange is specified in [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md). Lossless recovery is specified in [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md). Browser persistence is specified in [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Implementation order remains in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md).
 
 ## 1. Purpose
 
-The MVP must prove that Coedit can support one durable structured document through a headless document engine with clear authority, exact History, attributed collaborative rich text, deterministic projections, reversible Markdown interchange for imported documents, incremental browser durability, and lossless `.coedit` recovery.
+The MVP must prove that Coedit can support one durable structured document through a headless document engine with clear authority, exact History, attributed collaborative rich text, durable multi-span and positional Ranges, deterministic projections, reversible Markdown interchange for imported documents, incremental browser durability, and lossless `.coedit` recovery.
 
 The prototype must make later AI and collaboration work possible without implementing those systems now.
 
@@ -35,7 +35,9 @@ The MVP must provide these capabilities:
 17. Save a lossless opaque `.coedit` document.
 18. Reopen that `.coedit` document with equivalent current state and History.
 19. Persist documents incrementally in browser storage and survive a browser reload.
-20. Qualify the selected collaborative-content carrier against the accepted formatting, Origin, clipboard, comment-target-feasibility, convergence, and growth suite before freezing carrier-dependent implementation or `.coedit` version 1.
+20. Create one-span, multi-span, and Positional Ranges; resolve them against an explicit Version; serialize and parse them; and embed a Range value as optional internal-link refinement.
+21. Qualify Yjs and Automerge against the accepted attributed-content, structure, Range-feasibility, convergence, editor, and growth suite before selecting the production carrier.
+22. Select and record the Range-tracking representation before freezing `.coedit` version 1 or the internal-link Range encoding.
 
 ## 3. Out of scope
 
@@ -45,7 +47,7 @@ The MVP does not require:
 - networked multi-user collaboration;
 - presence, remote cursors, or typing indicators;
 - provenance visualization, analytics, authenticated identity, retention controls, or signed claims beyond the minimum Origin carrier;
-- comments or durable discussions;
+- Comment records, durable discussions, or comment repair UX;
 - post-genesis AI or automation Contributor registration;
 - attachments;
 - Tauri or another native shell;
@@ -103,7 +105,7 @@ Semantic editor groups and physical recovery checkpoints are not semantic Checkp
 
 Each InlineContent owns one canonical CollaborativeContent state containing text, hard breaks, intrinsic formatting marks, and protected Origin attribution. HTML, plain text, ProseMirror JSON, and attribution runs are derived representations.
 
-An empty CollaborativeContent value is valid and contains no partially initialized formatting or Origin metadata. Step 2 treats this value as typed and opaque; Step 3 expands the same type with the complete attributed-content behavior.
+An empty CollaborativeContent value is valid and contains no partially initialized formatting or Origin metadata. Step 2 treats this value as typed and opaque. Step 3 qualifies the candidate carriers against the complete attributed-content behavior, and Step 4 implements it with the selected carrier.
 
 Formatting has explicit insertion-boundary behavior. Every live text item and hard break has exactly one Origin; new Origin is assigned by the trusted engine/import boundary and never inherited from neighboring text. Formatting commands cannot erase or rewrite Origin.
 
@@ -120,6 +122,12 @@ Markdown is not the native recovery format.
 ### 4.9 Durable and transient state stay separate
 
 Selection, focus, disclosure, active lens, dialogs, editor composition state, retry UI, and similar interaction state are not product History unless a later feature explicitly makes them durable.
+
+### 4.10 Durable Range service
+
+The headless engine creates and resolves durable Range values against explicit Versions. A Range can refer to one or several semantic spans or to one logical position. Range is not a canonical entity, has no independent identity, and creates no document-wide holder registry.
+
+Range serialization is a non-mutating rebase suitable for an absolute URI or document-relative URI suffix. The service preserves explicit uncertainty and never silently binds to an unrelated target. `RANGE_MODEL.md` owns the detailed behavior and the Step 6 decision boundary.
 
 ## 5. Required domain properties
 
@@ -138,8 +146,10 @@ The prototype must preserve these domain rules:
 - a Block can contain zero, one, or several InlineContents;
 - several InlineContents are optional, not mandatory;
 - current entities do not use lifecycle timestamps or tombstones as product fields;
-- earlier working and checkpointed states live in History; and
-- historical materializations are detached and read-only.
+- earlier working and checkpointed states live in History;
+- historical materializations are detached and read-only;
+- a Range is a durable value and engine service, not a canonical entity or registry; and
+- moving Blocks does not reorder the semantic parts of an existing Range.
 
 `PRODUCT_DOMAIN_MODEL.md` is authoritative when this summary is insufficient.
 
@@ -203,10 +213,16 @@ A failed repository commit does not report success or publish partial state. Com
 
 ### Scenario H — Headless contract
 
-Core commands, queries, History, Checkpoints, restore, Markdown adapters, and portable serialization run in tests without React, file pickers, or IndexedDB. Pure engine behavior does not depend on UI state.
+Core commands, queries, History, Checkpoints, restore, Range operations, Markdown adapters, and portable serialization run in tests without React, file pickers, or IndexedDB. Pure engine behavior does not depend on UI state.
+
+### Scenario I — Durable Range round trip
+
+Create a Span Range directly from several spans and a separate Positional Range. Edit and restructure the selected document so the Span Range resolves across Blocks, changes current span count, and retains semantic order despite current tree order. Verify greedy Span boundaries and Block-local preceding-stickiness.
+
+Serialize each Range against an explicit Version, parse the result, and resolve the same semantic target or the same explicit uncertainty. Embed a serialized Range as internal-link refinement, preserve the primary Block fallback, and round trip it through `.coedit`. Ordinary edits and Block moves must not scan or rewrite every retained Range value.
 
 ## 7. Completion rule
 
 The document-engine MVP is complete when all in-scope scenarios pass within documented limits and the browser prototype exposes the vertical slice without violating the engine authority boundary.
 
-Completion does not mean that the product has a provenance explorer, comments, authenticated collaboration, an AI provider, signatures, or a final replicated-tree algorithm. It means their accepted invariants are protected by a tested attributed-content and document-engine foundation instead of UI state or an experimental storage layout.
+Completion does not mean that the product has a provenance explorer, Comment records or repair UX, authenticated collaboration, an AI provider, signatures, or a final networked replicated-tree algorithm. It means their accepted invariants are protected by a tested attributed-content, Range, and document-engine foundation instead of UI state or an experimental storage layout.

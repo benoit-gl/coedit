@@ -27,12 +27,13 @@ Use these layers in order:
 1. pure domain invariant tests;
 2. headless attributed CollaborativeContent and carrier-qualification tests;
 3. operation and History tests;
-4. Markdown planning, export, and round-trip fixtures;
-5. `.coedit` round-trip and hostile-input tests;
-6. in-memory and IndexedDB repository-adapter contract tests;
-7. editor integration tests with real collaborative state;
-8. component interaction and accessibility tests; and
-9. a small browser end-to-end suite for the complete vertical slice.
+4. headless Range creation, resolution, serialization, and scaling tests;
+5. Markdown planning, export, and round-trip fixtures;
+6. `.coedit` round-trip and hostile-input tests;
+7. in-memory and IndexedDB repository-adapter contract tests;
+8. editor integration tests with real collaborative state;
+9. component interaction and accessibility tests; and
+10. a small browser end-to-end suite for the complete vertical slice.
 
 A higher-level test does not replace a lower-level invariant test.
 
@@ -50,11 +51,11 @@ The Step 0 gate requires:
 - deferred decisions to be explicit; and
 - no implementation-blocking decision to remain open.
 
-The documented baseline closes the former `TextAnchor` blocker by assigning intrinsic formatting, content-native Origin, external CommentTargets, and transient selections to distinct mechanisms. A mechanical scan must find no normative external formatting/provenance range or per-InlineContent carrier assumption outside an explicitly superseded historical statement.
+The documented baseline closes the former `TextAnchor` blocker by assigning intrinsic formatting, content-native Origin, durable Range values, Range-holder lifecycles, and transient selections to distinct mechanisms. A mechanical scan must find no normative external formatting/provenance Range or single-InlineContent durable-target assumption outside an explicitly superseded historical statement.
 
-The accepted reconciliation closes Step 0. A separate Elaboration carrier gate must pass before Step 3 CollaborativeContent, carrier-dependent History effects, editor integration, or `.coedit` version 1 is frozen.
+PR #9 revalidates the Step 0 authority baseline without reopening completed Steps 1 and 2. Gate B selects the collaborative carrier after Step 3. Gate C selects the Range representation after Step 6 and before `.coedit` version 1 or internal-link Range encoding is frozen.
 
-The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, the actual qualification hardware/software environment, measurements, scaling behavior, and the selection rationale. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
+The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, the actual qualification hardware/software environment, measurements, scaling behavior, and the selection rationale. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
 
 ### 4.1 Step 1 tooling and platform evidence
 
@@ -174,7 +175,7 @@ document also follows the imported/unknown path until cross-document lineage is
 implemented. Verify restore uses fresh carrier identities,
 preserves historical Origin, and records the restoring actor and target Version.
 
-### 6.4 Convergence, atomicity, anchors, and growth
+### 6.4 Convergence, atomicity, Range feasibility, and growth
 
 Verify:
 
@@ -187,11 +188,16 @@ Verify:
   Contribution metadata publishes all or none;
 - a command that explicitly targets only one InlineContent cannot mutate
   unrelated InlineContents or Block structure;
-- stable cursor plus affinity survives ordinary edits and explicitly fails when
-  its containing content is unavailable;
-- quote/prefix/suffix/position fallback can represent attached, ambiguous, and
-  orphaned future comment targets without silent ambiguous reattachment;
-- retained Version and cursor behavior after the candidate's supported
+- direct one-span and multi-span Range creation is feasible through the same
+  carrier-neutral abstraction for each candidate;
+- greedy Span boundaries and Block-local preceding-sticky Positional boundaries
+  survive ordinary edits and transaction-shape variation;
+- one Range can retain semantic order across split, merge, and Block move,
+  including several current spans in one InlineContent;
+- a missing carrier position reports uncertainty without silent reattachment;
+- lazy Range resolution does not require normal edits or Block moves to scan all
+  retained Range holders;
+- retained Version and Range-position behavior survive the candidate's supported
   garbage-collection/compaction cycle; and
 - representative 100,000-code-point content and 5,000-Contribution load, edit, growth, materialization, and portable-open behavior. The 100,000-code-point fixture is a qualification workload, not a domain validity limit. Run smaller growth points as well so results expose local, linear, or worse scaling.
 
@@ -242,8 +248,9 @@ Verify at least:
 
 Functional invariants are mandatory and cannot be traded for a faster carrier.
 Select Yjs unless Automerge passes the same suite and materially reduces custom
-protected-metadata, structural, heads, cursor, or storage machinery enough to
-outweigh its integration maturity risk.
+protected-metadata, structural, heads, Range-position, or storage machinery
+enough to outweigh its integration maturity risk. This Gate B decision does not
+select the Step 6 Range-tracking representation.
 
 ## 7. History verification
 
@@ -266,7 +273,34 @@ Verify at least:
 - restore preserves prior Contributions, Checkpoints, and Contributors; and
 - successful publication emits one invalidation event while failures and exact retries emit none.
 
-## 8. Editor durability and semantic-group verification
+## 8. Durable Range verification
+
+Run the complete Step 6 suite in `RANGE_MODEL.md` against the selected carrier and every remaining lineage-representation candidate. Retain the winner's suite as production regression evidence.
+
+Verify at least:
+
+- direct one-span, multi-span, and Positional Range creation;
+- the final ordering, overlap, adjacency, duplicate, empty, stale, and cross-Version input rules;
+- immutable Range kind after complete deletion;
+- greedy Span insertion and replacement at both boundaries, independent of editor transaction shape;
+- Block-local preceding-stickiness without migration to a preceding Block when the target content becomes empty;
+- the accepted behavior for split exactly at a Positional Range;
+- split, merge, deletion, move, copy, and owning-container replacement;
+- zero, one, and several resolved spans, including several in one InlineContent;
+- semantic order independent of current tree order;
+- independent enumeration of every current span;
+- explicit empty-result, uncertainty, unresolved-target, and error distinctions;
+- no silent rebinding by coincidental identity or quote equality;
+- serialization as a rebase against one explicit Version;
+- absolute URI and document-relative URI-suffix parse/serialize round trip;
+- reinjection as internal-link refinement with primary Block fallback;
+- `.coedit` round trip of embedded Range values;
+- reload and supported compaction; and
+- edit and Block-move cost independent of the total retained Range count.
+
+Record the compared lineage representations, fixtures, measurements, rejected alternatives, and final selection. Gate C cannot pass on equal visible text alone; it requires equal Range behavior and uncertainty.
+
+## 9. Editor durability and semantic-group verification
 
 One successful editor command is one immutable Contribution and Version. Several
 prompt Contributions can share a semantic group ID for presentation. The
@@ -296,7 +330,7 @@ Use fake clocks and deterministic semantic group IDs for grouping tests. Treat
 the preserved 20-grapheme, 30-second, and two-capture settings as comparison
 fixtures, not normative assertions.
 
-## 9. Markdown verification
+## 10. Markdown verification
 
 Every successfully imported Markdown fixture must run the full round-trip property defined in `MARKDOWN_INTERCHANGE.md`:
 
@@ -310,7 +344,7 @@ The suite must also verify stable diagnostics for normalization, unsupported-sou
 
 Do not compare source Markdown text for equality. Canonical export spelling is allowed.
 
-## 10. Portable-format verification
+## 11. Portable-format verification
 
 Treat `.coedit` input as hostile.
 
@@ -328,11 +362,11 @@ Verify:
 - all documented resource limits fail safely when exceeded;
 - a failed open never replaces the active engine;
 - stale serialization returns no artifact;
-- intrinsic formatting, boundary policies, Origin, copy/restore lineage, and actor distinction round trip exactly;
+- intrinsic formatting, boundary policies, Origin, copy/restore lineage, actor distinction, and embedded Range values round trip exactly;
 - reconstruction from physical checkpoint plus effects equals direct materialization; and
 - successful format-version-1 encode is always accepted by the format-version-1 decoder.
 
-## 11. Browser durability verification
+## 12. Browser durability verification
 
 Run the same repository contract against the in-memory and IndexedDB adapters where applicable.
 
@@ -352,13 +386,13 @@ Verify:
 - visible degraded durability, exact retry, and explicit `.coedit` backup; and
 - `BroadcastChannel` acts only as invalidation, never ordering authority.
 
-## 12. UI and accessibility verification
+## 13. UI and accessibility verification
 
 Verify keyboard-only structural creation and movement, predictable focus after operations, single-editor ownership, historical read-only behavior, visible failure/retry state, and no direct React mutation of durable document state.
 
 Use a real browser for IME, focus transfer, clipboard behavior, and other interactions that cannot be qualified reliably in a simulated DOM.
 
-## 13. End-to-end MVP suite
+## 14. End-to-end MVP suite
 
 Keep the end-to-end suite small and high value. It must prove at least:
 
@@ -369,12 +403,13 @@ Keep the end-to-end suite small and high value. It must prove at least:
 5. verify internal and external paste lineage;
 6. create a semantic Checkpoint;
 7. inspect and restore History while preserving Origin and attributing the restore actor;
-8. export Markdown and re-import it to an equivalent Coedit document;
-9. save `.coedit` and reopen it;
-10. persist and reload through the incremental IndexedDB repository; and
-11. recover safely from representative stale, quota, failed-commit, and malformed-open cases.
+8. create, resolve, serialize, parse, and reinject representative multi-span and Positional Ranges;
+9. export Markdown and re-import it to an equivalent Coedit document;
+10. save `.coedit` and reopen it;
+11. persist and reload through the incremental IndexedDB repository; and
+12. recover safely from representative stale, quota, failed-commit, and malformed-open cases.
 
-## 14. Pre-network collaboration gate
+## 15. Pre-network collaboration gate
 
 Before real clients connect, qualify:
 
@@ -390,15 +425,15 @@ Before real clients connect, qualify:
   unseen concurrent inserts, and surfaces unresolved overlap;
 - restart-safe outbox/inbox, catch-up, bootstrap, authorization/schema/limit
   rejection, and quarantine; and
-- checkpoint/compaction that preserves retained Versions, Origins, and comment
-  target behavior.
+- checkpoint/compaction that preserves retained Versions, Origins, Range behavior,
+  and later comment-holder behavior.
 
 Carrier convergence alone cannot pass this gate. History, transport,
 authorization, restore, and structural integration must pass together.
 
-## 15. Later feature gates
+## 16. Later feature gates
 
-- **Comments:** cursor-plus-quote targets, attached/ambiguous/orphaned state,
+- **Comments:** Range-holder state, multi-span presentation, confidence policy,
   explicit repair, restore, and compaction fixtures.
 - **AI:** explicit source Version, typed operations, software-agent Origin,
   separate human acceptance, provider/model/version/derivation, and stale
@@ -410,7 +445,7 @@ authorization, restore, and structural integration must pass together.
 - **Storage/platform replacement:** measured evidence plus the existing
   engine/repository/portable contract suite for OPFS, SQL, or a native shell.
 
-## 16. Traceability rule
+## 17. Traceability rule
 
 Each MVP-contract scenario must link to one or more tests or qualification records before the MVP is declared complete.
 

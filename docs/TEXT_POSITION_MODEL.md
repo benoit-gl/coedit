@@ -1,14 +1,15 @@
 # Text position model
 
-**Status:** Accepted Step 3 text-position contract; carrier encoding remains a
-qualification decision.
+**Status:** Accepted text-position contract; Step 3 qualifies carrier behavior
+and Step 6 selects the durable Range representation.
 
 ## 1. Purpose and authority
 
 This document defines how Coedit separates Unicode text, editor positions, and
-durable collaborative text positions. It supplements
-[`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), which
-owns attributed-text behavior.
+durable collaborative text positions. It supplies position primitives to
+[`RANGE_MODEL.md`](RANGE_MODEL.md), which owns durable Range behavior, and
+supplements [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md),
+which owns attributed-text behavior.
 
 The document model must not invent one universal numeric character coordinate.
 Text editing, durable collaboration, and interchange have different position
@@ -65,10 +66,11 @@ resolveStableTextPosition(stablePosition) -> editorPosition | unresolved
 The exact types and encoding are carrier-private. Public detached values and the
 portable format must not expose a live carrier object.
 
-Stable positions are the primary live addressing mechanism for internal-link
-range refinement and future CommentTarget ranges. Quote, prefix, suffix,
-structural identity, and approximate position remain verification and repair
-information. They do not replace the stable position while it resolves.
+Stable positions are one candidate primitive for live Range tracking. They are
+not the Range API, semantic-order representation, or portable serialized Range.
+The Step 3 carrier gate qualifies their behavior. The Step 6 Range gate decides
+how carrier positions combine with carrier-neutral verification, repair, and
+lineage evidence.
 
 ## 5. Numeric offsets at boundaries
 
@@ -84,21 +86,20 @@ Do not use an unqualified field name such as `offset` for a persisted or
 cross-boundary numeric position when more than one unit is possible. Name or
 document the unit at that boundary.
 
-## 6. Portable and historical ranges
+## 6. Portable and historical Range positions
 
 Carrier-native stable positions can be operational state that is not meaningful
-outside the carrier instance that created them. Portable and historical range
-representations must therefore retain enough carrier-neutral evidence to recover
-or report the target without treating a carrier cursor as a universal document
-coordinate.
+outside the carrier instance that created them. A serialized Range must therefore
+retain enough carrier-neutral evidence to recover or report its semantic target
+without treating a carrier cursor as a universal document coordinate.
 
-For internal Block links and future comments, retain the owning Block and
-InlineContent identity plus exact quote and context evidence. An approximate
-position can assist repair when its coordinate and unit are defined by the
-owning format.
+One Range can refer to several semantic spans across Blocks and InlineContents.
+No portable position rule in this document reduces that Range to one owning
+InlineContent or one start/end pair. `RANGE_MODEL.md` owns the self-contained URI
+or URI-suffix contract, semantic order, rebasing, and uncertainty boundary.
 
-On import or reconstruction, create new live carrier positions only after the
-range resolves with the required confidence. Do not rebind an uncertain range
+On parse or reconstruction, create new live carrier positions only after the
+Range service resolves the required evidence. Do not rebind an uncertain Range
 silently.
 
 ## 7. Qualification
@@ -106,8 +107,8 @@ silently.
 Each carrier/editor candidate must prove:
 
 - conversion from editor positions to stable carrier positions and back;
-- stable range behavior through insertion, deletion, replacement, split, merge,
-  undo, redo, reload, and supported compaction;
+- the Step 3 Range-position feasibility cases through insertion, deletion,
+  replacement, split, merge, move, undo, redo, reload, and supported compaction;
 - no selection drift or endpoint corruption for combining sequences, astral
   characters, emoji sequences, variation selectors, and representative complex
   scripts;
@@ -125,8 +126,11 @@ production editor path uses.
   semantics.
 - Unicode scalar-value and grapheme indexes are not universal durable Coedit
   coordinates.
-- Durable live ranges use opaque carrier-stable positions.
+- Durable live Range tracking can use opaque carrier-stable positions behind the
+  engine service.
 - The editor remains the authority for transient selection and normal Unicode
   editing behavior.
-- Portable repair evidence remains carrier-neutral and separate from live carrier
+- Portable Range evidence remains carrier-neutral and separate from live carrier
   position identity.
+- `RANGE_MODEL.md` owns multi-span behavior and does not expose a live carrier
+  object as the public Range representation.

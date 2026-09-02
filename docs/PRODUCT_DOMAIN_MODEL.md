@@ -10,7 +10,8 @@ Use these documents for those concerns:
 
 - [`MVP_CONTRACT.md`](MVP_CONTRACT.md) defines what the document-engine prototype must prove.
 - [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) defines component authority and the public engine boundary.
-- [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines detailed formatting, origin, clipboard, and comment-target behavior.
+- [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines detailed formatting, Origin, clipboard, link-holder, and comment-holder behavior.
+- [`RANGE_MODEL.md`](RANGE_MODEL.md) defines durable multi-span and positional Range behavior.
 - [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md) defines private MVP implementation contracts that are not owned by focused specifications.
 - [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md) defines Markdown interchange semantics.
 - [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md) defines the `.coedit` recovery format.
@@ -64,7 +65,7 @@ Human users, imports, automation, and later AI collaborators use the same durabl
 
 Formatting is intrinsic collaborative rich-text metadata. Origin provenance is protected content-native metadata that travels with the text but never inherits from neighboring content. Comments are external records with repairable text targets. Ordinary selections are transient.
 
-These concerns share atomic versioning where required, but they do not share one generic durable range abstraction.
+These concerns share atomic versioning where required, but formatting and Origin do not use a generic external anchor. Internal links, comments, navigation, and later durable reference holders can use the shared Range value and engine service without making Range a formatting or provenance entity.
 
 ### 2.8 Presentation is a projection
 
@@ -184,7 +185,7 @@ When one section contains both body material and subsections, transparent groupi
 
 Most Blocks can contain one InlineContent. Zero contents are valid for grouping Blocks. Additional InlineContents exist only when the product needs simultaneous material.
 
-During Step 2, `InlineContentValue` is a typed, opaque, valid empty CollaborativeContent value. Structural operations can create, move, tag, reorder, and delete InlineContents without inspecting content internals. Step 3 expands the same type with text, hard breaks, formatting, Origin, and carrier-neutral behavior. No intermediate step creates partially valid attributed content.
+During Step 2, `InlineContentValue` is a typed, opaque, valid empty CollaborativeContent value. Structural operations can create, move, tag, reorder, and delete InlineContents without inspecting content internals. Step 3 qualifies the candidate carriers against text, hard breaks, formatting, Origin, and carrier-neutral behavior. Step 4 implements that behavior with the selected carrier. No intermediate step creates partially valid attributed content.
 
 ### 4.2 No mandatory content role enum
 
@@ -237,6 +238,12 @@ Moving a Block or reordering an InlineContent preserves the InlineContent identi
 Copying an InlineContent entity creates a new InlineContent ID and new carrier item identities. The copy receives semantically equivalent text and formatting, preserves same-document Origins, and records a copy Contribution with source/derivation references.
 
 Ordinary text copy/paste inserts content into the target InlineContent. It does not transfer the source InlineContent identity. A validated private Coedit clipboard representation preserves same-document Origins; ordinary external HTML or plain text receives imported or unknown Origin and never manufactures authorship for the paster.
+
+### 4.8 Durable Range references are values
+
+A Range is a durable semantic reference value supplied and resolved by the document engine. It is not an independently identified product entity, document-owned registry entry, formatting annotation, or provenance record.
+
+A Range can be stored outside the document, as with a future comment, or embedded as inert target metadata in an intrinsic internal-link mark. A Span Range can refer to one or several semantic spans across Blocks and InlineContents. A Positional Range refers to one logical position. `RANGE_MODEL.md` owns their detailed behavior and staged representation decision.
 
 ## 5. History, Versions, Contributions, and Checkpoints
 
@@ -310,9 +317,9 @@ This requirement does not mean that every arbitrary Coedit tree is exactly repre
 
 Minimum content Origin and its copy/restore invariants are part of the attributed-text foundation. Production provenance visualization, analytics, retention policy, authenticated claims, and signing remain later product phases.
 
-Comments and durable conversations are typed records associated with explicit `CommentTarget` values. They are not disguised manuscript Blocks or InlineContents. A CommentTarget combines stable carrier cursors and affinity with exact quote, prefix/suffix context, approximate position, and explicit attached/ambiguous/orphaned state. It never silently reattaches to an uncertain match.
+Comments and durable conversations are typed external records that can hold a Range value plus comment-specific attachment and repair state. They are not disguised manuscript Blocks, InlineContents, or Range entities. They never silently reattach to an uncertain match.
 
-Comments are the primary durable use case for a target outside the authored text. Ordinary selections and remote cursors remain transient. `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns the detailed behavior.
+Comments are a primary durable use case for a target outside the authored text. Internal links can embed the same Range value as a finer target while retaining a primary Block fallback. Ordinary selections and remote cursors remain transient. `RANGE_MODEL.md` owns Range behavior; `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns link and comment-holder behavior.
 
 ## 9. Contributor model and future AI collaboration
 
@@ -372,17 +379,22 @@ The current ontology requires:
 26. external repairable targets for comments rather than formatting or provenance;
 27. transient ordinary selections and presence;
 28. one shared Block spine for initial lenses within a Version;
-29. one logical collaborative document per Coedit document by default, hidden behind the engine; and
-30. future AI through the ordinary engine and provenance boundary.
+29. one logical collaborative document per Coedit document by default, hidden behind the engine;
+30. Range as a durable value and engine service rather than a canonical entity or registry;
+31. direct one-span and multi-span Range creation;
+32. greedy Span Ranges and Block-local preceding-sticky Positional Ranges;
+33. semantic Range order independent of current Block tree order; and
+34. future AI through the ordinary engine and provenance boundary.
 
 ## 12. Open questions
 
-No product-domain question blocks Step 2. Its trusted identity allocation, root construction, and opaque valid-empty InlineContent boundary are fixed by the implementation specification. Yjs v13 versus Automerge is an explicit Step 3 Elaboration implementation-qualification gate, not an unresolved domain decision.
+No product-domain question blocks the completed Steps 1 and 2. Step 3 compares Yjs v13 with Automerge and Gate B records the carrier selection. Step 6 owns the separate durable Range implementation and Gate C records the Range API and lineage-representation decisions. These are bounded implementation decisions, not permission for an adapter to change the accepted Range behavior.
 
 Post-MVP or pre-network questions include:
 
 - provenance visualization, retention, anonymization, and signed-claim policy;
 - exact comment repair confidence and conversation target scopes;
+- comment-specific multi-span repair and presentation policy;
 - post-genesis Contributor registration;
 - History compaction and collaborative-text garbage collection after measurement;
 - durable named lenses;
@@ -411,11 +423,12 @@ A future design is compatible with this domain direction only if it preserves th
 12. Local portability, verification, and recovery remain product constraints.
 13. UI layout and transient navigation do not leak into durable semantic state by accident.
 14. Private implementation choices do not become product concepts without an explicit decision.
+15. Durable Range references preserve accepted semantic order and holder independence without creating a document-wide registry.
 
 ## 14. Summary
 
 The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and canonical CollaborativeContent containing text, native formatting, and protected Origin.
 
-History preserves earlier states. Semantic Checkpoints are ordinary attributed Contributions that create content-identical Versions. Markdown is reversible interchange for the canonical imported subset. `.coedit` is lossless recovery.
+History preserves earlier states. Semantic Checkpoints are ordinary attributed Contributions that create content-identical Versions. The headless engine supplies durable multi-span and positional Range values without adding a Range entity or registry. Markdown is reversible interchange for the canonical imported subset. `.coedit` is lossless recovery.
 
 The MVP is a document-engine prototype. It qualifies and preserves minimum Origin semantics without requiring a provenance UI, comments product, AI provider, networking, Tauri, Rust, or SQLite.

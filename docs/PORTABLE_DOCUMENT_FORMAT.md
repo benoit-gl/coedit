@@ -1,7 +1,7 @@
 # `.coedit` portable document format
 
-**Status:** Accepted logical recovery contract; exact carrier-specific version-1
-fields and golden bytes are frozen only after the Step 3 carrier qualification.
+**Status:** Accepted logical recovery contract; exact carrier-specific and
+embedded Range version-1 fields are frozen only after Gates B and C.
 
 ## 1. Purpose and authority
 
@@ -15,7 +15,8 @@ limits.
 
 [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls domain meaning.
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
-controls formatting and Origin behavior. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
+controls formatting and Origin behavior. [`RANGE_MODEL.md`](RANGE_MODEL.md)
+controls embedded durable Range values. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
 controls the public serialization boundary. This document controls portable
 logical records, validation, compatibility, and the version-1 container.
 
@@ -44,7 +45,7 @@ acceptable. JSON is a portable container, not the internal database layout or a
 permanent promise that all future versions remain monolithic JSON.
 
 Do not freeze `formatVersion: 1`, publish a version-1 fixture, or implement the
-Step 6 encoder until Step 3 has recorded:
+Step 8 encoder until Gate B has recorded:
 
 - the selected carrier and exact supported version range;
 - its canonical checkpoint and incremental-effect encodings;
@@ -53,7 +54,12 @@ Step 6 encoder until Step 3 has recorded:
 - garbage-collection/retention assumptions; and
 - the measured JSON/base64 size and load cost.
 
-This is an implementation qualification gate. It does not reopen the product
+Gate C must also record the carrier-neutral Range API and resolution taxonomy,
+the selected Range-tracking representation, and the exact embedded internal-link
+Range encoding. Version 1 can then preserve that value without making the
+portable format a second Range authority.
+
+These are implementation qualification gates. They do not reopen the product
 semantics defined by current authorities.
 
 ## 3. Logical package
@@ -143,15 +149,18 @@ Carrier state preserves exactly:
 - intrinsic formatting marks and their boundary policies;
 - protected Origin references;
 - stable Block and InlineContent identities and ordering;
-- the private identities/tombstones required for accepted editing, restore, and
-  future comment-cursor behavior; and
+- the private identities and retained evidence required for accepted editing,
+  restore, and Range behavior;
+- embedded internal-link Range values in the Gate C carrier-neutral encoding; and
 - atomic effects spanning structure and several InlineContents.
 
 A normalized Block/text/mark projection can be computed during validation. If
 stored as an index or diagnostic aid, it is derived and must be verified against
 the carrier state; it is never a competing authority.
 
-The format does not contain external formatting or provenance ranges.
+The format does not contain external formatting or provenance Ranges. External
+comment records are not added to the strict MVP package. A Range value embedded
+in intrinsic internal-link metadata is canonical content and must round trip.
 
 ## 6. Origin, actor, and derivation
 
@@ -335,13 +344,15 @@ At minimum, verify:
   trips;
 - exact current and historical materialization;
 - intrinsic formatting and boundary policies survive;
-- Origin, actor, and derivation remain distinct and exact;
+- Origin, actor, derivation, and Range-tracking lineage remain distinct and exact;
 - semantic Checkpoints and physical recovery checkpoints remain distinct;
 - advertised VersionTokens remain stable after Save/Open;
 - successful CommandId retries remain idempotent after Save/Open;
+- every embedded Range value resolves to the same semantic target or explicit uncertainty after Save/Open;
 - missing, duplicate, unreachable, mis-hashed, or conflicting chunks fail;
 - malformed graph/frontiers, Contributor/Origin references, carrier state,
-  topology, ownership, marks, opaque link metadata, and typed internal links fail;
+  topology, ownership, marks, opaque link metadata, typed internal links, and
+  embedded serialized Range values fail;
 - malformed, truncated, duplicate-key, unknown-property, or unsupported
   container/carrier versions fail;
 - every documented resource limit fails safely when exceeded;

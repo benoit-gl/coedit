@@ -1,6 +1,6 @@
 # Coedit document-engine MVP scaffolding plan
 
-**Status:** Accepted implementation plan; Steps 0-2 are complete and Step 3 is next.
+**Status:** Accepted implementation plan; Steps 0-2 are complete and Step 3 carrier qualification is next.
 
 **Target branch:** `main`
 
@@ -17,8 +17,9 @@ Use the companion documents for authority:
 - [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md) defines product ontology and domain vocabulary.
 - [`docs/MVP_CONTRACT.md`](docs/MVP_CONTRACT.md) defines what the document-engine MVP must prove.
 - [`docs/MVP_ARCHITECTURE.md`](docs/MVP_ARCHITECTURE.md) defines component authority and the public engine boundary.
-- [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines attributed text, clipboard lineage, comment-target feasibility, and carrier qualification.
-- [`docs/STRUCTURAL_CARRIER_MODEL.md`](docs/STRUCTURAL_CARRIER_MODEL.md) defines Step 3 Block placement, Block-local carrier state, structural concurrency, and position-order qualification.
+- [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines attributed text, clipboard lineage, Range-holder behavior, and carrier qualification.
+- [`docs/RANGE_MODEL.md`](docs/RANGE_MODEL.md) defines durable multi-span and positional Range behavior, the Range service boundary, and its staged qualification.
+- [`docs/STRUCTURAL_CARRIER_MODEL.md`](docs/STRUCTURAL_CARRIER_MODEL.md) defines Block placement, Block-local carrier state, structural concurrency, and position-order qualification.
 - [`docs/CODING_STYLE.md`](docs/CODING_STYLE.md) defines source structure, TSDoc, linting, formatting, command-line interfaces, and developer-platform portability.
 - [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) defines concrete private MVP implementation rules that are not owned by a focused specification.
 - [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md) defines Markdown import, export, diagnostics, and round-trip behavior.
@@ -39,9 +40,9 @@ The plan uses a RUP-inspired lifecycle. It does not require the complete Rationa
 | Phase                     | Steps | Purpose                                                                   |
 | ------------------------- | ----: | ------------------------------------------------------------------------- |
 | Inception                 |     0 | Reconcile scope, decisions, authority, and known design blockers.         |
-| Elaboration               |   1-6 | Establish executable architecture and retire the main technical risks.    |
-| Construction              |  7-11 | Build and verify the browser vertical slice.                              |
-| Transition and assessment |    12 | Measure the prototype and decide whether new infrastructure is justified. |
+| Elaboration               |   1-8 | Establish executable architecture and retire the main technical risks.    |
+| Construction              |  9-13 | Build and verify the browser vertical slice.                              |
+| Transition and assessment |    14 | Measure the prototype and decide whether new infrastructure is justified. |
 
 Minimum protected Origin and lineage invariants are MVP foundation. Provenance visualization/analytics/authentication/signing, comments, durable discussions, AI-provider integration, and networked collaboration are post-MVP work. They are not hidden completion criteria for this plan.
 
@@ -74,6 +75,10 @@ The baseline must contain:
 - `docs/MVP_CONTRACT.md`;
 - `docs/MVP_ARCHITECTURE.md`;
 - `docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`;
+- `docs/TEXT_POSITION_MODEL.md`;
+- `docs/RANGE_MODEL.md`;
+- `docs/STRUCTURAL_CARRIER_MODEL.md`;
+- `docs/STRUCTURAL_POSITION_ALLOCATOR.md`;
 - `docs/CODING_STYLE.md`;
 - `docs/MVP_IMPLEMENTATION_SPEC.md`;
 - `docs/MARKDOWN_INTERCHANGE.md`;
@@ -81,8 +86,8 @@ The baseline must contain:
 - `docs/BROWSER_PERSISTENCE.md`;
 - `docs/MVP_VERIFICATION_PLAN.md`;
 - `docs/COLLABORATION_MODEL.md`;
-- `docs/decisions/README.md` and
-  `docs/decisions/0001-collaborative-content-provenance-history.md`; and
+- `docs/decisions/README.md` and its accepted ADRs, including
+  `docs/decisions/0008-durable-range-semantics.md`; and
 - `docs/PRESERVED_BRANCH_RECONCILIATION.md`.
 
 For every material design decision found in the preserved branch, classify it as one of:
@@ -94,7 +99,7 @@ For every material design decision found in the preserved branch, classify it as
 
 The reconciliation record must identify the current authority for retained, adapted, and superseded decisions. It must also identify any deferred decision that blocks implementation.
 
-The former `TextAnchor` blocker is resolved. Formatting uses native collaborative marks; Origin is protected content-native metadata; comments use future cursor-plus-quote targets; ordinary selections are transient. The accepted rationale is recorded in `docs/decisions/0001-collaborative-content-provenance-history.md`.
+The former `TextAnchor` blocker is resolved. Formatting uses native collaborative marks; Origin is protected content-native metadata; future comments and internal links can use the shared durable Range value; ordinary selections are transient. The accepted rationale is recorded in `docs/decisions/0001-collaborative-content-provenance-history.md` and `docs/decisions/0008-durable-range-semantics.md`.
 
 **Exit gate:**
 
@@ -103,7 +108,7 @@ The former `TextAnchor` blocker is resolved. Formatting uses native collaborativ
 - no authoritative document silently contradicts a retained preserved decision; and
 - no unresolved implementation-blocking decision remains.
 
-This documentation set establishes and closes the Step 0 authority baseline. Steps 1 and 2 subsequently established the browser scaffold and pure Block domain. Step 3 is next; carrier-dependent implementation and `.coedit` version-1 freeze remain behind the separate Elaboration carrier-qualification gate.
+This documentation set establishes the Step 0 authority baseline. Steps 1 and 2 subsequently established the browser scaffold and pure Block domain. PR #9 amends and revalidates Gate A with the durable Range authority and the revised Step 3-and-later sequence. Step 3 carrier qualification is next. Gate B selects the carrier; Gate C later selects the Range representation before `.coedit` version 1 is frozen.
 
 ### Step 1 — Establish the browser-only repository scaffold
 
@@ -141,25 +146,33 @@ See [`docs/CODING_STYLE.md`](docs/CODING_STYLE.md),
 
 **Objective:** Establish the recursive document structure and pure structural mutation model.
 
-**Outcome:** Tests can build and modify realistic Block trees through typed operations without React, Yjs, storage, or browser dependencies. Document/genesis construction creates the one real root outside the structural-operation model. The root has no tags, InlineContents, or child Blocks at genesis. Durable entity UUID text uses one global namespace without type information in the UUID format. InlineContents carry only a typed, opaque, valid empty `InlineContentValue`; structural code does not inspect content internals, and Step 3 expands that same type with attributed-content behavior.
+**Outcome:** Tests can build and modify realistic Block trees through typed operations without React, Yjs, storage, or browser dependencies. Document/genesis construction creates the one real root outside the structural-operation model. The root has no tags, InlineContents, or child Blocks at genesis. Durable entity UUID text uses one global namespace without type information in the UUID format. InlineContents carry only a typed, opaque, valid empty `InlineContentValue`; structural code does not inspect content internals, and Step 4 expands that same type with the selected attributed-content behavior.
 
 **Exit gate:** Structural invariants, live-identity uniqueness, trusted ID allocation, root construction, empty InlineContent behavior, ordering, limits, and rollback behavior are verified at the domain boundary. Step 2 requires no lifetime-ID registry; History and portable validation later reject durable identity reuse across retained lifetimes.
 
 See [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md), [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
-### Step 3 — Qualify and implement attributed CollaborativeContent
+### Step 3 — Qualify collaborative carrier candidates
 
-**Objective:** Select the collaborative carrier and establish canonical text, hard breaks, intrinsic formatting, protected Origin, and the structural carrier before History, import, editor integration, or serialization depends on their representation.
+**Objective:** Compare pinned Yjs v13 and Automerge through the same production-shaped carrier-neutral abstractions before production implementation, History, Range, editor, or portable formats depend on one carrier.
 
-Run the same pinned headless and Tiptap/ProseMirror suite against stable Yjs v13 and Automerge. Track Yjs v14 only after stable release; use Loro as a cursor/movable-tree benchmark, not a current candidate. Record dependency/license review, adapter complexity, target devices and budgets, measurements, and the selection rationale.
+The suite covers canonical text, hard breaks, intrinsic formatting, protected Origin, flat Block placement, liveness, allocator behavior, one transaction across structure and several InlineContents, editor integration, reload, compaction, and representative growth. It also covers the Range-feasibility subset in `RANGE_MODEL.md`: direct multi-span creation, greedy and positional boundaries, structural tracking, lazy resolution, and practical cost.
 
-**Outcome:** Headless code can create, validate, project, clone, edit, copy/paste, restore, and serialize CollaborativeContent. Formatting has explicit boundary policies; every live content item has protected non-inheriting Origin. One logical collaborative document contains the accepted flat Block carrier and Block-local logical payload namespaces, can transact across structure and several InlineContents, and supports semantic-update-over-delete through a carrier-qualified Block liveness effect. Future CommentTarget cursors are feasible.
+**Outcome:** The repository contains comparable fixtures, measurements, dependency/license review, adapter-complexity evidence, rejected-candidate rationale, and one recorded carrier selection. Qualification code uses the same abstractions intended for production, but this step does not freeze the final Range API or lineage representation.
 
-**Exit gate:** The common functional, structural, concurrency, clipboard, restore, cursor, atomicity, portable, garbage-collection, collision/ordering, and representative-growth suite passes. Select Yjs when its protected carrier works incrementally without fragile repair. Select Automerge only if it passes and materially removes custom machinery despite its integration maturity. Record the winner before carrier-dependent format fields or fixtures are frozen.
+**Exit gate:** Gate B passes. Functional invariants are mandatory. Select Yjs when it passes without fragile repair. Select Automerge only when it passes the same suite and materially removes custom machinery despite its integration risk.
 
-See [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), [`docs/STRUCTURAL_CARRIER_MODEL.md`](docs/STRUCTURAL_CARRIER_MODEL.md), [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
+See [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), [`docs/TEXT_POSITION_MODEL.md`](docs/TEXT_POSITION_MODEL.md), [`docs/RANGE_MODEL.md`](docs/RANGE_MODEL.md), [`docs/STRUCTURAL_CARRIER_MODEL.md`](docs/STRUCTURAL_CARRIER_MODEL.md), [`docs/STRUCTURAL_POSITION_ALLOCATOR.md`](docs/STRUCTURAL_POSITION_ALLOCATOR.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
-### Step 4 — Establish first-class in-memory History
+### Step 4 — Implement the selected collaborative core
+
+**Objective:** Establish the production attributed CollaborativeContent and structural carrier using the winner recorded by Gate B.
+
+**Outcome:** Headless code can create, validate, project, clone, edit, copy/paste, restore, and serialize carrier state. Formatting has explicit boundary policies; every live content item has protected non-inheriting Origin. One logical collaborative document contains the accepted flat Block carrier and Block-local payload namespaces, transacts across structure and several InlineContents, and supports semantic-update-over-delete. The selected carrier suite remains a production regression suite.
+
+**Exit gate:** Production code uses no rejected-candidate or carrier-specific public API. Functional, structural, concurrency, atomicity, clipboard, restore, allocator, reload, compaction, and growth regressions pass for the winner.
+
+### Step 5 — Establish first-class in-memory History
 
 **Objective:** Prove attributed Contributions, materializable Versions, semantic checkpoints, Origin/activity separation, restore, idempotency, and version-conflict behavior behind the public engine boundary.
 
@@ -169,7 +182,19 @@ See [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTAT
 
 See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
-### Step 5 — Implement structured Markdown import
+### Step 6 — Implement the durable Range service
+
+**Objective:** Finalize and implement the carrier-neutral Range service after the selected carrier and exact Version materialization exist.
+
+Close the remaining creation validation, normalization, resolution-state, split/merge/delete/copy, document-scope, URI, internal-link, and serialization decisions listed in `RANGE_MODEL.md`. Compare the remaining lineage candidates against the accepted behavior and record the selected representation.
+
+**Outcome:** Headless code can create one-span, multi-span, and Positional Ranges; resolve them against an explicit Version; enumerate resolved spans in semantic order; distinguish valid empty results from uncertainty; serialize and parse an absolute URI or document-relative suffix; rebase tracking evidence; and reinject a value as internal-link metadata or another Range holder.
+
+**Exit gate:** Gate C passes. The complete Range suite proves structural behavior, reload, compaction, serialization, internal-link fallback, no silent rebinding, and cost that does not scale with the total retained Range count.
+
+See [`docs/RANGE_MODEL.md`](docs/RANGE_MODEL.md), [`docs/TEXT_POSITION_MODEL.md`](docs/TEXT_POSITION_MODEL.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
+
+### Step 7 — Implement structured Markdown import
 
 **Objective:** Import realistic CommonMark/GFM through a deterministic parser and operation planner.
 
@@ -179,17 +204,17 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 See [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md).
 
-### Step 6 — Implement the lossless `.coedit` portable format
+### Step 8 — Implement the lossless `.coedit` portable format
 
-**Objective:** Prove lossless, validated, portable recovery for the capabilities built through Step 5.
+**Objective:** Prove lossless, validated, portable recovery for the capabilities built through Step 7.
 
-**Outcome:** After the Step 3 winner is recorded, the engine can assemble logical records and carrier chunks into an opaque bounded version-1 `.coedit` artifact and open it into a validated candidate engine.
+**Outcome:** After Gates B and C pass, the engine can assemble logical records, carrier chunks, and embedded Range values into an opaque bounded version-1 `.coedit` artifact and open it into a validated candidate engine.
 
-**Exit gate:** Current and historical attributed material, Origins, Contributions, derivation, Checkpoints, stable VersionTokens, and idempotency round trip within documented limits. Corrupt, hostile, unsupported, missing/mis-hashed, or inconsistent input fails without replacing the active document.
+**Exit gate:** Current and historical attributed material, Origins, Contributions, derivation, Checkpoints, embedded Range values, stable VersionTokens, and idempotency round trip within documented limits. Corrupt, hostile, unsupported, missing/mis-hashed, or inconsistent input fails without replacing the active document.
 
 See [`docs/PORTABLE_DOCUMENT_FORMAT.md`](docs/PORTABLE_DOCUMENT_FORMAT.md).
 
-### Step 7 — Build the read-only domain laboratory
+### Step 9 — Build the read-only domain laboratory
 
 **Objective:** Expose executable domain and import behavior in a deliberately plain browser workspace.
 
@@ -199,7 +224,7 @@ See [`docs/PORTABLE_DOCUMENT_FORMAT.md`](docs/PORTABLE_DOCUMENT_FORMAT.md).
 
 See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
-### Step 8 — Add structural editing
+### Step 10 — Add structural editing
 
 **Objective:** Make document structure editable through engine commands.
 
@@ -209,7 +234,7 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
-### Step 9 — Integrate interactive InlineContent editing
+### Step 11 — Integrate interactive InlineContent editing
 
 **Objective:** Connect one active editor to canonical attributed content through the engine command boundary with prompt durable Contributions and separate human-readable grouping.
 
@@ -219,7 +244,7 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
-### Step 10 — Add lenses, historical comparison, and Markdown export
+### Step 12 — Add lenses, historical comparison, and Markdown export
 
 **Objective:** Prove optional simultaneous content, exact Version projections, and reversible Markdown interchange for imported documents.
 
@@ -229,7 +254,7 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) and [`d
 
 See [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md).
 
-### Step 11 — Add browser durability
+### Step 13 — Add browser durability
 
 **Objective:** Survive browser reload through an incremental engine repository without making browser storage a second semantic authority.
 
@@ -239,7 +264,7 @@ See [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md).
 
 See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) and [`docs/BROWSER_PERSISTENCE.md`](docs/BROWSER_PERSISTENCE.md).
 
-### Step 12 — Reassess persistence and packaging
+### Step 14 — Reassess persistence and packaging
 
 **Objective:** Use measured prototype evidence to decide whether additional infrastructure is justified.
 
@@ -259,36 +284,40 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 ## 5. Phase and risk gates
 
-### Gate A — Step 0 authority baseline
+### Gate A — Documentation authority baseline
 
-Step 0 passes when the authority set, ADR rationale, and preserved-branch classifications are consistent and no normative external formatting/provenance anchor assumption remains. The current documentation records that decision, and Steps 1 and 2 subsequently established the browser scaffold and pure Block domain.
+Gate A passes when the authority set, ADR rationale, preserved-branch classifications, and work order are consistent. PR #9 revalidates this gate with the Range authority and revised sequence. Steps 1 and 2 remain complete; no implementation work is repeated.
 
-### Gate B — Attributed-content carrier qualification
+### Gate B — Collaborative carrier selection
 
-Do not freeze Step 3 implementation, carrier-dependent History effects, editor integration, or `.coedit` version 1 until the Yjs/Automerge common suite passes and the winner is recorded. The gate includes the attributed-content and structural-carrier suites.
+Gate B follows Step 3. Do not begin production carrier implementation or freeze carrier-dependent History effects before the Yjs/Automerge common suite passes and the winner is recorded. The suite includes attributed content, structure, allocator behavior, editor integration, atomicity, performance, and Range feasibility. Gate B does not select the Range-tracking representation.
 
-### Gate C — Elaboration baseline
+### Gate C — Durable Range freeze
 
-Do not treat the architecture as executable until Steps 1-6 pass. At that point the project has a browser scaffold, pure domain, canonical attributed CollaborativeContent, first-class History, structured Markdown import, and lossless `.coedit` recovery.
+Gate C follows Step 6. It closes the carrier-neutral Range API, remaining structural and copy behavior, resolution taxonomy, serialization and reinjection rules, internal-link encoding, and lineage representation. Do not freeze `.coedit` version 1 or the internal-link Range wire shape before Gate C passes.
 
-### Gate D — Interactive rich editing
+### Gate D — Elaboration baseline
 
-Do not attach the interactive editor before Steps 2-7 are usable. The attributed-content carrier, History, import, portable format, and read-only workspace must exist first.
+Do not treat the architecture as executable until Steps 1-8 pass. At that point the project has a browser scaffold, pure domain, selected collaborative core, first-class History, a durable Range service, structured Markdown import, and lossless `.coedit` recovery.
 
-### Gate E — SQL or native packaging
+### Gate E — Interactive rich editing
 
-Do not adopt SQL or a native shell before Step 12 measurements show a concrete need. A native shell must wrap the validated application. It must not redefine the document engine.
+Do not attach the interactive editor before Steps 2-10 are usable. The selected carrier, History, Range service, import, portable format, read-only workspace, and structural editing must exist first.
 
-### Gate F — Networked collaboration
+### Gate F — SQL or native packaging
 
-Networked collaboration is post-MVP. Before real clients connect, satisfy the preconditions in [`docs/COLLABORATION_MODEL.md`](docs/COLLABORATION_MODEL.md). The local MVP must not turn its private linear History or storage representation into a public distributed-system contract.
+Do not adopt SQL or a native shell before Step 14 measurements show a concrete need. A native shell must wrap the validated application. It must not redefine the document engine.
+
+### Gate G — Networked collaboration
+
+Networked collaboration is post-MVP. Before real clients connect, satisfy the preconditions in [`docs/COLLABORATION_MODEL.md`](docs/COLLABORATION_MODEL.md). The local MVP must not turn its private linear History, Range representation, or storage representation into a public distributed-system contract.
 
 ## 6. Post-MVP experiments
 
 After the strict document-engine MVP is complete, use separately gated iterations:
 
 1. provenance visualization/query, retention/anonymization, and authenticated identity;
-2. comments and durable discussions with cursor-plus-quote targets and explicit repair;
+2. comments and durable discussions with Range targets and explicit repair;
 3. an in-process two-engine causal replication bus and causal-restore conflicts;
 4. an authenticated relay, durable outbox/inbox, catch-up, and visible sync state;
 5. AI collaboration through explicit Versions and typed commands, with software-agent Origin and separate human acceptance;
@@ -306,6 +335,7 @@ The plan is complete when the browser prototype satisfies the MVP contract and a
 - the recursive Block model is the only structural ontology;
 - durable changes are attributed Contributions;
 - exact historical Versions, semantic checkpoints, and compensating restore are usable;
+- the headless Range service and embedded internal-link Range values pass Gate C;
 - optional InlineContents and content lenses are usable;
 - selected Versions, lenses, and subtrees can export to Markdown with explicit diagnostics when exact structural interchange is not possible;
 - the opaque `.coedit` artifact provides lossless recovery within its documented limits;
@@ -317,4 +347,4 @@ The plan is complete when the browser prototype satisfies the MVP contract and a
 - current documentation describes the clean-slate application; and
 - no deferred infrastructure has been introduced without passing its decision gate.
 
-Completion produces an experimental document-engine foundation. It includes minimum Origin semantics and incremental browser durability; it does not mean that AI-provider integration, provenance UI/authentication/signing, comments, networked collaboration, native packaging, or a final retention/compaction design is complete.
+Completion produces an experimental document-engine foundation. It includes minimum Origin semantics, a durable Range service, and incremental browser durability; it does not mean that AI-provider integration, provenance UI/authentication/signing, Comment records or repair UX, networked collaboration, native packaging, or a final History/Range retention and compaction design is complete.

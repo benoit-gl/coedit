@@ -309,8 +309,9 @@ History and therefore must converge like any other Contribution.
 
 ## 8. CollaborativeContent and Block structure use one carrier boundary
 
-Convergent rich-text changes and structural placement have different semantics,
-but Step 3 qualifies them inside one logical collaborative document.
+Convergent rich-text changes and structural placement have different semantics.
+Step 3 qualifies both candidates inside one logical collaborative document, and
+Step 4 implements the selected carrier.
 `STRUCTURAL_CARRIER_MODEL.md` owns the structural contract.
 
 The accepted structural representation uses one Block-local namespace per
@@ -366,12 +367,16 @@ This is a private carrier boundary, not a public `Y.Doc` or Automerge type.
 Subdocuments or sharding require measured evidence and must preserve atomic
 multi-target behavior and portable recovery.
 
-Formatting and Origin do not use external anchors. Future CommentTargets use
-carrier-stable cursors and explicit affinity as their primary location, combined
-with quote/prefix/suffix/position evidence for validated repair. Copying content
-creates new carrier identities; same-document copy retains Origins but comment
-targets do not silently migrate to the copy. Moving an InlineContent while
-preserving its identity and carrier state can preserve its comment cursors.
+Formatting and Origin do not use external anchors. The MVP headless Range service
+can use carrier-stable positions plus qualified lineage and carrier-neutral
+evidence behind its public value contract. Internal links can embed a Range;
+future comments can hold one externally with comment-specific repair state.
+
+Copying content creates new carrier identities and same-document copy retains
+Origins, but shared Origin or derivation does not by itself migrate or duplicate a
+Range target. Step 6 must record general Range copy behavior before Gate C passes.
+Moving an InlineContent while preserving its identity and carrier state can
+preserve qualified Range tracking.
 
 ## 9. Frontend-facing History behavior
 
@@ -507,6 +512,7 @@ The MVP does not implement networking. It does establish the following seams:
 - the accepted flat Block placement and Block activity compatibility contract;
 - intrinsic formatting and protected, non-inheriting Origin semantics;
 - first-class checkpoint Contributions;
+- a carrier-neutral durable Range service with no document-wide holder registry;
 - History listing, summary, exact materialization, and compensating restore;
 - change subscriptions followed by re-query;
 - opaque lossless serialization/opening;
@@ -521,20 +527,27 @@ checkpoints. Contract tests and types keep all of these private.
 
 ## 14. Staged implementation path
 
-1. Qualify Yjs v13 against Automerge with the attributed-content and structural
-   carrier suites, then retain the selected carrier suite as regression evidence.
-2. Build and validate the local-only MVP behind the engine and repository boundaries.
-3. Replace chunk/checkpoint details behind those same contracts as measurements require.
-4. Build an in-process two-engine replication test bus before using a network.
-5. Replicate immutable Contributions, including checkpoint Contributions, and
-   carrier effects under duplication, delay, reordering, partition, and
-   reconnect.
-6. Prove that the accepted structural carrier and Block activity semantics remain
-   correct when effects travel through the causal Contribution envelope.
-7. Add an authenticated relay, durable catch-up, and visible sync status.
-8. Add the independent ephemeral presence channel.
-9. Add or tune checkpoints, deltas, structural sharing, and compaction without
-   changing frontend behavior.
+1. Qualify Yjs v13 against Automerge with the attributed-content, structural, and
+   Range-feasibility suites; record the winner at Gate B.
+2. Implement the selected collaborative core and retain the common suite as
+   regression evidence.
+3. Establish local History and exact Version materialization.
+4. Implement the durable Range service and record its lineage representation at
+   Gate C.
+5. Complete and validate the remaining local-only MVP behind the engine and
+   repository boundaries.
+6. Replace chunk/checkpoint details behind those same contracts as measurements
+   require.
+7. Build an in-process two-engine replication test bus before using a network.
+8. Replicate immutable Contributions, including checkpoint Contributions, Range
+   behavior, and carrier effects under duplication, delay, reordering, partition,
+   and reconnect.
+9. Prove that accepted structural and Range semantics remain correct when effects
+   travel through the causal Contribution envelope.
+10. Add an authenticated relay, durable catch-up, and visible sync status.
+11. Add the independent ephemeral presence channel.
+12. Add or tune checkpoints, deltas, structural sharing, Range evidence, and
+    compaction without changing frontend behavior.
 
 No network phase begins merely because carrier convergence works. The
 History/convergence, transport, authorization, restore, and structural gates must
@@ -559,7 +572,9 @@ pass together.
   Contribution and converges under delayed/reordered delivery;
 - Origin never inherits or spoofs under concurrent insertion, copy, paste,
   formatting clear, or restore;
-- stable CommentTarget cursors and explicit ambiguous/orphan behavior converge;
+- durable Range resolution, semantic order, and explicit uncertainty converge;
+- future Comment holders preserve comment-specific repair behavior without
+  redefining Range semantics;
 - restore concurrent with unseen work;
 - concurrent checkpoints remain independently materializable and attributable;
 - unauthorized, revoked, malformed, and oversized remote records;
@@ -573,7 +588,7 @@ pass together.
 - exact `VersionToken` representation;
 - remote authorization and offline revocation policy;
 - exact same-region and structural conflict representation/UX for causal restore;
-- History retention and CRDT tombstone garbage collection;
+- History, Range-evidence, and CRDT tombstone retention or garbage collection;
 - checkpoint labels or other optional checkpoint metadata beyond ordinary
   Contribution context;
 - end-to-end encryption;
@@ -607,7 +622,7 @@ unresolved replication choices. `STRUCTURAL_CARRIER_MODEL.md` owns those rules.
   validates content origin stored with text plus a separate revision actor.
 - [W3C Web Annotation](https://www.w3.org/TR/annotation-model/) and
   [Hypothesis anchoring](https://github.com/hypothesis/client/blob/main/src/annotator/anchoring/html.ts)
-  inform stable-cursor plus quote/context CommentTargets.
+  inform the stable-cursor plus quote/context evidence used by durable Ranges.
 - [Automerge rich text](https://automerge.org/docs/reference/documents/rich-text/)
   and [Loro movable trees](https://www.loro.dev/docs/tutorial/tree) inform the
   carrier and structural qualification gates.

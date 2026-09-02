@@ -15,7 +15,8 @@ This record preserves why the decision was made. Normative behavior belongs in:
 - [`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md) for product meaning;
 - [`../MVP_CONTRACT.md`](../MVP_CONTRACT.md) for the MVP proof boundary;
 - [`../MVP_ARCHITECTURE.md`](../MVP_ARCHITECTURE.md) for component authority;
-- [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for formatting, Origin, clipboard, and CommentTarget behavior;
+- [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for formatting, Origin, clipboard, and Range-holder behavior;
+- [`../RANGE_MODEL.md`](../RANGE_MODEL.md) for durable Range behavior and staged representation selection;
 - [`../MVP_IMPLEMENTATION_SPEC.md`](../MVP_IMPLEMENTATION_SPEC.md) for private MVP rules;
 - [`../MARKDOWN_INTERCHANGE.md`](../MARKDOWN_INTERCHANGE.md) for Markdown import/export behavior;
 - [`../PORTABLE_DOCUMENT_FORMAT.md`](../PORTABLE_DOCUMENT_FORMAT.md) for recovery-format requirements;
@@ -100,18 +101,16 @@ actor separately and assigns an imported or unknown origin unless trustworthy
 source metadata is available. It must not manufacture an authorship claim for
 the paster.
 
-### 3.5 Comments use external targets; selections do not
+### 3.5 Comments use external Range holders; selections do not
 
-A durable comment or conversation has an explicit target outside the authored
-text. Its target combines:
+A future durable comment or conversation is an external record that holds one
+durable Range plus comment-specific attachment and repair state. The Range can
+refer to one or several semantic spans across Blocks and InlineContents. The
+Range service owns stable carrier positions, affinity, quote/context evidence,
+and explicit uncertainty. It never silently attaches to merely similar text.
 
-- document, Block, and InlineContent identity;
-- stable carrier cursors with start/end affinity;
-- exact quote plus prefix and suffix context; and
-- explicit attached, ambiguous, or orphaned state.
-
-Resolution uses the stable cursor first and quote/context/position evidence as
-a validated repair fallback. It never silently attaches to merely similar text.
+The complete comment state machine and repair experience remain post-MVP. They
+consume the shared Range service and do not redefine Range kind or resolution.
 
 Selections, focus, cursors, and typing state remain transient awareness data
 unless a future feature deliberately creates a durable named selection.
@@ -346,7 +345,7 @@ only by a demonstrated requirement for a bundled consistent Chromium runtime.
   qualification suite without justifying current adoption.
 - [W3C Web Annotation](https://www.w3.org/TR/annotation-model/) and
   [Hypothesis anchoring](https://github.com/hypothesis/client/blob/main/src/annotator/anchoring/html.ts)
-  support cursor-plus-quote/context comment targets.
+  support the cursor-plus-quote/context evidence used by durable Ranges.
 - [W3C PROV-DM](https://www.w3.org/TR/2013/REC-prov-dm-20130430/)
   supplies the Entity/Activity/Agent and derivation distinctions.
 - [Stencila Content Credentials](https://stencila.io/docs/content-credentials/)
