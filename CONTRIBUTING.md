@@ -96,6 +96,13 @@ transient review notes in the pull-request conversation instead.
 Branch history can be rewritten before merge. Coordinate before you force-update
 a branch that another contributor is actively using or building on.
 
+Pull requests are always squash-merged. Write the pull-request title and
+description as the final squash commit title and message. The description must
+state the resulting change and relevant verification, not temporary branch or
+review-process status. Update the title or description during review whenever
+the final change makes the existing text inaccurate or incomplete. Put
+transient review notes in the pull-request conversation instead.
+
 Submit only files that belong to the change. Remove temporary scripts,
 diagnostic logs, local verification artifacts, generated output, and other
 working files before review unless the repository explicitly requires them.
