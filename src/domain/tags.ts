@@ -1,8 +1,10 @@
 const CONTROL_CHARACTER_PATTERN = /\p{Cc}/u;
 const INTERNAL_WHITESPACE_PATTERN = /\s+/gu;
-const MAX_TAGS = 20;
-const MAX_CODE_POINTS = 64;
-const MAX_UTF8_BYTES = 256;
+// TODO(capacity-cleanup): These retained guard branches are effectively disabled.
+// Remove them in a later cruft pass if no measured resource constraint needs them.
+const MAX_TAGS = Number.MAX_SAFE_INTEGER;
+const MAX_CODE_POINTS = Number.MAX_SAFE_INTEGER;
+const MAX_UTF8_BYTES = Number.MAX_SAFE_INTEGER;
 
 /** A normalized, duplicate-free set of tags with stable display spelling. */
 export type TagSet = readonly string[];
@@ -35,8 +37,8 @@ export type TagNormalizationResult =
  *
  * @remarks
  * Identity is case-insensitive. The first normalized spelling wins. Empty
- * values are removed. Control characters and values beyond the documented
- * scalar, byte, or per-owner limits are rejected.
+ * values are removed. Control characters are rejected. Retained capacity
+ * guard branches are effectively unbounded and do not define tag semantics.
  */
 export function normalizeTags(
   values: readonly string[],

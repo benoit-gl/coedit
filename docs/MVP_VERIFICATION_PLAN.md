@@ -6,7 +6,7 @@
 
 This document defines how the document-engine MVP is verified. It maps the MVP contract and implementation risks to executable evidence.
 
-It does not redefine product behavior. `MVP_CONTRACT.md` defines what must be proved. The focused technical specifications define the behavior under test.
+It does not redefine product behavior. `MVP_CONTRACT.md` defines what must be proved. The focused technical specifications define the behavior under test. `CAPACITY_AND_PERFORMANCE_TARGETS.md` defines how capacity and performance numbers are interpreted; this plan owns the shared qualification workload sizes and performance targets.
 
 This document is the RUP-inspired Test Plan for the MVP. It is intentionally lightweight.
 
@@ -14,7 +14,7 @@ This document is the RUP-inspired Test Plan for the MVP. It is intentionally lig
 
 Use tests at the lowest meaningful boundary.
 
-Prefer deterministic tests with injected IDs, clocks, and limits. Use browser end-to-end tests only for behavior that requires a real browser integration boundary.
+Prefer deterministic tests with injected IDs, clocks, and resource-budget fixtures. Use browser end-to-end tests only for behavior that requires a real browser integration boundary.
 
 A successful happy path is insufficient when a capability can lose, reorder, corrupt, or silently replace user work. Data-loss and failure-path tests are required for those capabilities.
 
@@ -119,8 +119,8 @@ Verify at least:
 - cycles are rejected;
 - vector order is exact;
 - invalid indices fail without mutation;
-- count, depth, tag, and scalar limits work at and immediately beyond boundaries;
-- a depth-1,000 tree can be operated on without recursive stack growth;
+- former finite Step 2 tag, count, and depth boundaries no longer reject otherwise valid state;
+- deep trees are operated on without recursive stack growth;
 - moving a subtree retains identity;
 - moving into self or a descendant fails;
 - subtree deletion removes all live descendants and owned InlineContents;
@@ -142,7 +142,7 @@ Verify:
 - replacement, empty selection, mark exclusion, split, merge, and hard break;
 - editor-to-carrier-to-editor projection without a second formatting authority;
 - formatting clear/change never alters Origin; and
-- malformed or over-limit state fails without changing the base.
+- malformed state or input that exceeds an actual carrier resource guard fails without changing the base.
 
 ### 6.2 Protected Origin carrier
 
@@ -177,6 +177,8 @@ preserves historical Origin, and records the restoring actor and target Version.
 
 ### 6.4 Convergence, atomicity, anchors, and growth
 
+This plan owns the shared representative carrier/storage qualification workloads: 100,000 Unicode code points in representative InlineContent and 5,000 Contributions in representative History. These are demanding test workloads, not semantic maxima or implementation acceptance ceilings. Run smaller growth points and larger characterization points when practical so scaling behavior is visible.
+
 Verify:
 
 - pairwise and three-way insert/delete/format at identical and adjacent
@@ -194,15 +196,15 @@ Verify:
   orphaned future comment targets without silent ambiguous reattachment;
 - retained Version and cursor behavior after the candidate's supported
   garbage-collection/compaction cycle; and
-- representative 100,000-code-point content and 5,000-Contribution load, edit, growth, materialization, and portable-open behavior. The 100,000-code-point fixture is a qualification workload, not a domain validity limit. Run smaller growth points as well so results expose local, linear, or worse scaling.
+- load, edit, growth, materialization, and portable-open behavior at the shared representative content and History workloads defined above.
 
 ### 6.5 Performance qualification
 
 Use paired, same-machine measurements for Yjs and Automerge and record OS, Node/browser versions, CPU, RAM, and exact carrier/library versions. Warm up each case and repeat it. Record median and tail latency rather than one stopwatch value.
 
-Separate visible editor feedback from canonical local-model publication. Visible typing feedback is the critical hot path and must not wait for persistence, History materialization, network/replica delivery, or another slow subsystem. Normal local text editing must reach canonical local collaborative state and project back within 50 ms on the qualification environment. This limit is not a general hardware performance promise.
+Separate visible editor feedback from canonical local-model publication. Visible typing feedback is the critical hot path and must not wait for persistence, History materialization, network/replica delivery, or another slow subsystem. The preliminary local-update latency target is 50 ms from a normal local edit to canonical local collaborative state and projection back on the qualification environment. This is a latency calibration point for carrier qualification, not a throughput rate, product guarantee, or universal hardware requirement.
 
-Exercise ordinary typing, delete/backspace, insertion at start/middle/end, selection replacement, hard breaks, formatting, mark boundaries, and Unicode. Use smaller growth points plus the representative 100,000-code-point fixture and multiple InlineContents. Detect accidental whole-document scans or reconstruction on a normal keystroke; whole-document work on routine typing is disqualifying even when one test runner is fast enough to hide the cost.
+Exercise ordinary typing, delete/backspace, insertion at start/middle/end, selection replacement, hard breaks, formatting, mark boundaries, and Unicode. Use smaller growth points plus the representative content workload defined in section 6.4 and multiple InlineContents. Detect accidental whole-document scans or reconstruction on a normal keystroke; whole-document work on routine typing is disqualifying even when one test runner is fast enough to hide the cost.
 
 Measure Block create, move, subtree move, delete, and structure-plus-multiple-InlineContent atomic changes separately. Characterize open/reload, carrier serialization, checkpoint-state capture, historical materialization, export, convergence workloads, serialized-state growth, and supported garbage collection/compaction. Repeat critical measurements after reload/compaction. Deliberately slow persistence and replica delivery in browser tests; local typing must remain responsive.
 
@@ -307,7 +309,7 @@ Markdown A -> Coedit X -> Markdown B -> Coedit Y
 
 Verify `X` and `Y` with the documented Markdown equivalence relation.
 
-The suite must also verify stable diagnostics for normalization, unsupported-source literal preservation, unsupported nodes, malformed input, and importer resource limits. Link destinations are preserved as opaque metadata and are not classified as safe or unsafe by the importer.
+The suite must also verify stable diagnostics for normalization, unsupported-source literal preservation, unsupported nodes, malformed input, and the importer resource guards owned by `MARKDOWN_INTERCHANGE.md`. Link destinations are preserved as opaque metadata and are not classified as safe or unsafe by the importer.
 
 Do not compare source Markdown text for equality. Canonical export spelling is allowed.
 
@@ -326,7 +328,7 @@ Verify:
 - malformed trees and ownership fail;
 - broken graph/frontier links and Contributor/Origin references fail;
 - identity reuse across retained lifetimes fails;
-- all documented resource limits fail safely when exceeded;
+- the portable resource guards owned by `PORTABLE_DOCUMENT_FORMAT.md` fail safely when exceeded;
 - a failed open never replaces the active engine;
 - stale serialization returns no artifact;
 - intrinsic formatting, boundary policies, Origin, copy/restore lineage, and actor distinction round trip exactly;
@@ -389,7 +391,7 @@ Before real clients connect, qualify:
   travel through the causal Contribution envelope;
 - causal restore that compensates only work observed by its author, preserves
   unseen concurrent inserts, and surfaces unresolved overlap;
-- restart-safe outbox/inbox, catch-up, bootstrap, authorization/schema/limit
+- restart-safe outbox/inbox, catch-up, bootstrap, authorization/schema/resource-capacity
   rejection, and quarantine; and
 - checkpoint/compaction that preserves retained Versions, Origins, and comment
   target behavior.

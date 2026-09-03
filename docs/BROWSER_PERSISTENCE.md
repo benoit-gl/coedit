@@ -125,7 +125,7 @@ Opening a local document:
    invariants, and the resulting Version/frontier; and
 5. publishes a candidate engine only after complete success.
 
-Malformed, missing, mis-hashed, incompatible, or over-limit records produce a
+Malformed, missing, mis-hashed, incompatible, or over-capacity records produce a
 typed recovery error. They do not partially open or replace another active
 engine. Recovery diagnostics offer export of recoverable raw evidence where
 safe; they do not improvise a repaired document silently.
@@ -197,22 +197,18 @@ Opening `.coedit` first validates a candidate engine. Persisting that candidate
 then uses the ordinary repository protocol; the file's physical layout never
 becomes the IndexedDB schema by implication.
 
-## 11. Limits and measurements
+## 11. Measurements
 
-Before freezing checkpoint cadence, chunk size, compaction, or a new storage
-engine, measure at least:
+`MVP_VERIFICATION_PLAN.md` owns the shared representative content and History workload sizes and the shared performance targets. Do not duplicate those numbers here.
 
-- 100,000-character InlineContent editing and recovery;
-- 5,000 Contributions and representative formatting/Origin density;
-- cold open, warm open, ordinary commit, checkpoint, History materialization,
-  and `.coedit` assembly latency;
+For the browser repository, measure those shared workloads plus:
+
+- cold open, warm open, ordinary commit, checkpoint, History materialization, and `.coedit` assembly latency;
 - peak encoded and decoded memory;
 - write amplification and database growth; and
 - quota behavior in supported browsers and private modes.
 
-Record target devices and pass budgets before performance qualification begins.
-Correctness, atomicity, and no-data-loss requirements are not tradeable for a
-faster candidate.
+Record target devices and pass budgets before performance qualification begins. Correctness, atomicity, and no-data-loss requirements are not tradeable for a faster candidate. Browser-specific quota or warning thresholds come from measured platform behavior and are not portable document limits.
 
 ## 12. Required verification
 

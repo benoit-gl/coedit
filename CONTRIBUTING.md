@@ -50,7 +50,7 @@ For each change:
 
 - exercise the new successful behavior;
 - exercise relevant failure paths and invariants;
-- test documented limits and boundary conditions when they apply;
+- test semantic boundaries, explicit resource guards, and capacity-failure paths when they apply;
 - add a regression test for a corrected defect when practical; and
 - keep existing tests passing without weakening assertions only to accept the
   new implementation.

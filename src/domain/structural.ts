@@ -9,9 +9,11 @@ import type {
 import { normalizeTags } from "./tags.js";
 import type { TagSet } from "./tags.js";
 
-const MAX_BLOCKS = 50_000;
-const MAX_INLINE_CONTENTS = 50_000;
-const MAX_BLOCK_DEPTH = 1_000;
+// TODO(capacity-cleanup): These retained guard branches are effectively disabled.
+// Remove them in a later cruft pass if no measured resource constraint needs them.
+const MAX_BLOCKS = Number.MAX_SAFE_INTEGER;
+const MAX_INLINE_CONTENTS = Number.MAX_SAFE_INTEGER;
+const MAX_BLOCK_DEPTH = Number.MAX_SAFE_INTEGER;
 
 /** One atomic structural mutation in the Step 2 domain. */
 export type StructuralOperation =
@@ -98,7 +100,7 @@ export type StructuralOperation =
       readonly value: ChildrenPresentation;
     };
 
-/** Stable classification for an expected structural-domain rejection. */
+/** Stable classification for an expected structural or capacity-guard rejection. */
 export type StructuralErrorKind =
   | "EmptyOperationGroup"
   | "InvalidId"
@@ -111,7 +113,7 @@ export type StructuralErrorKind =
   | "LimitExceeded"
   | "NoEffect";
 
-/** Expected structural-domain failure. */
+/** Expected structural operation or retained capacity-guard failure. */
 export interface StructuralError {
   /** Stable machine-readable failure kind. */
   readonly kind: StructuralErrorKind;
@@ -209,7 +211,7 @@ export function applyStructuralOperations(
   return { ok: true, value: candidate };
 }
 
-/** Validates all Step 2 live structural invariants and resource limits. */
+/** Validates Step 2 live structural invariants and retained capacity guards. */
 export function validateDocument(
   document: StructuralDocument,
 ): StructuralResult<StructuralDocument> {
@@ -237,13 +239,13 @@ export function validateDocument(
     if (blockCount > MAX_BLOCKS) {
       return failure(
         "LimitExceeded",
-        `A document cannot exceed ${MAX_BLOCKS} live Blocks.`,
+        "The current implementation capacity for live Blocks was exceeded.",
       );
     }
     if (depth > MAX_BLOCK_DEPTH) {
       return failure(
         "LimitExceeded",
-        `Block depth cannot exceed ${MAX_BLOCK_DEPTH}.`,
+        "The current implementation capacity for Block depth was exceeded.",
       );
     }
     if (!isCanonicalUuidV4(block.id)) {
@@ -273,7 +275,7 @@ export function validateDocument(
       if (inlineCount > MAX_INLINE_CONTENTS) {
         return failure(
           "LimitExceeded",
-          `A document cannot exceed ${MAX_INLINE_CONTENTS} live InlineContents.`,
+          "The current implementation capacity for live InlineContents was exceeded.",
         );
       }
       if (!isCanonicalUuidV4(content.id)) {

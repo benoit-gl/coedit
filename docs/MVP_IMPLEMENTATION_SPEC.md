@@ -13,6 +13,7 @@ Use these focused authorities first:
 - [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) for product ontology and logical attributed-content meaning;
 - [`MVP_CONTRACT.md`](MVP_CONTRACT.md) for the MVP proof boundary;
 - [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) for public engine behavior and component authority;
+- [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) for cross-cutting capacity and resource semantics;
 - [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for formatting, Origin, clipboard, and comment-target behavior;
 - [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md) for Step 3 flat Block placement, Block-local carrier state, structural concurrency, and position-order qualification;
 - [`CODING_STYLE.md`](CODING_STYLE.md) for source structure, TSDoc, linting, formatting, dependency checks, package commands, and platform portability;
@@ -140,7 +141,7 @@ src/
 
 Do not split the application into packages before an independent consumer exists.
 
-## 4. IDs, tags, and implementation-capacity targets
+## 4. IDs, tags, and implementation capacity
 
 Use distinct branded TypeScript types for persisted identities. The MVP needs at least:
 
@@ -172,22 +173,9 @@ Initial tag normalization rules are semantic:
 - remove empty values; and
 - reject control characters.
 
-The first implementation must support at least:
+Step 2 has no application-defined finite maximum for tag count, tag size, live Block count, live InlineContent count, or Block depth. Those dimensions are limited only by semantic validity and the actual resources of the running implementation.
 
-- 20 tags per owner;
-- 64 Unicode code points per tag;
-- 256 UTF-8 bytes per tag;
-- 50,000 live Blocks;
-- 50,000 live InlineContents; and
-- Block depth 1,000 including the root.
-
-These numbers are preliminary minimum implementation-capacity targets. They are
-not document-model maxima and do not make a larger otherwise valid value or
-document semantically invalid. The implementation can use explicit resource
-guards while the prototype is bounded. Exceeding such a guard returns a typed
-capacity/resource failure rather than a domain-validation failure. Revise the
-targets and implementation guards when qualification, profiling, target-device
-measurements, and later real usage data provide better evidence.
+The Step 2 source keeps its earlier guard branches for now, but sets their thresholds to `Number.MAX_SAFE_INTEGER` so they are effectively disabled before ordinary runtime or allocation constraints. The source marks those branches as candidates for a later cruft-cleanup pass. Remove them if later evidence shows that no explicit guard is useful. If profiling exposes a real resource constraint, add an explicit implementation guard and report a capacity/resource failure; do not redefine the input as semantically invalid.
 
 All tree walks that can encounter user-controlled structure must be iterative and bounded by the implementation's current resource budget.
 
@@ -314,13 +302,13 @@ Genesis has sequence zero, contains the initial root created by the document fac
 
 A new document requires at least one human Contributor. For the MVP, the UX asks for a free-form display name before session creation and supplies that Contributor to the engine factory. This does not create an account/profile model.
 
-Contributor display names are trimmed and control-character-free. The first implementation must support at least 128 Unicode code points and 512 UTF-8 bytes. Those values are preliminary capacity targets, not a product-level maximum, and can be revised from usage and interoperability evidence.
+Contributor display names are trimmed and control-character-free. The MVP defines no application-level length maximum. A real UI, storage, or interoperability constraint can add an explicit boundary guard later under `CAPACITY_AND_PERFORMANCE_TARGETS.md`; that guard is not Contributor semantics.
 
 The domain vocabulary retains Contributor/agent kinds `human`, `imported`, `automation`, `ai`, and `unknown`. Strict MVP creation needs human plus imported/unknown identities sufficient for Origin records. A Markdown/file import Contribution is attributed to the human/system actor that performs it; its content points to imported/unknown Origin. Post-genesis interactive registration workflows remain deferred.
 
 Each successful durable command publishes one logical Contribution, its exact effect/update, any new Origin records, one resulting private Version, and its successful command receipt atomically. Several Contributions can share a semantic group ID for presentation.
 
-The early in-memory implementation may use a full snapshot per Contribution within the current qualification envelope. The Step 11 browser target uses immutable effects/update chunks, periodic physical recovery checkpoints, and a small CAS head. Product History remains independent of either representation.
+The early in-memory implementation may use a full snapshot per Contribution for bounded prototype and qualification fixtures. The Step 11 browser target uses immutable effects/update chunks, periodic physical recovery checkpoints, and a small CAS head. Product History remains independent of either representation.
 
 Use globally unique `CommandId` values. Check a previously successful CommandId before stale-version rejection:
 

@@ -288,10 +288,10 @@ describe("structural operations", () => {
     expect(result.ok).toBe(true);
   });
 
-  it("handles the depth-1000 boundary without recursive tree walking", () => {
+  it("walks beyond the former depth boundary without recursive stack growth", () => {
     const operations: StructuralOperation[] = [];
     let parent = ROOT_ID;
-    for (let depth = 2; depth <= 1_000; depth += 1) {
+    for (let depth = 2; depth <= 1_001; depth += 1) {
       const id = blockId(1_000 + depth);
       operations.push({
         kind: "CreateBlock",
@@ -304,74 +304,37 @@ describe("structural operations", () => {
       parent = id;
     }
 
-    const boundary = applyStructuralOperations(emptyDocument(), operations);
-    expect(boundary.ok).toBe(true);
-    if (!boundary.ok) {
-      return;
-    }
-
-    expectFailure(
-      boundary.value,
-      [
-        {
-          kind: "CreateBlock",
-          blockId: blockId(3_000),
-          parentId: parent,
-          index: 0,
-          tags: [],
-          childrenPresentation: "flow",
-        },
-      ],
-      "LimitExceeded",
+    expect(applyStructuralOperations(emptyDocument(), operations).ok).toBe(
+      true,
     );
   });
 });
 
-describe("live resource limits", () => {
-  it("accepts 50,000 Blocks and rejects 50,001", () => {
-    const children = Array.from({ length: 49_999 }, (_, index) =>
+describe("former live capacity boundaries", () => {
+  it("accepts more than the former live Block boundary", () => {
+    const children = Array.from({ length: 50_000 }, (_, index) =>
       flatBlock(index + 10_000),
     );
-    const boundary: StructuralDocument = {
+    const document: StructuralDocument = {
       id: DOCUMENT_ID,
       root: { ...flatBlock(9_999), id: ROOT_ID, children },
     };
-    expect(validateDocument(boundary).ok).toBe(true);
 
-    const beyond: StructuralDocument = {
-      ...boundary,
-      root: { ...boundary.root, children: [...children, flatBlock(60_000)] },
-    };
-    expectFailureResult(validateDocument(beyond), "LimitExceeded");
+    expect(validateDocument(document).ok).toBe(true);
   });
 
-  it("accepts 50,000 InlineContents and rejects 50,001", () => {
-    const contents = Array.from({ length: 50_000 }, (_, index) => ({
+  it("accepts more than the former live InlineContent boundary", () => {
+    const contents = Array.from({ length: 50_001 }, (_, index) => ({
       id: inlineId(100_000 + index),
       tags: [],
       content: createEmptyInlineContentValue(),
     }));
-    const boundary: StructuralDocument = {
+    const document: StructuralDocument = {
       id: DOCUMENT_ID,
       root: { ...flatBlock(90_000), id: ROOT_ID, contents },
     };
-    expect(validateDocument(boundary).ok).toBe(true);
 
-    const beyond: StructuralDocument = {
-      ...boundary,
-      root: {
-        ...boundary.root,
-        contents: [
-          ...contents,
-          {
-            id: inlineId(160_000),
-            tags: [],
-            content: createEmptyInlineContentValue(),
-          },
-        ],
-      },
-    };
-    expectFailureResult(validateDocument(beyond), "LimitExceeded");
+    expect(validateDocument(document).ok).toBe(true);
   });
 });
 

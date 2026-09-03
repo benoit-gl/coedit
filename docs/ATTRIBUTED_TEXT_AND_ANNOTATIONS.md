@@ -392,15 +392,7 @@ minimum it covers:
 - exact portable round trip and historical materialization; and
 - representative growth and load behavior.
 
-Functional invariants are mandatory. Performance qualification records the actual
-hardware and software environment used for each run. Normal local text editing must
-update canonical local collaborative state within 50 ms on that qualification
-environment. Measure visible editor feedback separately and keep it in the tightest
-practical loop; routine carrier, persistence, History, or replica work must not block
-visible local feedback. Open, reload, checkpoint, historical materialization, export,
-and other non-keystroke-critical operations are characterization data at this stage,
-not general fixed hardware promises. Retain median and tail measurements, scaling
-results, and dependency/license review as qualification evidence.
+Functional invariants are mandatory. `MVP_VERIFICATION_PLAN.md` owns the exact shared qualification workloads, latency target, measurement method, and evidence requirements. This specification requires visible local feedback to stay in the tightest practical loop; routine carrier, persistence, History, replica, open, reload, checkpoint, materialization, or export work must not redefine the editor hot path.
 
 Select Yjs when the protected Origin carrier passes without fragile full-state
 reconstruction or editor repair. Select Automerge only if its native rich-text,

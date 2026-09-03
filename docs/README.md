@@ -4,25 +4,24 @@ These documents describe the clean-slate application on `main`. Each document ha
 
 ## Current authoritative documents
 
-| Document                                                                   | Authority                                                                                                                |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md)                       | Logical product ontology and domain vocabulary                                                                           |
-| [`MVP_CONTRACT.md`](MVP_CONTRACT.md)                                       | Required proof boundary for the document-engine MVP                                                                      |
-| [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)                               | Component authority, public engine behavior, and adapter workflows                                                       |
-| [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) | Intrinsic formatting, origin attribution, clipboard lineage, comment targets, and carrier qualification                  |
-| [`TEXT_POSITION_MODEL.md`](TEXT_POSITION_MODEL.md)                         | Unicode text, transient editor coordinates, durable stable text positions, and range portability                         |
-| [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md)               | Step 3 flat Block placement, tree projection, structural concurrency policy, and position-order qualification            |
-| [`STRUCTURAL_POSITION_ALLOCATOR.md`](STRUCTURAL_POSITION_ALLOCATOR.md)     | Production dense-order allocator abstraction, collision tolerance, characterization, and algorithm selection             |
-| [`CODING_STYLE.md`](CODING_STYLE.md)                                       | Source structure, as-implemented TSDoc, lint/format/dependency tooling, command-line interface, and platform portability |
-| [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md)                 | Private MVP implementation rules that are not owned by a focused specification                                           |
-| [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md)                       | Markdown import, export, diagnostics, and normalized round-trip behavior                                                 |
-| [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md)               | Lossless `.coedit` logical recovery contract, gated version-1 container, and hostile-input validation                    |
-| [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md)                         | Incremental IndexedDB repository, recovery, multi-tab, quota, and backup behavior                                        |
-| [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md)                     | MVP test strategy, risk coverage, and qualification evidence                                                             |
-| [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md)                         | Post-MVP replication, convergence, and causal History direction                                                          |
-| [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md)                         | RUP-inspired work order, phase gates, and completion criteria                                                            |
-
-[`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) is the cross-cutting authority for the interpretation and revision of provisional numeric capacity and performance targets used by the documents above.
+| Document                                                                     | Authority                                                                                                                |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md)                         | Logical product ontology and domain vocabulary                                                                           |
+| [`MVP_CONTRACT.md`](MVP_CONTRACT.md)                                         | Required proof boundary for the document-engine MVP                                                                      |
+| [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)                                 | Component authority, public engine behavior, and adapter workflows                                                       |
+| [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) | Capacity/resource classification, numeric ownership, verification, and freeze rules                                      |
+| [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)   | Intrinsic formatting, origin attribution, clipboard lineage, comment targets, and carrier qualification                  |
+| [`TEXT_POSITION_MODEL.md`](TEXT_POSITION_MODEL.md)                           | Unicode text, transient editor coordinates, durable stable text positions, and range portability                         |
+| [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md)                 | Step 3 flat Block placement, tree projection, structural concurrency policy, and position-order qualification            |
+| [`STRUCTURAL_POSITION_ALLOCATOR.md`](STRUCTURAL_POSITION_ALLOCATOR.md)       | Production dense-order allocator abstraction, collision tolerance, characterization, and algorithm selection             |
+| [`CODING_STYLE.md`](CODING_STYLE.md)                                         | Source structure, as-implemented TSDoc, lint/format/dependency tooling, command-line interface, and platform portability |
+| [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md)                   | Private MVP implementation rules that are not owned by a focused specification                                           |
+| [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md)                         | Markdown import, export, diagnostics, and normalized round-trip behavior                                                 |
+| [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md)                 | Lossless `.coedit` logical recovery contract, gated version-1 container, and hostile-input validation                    |
+| [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md)                           | Incremental IndexedDB repository, recovery, multi-tab, quota, and backup behavior                                        |
+| [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md)                       | MVP test strategy, risk coverage, and qualification evidence                                                             |
+| [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md)                           | Post-MVP replication, convergence, and causal History direction                                                          |
+| [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md)                           | RUP-inspired work order, phase gates, and completion criteria                                                            |
 
 All current design authority is local to `main`.
 
@@ -37,7 +36,7 @@ Use the document with direct authority for the subject.
 - A private implementation type does not override `MVP_ARCHITECTURE.md`.
 - A codec or storage detail does not override `PRODUCT_DOMAIN_MODEL.md`.
 - A focused Markdown or `.coedit` specification overrides duplicated technical wording elsewhere.
-- `CAPACITY_AND_PERFORMANCE_TARGETS.md` controls whether a numeric value is a semantic invariant, a minimum implementation envelope, a hostile-input resource guard, or a qualification/performance target.
+- `CAPACITY_AND_PERFORMANCE_TARGETS.md` controls capacity classification and numeric ownership. Focused specifications own the exact retained guard values, and `MVP_VERIFICATION_PLAN.md` owns shared qualification numbers.
 - `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns detailed attributed-text behavior; `TEXT_POSITION_MODEL.md` owns text-coordinate and durable-position boundaries; `STRUCTURAL_CARRIER_MODEL.md` owns Step 3 Block placement and structural carrier qualification; `STRUCTURAL_POSITION_ALLOCATOR.md` owns the production allocator abstraction and allocator-algorithm qualification; `BROWSER_PERSISTENCE.md` owns browser repository behavior.
 - `CODING_STYLE.md` owns source-level documentation, linting, formatting, architectural dependency checks, package commands, and developer-platform portability.
 - `MVP_IMPLEMENTATION_SPEC.md` does not expand `MVP_CONTRACT.md`.

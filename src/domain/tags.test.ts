@@ -20,12 +20,11 @@ describe("tag normalization", () => {
     expect(result.ok).toBe(false);
   });
 
-  it("enforces owner, code-point, and UTF-8 byte limits", () => {
+  it("does not impose the former finite tag capacity boundaries", () => {
     const twentyOne = Array.from({ length: 21 }, (_, index) => `tag-${index}`);
-    expect(normalizeTags(twentyOne).ok).toBe(false);
-    expect(normalizeTags(["a".repeat(64)]).ok).toBe(true);
-    expect(normalizeTags(["a".repeat(65)]).ok).toBe(false);
-    expect(normalizeTags(["😀".repeat(64)]).ok).toBe(true);
-    expect(normalizeTags([`😀${"a".repeat(253)}`]).ok).toBe(false);
+    expect(normalizeTags(twentyOne).ok).toBe(true);
+    expect(normalizeTags(["a".repeat(65)]).ok).toBe(true);
+    expect(normalizeTags(["😀".repeat(65)]).ok).toBe(true);
+    expect(normalizeTags([`😀${"a".repeat(253)}`]).ok).toBe(true);
   });
 });

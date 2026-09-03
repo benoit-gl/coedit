@@ -10,8 +10,8 @@ This document defines lossless portable recovery for the document-engine MVP.
 The user-facing extension is `.coedit`. A portable artifact retains current
 attributed content, every advertised retained Version, product History,
 Contributors and Origins, semantic Checkpoints, source/derivation information,
-stable public Version identity, and command idempotency within documented
-implementation capacity.
+stable public Version identity, and command idempotency subject to explicit
+implementation resource capacity.
 
 [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls domain meaning.
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
@@ -19,7 +19,8 @@ controls formatting and Origin behavior. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTUR
 controls the public serialization boundary. This document controls portable
 logical records, validation, compatibility, and the version-1 container.
 [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md)
-controls the interpretation and revision of provisional numeric capacity targets.
+controls cross-cutting capacity semantics. This document owns the exact portable
+codec and hostile-input guard values.
 
 The internal browser repository is separately specified by
 [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Its stores and checkpoint
@@ -205,10 +206,11 @@ A blank document or import session begins with a human Contributor supplied by
 the UX. This does not create an account or security-principal model.
 
 The MVP package preserves each document-local Contributor's stable ID, kind, and
-validated display name so History attribution survives Save/Open. Display names
-obey the current implementation-capacity policy in `MVP_IMPLEMENTATION_SPEC.md`;
-they are descriptive metadata, not authenticated identity. A later separately
-managed profile can change presentation without changing stable attribution IDs.
+validated display name so History attribution survives Save/Open. Display-name
+validation is owned by `MVP_IMPLEMENTATION_SPEC.md`; the product defines no finite
+length maximum. Display names are descriptive metadata, not authenticated identity.
+A later separately managed profile can change presentation without changing stable
+attribution IDs.
 
 Human editing creates human Origin records. Markdown/file import creates
 imported or unknown Origin for source content while the import Contribution is
@@ -277,42 +279,24 @@ of work outside the restore author's observed frontier.
 Recompute derived projection hashes, affected targets, indexes, and reserved-ID
 sets. Do not trust serialized derived claims.
 
-## 11. Preliminary capacity and characterization envelope
+## 11. Initial hostile-input and codec resource guards
 
-The first implementation and carrier qualification must exercise at least this
-portable-format envelope:
+This document owns the exact initial version-1 portable-format guard values. The decoder uses finite guards before dangerous allocation or graph work:
 
 - 64 MiB UTF-8 JSON;
 - JSON nesting depth 128;
-- 5,001 advertised Versions including genesis;
-- 5,000 Contributions;
 - 64 parent/frontier references on one Contribution;
 - 250,000 semantic operations in one Contribution;
 - 1,000,000 semantic operations in one archive;
-- 50,000 Blocks in a materialization;
-- 50,000 InlineContents in a materialization;
 - 8 MiB for one decoded carrier checkpoint/effect chunk;
 - 48 MiB decoded binary chunk data across the archive; and
 - 1,000,000 Unicode code points in one InlineContent.
 
-These values are preliminary minimum implementation targets and stress points.
-They are not version-1 document maxima. In particular, 5,000 Contributions and
-5,001 Versions do not limit retained History. A valid document can require more
-History, content, structure, or causal references than this first qualification
-envelope exercises.
+These are implementation resource guards, not version-1 document maxima. They do not limit retained History length, Block count, InlineContent count, or any other semantic dimension that is not listed for a concrete codec-safety reason. Shared content and History qualification workload sizes belong only in `MVP_VERIFICATION_PLAN.md`.
 
-The decoder must use finite hostile-input resource guards. The encoder must
-preflight against the capacity of the implementation that performs the encode.
-Return a typed capacity error rather than truncate History, Origins, or document
-state. Do not encode a partial document to fit a provisional target.
+The encoder preflights the resource guards that apply to the artifact it produces. Return a typed capacity error rather than truncate History, Origins, or document state. A capacity failure does not make the document semantically invalid.
 
-Carrier qualification and later real usage data can revise these values. Before
-freezing version 1, verify that the selected container and implementation can
-round-trip the complete History and state of every document the same
-implementation accepts within its supported capacity. If measurements show that
-monolithic JSON/base64 or another implementation choice is the limiting factor,
-change the container rather than promoting that implementation limit into
-permanent document semantics.
+Revise the guard values when carrier qualification, profiling, target-device measurements, or later usage provides better evidence. Before freezing version 1, verify that the selected container can round-trip the required qualification workloads. If monolithic JSON/base64 is the actual limiting factor, change the container rather than promoting that implementation limit into document semantics.
 
 ## 12. Integrity and chunk identity
 
@@ -361,7 +345,7 @@ At minimum, verify:
   topology, ownership, marks, opaque link metadata, and typed internal links fail;
 - malformed, truncated, duplicate-key, unknown-property, or unsupported
   container/carrier versions fail;
-- documented provisional capacity targets and current implementation guards are exercised safely;
+- the hostile-input and codec resource guards owned by section 11 are exercised safely;
 - exceeding an implementation resource guard produces a capacity error without partial publication or semantic-invalidity claims;
 - stale serialization returns no artifact;
 - caller mutation of input bytes after open starts cannot alter the candidate;

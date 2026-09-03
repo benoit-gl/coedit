@@ -17,6 +17,7 @@ Use the companion documents for authority:
 - [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md) defines product ontology and domain vocabulary.
 - [`docs/MVP_CONTRACT.md`](docs/MVP_CONTRACT.md) defines what the document-engine MVP must prove.
 - [`docs/MVP_ARCHITECTURE.md`](docs/MVP_ARCHITECTURE.md) defines component authority and the public engine boundary.
+- [`docs/CAPACITY_AND_PERFORMANCE_TARGETS.md`](docs/CAPACITY_AND_PERFORMANCE_TARGETS.md) defines cross-cutting capacity, resource, and numeric-ownership rules.
 - [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines attributed text, clipboard lineage, comment-target feasibility, and carrier qualification.
 - [`docs/STRUCTURAL_CARRIER_MODEL.md`](docs/STRUCTURAL_CARRIER_MODEL.md) defines Step 3 Block placement, Block-local carrier state, structural concurrency, and position-order qualification.
 - [`docs/CODING_STYLE.md`](docs/CODING_STYLE.md) defines source structure, TSDoc, linting, formatting, command-line interfaces, and developer-platform portability.
@@ -73,6 +74,7 @@ The baseline must contain:
 - `docs/PRODUCT_DOMAIN_MODEL.md`;
 - `docs/MVP_CONTRACT.md`;
 - `docs/MVP_ARCHITECTURE.md`;
+- `docs/CAPACITY_AND_PERFORMANCE_TARGETS.md`;
 - `docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`;
 - `docs/CODING_STYLE.md`;
 - `docs/MVP_IMPLEMENTATION_SPEC.md`;
@@ -143,7 +145,7 @@ See [`docs/CODING_STYLE.md`](docs/CODING_STYLE.md),
 
 **Outcome:** Tests can build and modify realistic Block trees through typed operations without React, Yjs, storage, or browser dependencies. Document/genesis construction creates the one real root outside the structural-operation model. The root has no tags, InlineContents, or child Blocks at genesis. Durable entity UUID text uses one global namespace without type information in the UUID format. InlineContents carry only a typed, opaque, valid empty `InlineContentValue`; structural code does not inspect content internals, and Step 3 expands that same type with attributed-content behavior.
 
-**Exit gate:** Structural invariants, live-identity uniqueness, trusted ID allocation, root construction, empty InlineContent behavior, ordering, limits, and rollback behavior are verified at the domain boundary. Step 2 requires no lifetime-ID registry; History and portable validation later reject durable identity reuse across retained lifetimes.
+**Exit gate:** Structural invariants, live-identity uniqueness, trusted ID allocation, root construction, empty InlineContent behavior, ordering, effectively unbounded Step 2 capacity behavior, and rollback behavior are verified at the domain boundary. Step 2 requires no lifetime-ID registry; History and portable validation later reject durable identity reuse across retained lifetimes.
 
 See [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md), [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
@@ -185,7 +187,7 @@ See [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md).
 
 **Outcome:** After the Step 3 winner is recorded, the engine can assemble logical records and carrier chunks into an opaque bounded version-1 `.coedit` artifact and open it into a validated candidate engine.
 
-**Exit gate:** Current and historical attributed material, Origins, Contributions, derivation, Checkpoints, stable VersionTokens, and idempotency round trip within documented limits. Corrupt, hostile, unsupported, missing/mis-hashed, or inconsistent input fails without replacing the active document.
+**Exit gate:** Current and historical attributed material, Origins, Contributions, derivation, Checkpoints, stable VersionTokens, and idempotency round trip for the required qualification workloads. Portable resource guards return explicit capacity failures, and corrupt, hostile, unsupported, missing/mis-hashed, or inconsistent input fails without replacing the active document.
 
 See [`docs/PORTABLE_DOCUMENT_FORMAT.md`](docs/PORTABLE_DOCUMENT_FORMAT.md).
 
