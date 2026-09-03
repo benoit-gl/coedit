@@ -4,6 +4,8 @@
 
 **Decision date:** 2026-08-25
 
+**Amended:** 2026-09-03
+
 **Scope:** Whole-solution direction, including the strict document-engine MVP,
 the carrier-qualification gate, and compatibility requirements for later
 provenance, comments, AI, replication, and publication.
@@ -106,8 +108,9 @@ the paster.
 A future durable comment or conversation is an external record that holds one
 durable Range plus comment-specific attachment and repair state. The Range can
 refer to one or several semantic spans across Blocks and InlineContents. The
-Range service owns stable carrier positions, affinity, quote/context evidence,
-and explicit uncertainty. It never silently attaches to merely similar text.
+Range service owns stable carrier positions, affinity, lineage, and
+carrier-neutral evidence. It omits unresolved or ambiguous members and never
+attaches them to merely similar text.
 
 The complete comment state machine and repair experience remain post-MVP. They
 consume the shared Range service and do not redefine Range kind or resolution.
@@ -133,7 +136,8 @@ does not become a ProseMirror document tree.
 ### 3.7 Product History is separate from CRDT transport
 
 A Contribution is an immutable, attributed semantic activity. A Version is a
-materializable causal frontier. Product History is not reconstructed from
+materializable causal frontier. Every Version remains exactly materializable
+for the lifetime of its document. Product History is not reconstructed from
 editor transactions, debounce windows, Yjs updates, transport packets, or
 wall-clock ordering.
 
@@ -142,6 +146,10 @@ which references its exact convergence effects and can carry a semantic group
 ID. History presentation may group adjacent Contributions without rewriting or
 deleting physical records. Crash journaling and human-readable grouping are
 separate concerns.
+
+Physical materialization snapshots, recovery checkpoints, caches, structural
+sharing, and compaction can accelerate access. They create no product Version
+and cannot remove a Version or the lineage needed to resolve a durable Range.
 
 The future replicated Contribution envelope includes at least document and
 Contribution IDs, parent frontier, acting contributor, originating replica,
@@ -242,8 +250,8 @@ The suite must cover:
 - stable comment cursors through editing, deletion, reload, and recovery;
 - partition, duplicate, delay, and reorder convergence in two replicas;
 - causal restore preserving unseen concurrent work;
-- compaction/garbage-collection effects on retained Versions, origins, and
-  comment targets;
+- compaction/garbage-collection that preserves every Version, Origin, required
+  Range lineage, and future comment target;
 - representative 100,000-character content and 5,000-Contribution load,
   growth, save/open, and materialization behavior; and
 - portable round-trip without exposing carrier types in public APIs.
@@ -300,9 +308,9 @@ desired locality without becoming manuscript characters.
 
 ### Derive all provenance from History
 
-Rejected as the canonical model. Git-style blame is useful as a projection but
-copy/move inference is heuristic, deleted text disappears from the current
-view, and rewritten/compacted History can change the answer.
+Rejected as the canonical model. Git-style blame is useful as a projection, but
+copy/move inference is heuristic, deleted text disappears from the current view,
+and compacted carrier-level history can change an inferred answer.
 
 ### Treat restore or paste actor as the content author
 

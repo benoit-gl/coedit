@@ -160,10 +160,10 @@ integration layer decides whether and how to interpret or activate it.
 
 An internal Block link is a document-local typed reference. `blockId` is the
 primary target. The optional Range refines navigation to one semantic target and
-can resolve across several InlineContents or Blocks. Embedding the value in an
-intrinsic link mark does not create a Range entity or make comments intrinsic
-formatting. `RANGE_MODEL.md` owns creation, resolution, semantic order, and
-serialization.
+resolves only against the current document. It can resolve across several
+InlineContents or Blocks in that document. Embedding the value in an intrinsic
+link mark does not create a Range entity or make comments intrinsic formatting.
+`RANGE_MODEL.md` owns creation, resolution, lineage order, and serialization.
 
 Internal link resolution follows these rules:
 
@@ -173,11 +173,9 @@ Internal link resolution follows these rules:
 3. If no range is present, the resolved Block is the complete target.
 4. If a Range is present, resolve it through the engine against the selected
    Version.
-5. If the Range has an empty successful resolution, is uncertain, is unresolved,
-   or is invalid, but the primary Block still resolves, use the Step 6
-   link-fallback contract. The accepted default remains fallback to the primary
-   Block. Do not silently attach the Range to an unrelated Block or
-   InlineContent.
+5. If the Range produces no resolved span or position but the primary Block
+   still resolves, fall back to the primary Block. Do not attach the Range to an
+   unrelated Block or InlineContent.
 
 Deleting a target Block does not rewrite, delete, or invalidate incoming link
 marks. The target reference can remain unresolved in current material and can
@@ -185,9 +183,9 @@ resolve in a historical Version where that Block exists. A Block target creates
 no ownership relationship and does not prevent Block deletion.
 
 Internal Block targets are document-local. Same-document copy and restore can
-preserve them. Cross-document import or paste must not bind a source `BlockId` to
-a coincidentally equal target-document ID without an explicit future mapping
-protocol.
+preserve them. When an internal link is transferred to another document, the
+application must reject it, remove it, or convert it to an external deep link.
+The Range service performs no cross-document mapping.
 
 Every mark instance has one logical insertion-boundary policy:
 
@@ -277,10 +275,11 @@ its author and obeys the causal compensation rules in
 [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md). It does not delete unseen
 concurrent material.
 
-Deleted content and Origin records can remain physically reachable through
-retained History or carrier tombstones. A later retention/compaction policy must
-define when they can be removed or anonymized. Compaction cannot silently break
-an advertised retained Version.
+Deleted content and Origin records remain reachable when required to materialize
+a Version or resolve Range lineage. Physical compaction can change their storage
+only when every Version, Origin, and required lineage remains exact. Later
+anonymization requires a separate product decision; it cannot silently rewrite
+History.
 
 ## 9. Comment targets
 
@@ -294,10 +293,11 @@ CommentTarget
 ```
 
 The stored comment state records the latest deliberate interpretation of the
-Range resolution. It is not a license to trust stale offsets, bypass Range
-uncertainty, or silently choose one of several candidates. `RANGE_MODEL.md` owns
-the reusable resolution evidence and result boundary. The later comments feature
-owns confidence policy, explicit repair, conversation behavior, and presentation.
+Range resolution. It is not a license to trust stale offsets, restore an omitted
+member by similarity, or silently choose one of several candidates.
+`RANGE_MODEL.md` owns Range omission and the reusable result boundary. The later
+comments feature owns confidence policy, explicit repair, conversation behavior,
+and presentation.
 
 Internal Block-link Range refinement uses the same Range service but not the same
 holder lifecycle. A comment is an external record whose attachment state can
@@ -358,7 +358,7 @@ minimum it covers:
 - exact preservation of opaque link metadata without document-model
   interpretation;
 - internal Block links with and without Range refinement, including missing
-  Blocks and explicit uncertain Range results;
+  Blocks, omitted Range members, and primary Block fallback;
 - origin non-inheritance and protection from ordinary client commands;
 - concurrent insertion, deletion, replacement, and formatting at identical and
   adjacent boundaries;

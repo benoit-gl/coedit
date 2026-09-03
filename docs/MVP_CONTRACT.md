@@ -35,7 +35,7 @@ The MVP must provide these capabilities:
 17. Save a lossless opaque `.coedit` document.
 18. Reopen that `.coedit` document with equivalent current state and History.
 19. Persist documents incrementally in browser storage and survive a browser reload.
-20. Create one-span, multi-span, and Positional Ranges; resolve them against an explicit Version; serialize and parse them; and embed a Range value as optional internal-link refinement.
+20. Create one-span, multi-span, and Positional Ranges against the current visible Version; resolve spans or exact concatenated text against a descendant Version; rationalize them explicitly; serialize and parse them; and embed a Range value as optional internal-link refinement.
 21. Qualify Yjs and Automerge against the accepted attributed-content, structure, Range-feasibility, convergence, editor, and growth suite before selecting the production carrier.
 22. Select and record the Range-tracking representation before freezing `.coedit` version 1 or the internal-link Range encoding.
 
@@ -53,7 +53,7 @@ The MVP does not require:
 - Tauri or another native shell;
 - Rust;
 - SQLite or another permanent database choice;
-- a final History compaction or retention design;
+- a final physical History compaction strategy;
 - a final replicated-tree algorithm; or
 - a final product UI design.
 
@@ -77,7 +77,7 @@ Trusted document construction creates genesis with the initial root and no Contr
 
 ### 4.3 Opaque public Versions
 
-Clients treat `VersionToken` as an opaque, document-scoped equality token. Clients do not decode or order it and do not depend on a numeric revision, one permanent head, or one parent.
+Clients treat `VersionToken` as an opaque, document-scoped equality token. Clients do not decode or order it and do not depend on a numeric revision or globally unique Version identifier.
 
 ### 4.4 Exact query correlation
 
@@ -87,9 +87,9 @@ The UX must not perform a separate version read and assume that the two reads ar
 
 ### 4.5 First-class History
 
-Every retained Contribution can be listed and summarized without requiring the frontend to read private storage.
+Every Contribution can be listed and summarized without requiring the frontend to read private storage.
 
-Every advertised retained Version can be materialized exactly and read-only.
+Every Version remains exactly materializable and read-only for the lifetime of its document. Private physical snapshots can accelerate materialization without creating product Versions.
 
 Restore appends a new Contribution. Restore does not rewind or delete History.
 
@@ -115,7 +115,7 @@ A live editor can hold transient adapter state, but canonical text, formatting, 
 
 ### 4.8 Lossless portable recovery
 
-Within documented limits, the `.coedit` document contains enough information to reopen the document with equivalent current attributed content, retained History and derivation, stable advertised Version identities, and command-idempotency behavior.
+Within documented limits, the `.coedit` document contains enough information to reopen the document with equivalent current attributed content, complete History and derivation, stable Version identities, Range creation Versions and lineage, and command-idempotency behavior.
 
 Markdown is not the native recovery format.
 
@@ -125,9 +125,11 @@ Selection, focus, disclosure, active lens, dialogs, editor composition state, re
 
 ### 4.10 Durable Range service
 
-The headless engine creates and resolves durable Range values against explicit Versions. A Range can refer to one or several semantic spans or to one logical position. Range is not a canonical entity, has no independent identity, and creates no document-wide holder registry.
+The headless engine creates and resolves document-relative durable Range values. Each Range records its document-scoped creation Version and its original Block and InlineContent locations. A Range can contain arbitrarily ordered, overlapping, duplicated, adjacent, sparse, or zero-length Span members, or it can refer to one logical position. Range is not a canonical entity, has no independent identity, and creates no document-wide holder registry.
 
-Range serialization is a non-mutating rebase suitable for an absolute URI or document-relative URI suffix. The service preserves explicit uncertainty and never silently binds to an unrelated target. `RANGE_MODEL.md` owns the detailed behavior and the Step 6 decision boundary.
+Direct creation fails atomically if any supplied target does not resolve. Resolution returns surviving spans in creation and lineage order, skips unresolved members, and can concatenate exact text without separators. Copy creates no Range lineage. Explicit rationalization can merge only sequential, exactly adjacent spans made adjacent by a lineage merge.
+
+Range serialization is a non-mutating document-relative rebase. Parsing is best-effort and omits unresolved or ambiguous members without speculative rebinding. The application owns any enclosing document URI and selects the document supplied to the Range service. `RANGE_MODEL.md` owns the detailed behavior and the Step 6 decision boundary.
 
 ## 5. Required domain properties
 
@@ -201,7 +203,7 @@ If an arbitrary edited Coedit selection is outside the canonical Markdown-repres
 
 A document with realistic content and History can serialize to an opaque `.coedit` artifact and reopen into a candidate engine.
 
-The round trip preserves current and historical behavior, Checkpoint Contributions and Versions, stable advertised VersionTokens, exact text/formatting/Origin state, Contribution actor and derivation, and successful command-idempotency records.
+The round trip preserves current and historical behavior, Checkpoint Contributions and Versions, every stable VersionToken, Range creation Versions and lineage, exact text/formatting/Origin state, Contribution actor and derivation, and successful command-idempotency records.
 
 Malformed or unsupported input does not replace the current engine.
 
@@ -217,9 +219,9 @@ Core commands, queries, History, Checkpoints, restore, Range operations, Markdow
 
 ### Scenario I — Durable Range round trip
 
-Create a Span Range directly from several spans and a separate Positional Range. Edit and restructure the selected document so the Span Range resolves across Blocks, changes current span count, and retains semantic order despite current tree order. Verify greedy Span boundaries and Block-local preceding-stickiness.
+Create a Span Range directly from several arbitrarily ordered, overlapping, duplicated, adjacent, sparse, and zero-length spans, and create a separate Positional Range. Reject the complete creation if any supplied target does not resolve in the current visible Version. Edit and restructure the selected document so the Span Range resolves across Blocks, changes current span count, and retains creation and lineage order despite current tree order. Verify greedy Span boundaries, zero-length Span behavior, Block-local preceding-stickiness, no continuation through copy, and exact-boundary split without a manufactured zero-length descendant.
 
-Serialize each Range against an explicit Version, parse the result, and resolve the same semantic target or the same explicit uncertainty. Embed a serialized Range as internal-link refinement, preserve the primary Block fallback, and round trip it through `.coedit`. Ordinary edits and Block moves must not scan or rewrite every retained Range value.
+Resolve exact text by concatenating surviving spans without separators or deduplication. Rationalize only merge-caused exact adjacency after an explicit request. Serialize each Range as a document-relative value, parse it best-effort with unresolved or ambiguous members omitted, and resolve the rebased result. Embed a serialized Range as same-document internal-link refinement, preserve the primary Block fallback, and round trip it and its creation Version through `.coedit`. The application composes external deep links from a document URI and Range fragment. Ordinary edits and Block moves must not scan or rewrite every retained Range value.
 
 ## 7. Completion rule
 

@@ -8,7 +8,7 @@ embedded Range version-1 fields are frozen only after Gates B and C.
 This document defines lossless portable recovery for the document-engine MVP.
 
 The user-facing extension is `.coedit`. A portable artifact retains current
-attributed content, every advertised retained Version, product History,
+attributed content, every Version, product History,
 Contributors and Origins, semantic Checkpoints, source/derivation information,
 stable public Version identity, and command idempotency within documented
 limits.
@@ -51,13 +51,15 @@ Step 8 encoder until Gate B has recorded:
 - its canonical checkpoint and incremental-effect encodings;
 - logical-state and historical-materialization verification;
 - native formatting and Origin round-trip behavior;
-- garbage-collection/retention assumptions; and
+- garbage collection and compaction that preserve every Version and required
+  Range lineage; and
 - the measured JSON/base64 size and load cost.
 
-Gate C must also record the carrier-neutral Range API and resolution taxonomy,
-the selected Range-tracking representation, and the exact embedded internal-link
-Range encoding. Version 1 can then preserve that value without making the
-portable format a second Range authority.
+Gate C must also record the carrier-neutral Range API result wrappers, the
+selected Range-tracking representation, the document-relative Range-fragment
+encoding, and the exact embedded internal-link Range encoding. Version 1 can
+then preserve those values without making the portable format a second Range
+authority.
 
 These are implementation qualification gates. They do not reopen the product
 semantics defined by current authorities.
@@ -83,7 +85,7 @@ PortableManifest
   contributors[]
   origins[]
   contributions[]
-  advertisedVersions[]
+  versions[]
   commandReceipts[]
   chunks[]
   integrity:
@@ -107,7 +109,7 @@ optional source Version and derivation references
 authored display timestamp
 ```
 
-Each advertised Version maps one stable public `VersionToken` to the private
+Each Version maps one stable public `VersionToken` to the private
 frontier/checkpoint/effect information required to materialize it exactly.
 Clients never decode that mapping.
 
@@ -115,7 +117,8 @@ Clients never decode that mapping.
 not create a Contribution or Version.
 
 The package contains sufficient physical recovery checkpoints and immutable
-effects to reconstruct every advertised retained Version. Current state is the
+effects to reconstruct every Version and the lineage needed by embedded Ranges.
+Current state is the
 materialization named by `currentVersionToken`; it is not a second independent
 document object.
 
@@ -134,8 +137,8 @@ Contribution and its exact convergence effect.
 
 Complete snapshots per Contribution can be used by bounded early prototype
 fixtures, but version 1 must not require them if the selected carrier can provide
-immutable effects plus periodic checkpoints. A codec optimization cannot change
-which Versions are advertised or materializable.
+immutable effects plus periodic checkpoints. A codec optimization cannot make
+any Version or required Range lineage unavailable.
 
 ## 5. Canonical collaborative state
 
@@ -189,8 +192,8 @@ Use these rules:
   strings. Other persisted record IDs use the same representation unless their
   authoritative type defines another opaque form. Trusted code allocates IDs;
   pure reducers do not generate them.
-- `VersionToken` is public and opaque. The codec retains the private mapping
-  needed to reproduce every advertised token after open.
+- `VersionToken` is public, document-scoped, and opaque. The codec retains the
+  private mapping needed to reproduce every token after open.
 - Timestamps are canonical RFC 3339 UTC with millisecond precision:
   `YYYY-MM-DDTHH:mm:ss.sssZ`.
 - SHA-256 hashes are exactly 64 lowercase hexadecimal characters.
@@ -254,7 +257,7 @@ committing it to the browser repository.
 
 ## 10. History verification
 
-Verify retained History from genesis/frontier dependencies rather than trusting
+Verify complete History from genesis/frontier dependencies rather than trusting
 array or packet order.
 
 Genesis must contain the initial root and no Contribution. The first retained
@@ -286,7 +289,7 @@ carrier qualification measurements:
 
 - 64 MiB UTF-8 JSON;
 - JSON nesting depth 128;
-- 5,001 advertised Versions including genesis;
+- 5,001 Versions including genesis;
 - 5,000 Contributions;
 - at most 64 parent/frontier references on one Contribution;
 - 250,000 semantic operations in one Contribution;
@@ -325,8 +328,7 @@ After the carrier gate, check in:
 ## 13. Serialization concurrency
 
 Serialization is a non-mutating engine query against an expected VersionToken.
-It captures one stable retained frontier and the immutable records reachable
-under the requested History-retention contract.
+It captures the complete immutable History through one stable current frontier.
 
 If the engine advanced before serialization begins, return `VersionConflict`.
 Do not silently serialize a different Version. Concurrent repository activity
@@ -346,9 +348,10 @@ At minimum, verify:
 - intrinsic formatting and boundary policies survive;
 - Origin, actor, derivation, and Range-tracking lineage remain distinct and exact;
 - semantic Checkpoints and physical recovery checkpoints remain distinct;
-- advertised VersionTokens remain stable after Save/Open;
+- every VersionToken remains stable and exactly materializable after Save/Open;
 - successful CommandId retries remain idempotent after Save/Open;
-- every embedded Range value resolves to the same semantic target or explicit uncertainty after Save/Open;
+- every embedded Range retains its creation Version and resolves to the same
+  surviving spans and exact concatenated text after Save/Open;
 - missing, duplicate, unreachable, mis-hashed, or conflicting chunks fail;
 - malformed graph/frontiers, Contributor/Origin references, carrier state,
   topology, ownership, marks, opaque link metadata, typed internal links, and

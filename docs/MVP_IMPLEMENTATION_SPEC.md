@@ -313,7 +313,7 @@ The domain vocabulary retains Contributor/agent kinds `human`, `imported`, `auto
 
 Each successful durable command publishes one logical Contribution, its exact effect/update, any new Origin records, one resulting private Version, and its successful command receipt atomically. Several Contributions can share a semantic group ID for presentation.
 
-The early in-memory implementation may use a full snapshot per Contribution under the existing bounds. The Step 13 browser target uses immutable effects/update chunks, periodic physical recovery checkpoints, and a small CAS head. Product History remains independent of either representation.
+The early in-memory implementation may use a full snapshot per Contribution under the existing bounds. The Step 13 browser target uses immutable effects/update chunks, periodic physical recovery checkpoints or cached materializations, and a small CAS head. Every product Version remains exactly materializable for the lifetime of the document. A physical snapshot creates no product Version, and compaction cannot discard a Version or required Range lineage.
 
 Use globally unique `CommandId` values. Check a previously successful CommandId before stale-version rejection:
 
@@ -328,21 +328,28 @@ Use canonical RFC 3339 UTC timestamps with millisecond precision.
 
 Step 6 implements the headless service defined by `RANGE_MODEL.md` after Step 5 establishes exact Version materialization.
 
-The public boundary remains carrier-neutral. It accepts detached creation input and an explicit VersionToken, then returns a detached Range value, a versioned resolution, or a serialized value. It never returns a live Yjs relative position, Automerge cursor, carrier object, internal lineage node, or mutable engine-owned collection.
+The public boundary remains carrier-neutral. It accepts detached creation input against the current Version visible to the caller. The returned Range records that document-scoped creation Version and the original Block and InlineContent location of each member. It never returns a live Yjs relative position, Automerge cursor, carrier object, internal lineage node, or mutable engine-owned collection.
+
+Direct creation is all-or-none. If any supplied span or position does not resolve in the named current Version, creation fails. Span creation otherwise preserves the caller's arbitrary order, overlap, duplication, adjacency, sparsity, and zero-length members without normalization. A zero-length Span uses greedy Span semantics; it does not become a Positional Range.
+
+Resolution is valid only at the creation Version or a descendant Version in the same document. It returns surviving spans in creation and lineage order and omits unresolved, ambiguous, or deleted members. Text resolution concatenates exact span text without inserted separators or deduplication. Split and merge can extend Range lineage; copy, clone, import, and paste cannot.
+
+Parsing a serialized Range is best-effort. It resolves members in the document and Version supplied by the application, omits unresolved or ambiguous members, and rebases the returned Range to that Version. The application, not the Range service, parses an enclosing external document URI and selects the document engine.
+
+Explicit rationalization returns a rebased Range and can merge only consecutive, exactly adjacent spans when lineage proves that a merge of adjacent Blocks or InlineContents caused the adjacency. It does not run during normal editing or resolution.
 
 Gate C must close and record:
 
-- direct multi-span ordering and normalization;
-- empty-result, uncertainty, unresolved-target, and error distinctions;
-- split, merge, deletion, move, and copy behavior;
-- absolute URI and document-relative URI-suffix scope;
+- exact result wrappers, all-members-omitted parsing, and optional parse diagnostics;
+- the zero-length Span tie-break at an exact structural split;
+- Positional Range split, merge, deletion, and replacement behavior;
+- document-relative fragment grammar and resource limits;
 - internal-link Range encoding;
-- reusable carrier-neutral uncertainty evidence; and
 - the selected Range-tracking lineage representation.
 
-Range holders do not register with the document. Ordinary text edits and Block moves cannot enumerate or rewrite all retained holders. Resolution and serialization can perform work for the one supplied Range. Serialization rebases that Range against the selected Version and removes obsolete tracking evidence when the accepted representation permits it.
+Range holders do not register with the document. Ordinary text edits and Block moves cannot enumerate or rewrite all retained holders. Permanent Version materialization supplies the starting point for lazy lineage resolution. Resolution, rationalization, parsing, and serialization can perform work for the one supplied Range. Serialization rebases that Range against the selected Version and removes obsolete tracking evidence when the accepted representation permits it.
 
-Embedded internal-link Range values must retain the primary Block fallback and must never bind to another Block or InlineContent only because identifiers or quotes coincide. Comment records and repair UX remain post-MVP consumers of the same service.
+Embedded internal-link Range values resolve only in the current document and retain the primary Block fallback. External deep links combine an application-owned document URI with a Range fragment; the Range service performs no cross-document reconciliation. Comment records and repair UX remain post-MVP consumers of the same service.
 
 ## 9. Semantic Checkpoint and restore
 

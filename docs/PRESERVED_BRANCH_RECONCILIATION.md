@@ -28,7 +28,7 @@ Use these classifications:
 | Title/body `DocumentNode` ontology                                      | superseded                         | Structural context determines title, heading, body, and list-item presentation. `PRODUCT_DOMAIN_MODEL.md` controls.                                                                                                                                                                                                                   |
 | Tauri/Rust/SQLite as current runtime/storage                            | deferred                           | They are not MVP requirements. Reconsider only after measured evidence in the final MVP assessment step.                                                                                                                                                                                                                              |
 | `.coedit` as the public document extension                              | retained                           | The clean-slate portable artifact uses `.coedit`. `PORTABLE_DOCUMENT_FORMAT.md` controls the new format; preserved SQLite bytes are not compatible.                                                                                                                                                                                   |
-| Append-only History and compensating restore                            | retained                           | Preserved semantic behavior remains. `PRODUCT_DOMAIN_MODEL.md`, `MVP_ARCHITECTURE.md`, and `MVP_IMPLEMENTATION_SPEC.md` control.                                                                                                                                                                                                      |
+| Append-only permanent History and compensating restore                  | retained                           | Every Version remains exactly materializable for the document lifetime. Physical snapshots are private optimizations. `PRODUCT_DOMAIN_MODEL.md`, `MVP_ARCHITECTURE.md`, and `MVP_IMPLEMENTATION_SPEC.md` control.                                                                                                                     |
 | Historical viewing is a non-mutating query                              | retained                           | Current architecture requires exact detached read-only materialization. `MVP_ARCHITECTURE.md` controls.                                                                                                                                                                                                                               |
 | Semantic text edit groups with prompt durable commands                  | adapted                            | Preserve human-readable grouping and controlled transitions, but use immutable Contributions as the crash journal. Several Contributions can share a semantic group ID for presentation. `MVP_IMPLEMENTATION_SPEC.md`, `BROWSER_PERSISTENCE.md`, and `MVP_VERIFICATION_PLAN.md` control.                                              |
 | 20-grapheme insertion threshold                                         | superseded                         | Retained only as experimental tuning/test evidence. Character/time thresholds are measured UX policy, not durable semantics.                                                                                                                                                                                                          |
@@ -76,10 +76,11 @@ Range-feasibility, concurrency, atomicity, editor, portable, and growth suite.
 Yjs is the provisional winner on integration maturity; Automerge replaces it
 only if it passes and materially removes custom machinery.
 
-The selected carrier is implemented in Step 4. Step 5 then establishes History
-and Version materialization. Step 6 implements the durable Range service and Gate
-C selects its lineage representation. Do not freeze carrier-specific or embedded
-Range `.coedit` version-1 bytes before both gates pass.
+The selected carrier is implemented in Step 4. Step 5 then establishes permanent
+exact History and Version materialization. Step 6 implements the durable Range
+service and Gate C selects its lineage representation. Do not freeze
+carrier-specific or embedded Range `.coedit` version-1 bytes before both gates
+pass.
 
 These gates and their evidence are owned by `RANGE_MODEL.md`,
 `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `MVP_VERIFICATION_PLAN.md`, and

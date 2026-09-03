@@ -174,9 +174,9 @@ See [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTAT
 
 ### Step 5 — Establish first-class in-memory History
 
-**Objective:** Prove attributed Contributions, materializable Versions, semantic checkpoints, Origin/activity separation, restore, idempotency, and version-conflict behavior behind the public engine boundary.
+**Objective:** Prove attributed Contributions, permanently materializable Versions, semantic checkpoints, Origin/activity separation, restore, idempotency, and version-conflict behavior behind the public engine boundary.
 
-**Outcome:** The headless engine can commit structural and text work, query History, materialize exact Versions, create semantic checkpoints, and restore earlier material.
+**Outcome:** The headless engine can commit structural and text work, query History, materialize every Version exactly for the lifetime of the document, create semantic checkpoints, and restore earlier material. Private physical snapshots can accelerate access without creating product Versions.
 
 **Exit gate:** History behavior is verified without React, IndexedDB, or file APIs. Failed or stale commands publish no partial state. Local restore uses fresh carrier identities, preserves historical Origin, and records the restoring actor and target Version.
 
@@ -186,11 +186,11 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 **Objective:** Finalize and implement the carrier-neutral Range service after the selected carrier and exact Version materialization exist.
 
-Close the remaining creation validation, normalization, resolution-state, split/merge/delete/copy, document-scope, URI, internal-link, and serialization decisions listed in `RANGE_MODEL.md`. Compare the remaining lineage candidates against the accepted behavior and record the selected representation.
+Close the remaining result-wrapper, exact structural tie-break, positional structural behavior, fragment-encoding, resource-limit, and internal-link wire decisions listed in `RANGE_MODEL.md`. Compare the remaining lineage candidates against the accepted behavior and record the selected representation.
 
-**Outcome:** Headless code can create one-span, multi-span, and Positional Ranges; resolve them against an explicit Version; enumerate resolved spans in semantic order; distinguish valid empty results from uncertainty; serialize and parse an absolute URI or document-relative suffix; rebase tracking evidence; and reinject a value as internal-link metadata or another Range holder.
+**Outcome:** Headless code can create one-span, multi-span, and Positional Ranges against the visible Version; resolve surviving spans in creation and lineage order; concatenate exact text without separators; rationalize eligible merge-caused adjacency explicitly; serialize a document-relative Range fragment; parse it best-effort in an application-selected document; rebase tracking evidence; and reinject a value as internal-link metadata or another Range holder.
 
-**Exit gate:** Gate C passes. The complete Range suite proves structural behavior, reload, compaction, serialization, internal-link fallback, no silent rebinding, and cost that does not scale with the total retained Range count.
+**Exit gate:** Gate C passes. The complete Range suite proves atomic direct creation, permissive source-member preservation, structural and no-copy lineage, best-effort omission, exact text assembly, explicit rationalization, reload, compaction with every Version preserved, serialization, internal-link fallback, no speculative rebinding, and cost that does not scale with the total retained Range count.
 
 See [`docs/RANGE_MODEL.md`](docs/RANGE_MODEL.md), [`docs/TEXT_POSITION_MODEL.md`](docs/TEXT_POSITION_MODEL.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
@@ -294,7 +294,7 @@ Gate B follows Step 3. Do not begin production carrier implementation or freeze 
 
 ### Gate C — Durable Range freeze
 
-Gate C follows Step 6. It closes the carrier-neutral Range API, remaining structural and copy behavior, resolution taxonomy, serialization and reinjection rules, internal-link encoding, and lineage representation. Do not freeze `.coedit` version 1 or the internal-link Range wire shape before Gate C passes.
+Gate C follows Step 6. It closes the carrier-neutral Range API result wrappers, remaining positional and exact-boundary structural behavior, fragment serialization and reinjection rules, resource limits, internal-link encoding, and lineage representation. Do not freeze `.coedit` version 1 or the internal-link Range wire shape before Gate C passes.
 
 ### Gate D — Elaboration baseline
 
@@ -347,4 +347,4 @@ The plan is complete when the browser prototype satisfies the MVP contract and a
 - current documentation describes the clean-slate application; and
 - no deferred infrastructure has been introduced without passing its decision gate.
 
-Completion produces an experimental document-engine foundation. It includes minimum Origin semantics, a durable Range service, and incremental browser durability; it does not mean that AI-provider integration, provenance UI/authentication/signing, Comment records or repair UX, networked collaboration, native packaging, or a final History/Range retention and compaction design is complete.
+Completion produces an experimental document-engine foundation. It includes minimum Origin semantics, a durable Range service, permanent exact Version materialization, and incremental browser durability; it does not mean that AI-provider integration, provenance UI/authentication/signing, Comment records or repair UX, networked collaboration, native packaging, or a final physical History/Range compaction strategy is complete.

@@ -241,9 +241,9 @@ Ordinary text copy/paste inserts content into the target InlineContent. It does 
 
 ### 4.8 Durable Range references are values
 
-A Range is a durable semantic reference value supplied and resolved by the document engine. It is not an independently identified product entity, document-owned registry entry, formatting annotation, or provenance record.
+A Range is a document-relative durable semantic reference value supplied and resolved by the document engine. It records a document-scoped creation Version and the original Block and InlineContent location of each source member. It is not an independently identified product entity, document-owned registry entry, formatting annotation, or provenance record.
 
-A Range can be stored outside the document, as with a future comment, or embedded as inert target metadata in an intrinsic internal-link mark. A Span Range can refer to one or several semantic spans across Blocks and InlineContents. A Positional Range refers to one logical position. `RANGE_MODEL.md` owns their detailed behavior and staged representation decision.
+A Range can be stored outside the document, as with a future comment, or embedded as inert target metadata in an intrinsic internal-link mark. A Span Range preserves its source members in creation order without sorting, merging, or deduplication. Its members follow movement, split, and merge lineage but not copy lineage. A Positional Range refers to one logical position and remains distinct from a zero-length Span. `RANGE_MODEL.md` owns their detailed behavior and staged representation decision.
 
 ## 5. History, Versions, Contributions, and Checkpoints
 
@@ -253,11 +253,11 @@ Use these terms consistently:
 
 - **Contribution:** one immutable, attributed durable semantic activity, including its acting Contributor, base/frontier, kind, optional semantic group, exact effect reference, affected targets, and optional source/derivation references.
 - **Version:** one materializable state of the document.
-- **History:** retained Contributions and materializable Versions.
+- **History:** immutable Contributions and permanently materializable Versions for the lifetime of the document.
 - **VersionToken:** the opaque public identifier for a Version.
 - **Checkpoint:** one semantic Contribution that marks an exact point in History and produces a new content-identical Version.
 
-The private MVP can implement a linear revision ledger and use complete snapshots in bounded tests or an identified early prototype. The browser target uses immutable effects plus periodic recovery checkpoints. These are implementation choices, not logical domain requirements.
+The private MVP can implement a linear revision ledger and use complete snapshots in bounded tests or an identified early prototype. The browser target uses immutable effects plus periodic physical recovery checkpoints or cached materializations. These private optimizations do not create product Versions and cannot make an existing Version unavailable.
 
 Semantic editor groups and physical recovery checkpoints are not semantic Checkpoints.
 
@@ -383,8 +383,11 @@ The current ontology requires:
 30. Range as a durable value and engine service rather than a canonical entity or registry;
 31. direct one-span and multi-span Range creation;
 32. greedy Span Ranges and Block-local preceding-sticky Positional Ranges;
-33. semantic Range order independent of current Block tree order; and
-34. future AI through the ordinary engine and provenance boundary.
+33. Range resolution in creation and lineage order, independent of current Block tree order;
+34. exact text concatenation without inferred separators or deduplication;
+35. Range lineage through movement, split, and merge but not copy;
+36. permanent exact materialization of every Version while its document is retained; and
+37. future AI through the ordinary engine and provenance boundary.
 
 ## 12. Open questions
 
@@ -396,7 +399,7 @@ Post-MVP or pre-network questions include:
 - exact comment repair confidence and conversation target scopes;
 - comment-specific multi-span repair and presentation policy;
 - post-genesis Contributor registration;
-- History compaction and collaborative-text garbage collection after measurement;
+- physical History compaction and collaborative-text garbage collection that preserve every Version and required Range lineage;
 - durable named lenses;
 - simultaneous independently editable outlines;
 - the exact concurrent Block-tree algorithm or relay-coordination policy;
@@ -423,12 +426,12 @@ A future design is compatible with this domain direction only if it preserves th
 12. Local portability, verification, and recovery remain product constraints.
 13. UI layout and transient navigation do not leak into durable semantic state by accident.
 14. Private implementation choices do not become product concepts without an explicit decision.
-15. Durable Range references preserve accepted semantic order and holder independence without creating a document-wide registry.
+15. Durable Range references preserve creation and lineage order and holder independence without creating a document-wide registry.
 
 ## 14. Summary
 
 The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and canonical CollaborativeContent containing text, native formatting, and protected Origin.
 
-History preserves earlier states. Semantic Checkpoints are ordinary attributed Contributions that create content-identical Versions. The headless engine supplies durable multi-span and positional Range values without adding a Range entity or registry. Markdown is reversible interchange for the canonical imported subset. `.coedit` is lossless recovery.
+History preserves every Version for the lifetime of its document. Semantic Checkpoints are ordinary attributed Contributions that create content-identical Versions; private materialization snapshots are only an optimization. The headless engine supplies document-relative durable multi-span and positional Range values without adding a Range entity or registry. Markdown is reversible interchange for the canonical imported subset. `.coedit` is lossless recovery.
 
 The MVP is a document-engine prototype. It qualifies and preserves minimum Origin semantics without requiring a provenance UI, comments product, AI provider, networking, Tauri, Rust, or SQLite.

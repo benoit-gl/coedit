@@ -40,7 +40,7 @@ The engine owns:
 - typed, attributed, version-checked, atomic command application;
 - stable document, content, Contribution, and Version identities;
 - current projections and exact historical materialization;
-- carrier-neutral Range creation, resolution, parsing, serialization, and reinjection;
+- carrier-neutral Range creation, span and text resolution, rationalization, parsing, serialization, and reinjection;
 - lightweight History listing and semantic changeset summaries;
 - semantic Checkpoint creation;
 - compensating restore;
@@ -167,6 +167,12 @@ interface DocumentEngine {
   resolveRange(
     request: ResolveRangeRequest,
   ): Promise<Result<Versioned<RangeResolution>, RangeError>>;
+  resolveRangeText(
+    request: ResolveRangeRequest,
+  ): Promise<Result<Versioned<string>, RangeError>>;
+  rationalizeRange(
+    request: ResolveRangeRequest,
+  ): Promise<Result<Range, RangeError>>;
   serializeRange(
     request: SerializeRangeRequest,
   ): Promise<Result<SerializedRange, RangeError>>;
@@ -203,7 +209,7 @@ interface SerializeRangeRequest {
 
 interface ParseRangeRequest {
   readonly value: SerializedRange;
-  readonly documentContext?: DocumentId;
+  readonly version: VersionToken;
 }
 
 interface PortableDocument {
@@ -223,7 +229,7 @@ interface PortableDocumentInput {
 }
 ```
 
-`RANGE_MODEL.md` owns Range behavior. The operation names and request shapes above are illustrative; Step 6 Gate C finalizes creation validation, resolution taxonomy, document context, and serialization types without exposing carrier-native objects.
+`RANGE_MODEL.md` owns Range behavior. The selected `DocumentEngine` supplies document context. The operation names and request shapes above are illustrative; Step 6 Gate C finalizes result wrappers, parse diagnostics, resource limits, and serialization types without exposing carrier-native objects.
 
 `PORTABLE_DOCUMENT_FORMAT.md` owns the exact `.coedit` wire contract. The UX treats `bytes` as opaque. No specific MIME type is part of the accepted MVP design yet.
 
@@ -231,7 +237,7 @@ interface PortableDocumentInput {
 
 `VersionToken` is equality-comparable, document-scoped, opaque, and not orderable or decodable by clients.
 
-An advertised VersionToken remains stable across a lossless `.coedit` Save/Open round trip.
+Every VersionToken remains stable and exactly materializable for the lifetime of its document, including across a lossless `.coedit` Save/Open round trip. A VersionToken remains document-scoped; it need not be globally unique.
 
 The trusted document factory creates genesis with one real root from supplied durable IDs and no Contribution. Root creation is not a structural command. The first successful user mutation creates the first Contribution and resulting Version.
 
@@ -395,11 +401,11 @@ Selection, focus, disclosure, active lens, dialogs, presence, cursor state, retr
 
 The public promise is:
 
-> Every retained Contribution can be listed and summarized. Every advertised retained VersionToken can be materialized exactly and restored through the engine API.
+> Every Contribution can be listed and summarized. Every VersionToken can be materialized exactly and restored through the engine API for the lifetime of its document.
 
 A complete private snapshot per Contribution is acceptable only in bounded in-memory tests or an explicitly identified early prototype because it is simple to verify. It is not the Step 13 browser target, a public data type, or a long-term storage contract.
 
-The browser target uses immutable Contributions/effect chunks, periodic canonical recovery checkpoints, and a small CAS head. The engine can change structural sharing, chunking, caches, indexes, checkpoint cadence, or compaction if it preserves the public contract and every advertised retained Version.
+The browser target uses immutable Contributions/effect chunks, periodic physical recovery checkpoints or cached materializations, and a small CAS head. The engine can change structural sharing, chunking, caches, indexes, checkpoint cadence, or compaction only if it preserves every Version and the lineage needed by Range resolution. Physical snapshots create no product Versions.
 
 ## 11. Compatibility with later consumers
 
@@ -420,7 +426,9 @@ The MVP must prove:
 - copy and restore preserve Origin while attributing their new Contributions to the acting Contributor;
 - semantic Checkpoints publish one attributed Contribution and one content-identical Version;
 - historical materialization is exact, detached, and read-only;
-- the headless Range service creates direct multi-span and Positional Ranges, resolves every span in semantic order against an explicit Version, preserves uncertainty without silent rebinding, and round trips serialized values;
+- the headless Range service records each Range's creation Version, rejects direct creation when any supplied target is unresolved, preserves arbitrary source order and multiplicity, resolves surviving spans in creation and lineage order, concatenates exact text without separators, and never follows copied content;
+- explicit rationalization merges only consecutive exact adjacency caused by a lineage merge;
+- best-effort parsing omits unresolved or ambiguous members without speculative rebinding, and document-relative serialization round trips each surviving member;
 - Range operations expose no live carrier object or document-wide holder registry;
 - editor-content values are detached and cannot mutate engine state;
 - restore appends instead of rewinding;

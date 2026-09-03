@@ -192,12 +192,12 @@ Verify:
   carrier-neutral abstraction for each candidate;
 - greedy Span boundaries and Block-local preceding-sticky Positional boundaries
   survive ordinary edits and transaction-shape variation;
-- one Range can retain semantic order across split, merge, and Block move,
+- one Range retains creation and lineage order across split, merge, and Block move,
   including several current spans in one InlineContent;
-- a missing carrier position reports uncertainty without silent reattachment;
+- an unresolved or ambiguous member is omitted without silent reattachment;
 - lazy Range resolution does not require normal edits or Block moves to scan all
   retained Range holders;
-- retained Version and Range-position behavior survive the candidate's supported
+- every Version and required Range lineage survive the candidate's supported
   garbage-collection/compaction cycle; and
 - representative 100,000-code-point content and 5,000-Contribution load, edit, growth, materialization, and portable-open behavior. The 100,000-code-point fixture is a qualification workload, not a domain validity limit. Run smaller growth points as well so results expose local, linear, or worse scaling.
 
@@ -266,6 +266,9 @@ Verify at least:
 - exact CommandId retry returns the original receipt and creates no new Contribution;
 - conflicting CommandId reuse fails;
 - historical materializations are exact, detached, and read-only;
+- every created Version remains exactly materializable after later edits,
+  physical checkpoints, reload, and supported compaction;
+- physical materialization snapshots create no product Version;
 - semantic Checkpoint creation adds one attributed Contribution and one content-identical Version;
 - multiple semantic Checkpoints remain separately materializable;
 - restore appends a new Contribution and does not rewind History;
@@ -279,26 +282,43 @@ Run the complete Step 6 suite in `RANGE_MODEL.md` against the selected carrier a
 
 Verify at least:
 
-- direct one-span, multi-span, and Positional Range creation;
-- the final ordering, overlap, adjacency, duplicate, empty, stale, and cross-Version input rules;
-- immutable Range kind after complete deletion;
+- atomic direct one-span, multi-span, and Positional Range creation, including
+  complete failure when any supplied target does not resolve at the visible tip;
+- preservation of arbitrary creation order, overlap, duplication, adjacency,
+  sparsity, and zero-length Span members without normalization;
+- immutable Span and Positional kinds after complete deletion or coincident Span
+  boundaries;
 - greedy Span insertion and replacement at both boundaries, independent of editor transaction shape;
 - Block-local preceding-stickiness without migration to a preceding Block when the target content becomes empty;
 - the accepted behavior for split exactly at a Positional Range;
-- split, merge, deletion, move, copy, and owning-container replacement;
+- split, merge, deletion, move, and owning-container replacement;
+- no Range continuation through copy, clone, import, paste, or shared Origin and
+  derivation;
+- an exact-boundary Span split creates no zero-length descendant on the other
+  side;
 - zero, one, and several resolved spans, including several in one InlineContent;
-- semantic order independent of current tree order;
-- independent enumeration of every current span;
-- explicit empty-result, uncertainty, unresolved-target, and error distinctions;
+- independent enumeration in creation and descendant lineage order, regardless
+  of current tree order;
+- exact text concatenation without inferred separators, with duplicated output
+  for overlaps and duplicates and no output for missing members;
+- explicit rationalization that merges only consecutive exact adjacency caused
+  by a lineage-preserving structural merge;
+- no implicit rationalization during editing or ordinary resolution;
 - no silent rebinding by coincidental identity or quote equality;
 - serialization as a rebase against one explicit Version;
-- absolute URI and document-relative URI-suffix parse/serialize round trip;
+- best-effort parsing that omits unresolved or ambiguous members and rebases the
+  surviving Range to the selected Version;
+- rejection when a resolution target predates or does not descend from the
+  Range's creation Version;
+- document-relative Range-fragment parse/serialize round trip;
+- application-owned external document URI parsing and document selection;
 - reinjection as internal-link refinement with primary Block fallback;
-- `.coedit` round trip of embedded Range values;
+- `.coedit` round trip of embedded Range values, their creation Versions, and
+  required lineage;
 - reload and supported compaction; and
 - edit and Block-move cost independent of the total retained Range count.
 
-Record the compared lineage representations, fixtures, measurements, rejected alternatives, and final selection. Gate C cannot pass on equal visible text alone; it requires equal Range behavior and uncertainty.
+Record the compared lineage representations, fixtures, measurements, rejected alternatives, and final selection. Gate C cannot pass on equal visible text alone; it requires equal Range behavior, creation order, lineage order, omission, and rationalization behavior.
 
 ## 9. Editor durability and semantic-group verification
 
@@ -403,7 +423,7 @@ Keep the end-to-end suite small and high value. It must prove at least:
 5. verify internal and external paste lineage;
 6. create a semantic Checkpoint;
 7. inspect and restore History while preserving Origin and attributing the restore actor;
-8. create, resolve, serialize, parse, and reinject representative multi-span and Positional Ranges;
+8. create, resolve as spans and exact text, rationalize, serialize, parse, and reinject representative multi-span and Positional Ranges;
 9. export Markdown and re-import it to an equivalent Coedit document;
 10. save `.coedit` and reopen it;
 11. persist and reload through the incremental IndexedDB repository; and
@@ -418,15 +438,15 @@ Before real clients connect, qualify:
 - a two-engine fault bus with duplicate, delay, reorder, missing dependency,
   partition, reconnect, and conflicting-ID cases;
 - convergence of Contribution graph/frontier, hidden carrier state, Block tree,
-  formatting/Origin projection, and every advertised materialization;
+  formatting/Origin projection, and every Version materialization;
 - the accepted flat structural carrier and Block liveness semantics when effects
   travel through the causal Contribution envelope;
 - causal restore that compensates only work observed by its author, preserves
   unseen concurrent inserts, and surfaces unresolved overlap;
 - restart-safe outbox/inbox, catch-up, bootstrap, authorization/schema/limit
   rejection, and quarantine; and
-- checkpoint/compaction that preserves retained Versions, Origins, Range behavior,
-  and later comment-holder behavior.
+- checkpoint/compaction that preserves every Version, Origin, required Range
+  lineage, Range behavior, and later comment-holder behavior.
 
 Carrier convergence alone cannot pass this gate. History, transport,
 authorization, restore, and structural integration must pass together.

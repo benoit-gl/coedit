@@ -4,6 +4,8 @@
 
 **Date:** 2026-09-01
 
+**Amended:** 2026-09-03
+
 ## Context
 
 Collaborative rich text needs fast editor operations and durable references that
@@ -38,9 +40,10 @@ behavior.
 
 Preserve authored Unicode text without silent normalization.
 
-Portable and historical range recovery uses carrier-neutral structural identity,
-quote, context, and explicitly defined approximate-position evidence. It does not
-assume that a live carrier cursor is a universal portable coordinate.
+Portable and historical Range recovery uses the creation Version, original Block
+and InlineContent identities, and carrier-neutral lineage evidence selected at
+Gate C. It does not assume that a live carrier cursor is a universal portable
+coordinate or bind an unresolved member by text similarity.
 
 ## Rationale
 
@@ -53,7 +56,9 @@ and avoids two authorities for cursor and selection behavior.
 
 - UTF-16 can remain a JavaScript or parser boundary detail without becoming
   canonical document semantics.
-- Durable internal-link and future comment ranges use stable carrier positions.
+- Durable internal-link and future comment Ranges can use stable carrier
+  positions behind the Range service while their carrier-neutral value remains
+  document-relative.
 - Qualification must test complex Unicode selections and stable-position
   conversion through editing and reload.
 - Portable recovery needs carrier-neutral repair evidence in addition to live

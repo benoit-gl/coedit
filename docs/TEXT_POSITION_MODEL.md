@@ -95,12 +95,13 @@ without treating a carrier cursor as a universal document coordinate.
 
 One Range can refer to several semantic spans across Blocks and InlineContents.
 No portable position rule in this document reduces that Range to one owning
-InlineContent or one start/end pair. `RANGE_MODEL.md` owns the self-contained URI
-or URI-suffix contract, semantic order, rebasing, and uncertainty boundary.
+InlineContent or one start/end pair. `RANGE_MODEL.md` owns the document-relative
+Range-fragment contract, creation and lineage order, rebasing, and omission
+behavior.
 
 On parse or reconstruction, create new live carrier positions only after the
-Range service resolves the required evidence. Do not rebind an uncertain Range
-silently.
+Range service resolves the required evidence. Omit an unresolved or ambiguous
+member; do not rebind it by similarity.
 
 ## 7. Qualification
 

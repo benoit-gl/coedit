@@ -133,7 +133,8 @@ safe; they do not improvise a repaired document silently.
 Prepared maintenance/checkpoint chunks or records left unreachable by a
 superseded head are not current document state. A later bounded garbage collector
 may remove verified unreachable records after accounting for active heads,
-retained Versions, concurrent tabs, and recovery checkpoints.
+every product Version, required Range lineage, concurrent tabs, and recovery
+checkpoints.
 
 ## 7. Checkpoint and compaction rules
 
@@ -142,10 +143,10 @@ growth and recovery latency. Checkpoint creation must not create a product
 Contribution or Version.
 
 Compaction can replace private replay paths only after a new checkpoint is fully
-written and validated. It cannot silently make an advertised retained
-VersionToken, semantic Checkpoint, Origin, durable Range behavior, or future comment-holder behavior
-unavailable. A future retention policy must explicitly change the product
-promise before such data can be discarded.
+written and validated. It cannot make any VersionToken, semantic Checkpoint,
+Origin, required Range lineage, durable Range behavior, or future comment-holder
+behavior unavailable. Every Version remains exactly materializable for the
+lifetime of the retained document.
 
 Complete snapshots per Contribution are permitted in bounded in-memory tests or
 an explicitly identified early prototype. They are not the Step 13 target and
@@ -188,7 +189,7 @@ The IndexedDB repository is optimized for incremental local commit and recovery.
 The `.coedit` artifact is optimized for explicit portable Save/Open, backup, and
 interchange between Coedit installations.
 
-An explicit Save asks the engine to assemble one stable retained Version and
+An explicit Save asks the engine to assemble the current Version and complete
 History into `.coedit` bytes under
 [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md). Normal autosave
 does not repeatedly assemble or rewrite those bytes.

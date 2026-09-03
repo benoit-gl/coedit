@@ -4,57 +4,78 @@
 
 **Date:** 2026-09-02
 
+**Amended:** 2026-09-03
+
 ## Context
 
-The earlier attributed-text contract modeled a durable text target as one pair of
-stable positions inside one InlineContent. That shape cannot express the required
-behavior after structural split, merge, and move operations.
+The earlier attributed-text contract modeled a durable target as one pair of
+stable positions inside one InlineContent. That shape cannot preserve the
+required behavior across structural split, merge, movement, and multi-span
+references.
 
-A long-lived reference can need to preserve semantic text when its current
-material becomes discontiguous, moves into several Blocks, or returns to one
-InlineContent with excluded material between included parts.
-
-The design must avoid making normal document edits proportional to the number of
-comments, links, or other retained references. The implementation plan must also
-let Range feasibility affect carrier selection without forcing Step 3 to select
-and implement the complete Range-tracking representation.
+The design must also avoid making ordinary document edits proportional to the
+number of retained links, comments, or other Range holders. Carrier
+qualification must prove feasibility without forcing Step 3 to select and
+implement the complete Range-tracking representation.
 
 ## Decision
 
-Define Range as a durable reference value and engine service contract. Range is
+Define Range as a document-relative durable value and engine service. Range is
 not a canonical entity, has no independent product identity, and creates no
-document-wide registry. A holder can store it externally or embed it as a value
-in canonical internal-link metadata.
+document-wide registry.
 
-A Range has an immutable kind:
+Each Range records its document-scoped creation `VersionToken`. Each source
+member records its original Block, InlineContent, and boundaries. No globally
+unique Version identifier is required because the caller supplies the document
+context.
 
-- a Span Range is greedy at both boundaries and can resolve to zero, one, or
-  several current spans; and
-- a Positional Range is explicitly zero-length, non-greedy, and sticky toward
-  preceding content in logical text order within its current Block and
-  InlineContent.
+Direct creation is atomic against the current visible Version. It fails if any
+supplied member cannot resolve. Span creation otherwise accepts the caller's
+members without sorting, merging, deduplication, or semantic validation. Members
+can overlap, repeat, be sparse or adjacent, have zero length, and use arbitrary
+creation order.
 
-A Range can be created directly from several spans. Resolved spans can cross
-Blocks and InlineContents, and several resolved spans can exist in one
-InlineContent.
+A zero-length Span remains a greedy Span. A Positional Range remains a distinct,
+non-greedy, preceding-sticky position.
 
-Structural tree order does not define Range semantic order. Moving Blocks does
-not reorder the semantic parts of an existing Range. Each current resolved span
-is independently queryable.
+Resolution returns surviving spans in creation order and descendant lineage
+order. It omits unresolved, ambiguous, or deleted members. Text resolution
+concatenates their exact text without adding separators. Overlap and duplication
+therefore produce duplicate text.
 
-A Range can be serialized to a self-contained versioned representation suitable
-for an absolute URI or document-relative URI suffix. Serialization rebases the
-Range against the selected Version and can remove obsolete tracking references.
-Ordinary edits do not scan or rewrite all retained Range values.
+Movement, split, and merge preserve Range lineage. Copy, clone, duplication,
+import, and paste do not. Deleting a source container without a
+lineage-preserving merge makes its member absent from later resolution. A split
+exactly at a Span boundary creates no zero-length descendant on the other side.
 
-Implementation is distributed across separate steps:
+The application can explicitly rationalize a Range. Rationalization can merge
+only consecutive, exactly adjacent spans whose adjacency resulted from a
+lineage-preserving merge of adjacent content. It returns a new Range rebased to
+the selected Version and never runs implicitly.
+
+Parsing a serialized Range is best-effort. It omits unresolved or ambiguous
+members and returns a new Range rebased to the selected Version. Ordinary direct
+creation remains all-or-none.
+
+A Range serialization is a self-contained document-relative description or URI
+fragment. The application owns the enclosing document URI and scheme. Internal
+links resolve against their current document. External deep links use the
+document selected by the URI. The Range service performs no cross-document
+reconciliation.
+
+Every Version remains exactly materializable for the lifetime of its retained
+document. Private physical materialization snapshots can accelerate access but
+do not create product Versions. Permanent Version materialization lets the
+engine resolve Ranges lazily without a Range ledger.
+
+Implementation remains staged:
 
 1. Step 3 qualifies Yjs and Automerge, including Range feasibility, and selects
    the collaborative carrier.
 2. Step 4 implements the selected attributed-content and structural core.
-3. Step 5 establishes exact History and Version materialization.
-4. Step 6 finalizes and implements the durable Range service and selects the
-   Range-tracking lineage representation.
+3. Step 5 establishes permanent exact History and Version materialization.
+4. Step 6 implements the durable Range service and selects the Range-tracking
+   lineage representation.
 
 The exact lineage representation is **not selected** by this ADR. Persistent
 lineage, piece-oriented structures, derivation graphs, carrier-native identity,
@@ -63,37 +84,31 @@ and hybrid approaches remain candidates.
 ## Consequences
 
 - `RANGE_MODEL.md` is the direct authority for durable Range behavior.
-- Older single-InlineContent range shapes are replaced with the shared Range
-  value contract.
-- Range behavior is distinct from the storage and lifecycle of each Range holder.
-- A Span Range does not become positional when deletion makes it empty.
-- Replacement semantics cannot depend on one editor-specific transaction shape.
-- Split and merge can change the number and structural location of resolved spans
-  without changing their semantic order.
-- Range tracking must not make cheap Block movement depend on rewriting all
-  references.
-- Carrier qualification must prove Range feasibility before one carrier wins.
-- The later Range gate must compare and select lineage representations before
-  `.coedit` version 1 or internal-link Range encoding is frozen.
-- Comment records and repair UX remain post-MVP; the reusable headless Range
-  service remains part of the document-engine MVP.
+- A bare Range needs document context but no global Version identifier.
+- Range creation preserves input order and multiplicity without normalization.
+- Resolution can be partial but never rebinds an omitted member speculatively.
+- A Span never becomes positional because it has zero length.
+- Range lineage follows movement, split, and merge but not copying.
+- Rationalization is explicit and limited to adjacency caused by a lineage merge.
+- Internal and external document selection remain application concerns.
+- All Versions and required lineage remain materializable while the document is
+  retained.
+- Ordinary edits do not scan or rewrite retained Range values.
+- Comment records and repair UX remain post-MVP consumers of the reusable
+  headless Range service.
 
 ## Step 6 decisions
 
-Step 6 must close:
+Step 6 must still close:
 
 - the lineage representation and its carrier integration;
-- the carrier-neutral API and resolution-result taxonomy;
-- direct multi-span ordering, overlap, adjacency, duplicate, empty, stale, and
-  cross-Version validation;
-- Block and InlineContent identity rules for split and merge;
-- the result of splitting exactly at a Positional Range;
-- behavior when an owning container is deleted, copied, replaced, or merged;
-- document and Version scope in absolute URI and URI-suffix forms;
-- the serialized URI grammar, encoding, versioning, escaping, and size limits;
-- the final internal-link serialized shape; and
-- reusable evidence for empty-result, uncertainty, and unresolved-target
-  distinctions.
+- exact carrier-neutral API names and result wrappers;
+- the all-members-omitted parse result and optional parse diagnostics;
+- the zero-length Span tie-break at an exact structural split;
+- Positional Range behavior for split, merge, deletion, and replacement;
+- the fragment grammar, encoding, versioning, escaping, and size limits;
+- source-member and serialized-size resource limits; and
+- the final internal-link serialized shape.
 
 Detailed comment repair policy remains a separate post-MVP decision.
 

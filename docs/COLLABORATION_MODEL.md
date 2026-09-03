@@ -200,17 +200,26 @@ B -----/                 current frontier = {C}
 ```
 
 `A` and `B` are concurrent Contributions based on `G`. Neither is “really
-second.” The combined version is the causal frontier `{A, B}` plus its causal
-closure. It is a named/materializable Version even though no synthetic merge
-Contribution or fake History row exists. `C` names both heads as parents and
-joins the graph.
+second.” The combined Version is the causal frontier `{A, B}` plus its causal
+closure. It becomes the current merged Version as soon as both Contributions are
+integrated; no synthetic merge Contribution or fake History row is required.
+`C` is an ordinary later Contribution that observes that merged frontier.
+
+Concurrent heads are temporary replication state, not permanent user-facing
+History branches. A Range created on one visible frontier can resolve only on
+that Version or a descendant that contains it. It cannot resolve against a
+concurrent unmerged frontier. Once work is exchanged, the merged frontier is a
+descendant of both inputs. Duplicating or forking a document creates a new
+document identity rather than a permanent branch under the same `DocumentId`.
 
 Use these terms consistently:
 
 - **Contribution:** an immutable, attributed semantic action and graph node;
 - **Version:** a materializable causal frontier and its closure;
-- **History:** the causal Contribution graph;
-- **VersionToken:** an opaque public identifier for a Version; and
+- **History:** the causal Contribution graph in which every Version remains
+  materializable for the lifetime of the document;
+- **VersionToken:** an opaque, document-scoped public identifier for a Version;
+  it need not be globally unique; and
 - **Checkpoint:** a semantic Contribution whose resulting Version has document
   material identical to its declared base/frontier.
 
@@ -288,7 +297,7 @@ Contributions, they must have:
    if byte encodings differ;
 3. the same validated Block tree, ordering, tags, and CollaborativeContent
    projection;
-4. the same materialization for every advertised causal frontier; and
+4. the same materialization for every causal frontier that forms a Version; and
 5. the same durable current frontier: the canonical set of maximal integrated
    heads.
 
@@ -298,11 +307,9 @@ plain-text comparison cannot establish correctness.
 
 Storage snapshots, update merging, caches, indexes, and compaction may differ
 between replicas. They are physical representations, not part of equality, as
-long as they preserve the same advertised causal graph and exact materialization
-behavior. Physical compaction must not make a user-visible Version impossible to
-identify, materialize, or restore unless a future explicit retention policy
-first changes that product promise; an advertised token is not silently
-invalidated.
+long as they preserve the same causal graph, every Version, and the lineage
+needed by Range resolution. Physical compaction cannot make a Version impossible
+to identify, materialize, or restore while its document is retained.
 
 Semantic checkpoint Contributions are different. They are part of Product
 History and therefore must converge like any other Contribution.
@@ -373,10 +380,10 @@ evidence behind its public value contract. Internal links can embed a Range;
 future comments can hold one externally with comment-specific repair state.
 
 Copying content creates new carrier identities and same-document copy retains
-Origins, but shared Origin or derivation does not by itself migrate or duplicate a
-Range target. Step 6 must record general Range copy behavior before Gate C passes.
-Moving an InlineContent while preserving its identity and carrier state can
-preserve qualified Range tracking.
+Origins, but shared Origin or derivation creates no Range-tracking lineage to the
+copy. Moving an InlineContent while preserving its identity and carrier state
+preserves Range tracking. Split and merge operations can create explicit
+Range-continuation lineage.
 
 ## 9. Frontend-facing History behavior
 
@@ -384,11 +391,11 @@ The collaboration model preserves the same public behavior as the local MVP.
 The frontend can:
 
 - list lightweight Contribution summaries without materializing historical
-  documents and separately identify advertised Versions;
+  documents and separately identify Versions;
 - see attribution, semantic kind, affected targets, and concurrency;
 - identify checkpoint Contributions and their exact resulting Versions;
 - query the current frontier as an opaque `VersionToken`;
-- materialize any advertised token read-only;
+- materialize any VersionToken read-only;
 - restore a selected version through a new mutation; and
 - subscribe to invalidation/change hints and re-query.
 
@@ -513,7 +520,8 @@ The MVP does not implement networking. It does establish the following seams:
 - intrinsic formatting and protected, non-inheriting Origin semantics;
 - first-class checkpoint Contributions;
 - a carrier-neutral durable Range service with no document-wide holder registry;
-- History listing, summary, exact materialization, and compensating restore;
+- History listing, summary, permanent exact Version materialization, and
+  compensating restore;
 - change subscriptions followed by re-query;
 - opaque lossless serialization/opening;
 - separate durable and ephemeral state; and
@@ -531,7 +539,7 @@ checkpoints. Contract tests and types keep all of these private.
    Range-feasibility suites; record the winner at Gate B.
 2. Implement the selected collaborative core and retain the common suite as
    regression evidence.
-3. Establish local History and exact Version materialization.
+3. Establish local History and permanent exact Version materialization.
 4. Implement the durable Range service and record its lineage representation at
    Gate C.
 5. Complete and validate the remaining local-only MVP behind the engine and
@@ -560,7 +568,7 @@ pass together.
 - the same Contribution ID with a conflicting payload;
 - offline edits followed by reconnect;
 - equal Contribution sets produce the same graph, frontiers, collaborative
-  state, and every advertised materialization;
+  state, and every Version materialization;
 - identical rendering with different hidden CRDT state is detected as
   insufficient;
 - atomic publication of a Contribution spanning structure and several
@@ -572,14 +580,15 @@ pass together.
   Contribution and converges under delayed/reordered delivery;
 - Origin never inherits or spoofs under concurrent insertion, copy, paste,
   formatting clear, or restore;
-- durable Range resolution, semantic order, and explicit uncertainty converge;
+- durable Range creation order, lineage order, omission, exact text resolution,
+  and rationalization converge;
 - future Comment holders preserve comment-specific repair behavior without
   redefining Range semantics;
 - restore concurrent with unseen work;
 - concurrent checkpoints remain independently materializable and attributable;
 - unauthorized, revoked, malformed, and oversized remote records;
-- relay bootstrap/compaction preserves advertised History and semantic
-  checkpoint Contributions; and
+- relay bootstrap/compaction preserves every Version, required Range lineage,
+  and semantic checkpoint Contribution; and
 - presence loss or reordering never changes durable state.
 
 ## 16. Explicitly unresolved decisions
@@ -588,12 +597,12 @@ pass together.
 - exact `VersionToken` representation;
 - remote authorization and offline revocation policy;
 - exact same-region and structural conflict representation/UX for causal restore;
-- History, Range-evidence, and CRDT tombstone retention or garbage collection;
+- physical History, Range-evidence, and CRDT tombstone compaction that preserves
+  every Version and required Range lineage;
 - checkpoint labels or other optional checkpoint metadata beyond ordinary
   Contribution context;
 - end-to-end encryption;
 - criteria and migration for any future sharding of the one logical collaborative document;
-- document forks versus continuation under one document ID; and
 - whether any workflow eventually requires a coordinated canonical sequence.
 
 The flat Block carrier, command-to-placement mapping, semantic-update-over-delete

@@ -4,6 +4,8 @@
 
 **Date:** 2026-08-31
 
+**Amended:** 2026-09-03
+
 **Authority:** [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) controls detailed link and range-target behavior. [`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md) controls product ontology.
 
 ## Context
@@ -25,11 +27,11 @@ A link target has one of two forms:
 
 The optional internal-link refinement uses the shared Range value and Range service. This reuse does not create a shared `RangeAnnotation` domain entity and does not make comments intrinsic formatting.
 
-The `BlockId` is the primary internal target. If the range cannot resolve but the Block exists, the link falls back to the Block. If the Block does not exist in the selected Version, the link remains valid canonical content but is unresolved.
+The `BlockId` is the primary internal target. The optional Range resolves only against the current document. If it produces no resolved span or position but the Block exists, the link falls back to the Block. If the Block does not exist in the selected Version, the link remains valid canonical content but is unresolved.
 
 An internal link is a reference only. It does not own the target, prevent deletion, or require incoming-link rewrites when the target disappears.
 
-Internal Block targets are document-local. Cross-document transfer must not bind a source `BlockId` to an equal UUID in the destination document without an explicit mapping protocol.
+Internal Block targets are document-local. Cross-document transfer must reject or remove the internal target, or convert it to an external deep link. The application owns the external document URI and supplies its extracted Range fragment to that document's Range service. The Range service performs no cross-document mapping.
 
 ## Consequences
 
@@ -37,7 +39,7 @@ Internal Block targets are document-local. Cross-document transfer must not bind
 - Carrier qualification must prove durable Range feasibility for internal links as well as future comments.
 - Presentation code, not the document model, owns URL or navigation safety policy.
 - Same-document copy and restore can preserve internal targets.
-- Cross-document import or paste requires explicit future target mapping before internal links can remain live references.
+- Cross-document import or paste cannot keep an internal target as a destination-document reference without explicit application conversion to an external deep link.
 - Deleting a Block can leave unresolved incoming links without causing referential-integrity mutation.
 - Comment and annotation lifecycle remains external and distinct from link formatting.
 
