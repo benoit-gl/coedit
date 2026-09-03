@@ -9,7 +9,6 @@ These documents describe the clean-slate application on `main`. Each document ha
 | [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md)                       | Logical product ontology and domain vocabulary                                                                           |
 | [`MVP_CONTRACT.md`](MVP_CONTRACT.md)                                       | Required proof boundary for the document-engine MVP                                                                      |
 | [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)                               | Component authority, public engine behavior, and adapter workflows                                                       |
-| [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) | Cross-cutting interpretation and revision of provisional capacity and performance targets                               |
 | [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) | Intrinsic formatting, origin attribution, clipboard lineage, comment targets, and carrier qualification                  |
 | [`TEXT_POSITION_MODEL.md`](TEXT_POSITION_MODEL.md)                         | Unicode text, transient editor coordinates, durable stable text positions, and range portability                         |
 | [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md)               | Step 3 flat Block placement, tree projection, structural concurrency policy, and position-order qualification            |
@@ -22,6 +21,8 @@ These documents describe the clean-slate application on `main`. Each document ha
 | [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md)                     | MVP test strategy, risk coverage, and qualification evidence                                                             |
 | [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md)                         | Post-MVP replication, convergence, and causal History direction                                                          |
 | [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md)                         | RUP-inspired work order, phase gates, and completion criteria                                                            |
+
+[`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) is the cross-cutting authority for the interpretation and revision of provisional numeric capacity and performance targets used by the documents above.
 
 All current design authority is local to `main`.
 
