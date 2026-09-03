@@ -9,6 +9,7 @@ These documents describe the clean-slate application on `main`. Each document ha
 | [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md)                       | Logical product ontology and domain vocabulary                                                                           |
 | [`MVP_CONTRACT.md`](MVP_CONTRACT.md)                                       | Required proof boundary for the document-engine MVP                                                                      |
 | [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)                               | Component authority, public engine behavior, and adapter workflows                                                       |
+| [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) | Cross-cutting interpretation and revision of provisional capacity and performance targets                               |
 | [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) | Intrinsic formatting, origin attribution, clipboard lineage, comment targets, and carrier qualification                  |
 | [`TEXT_POSITION_MODEL.md`](TEXT_POSITION_MODEL.md)                         | Unicode text, transient editor coordinates, durable stable text positions, and range portability                         |
 | [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md)               | Step 3 flat Block placement, tree projection, structural concurrency policy, and position-order qualification            |
@@ -35,6 +36,7 @@ Use the document with direct authority for the subject.
 - A private implementation type does not override `MVP_ARCHITECTURE.md`.
 - A codec or storage detail does not override `PRODUCT_DOMAIN_MODEL.md`.
 - A focused Markdown or `.coedit` specification overrides duplicated technical wording elsewhere.
+- `CAPACITY_AND_PERFORMANCE_TARGETS.md` controls whether a numeric value is a semantic invariant, a minimum implementation envelope, a hostile-input resource guard, or a qualification/performance target.
 - `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns detailed attributed-text behavior; `TEXT_POSITION_MODEL.md` owns text-coordinate and durable-position boundaries; `STRUCTURAL_CARRIER_MODEL.md` owns Step 3 Block placement and structural carrier qualification; `STRUCTURAL_POSITION_ALLOCATOR.md` owns the production allocator abstraction and allocator-algorithm qualification; `BROWSER_PERSISTENCE.md` owns browser repository behavior.
 - `CODING_STYLE.md` owns source-level documentation, linting, formatting, architectural dependency checks, package commands, and developer-platform portability.
 - `MVP_IMPLEMENTATION_SPEC.md` does not expand `MVP_CONTRACT.md`.

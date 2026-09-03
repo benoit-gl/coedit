@@ -140,7 +140,7 @@ src/
 
 Do not split the application into packages before an independent consumer exists.
 
-## 4. IDs, tags, and structural limits
+## 4. IDs, tags, and implementation-capacity targets
 
 Use distinct branded TypeScript types for persisted identities. The MVP needs at least:
 
@@ -162,26 +162,34 @@ Identity reuse means assigning an existing durable ID to a different entity, rec
 
 Use one tag-normalization implementation for Block and InlineContent tags. Keep ownership separate.
 
-Initial tag rules:
+Initial tag normalization rules are semantic:
 
 - Unicode NFKC normalization;
 - trim outer whitespace;
 - collapse internal whitespace;
 - case-insensitive identity;
 - first-spelling preservation;
-- remove empty values;
-- reject control characters;
-- at most 20 tags per owner;
-- at most 64 Unicode code points per tag; and
-- at most 256 UTF-8 bytes per tag.
+- remove empty values; and
+- reject control characters.
 
-Initial live-domain limits:
+The first implementation must support at least:
 
-- 50,000 Blocks;
-- 50,000 InlineContents; and
+- 20 tags per owner;
+- 64 Unicode code points per tag;
+- 256 UTF-8 bytes per tag;
+- 50,000 live Blocks;
+- 50,000 live InlineContents; and
 - Block depth 1,000 including the root.
 
-All tree walks that can encounter user-controlled structure must be iterative and bounded.
+These numbers are preliminary minimum implementation-capacity targets. They are
+not document-model maxima and do not make a larger otherwise valid value or
+document semantically invalid. The implementation can use explicit resource
+guards while the prototype is bounded. Exceeding such a guard returns a typed
+capacity/resource failure rather than a domain-validation failure. Revise the
+targets and implementation guards when qualification, profiling, target-device
+measurements, and later real usage data provide better evidence.
+
+All tree walks that can encounter user-controlled structure must be iterative and bounded by the implementation's current resource budget.
 
 ## 5. Pure structural operations
 
@@ -306,13 +314,13 @@ Genesis has sequence zero, contains the initial root created by the document fac
 
 A new document requires at least one human Contributor. For the MVP, the UX asks for a free-form display name before session creation and supplies that Contributor to the engine factory. This does not create an account/profile model.
 
-Contributor display names are trimmed, control-character-free text limited to 128 Unicode code points and 512 UTF-8 bytes.
+Contributor display names are trimmed and control-character-free. The first implementation must support at least 128 Unicode code points and 512 UTF-8 bytes. Those values are preliminary capacity targets, not a product-level maximum, and can be revised from usage and interoperability evidence.
 
 The domain vocabulary retains Contributor/agent kinds `human`, `imported`, `automation`, `ai`, and `unknown`. Strict MVP creation needs human plus imported/unknown identities sufficient for Origin records. A Markdown/file import Contribution is attributed to the human/system actor that performs it; its content points to imported/unknown Origin. Post-genesis interactive registration workflows remain deferred.
 
 Each successful durable command publishes one logical Contribution, its exact effect/update, any new Origin records, one resulting private Version, and its successful command receipt atomically. Several Contributions can share a semantic group ID for presentation.
 
-The early in-memory implementation may use a full snapshot per Contribution under the existing bounds. The Step 11 browser target uses immutable effects/update chunks, periodic physical recovery checkpoints, and a small CAS head. Product History remains independent of either representation.
+The early in-memory implementation may use a full snapshot per Contribution within the current qualification envelope. The Step 11 browser target uses immutable effects/update chunks, periodic physical recovery checkpoints, and a small CAS head. Product History remains independent of either representation.
 
 Use globally unique `CommandId` values. Check a previously successful CommandId before stale-version rejection:
 

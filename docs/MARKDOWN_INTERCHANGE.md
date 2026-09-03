@@ -8,7 +8,7 @@ This document defines Markdown import, export, diagnostics, and the Markdown rou
 
 The input dialect is CommonMark plus GitHub Flavored Markdown (GFM). Markdown is an interchange and rendering format. It is not the lossless Coedit recovery format.
 
-`PRODUCT_DOMAIN_MODEL.md` controls domain meaning. `MVP_CONTRACT.md` controls the MVP proof boundary. `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` controls formatting and Origin behavior. `MVP_IMPLEMENTATION_SPEC.md` controls implementation details that are not defined here.
+`PRODUCT_DOMAIN_MODEL.md` controls domain meaning. `MVP_CONTRACT.md` controls the MVP proof boundary. `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` controls formatting and Origin behavior. `MVP_IMPLEMENTATION_SPEC.md` controls implementation details that are not defined here. `CAPACITY_AND_PERFORMANCE_TARGETS.md` controls the interpretation and revision of provisional numeric capacity targets.
 
 ## 2. Core round-trip invariant
 
@@ -63,15 +63,17 @@ Decode source as UTF-8 with fatal error handling. Permit one optional UTF-8 BOM.
 
 `sourceName` is display metadata only. Retain a basename, not an absolute local path.
 
-The initial import limits are:
+The first importer must support at least this preliminary capacity envelope:
 
 - 10 MiB UTF-8 source;
 - 200,000 Markdown AST nodes;
 - 50,000 Blocks in the candidate imported document, including the root;
-- source nesting depth 100;
-- source name at most 255 Unicode code points and 1 KiB UTF-8.
+- source nesting depth 100; and
+- source names of 255 Unicode code points and 1 KiB UTF-8.
 
-Invalid UTF-8 or an exceeded limit rejects the import before the active document is replaced.
+These values are minimum implementation targets and hostile-input characterization points, not Markdown or Coedit semantic maxima. The importer can use explicit resource guards while the prototype is bounded. Exceeding the current guard returns a typed import-capacity failure before the active document is replaced; it does not mean that the source or resulting Coedit document is semantically invalid. Revise the targets and guards from parser profiling, target-device measurements, interoperability work, and later real usage data.
+
+Invalid UTF-8 is a source-format error. Resource exhaustion or an exceeded implementation guard is a capacity error. Keep those failure classes distinct.
 
 ## 6. Heading and section construction
 
