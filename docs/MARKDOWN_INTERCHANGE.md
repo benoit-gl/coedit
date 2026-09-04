@@ -68,7 +68,7 @@ Treat Markdown input as hostile. The first importer uses these resource guards:
 - 10 MiB UTF-8 source bytes;
 - 200,000 Markdown AST nodes;
 - source nesting depth 100; and
-- source names of 255 Unicode code points and 1 KiB UTF-8.
+- source-name metadata of at most 1 KiB UTF-8.
 
 These values protect the importer implementation. They are not Markdown or Coedit semantic maxima. This document is the direct owner of the exact guard values. Revise them from parser profiling, target-device measurements, interoperability work, and later usage evidence.
 
