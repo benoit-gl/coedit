@@ -92,7 +92,7 @@ Before a new classification becomes durable state, ask:
 
 A contextual classification that can change with the consumer and has no durable workflow normally remains a diagnostic, projection result, activation decision, or other boundary result. ADR 0005 records the rationale and examples.
 
-The same rule applies to capacity. `CAPACITY_AND_PERFORMANCE_TARGETS.md` owns the detailed classification and default rule. The domain has no arbitrary finite size ceiling only because one carrier, parser, codec, browser, or storage implementation has finite resources. An actual implementation constraint returns an explicit capacity/resource failure and does not make larger content semantically invalid. Hostile external inputs still require bounded processing at the consuming boundary.
+The same rule applies to capacity. `CAPACITY_AND_PERFORMANCE_TARGETS.md` owns the detailed classification and default rule. The domain has no arbitrary finite size ceiling only because one carrier, parser, codec, browser, or storage implementation has finite resources. An actual implementation constraint returns an explicit capacity/resource failure and does not make larger content semantically invalid. Any public engine error can report that a local bound or capacity limit caused the operation to fail when applicable. The error must identify that cause as a capacity/resource failure so that clients do not mistake it for a statement that the document or requested state is semantically invalid. This rule does not require the MVP to define a complete error taxonomy in advance. Hostile external inputs still require bounded processing at the consuming boundary.
 
 ## 3. Public engine behavior
 

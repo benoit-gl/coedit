@@ -185,7 +185,7 @@ See [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md).
 
 **Objective:** Prove lossless, validated, portable recovery for the capabilities built through Step 5.
 
-**Outcome:** After the Step 3 winner is recorded, the engine can assemble logical records and carrier chunks into an opaque bounded version-1 `.coedit` artifact and open it into a validated candidate engine.
+**Outcome:** After the Step 3 winner is recorded, the engine can assemble logical records and carrier chunks into an opaque version-1 `.coedit` artifact and open it into a validated candidate engine.
 
 **Exit gate:** Current and historical attributed material, Origins, Contributions, derivation, Checkpoints, stable VersionTokens, and idempotency round trip for the required qualification workloads. Portable resource guards return explicit capacity failures, and corrupt, hostile, unsupported, missing/mis-hashed, or inconsistent input fails without replacing the active document.
 
