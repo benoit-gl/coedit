@@ -99,9 +99,10 @@ Verify that:
   without linting generated bundle files; and
 - the root README documents commands and platform tiers accurately.
 
-There is no current CI pass to verify. When CI is added, its Linux job must call
-the same canonical sequence; a separate CI-only build or test path fails this
-contract.
+The permanent Linux CI job runs the canonical sequence and then runs
+`npm run check` again after the build. A separate CI-only build or test path
+fails this contract. Native Windows evidence remains required for changes to
+platform-sensitive developer tooling as defined by `CODING_STYLE.md`.
 
 ## 5. Domain and structural verification
 
