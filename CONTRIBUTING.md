@@ -72,6 +72,13 @@ and reviewed as such.
 
 ## Pull-request hygiene
 
+Pull requests are always squash-merged. Write the pull-request title and
+description as the final squash commit title and message. The description must
+state the resulting change and relevant verification, not temporary branch or
+review-process status. Update the title or description during review whenever
+the final change makes the existing text inaccurate or incomplete. Put
+transient review notes in the pull-request conversation instead.
+
 Submit only files that belong to the change. Remove temporary scripts,
 diagnostic logs, local verification artifacts, generated output, and other
 working files before review unless the repository explicitly requires them.
