@@ -177,7 +177,7 @@ preserves historical Origin, and records the restoring actor and target Version.
 
 ### 6.4 Convergence, atomicity, anchors, and growth
 
-This plan owns the shared representative carrier/storage qualification workloads: 100,000 Unicode code points in representative InlineContent and 5,000 Contributions in representative History. These are demanding test workloads, not semantic maxima or implementation acceptance ceilings. Run smaller growth points and larger characterization points when practical so scaling behavior is visible.
+This plan owns the shared representative carrier/storage qualification workloads: 100,000 Unicode code points in representative InlineContent and 5,000 Contributions in representative History. These values are qualification numbers, not hard limits, semantic maxima, implementation acceptance ceilings, or product guarantees. Run smaller growth points and larger characterization points when practical so scaling behavior is visible.
 
 Verify:
 

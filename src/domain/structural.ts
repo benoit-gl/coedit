@@ -9,12 +9,6 @@ import type {
 import { normalizeTags } from "./tags.js";
 import type { TagSet } from "./tags.js";
 
-// TODO(capacity-cleanup): These retained guard branches are effectively disabled.
-// Remove them in a later cruft pass if no measured resource constraint needs them.
-const MAX_BLOCKS = Number.MAX_SAFE_INTEGER;
-const MAX_INLINE_CONTENTS = Number.MAX_SAFE_INTEGER;
-const MAX_BLOCK_DEPTH = Number.MAX_SAFE_INTEGER;
-
 /** One atomic structural mutation in the Step 2 domain. */
 export type StructuralOperation =
   | {
@@ -100,7 +94,7 @@ export type StructuralOperation =
       readonly value: ChildrenPresentation;
     };
 
-/** Stable classification for an expected structural or capacity-guard rejection. */
+/** Stable classification for an expected structural-domain rejection. */
 export type StructuralErrorKind =
   | "EmptyOperationGroup"
   | "InvalidId"
@@ -110,10 +104,9 @@ export type StructuralErrorKind =
   | "NotFound"
   | "RootMutation"
   | "Cycle"
-  | "LimitExceeded"
   | "NoEffect";
 
-/** Expected structural operation or retained capacity-guard failure. */
+/** Expected structural-domain failure. */
 export interface StructuralError {
   /** Stable machine-readable failure kind. */
   readonly kind: StructuralErrorKind;
@@ -211,7 +204,7 @@ export function applyStructuralOperations(
   return { ok: true, value: candidate };
 }
 
-/** Validates Step 2 live structural invariants and retained capacity guards. */
+/** Validates all Step 2 live structural invariants. */
 export function validateDocument(
   document: StructuralDocument,
 ): StructuralResult<StructuralDocument> {
@@ -223,30 +216,12 @@ export function validateDocument(
   }
 
   const durableIds = new Set<string>([document.id]);
-  let blockCount = 0;
-  let inlineCount = 0;
-  const stack: Array<{ readonly block: Block; readonly depth: number }> = [
-    { block: document.root, depth: 1 },
-  ];
+  const stack: Block[] = [document.root];
 
   while (stack.length > 0) {
-    const entry = stack.pop();
-    if (entry === undefined) {
+    const block = stack.pop();
+    if (block === undefined) {
       break;
-    }
-    const { block, depth } = entry;
-    blockCount += 1;
-    if (blockCount > MAX_BLOCKS) {
-      return failure(
-        "LimitExceeded",
-        "The current implementation capacity for live Blocks was exceeded.",
-      );
-    }
-    if (depth > MAX_BLOCK_DEPTH) {
-      return failure(
-        "LimitExceeded",
-        "The current implementation capacity for Block depth was exceeded.",
-      );
     }
     if (!isCanonicalUuidV4(block.id)) {
       return failure(
@@ -271,13 +246,6 @@ export function validateDocument(
     }
 
     for (const content of block.contents) {
-      inlineCount += 1;
-      if (inlineCount > MAX_INLINE_CONTENTS) {
-        return failure(
-          "LimitExceeded",
-          "The current implementation capacity for live InlineContents was exceeded.",
-        );
-      }
       if (!isCanonicalUuidV4(content.id)) {
         return failure(
           "InvalidId",
@@ -303,7 +271,7 @@ export function validateDocument(
     for (let index = block.children.length - 1; index >= 0; index -= 1) {
       const child = block.children[index];
       if (child !== undefined) {
-        stack.push({ block: child, depth: depth + 1 });
+        stack.push(child);
       }
     }
   }

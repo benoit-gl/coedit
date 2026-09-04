@@ -11,7 +11,9 @@ and what eventual consistency must mean for Coedit. It complements
 defines content attribution and comment-target behavior,
 [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md), which defines the
 accepted Block carrier and structural merge semantics,
-and [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md), which defines the current
+[`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md),
+which defines capacity classification and resource-guard semantics, and
+[`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md), which defines the current
 implementation order.
 
 ## 1. Decision summary
@@ -153,8 +155,9 @@ payload to apply.
 
 Before networked collaboration ships, Step 3 carrier behavior is necessary but
 not sufficient to permit offline publication. The pre-network gate must also
-prove the exact causal envelope, dependency handling, authorization, limits,
-restart-safe transport, and atomic integration behavior.
+prove the exact causal envelope, dependency handling, authorization,
+resource-capacity handling, restart-safe transport, and atomic integration
+behavior.
 
 Checkpoint creation uses the same flow. A checkpoint created locally is a
 semantic Contribution against the exact frontier observed by its author. It does
@@ -174,13 +177,15 @@ authenticated remote envelope
 
 Remote work is not reissued as a new local user command, which would duplicate
 History and attribution. The local-command and remote-integration paths do share
-schema validation, invariants, limits, contribution verification, and atomic
-publication rules.
+schema validation, invariants, resource-capacity checks, contribution
+verification, and atomic publication rules.
 
 Delivery is idempotent. An already integrated Contribution is a no-op; reusing
 its ID with different content is corruption. Missing parents are buffered or
-requested. Invalid, unauthorized, or over-limit records are rejected without
-partially changing visible state.
+requested. Invalid or unauthorized records and records that exceed an
+implementation resource guard are rejected without partially changing visible
+state. Resource-capacity rejection does not make an otherwise valid document
+semantically invalid.
 
 ## 5. Product History is a causal Contribution graph
 
@@ -450,7 +455,7 @@ Contribution whose contributor is not yet known is buffered or rejected; a
 replica never invents a local substitute identity.
 
 The relay and receiving engine validate document access, envelope authenticity,
-schema/capability versions, and resource limits. Offline work created before an
+schema/capability versions, and resource-capacity guards. Offline work created before an
 authorization change may need to be provisional, quarantined, or rejected; that
 policy is open and must be visible rather than silently dropping work.
 
@@ -483,7 +488,7 @@ The future replication protocol will need, at minimum:
 - causal dependencies/frontiers and, where useful, CRDT state vectors;
 - idempotent delivery and content-conflict detection;
 - acknowledgements plus durable outbox/inbox recovery;
-- authenticated authorization and resource limits;
+- authenticated authorization and resource-capacity guards;
 - dependency requests, catch-up, and bootstrap-snapshot transfer;
 - atomic envelopes for multi-target Contributions;
 - Origin, source, and derivation records plus their authorization rules;

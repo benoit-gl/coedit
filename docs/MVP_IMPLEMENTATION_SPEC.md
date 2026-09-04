@@ -175,7 +175,7 @@ Initial tag normalization rules are semantic:
 
 Step 2 has no application-defined finite maximum for tag count, tag size, live Block count, live InlineContent count, or Block depth. Those dimensions are limited only by semantic validity and the actual resources of the running implementation.
 
-The Step 2 source keeps its earlier guard branches for now, but sets their thresholds to `Number.MAX_SAFE_INTEGER` so they are effectively disabled before ordinary runtime or allocation constraints. The source marks those branches as candidates for a later cruft-cleanup pass. Remove them if later evidence shows that no explicit guard is useful. If profiling exposes a real resource constraint, add an explicit implementation guard and report a capacity/resource failure; do not redefine the input as semantically invalid.
+Step 2 retains no finite capacity-guard branches for those dimensions. If profiling exposes a real resource constraint, add an explicit guard at the affected implementation boundary and report a capacity/resource failure; do not redefine otherwise valid input as semantically invalid.
 
 All tree walks that can encounter user-controlled structure must be iterative and bounded by the implementation's current resource budget.
 
