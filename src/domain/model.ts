@@ -1,26 +1,12 @@
 import type { BlockId, DocumentId, InlineContentId } from "./ids.js";
+import type { InlineContentValue } from "./content.js";
 import type { TagSet } from "./tags.js";
 
-const emptyInlineContentValueBrand: unique symbol = Symbol(
-  "emptyInlineContentValue",
-);
+export { createEmptyInlineContentValue } from "./content.js";
+export type { InlineContentValue } from "./content.js";
 
 /** Controls how a Block projects its direct children. */
 export type ChildrenPresentation = "sections" | "flow" | "bullets" | "numbers";
-
-/**
- * Canonical CollaborativeContent value carried by InlineContent.
- *
- * @remarks
- * Step 2 exposes only a valid empty value created by
- * {@link createEmptyInlineContentValue}. Structural code treats this value as
- * opaque. Step 3 expands this same domain type behind the carrier-neutral
- * boundary.
- */
-export interface InlineContentValue {
-  /** Internal nominal marker. It is not a wire-format or public type discriminator. */
-  readonly [emptyInlineContentValueBrand]: true;
-}
 
 /** One independently addressable content value owned by a Block. */
 export interface InlineContent {
@@ -28,7 +14,7 @@ export interface InlineContent {
   readonly id: InlineContentId;
   /** Tags owned by this InlineContent. */
   readonly tags: TagSet;
-  /** Canonical content value. */
+  /** Canonical carrier-neutral CollaborativeContent value. */
   readonly content: InlineContentValue;
 }
 
@@ -46,15 +32,10 @@ export interface Block {
   readonly children: readonly Block[];
 }
 
-/** Step 2 structural state for one Coedit document. */
+/** Live structural projection for one Coedit document. */
 export interface StructuralDocument {
   /** Durable document identity. */
   readonly id: DocumentId;
   /** The document's one real root Block. */
   readonly root: Block;
-}
-
-/** Creates the only valid Step 2 CollaborativeContent value. */
-export function createEmptyInlineContentValue(): InlineContentValue {
-  return Object.freeze({ [emptyInlineContentValueBrand]: true as const });
 }
