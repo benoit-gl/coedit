@@ -177,7 +177,10 @@ Step 2 has no application-defined finite maximum for tag count, tag size, live B
 
 Step 2 retains no finite capacity-guard branches for those dimensions. If profiling exposes a real resource constraint, add an explicit guard at the affected implementation boundary and report a capacity/resource failure; do not redefine otherwise valid input as semantically invalid.
 
-All tree walks that can encounter user-controlled structure must be iterative and bounded by the implementation's current resource budget.
+All tree walks that can encounter user-controlled structure must be iterative,
+perform work proportional to the structure they visit, and avoid recursive stack
+growth. The Step 2 domain does not invent a traversal budget. A consuming
+untrusted-input boundary owns any resource guard selected for that boundary.
 
 ## 5. Pure structural operations
 
@@ -302,7 +305,11 @@ Genesis has sequence zero, contains the initial root created by the document fac
 
 A new document requires at least one human Contributor. For the MVP, the UX asks for a free-form display name before session creation and supplies that Contributor to the engine factory. This does not create an account/profile model.
 
-Contributor display names are trimmed and control-character-free. The MVP defines no application-level length maximum. A real UI, storage, or interoperability constraint can add an explicit boundary guard later under `CAPACITY_AND_PERFORMANCE_TARGETS.md`; that guard is not Contributor semantics.
+Contributor display names are trimmed and control-character-free. The MVP
+defines no application-level length maximum. Any UI, storage, or
+interoperability guard remains a pending selection owned by the affected
+boundary's implementation step under `CAPACITY_AND_PERFORMANCE_TARGETS.md`; it is
+not Contributor semantics.
 
 The domain vocabulary retains Contributor/agent kinds `human`, `imported`, `automation`, `ai`, and `unknown`. Strict MVP creation needs human plus imported/unknown identities sufficient for Origin records. A Markdown/file import Contribution is attributed to the human/system actor that performs it; its content points to imported/unknown Origin. Post-genesis interactive registration workflows remain deferred.
 
@@ -386,9 +393,18 @@ Accepted behavior:
 - failure retains the exact detached command and editor work needed for retry;
 - degraded durability, quota, and conflict are visible;
 - no later command overtakes a failed head; and
-- typing is not blocked merely because two whole-artifact serializations are pending, because normal durability does not serialize the whole artifact.
+- typing is not blocked by queued whole-artifact serialization, because normal durability does not serialize the whole artifact.
 
-Time, character, and memory thresholds are tunable UX/repository policy recorded with measurements. They are not product History semantics. The preserved 20-grapheme, 30-second, and two-pending-capture constants remain test evidence only.
+**Maturity:** Experimental comparison fixtures.
+
+**Owner:** This document.
+
+**Promotion gate:** Step 9 editor integration and measurements.
+
+Time, character, and memory thresholds are tunable UX/repository policy recorded
+with measurements. They are not product History semantics. Use the preserved
+20-grapheme, 30-second, and two-pending-capture values only as experimental
+comparison fixtures until Step 9 promotes, replaces, or retires them.
 
 ## 12. Lenses and comparison
 

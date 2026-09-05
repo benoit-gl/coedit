@@ -107,11 +107,11 @@ the current semantic group. Exact time and character thresholds are
 tunable UX parameters, not durable semantics.
 
 A failed commit retains the exact detached command/draft needed for retry and
-surfaces degraded durability. Typing is not blocked merely because two complete
-artifact serializations are pending; ordinary autosave does not serialize a
-complete artifact. Resource-limit enforcement can reject the operation that
-would exceed an accepted bound, but a hidden queue threshold must not silently
-discard work.
+surfaces degraded durability. Typing is not blocked by queued complete-artifact
+serialization; ordinary autosave does not serialize a complete artifact.
+Selected resource-guard enforcement can reject the operation that would exceed
+a supported implementation boundary, but a hidden queue threshold must not
+silently discard work.
 
 ## 6. Open and recovery
 
@@ -129,6 +129,19 @@ Malformed, missing, mis-hashed, incompatible, or over-capacity records produce a
 typed recovery error. They do not partially open or replace another active
 engine. Recovery diagnostics offer export of recoverable raw evidence where
 safe; they do not improvise a repaired document silently.
+
+**Maturity:** Pending selection.
+
+**Owner:** This document.
+
+**Promotion gate:** Step 11 browser-repository implementation, with tuning
+evidence revisited in Step 12.
+
+Before Step 11 closes, profile checkpoint decoding, effect replay, collection
+cardinality, and reconstructed-state allocation on target browsers. Record any
+selected guards, the capacity error behavior, and why work without an explicit
+guard is safely bounded elsewhere. No numeric recovery maximum is accepted in
+advance.
 
 Prepared maintenance/checkpoint chunks or records left unreachable by a
 superseded head are not current document state. A later bounded garbage collector
@@ -199,7 +212,9 @@ becomes the IndexedDB schema by implication.
 
 ## 11. Measurements
 
-`MVP_VERIFICATION_PLAN.md` owns the shared representative content and History workload sizes and the shared performance targets. Do not duplicate those numbers here.
+`MVP_VERIFICATION_PLAN.md` owns the experimental shared content and History
+workload candidates. Do not duplicate those numbers or treat them as browser
+acceptance budgets here.
 
 For the browser repository, measure those shared workloads plus:
 
@@ -208,7 +223,12 @@ For the browser repository, measure those shared workloads plus:
 - write amplification and database growth; and
 - quota behavior in supported browsers and private modes.
 
-Record target devices and pass budgets before performance qualification begins. Correctness, atomicity, and no-data-loss requirements are not tradeable for a faster candidate. Browser-specific quota or warning thresholds come from measured platform behavior and are not portable document limits.
+Record target devices and a run-specific measurement method before performance
+qualification begins. Step 11 can promote evidence-backed implementation guards;
+Step 12 can promote, replace, or retire performance and warning targets.
+Correctness, atomicity, and no-data-loss requirements are not tradeable for a
+faster candidate. Browser-specific quota or warning thresholds come from
+measured platform behavior and are not portable document limits.
 
 ## 12. Required verification
 
@@ -221,6 +241,7 @@ The repository contract suite must cover:
 - transaction abort without partial publication;
 - corrupt, missing, duplicate, mis-hashed, unreachable, and incompatible chunks;
 - recovery from a physical checkpoint plus later effects;
+- selected recovery guards return typed capacity failures without partial publication;
 - quota denial/exhaustion and persistent-storage denial;
 - visible degraded durability plus exact retry;
 - safe unreachable-record cleanup;

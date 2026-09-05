@@ -182,10 +182,21 @@ verification, and atomic publication rules.
 
 Delivery is idempotent. An already integrated Contribution is a no-op; reusing
 its ID with different content is corruption. Missing parents are buffered or
-requested. Invalid or unauthorized records and records that exceed an
-implementation resource guard are rejected without partially changing visible
-state. Resource-capacity rejection does not make an otherwise valid document
-semantically invalid.
+requested. Invalid or unauthorized records are rejected without partially
+changing visible state. A record that exceeds one receiver's implementation
+capacity is not thereby invalid: the receiver must retain or visibly quarantine
+enough information to retry, or stop incompatibly, rather than silently discard
+the record and integrate a different valid set.
+
+**Maturity:** Pending selection.
+
+**Owner:** This document.
+
+**Promotion gate:** The post-MVP network-collaboration gate.
+
+That gate selects the exact persistence, retry, quarantine, relay, and recovery
+mechanics. This MVP direction fixes only the non-semantic classification,
+visibility, and convergence requirements.
 
 ## 5. Product History is a causal Contribution graph
 
@@ -455,9 +466,10 @@ Contribution whose contributor is not yet known is buffered or rejected; a
 replica never invents a local substitute identity.
 
 The relay and receiving engine validate document access, envelope authenticity,
-schema/capability versions, and resource-capacity guards. Offline work created before an
-authorization change may need to be provisional, quarantined, or rejected; that
-policy is open and must be visible rather than silently dropping work.
+schema/capability versions, and selected resource-capacity guards. Offline work
+created before an authorization change may need to be provisional, quarantined,
+or rejected; that policy is open and must be visible rather than silently
+dropping work.
 
 Replicas must also converge on which envelopes are valid. Schema/capability and
 authorization decisions cannot depend on unsynchronized local clocks or
@@ -498,6 +510,10 @@ The future replication protocol will need, at minimum:
 
 These fields are private protocol concerns. They must not turn the UX-facing
 `VersionToken` into a structure the frontend interprets.
+
+The exact capacity guard values and retry/quarantine protocol remain pending
+until the network-collaboration gate has implementation and fault-injection
+evidence. They are not preselected by the local MVP.
 
 ## 13. What the MVP must preserve now
 

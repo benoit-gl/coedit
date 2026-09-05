@@ -311,8 +311,8 @@ describe("structural operations", () => {
 });
 
 describe("former live capacity boundaries", () => {
-  it("accepts more than the former live Block boundary", () => {
-    const children = Array.from({ length: 50_000 }, (_, index) =>
+  it("creates a Block beyond the former live Block boundary", () => {
+    const children = Array.from({ length: 49_999 }, (_, index) =>
       flatBlock(index + 10_000),
     );
     const document: StructuralDocument = {
@@ -321,10 +321,25 @@ describe("former live capacity boundaries", () => {
     };
 
     expect(validateDocument(document).ok).toBe(true);
+    const result = applyStructuralOperations(document, [
+      {
+        kind: "CreateBlock",
+        blockId: blockId(60_000),
+        parentId: ROOT_ID,
+        index: children.length,
+        tags: [],
+        childrenPresentation: "flow",
+      },
+    ]);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.root.children).toHaveLength(50_000);
+    }
   });
 
-  it("accepts more than the former live InlineContent boundary", () => {
-    const contents = Array.from({ length: 50_001 }, (_, index) => ({
+  it("creates InlineContent beyond the former live boundary", () => {
+    const contents = Array.from({ length: 50_000 }, (_, index) => ({
       id: inlineId(100_000 + index),
       tags: [],
       content: createEmptyInlineContentValue(),
@@ -335,6 +350,21 @@ describe("former live capacity boundaries", () => {
     };
 
     expect(validateDocument(document).ok).toBe(true);
+    const result = applyStructuralOperations(document, [
+      {
+        kind: "CreateInlineContent",
+        blockId: ROOT_ID,
+        inlineContentId: inlineId(160_000),
+        index: contents.length,
+        tags: [],
+        content: createEmptyInlineContentValue(),
+      },
+    ]);
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.root.contents).toHaveLength(50_001);
+    }
   });
 });
 

@@ -232,9 +232,10 @@ Before the CollaborativeContent implementation and `.coedit` carrier encoding ar
 frozen, run the same headless and editor-integrated suite against Yjs v13 and
 Automerge. Track Yjs v14 for a later rerun after stable release.
 
-The exact representative workload values are qualification numbers owned by
-`MVP_VERIFICATION_PLAN.md`. They are not hard limits, semantic maxima, or product
-guarantees.
+The representative workload values are experimental candidates owned by
+`MVP_VERIFICATION_PLAN.md`. Before comparing carriers, the qualification run
+records one method and fixture profile used for both. The candidate values are
+not hard limits, semantic maxima, correctness thresholds, or product guarantees.
 
 The suite must cover:
 

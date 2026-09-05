@@ -207,6 +207,11 @@ Core commands, queries, History, Checkpoints, restore, Markdown adapters, and po
 
 ## 7. Completion rule
 
-The document-engine MVP is complete when all in-scope scenarios pass for the required qualification workloads, explicit resource guards fail safely, and the browser prototype exposes the vertical slice without violating the engine authority boundary. Completion does not create arbitrary product-level size maxima.
+The document-engine MVP is complete when all in-scope scenarios pass,
+experimental workloads have recorded characterization evidence, every guard
+selected by an implemented boundary fails safely, and the browser prototype
+exposes the vertical slice without violating the engine authority boundary.
+Completion does not create arbitrary product-level size maxima or promote an
+experimental target implicitly.
 
 Completion does not mean that the product has a provenance explorer, comments, authenticated collaboration, an AI provider, signatures, or a final replicated-tree algorithm. It means their accepted invariants are protected by a tested attributed-content and document-engine foundation instead of UI state or an experimental storage layout.

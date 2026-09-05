@@ -253,6 +253,16 @@ The private representation is untrusted input even when it originated in
 Coedit. Validate its version, sizes, IDs, formatting, Origin references, and
 source relationship before use.
 
+**Maturity:** Pending selection.
+
+**Owner:** This document.
+
+**Promotion gate:** Step 3 carrier and clipboard qualification.
+
+Step 3 must profile the selected carrier and private-fragment representation,
+then record and test any byte, nesting, collection, or decoded-allocation guards
+needed at this boundary. No numeric clipboard maximum is accepted in advance.
+
 The strict MVP preserves Origins from a private fragment only when its source
 `DocumentId` matches the target document and every referenced Origin resolves
 without conflict. Same-document private fragments can also preserve typed
@@ -392,7 +402,13 @@ minimum it covers:
 - exact portable round trip and historical materialization; and
 - representative growth and load behavior.
 
-Functional invariants are mandatory. `MVP_VERIFICATION_PLAN.md` owns the exact shared qualification workloads, latency target, measurement method, and evidence requirements. This specification requires visible local feedback to stay in the tightest practical loop; routine carrier, persistence, History, replica, open, reload, checkpoint, materialization, or export work must not redefine the editor hot path.
+Functional invariants are mandatory. `MVP_VERIFICATION_PLAN.md` owns the
+experimental shared workload and latency candidates and requires one
+run-specific method to be recorded before candidate comparison. Those candidates
+are measurement inputs, not acceptance contracts. This specification requires
+visible local feedback to stay in the tightest practical loop; routine carrier,
+persistence, History, replica, open, reload, checkpoint, materialization, or
+export work must not redefine the editor hot path.
 
 Select Yjs when the protected Origin carrier passes without fragile full-state
 reconstruction or editor repair. Select Automerge only if its native rich-text,
@@ -405,6 +421,7 @@ The production implementation repeats the selected carrier's qualification
 fixtures as regression tests. In addition, prove:
 
 - malformed or oversized carrier input leaves the base unchanged;
+- malformed or over-capacity private clipboard fragments leave the base unchanged and do not disable ordinary HTML/plain fallback;
 - caller mutation of detached input cannot mutate engine state;
 - a failed command publishes no text, mark, Origin, Contribution, or Version;
 - opaque link metadata round trips without document-model interpretation;

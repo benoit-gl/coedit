@@ -60,6 +60,13 @@ All implementation and verification commands must preserve the cross-platform co
 
 A preserved implementation choice is not automatically current authority. A new design is not accepted merely because it is more convenient. Material conflicts must be resolved explicitly through Step 0 traceability or a later recorded decision.
 
+Capacity and performance statements follow the maturity model in
+`docs/CAPACITY_AND_PERFORMANCE_TARGETS.md`. Each affected implementation step
+owns its pending selections and cannot close while a hostile-input boundary
+introduced by that step lacks a selected, documented, and tested protection
+mechanism. Experimental targets produce evidence; they are not correctness gates
+unless the responsible authority promotes them.
+
 ## 4. Ordered work
 
 ### Step 0 — Reconcile the documentation and preserved decisions
@@ -153,11 +160,11 @@ See [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md), [`docs/MVP_I
 
 **Objective:** Select the collaborative carrier and establish canonical text, hard breaks, intrinsic formatting, protected Origin, and the structural carrier before History, import, editor integration, or serialization depends on their representation.
 
-Run the same pinned headless and Tiptap/ProseMirror suite against stable Yjs v13 and Automerge. Track Yjs v14 only after stable release; use Loro as a cursor/movable-tree benchmark, not a current candidate. Record dependency/license review, adapter complexity, target devices and budgets, measurements, and the selection rationale.
+Run the same pinned headless and Tiptap/ProseMirror suite against stable Yjs v13 and Automerge. Track Yjs v14 only after stable release; use Loro as a cursor/movable-tree benchmark, not a current candidate. Before comparing candidates, record one run-specific fixture profile and measurement method used for both. Record dependency/license review, adapter complexity, target devices, measurements, and the selection rationale.
 
 **Outcome:** Headless code can create, validate, project, clone, edit, copy/paste, restore, and serialize CollaborativeContent. Formatting has explicit boundary policies; every live content item has protected non-inheriting Origin. One logical collaborative document contains the accepted flat Block carrier and Block-local logical payload namespaces, can transact across structure and several InlineContents, and supports semantic-update-over-delete through a carrier-qualified Block liveness effect. Future CommentTarget cursors are feasible.
 
-**Exit gate:** The common functional, structural, concurrency, clipboard, restore, cursor, atomicity, portable, garbage-collection, collision/ordering, and representative-growth suite passes. Select Yjs when its protected carrier works incrementally without fragile repair. Select Automerge only if it passes and materially removes custom machinery despite its integration maturity. Record the winner before carrier-dependent format fields or fixtures are frozen.
+**Exit gate:** The common functional, structural, concurrency, clipboard, restore, cursor, atomicity, portable, garbage-collection, collision/ordering, and representative-growth suite passes. Carrier and private-clipboard hostile-input guards are selected from profiling evidence and tested atomically. Experimental performance candidates are recorded as evidence rather than correctness thresholds unless deliberately promoted. Select Yjs when its protected carrier works incrementally without fragile repair. Select Automerge only if it passes and materially removes custom machinery despite its integration maturity. Record the winner before carrier-dependent format fields or fixtures are frozen.
 
 See [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), [`docs/STRUCTURAL_CARRIER_MODEL.md`](docs/STRUCTURAL_CARRIER_MODEL.md), [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
@@ -177,7 +184,7 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 **Outcome:** Supported source becomes ordinary attributed document operations. Unsupported source is preserved or rejected with stable diagnostics.
 
-**Exit gate:** The fixture set produces valid documents or explicit failures. No source node is silently discarded. The imported structure is within the canonical Markdown-representable Coedit subset defined by the interchange specification.
+**Exit gate:** The fixture set produces valid documents or explicit failures. No source node is silently discarded. The imported structure is within the canonical Markdown-representable Coedit subset defined by the interchange specification. Parser and importer profiling selects hostile-input guards, records their evidence, distinguishes source-format from capacity failure at the top-level result, and verifies that failed import publishes no candidate.
 
 See [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md).
 
@@ -187,7 +194,7 @@ See [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md).
 
 **Outcome:** After the Step 3 winner is recorded, the engine can assemble logical records and carrier chunks into an opaque version-1 `.coedit` artifact and open it into a validated candidate engine.
 
-**Exit gate:** Current and historical attributed material, Origins, Contributions, derivation, Checkpoints, stable VersionTokens, and idempotency round trip for the required qualification workloads. Portable resource guards return explicit capacity failures, and corrupt, hostile, unsupported, missing/mis-hashed, or inconsistent input fails without replacing the active document.
+**Exit gate:** Current and historical attributed material, Origins, Contributions, derivation, Checkpoints, stable VersionTokens, and idempotency round trip for the representative fixtures recorded by the qualification run. Profiling covers raw and decoded allocation, collection cardinality, graph work, carrier chunks, and content size; it selects and records the portable implementation guards before version 1 freezes. Selected guards return explicit capacity failures, and corrupt, hostile, unsupported, missing/mis-hashed, or inconsistent input fails without replacing the active document.
 
 See [`docs/PORTABLE_DOCUMENT_FORMAT.md`](docs/PORTABLE_DOCUMENT_FORMAT.md).
 
@@ -217,7 +224,7 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 **Outcome:** Headings, prose, and list items can be edited in place with attributed durable commits. Several immutable Contributions can share one human-visible semantic group without redefining the semantic History Checkpoint concept.
 
-**Exit gate:** Editor ownership transitions do not lose text, formatting, or Origin. IME and atomic edit paths, prompt commit, semantic grouping, failure retry, internal/external clipboard, History restore, and `.coedit` round trips preserve exact committed state. No two-whole-artifact queue threshold blocks ordinary typing.
+**Exit gate:** Editor ownership transitions do not lose text, formatting, or Origin. IME and atomic edit paths, prompt commit, semantic grouping, failure retry, internal/external clipboard, History restore, and `.coedit` round trips preserve exact committed state. No whole-artifact queue threshold blocks ordinary typing.
 
 See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
@@ -237,7 +244,7 @@ See [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md).
 
 **Outcome:** IndexedDB stores immutable Contribution/effect records, periodic physical recovery checkpoints, command receipts, local descriptors, and a small compare-and-swap head. Explicit `.coedit` Save/Open remains a separate portable workflow.
 
-**Exit gate:** Reload preserves attributed content and History. Failure injection proves atomic record/head publication. Failed, quota-limited, or competing writes do not claim success or silently overwrite newer state; degraded durability and `.coedit` backup are visible.
+**Exit gate:** Reload preserves attributed content and History. Failure injection proves atomic record/head publication. Recovery profiling selects any required checkpoint, replay, collection, and allocation guards and verifies typed capacity failure without partial open. Failed, quota-limited, or competing writes do not claim success or silently overwrite newer state; degraded durability and `.coedit` backup are visible.
 
 See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) and [`docs/BROWSER_PERSISTENCE.md`](docs/BROWSER_PERSISTENCE.md).
 
@@ -267,7 +274,7 @@ Step 0 passes when the authority set, ADR rationale, and preserved-branch classi
 
 ### Gate B — Attributed-content carrier qualification
 
-Do not freeze Step 3 implementation, carrier-dependent History effects, editor integration, or `.coedit` version 1 until the Yjs/Automerge common suite passes and the winner is recorded. The gate includes the attributed-content and structural-carrier suites.
+Do not freeze Step 3 implementation, carrier-dependent History effects, editor integration, or `.coedit` version 1 until the Yjs/Automerge common suite passes and the winner is recorded. The gate includes the attributed-content and structural-carrier suites, one run-specific comparison method, and selected/tested carrier and private-clipboard guards. Experimental performance candidates do not become acceptance thresholds merely because the gate measured them.
 
 ### Gate C — Elaboration baseline
 
@@ -310,7 +317,7 @@ The plan is complete when the browser prototype satisfies the MVP contract and a
 - exact historical Versions, semantic checkpoints, and compensating restore are usable;
 - optional InlineContents and content lenses are usable;
 - selected Versions, lenses, and subtrees can export to Markdown with explicit diagnostics when exact structural interchange is not possible;
-- the opaque `.coedit` artifact provides lossless recovery within its documented limits;
+- the opaque `.coedit` artifact provides lossless recovery within the selected implementation capacity, and capacity failure does not claim semantic invalidity;
 - the incremental IndexedDB repository provides browser reload durability without becoming a second semantic authority;
 - one active rich-text editor preserves canonical text, intrinsic marks, and protected Origin;
 - semantic edit grouping remains separate from prompt durable Contributions and preserves controlled transition, failure, and retry rules;

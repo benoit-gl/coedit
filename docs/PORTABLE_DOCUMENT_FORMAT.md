@@ -1,7 +1,8 @@
 # `.coedit` portable document format
 
-**Status:** Accepted logical recovery contract; exact carrier-specific version-1
-fields and golden bytes are frozen only after the Step 3 carrier qualification.
+**Status:** Accepted logical recovery contract; carrier-specific fields,
+container details, and implementation guards remain pending or experimental
+until the Step 3 and Step 6 gates promote them.
 
 ## 1. Purpose and authority
 
@@ -17,10 +18,12 @@ implementation resource capacity.
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
 controls formatting and Origin behavior. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
 controls the public serialization boundary. This document controls portable
-logical records, validation, compatibility, and the version-1 container.
+logical records, validation, compatibility, and the candidate version-1
+container.
 [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md)
-controls cross-cutting capacity semantics. This document owns the exact portable
-codec and hostile-input guard values.
+controls cross-cutting capacity semantics and contract maturity. This document
+owns portable codec and hostile-input behavior, experimental guard candidates,
+and the guards selected during Step 6.
 
 The internal browser repository is separately specified by
 [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Its stores and checkpoint
@@ -41,9 +44,10 @@ suggestedExtension: ".coedit"
 The public architecture keeps `mediaType` as opaque transport metadata until a
 media type is registered or deliberately selected.
 
-Version 1 uses one bounded UTF-8 JSON container with base64 for binary chunks if
-the carrier qualification confirms that the resource and performance behavior is
-acceptable. JSON is a portable container, not the internal database layout or a
+Version 1 currently proposes one bounded UTF-8 JSON container with base64 for
+binary chunks. Container selection remains pending until carrier qualification
+and Step 6 measurements confirm acceptable resource and performance behavior.
+JSON is a candidate portable container, not the internal database layout or a
 permanent promise that all future versions remain monolithic JSON.
 
 Do not freeze `formatVersion: 1`, publish a version-1 fixture, or implement the
@@ -279,9 +283,18 @@ of work outside the restore author's observed frontier.
 Recompute derived projection hashes, affected targets, indexes, and reserved-ID
 sets. Do not trust serialized derived claims.
 
-## 11. Initial hostile-input and codec resource guards
+## 11. Hostile-input and codec resource-guard selection
 
-This document owns the exact initial version-1 portable-format guard values. The decoder uses finite guards before dangerous allocation or graph work:
+The Step 6 decoder cannot ship until it uses selected finite guards before
+dangerous allocation or graph work.
+
+**Maturity:** Experimental guard candidates; final selection pending.
+
+**Owner:** This document.
+
+**Promotion gate:** Step 6 implementation evidence and version-1 freeze.
+
+Use these values as initial characterization points:
 
 - 64 MiB UTF-8 JSON;
 - JSON nesting depth 128;
@@ -292,11 +305,27 @@ This document owns the exact initial version-1 portable-format guard values. The
 - 48 MiB decoded binary chunk data across the archive; and
 - 1,000,000 Unicode code points in one InlineContent.
 
-These are implementation resource guards, not version-1 document maxima. They do not limit retained History length, Block count, InlineContent count, or any other semantic dimension that is not listed for a concrete codec-safety reason. Shared content and History qualification workload sizes belong only in `MVP_VERIFICATION_PLAN.md`.
+These candidates do not define current acceptance, rejection, compatibility, or
+correctness-test thresholds. They are possible implementation resource guards,
+not version-1 document maxima. Shared content and History qualification
+workloads belong only in `MVP_VERIFICATION_PLAN.md`.
 
-The encoder preflights the resource guards that apply to the artifact it produces. Return a typed capacity error rather than truncate History, Origins, or document state. A capacity failure does not make the document semantically invalid.
+Step 6 profiling must characterize raw bytes, decoded allocation, nesting,
+collection cardinality, and graph-processing work. The selection record must
+consider Versions, Contributions, Blocks, InlineContents, per-Contribution and
+archive operations, carrier chunks, and InlineContent size. It must record
+which dimensions need explicit guards, why the selected values are safe on
+target environments, and why an omitted guard is safely bounded elsewhere.
 
-Revise the guard values when carrier qualification, profiling, target-device measurements, or later usage provides better evidence. Before freezing version 1, verify that the selected container can round-trip the required qualification workloads. If monolithic JSON/base64 is the actual limiting factor, change the container rather than promoting that implementation limit into document semantics.
+After promotion, the encoder preflights the selected resource guards that apply
+to the artifact it produces. Return a typed capacity error rather than truncate
+History, Origins, or document state. A capacity failure does not make the
+document semantically invalid.
+
+Before freezing version 1, verify that the selected container can round-trip the
+representative fixtures recorded by the qualification run. If monolithic
+JSON/base64 is the actual limiting factor, change the container rather than
+promoting that implementation limit into document semantics.
 
 ## 12. Integrity and chunk identity
 
@@ -345,8 +374,8 @@ At minimum, verify:
   topology, ownership, marks, opaque link metadata, and typed internal links fail;
 - malformed, truncated, duplicate-key, unknown-property, or unsupported
   container/carrier versions fail;
-- the hostile-input and codec resource guards owned by section 11 are exercised safely;
-- exceeding an implementation resource guard produces a capacity error without partial publication or semantic-invalidity claims;
+- every resource guard selected and promoted under section 11 is exercised safely;
+- exceeding a selected implementation resource guard produces a capacity error without partial publication or semantic-invalidity claims;
 - stale serialization returns no artifact;
 - caller mutation of input bytes after open starts cannot alter the candidate;
 - a failed open never replaces the active engine;

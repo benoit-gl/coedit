@@ -125,7 +125,7 @@ applicable, cover:
 - mutation and side effects;
 - concurrency or version assumptions;
 - expected failure behavior;
-- resource limits; and
+- selected or frozen resource guards and capacity-failure behavior; and
 - security or trust boundaries.
 
 Use standard TSDoc tags such as `@remarks`, `@param`, `@returns`, `@throws`,
