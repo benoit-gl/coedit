@@ -50,7 +50,10 @@ For each change:
 
 - exercise the new successful behavior;
 - exercise relevant failure paths and invariants;
-- test documented limits and boundary conditions when they apply;
+- test semantic boundaries and every selected or frozen resource guard and
+  capacity-failure path when they apply;
+- record experimental capacity or performance results without using an
+  unpromoted candidate as a correctness failure;
 - add a regression test for a corrected defect when practical; and
 - keep existing tests passing without weakening assertions only to accept the
   new implementation.
@@ -64,6 +67,14 @@ the required behavior.
 Keep implementation, tests, TSDoc, and authoritative documentation consistent.
 When a change modifies a documented contract, update all affected artifacts in
 the same pull request.
+
+Every finite capacity, resource, or performance number that affects acceptance,
+rejection, compatibility, protection, or evaluation must follow
+`docs/CAPACITY_AND_PERFORMANCE_TARGETS.md`. Identify its maturity, direct owner,
+and promotion gate or change rule. A pull request that promotes an experimental
+target or pending selection must include the supporting environment, evidence,
+failure behavior, and tests. Do not make an experimental target fail
+correctness CI or reject otherwise valid document state.
 
 Do not suppress a lint, dependency, TypeDoc, or verification failure only to
 make a gate pass. A required exception is a design change and must be documented
@@ -108,6 +119,8 @@ Before you mark a pull request ready for review:
 - confirm that all new or changed behavior has the required tests;
 - confirm that implementation, tests, TSDoc, and authoritative documentation
   agree;
+- confirm that new capacity/performance numbers have a maturity, owner, and
+  promotion gate and that only promoted contracts drive correctness failures;
 - run or obtain the required verification on the current head; and
 - ensure that the pull-request title and description accurately state the final
   change and verification evidence.

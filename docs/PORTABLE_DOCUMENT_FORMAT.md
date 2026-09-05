@@ -1,7 +1,8 @@
 # `.coedit` portable document format
 
-**Status:** Accepted logical recovery contract; exact carrier-specific version-1
-fields and golden bytes are frozen only after the Step 3 carrier qualification.
+**Status:** Accepted logical recovery contract; carrier-specific fields,
+container details, and implementation guards remain pending or experimental
+until the Step 3 and Step 6 gates promote them.
 
 ## 1. Purpose and authority
 
@@ -10,14 +11,19 @@ This document defines lossless portable recovery for the document-engine MVP.
 The user-facing extension is `.coedit`. A portable artifact retains current
 attributed content, every advertised retained Version, product History,
 Contributors and Origins, semantic Checkpoints, source/derivation information,
-stable public Version identity, and command idempotency within documented
-limits.
+stable public Version identity, and command idempotency subject to explicit
+implementation resource capacity.
 
 [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls domain meaning.
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
 controls formatting and Origin behavior. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
 controls the public serialization boundary. This document controls portable
-logical records, validation, compatibility, and the version-1 container.
+logical records, validation, compatibility, and the candidate version-1
+container.
+[`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md)
+controls cross-cutting capacity semantics and contract maturity. This document
+owns portable codec and hostile-input behavior, experimental guard candidates,
+and the guards selected during Step 6.
 
 The internal browser repository is separately specified by
 [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Its stores and checkpoint
@@ -38,9 +44,10 @@ suggestedExtension: ".coedit"
 The public architecture keeps `mediaType` as opaque transport metadata until a
 media type is registered or deliberately selected.
 
-Version 1 uses one bounded UTF-8 JSON container with base64 for binary chunks if
-the carrier qualification confirms that the resource and performance limits are
-acceptable. JSON is a portable container, not the internal database layout or a
+Version 1 currently proposes one bounded UTF-8 JSON container with base64 for
+binary chunks. Container selection remains pending until carrier qualification
+and Step 6 measurements confirm acceptable resource and performance behavior.
+JSON is a candidate portable container, not the internal database layout or a
 permanent promise that all future versions remain monolithic JSON.
 
 Do not freeze `formatVersion: 1`, publish a version-1 fixture, or implement the
@@ -203,10 +210,11 @@ A blank document or import session begins with a human Contributor supplied by
 the UX. This does not create an account or security-principal model.
 
 The MVP package preserves each document-local Contributor's stable ID, kind, and
-validated display name so History attribution survives Save/Open. Display names
-obey the scalar limits in `MVP_IMPLEMENTATION_SPEC.md`; they are descriptive
-metadata, not authenticated identity. A later separately managed profile can
-change presentation without changing stable attribution IDs.
+validated display name so History attribution survives Save/Open. Display-name
+validation is owned by `MVP_IMPLEMENTATION_SPEC.md`; the product defines no finite
+length maximum. Display names are descriptive metadata, not authenticated identity.
+A later separately managed profile can change presentation without changing stable
+attribution IDs.
 
 Human editing creates human Origin records. Markdown/file import creates
 imported or unknown Origin for source content while the import Contribution is
@@ -222,26 +230,31 @@ Contributor implicitly.
 
 Treat portable input as hostile. Validate a detached copy in this order:
 
-1. raw byte-size limit;
+1. implementation raw byte-size guard;
 2. UTF-8, JSON depth, duplicate keys, envelope identifier, exact supported
-   version, known properties, collection limits, and safe integers;
+   version, known properties, collection resource guards, and safe integers;
 3. carrier name/version/schema support and encoded binary shape;
-4. per-chunk decoded-size limit and SHA-256 content address;
+4. per-chunk decoded-size guard and SHA-256 content address;
 5. envelope corruption digest over the still-untrusted canonical payload;
 6. unique live IDs, immutable-record conflicts, command-idempotency records,
    and prohibited durable identity reuse across retained lifetimes;
 7. Contribution graph/frontier acyclicity, parent/result references, retained
    Version mappings, current pointer, and reachability;
 8. Contributor, Origin, source, derivation, effect, and checkpoint references;
-9. carrier checkpoint/effect schema, dependency closure, and resource limits;
+9. carrier checkpoint/effect schema, dependency closure, and implementation resource guards;
 10. reconstructed Block topology, ownership, ordering, tags, and structural
-    limits;
+    invariants plus implementation capacity;
 11. reconstructed text, hard breaks, marks, boundary policies, Origin coverage,
     opaque link-metadata shape/resource bounds, and typed internal-link shape; and
 12. History replay/materialization invariants.
 
 Validate a complete candidate engine before replacing the active engine or
 committing it to the browser repository.
+
+A capacity/resource rejection is not a semantic-format rejection. Keep those
+failure classes distinct so a conforming implementation can safely decline an
+artifact it cannot currently process without declaring that the artifact is
+universally invalid.
 
 ## 10. History verification
 
@@ -270,32 +283,49 @@ of work outside the restore author's observed frontier.
 Recompute derived projection hashes, affected targets, indexes, and reserved-ID
 sets. Do not trust serialized derived claims.
 
-## 11. Initial resource limits
+## 11. Hostile-input and codec resource-guard selection
 
-Start with these version-1 correctness limits, subject to confirmation by the
-carrier qualification measurements:
+The Step 6 decoder cannot ship until it uses selected finite guards before
+dangerous allocation or graph work.
+
+**Maturity:** Experimental guard candidates; final selection pending.
+
+**Owner:** This document.
+
+**Promotion gate:** Step 6 implementation evidence and version-1 freeze.
+
+Use these values as initial characterization points:
 
 - 64 MiB UTF-8 JSON;
 - JSON nesting depth 128;
-- 5,001 advertised Versions including genesis;
-- 5,000 Contributions;
-- at most 64 parent/frontier references on one Contribution;
+- 64 parent/frontier references on one Contribution;
 - 250,000 semantic operations in one Contribution;
 - 1,000,000 semantic operations in one archive;
-- 50,000 Blocks in any materialization;
-- 50,000 InlineContents in any materialization;
 - 8 MiB for one decoded carrier checkpoint/effect chunk;
 - 48 MiB decoded binary chunk data across the archive; and
 - 1,000,000 Unicode code points in one InlineContent.
 
-The encoder preflights the same limits and final UTF-8 size. Return a typed limit
-error instead of creating a version-1 file the decoder rejects. Do not truncate
-History, Origins, or document state to fit the format.
+These candidates do not define current acceptance, rejection, compatibility, or
+correctness-test thresholds. They are possible implementation resource guards,
+not version-1 document maxima. Shared content and History qualification
+workloads belong only in `MVP_VERIFICATION_PLAN.md`.
 
-If representative correct fixtures cannot fit or load acceptably on the recorded
-qualification environment, change the container before declaring version 1 frozen.
-Treat these measurements as format-capacity evidence, not as a general hardware
-performance promise, and do not silently relax hostile-input bounds.
+Step 6 profiling must characterize raw bytes, decoded allocation, nesting,
+collection cardinality, and graph-processing work. The selection record must
+consider Versions, Contributions, Blocks, InlineContents, per-Contribution and
+archive operations, carrier chunks, and InlineContent size. It must record
+which dimensions need explicit guards, why the selected values are safe on
+target environments, and why an omitted guard is safely bounded elsewhere.
+
+After promotion, the encoder preflights the selected resource guards that apply
+to the artifact it produces. Return a typed capacity error rather than truncate
+History, Origins, or document state. A capacity failure does not make the
+document semantically invalid.
+
+Before freezing version 1, verify that the selected container can round-trip the
+representative fixtures recorded by the qualification run. If monolithic
+JSON/base64 is the actual limiting factor, change the container rather than
+promoting that implementation limit into document semantics.
 
 ## 12. Integrity and chunk identity
 
@@ -344,13 +374,14 @@ At minimum, verify:
   topology, ownership, marks, opaque link metadata, and typed internal links fail;
 - malformed, truncated, duplicate-key, unknown-property, or unsupported
   container/carrier versions fail;
-- every documented resource limit fails safely when exceeded;
+- every resource guard selected and promoted under section 11 is exercised safely;
+- exceeding a selected implementation resource guard produces a capacity error without partial publication or semantic-invalidity claims;
 - stale serialization returns no artifact;
 - caller mutation of input bytes after open starts cannot alter the candidate;
 - a failed open never replaces the active engine;
 - reconstruction from periodic checkpoint plus effects equals direct current and
   historical materialization; and
-- every successful version-1 encode is accepted by the version-1 decoder.
+- every successful version-1 encode is accepted by the version-1 decoder on the same supported implementation envelope.
 
 ## 15. Compatibility and evolution
 

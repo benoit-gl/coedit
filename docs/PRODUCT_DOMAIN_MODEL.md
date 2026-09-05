@@ -10,6 +10,7 @@ Use these documents for those concerns:
 
 - [`MVP_CONTRACT.md`](MVP_CONTRACT.md) defines what the document-engine prototype must prove.
 - [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) defines component authority and the public engine boundary.
+- [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) defines cross-cutting capacity and resource semantics.
 - [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines detailed formatting, origin, clipboard, and comment-target behavior.
 - [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md) defines private MVP implementation contracts that are not owned by focused specifications.
 - [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md) defines Markdown interchange semantics.
@@ -131,7 +132,7 @@ The clean-slate model requires these invariants:
 11. InlineContent order is the order of the Block's `contents` vector.
 12. The live Block tree contains no cycle.
 
-The implementation specification defines initial size, depth, ID, and validation limits.
+These invariants do not impose finite document-size, tag-size, or tree-depth maxima. `CAPACITY_AND_PERFORMANCE_TARGETS.md` controls capacity semantics, and `MVP_IMPLEMENTATION_SPEC.md` owns the current Step 2 implementation behavior.
 
 All durable user-created and domain entity identities use canonical lowercase UUID-v4 values. Trusted construction or application code allocates them; pure structural reducers never generate identities. The Step 2 domain rejects duplicate Block and InlineContent IDs in the live structure but keeps no lifetime-ID registry. Once History exists, it rejects reuse of an identity across retained lifetimes, and portable validation enforces the same rule when opening a document.
 

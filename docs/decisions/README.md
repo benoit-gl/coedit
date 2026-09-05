@@ -20,3 +20,4 @@ rewriting history.
 | [`0005-semantic-interpretation-boundaries.md`](0005-semantic-interpretation-boundaries.md)                         | Accepted | Durable semantic boundaries, contextual judgments, and implementation-capacity limits                     |
 | [`0006-text-position-ownership.md`](0006-text-position-ownership.md)                                               | Accepted | Editor-native transient positions, carrier-stable durable positions, and Unicode coordinate ownership     |
 | [`0007-structural-position-allocator-abstraction.md`](0007-structural-position-allocator-abstraction.md)           | Accepted | Production allocator abstraction, collision tolerance, and reusable qualification                         |
+| [`0008-capacity-contract-maturity.md`](0008-capacity-contract-maturity.md)                                         | Accepted | Capacity maturity, ownership, experimental evidence, and promotion gates                                  |

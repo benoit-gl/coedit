@@ -4,7 +4,7 @@
 
 This document defines what the Coedit MVP must prove. The MVP is a **document-engine prototype**, not a complete collaborative writing product.
 
-Detailed implementation rules are in [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md). Domain meaning remains in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Public authority boundaries remain in [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md). Attributed text is specified in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md). Markdown interchange is specified in [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md). Lossless recovery is specified in [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md). Browser persistence is specified in [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Implementation order remains in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md).
+Detailed implementation rules are in [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md). Domain meaning remains in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Public authority boundaries remain in [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md). Capacity and resource semantics are specified in [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md). Attributed text is specified in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md). Markdown interchange is specified in [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md). Lossless recovery is specified in [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md). Browser persistence is specified in [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Implementation order remains in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md).
 
 ## 1. Purpose
 
@@ -113,7 +113,7 @@ A live editor can hold transient adapter state, but canonical text, formatting, 
 
 ### 4.8 Lossless portable recovery
 
-Within documented limits, the `.coedit` document contains enough information to reopen the document with equivalent current attributed content, retained History and derivation, stable advertised Version identities, and command-idempotency behavior.
+Within the implementation's actual supported resource capacity, the `.coedit` document contains enough information to reopen the document with equivalent current attributed content, retained History and derivation, stable advertised Version identities, and command-idempotency behavior. A codec capacity failure is explicit and is not a claim that the document is semantically invalid.
 
 Markdown is not the native recovery format.
 
@@ -207,6 +207,11 @@ Core commands, queries, History, Checkpoints, restore, Markdown adapters, and po
 
 ## 7. Completion rule
 
-The document-engine MVP is complete when all in-scope scenarios pass within documented limits and the browser prototype exposes the vertical slice without violating the engine authority boundary.
+The document-engine MVP is complete when all in-scope scenarios pass,
+experimental workloads have recorded characterization evidence, every guard
+selected by an implemented boundary fails safely, and the browser prototype
+exposes the vertical slice without violating the engine authority boundary.
+Completion does not create arbitrary product-level size maxima or promote an
+experimental target implicitly.
 
 Completion does not mean that the product has a provenance explorer, comments, authenticated collaboration, an AI provider, signatures, or a final replicated-tree algorithm. It means their accepted invariants are protected by a tested attributed-content and document-engine foundation instead of UI state or an experimental storage layout.

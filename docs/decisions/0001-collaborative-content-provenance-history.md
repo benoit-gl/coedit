@@ -15,6 +15,7 @@ This record preserves why the decision was made. Normative behavior belongs in:
 - [`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md) for product meaning;
 - [`../MVP_CONTRACT.md`](../MVP_CONTRACT.md) for the MVP proof boundary;
 - [`../MVP_ARCHITECTURE.md`](../MVP_ARCHITECTURE.md) for component authority;
+- [`../CAPACITY_AND_PERFORMANCE_TARGETS.md`](../CAPACITY_AND_PERFORMANCE_TARGETS.md) for capacity classification and numeric ownership;
 - [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for formatting, Origin, clipboard, and CommentTarget behavior;
 - [`../MVP_IMPLEMENTATION_SPEC.md`](../MVP_IMPLEMENTATION_SPEC.md) for private MVP rules;
 - [`../MARKDOWN_INTERCHANGE.md`](../MARKDOWN_INTERCHANGE.md) for Markdown import/export behavior;
@@ -231,6 +232,11 @@ Before the CollaborativeContent implementation and `.coedit` carrier encoding ar
 frozen, run the same headless and editor-integrated suite against Yjs v13 and
 Automerge. Track Yjs v14 for a later rerun after stable release.
 
+The representative workload values are experimental candidates owned by
+`MVP_VERIFICATION_PLAN.md`. Before comparing carriers, the qualification run
+records one method and fixture profile used for both. The candidate values are
+not hard limits, semantic maxima, correctness thresholds, or product guarantees.
+
 The suite must cover:
 
 - concurrent insertion, deletion, and formatting at both boundaries;
@@ -245,8 +251,8 @@ The suite must cover:
 - causal restore preserving unseen concurrent work;
 - compaction/garbage-collection effects on retained Versions, origins, and
   comment targets;
-- representative 100,000-character content and 5,000-Contribution load,
-  growth, save/open, and materialization behavior; and
+- the shared representative content and History qualification workloads,
+  including growth, save/open, and materialization behavior; and
 - portable round-trip without exposing carrier types in public APIs.
 
 Select Yjs when its protected metadata carrier is incremental, non-inheriting,
