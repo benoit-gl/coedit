@@ -1,8 +1,7 @@
 # Structural position allocator
 
-**Status:** Accepted Step 3 allocator abstraction and qualification contract;
-concrete algorithm selection remains open until persisted qualification evidence
-exists.
+**Status:** Accepted allocator abstraction; Step 3 selects the concrete
+algorithm and Step 4 implements it in the selected collaborative core.
 
 ## 1. Purpose and authority
 
@@ -92,10 +91,10 @@ repair path. The engine-level collision model still remains valid.
 
 ## 5. Qualification candidates
 
-Step 3 must characterize established dense-order algorithm families before it
-selects the production allocator. Relevant prior art includes fractional
-indexing, LSEQ-family approaches, and non-interleaving sequence approaches such
-as Fugue/FugueMax.
+Step 3 must characterize established dense-order algorithm families and select
+the production allocator. Step 4 retains the selected implementation behind the
+same abstraction. Relevant prior art includes fractional indexing, LSEQ-family
+approaches, and non-interleaving sequence approaches such as Fugue/FugueMax.
 
 A locally developed allocator can also be characterized as a candidate. It does
 not become the selected design merely because it exists or passes its own unit

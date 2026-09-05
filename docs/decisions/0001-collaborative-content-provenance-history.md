@@ -4,6 +4,8 @@
 
 **Decision date:** 2026-08-25
 
+**Amended:** 2026-09-03
+
 **Scope:** Whole-solution direction, including the strict document-engine MVP,
 the carrier-qualification gate, and compatibility requirements for later
 provenance, comments, AI, replication, and publication.
@@ -16,7 +18,8 @@ This record preserves why the decision was made. Normative behavior belongs in:
 - [`../MVP_CONTRACT.md`](../MVP_CONTRACT.md) for the MVP proof boundary;
 - [`../MVP_ARCHITECTURE.md`](../MVP_ARCHITECTURE.md) for component authority;
 - [`../CAPACITY_AND_PERFORMANCE_TARGETS.md`](../CAPACITY_AND_PERFORMANCE_TARGETS.md) for capacity classification and numeric ownership;
-- [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for formatting, Origin, clipboard, and CommentTarget behavior;
+- [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for formatting, Origin, clipboard, and Range-holder behavior;
+- [`../RANGE_MODEL.md`](../RANGE_MODEL.md) for durable Range behavior and staged representation selection;
 - [`../MVP_IMPLEMENTATION_SPEC.md`](../MVP_IMPLEMENTATION_SPEC.md) for private MVP rules;
 - [`../MARKDOWN_INTERCHANGE.md`](../MARKDOWN_INTERCHANGE.md) for Markdown import/export behavior;
 - [`../PORTABLE_DOCUMENT_FORMAT.md`](../PORTABLE_DOCUMENT_FORMAT.md) for recovery-format requirements;
@@ -101,18 +104,17 @@ actor separately and assigns an imported or unknown origin unless trustworthy
 source metadata is available. It must not manufacture an authorship claim for
 the paster.
 
-### 3.5 Comments use external targets; selections do not
+### 3.5 Comments use external Range holders; selections do not
 
-A durable comment or conversation has an explicit target outside the authored
-text. Its target combines:
+A future durable comment or conversation is an external record that holds one
+durable Range plus comment-specific attachment and repair state. The Range can
+refer to one or several semantic spans across Blocks and InlineContents. The
+Range service owns stable carrier positions, affinity, lineage, and
+carrier-neutral evidence. It omits unresolved or ambiguous members and never
+attaches them to merely similar text.
 
-- document, Block, and InlineContent identity;
-- stable carrier cursors with start/end affinity;
-- exact quote plus prefix and suffix context; and
-- explicit attached, ambiguous, or orphaned state.
-
-Resolution uses the stable cursor first and quote/context/position evidence as
-a validated repair fallback. It never silently attaches to merely similar text.
+The complete comment state machine and repair experience remain post-MVP. They
+consume the shared Range service and do not redefine Range kind or resolution.
 
 Selections, focus, cursors, and typing state remain transient awareness data
 unless a future feature deliberately creates a durable named selection.
@@ -135,7 +137,8 @@ does not become a ProseMirror document tree.
 ### 3.7 Product History is separate from CRDT transport
 
 A Contribution is an immutable, attributed semantic activity. A Version is a
-materializable causal frontier. Product History is not reconstructed from
+materializable causal frontier. Every Version remains exactly materializable
+for the lifetime of its document. Product History is not reconstructed from
 editor transactions, debounce windows, Yjs updates, transport packets, or
 wall-clock ordering.
 
@@ -144,6 +147,10 @@ which references its exact convergence effects and can carry a semantic group
 ID. History presentation may group adjacent Contributions without rewriting or
 deleting physical records. Crash journaling and human-readable grouping are
 separate concerns.
+
+Physical materialization snapshots, recovery checkpoints, caches, structural
+sharing, and compaction can accelerate access. They create no product Version
+and cannot remove a Version or the lineage needed to resolve a durable Range.
 
 The future replicated Contribution envelope includes at least document and
 Contribution IDs, parent frontier, acting contributor, originating replica,
@@ -246,11 +253,12 @@ The suite must cover:
 - internal/external copy and paste, restore, split, merge, hard break, IME,
   undo, and redo;
 - atomic structure-plus-text and multi-InlineContent operations;
-- stable comment cursors through editing, deletion, reload, and recovery;
+- durable Range-position feasibility through editing, deletion, reload, and
+  recovery;
 - partition, duplicate, delay, and reorder convergence in two replicas;
 - causal restore preserving unseen concurrent work;
-- compaction/garbage-collection effects on retained Versions, origins, and
-  comment targets;
+- compaction/garbage-collection that preserves every Version, Origin, required
+  Range lineage, and future comment target;
 - the shared representative content and History qualification workloads,
   including growth, save/open, and materialization behavior; and
 - portable round-trip without exposing carrier types in public APIs.
@@ -297,7 +305,7 @@ Costs and constraints:
 
 Rejected. It duplicates rich-text structure, creates difficult boundary and
 atomicity rules, and incorrectly implies that provenance inherits like
-formatting. External anchors remain appropriate for comments.
+formatting. External Range holders remain appropriate for comments.
 
 ### Literal inline marker characters
 
@@ -307,9 +315,9 @@ desired locality without becoming manuscript characters.
 
 ### Derive all provenance from History
 
-Rejected as the canonical model. Git-style blame is useful as a projection but
-copy/move inference is heuristic, deleted text disappears from the current
-view, and rewritten/compacted History can change the answer.
+Rejected as the canonical model. Git-style blame is useful as a projection, but
+copy/move inference is heuristic, deleted text disappears from the current view,
+and compacted carrier-level history can change an inferred answer.
 
 ### Treat restore or paste actor as the content author
 
@@ -352,7 +360,8 @@ only by a demonstrated requirement for a bundled consistent Chromium runtime.
   qualification suite without justifying current adoption.
 - [W3C Web Annotation](https://www.w3.org/TR/annotation-model/) and
   [Hypothesis anchoring](https://github.com/hypothesis/client/blob/main/src/annotator/anchoring/html.ts)
-  support cursor-plus-quote/context comment targets.
+  inform later comment attachment and repair design without defining Range
+  resolution.
 - [W3C PROV-DM](https://www.w3.org/TR/2013/REC-prov-dm-20130430/)
   supplies the Entity/Activity/Agent and derivation distinctions.
 - [Stencila Content Credentials](https://stencila.io/docs/content-credentials/)

@@ -1,29 +1,30 @@
 # `.coedit` portable document format
 
 **Status:** Accepted logical recovery contract; carrier-specific fields,
-container details, and implementation guards remain pending or experimental
-until the Step 3 and Step 6 gates promote them.
+embedded Range fields, container details, and implementation guards remain
+pending or experimental until Gates B and C pass and Step 8 freezes version 1.
 
 ## 1. Purpose and authority
 
 This document defines lossless portable recovery for the document-engine MVP.
 
 The user-facing extension is `.coedit`. A portable artifact retains current
-attributed content, every advertised retained Version, product History,
+attributed content, every Version, product History,
 Contributors and Origins, semantic Checkpoints, source/derivation information,
 stable public Version identity, and command idempotency subject to explicit
 implementation resource capacity.
 
 [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls domain meaning.
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
-controls formatting and Origin behavior. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
+controls formatting and Origin behavior. [`RANGE_MODEL.md`](RANGE_MODEL.md)
+controls embedded durable Range values. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
 controls the public serialization boundary. This document controls portable
 logical records, validation, compatibility, and the candidate version-1
 container.
 [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md)
 controls cross-cutting capacity semantics and contract maturity. This document
 owns portable codec and hostile-input behavior, experimental guard candidates,
-and the guards selected during Step 6.
+and the guards selected during Step 8.
 
 The internal browser repository is separately specified by
 [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Its stores and checkpoint
@@ -46,21 +47,28 @@ media type is registered or deliberately selected.
 
 Version 1 currently proposes one bounded UTF-8 JSON container with base64 for
 binary chunks. Container selection remains pending until carrier qualification
-and Step 6 measurements confirm acceptable resource and performance behavior.
+and Step 8 measurements confirm acceptable resource and performance behavior.
 JSON is a candidate portable container, not the internal database layout or a
 permanent promise that all future versions remain monolithic JSON.
 
 Do not freeze `formatVersion: 1`, publish a version-1 fixture, or implement the
-Step 6 encoder until Step 3 has recorded:
+Step 8 encoder until Gate B has recorded:
 
 - the selected carrier and exact supported version range;
 - its canonical checkpoint and incremental-effect encodings;
 - logical-state and historical-materialization verification;
 - native formatting and Origin round-trip behavior;
-- garbage-collection/retention assumptions; and
+- garbage collection and compaction that preserve every Version and required
+  Range lineage; and
 - the measured JSON/base64 size and load cost.
 
-This is an implementation qualification gate. It does not reopen the product
+Gate C must also record the carrier-neutral Range API result wrappers, the
+selected Range-tracking representation, the document-relative Range-fragment
+encoding, and the exact embedded internal-link Range encoding. Version 1 can
+then preserve those values without making the portable format a second Range
+authority.
+
+These are implementation qualification gates. They do not reopen the product
 semantics defined by current authorities.
 
 ## 3. Logical package
@@ -84,7 +92,7 @@ PortableManifest
   contributors[]
   origins[]
   contributions[]
-  advertisedVersions[]
+  versions[]
   commandReceipts[]
   chunks[]
   integrity:
@@ -108,7 +116,7 @@ optional source Version and derivation references
 authored display timestamp
 ```
 
-Each advertised Version maps one stable public `VersionToken` to the private
+Each Version maps one stable public `VersionToken` to the private
 frontier/checkpoint/effect information required to materialize it exactly.
 Clients never decode that mapping.
 
@@ -116,7 +124,8 @@ Clients never decode that mapping.
 not create a Contribution or Version.
 
 The package contains sufficient physical recovery checkpoints and immutable
-effects to reconstruct every advertised retained Version. Current state is the
+effects to reconstruct every Version and the lineage needed by embedded Ranges.
+Current state is the
 materialization named by `currentVersionToken`; it is not a second independent
 document object.
 
@@ -135,8 +144,8 @@ Contribution and its exact convergence effect.
 
 Complete snapshots per Contribution can be used by bounded early prototype
 fixtures, but version 1 must not require them if the selected carrier can provide
-immutable effects plus periodic checkpoints. A codec optimization cannot change
-which Versions are advertised or materializable.
+immutable effects plus periodic checkpoints. A codec optimization cannot make
+any Version or required Range lineage unavailable.
 
 ## 5. Canonical collaborative state
 
@@ -150,15 +159,18 @@ Carrier state preserves exactly:
 - intrinsic formatting marks and their boundary policies;
 - protected Origin references;
 - stable Block and InlineContent identities and ordering;
-- the private identities/tombstones required for accepted editing, restore, and
-  future comment-cursor behavior; and
+- the private identities and retained evidence required for accepted editing,
+  restore, and Range behavior;
+- embedded internal-link Range values in the Gate C carrier-neutral encoding; and
 - atomic effects spanning structure and several InlineContents.
 
 A normalized Block/text/mark projection can be computed during validation. If
 stored as an index or diagnostic aid, it is derived and must be verified against
 the carrier state; it is never a competing authority.
 
-The format does not contain external formatting or provenance ranges.
+The format does not contain external formatting or provenance Ranges. External
+comment records are not added to the strict MVP package. A Range value embedded
+in intrinsic internal-link metadata is canonical content and must round trip.
 
 ## 6. Origin, actor, and derivation
 
@@ -187,8 +199,8 @@ Use these rules:
   strings. Other persisted record IDs use the same representation unless their
   authoritative type defines another opaque form. Trusted code allocates IDs;
   pure reducers do not generate them.
-- `VersionToken` is public and opaque. The codec retains the private mapping
-  needed to reproduce every advertised token after open.
+- `VersionToken` is public, document-scoped, and opaque. The codec retains the
+  private mapping needed to reproduce every token after open.
 - Timestamps are canonical RFC 3339 UTC with millisecond precision:
   `YYYY-MM-DDTHH:mm:ss.sssZ`.
 - SHA-256 hashes are exactly 64 lowercase hexadecimal characters.
@@ -258,7 +270,7 @@ universally invalid.
 
 ## 10. History verification
 
-Verify retained History from genesis/frontier dependencies rather than trusting
+Verify complete History from genesis/frontier dependencies rather than trusting
 array or packet order.
 
 Genesis must contain the initial root and no Contribution. The first retained
@@ -285,14 +297,14 @@ sets. Do not trust serialized derived claims.
 
 ## 11. Hostile-input and codec resource-guard selection
 
-The Step 6 decoder cannot ship until it uses selected finite guards before
+The Step 8 decoder cannot ship until it uses selected finite guards before
 dangerous allocation or graph work.
 
 **Maturity:** Experimental guard candidates; final selection pending.
 
 **Owner:** This document.
 
-**Promotion gate:** Step 6 implementation evidence and version-1 freeze.
+**Promotion gate:** Step 8 implementation evidence and version-1 freeze.
 
 Use these values as initial characterization points:
 
@@ -310,7 +322,7 @@ correctness-test thresholds. They are possible implementation resource guards,
 not version-1 document maxima. Shared content and History qualification
 workloads belong only in `MVP_VERIFICATION_PLAN.md`.
 
-Step 6 profiling must characterize raw bytes, decoded allocation, nesting,
+Step 8 profiling must characterize raw bytes, decoded allocation, nesting,
 collection cardinality, and graph-processing work. The selection record must
 consider Versions, Contributions, Blocks, InlineContents, per-Contribution and
 archive operations, carrier chunks, and InlineContent size. It must record
@@ -346,8 +358,7 @@ After the carrier gate, check in:
 ## 13. Serialization concurrency
 
 Serialization is a non-mutating engine query against an expected VersionToken.
-It captures one stable retained frontier and the immutable records reachable
-under the requested History-retention contract.
+It captures the complete immutable History through one stable current frontier.
 
 If the engine advanced before serialization begins, return `VersionConflict`.
 Do not silently serialize a different Version. Concurrent repository activity
@@ -365,13 +376,16 @@ At minimum, verify:
   trips;
 - exact current and historical materialization;
 - intrinsic formatting and boundary policies survive;
-- Origin, actor, and derivation remain distinct and exact;
+- Origin, actor, derivation, and Range-tracking lineage remain distinct and exact;
 - semantic Checkpoints and physical recovery checkpoints remain distinct;
-- advertised VersionTokens remain stable after Save/Open;
+- every VersionToken remains stable and exactly materializable after Save/Open;
 - successful CommandId retries remain idempotent after Save/Open;
+- every embedded Range retains its creation Version and resolves to the same
+  surviving spans and exact concatenated text after Save/Open;
 - missing, duplicate, unreachable, mis-hashed, or conflicting chunks fail;
 - malformed graph/frontiers, Contributor/Origin references, carrier state,
-  topology, ownership, marks, opaque link metadata, and typed internal links fail;
+  topology, ownership, marks, opaque link metadata, typed internal links, and
+  embedded serialized Range values fail;
 - malformed, truncated, duplicate-key, unknown-property, or unsupported
   container/carrier versions fail;
 - every resource guard selected and promoted under section 11 is exercised safely;

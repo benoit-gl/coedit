@@ -8,7 +8,7 @@ This document defines Markdown import, export, diagnostics, and the Markdown rou
 
 The input dialect is CommonMark plus GitHub Flavored Markdown (GFM). Markdown is an interchange and rendering format. It is not the lossless Coedit recovery format.
 
-`PRODUCT_DOMAIN_MODEL.md` controls domain meaning. `MVP_CONTRACT.md` controls the MVP proof boundary. `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` controls formatting and Origin behavior. `MVP_IMPLEMENTATION_SPEC.md` controls implementation details that are not defined here. `CAPACITY_AND_PERFORMANCE_TARGETS.md` controls cross-cutting capacity semantics and contract maturity. This document owns Markdown hostile-input behavior, experimental guard candidates, and the guards selected during Step 5.
+`PRODUCT_DOMAIN_MODEL.md` controls domain meaning. `MVP_CONTRACT.md` controls the MVP proof boundary. `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` controls formatting and Origin behavior. `MVP_IMPLEMENTATION_SPEC.md` controls implementation details that are not defined here. `CAPACITY_AND_PERFORMANCE_TARGETS.md` controls cross-cutting capacity semantics and contract maturity. This document owns Markdown hostile-input behavior, experimental guard candidates, and the guards selected during Step 7.
 
 ## 2. Core round-trip invariant
 
@@ -63,14 +63,14 @@ Decode source as UTF-8 with fatal error handling. Permit one optional UTF-8 BOM.
 
 `sourceName` is display metadata only. Retain a basename, not an absolute local path.
 
-Treat Markdown input as hostile. The Step 5 importer cannot ship until it has
+Treat Markdown input as hostile. The Step 7 importer cannot ship until it has
 selected and tested guards for dangerous byte, parser, tree, and metadata work.
 
 **Maturity:** Experimental guard candidates; final selection pending.
 
 **Owner:** This document.
 
-**Promotion gate:** Step 5 Markdown implementation and profiling.
+**Promotion gate:** Step 7 Markdown implementation and profiling.
 
 Use these values as initial characterization points:
 
@@ -80,7 +80,7 @@ Use these values as initial characterization points:
 - 1 KiB UTF-8 source-name metadata.
 
 These candidates do not define current acceptance, rejection, compatibility, or
-correctness-test thresholds. Step 5 records the parser version, target
+correctness-test thresholds. Step 7 records the parser version, target
 environment, raw and decoded resource behavior, selected values, failure
 behavior, and boundary tests before promoting any value to a frozen
 implementation guard. The selected guards are not Markdown or Coedit semantic
@@ -92,7 +92,7 @@ Invalid UTF-8 is a source-format error. Resource exhaustion or an exceeded
 selected importer guard is a capacity error. Either failure occurs before the
 active document is replaced.
 
-Step 5 must define a top-level import-failure result that distinguishes those
+Step 7 must define a top-level import-failure result that distinguishes those
 categories without requiring an AST node or source location. `ImportDiagnostic`
 remains the shape for source-node normalization, preservation, and rejection
 diagnostics; this requirement does not freeze the eventual TypeScript API in
@@ -252,7 +252,7 @@ The test suite must include at least:
 - unsupported block constructs that use literal fallback; and
 - opaque link destinations and unsupported inline constructs.
 
-When Step 5 selects importer guards, add tests below and around each selected
+When Step 7 selects importer guards, add tests below and around each selected
 guard when practical, prove that capacity failure leaves no active candidate,
 and verify the top-level source-format/capacity distinction. Experimental
 candidate values produce characterization evidence until they are promoted;

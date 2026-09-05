@@ -4,11 +4,11 @@
 
 This document defines what the Coedit MVP must prove. The MVP is a **document-engine prototype**, not a complete collaborative writing product.
 
-Detailed implementation rules are in [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md). Domain meaning remains in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Public authority boundaries remain in [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md). Capacity and resource semantics are specified in [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md). Attributed text is specified in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md). Markdown interchange is specified in [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md). Lossless recovery is specified in [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md). Browser persistence is specified in [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Implementation order remains in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md).
+Detailed implementation rules are in [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md). Domain meaning remains in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Public authority boundaries remain in [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md). Capacity and resource semantics are specified in [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md). Attributed text is specified in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md). Durable Range behavior is specified in [`RANGE_MODEL.md`](RANGE_MODEL.md). Markdown interchange is specified in [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md). Lossless recovery is specified in [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md). Browser persistence is specified in [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Implementation order remains in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md).
 
 ## 1. Purpose
 
-The MVP must prove that Coedit can support one durable structured document through a headless document engine with clear authority, exact History, attributed collaborative rich text, deterministic projections, reversible Markdown interchange for imported documents, incremental browser durability, and lossless `.coedit` recovery.
+The MVP must prove that Coedit can support one durable structured document through a headless document engine with clear authority, exact History, attributed collaborative rich text, durable multi-span and positional Ranges, deterministic projections, reversible Markdown interchange for imported documents, incremental browser durability, and lossless `.coedit` recovery.
 
 The prototype must make later AI and collaboration work possible without implementing those systems now.
 
@@ -35,7 +35,9 @@ The MVP must provide these capabilities:
 17. Save a lossless opaque `.coedit` document.
 18. Reopen that `.coedit` document with equivalent current state and History.
 19. Persist documents incrementally in browser storage and survive a browser reload.
-20. Qualify the selected collaborative-content carrier against the accepted formatting, Origin, clipboard, comment-target-feasibility, convergence, and growth suite before freezing carrier-dependent implementation or `.coedit` version 1.
+20. Create one-span, multi-span, and Positional Ranges against the current visible Version; resolve spans or exact concatenated text against a descendant Version; rationalize them explicitly; serialize and parse them; and embed a Range value as optional internal-link refinement.
+21. Qualify Yjs and Automerge against the accepted attributed-content, structure, Range-feasibility, convergence, editor, and growth suite before selecting the production carrier.
+22. Select and record the Range-tracking representation before freezing `.coedit` version 1 or the internal-link Range encoding.
 
 ## 3. Out of scope
 
@@ -45,13 +47,13 @@ The MVP does not require:
 - networked multi-user collaboration;
 - presence, remote cursors, or typing indicators;
 - provenance visualization, analytics, authenticated identity, retention controls, or signed claims beyond the minimum Origin carrier;
-- comments or durable discussions;
+- Comment records, durable discussions, or comment repair UX;
 - post-genesis AI or automation Contributor registration;
 - attachments;
 - Tauri or another native shell;
 - Rust;
 - SQLite or another permanent database choice;
-- a final History compaction or retention design;
+- a final physical History compaction strategy;
 - a final replicated-tree algorithm; or
 - a final product UI design.
 
@@ -75,7 +77,7 @@ Trusted document construction creates genesis with the initial root and no Contr
 
 ### 4.3 Opaque public Versions
 
-Clients treat `VersionToken` as an opaque, document-scoped equality token. Clients do not decode or order it and do not depend on a numeric revision, one permanent head, or one parent.
+Clients treat `VersionToken` as an opaque, document-scoped equality token. Clients do not decode or order it and do not depend on a numeric revision or globally unique Version identifier.
 
 ### 4.4 Exact query correlation
 
@@ -85,9 +87,9 @@ The UX must not perform a separate version read and assume that the two reads ar
 
 ### 4.5 First-class History
 
-Every retained Contribution can be listed and summarized without requiring the frontend to read private storage.
+Every Contribution can be listed and summarized without requiring the frontend to read private storage.
 
-Every advertised retained Version can be materialized exactly and read-only.
+Every Version remains exactly materializable and read-only for the lifetime of its document. Private physical snapshots can accelerate materialization without creating product Versions.
 
 Restore appends a new Contribution. Restore does not rewind or delete History.
 
@@ -103,7 +105,7 @@ Semantic editor groups and physical recovery checkpoints are not semantic Checkp
 
 Each InlineContent owns one canonical CollaborativeContent state containing text, hard breaks, intrinsic formatting marks, and protected Origin attribution. HTML, plain text, ProseMirror JSON, and attribution runs are derived representations.
 
-An empty CollaborativeContent value is valid and contains no partially initialized formatting or Origin metadata. Step 2 treats this value as typed and opaque; Step 3 expands the same type with the complete attributed-content behavior.
+An empty CollaborativeContent value is valid and contains no partially initialized formatting or Origin metadata. Step 2 treats this value as typed and opaque. Step 3 qualifies the candidate carriers against the complete attributed-content behavior, and Step 4 implements it with the selected carrier.
 
 Formatting has explicit insertion-boundary behavior. Every live text item and hard break has exactly one Origin; new Origin is assigned by the trusted engine/import boundary and never inherited from neighboring text. Formatting commands cannot erase or rewrite Origin.
 
@@ -113,13 +115,21 @@ A live editor can hold transient adapter state, but canonical text, formatting, 
 
 ### 4.8 Lossless portable recovery
 
-Within the implementation's actual supported resource capacity, the `.coedit` document contains enough information to reopen the document with equivalent current attributed content, retained History and derivation, stable advertised Version identities, and command-idempotency behavior. A codec capacity failure is explicit and is not a claim that the document is semantically invalid.
+Within the implementation's actual supported resource capacity, the `.coedit` document contains enough information to reopen the document with equivalent current attributed content, complete History and derivation, stable Version identities, Range creation Versions and lineage, and command-idempotency behavior. A codec capacity failure is explicit and is not a claim that the document is semantically invalid.
 
 Markdown is not the native recovery format.
 
 ### 4.9 Durable and transient state stay separate
 
 Selection, focus, disclosure, active lens, dialogs, editor composition state, retry UI, and similar interaction state are not product History unless a later feature explicitly makes them durable.
+
+### 4.10 Durable Range service
+
+The headless engine creates and resolves document-relative durable Range values. Each Range records its document-scoped creation Version and its original Block and InlineContent locations. A Range can contain arbitrarily ordered, overlapping, duplicated, adjacent, sparse, or zero-length Span members, or it can refer to one logical position. Range is not a canonical entity, has no independent identity, and creates no document-wide holder registry.
+
+Direct creation fails atomically if any supplied target does not resolve. Resolution returns surviving spans in creation and lineage order, skips unresolved members, and can concatenate exact text without separators. Copy creates no Range lineage. Explicit rationalization can merge only sequential, exactly adjacent spans made adjacent by a lineage merge.
+
+Range serialization is a non-mutating document-relative rebase. Parsing is best-effort and omits unresolved or ambiguous members without speculative rebinding. The application owns any enclosing document URI and selects the document supplied to the Range service. `RANGE_MODEL.md` owns the detailed behavior and the Step 6 decision boundary.
 
 ## 5. Required domain properties
 
@@ -138,8 +148,10 @@ The prototype must preserve these domain rules:
 - a Block can contain zero, one, or several InlineContents;
 - several InlineContents are optional, not mandatory;
 - current entities do not use lifecycle timestamps or tombstones as product fields;
-- earlier working and checkpointed states live in History; and
-- historical materializations are detached and read-only.
+- earlier working and checkpointed states live in History;
+- historical materializations are detached and read-only;
+- a Range is a durable value and engine service, not a canonical entity or registry; and
+- moving Blocks does not reorder the semantic parts of an existing Range.
 
 `PRODUCT_DOMAIN_MODEL.md` is authoritative when this summary is insufficient.
 
@@ -191,7 +203,7 @@ If an arbitrary edited Coedit selection is outside the canonical Markdown-repres
 
 A document with realistic content and History can serialize to an opaque `.coedit` artifact and reopen into a candidate engine.
 
-The round trip preserves current and historical behavior, Checkpoint Contributions and Versions, stable advertised VersionTokens, exact text/formatting/Origin state, Contribution actor and derivation, and successful command-idempotency records.
+The round trip preserves current and historical behavior, Checkpoint Contributions and Versions, every stable VersionToken, Range creation Versions and lineage, exact text/formatting/Origin state, Contribution actor and derivation, and successful command-idempotency records.
 
 Malformed or unsupported input does not replace the current engine.
 
@@ -203,7 +215,13 @@ A failed repository commit does not report success or publish partial state. Com
 
 ### Scenario H — Headless contract
 
-Core commands, queries, History, Checkpoints, restore, Markdown adapters, and portable serialization run in tests without React, file pickers, or IndexedDB. Pure engine behavior does not depend on UI state.
+Core commands, queries, History, Checkpoints, restore, Range operations, Markdown adapters, and portable serialization run in tests without React, file pickers, or IndexedDB. Pure engine behavior does not depend on UI state.
+
+### Scenario I — Durable Range round trip
+
+Create a Span Range directly from several arbitrarily ordered, overlapping, duplicated, adjacent, sparse, and zero-length spans, and create a separate Positional Range. Reject the complete creation if any supplied target does not resolve in the current visible Version. Edit and restructure the selected document so the Span Range resolves across Blocks, changes current span count, and retains creation and lineage order despite current tree order. Verify greedy Span boundaries, zero-length Span behavior, Block-local preceding-stickiness, no continuation through copy, and exact-boundary split without a manufactured zero-length descendant.
+
+Resolve exact text by concatenating surviving spans without separators or deduplication. Rationalize only merge-caused exact adjacency after an explicit request. Serialize each Range as a document-relative value, parse it best-effort with unresolved or ambiguous members omitted, and resolve the rebased result. Embed a serialized Range as same-document internal-link refinement, preserve the primary Block fallback, and round trip it and its creation Version through `.coedit`. The application composes external deep links from a document URI and Range fragment. Ordinary edits and Block moves must not scan or rewrite every retained Range value.
 
 ## 7. Completion rule
 
@@ -214,4 +232,4 @@ exposes the vertical slice without violating the engine authority boundary.
 Completion does not create arbitrary product-level size maxima or promote an
 experimental target implicitly.
 
-Completion does not mean that the product has a provenance explorer, comments, authenticated collaboration, an AI provider, signatures, or a final replicated-tree algorithm. It means their accepted invariants are protected by a tested attributed-content and document-engine foundation instead of UI state or an experimental storage layout.
+Completion does not mean that the product has a provenance explorer, Comment records or repair UX, authenticated collaboration, an AI provider, signatures, or a final networked replicated-tree algorithm. It means their accepted invariants are protected by a tested attributed-content, Range, and document-engine foundation instead of UI state or an experimental storage layout.

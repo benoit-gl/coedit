@@ -119,10 +119,10 @@ required behavior and refer to that owner without copying the value.
 | Contributor scalar behavior                      | `MVP_IMPLEMENTATION_SPEC.md`         | Accepted invariant; boundary guard pending    | Relevant UI, codec, or storage step       |
 | Carrier and private-clipboard resource guards    | `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` | Pending selection                             | Step 3 carrier qualification              |
 | Shared carrier performance workloads and targets | `MVP_VERIFICATION_PLAN.md`           | Experimental targets                          | Step 3 carrier qualification              |
-| Markdown hostile-input guards                    | `MARKDOWN_INTERCHANGE.md`            | Experimental candidates; selection pending    | Step 5                                    |
-| `.coedit` hostile-input and codec guards         | `PORTABLE_DOCUMENT_FORMAT.md`        | Experimental candidates; selection pending    | Step 6 and version-1 freeze               |
-| Browser recovery, quota, and storage thresholds  | `BROWSER_PERSISTENCE.md`             | Pending selection or experimental measurement | Steps 11-12                               |
-| Editor grouping and queue comparison fixtures    | `MVP_IMPLEMENTATION_SPEC.md`         | Experimental targets                          | Step 9                                    |
+| Markdown hostile-input guards                    | `MARKDOWN_INTERCHANGE.md`            | Experimental candidates; selection pending    | Step 7                                    |
+| `.coedit` hostile-input and codec guards         | `PORTABLE_DOCUMENT_FORMAT.md`        | Experimental candidates; selection pending    | Step 8 and version-1 freeze               |
+| Browser recovery, quota, and storage thresholds  | `BROWSER_PERSISTENCE.md`             | Pending selection or experimental measurement | Steps 13-14                               |
+| Editor grouping and queue comparison fixtures    | `MVP_IMPLEMENTATION_SPEC.md`         | Experimental targets                          | Step 11                                   |
 | Network replication capacity behavior            | `COLLABORATION_MODEL.md`             | Pending selection                             | Post-MVP network-collaboration gate       |
 
 ADRs and explicit traceability records can reproduce an earlier value only to
