@@ -13,6 +13,7 @@ Use these focused authorities first:
 - [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) for product ontology and logical attributed-content meaning;
 - [`MVP_CONTRACT.md`](MVP_CONTRACT.md) for the MVP proof boundary;
 - [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) for public engine behavior and component authority;
+- [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) for cross-cutting capacity and resource semantics;
 - [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for formatting, Origin, clipboard, and Range-holder behavior;
 - [`RANGE_MODEL.md`](RANGE_MODEL.md) for durable Range behavior, the Range service, and staged representation selection;
 - [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md) for flat Block placement, Block-local carrier state, structural concurrency, and position-order qualification;
@@ -141,7 +142,7 @@ src/
 
 Do not split the application into packages before an independent consumer exists.
 
-## 4. IDs, tags, and structural limits
+## 4. IDs, tags, and implementation capacity
 
 Use distinct branded TypeScript types for persisted identities. The MVP needs at least:
 
@@ -163,26 +164,24 @@ Identity reuse means assigning an existing durable ID to a different entity, rec
 
 Use one tag-normalization implementation for Block and InlineContent tags. Keep ownership separate.
 
-Initial tag rules:
+Initial tag normalization rules are semantic:
 
 - Unicode NFKC normalization;
 - trim outer whitespace;
 - collapse internal whitespace;
 - case-insensitive identity;
 - first-spelling preservation;
-- remove empty values;
-- reject control characters;
-- at most 20 tags per owner;
-- at most 64 Unicode code points per tag; and
-- at most 256 UTF-8 bytes per tag.
+- remove empty values; and
+- reject control characters.
 
-Initial live-domain limits:
+Step 2 has no application-defined finite maximum for tag count, tag size, live Block count, live InlineContent count, or Block depth. Those dimensions are limited only by semantic validity and the actual resources of the running implementation.
 
-- 50,000 Blocks;
-- 50,000 InlineContents; and
-- Block depth 1,000 including the root.
+Step 2 retains no finite capacity-guard branches for those dimensions. If profiling exposes a real resource constraint, add an explicit guard at the affected implementation boundary and report a capacity/resource failure; do not redefine otherwise valid input as semantically invalid.
 
-All tree walks that can encounter user-controlled structure must be iterative and bounded.
+All tree walks that can encounter user-controlled structure must be iterative,
+perform work proportional to the structure they visit, and avoid recursive stack
+growth. The Step 2 domain does not invent a traversal budget. A consuming
+untrusted-input boundary owns any resource guard selected for that boundary.
 
 ## 5. Pure structural operations
 
@@ -307,13 +306,17 @@ Genesis has sequence zero, contains the initial root created by the document fac
 
 A new document requires at least one human Contributor. For the MVP, the UX asks for a free-form display name before session creation and supplies that Contributor to the engine factory. This does not create an account/profile model.
 
-Contributor display names are trimmed, control-character-free text limited to 128 Unicode code points and 512 UTF-8 bytes.
+Contributor display names are trimmed and control-character-free. The MVP
+defines no application-level length maximum. Any UI, storage, or
+interoperability guard remains a pending selection owned by the affected
+boundary's implementation step under `CAPACITY_AND_PERFORMANCE_TARGETS.md`; it is
+not Contributor semantics.
 
 The domain vocabulary retains Contributor/agent kinds `human`, `imported`, `automation`, `ai`, and `unknown`. Strict MVP creation needs human plus imported/unknown identities sufficient for Origin records. A Markdown/file import Contribution is attributed to the human/system actor that performs it; its content points to imported/unknown Origin. Post-genesis interactive registration workflows remain deferred.
 
 Each successful durable command publishes one logical Contribution, its exact effect/update, any new Origin records, one resulting private Version, and its successful command receipt atomically. Several Contributions can share a semantic group ID for presentation.
 
-The early in-memory implementation may use a full snapshot per Contribution under the existing bounds. The Step 13 browser target uses immutable effects/update chunks, periodic physical recovery checkpoints or cached materializations, and a small CAS head. Every product Version remains exactly materializable for the lifetime of the document. A physical snapshot creates no product Version, and compaction cannot discard a Version or required Range lineage.
+The early in-memory implementation may use a full snapshot per Contribution for prototype and qualification fixtures that fit within actual implementation resource capacity. The Step 13 browser target uses immutable effects/update chunks, periodic physical recovery checkpoints or cached materializations, and a small CAS head. Every product Version remains exactly materializable for the lifetime of the document. A physical snapshot creates no product Version, and compaction cannot discard a Version or required Range lineage. Product History remains independent of the physical representation.
 
 Use globally unique `CommandId` values. Check a previously successful CommandId before stale-version rejection:
 
@@ -343,7 +346,7 @@ Gate C must close and record:
 - exact result wrappers, all-members-omitted parsing, and optional parse diagnostics;
 - the zero-length Span tie-break at an exact structural split;
 - Positional Range split, merge, deletion, and replacement behavior;
-- document-relative fragment grammar and resource limits;
+- document-relative fragment grammar and resource-guard behavior;
 - internal-link Range encoding;
 - the selected Range-tracking lineage representation.
 
@@ -418,9 +421,18 @@ Accepted behavior:
 - failure retains the exact detached command and editor work needed for retry;
 - degraded durability, quota, and conflict are visible;
 - no later command overtakes a failed head; and
-- typing is not blocked merely because two whole-artifact serializations are pending, because normal durability does not serialize the whole artifact.
+- typing is not blocked by queued whole-artifact serialization, because normal durability does not serialize the whole artifact.
 
-Time, character, and memory thresholds are tunable UX/repository policy recorded with measurements. They are not product History semantics. The preserved 20-grapheme, 30-second, and two-pending-capture constants remain test evidence only.
+**Maturity:** Experimental comparison fixtures.
+
+**Owner:** This document.
+
+**Promotion gate:** Step 11 editor integration and measurements.
+
+Time, character, and memory thresholds are tunable UX/repository policy recorded
+with measurements. They are not product History semantics. Use the preserved
+20-grapheme, 30-second, and two-pending-capture values only as experimental
+comparison fixtures until Step 11 promotes, replaces, or retires them.
 
 ## 13. Lenses and comparison
 

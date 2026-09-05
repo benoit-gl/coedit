@@ -48,9 +48,7 @@ Origin and Contributor records can preserve descriptive attribution facts. Authe
 
 ### Implementation capacity
 
-An arbitrary maximum text or payload size is not a canonical document invariant only because the current carrier or runtime has a practical limit. Carrier, parser, codec, browser, and storage implementations can enforce explicit resource/capacity limits at their boundaries. Qualification records the tested envelope. Representative performance fixtures do not become validity limits.
-
-For Step 3, 100,000 code points is a deliberately demanding content-performance fixture. It is not the largest semantically valid InlineContent.
+An arbitrary maximum text or payload size is not a canonical document invariant only because the current carrier or runtime has a practical limit. Implementations can return explicit resource/capacity failures at real boundaries, and hostile-input consumers can enforce safety guards. Qualification workloads remain test evidence rather than validity limits. `CAPACITY_AND_PERFORMANCE_TARGETS.md` owns the cross-cutting policy and maturity model, and [`ADR 0008`](0008-capacity-contract-maturity.md) preserves the reclassification rationale and earlier planning values.
 
 ### Carrier semantic activity
 

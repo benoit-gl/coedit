@@ -1,10 +1,10 @@
-# ADR 0008: Durable Range semantics and staged implementation
+# ADR 0009: Durable Range semantics and staged implementation
 
 **Status:** Accepted behavior; Step 6 representation decision unresolved
 
 **Date:** 2026-09-02
 
-**Amended:** 2026-09-03
+**Amended:** 2026-09-05
 
 ## Context
 
@@ -106,8 +106,10 @@ Step 6 must still close:
 - the all-members-omitted parse result and optional parse diagnostics;
 - the zero-length Span tie-break at an exact structural split;
 - Positional Range behavior for split, merge, deletion, and replacement;
-- the fragment grammar, encoding, versioning, escaping, and size limits;
-- source-member and serialized-size resource limits; and
+- the fragment grammar, encoding, versioning, escaping, and resource-guard
+  behavior;
+- whether source-member count or serialized size needs an explicit finite
+  implementation guard and, if so, its selected value and failure behavior; and
 - the final internal-link serialized shape.
 
 Detailed comment repair policy remains a separate post-MVP decision.
@@ -117,6 +119,8 @@ Detailed comment repair policy remains a separate post-MVP decision.
 [`../RANGE_MODEL.md`](../RANGE_MODEL.md) owns the detailed behavioral and staged
 qualification contract. [`../TEXT_POSITION_MODEL.md`](../TEXT_POSITION_MODEL.md)
 owns editor and carrier position boundaries.
+[`../CAPACITY_AND_PERFORMANCE_TARGETS.md`](../CAPACITY_AND_PERFORMANCE_TARGETS.md)
+owns cross-cutting capacity semantics and contract maturity.
 [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
 owns formatting, Origin, link, and comment-holder behavior outside the Range
 contract. [`../../SCAFFOLDING_PLAN.md`](../../SCAFFOLDING_PLAN.md) owns step and

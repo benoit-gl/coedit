@@ -125,7 +125,7 @@ applicable, cover:
 - mutation and side effects;
 - concurrency or version assumptions;
 - expected failure behavior;
-- resource limits; and
+- selected or frozen resource guards and capacity-failure behavior; and
 - security or trust boundaries.
 
 Use standard TSDoc tags such as `@remarks`, `@param`, `@returns`, `@throws`,
@@ -218,7 +218,7 @@ Platform tiers are:
 | Tier    | Requirement                                                                                             |
 | ------- | ------------------------------------------------------------------------------------------------------- |
 | Windows | Required native developer platform. Commands work from PowerShell or `cmd.exe` through package scripts. |
-| Linux   | Required developer and future CI platform.                                                              |
+| Linux   | Required developer and CI platform.                                                                     |
 | macOS   | Intended supported developer platform; use the same commands and avoid known incompatibilities.         |
 
 Step 1 pins the Node.js runtime range and pnpm version in project metadata and
@@ -281,12 +281,27 @@ tracked source during this sequence.
 
 ## 10. CI and platform verification
 
-There is no CI configuration yet. Do not add a workflow merely to satisfy this
-document.
+The repository CI workflow runs on Linux for pull requests and pushes to `main`.
+It uses the ordinary repository commands rather than a separate CI-only build or
+test path. The required job runs:
 
-When CI is introduced, its required execution environment is Linux and it runs
-the canonical commands above rather than a separate CI-only build. Linux CI does
-not reduce the Windows compatibility requirement.
+```text
+npm run bootstrap
+npm run check
+npm run build
+npm run check
+```
+
+The second `npm run check` verifies that generated build output does not affect
+source verification. Keep this workflow small and deterministic. Add a CI-only
+helper, cache, matrix, service, or platform job only when a concrete verification
+need justifies it.
+
+Linux CI is the ordinary pull-request gate. It does not reduce the Windows
+compatibility requirement. Changes to bootstrap behavior, package scripts,
+build tooling, path handling, or other platform-sensitive developer tooling must
+also be qualified on native Windows. Other changes do not require a Windows CI
+job merely because Windows is a supported developer platform.
 
 Before Step 1 exits, retain successful clean-checkout evidence from:
 

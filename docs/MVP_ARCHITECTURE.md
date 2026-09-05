@@ -2,7 +2,7 @@
 
 **Status:** Accepted clean-slate MVP direction.
 
-This document is authoritative for component ownership and the public document-engine boundary. Product ontology belongs in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Implementation order belongs in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md). Attributed text, durable Range behavior, Markdown interchange, `.coedit`, and browser persistence details belong in their focused specifications. Post-MVP replication belongs in [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md).
+This document is authoritative for component ownership and the public document-engine boundary. Product ontology belongs in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Implementation order belongs in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md). Capacity classification belongs in [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md). Attributed text, durable Range behavior, Markdown interchange, `.coedit`, and browser persistence details belong in their focused specifications. Post-MVP replication belongs in [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md).
 
 The document engine is a logical backend. In the MVP it runs locally in the browser process. It does not need to be a server, worker, native process, or separate package.
 
@@ -93,9 +93,7 @@ Before a new classification becomes durable state, ask:
 
 A contextual classification that can change with the consumer and has no durable workflow normally remains a diagnostic, projection result, activation decision, or other boundary result. ADR 0005 records the rationale and examples.
 
-The same rule applies to capacity. The domain does not impose an arbitrary text or payload-size ceiling only because one carrier, parser, codec, browser, or storage implementation needs a resource guard. Boundary implementations can reject work they cannot process safely and must return explicit resource/capacity failure. Qualification records the tested envelope. Such an implementation limit does not make larger content semantically invalid.
-
-Resource protection remains mandatory for hostile external inputs. Parser byte limits, nesting limits, archive bounds, opaque-metadata bounds, and similar guards protect the consuming implementation without redefining document ontology.
+The same rule applies to capacity. `CAPACITY_AND_PERFORMANCE_TARGETS.md` owns the detailed classification and default rule. The domain has no arbitrary finite size ceiling only because one carrier, parser, codec, browser, or storage implementation has finite resources. An actual implementation constraint returns an explicit capacity/resource failure and does not make larger content semantically invalid. Any public engine error can report that a local bound or capacity limit caused the operation to fail when applicable. The error must identify that cause as a capacity/resource failure so that clients do not mistake it for a statement that the document or requested state is semantically invalid. This rule does not require the MVP to define a complete error taxonomy in advance. Hostile external inputs still require bounded processing at the consuming boundary.
 
 ## 3. Public engine behavior
 
@@ -229,7 +227,7 @@ interface PortableDocumentInput {
 }
 ```
 
-`RANGE_MODEL.md` owns Range behavior. The selected `DocumentEngine` supplies document context. The operation names and request shapes above are illustrative; Step 6 Gate C finalizes result wrappers, parse diagnostics, resource limits, and serialization types without exposing carrier-native objects.
+`RANGE_MODEL.md` owns Range behavior. The selected `DocumentEngine` supplies document context. The operation names and request shapes above are illustrative; Step 6 Gate C finalizes result wrappers, parse diagnostics, resource-guard behavior, and serialization types without exposing carrier-native objects.
 
 `PORTABLE_DOCUMENT_FORMAT.md` owns the exact `.coedit` wire contract. The UX treats `bytes` as opaque. No specific MIME type is part of the accepted MVP design yet.
 

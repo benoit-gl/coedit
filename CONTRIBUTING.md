@@ -1,6 +1,6 @@
 # Contributing to Coedit
 
-This document defines the minimum submission standard for implementation work.
+This document defines the minimum submission standard for repository changes.
 It does not replace the engineering or verification specifications.
 
 Read these documents before you change implementation code:
@@ -14,23 +14,18 @@ The authoritative documentation index is [`docs/README.md`](docs/README.md).
 
 ## Definition of done
 
-Every commit that remains in a submitted pull request must be a valid repository
-state. Do not submit a known-broken intermediate commit.
-
-Before you push such a commit, verify that its contents pass:
-
-```text
-npm run check
-npm run build
-```
+Draft pull requests and development branches can contain incomplete, fixup, or
+checkpoint commits. Intermediate branch commits do not have to pass all
+repository gates. The final pull-request head must be a coherent repository
+state before the pull request is ready for review or merge.
 
 Use `npm run bootstrap` first on a clean checkout or when dependencies are not
 installed. `npm run check` is the complete non-interactive source-verification
 gate. It includes formatting, TypeScript, ESLint, dependency rules, API
 documentation validation, and the complete default unit-test suite.
 
-A pull request is complete only when the final submitted contents pass the
-canonical clean-checkout sequence:
+A pull request is complete only when its current head passes the repository CI
+workflow. The canonical clean-checkout sequence is:
 
 ```text
 npm run bootstrap
@@ -38,9 +33,13 @@ npm run check
 npm run build
 ```
 
-Do not describe work as complete when a required gate has not run successfully.
-If verification cannot run because of an external limitation, keep the work
-explicitly incomplete and state which evidence is missing.
+CI runs the same sequence and then runs `npm run check` again after the build to
+verify that generated output does not affect source checks.
+
+Verification claims must state evidence that actually ran against the current
+pull-request head. Do not describe work as complete when a required gate has not
+run successfully. If verification cannot run because of an external limitation,
+keep the work explicitly incomplete and state which evidence is missing.
 
 ## Test requirements
 
@@ -51,7 +50,10 @@ For each change:
 
 - exercise the new successful behavior;
 - exercise relevant failure paths and invariants;
-- test documented limits and boundary conditions when they apply;
+- test semantic boundaries and every selected or frozen resource guard and
+  capacity-failure path when they apply;
+- record experimental capacity or performance results without using an
+  unpromoted candidate as a correctness failure;
 - add a regression test for a corrected defect when practical; and
 - keep existing tests passing without weakening assertions only to accept the
   new implementation.
@@ -66,11 +68,44 @@ Keep implementation, tests, TSDoc, and authoritative documentation consistent.
 When a change modifies a documented contract, update all affected artifacts in
 the same pull request.
 
+Every finite capacity, resource, or performance number that affects acceptance,
+rejection, compatibility, protection, or evaluation must follow
+`docs/CAPACITY_AND_PERFORMANCE_TARGETS.md`. Identify its maturity, direct owner,
+and promotion gate or change rule. A pull request that promotes an experimental
+target or pending selection must include the supporting environment, evidence,
+failure behavior, and tests. Do not make an experimental target fail
+correctness CI or reject otherwise valid document state.
+
 Do not suppress a lint, dependency, TypeDoc, or verification failure only to
 make a gate pass. A required exception is a design change and must be documented
 and reviewed as such.
 
-## Pull-request hygiene
+Call out a new dependency, public API change, architecture-boundary exception,
+lint or verification suppression, or toolchain-version change in the
+pull-request description and state the reason. Do not add a separate process for
+such a change unless an authoritative specification requires it.
+
+## Pull-request workflow and hygiene
+
+Use one pull request for one logical merge unit. Keep unrelated cleanup and
+refactoring out of the change. Documentation and implementation that define one
+contract can remain in the same pull request. Use a separate design pull request
+when a design decision must be reviewed or accepted independently.
+
+Open a draft pull request when the work becomes useful to share, preserve, or
+review. Draft work can be incomplete and can contain temporary commits. Before
+you mark it ready for review, make its final scope coherent and remove temporary
+working state.
+
+Pull requests are always squash-merged. Write the pull-request title and
+description as the final squash commit title and message. The description must
+state the resulting change and relevant verification, not temporary branch or
+review-process status. Update the title or description during review whenever
+the final change makes the existing text inaccurate or incomplete. Put
+transient review notes in the pull-request conversation instead.
+
+Branch history can be rewritten before merge. Coordinate before you force-update
+a branch that another contributor is actively using or building on.
 
 Submit only files that belong to the change. Remove temporary scripts,
 diagnostic logs, local verification artifacts, generated output, and other
@@ -79,15 +114,16 @@ working files before review unless the repository explicitly requires them.
 Before you mark a pull request ready for review:
 
 - inspect the complete diff against its target branch;
+- confirm that the final head is coherent and has no known broken state;
 - confirm that no unrelated or generated files remain;
 - confirm that all new or changed behavior has the required tests;
-- run the canonical verification sequence on the final contents; and
-- ensure that the pull-request description states the implemented contract and
-  the verification that actually ran.
-
-Keep commits reviewable and bisectable. Do not retain a commit that fails the
-repository gates, depends on a later fix to become valid, or leaves the source,
-tests, and documentation intentionally inconsistent.
+- confirm that implementation, tests, TSDoc, and authoritative documentation
+  agree;
+- confirm that new capacity/performance numbers have a maturity, owner, and
+  promotion gate and that only promoted contracts drive correctness failures;
+- run or obtain the required verification on the current head; and
+- ensure that the pull-request title and description accurately state the final
+  change and verification evidence.
 
 ## Generated output
 

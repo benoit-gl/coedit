@@ -4,24 +4,25 @@ These documents describe the clean-slate application on `main`. Each document ha
 
 ## Current authoritative documents
 
-| Document                                                                   | Authority                                                                                                                |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md)                       | Logical product ontology and domain vocabulary                                                                           |
-| [`MVP_CONTRACT.md`](MVP_CONTRACT.md)                                       | Required proof boundary for the document-engine MVP                                                                      |
-| [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)                               | Component authority, public engine behavior, and adapter workflows                                                       |
-| [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) | Intrinsic formatting, origin attribution, clipboard lineage, comment targets, and carrier qualification                  |
-| [`TEXT_POSITION_MODEL.md`](TEXT_POSITION_MODEL.md)                         | Unicode text, transient editor coordinates, and durable carrier-position boundaries                                      |
-| [`RANGE_MODEL.md`](RANGE_MODEL.md)                                         | Durable multi-span and positional Range behavior, service boundary, serialization, and staged qualification              |
-| [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md)               | Flat Block placement, tree projection, structural concurrency policy, and position-order qualification                   |
-| [`STRUCTURAL_POSITION_ALLOCATOR.md`](STRUCTURAL_POSITION_ALLOCATOR.md)     | Production dense-order allocator abstraction, collision tolerance, characterization, and algorithm selection             |
-| [`CODING_STYLE.md`](CODING_STYLE.md)                                       | Source structure, as-implemented TSDoc, lint/format/dependency tooling, command-line interface, and platform portability |
-| [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md)                 | Private MVP implementation rules that are not owned by a focused specification                                           |
-| [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md)                       | Markdown import, export, diagnostics, and normalized round-trip behavior                                                 |
-| [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md)               | Lossless `.coedit` logical recovery contract, gated version-1 container, and hostile-input validation                    |
-| [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md)                         | Incremental IndexedDB repository, recovery, multi-tab, quota, and backup behavior                                        |
-| [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md)                     | MVP test strategy, risk coverage, and qualification evidence                                                             |
-| [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md)                         | Post-MVP replication, convergence, and causal History direction                                                          |
-| [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md)                         | RUP-inspired work order, phase gates, and completion criteria                                                            |
+| Document                                                                     | Authority                                                                                                                |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md)                         | Logical product ontology and domain vocabulary                                                                           |
+| [`MVP_CONTRACT.md`](MVP_CONTRACT.md)                                         | Required proof boundary for the document-engine MVP                                                                      |
+| [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)                                 | Component authority, public engine behavior, and adapter workflows                                                       |
+| [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) | Capacity/resource classification, contract maturity, ownership, verification, and promotion rules                        |
+| [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)   | Intrinsic formatting, Origin attribution, clipboard lineage, Range-holder behavior, and carrier qualification            |
+| [`TEXT_POSITION_MODEL.md`](TEXT_POSITION_MODEL.md)                           | Unicode text, transient editor coordinates, and durable carrier-position boundaries                                      |
+| [`RANGE_MODEL.md`](RANGE_MODEL.md)                                           | Durable multi-span and positional Range behavior, service boundary, serialization, and staged qualification              |
+| [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md)                 | Flat Block placement, tree projection, structural concurrency policy, and position-order qualification                   |
+| [`STRUCTURAL_POSITION_ALLOCATOR.md`](STRUCTURAL_POSITION_ALLOCATOR.md)       | Production dense-order allocator abstraction, collision tolerance, characterization, and algorithm selection             |
+| [`CODING_STYLE.md`](CODING_STYLE.md)                                         | Source structure, as-implemented TSDoc, lint/format/dependency tooling, command-line interface, and platform portability |
+| [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md)                   | Private MVP implementation rules that are not owned by a focused specification                                           |
+| [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md)                         | Markdown import, export, diagnostics, and normalized round-trip behavior                                                 |
+| [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md)                 | Lossless `.coedit` logical recovery contract, gated version-1 container, and hostile-input validation                    |
+| [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md)                           | Incremental IndexedDB repository, recovery, multi-tab, quota, and backup behavior                                        |
+| [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md)                       | MVP test strategy, risk coverage, and qualification evidence                                                             |
+| [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md)                           | Post-MVP replication, convergence, and causal History direction                                                          |
+| [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md)                           | RUP-inspired work order, phase gates, and completion criteria                                                            |
 
 All current design authority is local to `main`.
 
@@ -36,6 +37,7 @@ Use the document with direct authority for the subject.
 - A private implementation type does not override `MVP_ARCHITECTURE.md`.
 - A codec or storage detail does not override `PRODUCT_DOMAIN_MODEL.md`.
 - A focused Markdown or `.coedit` specification overrides duplicated technical wording elsewhere.
+- `CAPACITY_AND_PERFORMANCE_TARGETS.md` controls capacity classification, maturity, ownership, and promotion. Focused specifications own current subsystem behavior and candidates; pending or experimental numbers are not exact contracts until their named gate promotes them. [`ADR 0008`](decisions/0008-capacity-contract-maturity.md) preserves the reclassification rationale and earlier planning values.
 - `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns detailed attributed-text behavior and Range-holder lifecycle outside the shared Range contract.
 - `TEXT_POSITION_MODEL.md` owns text-coordinate and durable carrier-position boundaries; `RANGE_MODEL.md` owns durable multi-span and positional Range behavior, the carrier-neutral Range service, and Range serialization.
 - `STRUCTURAL_CARRIER_MODEL.md` owns Block placement and structural carrier qualification; `STRUCTURAL_POSITION_ALLOCATOR.md` owns the production allocator abstraction and allocator-algorithm qualification; `BROWSER_PERSISTENCE.md` owns browser repository behavior.
@@ -48,7 +50,7 @@ When implementation evidence invalidates an accepted rule, update the responsibl
 
 ## Current implementation status
 
-The documentation authority, coding/tooling agreement, and preserved-decision reconciliation required by Step 0 are complete. PR #9 amends that baseline with the durable Range contract and the revised Step 3-and-later work order. Formatting remains intrinsic collaborative metadata, Origin provenance remains protected content-native metadata, and ordinary selections remain transient. Comments and internal links can use the shared Range value without making Range a formatting/provenance anchor, canonical entity, or registry.
+The documentation authority, coding/tooling agreement, and preserved-decision reconciliation required by Step 0 are complete. The baseline includes the durable Range contract and the revised Step 3-and-later work order. Formatting remains intrinsic collaborative metadata, Origin provenance remains protected content-native metadata, and ordinary selections remain transient. Comments and internal links can use the shared Range value without making Range a formatting/provenance anchor, canonical entity, or registry.
 
 Steps 1 and 2 are implemented. Step 2 provides the pure recursive Block domain, typed structural operations, tag normalization, live structural validation, atomic operation groups, trusted Web Crypto UUID allocation outside the domain, and the typed opaque empty `InlineContentValue`. The genesis factory creates exactly one real root with no tags, no InlineContents, and no child Blocks. Application code adds any authored starter content after genesis through ordinary operations.
 
@@ -58,13 +60,13 @@ Step 3 is the next implementation step and now qualifies the Yjs and Automerge c
 
 Collaborative text does not use one universal numeric character coordinate. Canonical text does not prescribe UTF-8 or UTF-16 storage. The editor owns transient editing positions and normal Unicode selection behavior. A Range records its document-scoped creation Version and original Block/InlineContent locations. Direct creation is all-or-none and preserves arbitrary source order and multiplicity. Resolution follows movement, split, and merge lineage but not copying; it omits unresolved members and concatenates exact text without inferred separators. Serialization emits a document-relative Range fragment, while the application owns an enclosing external document URI. [`TEXT_POSITION_MODEL.md`](TEXT_POSITION_MODEL.md) owns position boundaries; [`RANGE_MODEL.md`](RANGE_MODEL.md) owns Range behavior.
 
-Gate B selects the collaborative carrier after Step 3 qualification against the common suites in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), [`TEXT_POSITION_MODEL.md`](TEXT_POSITION_MODEL.md), [`RANGE_MODEL.md`](RANGE_MODEL.md), [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md), [`STRUCTURAL_POSITION_ALLOCATOR.md`](STRUCTURAL_POSITION_ALLOCATOR.md), and [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md). Step 3 proves Range feasibility but does not freeze the lineage representation. Gate C closes the Range API, behavior, serialization, and representation after Step 6 and before `.coedit` version 1 or the internal-link Range encoding is frozen.
+Gate B selects the collaborative carrier after Step 3 qualifies pinned Yjs v13 against Automerge with the common suites in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), [`TEXT_POSITION_MODEL.md`](TEXT_POSITION_MODEL.md), [`RANGE_MODEL.md`](RANGE_MODEL.md), [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md), [`STRUCTURAL_POSITION_ALLOCATOR.md`](STRUCTURAL_POSITION_ALLOCATOR.md), and [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md). Allocator candidates use the same production abstraction. The persisted evidence records one run-specific comparison method and the final selection. Experimental workload and latency candidates remain evidence rather than correctness thresholds unless promoted. Step 3 proves Range feasibility but does not freeze the lineage representation. Gate C closes the Range API, behavior, serialization, and representation after Step 6 and before `.coedit` version 1 or the internal-link Range encoding is frozen.
 
 Step 1 established the OS-neutral npm package-command interface and tooling in
 [`CODING_STYLE.md`](CODING_STYLE.md). npm bootstraps the pinned pnpm version, so
 no global pnpm installation is required. Native Windows and Linux command-line
 builds are required; macOS is intended and must not be knowingly excluded.
-Future CI runs on Linux through the same commands. No CI workflow exists yet.
+The CI workflow runs the same commands on Linux for pull requests and pushes to `main`, including a second `npm run check` after the production build.
 
 ## Preserved experimental evidence
 

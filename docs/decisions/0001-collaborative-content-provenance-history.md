@@ -17,6 +17,7 @@ This record preserves why the decision was made. Normative behavior belongs in:
 - [`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md) for product meaning;
 - [`../MVP_CONTRACT.md`](../MVP_CONTRACT.md) for the MVP proof boundary;
 - [`../MVP_ARCHITECTURE.md`](../MVP_ARCHITECTURE.md) for component authority;
+- [`../CAPACITY_AND_PERFORMANCE_TARGETS.md`](../CAPACITY_AND_PERFORMANCE_TARGETS.md) for capacity classification and numeric ownership;
 - [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for formatting, Origin, clipboard, and Range-holder behavior;
 - [`../RANGE_MODEL.md`](../RANGE_MODEL.md) for durable Range behavior and staged representation selection;
 - [`../MVP_IMPLEMENTATION_SPEC.md`](../MVP_IMPLEMENTATION_SPEC.md) for private MVP rules;
@@ -238,6 +239,11 @@ Before the CollaborativeContent implementation and `.coedit` carrier encoding ar
 frozen, run the same headless and editor-integrated suite against Yjs v13 and
 Automerge. Track Yjs v14 for a later rerun after stable release.
 
+The representative workload values are experimental candidates owned by
+`MVP_VERIFICATION_PLAN.md`. Before comparing carriers, the qualification run
+records one method and fixture profile used for both. The candidate values are
+not hard limits, semantic maxima, correctness thresholds, or product guarantees.
+
 The suite must cover:
 
 - concurrent insertion, deletion, and formatting at both boundaries;
@@ -247,13 +253,14 @@ The suite must cover:
 - internal/external copy and paste, restore, split, merge, hard break, IME,
   undo, and redo;
 - atomic structure-plus-text and multi-InlineContent operations;
-- stable comment cursors through editing, deletion, reload, and recovery;
+- durable Range-position feasibility through editing, deletion, reload, and
+  recovery;
 - partition, duplicate, delay, and reorder convergence in two replicas;
 - causal restore preserving unseen concurrent work;
 - compaction/garbage-collection that preserves every Version, Origin, required
   Range lineage, and future comment target;
-- representative 100,000-character content and 5,000-Contribution load,
-  growth, save/open, and materialization behavior; and
+- the shared representative content and History qualification workloads,
+  including growth, save/open, and materialization behavior; and
 - portable round-trip without exposing carrier types in public APIs.
 
 Select Yjs when its protected metadata carrier is incremental, non-inheriting,
@@ -298,7 +305,7 @@ Costs and constraints:
 
 Rejected. It duplicates rich-text structure, creates difficult boundary and
 atomicity rules, and incorrectly implies that provenance inherits like
-formatting. External anchors remain appropriate for comments.
+formatting. External Range holders remain appropriate for comments.
 
 ### Literal inline marker characters
 
@@ -353,7 +360,8 @@ only by a demonstrated requirement for a bundled consistent Chromium runtime.
   qualification suite without justifying current adoption.
 - [W3C Web Annotation](https://www.w3.org/TR/annotation-model/) and
   [Hypothesis anchoring](https://github.com/hypothesis/client/blob/main/src/annotator/anchoring/html.ts)
-  support the cursor-plus-quote/context evidence used by durable Ranges.
+  inform later comment attachment and repair design without defining Range
+  resolution.
 - [W3C PROV-DM](https://www.w3.org/TR/2013/REC-prov-dm-20130430/)
   supplies the Entity/Activity/Agent and derivation distinctions.
 - [Stencila Content Credentials](https://stencila.io/docs/content-credentials/)

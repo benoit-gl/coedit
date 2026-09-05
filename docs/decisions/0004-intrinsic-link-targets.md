@@ -6,7 +6,7 @@
 
 **Amended:** 2026-09-03
 
-**Authority:** [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) controls detailed link and range-target behavior. [`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md) controls product ontology.
+**Authority:** [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) controls detailed link-holder behavior. [`../RANGE_MODEL.md`](../RANGE_MODEL.md) controls Range behavior. [`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md) controls product ontology.
 
 ## Context
 
@@ -22,7 +22,7 @@ A link remains an intrinsic formatting mark.
 
 A link target has one of two forms:
 
-1. **Opaque link metadata.** The document engine preserves a bounded carrier-neutral value without interpreting its application meaning. The presentation or integration layer decides whether and how to interpret or activate it.
+1. **Opaque link metadata.** The document engine preserves a carrier-neutral value subject to applicable implementation resource guards without interpreting its application meaning. The presentation or integration layer decides whether and how to interpret or activate it.
 2. **Internal Block target.** The link stores a document-local `BlockId`. It can optionally contain a durable Range refinement.
 
 The optional internal-link refinement uses the shared Range value and Range service. This reuse does not create a shared `RangeAnnotation` domain entity and does not make comments intrinsic formatting.

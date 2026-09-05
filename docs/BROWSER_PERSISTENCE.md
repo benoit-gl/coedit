@@ -107,11 +107,11 @@ the current semantic group. Exact time and character thresholds are
 tunable UX parameters, not durable semantics.
 
 A failed commit retains the exact detached command/draft needed for retry and
-surfaces degraded durability. Typing is not blocked merely because two complete
-artifact serializations are pending; ordinary autosave does not serialize a
-complete artifact. Resource-limit enforcement can reject the operation that
-would exceed an accepted bound, but a hidden queue threshold must not silently
-discard work.
+surfaces degraded durability. Typing is not blocked by queued complete-artifact
+serialization; ordinary autosave does not serialize a complete artifact.
+Selected resource-guard enforcement can reject the operation that would exceed
+a supported implementation boundary, but a hidden queue threshold must not
+silently discard work.
 
 ## 6. Open and recovery
 
@@ -125,10 +125,23 @@ Opening a local document:
    invariants, and the resulting Version/frontier; and
 5. publishes a candidate engine only after complete success.
 
-Malformed, missing, mis-hashed, incompatible, or over-limit records produce a
+Malformed, missing, mis-hashed, incompatible, or over-capacity records produce a
 typed recovery error. They do not partially open or replace another active
 engine. Recovery diagnostics offer export of recoverable raw evidence where
 safe; they do not improvise a repaired document silently.
+
+**Maturity:** Pending selection.
+
+**Owner:** This document.
+
+**Promotion gate:** Step 13 browser-repository implementation, with tuning
+evidence revisited in Step 14.
+
+Before Step 13 closes, profile checkpoint decoding, effect replay, collection
+cardinality, and reconstructed-state allocation on target browsers. Record any
+selected guards, the capacity error behavior, and why work without an explicit
+guard is safely bounded elsewhere. No numeric recovery maximum is accepted in
+advance.
 
 Prepared maintenance/checkpoint chunks or records left unreachable by a
 superseded head are not current document state. A later bounded garbage collector
@@ -198,22 +211,25 @@ Opening `.coedit` first validates a candidate engine. Persisting that candidate
 then uses the ordinary repository protocol; the file's physical layout never
 becomes the IndexedDB schema by implication.
 
-## 11. Limits and measurements
+## 11. Measurements
 
-Before freezing checkpoint cadence, chunk size, compaction, or a new storage
-engine, measure at least:
+`MVP_VERIFICATION_PLAN.md` owns the experimental shared content and History
+workload candidates. Do not duplicate those numbers or treat them as browser
+acceptance budgets here.
 
-- 100,000-character InlineContent editing and recovery;
-- 5,000 Contributions and representative formatting/Origin density;
-- cold open, warm open, ordinary commit, checkpoint, History materialization,
-  and `.coedit` assembly latency;
+For the browser repository, measure those shared workloads plus:
+
+- cold open, warm open, ordinary commit, checkpoint, History materialization, and `.coedit` assembly latency;
 - peak encoded and decoded memory;
 - write amplification and database growth; and
 - quota behavior in supported browsers and private modes.
 
-Record target devices and pass budgets before performance qualification begins.
+Record target devices and a run-specific measurement method before performance
+qualification begins. Step 13 can promote evidence-backed implementation guards;
+Step 14 can promote, replace, or retire performance and warning targets.
 Correctness, atomicity, and no-data-loss requirements are not tradeable for a
-faster candidate.
+faster candidate. Browser-specific quota or warning thresholds come from
+measured platform behavior and are not portable document limits.
 
 ## 12. Required verification
 
@@ -226,6 +242,7 @@ The repository contract suite must cover:
 - transaction abort without partial publication;
 - corrupt, missing, duplicate, mis-hashed, unreachable, and incompatible chunks;
 - recovery from a physical checkpoint plus later effects;
+- selected recovery guards return typed capacity failures without partial publication;
 - quota denial/exhaustion and persistent-storage denial;
 - visible degraded durability plus exact retry;
 - safe unreachable-record cleanup;

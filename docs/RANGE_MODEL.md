@@ -11,10 +11,12 @@ observable semantics and the required engine service boundary. It does not
 select the private representation used to track content lineage.
 
 `PRODUCT_DOMAIN_MODEL.md` controls product meaning. `MVP_ARCHITECTURE.md`
-controls the public engine boundary. `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns
-formatting, Origin, link, and comment behavior outside this Range contract.
-`TEXT_POSITION_MODEL.md` owns editor and carrier position boundaries.
-`SCAFFOLDING_PLAN.md` owns the implementation order and decision gates.
+controls the public engine boundary. `CAPACITY_AND_PERFORMANCE_TARGETS.md`
+controls cross-cutting capacity semantics and contract maturity.
+`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns formatting, Origin, link, and comment
+behavior outside this Range contract. `TEXT_POSITION_MODEL.md` owns editor and
+carrier position boundaries. `SCAFFOLDING_PLAN.md` owns the implementation order
+and decision gates.
 
 A Range is a durable reference value, not a document entity. A comment can keep
 the value in an external record. An intrinsic internal-link mark can embed the
@@ -219,7 +221,7 @@ ordinary resolution.
 
 The Range service serializes a self-contained, versioned, document-relative
 Range description or URI-fragment suffix. The exact fragment grammar, encoding,
-size limits, and escaping rules remain Step 6 decisions.
+escaping rules, and resource-guard behavior remain Step 6 decisions.
 
 Serialization is a non-mutating rebase against the selected Version. It emits a
 fresh portable representation of the Range at that Version and can remove
@@ -322,7 +324,7 @@ Step 3 carrier qualification must prove at least:
 
 Step 6 Range acceptance must additionally prove:
 
-- the final API result and resource-limit rules;
+- the final API result and resource-guard rules;
 - immutable Span and Positional kinds, including zero-length Spans;
 - complete deletion followed by insertion without changing Range kind;
 - independent enumeration of resolved spans in creation and lineage order;
@@ -340,6 +342,17 @@ Step 6 Range acceptance must additionally prove:
 
 ## 14. Explicitly open Step 6 decisions
 
+**Maturity:** Pending selection.
+
+**Owner:** This document.
+
+**Promotion gate:** Step 6 Range implementation and Gate C.
+
+Step 6 must profile source-member count, serialized size, decoded allocation,
+and resolution work. It must select and test any required finite implementation
+guards and their capacity-failure behavior. No finite Range maximum is accepted
+in advance.
+
 The remaining decisions are:
 
 - the Range-tracking lineage representation and carrier integration;
@@ -348,8 +361,10 @@ The remaining decisions are:
   members;
 - the zero-length Span tie-break when a split occurs at its sole boundary;
 - Positional Range behavior for split, merge, deletion, and replacement;
-- exact fragment grammar, encoding, versioning, escaping, and size limits;
-- resource limits for source-member count and serialized size; and
+- exact fragment grammar, encoding, versioning, escaping, and resource-guard
+  behavior;
+- whether source-member count or serialized size needs an explicit finite
+  implementation guard and, if so, its selected value and failure behavior; and
 - the final internal-link serialized shape.
 
 Detailed comment repair policy remains a post-MVP comments decision. It does not

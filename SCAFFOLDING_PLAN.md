@@ -17,6 +17,7 @@ Use the companion documents for authority:
 - [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md) defines product ontology and domain vocabulary.
 - [`docs/MVP_CONTRACT.md`](docs/MVP_CONTRACT.md) defines what the document-engine MVP must prove.
 - [`docs/MVP_ARCHITECTURE.md`](docs/MVP_ARCHITECTURE.md) defines component authority and the public engine boundary.
+- [`docs/CAPACITY_AND_PERFORMANCE_TARGETS.md`](docs/CAPACITY_AND_PERFORMANCE_TARGETS.md) defines cross-cutting capacity, resource, and numeric-ownership rules.
 - [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines attributed text, clipboard lineage, Range-holder behavior, and carrier qualification.
 - [`docs/RANGE_MODEL.md`](docs/RANGE_MODEL.md) defines durable multi-span and positional Range behavior, the Range service boundary, and its staged qualification.
 - [`docs/STRUCTURAL_CARRIER_MODEL.md`](docs/STRUCTURAL_CARRIER_MODEL.md) defines Block placement, Block-local carrier state, structural concurrency, and position-order qualification.
@@ -60,6 +61,13 @@ All implementation and verification commands must preserve the cross-platform co
 
 A preserved implementation choice is not automatically current authority. A new design is not accepted merely because it is more convenient. Material conflicts must be resolved explicitly through Step 0 traceability or a later recorded decision.
 
+Capacity and performance statements follow the maturity model in
+`docs/CAPACITY_AND_PERFORMANCE_TARGETS.md`. Each affected implementation step
+owns its pending selections and cannot close while a hostile-input boundary
+introduced by that step lacks a selected, documented, and tested protection
+mechanism. Experimental targets produce evidence; they are not correctness gates
+unless the responsible authority promotes them.
+
 ## 4. Ordered work
 
 ### Step 0 — Reconcile the documentation and preserved decisions
@@ -74,6 +82,7 @@ The baseline must contain:
 - `docs/PRODUCT_DOMAIN_MODEL.md`;
 - `docs/MVP_CONTRACT.md`;
 - `docs/MVP_ARCHITECTURE.md`;
+- `docs/CAPACITY_AND_PERFORMANCE_TARGETS.md`;
 - `docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`;
 - `docs/TEXT_POSITION_MODEL.md`;
 - `docs/RANGE_MODEL.md`;
@@ -87,7 +96,7 @@ The baseline must contain:
 - `docs/MVP_VERIFICATION_PLAN.md`;
 - `docs/COLLABORATION_MODEL.md`;
 - `docs/decisions/README.md` and its accepted ADRs, including
-  `docs/decisions/0008-durable-range-semantics.md`; and
+  `docs/decisions/0009-durable-range-semantics.md`; and
 - `docs/PRESERVED_BRANCH_RECONCILIATION.md`.
 
 For every material design decision found in the preserved branch, classify it as one of:
@@ -99,7 +108,7 @@ For every material design decision found in the preserved branch, classify it as
 
 The reconciliation record must identify the current authority for retained, adapted, and superseded decisions. It must also identify any deferred decision that blocks implementation.
 
-The former `TextAnchor` blocker is resolved. Formatting uses native collaborative marks; Origin is protected content-native metadata; future comments and internal links can use the shared durable Range value; ordinary selections are transient. The accepted rationale is recorded in `docs/decisions/0001-collaborative-content-provenance-history.md` and `docs/decisions/0008-durable-range-semantics.md`.
+The former `TextAnchor` blocker is resolved. Formatting uses native collaborative marks; Origin is protected content-native metadata; future comments and internal links can use the shared durable Range value; ordinary selections are transient. The accepted rationale is recorded in `docs/decisions/0001-collaborative-content-provenance-history.md` and `docs/decisions/0009-durable-range-semantics.md`.
 
 **Exit gate:**
 
@@ -108,7 +117,7 @@ The former `TextAnchor` blocker is resolved. Formatting uses native collaborativ
 - no authoritative document silently contradicts a retained preserved decision; and
 - no unresolved implementation-blocking decision remains.
 
-This documentation set establishes the Step 0 authority baseline. Steps 1 and 2 subsequently established the browser scaffold and pure Block domain. PR #9 amends and revalidates Gate A with the durable Range authority and the revised Step 3-and-later sequence. Step 3 carrier qualification is next. Gate B selects the carrier; Gate C later selects the Range representation before `.coedit` version 1 is frozen.
+This documentation set establishes and revalidates the Step 0 authority baseline with the durable Range authority and the revised Step 3-and-later sequence. Steps 1 and 2 subsequently established the browser scaffold and pure Block domain. Step 3 carrier qualification is next. Gate B selects the carrier; Gate C later selects the Range representation before `.coedit` version 1 is frozen.
 
 ### Step 1 — Establish the browser-only repository scaffold
 
@@ -135,8 +144,8 @@ tracked. The root README points to the documentation index and accurately lists
 the available commands. Record a macOS smoke run when a macOS environment is
 available; do not block Step 1 solely because it is not.
 
-There is no CI workflow requirement in Step 1. When CI is introduced, Linux runs
-the same bootstrap, check, and build commands.
+Step 1 did not require a CI workflow. The current workflow runs the same
+bootstrap, check, build, and post-build check commands on Linux.
 
 See [`docs/CODING_STYLE.md`](docs/CODING_STYLE.md),
 [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md), and
@@ -148,7 +157,7 @@ See [`docs/CODING_STYLE.md`](docs/CODING_STYLE.md),
 
 **Outcome:** Tests can build and modify realistic Block trees through typed operations without React, Yjs, storage, or browser dependencies. Document/genesis construction creates the one real root outside the structural-operation model. The root has no tags, InlineContents, or child Blocks at genesis. Durable entity UUID text uses one global namespace without type information in the UUID format. InlineContents carry only a typed, opaque, valid empty `InlineContentValue`; structural code does not inspect content internals, and Step 4 expands that same type with the selected attributed-content behavior.
 
-**Exit gate:** Structural invariants, live-identity uniqueness, trusted ID allocation, root construction, empty InlineContent behavior, ordering, limits, and rollback behavior are verified at the domain boundary. Step 2 requires no lifetime-ID registry; History and portable validation later reject durable identity reuse across retained lifetimes.
+**Exit gate:** Structural invariants, live-identity uniqueness, trusted ID allocation, root construction, empty InlineContent behavior, ordering, effectively unbounded Step 2 capacity behavior, and rollback behavior are verified at the domain boundary. Step 2 requires no lifetime-ID registry; History and portable validation later reject durable identity reuse across retained lifetimes.
 
 See [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md), [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
@@ -156,11 +165,13 @@ See [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md), [`docs/MVP_I
 
 **Objective:** Compare pinned Yjs v13 and Automerge through the same production-shaped carrier-neutral abstractions before production implementation, History, Range, editor, or portable formats depend on one carrier.
 
+Run the same pinned headless and Tiptap/ProseMirror suite against stable Yjs v13 and Automerge. Track Yjs v14 only after stable release; use Loro as a cursor/movable-tree benchmark, not a current candidate. Before comparing candidates, record one run-specific fixture profile and measurement method used for both. Record dependency/license review, adapter complexity, target devices, measurements, and the selection rationale.
+
 The suite covers canonical text, hard breaks, intrinsic formatting, protected Origin, flat Block placement, liveness, allocator behavior, one transaction across structure and several InlineContents, editor integration, reload, compaction, and representative growth. It also covers the Range-feasibility subset in `RANGE_MODEL.md`: direct multi-span creation, greedy and positional boundaries, structural tracking, lazy resolution, and practical cost.
 
 **Outcome:** The repository contains comparable fixtures, measurements, dependency/license review, adapter-complexity evidence, rejected-candidate rationale, and one recorded carrier selection. Qualification code uses the same abstractions intended for production, but this step does not freeze the final Range API or lineage representation.
 
-**Exit gate:** Gate B passes. Functional invariants are mandatory. Select Yjs when it passes without fragile repair. Select Automerge only when it passes the same suite and materially removes custom machinery despite its integration risk.
+**Exit gate:** Gate B passes. The common functional, structural, concurrency, clipboard, restore, cursor, Range-feasibility, atomicity, portable, garbage-collection, collision/ordering, and representative-growth suite passes. Carrier and private-clipboard hostile-input guards are selected from profiling evidence and tested atomically. Experimental performance candidates are recorded as evidence rather than correctness thresholds unless deliberately promoted. Functional invariants are mandatory. Select Yjs when its protected carrier works incrementally without fragile repair. Select Automerge only if it passes the same suite and materially removes custom machinery despite its integration maturity. Record the winner before carrier-dependent format fields or fixtures are frozen.
 
 See [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), [`docs/TEXT_POSITION_MODEL.md`](docs/TEXT_POSITION_MODEL.md), [`docs/RANGE_MODEL.md`](docs/RANGE_MODEL.md), [`docs/STRUCTURAL_CARRIER_MODEL.md`](docs/STRUCTURAL_CARRIER_MODEL.md), [`docs/STRUCTURAL_POSITION_ALLOCATOR.md`](docs/STRUCTURAL_POSITION_ALLOCATOR.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
@@ -186,7 +197,7 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 **Objective:** Finalize and implement the carrier-neutral Range service after the selected carrier and exact Version materialization exist.
 
-Close the remaining result-wrapper, exact structural tie-break, positional structural behavior, fragment-encoding, resource-limit, and internal-link wire decisions listed in `RANGE_MODEL.md`. Compare the remaining lineage candidates against the accepted behavior and record the selected representation.
+Close the remaining result-wrapper, exact structural tie-break, positional structural behavior, fragment-encoding, resource-guard, and internal-link wire decisions listed in `RANGE_MODEL.md`. Compare the remaining lineage candidates against the accepted behavior and record the selected representation.
 
 **Outcome:** Headless code can create one-span, multi-span, and Positional Ranges against the visible Version; resolve surviving spans in creation and lineage order; concatenate exact text without separators; rationalize eligible merge-caused adjacency explicitly; serialize a document-relative Range fragment; parse it best-effort in an application-selected document; rebase tracking evidence; and reinject a value as internal-link metadata or another Range holder.
 
@@ -200,7 +211,7 @@ See [`docs/RANGE_MODEL.md`](docs/RANGE_MODEL.md), [`docs/TEXT_POSITION_MODEL.md`
 
 **Outcome:** Supported source becomes ordinary attributed document operations. Unsupported source is preserved or rejected with stable diagnostics.
 
-**Exit gate:** The fixture set produces valid documents or explicit failures. No source node is silently discarded. The imported structure is within the canonical Markdown-representable Coedit subset defined by the interchange specification.
+**Exit gate:** The fixture set produces valid documents or explicit failures. No source node is silently discarded. The imported structure is within the canonical Markdown-representable Coedit subset defined by the interchange specification. Parser and importer profiling selects hostile-input guards, records their evidence, distinguishes source-format from capacity failure at the top-level result, and verifies that failed import publishes no candidate.
 
 See [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md).
 
@@ -208,9 +219,9 @@ See [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md).
 
 **Objective:** Prove lossless, validated, portable recovery for the capabilities built through Step 7.
 
-**Outcome:** After Gates B and C pass, the engine can assemble logical records, carrier chunks, and embedded Range values into an opaque bounded version-1 `.coedit` artifact and open it into a validated candidate engine.
+**Outcome:** After Gates B and C pass, the engine can assemble logical records, carrier chunks, and embedded Range values into an opaque version-1 `.coedit` artifact and open it into a validated candidate engine.
 
-**Exit gate:** Current and historical attributed material, Origins, Contributions, derivation, Checkpoints, embedded Range values, stable VersionTokens, and idempotency round trip within documented limits. Corrupt, hostile, unsupported, missing/mis-hashed, or inconsistent input fails without replacing the active document.
+**Exit gate:** Current and historical attributed material, Origins, Contributions, derivation, Checkpoints, embedded Range values, stable VersionTokens, and idempotency round trip for the representative fixtures recorded by the qualification run. Profiling covers raw and decoded allocation, collection cardinality, graph work, carrier chunks, and content size; it selects and records the portable implementation guards before version 1 freezes. Selected guards return explicit capacity failures, and corrupt, hostile, unsupported, missing/mis-hashed, or inconsistent input fails without replacing the active document.
 
 See [`docs/PORTABLE_DOCUMENT_FORMAT.md`](docs/PORTABLE_DOCUMENT_FORMAT.md).
 
@@ -240,7 +251,7 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 **Outcome:** Headings, prose, and list items can be edited in place with attributed durable commits. Several immutable Contributions can share one human-visible semantic group without redefining the semantic History Checkpoint concept.
 
-**Exit gate:** Editor ownership transitions do not lose text, formatting, or Origin. IME and atomic edit paths, prompt commit, semantic grouping, failure retry, internal/external clipboard, History restore, and `.coedit` round trips preserve exact committed state. No two-whole-artifact queue threshold blocks ordinary typing.
+**Exit gate:** Editor ownership transitions do not lose text, formatting, or Origin. IME and atomic edit paths, prompt commit, semantic grouping, failure retry, internal/external clipboard, History restore, and `.coedit` round trips preserve exact committed state. No whole-artifact queue threshold blocks ordinary typing.
 
 See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
@@ -260,7 +271,7 @@ See [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md).
 
 **Outcome:** IndexedDB stores immutable Contribution/effect records, periodic physical recovery checkpoints, command receipts, local descriptors, and a small compare-and-swap head. Explicit `.coedit` Save/Open remains a separate portable workflow.
 
-**Exit gate:** Reload preserves attributed content and History. Failure injection proves atomic record/head publication. Failed, quota-limited, or competing writes do not claim success or silently overwrite newer state; degraded durability and `.coedit` backup are visible.
+**Exit gate:** Reload preserves attributed content and History. Failure injection proves atomic record/head publication. Recovery profiling selects any required checkpoint, replay, collection, and allocation guards and verifies typed capacity failure without partial open. Failed, quota-limited, or competing writes do not claim success or silently overwrite newer state; degraded durability and `.coedit` backup are visible.
 
 See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) and [`docs/BROWSER_PERSISTENCE.md`](docs/BROWSER_PERSISTENCE.md).
 
@@ -286,15 +297,15 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 ### Gate A — Documentation authority baseline
 
-Gate A passes when the authority set, ADR rationale, preserved-branch classifications, and work order are consistent. PR #9 revalidates this gate with the Range authority and revised sequence. Steps 1 and 2 remain complete; no implementation work is repeated.
+Gate A passes when the authority set, ADR rationale, preserved-branch classifications, and work order are consistent. The Range authority and revised sequence revalidate this gate. Steps 1 and 2 remain complete; no implementation work is repeated.
 
 ### Gate B — Collaborative carrier selection
 
-Gate B follows Step 3. Do not begin production carrier implementation or freeze carrier-dependent History effects before the Yjs/Automerge common suite passes and the winner is recorded. The suite includes attributed content, structure, allocator behavior, editor integration, atomicity, performance, and Range feasibility. Gate B does not select the Range-tracking representation.
+Gate B follows Step 3. Do not begin production carrier implementation or freeze carrier-dependent History effects, editor integration, or `.coedit` version 1 before the Yjs/Automerge common suite passes and the winner is recorded. The gate includes attributed content, structure, allocator behavior, editor integration, atomicity, Range feasibility, one run-specific comparison method, and selected and tested carrier and private-clipboard guards. Experimental performance candidates do not become acceptance thresholds merely because the gate measured them. Gate B does not select the Range-tracking representation.
 
 ### Gate C — Durable Range freeze
 
-Gate C follows Step 6. It closes the carrier-neutral Range API result wrappers, remaining positional and exact-boundary structural behavior, fragment serialization and reinjection rules, resource limits, internal-link encoding, and lineage representation. Do not freeze `.coedit` version 1 or the internal-link Range wire shape before Gate C passes.
+Gate C follows Step 6. It closes the carrier-neutral Range API result wrappers, remaining positional and exact-boundary structural behavior, fragment serialization and reinjection rules, resource-guard behavior, internal-link encoding, and lineage representation. Do not freeze `.coedit` version 1 or the internal-link Range wire shape before Gate C passes.
 
 ### Gate D — Elaboration baseline
 
@@ -338,7 +349,7 @@ The plan is complete when the browser prototype satisfies the MVP contract and a
 - the headless Range service and embedded internal-link Range values pass Gate C;
 - optional InlineContents and content lenses are usable;
 - selected Versions, lenses, and subtrees can export to Markdown with explicit diagnostics when exact structural interchange is not possible;
-- the opaque `.coedit` artifact provides lossless recovery within its documented limits;
+- the opaque `.coedit` artifact provides lossless recovery within the selected implementation capacity, and capacity failure does not claim semantic invalidity;
 - the incremental IndexedDB repository provides browser reload durability without becoming a second semantic authority;
 - one active rich-text editor preserves canonical text, intrinsic marks, and protected Origin;
 - semantic edit grouping remains separate from prompt durable Contributions and preserves controlled transition, failure, and retry rules;
