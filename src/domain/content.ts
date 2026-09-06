@@ -26,12 +26,7 @@ export type MarkBoundaryPolicy = "none" | "start" | "end" | "both";
 
 /** Closed initial intrinsic formatting vocabulary. */
 export type FormattingMarkKind =
-  | "bold"
-  | "italic"
-  | "underline"
-  | "strikethrough"
-  | "inlineCode"
-  | "link";
+  "bold" | "italic" | "underline" | "strikethrough" | "inlineCode" | "link";
 
 /** JSON-like value that the document model preserves without interpretation. */
 export type OpaqueLinkValue =
