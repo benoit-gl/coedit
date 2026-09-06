@@ -336,9 +336,12 @@ Step 6 Range acceptance must additionally prove:
 - application-owned external document URI handling;
 - serialization and rationalization that rebase the supplied Range;
 - internal-link fallback without cross-document reconciliation;
-- `.coedit` round trip of every embedded Range value and creation Version;
 - representative retained-Range scaling; and
 - recorded comparison and selection of the lineage representation.
+
+Step 8 portable-format acceptance must additionally prove that every embedded
+Range value, its creation Version, and the lineage required to resolve it round
+trip through `.coedit` without changing Range behavior.
 
 ## 14. Explicitly open Step 6 decisions
 
