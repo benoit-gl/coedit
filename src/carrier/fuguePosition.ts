@@ -54,7 +54,10 @@ export const fuguePositionAllocator: StructuralPositionAllocator<
       (lower !== undefined && !isFuguePosition(lower)) ||
       (upper !== undefined && !isFuguePosition(upper))
     ) {
-      return failure("InvalidPosition", "Fugue bounds must be valid positions.");
+      return failure(
+        "InvalidPosition",
+        "Fugue bounds must be valid positions.",
+      );
     }
     if (
       lower !== undefined &&
@@ -97,7 +100,9 @@ export const fuguePositionAllocator: StructuralPositionAllocator<
   },
 };
 
-function deterministicRandomBytes(seed: string): (length: number) => Uint8Array {
+function deterministicRandomBytes(
+  seed: string,
+): (length: number) => Uint8Array {
   let state = seedHash(seed);
   return (length) => {
     const result = new Uint8Array(length);
@@ -120,7 +125,10 @@ function seedHash(seed: string): number {
   return hash === 0 ? 0x9e3779b9 : hash;
 }
 
-function compareRawStrings(left: string, right: string): StructuralPositionOrder {
+function compareRawStrings(
+  left: string,
+  right: string,
+): StructuralPositionOrder {
   return left < right ? -1 : left > right ? 1 : 0;
 }
 

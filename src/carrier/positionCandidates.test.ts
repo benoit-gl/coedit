@@ -76,9 +76,9 @@ for (const candidate of candidates) {
       if (!result.ok) return;
 
       for (const position of result.value) {
-        expect(candidate.allocator.decode(candidate.allocator.encode(position))).toEqual(
-          position,
-        );
+        expect(
+          candidate.allocator.decode(candidate.allocator.encode(position)),
+        ).toEqual(position);
       }
     });
 
@@ -138,9 +138,9 @@ function expectOrdered<Position, Context>(
   positions: readonly Position[],
 ): void {
   for (let index = 1; index < positions.length; index += 1) {
-    expect(allocator.compare(positions[index - 1]!, positions[index]!)).toBeLessThan(
-      0,
-    );
+    expect(
+      allocator.compare(positions[index - 1]!, positions[index]!),
+    ).toBeLessThan(0);
   }
 }
 

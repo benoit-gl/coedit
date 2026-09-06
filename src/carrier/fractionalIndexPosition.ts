@@ -81,11 +81,7 @@ export const fractionalIndexPositionAllocator: StructuralPositionAllocator<
         "Lower structural position must sort before upper structural position.",
       );
     }
-    if (
-      lower !== undefined &&
-      upper !== undefined &&
-      lower.key === upper.key
-    ) {
+    if (lower !== undefined && upper !== undefined && lower.key === upper.key) {
       return failure(
         "InvalidBounds",
         "A fresh fractional key cannot be allocated inside one primary-key collision.",
@@ -93,7 +89,11 @@ export const fractionalIndexPositionAllocator: StructuralPositionAllocator<
     }
 
     try {
-      const keys = generateNKeysBetween(lower?.key ?? null, upper?.key ?? null, count);
+      const keys = generateNKeysBetween(
+        lower?.key ?? null,
+        upper?.key ?? null,
+        count,
+      );
       return {
         ok: true,
         value: keys.map((key, index) => ({
@@ -113,7 +113,9 @@ export const fractionalIndexPositionAllocator: StructuralPositionAllocator<
   },
   encode(position) {
     if (!isValidFractionalIndexPosition(position)) {
-      throw new TypeError("Cannot encode an invalid fractional-index position.");
+      throw new TypeError(
+        "Cannot encode an invalid fractional-index position.",
+      );
     }
     return JSON.stringify(position);
   },
@@ -157,7 +159,10 @@ function isFractionalIndexPositionRecord(
   );
 }
 
-function compareRawStrings(left: string, right: string): StructuralPositionOrder {
+function compareRawStrings(
+  left: string,
+  right: string,
+): StructuralPositionOrder {
   return left < right ? -1 : left > right ? 1 : 0;
 }
 

@@ -231,7 +231,11 @@ function allocateLocalDenseRun(
     );
   }
 
-  const anchor = allocateDigitsBetween(lowerDigits, upperDigits, context.runNonce);
+  const anchor = allocateDigitsBetween(
+    lowerDigits,
+    upperDigits,
+    context.runNonce,
+  );
   if (anchor === undefined) {
     return failure(
       "CapacityExceeded",
