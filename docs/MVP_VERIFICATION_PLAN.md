@@ -330,7 +330,7 @@ Verify at least:
   link's primary Block fallback;
 - operations without a naturally designated semantic continuation select the
   same identity deterministically on every replica without clocks or arrival
-  order; and
+  order;
 - complete one-to-many split and many-to-one merge lineage remains resolvable
   independently of whichever entity identity continues;
 - no Range continuation through copy, clone, import, paste, or shared Origin and
