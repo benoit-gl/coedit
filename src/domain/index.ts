@@ -32,14 +32,12 @@ export type {
   HardBreakContentItem,
   InlineContentValue,
   InternalBlockLinkTarget,
-  InternalLinkRange,
   LinkTarget,
   MarkBoundaryPolicy,
   OpaqueLinkTarget,
   OpaqueLinkValue,
   OriginKind,
   OriginRecord,
-  StableRangeCursor,
   TextContentItem,
 } from "./content.js";
 export type {
