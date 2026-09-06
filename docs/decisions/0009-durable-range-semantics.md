@@ -108,7 +108,7 @@ Step 6 must still close:
   lineage, remain historical-only, or become unresolved, including internal-link
   Block fallback;
 - the deterministic identity rule when no semantic continuation is naturally
-  designated; and
+  designated;
 - preservation of complete one-to-many and many-to-one lineage independently of
   the continuing entity identity;
 - exact carrier-neutral API names and result wrappers;
