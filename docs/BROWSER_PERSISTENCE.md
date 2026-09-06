@@ -134,10 +134,10 @@ safe; they do not improvise a repaired document silently.
 
 **Owner:** This document.
 
-**Promotion gate:** Step 11 browser-repository implementation, with tuning
-evidence revisited in Step 12.
+**Promotion gate:** Step 13 browser-repository implementation, with tuning
+evidence revisited in Step 14.
 
-Before Step 11 closes, profile checkpoint decoding, effect replay, collection
+Before Step 13 closes, profile checkpoint decoding, effect replay, collection
 cardinality, and reconstructed-state allocation on target browsers. Record any
 selected guards, the capacity error behavior, and why work without an explicit
 guard is safely bounded elsewhere. No numeric recovery maximum is accepted in
@@ -146,7 +146,8 @@ advance.
 Prepared maintenance/checkpoint chunks or records left unreachable by a
 superseded head are not current document state. A later bounded garbage collector
 may remove verified unreachable records after accounting for active heads,
-retained Versions, concurrent tabs, and recovery checkpoints.
+every product Version, required Range lineage, concurrent tabs, and recovery
+checkpoints.
 
 ## 7. Checkpoint and compaction rules
 
@@ -155,13 +156,13 @@ growth and recovery latency. Checkpoint creation must not create a product
 Contribution or Version.
 
 Compaction can replace private replay paths only after a new checkpoint is fully
-written and validated. It cannot silently make an advertised retained
-VersionToken, semantic Checkpoint, Origin, or future CommentTarget behavior
-unavailable. A future retention policy must explicitly change the product
-promise before such data can be discarded.
+written and validated. It cannot make any VersionToken, semantic Checkpoint,
+Origin, required Range lineage, durable Range behavior, or future comment-holder
+behavior unavailable. Every Version remains exactly materializable for the
+lifetime of the retained document.
 
 Complete snapshots per Contribution are permitted in bounded in-memory tests or
-an explicitly identified early prototype. They are not the Step 11 target and
+an explicitly identified early prototype. They are not the Step 13 target and
 must not become the public History or portable-format abstraction.
 
 ## 8. Multi-tab behavior
@@ -192,7 +193,7 @@ success. The application preserves retryable work and offers explicit `.coedit`
 export/backup while sufficient committed state remains available.
 
 The UX should warn before measured usage approaches a browser-specific safe
-margin. The exact warning threshold is a Step 12 measurement outcome, not a
+margin. The exact warning threshold is a Step 14 measurement outcome, not a
 portable document limit.
 
 ## 10. `.coedit` separation
@@ -201,7 +202,7 @@ The IndexedDB repository is optimized for incremental local commit and recovery.
 The `.coedit` artifact is optimized for explicit portable Save/Open, backup, and
 interchange between Coedit installations.
 
-An explicit Save asks the engine to assemble one stable retained Version and
+An explicit Save asks the engine to assemble the current Version and complete
 History into `.coedit` bytes under
 [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md). Normal autosave
 does not repeatedly assemble or rewrite those bytes.
@@ -224,8 +225,8 @@ For the browser repository, measure those shared workloads plus:
 - quota behavior in supported browsers and private modes.
 
 Record target devices and a run-specific measurement method before performance
-qualification begins. Step 11 can promote evidence-backed implementation guards;
-Step 12 can promote, replace, or retire performance and warning targets.
+qualification begins. Step 13 can promote evidence-backed implementation guards;
+Step 14 can promote, replace, or retire performance and warning targets.
 Correctness, atomicity, and no-data-loss requirements are not tradeable for a
 faster candidate. Browser-specific quota or warning thresholds come from
 measured platform behavior and are not portable document limits.

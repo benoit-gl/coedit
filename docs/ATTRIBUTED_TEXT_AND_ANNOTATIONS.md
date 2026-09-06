@@ -6,8 +6,9 @@ the Elaboration qualification gate.
 ## 1. Purpose and authority
 
 This document defines the detailed behavior of InlineContent text, intrinsic
-formatting, origin attribution, link targets, copy/paste/restore lineage, future
-comment targets, and transient selections.
+formatting, Origin attribution, link holders, copy/paste/restore lineage, future
+comment holders, and transient selections. `RANGE_MODEL.md` owns the shared
+durable Range value and engine service used by internal links and future comments.
 
 [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls product meaning.
 [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) controls the public engine boundary.
@@ -32,9 +33,10 @@ The strict MVP and its carrier qualification must implement:
 - validated internal and external clipboard behavior; and
 - exact `.coedit` recovery of that state.
 
-The carrier gate also proves that stable range targeting for internal links and
-future comment targets is feasible. It does not require a comment UI or durable
-Comment records in the strict MVP.
+The Step 3 carrier gate also proves that both carrier candidates can support the
+accepted Range behavior. The Step 6 Range gate finalizes and implements the
+headless Range service and internal-link Range encoding. It does not require a
+comment UI or durable Comment records in the strict MVP.
 
 Post-MVP capabilities include provenance visualization and queries, production
 identity and authorization, cross-document origin-catalog exchange, AI-provider
@@ -51,15 +53,15 @@ Use these terms consistently:
 - **Opaque link metadata:** inert formatting metadata that the document model
   preserves but does not interpret.
 - **Internal Block link:** a document-local link target identified by `BlockId`,
-  with an optional text-range refinement inside that Block.
+  with an optional Range refinement.
 - **Origin:** immutable attribution describing the agent or source that first
   created a logical content unit.
 - **Contribution actor:** the Contributor that performed a durable operation in
   this document.
 - **Derivation:** a reference explaining that new placement or generated
   material used earlier or external material.
-- **CommentTarget:** an external durable target that attempts to resolve a text
-  range and can become ambiguous or orphaned.
+- **CommentTarget:** a future external comment-holder value that combines one
+  Range with comment-specific attachment and repair state.
 
 The carrier-neutral logical shape is illustrative:
 
@@ -107,8 +109,9 @@ change placement, not authorship.
 
 An empty CollaborativeContent value is valid: it contains no live text items or
 hard breaks and therefore needs no partial formatting or Origin placeholder.
-Step 2 represents that state with the typed, opaque `InlineContentValue`; Step 3
-expands the same type with the complete carrier-neutral behavior below.
+Step 2 represents that state with the typed, opaque `InlineContentValue`. Step 3
+qualifies the candidate carriers against the complete carrier-neutral behavior
+below. Step 4 implements that behavior with the selected carrier.
 
 1. Every live text item and hard break has exactly one valid `OriginId`.
 2. Formatting marks and origin attribution are part of the same canonical
@@ -143,34 +146,25 @@ A link mark carries one carrier-neutral target value. The target is one of:
 
 ```text
 OpaqueLinkTarget
-  metadata: opaque bounded value
+  metadata: opaque value subject to implementation resource guards
 
 InternalBlockLinkTarget
   blockId: BlockId
-  range?:
-    inlineContentId: InlineContentId
-    startCursor
-    endCursor
-    startAffinity: before | after
-    endAffinity: before | after
-    quote:
-      exact
-      prefix
-      suffix
-    approximatePosition?: { start, end }
+  range?: Range
 ```
 
 Opaque link metadata is inert document data. The document model validates only
-its carrier shape and resource limits. It does not interpret the metadata as a
-URL, URI, command, citation, or another application concept. The presentation or
-integration layer decides whether and how to interpret or activate it.
+its carrier shape and applicable implementation resource guards. It does not
+interpret the metadata as a URL, URI, command, citation, or another application
+concept. The presentation or integration layer decides whether and how to
+interpret or activate it.
 
 An internal Block link is a document-local typed reference. `blockId` is the
-primary target. The optional range refines navigation to text inside one
-InlineContent owned by that Block. The range uses the same stable-cursor,
-affinity, quote/context, and approximate-position mechanics used by
-`CommentTarget`; this behavioral reuse does not create a generic durable range
-entity or make comments intrinsic formatting.
+primary target. The optional Range refines navigation to one semantic target and
+resolves only against the current document. It can resolve across several
+InlineContents or Blocks in that document. Embedding the value in an intrinsic
+link mark does not create a Range entity or make comments intrinsic formatting.
+`RANGE_MODEL.md` owns creation, resolution, lineage order, and serialization.
 
 Internal link resolution follows these rules:
 
@@ -178,11 +172,11 @@ Internal link resolution follows these rules:
 2. If the Block does not resolve, keep the link as valid canonical content and
    report an unresolved target to the presentation layer.
 3. If no range is present, the resolved Block is the complete target.
-4. If a range is present, first try its stable cursors and then its quote/context
-   fallback within the named InlineContent and Block.
-5. If the range is ambiguous or orphaned but the Block still resolves, fall back
-   to the Block target. Do not silently attach the range to another Block or
-   InlineContent.
+4. If a Range is present, resolve it through the engine against the selected
+   Version.
+5. If the Range produces no resolved span or position but the primary Block
+   still resolves, fall back to the primary Block. Do not attach the Range to an
+   unrelated Block or InlineContent.
 
 Deleting a target Block does not rewrite, delete, or invalidate incoming link
 marks. The target reference can remain unresolved in current material and can
@@ -190,9 +184,9 @@ resolve in a historical Version where that Block exists. A Block target creates
 no ownership relationship and does not prevent Block deletion.
 
 Internal Block targets are document-local. Same-document copy and restore can
-preserve them. Cross-document import or paste must not bind a source `BlockId` to
-a coincidentally equal target-document ID without an explicit future mapping
-protocol.
+preserve them. When an internal link is transferred to another document, the
+application must reject it, remove it, or convert it to an external deep link.
+The Range service performs no cross-document mapping.
 
 Every mark instance has one logical insertion-boundary policy:
 
@@ -292,10 +286,11 @@ its author and obeys the causal compensation rules in
 [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md). It does not delete unseen
 concurrent material.
 
-Deleted content and Origin records can remain physically reachable through
-retained History or carrier tombstones. A later retention/compaction policy must
-define when they can be removed or anonymized. Compaction cannot silently break
-an advertised retained Version.
+Deleted content and Origin records remain reachable when required to materialize
+a Version or resolve Range lineage. Physical compaction can change their storage
+only when every Version, Origin, and required lineage remains exact. Later
+anonymization requires a separate product decision; it cannot silently rewrite
+History.
 
 ## 9. Comment targets
 
@@ -304,41 +299,27 @@ Comments and conversations are external records. Their target shape is:
 ```text
 CommentTarget
   documentId
-  blockId
-  inlineContentId
-  startCursor
-  endCursor
-  startAffinity: before | after
-  endAffinity: before | after
-  quote:
-    exact
-    prefix
-    suffix
-  approximatePosition?: { start, end }
-  state: attached | ambiguous | orphaned
+  range: Range
+  state: comment-specific attachment and repair state
 ```
 
-The stored state records the latest deliberate resolution result; it is not a
-license to trust stale offsets.
+The stored comment state records the latest deliberate interpretation of the
+Range resolution. It is not a license to trust stale offsets, restore an omitted
+member by similarity, or silently choose one of several candidates.
+`RANGE_MODEL.md` owns Range omission and the reusable result boundary. The later
+comments feature owns confidence policy, explicit repair, conversation behavior,
+and presentation.
 
-Resolution order is:
-
-1. resolve stable carrier cursors;
-2. validate the resulting text against quote/context evidence;
-3. if unresolved or invalid, search by exact quote and disambiguate with prefix,
-   suffix, structural identity, and approximate position;
-4. attach only when one result satisfies the accepted confidence policy;
-5. otherwise return `ambiguous` or `orphaned` and require explicit repair.
-
-Internal Block-link range refinement uses the same targeting mechanics but not
-the same lifecycle. A comment is an external record whose attachment state can
+Internal Block-link Range refinement uses the same Range service but not the same
+holder lifecycle. A comment is an external record whose attachment state can
 require explicit repair. An internal link is intrinsic formatting whose
-`BlockId` remains the primary target; an unresolved optional range falls back to
-that Block when possible.
+`BlockId` remains the primary target; an unresolved optional Range uses the
+accepted Block fallback when possible.
 
-Exact confidence thresholds and the comment repair UX are a post-MVP decision.
-The carrier gate only requires that these states and behaviors are implementable
-without an external formatting/provenance anchor model.
+Exact confidence thresholds, multi-span comment presentation, and comment repair
+UX are post-MVP decisions. Step 3 proves carrier feasibility. Step 6 implements
+the reusable headless Range service without adding an external formatting or
+provenance anchor model.
 
 ## 10. Selection and awareness
 
@@ -387,16 +368,17 @@ minimum it covers:
 - all formatting boundary policies and overlapping marks;
 - exact preservation of opaque link metadata without document-model
   interpretation;
-- internal Block links with and without range refinement, including missing
-  Blocks and ambiguous/orphaned ranges;
+- internal Block links with and without Range refinement, including missing
+  Blocks, omitted Range members, and primary Block fallback;
 - origin non-inheritance and protection from ordinary client commands;
 - concurrent insertion, deletion, replacement, and formatting at identical and
   adjacent boundaries;
 - split, merge, hard break, IME, cut, paste, undo, and redo;
 - same-document copy and restore lineage;
 - external clipboard stripping and imported/unknown Origin assignment;
-- stable cursor feasibility for internal link ranges and future comment targets
-  through edits, deletion, reload, and compaction;
+- the Step 3 Range-feasibility cases in `RANGE_MODEL.md`, including direct
+  multi-span creation, greedy and positional boundaries, structural tracking,
+  lazy resolution, reload, and compaction;
 - one transaction spanning Block structure and several InlineContents;
 - duplicate, delayed, reordered, partitioned, and reconnected updates;
 - exact portable round trip and historical materialization; and
@@ -425,8 +407,8 @@ fixtures as regression tests. In addition, prove:
 - caller mutation of detached input cannot mutate engine state;
 - a failed command publishes no text, mark, Origin, Contribution, or Version;
 - opaque link metadata round trips without document-model interpretation;
-- same-document internal Block links preserve their `BlockId` and optional range
-  refinement through copy, restore, and carrier round trip;
+- same-document internal Block links preserve their `BlockId` and optional Range
+  value through copy, restore, carrier round trip, and `.coedit` round trip;
 - `.coedit` preserves intrinsic formatting, Origins, Contributors,
   Contributions, and derivation exactly;
 - Markdown compares visible semantic marks but intentionally excludes Origin

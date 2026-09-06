@@ -2,7 +2,7 @@
 
 **Status:** Accepted clean-slate MVP direction.
 
-This document is authoritative for component ownership and the public document-engine boundary. Product ontology belongs in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Implementation order belongs in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md). Capacity classification belongs in [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md). Attributed text, Markdown interchange, `.coedit`, and browser persistence details belong in their focused specifications. Post-MVP replication belongs in [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md).
+This document is authoritative for component ownership and the public document-engine boundary. Product ontology belongs in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Implementation order belongs in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md). Capacity classification belongs in [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md). Attributed text, durable Range behavior, Markdown interchange, `.coedit`, and browser persistence details belong in their focused specifications. Post-MVP replication belongs in [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md).
 
 The document engine is a logical backend. In the MVP it runs locally in the browser process. It does not need to be a server, worker, native process, or separate package.
 
@@ -25,7 +25,7 @@ Portable file transport -----+                    repository port  portable code
                                                  memory / IndexedDB    .coedit bytes
 ```
 
-The strict MVP can import Markdown, inspect and edit the Block tree and inline content, use lenses, inspect and restore History, create semantic Checkpoints, export Markdown, save/reopen `.coedit`, and survive browser reload.
+The strict MVP can import Markdown, inspect and edit the Block tree and inline content, use lenses, inspect and restore History, create semantic Checkpoints, create and resolve durable Ranges, export Markdown, save/reopen `.coedit`, and survive browser reload.
 
 Tauri, Rust, SQLite, AI providers, provenance visualization, comments, durable discussions, multi-user networking, attachments, signed claims, and final History compaction are not MVP requirements. Minimum protected Origin metadata is an MVP foundation even though a provenance product is not.
 
@@ -40,6 +40,7 @@ The engine owns:
 - typed, attributed, version-checked, atomic command application;
 - stable document, content, Contribution, and Version identities;
 - current projections and exact historical materialization;
+- carrier-neutral Range creation, span and text resolution, rationalization, parsing, serialization, and reinjection;
 - lightweight History listing and semantic changeset summaries;
 - semantic Checkpoint creation;
 - compensating restore;
@@ -160,6 +161,20 @@ interface DocumentEngine {
   materialize(
     version: VersionToken,
   ): Promise<Result<Versioned<MaterializedDocument>, QueryError>>;
+  createRange(request: CreateRangeRequest): Promise<Result<Range, RangeError>>;
+  resolveRange(
+    request: ResolveRangeRequest,
+  ): Promise<Result<Versioned<RangeResolution>, RangeError>>;
+  resolveRangeText(
+    request: ResolveRangeRequest,
+  ): Promise<Result<Versioned<string>, RangeError>>;
+  rationalizeRange(
+    request: ResolveRangeRequest,
+  ): Promise<Result<Range, RangeError>>;
+  serializeRange(
+    request: SerializeRangeRequest,
+  ): Promise<Result<SerializedRange, RangeError>>;
+  parseRange(request: ParseRangeRequest): Promise<Result<Range, RangeError>>;
   serializePortableDocument(
     request: SerializeRequest,
   ): Promise<Result<PortableDocument, SerializationError>>;
@@ -173,6 +188,26 @@ interface DocumentEngineFactory {
   openPortableDocument(
     input: PortableDocumentInput,
   ): Promise<Result<DocumentEngine, OpenError>>;
+}
+
+interface CreateRangeRequest {
+  readonly expectedVersion: VersionToken;
+  readonly input: SpanRangeInput | PositionalRangeInput;
+}
+
+interface ResolveRangeRequest {
+  readonly version: VersionToken;
+  readonly range: Range;
+}
+
+interface SerializeRangeRequest {
+  readonly version: VersionToken;
+  readonly range: Range;
+}
+
+interface ParseRangeRequest {
+  readonly value: SerializedRange;
+  readonly version: VersionToken;
 }
 
 interface PortableDocument {
@@ -192,13 +227,15 @@ interface PortableDocumentInput {
 }
 ```
 
-`PORTABLE_DOCUMENT_FORMAT.md` owns the exact wire contract. The UX treats `bytes` as opaque. No specific MIME type is part of the accepted MVP design yet.
+`RANGE_MODEL.md` owns Range behavior. The selected `DocumentEngine` supplies document context. The operation names and request shapes above are illustrative; Step 6 Gate C finalizes result wrappers, parse diagnostics, resource-guard behavior, and serialization types without exposing carrier-native objects.
+
+`PORTABLE_DOCUMENT_FORMAT.md` owns the exact `.coedit` wire contract. The UX treats `bytes` as opaque. No specific MIME type is part of the accepted MVP design yet.
 
 ## 4. Version and command contract
 
 `VersionToken` is equality-comparable, document-scoped, opaque, and not orderable or decodable by clients.
 
-An advertised VersionToken remains stable across a lossless `.coedit` Save/Open round trip.
+Every VersionToken remains stable and exactly materializable for the lifetime of its document, including across a lossless `.coedit` Save/Open round trip. A VersionToken remains document-scoped; it need not be globally unique.
 
 The trusted document factory creates genesis with one real root from supplied durable IDs and no Contribution. Root creation is not a structural command. The first successful user mutation creates the first Contribution and resulting Version.
 
@@ -362,11 +399,11 @@ Selection, focus, disclosure, active lens, dialogs, presence, cursor state, retr
 
 The public promise is:
 
-> Every retained Contribution can be listed and summarized. Every advertised retained VersionToken can be materialized exactly and restored through the engine API.
+> Every Contribution can be listed and summarized. Every VersionToken can be materialized exactly and restored through the engine API for the lifetime of its document.
 
-A complete private snapshot per Contribution is acceptable only in bounded in-memory tests or an explicitly identified early prototype because it is simple to verify. It is not the Step 11 browser target, a public data type, or a long-term storage contract.
+A complete private snapshot per Contribution is acceptable only in bounded in-memory tests or an explicitly identified early prototype because it is simple to verify. It is not the Step 13 browser target, a public data type, or a long-term storage contract.
 
-The browser target uses immutable Contributions/effect chunks, periodic canonical recovery checkpoints, and a small CAS head. The engine can change structural sharing, chunking, caches, indexes, checkpoint cadence, or compaction if it preserves the public contract and every advertised retained Version.
+The browser target uses immutable Contributions/effect chunks, periodic physical recovery checkpoints or cached materializations, and a small CAS head. The engine can change structural sharing, chunking, caches, indexes, checkpoint cadence, or compaction only if it preserves every Version and the lineage needed by Range resolution. Physical snapshots create no product Versions.
 
 ## 11. Compatibility with later consumers
 
@@ -387,6 +424,10 @@ The MVP must prove:
 - copy and restore preserve Origin while attributing their new Contributions to the acting Contributor;
 - semantic Checkpoints publish one attributed Contribution and one content-identical Version;
 - historical materialization is exact, detached, and read-only;
+- the headless Range service records each Range's creation Version, rejects direct creation when any supplied target is unresolved, preserves arbitrary source order and multiplicity, resolves surviving spans in creation and lineage order, concatenates exact text without separators, and never follows copied content;
+- explicit rationalization merges only consecutive exact adjacency caused by a lineage merge;
+- best-effort parsing omits unresolved or ambiguous members without speculative rebinding, and document-relative serialization round trips each surviving member;
+- Range operations expose no live carrier object or document-wide holder registry;
 - editor-content values are detached and cannot mutate engine state;
 - restore appends instead of rewinding;
 - `.coedit` serialization checks its expected Version;
@@ -397,4 +438,4 @@ The MVP must prove:
 - Markdown imported documents satisfy the export/re-import normalized equivalence property; and
 - a different private History representation can pass the same public contract suite.
 
-The strict MVP deliberately does not prove network convergence, a provenance UI, comments, authenticated attribution, signed claims, or AI-provider collaboration. It does prove the minimum content-Origin invariants and carrier feasibility those capabilities require.
+The strict MVP deliberately does not prove network convergence, a provenance UI, Comment records or repair UX, authenticated attribution, signed claims, or AI-provider collaboration. It does prove the reusable headless Range service, minimum content-Origin invariants, and carrier feasibility those capabilities require.

@@ -8,7 +8,7 @@ This document records how collaboration should fit around the document engine
 and what eventual consistency must mean for Coedit. It complements
 [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md), which defines the local engine API,
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), which
-defines content attribution and comment-target behavior,
+defines content attribution and Range-holder behavior,
 [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md), which defines the
 accepted Block carrier and structural merge semantics,
 [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md),
@@ -216,17 +216,26 @@ B -----/                 current frontier = {C}
 ```
 
 `A` and `B` are concurrent Contributions based on `G`. Neither is “really
-second.” The combined version is the causal frontier `{A, B}` plus its causal
-closure. It is a named/materializable Version even though no synthetic merge
-Contribution or fake History row exists. `C` names both heads as parents and
-joins the graph.
+second.” The combined Version is the causal frontier `{A, B}` plus its causal
+closure. It becomes the current merged Version as soon as both Contributions are
+integrated; no synthetic merge Contribution or fake History row is required.
+`C` is an ordinary later Contribution that observes that merged frontier.
+
+Concurrent heads are temporary replication state, not permanent user-facing
+History branches. A Range created on one visible frontier can resolve only on
+that Version or a descendant that contains it. It cannot resolve against a
+concurrent unmerged frontier. Once work is exchanged, the merged frontier is a
+descendant of both inputs. Duplicating or forking a document creates a new
+document identity rather than a permanent branch under the same `DocumentId`.
 
 Use these terms consistently:
 
 - **Contribution:** an immutable, attributed semantic action and graph node;
 - **Version:** a materializable causal frontier and its closure;
-- **History:** the causal Contribution graph;
-- **VersionToken:** an opaque public identifier for a Version; and
+- **History:** the causal Contribution graph in which every Version remains
+  materializable for the lifetime of the document;
+- **VersionToken:** an opaque, document-scoped public identifier for a Version;
+  it need not be globally unique; and
 - **Checkpoint:** a semantic Contribution whose resulting Version has document
   material identical to its declared base/frontier.
 
@@ -300,11 +309,11 @@ Contributions, they must have:
 
 1. the same immutable causal Contribution graph and metadata;
 2. collaborative-state-equivalent carrier state, including identity, placement,
-   Block activity, delete, formatting, Origin, and stable-cursor behavior, even
+   Block activity, delete, formatting, Origin, and Range-position behavior, even
    if byte encodings differ;
 3. the same validated Block tree, ordering, tags, and CollaborativeContent
    projection;
-4. the same materialization for every advertised causal frontier; and
+4. the same materialization for every causal frontier that forms a Version; and
 5. the same durable current frontier: the canonical set of maximal integrated
    heads.
 
@@ -314,19 +323,18 @@ plain-text comparison cannot establish correctness.
 
 Storage snapshots, update merging, caches, indexes, and compaction may differ
 between replicas. They are physical representations, not part of equality, as
-long as they preserve the same advertised causal graph and exact materialization
-behavior. Physical compaction must not make a user-visible Version impossible to
-identify, materialize, or restore unless a future explicit retention policy
-first changes that product promise; an advertised token is not silently
-invalidated.
+long as they preserve the same causal graph, every Version, and the lineage
+needed by Range resolution. Physical compaction cannot make a Version impossible
+to identify, materialize, or restore while its document is retained.
 
 Semantic checkpoint Contributions are different. They are part of Product
 History and therefore must converge like any other Contribution.
 
 ## 8. CollaborativeContent and Block structure use one carrier boundary
 
-Convergent rich-text changes and structural placement have different semantics,
-but Step 3 qualifies them inside one logical collaborative document.
+Convergent rich-text changes and structural placement have different semantics.
+Step 3 qualifies both candidates inside one logical collaborative document, and
+Step 4 implements the selected carrier.
 `STRUCTURAL_CARRIER_MODEL.md` owns the structural contract.
 
 The accepted structural representation uses one Block-local namespace per
@@ -382,12 +390,16 @@ This is a private carrier boundary, not a public `Y.Doc` or Automerge type.
 Subdocuments or sharding require measured evidence and must preserve atomic
 multi-target behavior and portable recovery.
 
-Formatting and Origin do not use external anchors. Future CommentTargets use
-carrier-stable cursors and explicit affinity as their primary location, combined
-with quote/prefix/suffix/position evidence for validated repair. Copying content
-creates new carrier identities; same-document copy retains Origins but comment
-targets do not silently migrate to the copy. Moving an InlineContent while
-preserving its identity and carrier state can preserve its comment cursors.
+Formatting and Origin do not use external anchors. The MVP headless Range service
+can use carrier-stable positions plus qualified lineage and carrier-neutral
+evidence behind its public value contract. Internal links can embed a Range;
+future comments can hold one externally with comment-specific repair state.
+
+Copying content creates new carrier identities and same-document copy retains
+Origins, but shared Origin or derivation creates no Range-tracking lineage to the
+copy. Moving an InlineContent while preserving its identity and carrier state
+preserves Range tracking. Split and merge operations can create explicit
+Range-continuation lineage.
 
 ## 9. Frontend-facing History behavior
 
@@ -395,11 +407,11 @@ The collaboration model preserves the same public behavior as the local MVP.
 The frontend can:
 
 - list lightweight Contribution summaries without materializing historical
-  documents and separately identify advertised Versions;
+  documents and separately identify Versions;
 - see attribution, semantic kind, affected targets, and concurrency;
 - identify checkpoint Contributions and their exact resulting Versions;
 - query the current frontier as an opaque `VersionToken`;
-- materialize any advertised token read-only;
+- materialize any VersionToken read-only;
 - restore a selected version through a new mutation; and
 - subscribe to invalidation/change hints and re-query.
 
@@ -528,7 +540,9 @@ The MVP does not implement networking. It does establish the following seams:
 - the accepted flat Block placement and Block activity compatibility contract;
 - intrinsic formatting and protected, non-inheriting Origin semantics;
 - first-class checkpoint Contributions;
-- History listing, summary, exact materialization, and compensating restore;
+- a carrier-neutral durable Range service with no document-wide holder registry;
+- History listing, summary, permanent exact Version materialization, and
+  compensating restore;
 - change subscriptions followed by re-query;
 - opaque lossless serialization/opening;
 - separate durable and ephemeral state; and
@@ -536,26 +550,34 @@ The MVP does not implement networking. It does establish the following seams:
   revision order.
 
 The private MVP implementation may still use one head and one parent per
-private Version record. Complete snapshots are limited to bounded tests or an identified early
-prototype; the browser target uses immutable effects plus periodic physical
-checkpoints. Contract tests and types keep all of these private.
+private Version record. Complete snapshots are limited to tests and identified
+early prototypes that fit within actual implementation resource capacity. The
+browser target uses immutable effects plus periodic physical checkpoints.
+Contract tests and types keep all of these private.
 
 ## 14. Staged implementation path
 
-1. Qualify Yjs v13 against Automerge with the attributed-content and structural
-   carrier suites, then retain the selected carrier suite as regression evidence.
-2. Build and validate the local-only MVP behind the engine and repository boundaries.
-3. Replace chunk/checkpoint details behind those same contracts as measurements require.
-4. Build an in-process two-engine replication test bus before using a network.
-5. Replicate immutable Contributions, including checkpoint Contributions, and
-   carrier effects under duplication, delay, reordering, partition, and
-   reconnect.
-6. Prove that the accepted structural carrier and Block activity semantics remain
-   correct when effects travel through the causal Contribution envelope.
-7. Add an authenticated relay, durable catch-up, and visible sync status.
-8. Add the independent ephemeral presence channel.
-9. Add or tune checkpoints, deltas, structural sharing, and compaction without
-   changing frontend behavior.
+1. Qualify Yjs v13 against Automerge with the attributed-content, structural, and
+   Range-feasibility suites; record the winner at Gate B.
+2. Implement the selected collaborative core and retain the common suite as
+   regression evidence.
+3. Establish local History and permanent exact Version materialization.
+4. Implement the durable Range service and record its lineage representation at
+   Gate C.
+5. Complete and validate the remaining local-only MVP behind the engine and
+   repository boundaries.
+6. Replace chunk/checkpoint details behind those same contracts as measurements
+   require.
+7. Build an in-process two-engine replication test bus before using a network.
+8. Replicate immutable Contributions, including checkpoint Contributions, Range
+   behavior, and carrier effects under duplication, delay, reordering, partition,
+   and reconnect.
+9. Prove that accepted structural and Range semantics remain correct when effects
+   travel through the causal Contribution envelope.
+10. Add an authenticated relay, durable catch-up, and visible sync status.
+11. Add the independent ephemeral presence channel.
+12. Add or tune checkpoints, deltas, structural sharing, Range evidence, and
+    compaction without changing frontend behavior.
 
 No network phase begins merely because carrier convergence works. The
 History/convergence, transport, authorization, restore, and structural gates must
@@ -568,7 +590,7 @@ pass together.
 - the same Contribution ID with a conflicting payload;
 - offline edits followed by reconnect;
 - equal Contribution sets produce the same graph, frontiers, collaborative
-  state, and every advertised materialization;
+  state, and every Version materialization;
 - identical rendering with different hidden CRDT state is detected as
   insufficient;
 - atomic publication of a Contribution spanning structure and several
@@ -580,12 +602,15 @@ pass together.
   Contribution and converges under delayed/reordered delivery;
 - Origin never inherits or spoofs under concurrent insertion, copy, paste,
   formatting clear, or restore;
-- stable CommentTarget cursors and explicit ambiguous/orphan behavior converge;
+- durable Range creation order, lineage order, omission, exact text resolution,
+  and rationalization converge;
+- future Comment holders preserve comment-specific repair behavior without
+  redefining Range semantics;
 - restore concurrent with unseen work;
 - concurrent checkpoints remain independently materializable and attributable;
 - unauthorized, revoked, malformed, and oversized remote records;
-- relay bootstrap/compaction preserves advertised History and semantic
-  checkpoint Contributions; and
+- relay bootstrap/compaction preserves every Version, required Range lineage,
+  and semantic checkpoint Contribution; and
 - presence loss or reordering never changes durable state.
 
 ## 16. Explicitly unresolved decisions
@@ -594,12 +619,12 @@ pass together.
 - exact `VersionToken` representation;
 - remote authorization and offline revocation policy;
 - exact same-region and structural conflict representation/UX for causal restore;
-- History retention and CRDT tombstone garbage collection;
+- physical History, Range-evidence, and CRDT tombstone compaction that preserves
+  every Version and required Range lineage;
 - checkpoint labels or other optional checkpoint metadata beyond ordinary
   Contribution context;
 - end-to-end encryption;
 - criteria and migration for any future sharding of the one logical collaborative document;
-- document forks versus continuation under one document ID; and
 - whether any workflow eventually requires a coordinated canonical sequence.
 
 The flat Block carrier, command-to-placement mapping, semantic-update-over-delete
@@ -628,7 +653,8 @@ unresolved replication choices. `STRUCTURAL_CARRIER_MODEL.md` owns those rules.
   validates content origin stored with text plus a separate revision actor.
 - [W3C Web Annotation](https://www.w3.org/TR/annotation-model/) and
   [Hypothesis anchoring](https://github.com/hypothesis/client/blob/main/src/annotator/anchoring/html.ts)
-  inform stable-cursor plus quote/context CommentTargets.
+  inform later comment attachment and repair design without defining Range
+  resolution.
 - [Automerge rich text](https://automerge.org/docs/reference/documents/rich-text/)
   and [Loro movable trees](https://www.loro.dev/docs/tutorial/tree) inform the
   carrier and structural qualification gates.

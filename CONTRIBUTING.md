@@ -36,9 +36,9 @@ npm run build
 CI runs the same sequence and then runs `npm run check` again after the build to
 verify that generated output does not affect source checks.
 
-Verification claims must state evidence that actually ran against the current
-pull-request head. Do not describe work as complete when a required gate has not
-run successfully. If verification cannot run because of an external limitation,
+Verification claims must describe evidence that actually ran against the stated
+revision. Do not describe work as complete when a required gate has not run
+successfully. If verification cannot run because of an external limitation,
 keep the work explicitly incomplete and state which evidence is missing.
 
 ## Test requirements
@@ -99,10 +99,10 @@ working state.
 
 Pull requests are always squash-merged. Write the pull-request title and
 description as the final squash commit title and message. The description must
-state the resulting change and relevant verification, not temporary branch or
-review-process status. Update the title or description during review whenever
-the final change makes the existing text inaccurate or incomplete. Put
-transient review notes in the pull-request conversation instead.
+state the resulting change, not temporary branch or review-process status.
+Update the title or description during review whenever the final change makes
+the existing text inaccurate or incomplete. Put transient review notes in the
+pull-request conversation instead.
 
 Branch history can be rewritten before merge. Coordinate before you force-update
 a branch that another contributor is actively using or building on.
@@ -123,7 +123,7 @@ Before you mark a pull request ready for review:
   promotion gate and that only promoted contracts drive correctness failures;
 - run or obtain the required verification on the current head; and
 - ensure that the pull-request title and description accurately state the final
-  change and verification evidence.
+  change.
 
 ## Generated output
 

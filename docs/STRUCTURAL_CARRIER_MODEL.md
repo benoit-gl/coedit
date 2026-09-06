@@ -1,17 +1,18 @@
 # Structural carrier model
 
-**Status:** Accepted Step 3 structural carrier contract; exact position-allocation
-algorithm and carrier encoding remain qualification decisions.
+**Status:** Accepted structural carrier contract; the allocator and carrier are
+qualified in Step 3 and implemented for the selected carrier in Step 4.
 
-**Applies to:** `SCAFFOLDING_PLAN.md`, Step 3, and future replicated structural
+**Applies to:** `SCAFFOLDING_PLAN.md`, Steps 3-4, and future replicated structural
 editing.
 
 ## 1. Purpose
 
-This document defines how Coedit maps the Step 2 Block tree into the private
-collaborative carrier during Step 3. It defines the required structural meaning
-and qualification criteria. It does not select the final Yjs or Automerge
-adapter, transport protocol, or position-allocation algorithm.
+This document defines how Coedit maps the Step 2 Block tree into a private
+collaborative carrier. Step 3 qualifies both candidates and Step 4 implements the
+winner. This document defines required structural meaning and qualification
+criteria. It does not select the Yjs or Automerge adapter, transport protocol, or
+position-allocation algorithm.
 
 Use these documents with this contract:
 
@@ -27,10 +28,10 @@ Use these documents with this contract:
 
 ## 2. Context
 
-Step 2 implements one recursive logical Block tree. Step 3 introduces a
-collaborative carrier for attributed InlineContent and must also prove that one
-logical collaborative document can publish an atomic change that spans structure
-and several InlineContents.
+Step 2 implements one recursive logical Block tree. Step 3 proves that each
+candidate can carry attributed InlineContent and publish one atomic change across
+structure and several InlineContents. Step 4 implements that behavior for the
+selected carrier.
 
 Yjs and Automerge both provide structured collaborative data. The Block tree does
 not need to be serialized as JSON, YAML, indentation text, or another textual
@@ -41,7 +42,7 @@ concurrent structural work. A generic CRDT map or sequence does not know Coedit'
 requirements for one visible Block identity, deterministic order, and recoverable
 behavior after conflicting moves or deletes.
 
-The Step 3 representation must also avoid fixing a full network protocol or
+The qualified and selected representation must also avoid fixing a full network protocol or
 post-MVP conflict UX before qualification evidence exists.
 
 ## 3. Accepted logical carrier representation
@@ -333,7 +334,7 @@ surface a disruptive-change warning and direct the user to the relevant before
 and after Versions. Detection and presentation are separate from the durable
 History mechanism.
 
-## 12. Step 3 qualification requirements
+## 12. Step 3 qualification and Step 4 regression requirements
 
 Run the same structural carrier suite against the pinned Yjs and Automerge
 candidates. At minimum verify:
@@ -376,21 +377,23 @@ candidates. At minimum verify:
 - equal projected structure after duplicate, delayed, reordered, partitioned,
   and reconnected carrier updates.
 
-Use qualification surrogates for later History, restore, and portable-format
-machinery that does not exist in Step 3. Repeat the real cross-subsystem tests
-when those later steps are implemented.
+Use qualification surrogates for later History, Range, restore, and portable-format
+machinery that does not exist in Step 3. Step 4 retains the suite for the selected
+carrier. Repeat the real cross-subsystem tests when those later steps are
+implemented.
 
 ## 13. What remains open
 
-Step 3 must still select or implement the concrete position allocator and prove
-its behavior. The exact encoded `Placement` scalar, activity/liveness encoding,
-payload nesting, existence-conflict mapping, carrier transaction format, and
-adapter-private metadata are implementation decisions.
+Step 3 must select the concrete position allocator and prove its behavior. Step
+4 implements it behind the accepted allocator abstraction. The exact encoded
+`Placement` scalar, activity/liveness encoding, payload nesting,
+existence-conflict mapping, carrier transaction format, and adapter-private
+metadata are implementation decisions.
 
 Network transport, authorization, causal envelope encoding, retained-History
 storage, and the complete post-MVP offline structural-conflict UX remain outside
 this contract.
 
-The accepted flat placement model is a compatibility constraint for Step 3. It
-is not a claim that every future collaboration conflict can be resolved without
-product policy or further research.
+The accepted flat placement model is a compatibility constraint for Steps 3-4
+and later work. It is not a claim that every future collaboration conflict can
+be resolved without product policy or further research.
