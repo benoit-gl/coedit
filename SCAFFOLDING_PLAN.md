@@ -51,13 +51,13 @@ Do not implement a later-step subsystem only to prepare for possible future work
 
 ## 3. Working agreement
 
-All implementation work must occur on `main` or on a branch that descends from `main`.
+All implementation work must occur on a branch that descends from `main` and must enter `main` through a pull request. Do not commit implementation work directly to `main`.
 
 Do not merge, rebase, reset, or commit to `tauri-experimental-orphan`. Inspect it only as evidence and for selectively reusable behavior or tests.
 
 Each implementation step must preserve the Step 0 documentation foundation. If implementation evidence invalidates an accepted rule, update the responsible authoritative document in the same change.
 
-All implementation and verification commands must preserve the cross-platform contract in `docs/CODING_STYLE.md`. Linux is the future CI environment; Windows remains a required native developer platform, and macOS is an intended supported platform.
+All implementation and verification commands must preserve the cross-platform contract in `docs/CODING_STYLE.md`. Linux is the CI environment; Windows remains a required native developer platform, and macOS is an intended supported platform.
 
 A preserved implementation choice is not automatically current authority. A new design is not accepted merely because it is more convenient. Material conflicts must be resolved explicitly through Step 0 traceability or a later recorded decision.
 
@@ -366,7 +366,7 @@ The plan is complete when the browser prototype satisfies the MVP contract and a
 - one active rich-text editor preserves canonical text, intrinsic marks, and protected Origin;
 - semantic edit grouping remains separate from prompt durable Contributions and preserves controlled transition, failure, and retry rules;
 - verification covers data loss, hostile input, corruption, conflicts, History, checkpoints, restore, and interchange round trips;
-- the canonical clean-checkout command sequence succeeds on required Windows and Linux environments, remains macOS-compatible by design, and is the only future Linux CI path;
+- the canonical clean-checkout command sequence succeeds on required Windows and Linux environments, remains macOS-compatible by design, and is the same path used by Linux CI;
 - current documentation describes the clean-slate application; and
 - no deferred infrastructure has been introduced without passing its decision gate.
 
