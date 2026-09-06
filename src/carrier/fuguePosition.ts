@@ -76,7 +76,11 @@ export const fuguePositionAllocator: StructuralPositionAllocator<
         allowInsecureRandom: true,
       });
       const burst = fugue.startBurst(lower ?? null, upper ?? null);
-      return { ok: true, value: burst.nextMany(count) };
+      const value: FugueStructuralPosition[] = [];
+      for (let index = 0; index < count; index += 1) {
+        value.push(burst.next());
+      }
+      return { ok: true, value };
     } catch (cause: unknown) {
       return failure(
         "CandidateFailure",
