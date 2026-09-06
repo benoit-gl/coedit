@@ -288,7 +288,9 @@ function isOpaqueValue(value: unknown): value is OpaqueLinkValue {
     seen.add(current);
 
     if (Array.isArray(current)) {
-      pending.push(...current);
+      for (const item of current as readonly unknown[]) {
+        pending.push(item);
+      }
       continue;
     }
 
