@@ -1,0 +1,49 @@
+name: Step 3 format qualification harness
+
+on:
+  push:
+    branches:
+      - impl/step-3-carrier-qualification
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v7
+        with:
+          ref: impl/step-3-carrier-qualification
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Bootstrap dependencies
+        run: npm run bootstrap
+
+      - name: Format qualification changes
+        run: >-
+          npm exec -- prettier --write
+          package.json
+          qualification/step3/README.md
+          qualification/step3/browser.html
+          qualification/step3/browserFixture.ts
+          qualification/step3/editor.pw.ts
+          qualification/step3/playwright.config.ts
+          qualification/step3/qualification.qual.ts
+          src/carrier/rangeFeasibility.test.ts
+          .github/workflows/step3-qualification.yml
+
+      - name: Commit formatting and remove this workflow
+        run: |
+          rm .github/workflows/step3-format-qualification.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package.json qualification/step3 src/carrier/rangeFeasibility.test.ts .github/workflows/step3-qualification.yml .github/workflows/step3-format-qualification.yml
+          git commit -m "Format Step 3 qualification harness"
+          git push origin HEAD:impl/step-3-carrier-qualification
