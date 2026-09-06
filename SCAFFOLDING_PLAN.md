@@ -197,7 +197,12 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 **Objective:** Finalize and implement the carrier-neutral Range service after the selected carrier and exact Version materialization exist.
 
-Close the remaining result-wrapper, exact structural tie-break, positional structural behavior, fragment-encoding, resource-guard, and internal-link wire decisions listed in `RANGE_MODEL.md`. Compare the remaining lineage candidates against the accepted behavior and record the selected representation.
+Close the remaining result-wrapper, split/merge continuing-identity,
+merged-away-reference, deterministic identity tie-break, complete structural
+lineage, exact structural boundary, positional structural behavior,
+fragment-encoding, resource-guard, and internal-link wire decisions listed in
+`RANGE_MODEL.md`. Compare the remaining lineage candidates against the accepted
+behavior and record the selected representation.
 
 **Outcome:** Headless code can create one-span, multi-span, and Positional Ranges against the visible Version; resolve surviving spans in creation and lineage order; concatenate exact text without separators; rationalize eligible merge-caused adjacency explicitly; serialize a document-relative Range fragment; parse it best-effort in an application-selected document; rebase tracking evidence; and reinject a value as internal-link metadata or another Range holder.
 
@@ -305,7 +310,14 @@ Gate B follows Step 3. Do not begin production carrier implementation or freeze 
 
 ### Gate C — Durable Range freeze
 
-Gate C follows Step 6. It closes the carrier-neutral Range API result wrappers, remaining positional and exact-boundary structural behavior, fragment serialization and reinjection rules, resource-guard behavior, internal-link encoding, and lineage representation. Do not freeze `.coedit` version 1 or the internal-link Range wire shape before Gate C passes.
+Gate C follows Step 6. It closes the carrier-neutral Range API result wrappers,
+split/merge continuing identities, merged-away-reference behavior, the
+deterministic identity rule when no semantic continuation is naturally
+designated, complete one-to-many and many-to-one lineage, remaining positional
+and exact-boundary structural behavior, fragment serialization and reinjection
+rules, resource-guard behavior, internal-link encoding, and lineage
+representation. Do not freeze `.coedit` version 1 or the internal-link Range
+wire shape before Gate C passes.
 
 ### Gate D — Elaboration baseline
 

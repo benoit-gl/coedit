@@ -102,6 +102,15 @@ and hybrid approaches remain candidates.
 Step 6 must still close:
 
 - the lineage representation and its carrier integration;
+- how split and merge commands designate the continuing Block and InlineContent
+  identities;
+- whether references to identities consumed by a merge follow structural
+  lineage, remain historical-only, or become unresolved, including internal-link
+  Block fallback;
+- the deterministic identity rule when no semantic continuation is naturally
+  designated; and
+- preservation of complete one-to-many and many-to-one lineage independently of
+  the continuing entity identity;
 - exact carrier-neutral API names and result wrappers;
 - the all-members-omitted parse result and optional parse diagnostics;
 - the zero-length Span tie-break at an exact structural split;

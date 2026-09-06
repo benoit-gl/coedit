@@ -323,6 +323,16 @@ Verify at least:
 - Block-local preceding-stickiness without migration to a preceding Block when the target content becomes empty;
 - the accepted behavior for split exactly at a Positional Range;
 - split, merge, deletion, move, and owning-container replacement;
+- each split and merge applies the accepted continuing-identity rule for Blocks
+  and InlineContents;
+- references to identities consumed by a merge exhibit the accepted
+  follow-lineage, historical-only, or unresolved behavior, including an internal
+  link's primary Block fallback;
+- operations without a naturally designated semantic continuation select the
+  same identity deterministically on every replica without clocks or arrival
+  order; and
+- complete one-to-many split and many-to-one merge lineage remains resolvable
+  independently of whichever entity identity continues;
 - no Range continuation through copy, clone, import, paste, or shared Origin and
   derivation;
 - an exact-boundary Span split creates no zero-length descendant on the other
@@ -349,7 +359,11 @@ Verify at least:
 - reload and supported compaction; and
 - edit and Block-move cost independent of the total retained Range count.
 
-Record the compared lineage representations, fixtures, measurements, rejected alternatives, and final selection. Gate C cannot pass on equal visible text alone; it requires equal Range behavior, creation order, lineage order, omission, and rationalization behavior.
+Record the compared lineage representations, continuing-identity rules,
+merged-away-reference behavior, fixtures, measurements, rejected alternatives,
+and final selection. Gate C cannot pass on equal visible text alone; it requires
+equal entity-identity results, Range behavior, creation order, lineage order,
+omission, and rationalization behavior.
 
 ## 9. Editor durability and semantic-group verification
 

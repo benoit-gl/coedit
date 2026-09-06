@@ -344,6 +344,15 @@ Explicit rationalization returns a rebased Range and can merge only consecutive,
 Gate C must close and record:
 
 - exact result wrappers, all-members-omitted parsing, and optional parse diagnostics;
+- split and merge rules that designate the continuing Block and InlineContent
+  identities;
+- whether references to identities consumed by a merge follow structural
+  lineage, remain historical-only, or become unresolved, including internal-link
+  Block fallback;
+- the deterministic identity rule when no semantic continuation is naturally
+  designated, without using clocks or incidental replica order;
+- complete one-to-many split and many-to-one merge lineage independent of the
+  continuing entity identity;
 - the zero-length Span tie-break at an exact structural split;
 - Positional Range split, merge, deletion, and replacement behavior;
 - document-relative fragment grammar and resource-guard behavior;

@@ -356,6 +356,15 @@ in advance.
 The remaining decisions are:
 
 - the Range-tracking lineage representation and carrier integration;
+- how each split and merge command designates the Block and InlineContent whose
+  identity is the continuing identity;
+- whether references to a BlockId or InlineContentId consumed by a merge follow
+  structural lineage, remain historical-only, or become unresolved, including
+  the effect on an internal link's primary Block fallback;
+- the deterministic identity rule when an operation has no naturally designated
+  semantic continuation; clocks and incidental replica order cannot decide it;
+- how complete one-to-many split lineage and many-to-one merge lineage remain
+  available independently of whichever entity identity continues;
 - exact carrier-neutral API names and result wrappers;
 - the result and optional diagnostics when parsing omits members, including all
   members;
