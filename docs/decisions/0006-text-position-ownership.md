@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-01
 
-**Amended:** 2026-09-03
+**Amended:** 2026-09-06
 
 ## Context
 
@@ -26,8 +26,10 @@ valid editor selection.
 Canonical CollaborativeContent stores Unicode text without prescribing a storage
 encoding as document semantics.
 
-Use editor-native positions for transient editing. Use carrier-native stable
-relative positions for durable live collaborative references. Treat those stable
+Use editor-native positions for transient editing. Durable references use the
+carrier-neutral Range service. A private Range-tracking implementation can use
+carrier-native stable relative positions as one primitive, but this ADR does not
+select the Range-tracking representation. Treat any carrier-native stable
 positions as opaque outside the carrier adapter.
 
 Do not define a universal carrier-neutral numeric character coordinate. Numeric
@@ -41,31 +43,34 @@ behavior.
 Preserve authored Unicode text without silent normalization.
 
 Portable and historical Range recovery uses the creation Version, original Block
-and InlineContent identities, and carrier-neutral lineage evidence selected at
-Gate C. It does not assume that a live carrier cursor is a universal portable
-coordinate or bind an unresolved member by text similarity.
+and InlineContent identities, and the carrier-neutral lineage and verification
+evidence selected at Gate C. It does not assume that a live carrier cursor is a
+universal portable coordinate or bind an unresolved member by text similarity.
 
 ## Rationale
 
 This design keeps keystroke-critical operations in the editor's native position
-model and uses the collaboration system's established stable-position machinery
-for durable references. It avoids unnecessary full-text coordinate conversion
-and avoids two authorities for cursor and selection behavior.
+model while allowing the Range implementation to use established carrier
+position machinery when qualification supports it. It avoids unnecessary
+full-text coordinate conversion, avoids two authorities for cursor and selection
+behavior, and leaves the durable Range-tracking representation to Gate C.
 
 ## Consequences
 
 - UTF-16 can remain a JavaScript or parser boundary detail without becoming
   canonical document semantics.
 - Durable internal-link and future comment Ranges can use stable carrier
-  positions behind the Range service while their carrier-neutral value remains
-  document-relative.
+  positions behind the Range service without requiring them as the complete
+  Range-tracking representation.
 - Qualification must test complex Unicode selections and stable-position
-  conversion through editing and reload.
-- Portable recovery needs carrier-neutral repair evidence in addition to live
-  carrier positions.
+  conversion through editing and reload when a candidate uses that primitive.
+- Portable recovery needs carrier-neutral lineage and verification evidence in
+  addition to any live carrier positions used by the selected representation.
 
 ## Authority
 
 [`../TEXT_POSITION_MODEL.md`](../TEXT_POSITION_MODEL.md) owns the detailed
-contract. [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
+coordinate and carrier-position boundary contract. [`../RANGE_MODEL.md`](../RANGE_MODEL.md)
+owns durable Range behavior and the Gate C representation decision.
+[`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
 owns attributed-text behavior.
