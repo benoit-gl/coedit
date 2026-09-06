@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 for (const candidate of ["yjs", "automerge"] as const) {
   test.describe(`${candidate} browser carrier`, () => {
@@ -73,9 +73,7 @@ for (const candidate of ["yjs", "automerge"] as const) {
   });
 }
 
-async function visibleText(
-  page: import("@playwright/test").Page,
-): Promise<string> {
+async function visibleText(page: Page): Promise<string> {
   return page.evaluate(() =>
     window.coeditQualification
       .snapshot()
