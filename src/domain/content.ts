@@ -257,10 +257,7 @@ function validateLinkTarget(
 
   return isCanonicalUuidV4(target.blockId)
     ? undefined
-    : error(
-        "InvalidLinkTarget",
-        "Internal links require a canonical BlockId.",
-      );
+    : error("InvalidLinkTarget", "Internal links require a canonical BlockId.");
 }
 
 function isOpaqueValue(value: unknown): value is OpaqueLinkValue {
