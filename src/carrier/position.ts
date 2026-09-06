@@ -1,8 +1,6 @@
 import { isCanonicalUuidV4 } from "../domain/ids.js";
 
 const BASE = 65_536;
-const MAX_PATH_LENGTH = 256;
-const MAX_RUN_LENGTH = 50_000;
 
 /** Three-way ordering result used by structural position comparators. */
 export type StructuralPositionOrder = -1 | 0 | 1;
@@ -93,15 +91,15 @@ export interface LocalDenseAllocationContext {
   readonly runNonce: string;
 }
 
-/** Stable local dense-order allocation failure kinds. */
+/** Stable local dense-order candidate failure kinds. */
 export type LocalDensePositionErrorKind =
   | "InvalidPosition"
   | "InvalidBounds"
   | "InvalidNonce"
   | "InvalidCount"
-  | "PathLimitExceeded";
+  | "CapacityExceeded";
 
-/** Local dense-order candidate used for Step 3 qualification, not yet selected for production. */
+/** Local dense-order candidate used for Step 3 qualification, not selected for production. */
 export const localDensePositionAllocator: StructuralPositionAllocator<
   LocalDensePosition,
   LocalDenseAllocationContext
@@ -153,15 +151,13 @@ export function isValidLocalDensePosition(
 ): boolean {
   return (
     position.digits.length > 0 &&
-    position.digits.length <= MAX_PATH_LENGTH &&
     position.digits[position.digits.length - 1] !== 0 &&
     position.digits.every(
       (digit) => Number.isSafeInteger(digit) && digit >= 0 && digit < BASE,
     ) &&
     isCanonicalUuidV4(position.run) &&
     Number.isSafeInteger(position.member) &&
-    position.member >= 0 &&
-    position.member <= MAX_RUN_LENGTH
+    position.member >= 1
   );
 }
 
@@ -196,10 +192,10 @@ function allocateLocalDenseRun(
       "Position run nonce must be a canonical UUID-v4 value.",
     );
   }
-  if (!Number.isSafeInteger(count) || count < 1 || count > MAX_RUN_LENGTH) {
+  if (!Number.isSafeInteger(count) || count < 1) {
     return failure(
       "InvalidCount",
-      `A structural position run must contain 1-${MAX_RUN_LENGTH} members.`,
+      "Structural position run count must be a positive safe integer.",
     );
   }
   if (
@@ -235,24 +231,19 @@ function allocateLocalDenseRun(
     );
   }
 
-  const anchor = allocateDigitsBetween(
-    lowerDigits,
-    upperDigits,
-    context.runNonce,
-    0,
-  );
-  if (anchor === undefined || anchor.length >= MAX_PATH_LENGTH) {
+  const anchor = allocateDigitsBetween(lowerDigits, upperDigits, context.runNonce);
+  if (anchor === undefined) {
     return failure(
-      "PathLimitExceeded",
-      "Structural position path exceeded the qualification safety limit.",
+      "CapacityExceeded",
+      "The local dense candidate could not allocate a fresh path for these finite bounds.",
     );
   }
 
   const stride = Math.floor(BASE / (count + 1));
   if (stride < 1) {
     return failure(
-      "InvalidCount",
-      "Structural run is too large for one anchor.",
+      "CapacityExceeded",
+      "The local dense candidate cannot fit this ordered run in one allocation anchor.",
     );
   }
   const positions: LocalDensePosition[] = [];
@@ -271,14 +262,14 @@ function allocateDigitsBetween(
   lower: readonly number[] | undefined,
   upper: readonly number[] | undefined,
   nonce: string,
-  nonceOffset: number,
 ): number[] | undefined {
   const prefix: number[] = [];
   let depth = 0;
   let lowerActive = lower !== undefined;
   let upperActive = upper !== undefined;
+  const searchDepth = Math.max(lower?.length ?? 0, upper?.length ?? 0) + 2;
 
-  while (prefix.length < MAX_PATH_LENGTH - 1) {
+  while (depth < searchDepth) {
     const lowerDigit =
       lowerActive && lower !== undefined && depth < lower.length
         ? (lower[depth] ?? 0)
@@ -298,7 +289,7 @@ function allocateDigitsBetween(
 
     if (upperDigit - lowerDigit > 1) {
       const available = upperDigit - lowerDigit - 1;
-      const jitter = hashNonce(nonce, nonceOffset + depth) % available;
+      const jitter = hashNonce(nonce, depth) % available;
       prefix.push(lowerDigit + 1 + jitter);
       return prefix;
     }
