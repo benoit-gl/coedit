@@ -1,0 +1,34 @@
+name: Step 3 format diagnostic
+
+on:
+  push:
+    branches:
+      - impl/step-3-carrier-qualification
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Bootstrap dependencies
+        run: npm run bootstrap
+
+      - name: Format recovered content model
+        run: npm run format -- src/domain/content.ts
+
+      - name: Upload formatted file
+        uses: actions/upload-artifact@v4
+        with:
+          name: formatted-content-model
+          path: src/domain/content.ts
