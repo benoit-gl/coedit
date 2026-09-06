@@ -21,6 +21,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "docs:check": "typedoc --options typedoc.json",
+    "qualify:step3:headless": "vitest run qualification/step3/qualification.qual.ts",
+    "qualify:step3:browser": "playwright test --config qualification/step3/playwright.config.ts",
+    "qualify:step3": "npm run qualify:step3:headless && npm run qualify:step3:browser",
     "check": "npm run format:check && npm run typecheck && npm run lint && npm run lint:deps && npm run docs:check && npm run test"
   },
   "dependencies": {
