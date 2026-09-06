@@ -2,13 +2,9 @@ import type {
   BlockId,
   ContributionId,
   ContributorId,
-  InlineContentId,
   OriginId,
 } from "./ids.js";
 import { isCanonicalUuidV4 } from "./ids.js";
-
-const MAX_OPAQUE_LINK_BYTES = 8_192;
-const MAX_OPAQUE_LINK_DEPTH = 8;
 
 /** Classifies the source that first created one logical content unit. */
 export type OriginKind = "human" | "imported" | "automation" | "ai" | "unknown";
@@ -30,9 +26,14 @@ export type MarkBoundaryPolicy = "none" | "start" | "end" | "both";
 
 /** Closed initial intrinsic formatting vocabulary. */
 export type FormattingMarkKind =
-  "bold" | "italic" | "underline" | "strikethrough" | "inlineCode" | "link";
+  | "bold"
+  | "italic"
+  | "underline"
+  | "strikethrough"
+  | "inlineCode"
+  | "link";
 
-/** Bounded JSON-like value that the document model preserves without interpretation. */
+/** JSON-like value that the document model preserves without interpretation. */
 export type OpaqueLinkValue =
   | null
   | boolean
@@ -41,55 +42,29 @@ export type OpaqueLinkValue =
   | readonly OpaqueLinkValue[]
   | { readonly [key: string]: OpaqueLinkValue };
 
-/** Opaque serialized cursor value owned by one carrier adapter. */
-export type StableRangeCursor = string;
-
-/** Optional passage refinement inside the Block named by an internal link. */
-export interface InternalLinkRange {
-  /** InlineContent that owns the target passage. */
-  readonly inlineContentId: InlineContentId;
-  /** Stable carrier cursor for the start boundary. */
-  readonly startCursor: StableRangeCursor;
-  /** Stable carrier cursor for the end boundary. */
-  readonly endCursor: StableRangeCursor;
-  /** Cursor affinity for the start boundary. */
-  readonly startAffinity: "before" | "after";
-  /** Cursor affinity for the end boundary. */
-  readonly endAffinity: "before" | "after";
-  /** Quote and context evidence used when stable cursors do not resolve. */
-  readonly quote: {
-    /** Exact visible target text. */
-    readonly exact: string;
-    /** Visible context immediately before the target. */
-    readonly prefix: string;
-    /** Visible context immediately after the target. */
-    readonly suffix: string;
-  };
-  /** Optional fallback position hint. It is not authoritative. */
-  readonly approximatePosition?: {
-    /** Approximate start position in the owning interchange coordinate. */
-    readonly start: number;
-    /** Approximate end position in the owning interchange coordinate. */
-    readonly end: number;
-  };
-}
-
 /** Inert presentation-owned link target. */
 export interface OpaqueLinkTarget {
   /** Selects opaque presentation metadata. */
   readonly kind: "opaque";
-  /** Bounded metadata preserved exactly by the document engine. */
+  /** Metadata preserved exactly by the document engine. */
   readonly metadata: OpaqueLinkValue;
 }
 
-/** Typed same-document Block link with an optional passage refinement. */
+/**
+ * Typed same-document Block link used during Step 3 carrier qualification.
+ *
+ * @remarks
+ * `blockId` is the primary durable target. The accepted model also permits an
+ * optional durable Range refinement, but Step 6 owns the Range representation
+ * and internal-link Range encoding. Step 3 therefore does not freeze a Range
+ * value into this carrier-neutral link shape. Range feasibility is qualified
+ * separately through the candidate-neutral carrier APIs.
+ */
 export interface InternalBlockLinkTarget {
   /** Selects a document-local Block target. */
   readonly kind: "block";
   /** Primary durable target Block. */
   readonly blockId: BlockId;
-  /** Optional passage refinement inside the target Block. */
-  readonly range?: InternalLinkRange;
 }
 
 /** Target carried by an intrinsic link mark. */
@@ -145,8 +120,7 @@ export type ContentValidationErrorKind =
   | "MissingOrigin"
   | "InvalidItem"
   | "InvalidMark"
-  | "InvalidLinkTarget"
-  | "LimitExceeded";
+  | "InvalidLinkTarget";
 
 /** Expected carrier-neutral content validation failure. */
 export interface ContentValidationError {
@@ -278,89 +252,67 @@ function validateLinkTarget(
   target: LinkTarget,
 ): ContentValidationError | undefined {
   if (target.kind === "opaque") {
-    if (!isOpaqueValue(target.metadata, 0)) {
-      return error(
-        "InvalidLinkTarget",
-        "Opaque link metadata is not a bounded JSON-like value.",
-      );
-    }
-    const encoded = JSON.stringify(target.metadata);
-    if (new TextEncoder().encode(encoded).byteLength > MAX_OPAQUE_LINK_BYTES) {
-      return error(
-        "LimitExceeded",
-        "Opaque link metadata exceeds its byte limit.",
-      );
-    }
-    return undefined;
+    return isOpaqueValue(target.metadata)
+      ? undefined
+      : error(
+          "InvalidLinkTarget",
+          "Opaque link metadata must be an acyclic JSON-like value.",
+        );
   }
 
-  if (!isCanonicalUuidV4(target.blockId)) {
-    return error(
-      "InvalidLinkTarget",
-      "Internal links require a canonical BlockId.",
-    );
-  }
-  const range = target.range;
-  if (range === undefined) {
-    return undefined;
-  }
-  if (
-    !isCanonicalUuidV4(range.inlineContentId) ||
-    range.startCursor.length === 0 ||
-    range.endCursor.length === 0
-  ) {
-    return error(
-      "InvalidLinkTarget",
-      "Internal-link range identity and cursors are invalid.",
-    );
-  }
-  if (range.approximatePosition !== undefined) {
-    const { start, end } = range.approximatePosition;
-    if (
-      !Number.isSafeInteger(start) ||
-      !Number.isSafeInteger(end) ||
-      start < 0 ||
-      end < start
-    ) {
-      return error(
+  return isCanonicalUuidV4(target.blockId)
+    ? undefined
+    : error(
         "InvalidLinkTarget",
-        "Internal-link approximate range is invalid.",
+        "Internal links require a canonical BlockId.",
       );
-    }
-  }
-  return undefined;
 }
 
-function isOpaqueValue(
-  value: unknown,
-  depth: number,
-): value is OpaqueLinkValue {
-  if (depth > MAX_OPAQUE_LINK_DEPTH) {
-    return false;
-  }
-  if (
-    value === null ||
-    typeof value === "boolean" ||
-    typeof value === "string"
-  ) {
-    return true;
-  }
-  if (typeof value === "number") {
-    return Number.isFinite(value);
-  }
-  if (Array.isArray(value)) {
-    return value.every((entry) => isOpaqueValue(entry, depth + 1));
-  }
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-  const record = value as Readonly<Record<string, unknown>>;
-  for (const key of Object.keys(record)) {
-    const entry = record[key];
-    if (key.length === 0 || !isOpaqueValue(entry, depth + 1)) {
+function isOpaqueValue(value: unknown): value is OpaqueLinkValue {
+  const pending: unknown[] = [value];
+  const seen = new WeakSet<object>();
+
+  while (pending.length > 0) {
+    const current = pending.pop();
+    if (
+      current === null ||
+      typeof current === "boolean" ||
+      typeof current === "string"
+    ) {
+      continue;
+    }
+    if (typeof current === "number") {
+      if (!Number.isFinite(current)) {
+        return false;
+      }
+      continue;
+    }
+    if (typeof current !== "object") {
       return false;
     }
+    if (seen.has(current)) {
+      return false;
+    }
+    seen.add(current);
+
+    if (Array.isArray(current)) {
+      pending.push(...current);
+      continue;
+    }
+
+    const prototype = Object.getPrototypeOf(current) as unknown;
+    if (prototype !== Object.prototype && prototype !== null) {
+      return false;
+    }
+    const record = current as Readonly<Record<string, unknown>>;
+    for (const key of Object.keys(record)) {
+      if (key.length === 0) {
+        return false;
+      }
+      pending.push(record[key]);
+    }
   }
+
   return true;
 }
 
