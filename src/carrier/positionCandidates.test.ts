@@ -21,18 +21,12 @@ interface Candidate<Position, Context> {
 
 const candidates: readonly Candidate<unknown, unknown>[] = [
   {
-    allocator: fractionalIndexPositionAllocator as StructuralPositionAllocator<
-      unknown,
-      unknown
-    >,
+    allocator: fractionalIndexPositionAllocator,
     context: (runNonce) =>
       ({ runNonce }) satisfies FractionalIndexAllocationContext,
   },
   {
-    allocator: fuguePositionAllocator as StructuralPositionAllocator<
-      unknown,
-      unknown
-    >,
+    allocator: fuguePositionAllocator,
     context: (runNonce) => ({ runNonce }) satisfies FugueAllocationContext,
   },
 ];
