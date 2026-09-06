@@ -3,12 +3,10 @@ import { describe, expect, it } from "vitest";
 import {
   fractionalIndexPositionAllocator,
   type FractionalIndexAllocationContext,
-  type FractionalIndexPosition,
 } from "./fractionalIndexPosition.js";
 import {
   fuguePositionAllocator,
   type FugueAllocationContext,
-  type FugueStructuralPosition,
 } from "./fuguePosition.js";
 import type { StructuralPositionAllocator } from "./position.js";
 
@@ -143,7 +141,3 @@ function expectOrdered<Position, Context>(
     ).toBeLessThan(0);
   }
 }
-
-// Keep the concrete types referenced so changes to either adapter remain type-checked.
-type _FractionalCandidatePosition = FractionalIndexPosition;
-type _FugueCandidatePosition = FugueStructuralPosition;
