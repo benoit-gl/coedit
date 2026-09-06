@@ -4,7 +4,7 @@
 
 **Decision date:** 2026-08-25
 
-**Amended:** 2026-09-03
+**Amended:** 2026-09-06
 
 **Scope:** Whole-solution direction, including the strict document-engine MVP,
 the carrier-qualification gate, and compatibility requirements for later
@@ -109,9 +109,10 @@ the paster.
 A future durable comment or conversation is an external record that holds one
 durable Range plus comment-specific attachment and repair state. The Range can
 refer to one or several semantic spans across Blocks and InlineContents. The
-Range service owns stable carrier positions, affinity, lineage, and
-carrier-neutral evidence. It omits unresolved or ambiguous members and never
-attaches them to merely similar text.
+Range service can use stable carrier positions behind its carrier-neutral value;
+the exact tracking and lineage representation remains a Gate C decision. It
+omits unresolved or ambiguous members and never attaches them to merely similar
+text.
 
 The complete comment state machine and repair experience remain post-MVP. They
 consume the shared Range service and do not redefine Range kind or resolution.
