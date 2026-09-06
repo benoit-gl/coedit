@@ -16,17 +16,14 @@ import type { ContentCarrierFactory } from "../../src/carrier/contentCarrier.js"
 import {
   fractionalIndexPositionAllocator,
   type FractionalIndexAllocationContext,
-  type FractionalIndexPosition,
 } from "../../src/carrier/fractionalIndexPosition.js";
 import {
   fuguePositionAllocator,
   type FugueAllocationContext,
-  type FugueStructuralPosition,
 } from "../../src/carrier/fuguePosition.js";
 import {
   localDensePositionAllocator,
   type LocalDenseAllocationContext,
-  type LocalDensePosition,
   type StructuralPositionAllocator,
 } from "../../src/carrier/position.js";
 import { yjsContentCarrierFactory } from "../../src/carrier/yjsContentCarrier.js";
@@ -263,8 +260,3 @@ function origin(index: number): OriginRecord {
     createdBy: parseContributionId(`6a000000-0000-4000-8000-${suffix}`),
   };
 }
-
-// These aliases keep all candidate representations under compile-time qualification.
-type _LocalDensePosition = LocalDensePosition;
-type _FractionalIndexPosition = FractionalIndexPosition;
-type _FugueStructuralPosition = FugueStructuralPosition;
