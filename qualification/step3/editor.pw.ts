@@ -3,7 +3,9 @@ import { expect, test } from "@playwright/test";
 for (const candidate of ["yjs", "automerge"] as const) {
   test.describe(`${candidate} browser carrier`, () => {
     test.beforeEach(async ({ page }) => {
-      await page.goto(`/qualification/step3/browser.html?candidate=${candidate}`);
+      await page.goto(
+        `/qualification/step3/browser.html?candidate=${candidate}`,
+      );
       await page.locator(".ProseMirror").click();
     });
 
@@ -25,18 +27,24 @@ for (const candidate of ["yjs", "automerge"] as const) {
         window.coeditQualification.select(0, 1);
         window.coeditQualification.addBold();
       });
-      const snapshot = await page.evaluate(() => window.coeditQualification.snapshot());
-      expect(snapshot.items[0]?.marks.some((mark) => mark.kind === "bold")).toBe(
-        true,
+      const snapshot = await page.evaluate(() =>
+        window.coeditQualification.snapshot(),
       );
+      expect(
+        snapshot.items[0]?.marks.some((mark) => mark.kind === "bold"),
+      ).toBe(true);
 
       await page.evaluate(() => window.coeditQualification.select(2, 2));
       await page.keyboard.press("Enter");
       await expect.poll(() => visibleText(page)).toBe("aX\n");
 
-      expect(await page.evaluate(() => window.coeditQualification.undo())).toBe(true);
+      expect(await page.evaluate(() => window.coeditQualification.undo())).toBe(
+        true,
+      );
       await expect.poll(() => visibleText(page)).toBe("aX");
-      expect(await page.evaluate(() => window.coeditQualification.redo())).toBe(true);
+      expect(await page.evaluate(() => window.coeditQualification.redo())).toBe(
+        true,
+      );
       await expect.poll(() => visibleText(page)).toBe("aX\n");
     });
 
@@ -55,7 +63,9 @@ for (const candidate of ["yjs", "automerge"] as const) {
       });
 
       await expect.poll(() => visibleText(page)).toBe("é");
-      const snapshot = await page.evaluate(() => window.coeditQualification.snapshot());
+      const snapshot = await page.evaluate(() =>
+        window.coeditQualification.snapshot(),
+      );
       expect(snapshot.items).toHaveLength(1);
       expect(snapshot.origins).toHaveLength(1);
       expect(snapshot.items[0]?.originId).toBe(snapshot.origins[0]?.id);

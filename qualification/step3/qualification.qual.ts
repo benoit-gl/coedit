@@ -169,7 +169,8 @@ function measureAllocator<Position, Context>(
   const allocateRepeated1000Ms = performance.now() - started;
 
   const encodedLengths = positions.map(
-    (position) => new TextEncoder().encode(allocator.encode(position)).byteLength,
+    (position) =>
+      new TextEncoder().encode(allocator.encode(position)).byteLength,
   );
   const left = allocator.allocateRun({
     count: 16,

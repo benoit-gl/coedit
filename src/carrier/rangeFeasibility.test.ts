@@ -13,7 +13,10 @@ import type {
   CollaborativeDocumentCarrier,
   CollaborativeDocumentCarrierFactory,
 } from "./collaborativeDocumentCarrier.js";
-import { localDensePositionAllocator, type LocalDensePosition } from "./position.js";
+import {
+  localDensePositionAllocator,
+  type LocalDensePosition,
+} from "./position.js";
 import { createYjsCollaborativeDocumentCarrierFactory } from "./yjsCollaborativeDocumentCarrier.js";
 
 const rootId = parseBlockId("63000000-0000-4000-8000-000000000001");
@@ -26,10 +29,13 @@ const secondContentId = parseInlineContentId(
 const firstOrigin = origin(1);
 const secondOrigin = origin(2);
 
-const factories: readonly CollaborativeDocumentCarrierFactory<LocalDensePosition>[] = [
-  createYjsCollaborativeDocumentCarrierFactory(localDensePositionAllocator),
-  createAutomergeCollaborativeDocumentCarrierFactory(localDensePositionAllocator),
-];
+const factories: readonly CollaborativeDocumentCarrierFactory<LocalDensePosition>[] =
+  [
+    createYjsCollaborativeDocumentCarrierFactory(localDensePositionAllocator),
+    createAutomergeCollaborativeDocumentCarrierFactory(
+      localDensePositionAllocator,
+    ),
+  ];
 
 for (const factory of factories) {
   describe(`${factory.candidate} Range feasibility`, () => {
@@ -151,7 +157,11 @@ function cursorSpan(
 ): FeasibilityCursorSpan {
   return {
     inlineContentId,
-    startCursor: carrier.createInlineContentCursor(inlineContentId, start, "before"),
+    startCursor: carrier.createInlineContentCursor(
+      inlineContentId,
+      start,
+      "before",
+    ),
     endCursor: carrier.createInlineContentCursor(inlineContentId, end, "after"),
   };
 }

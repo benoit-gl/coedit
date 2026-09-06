@@ -7,7 +7,10 @@ export default defineConfig({
   workers: 1,
   retries: 0,
   timeout: 15_000,
-  reporter: [["list"], ["json", { outputFile: "artifacts/step3/playwright.json" }]],
+  reporter: [
+    ["list"],
+    ["json", { outputFile: "artifacts/step3/playwright.json" }],
+  ],
   use: {
     baseURL: "http://127.0.0.1:5173",
     browserName: "chromium",

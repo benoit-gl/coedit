@@ -6,15 +6,15 @@ This directory contains the reproducible evidence harness for Step 3. It does no
 
 The qualification branch pins these candidate and adapter dependencies:
 
-| Dependency | Version | Role | License decision |
-| --- | --- | --- | --- |
-| `yjs` | 13.6.32 | collaborative carrier candidate | admissible |
-| `@automerge/automerge` | 3.4.1 | collaborative carrier candidate | admissible |
-| `@tiptap/core` / `@tiptap/pm` | 3.30.5 | common editor boundary | admissible |
-| `fractional-indexing` | 4.0.0 | established fractional structural-position candidate | admissible; CC0-1.0 |
-| `fugue` | 3.0.0 | established Fugue structural-position candidate | admissible; Unlicense |
-| `@playwright/test` | 1.62.1 | real Chromium qualification | development-only |
-| `dompurify` | 3.4.14 | clipboard sanitization qualification dependency | admissible |
+| Dependency                    | Version | Role                                                 | License decision      |
+| ----------------------------- | ------- | ---------------------------------------------------- | --------------------- |
+| `yjs`                         | 13.6.32 | collaborative carrier candidate                      | admissible            |
+| `@automerge/automerge`        | 3.4.1   | collaborative carrier candidate                      | admissible            |
+| `@tiptap/core` / `@tiptap/pm` | 3.30.5  | common editor boundary                               | admissible            |
+| `fractional-indexing`         | 4.0.0   | established fractional structural-position candidate | admissible; CC0-1.0   |
+| `fugue`                       | 3.0.0   | established Fugue structural-position candidate      | admissible; Unlicense |
+| `@playwright/test`            | 1.62.1  | real Chromium qualification                          | development-only      |
+| `dompurify`                   | 3.4.14  | clipboard sanitization qualification dependency      | admissible            |
 
 The available TypeScript LSEQ package `@peoplesgrocers/lseq` was reviewed as an established-family reference but is not imported because it is AGPL-3.0. Step 3 records that screen rather than adding a product dependency with an unsuitable license.
 

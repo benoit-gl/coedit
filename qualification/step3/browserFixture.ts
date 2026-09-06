@@ -44,7 +44,8 @@ const factories: Readonly<Record<string, ContentCarrierFactory>> = {
   yjs: yjsContentCarrierFactory,
   automerge: automergeContentCarrierFactory,
 };
-const candidate = new URLSearchParams(window.location.search).get("candidate") ?? "yjs";
+const candidate =
+  new URLSearchParams(window.location.search).get("candidate") ?? "yjs";
 const factory = factories[candidate];
 if (factory === undefined) {
   throw new Error(`Unknown Step 3 browser candidate: ${candidate}.`);
@@ -96,7 +97,9 @@ const view = new EditorView(editorElement, {
 window.coeditQualification = {
   snapshot: () => carrier.snapshot(),
   select(from, to) {
-    const transaction = state.tr.setSelection(TextSelection.create(state.doc, from, to));
+    const transaction = state.tr.setSelection(
+      TextSelection.create(state.doc, from, to),
+    );
     state = state.apply(transaction);
     view.updateState(state);
     view.focus();
@@ -106,7 +109,9 @@ window.coeditQualification = {
       kind: "bold",
       boundaryPolicy: "both",
     });
-    publishTransaction(state.tr.addMark(state.selection.from, state.selection.to, mark));
+    publishTransaction(
+      state.tr.addMark(state.selection.from, state.selection.to, mark),
+    );
   },
   undo: () => runHistoryCommand(undo),
   redo: () => runHistoryCommand(redo),
@@ -128,7 +133,9 @@ function publishTransaction(transaction: Transaction): void {
 
 function runHistoryCommand(command: typeof undo): boolean {
   preserveNextInsertion = true;
-  const handled = command(state, (transaction) => publishTransaction(transaction));
+  const handled = command(state, (transaction) =>
+    publishTransaction(transaction),
+  );
   if (!handled) {
     preserveNextInsertion = false;
   }
