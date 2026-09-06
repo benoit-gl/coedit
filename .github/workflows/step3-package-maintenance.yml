@@ -1,0 +1,47 @@
+name: Step 3 package maintenance
+
+on:
+  push:
+    branches:
+      - impl/step-3-carrier-qualification
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Bootstrap dependencies
+        run: npm run bootstrap
+
+      - name: Remove stale recovered dependencies
+        run: >-
+          npm exec --yes --package=pnpm@11.24.0 -- pnpm remove
+          @automerge/prosemirror @types/mdast remark-gfm remark-parse unified y-prosemirror
+
+      - name: Add Step 3 qualification dependencies
+        run: >-
+          npm exec --yes --package=pnpm@11.24.0 -- pnpm add
+          dompurify@3.4.14 fractional-indexing@4.0.0 fugue@3.0.0
+
+      - name: Add browser qualification dependency
+        run: >-
+          npm exec --yes --package=pnpm@11.24.0 -- pnpm add -D @playwright/test@1.62.1
+
+      - name: Upload package metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: step3-package-metadata
+          path: |
+            package.json
+            pnpm-lock.yaml
