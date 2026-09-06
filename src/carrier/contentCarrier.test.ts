@@ -9,7 +9,6 @@ import {
   parseBlockId,
   parseContributionId,
   parseContributorId,
-  parseInlineContentId,
   parseOriginId,
 } from "../domain/ids.js";
 import { automergeContentCarrierFactory } from "./automergeContentCarrier.js";
@@ -88,17 +87,6 @@ for (const factory of factories) {
         target: {
           kind: "block",
           blockId: parseBlockId("40000000-0000-4000-8000-000000000001"),
-          range: {
-            inlineContentId: parseInlineContentId(
-              "50000000-0000-4000-8000-000000000001",
-            ),
-            startCursor: "carrier:start",
-            endCursor: "carrier:end",
-            startAffinity: "after",
-            endAffinity: "before",
-            quote: { exact: "target", prefix: "pre", suffix: "post" },
-            approximatePosition: { start: 2, end: 8 },
-          },
         },
       };
       carrier.addMark(0, 2, opaque);
