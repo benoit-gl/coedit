@@ -354,8 +354,6 @@ Verify at least:
 - document-relative Range-fragment parse/serialize round trip;
 - application-owned external document URI parsing and document selection;
 - reinjection as internal-link refinement with primary Block fallback;
-- `.coedit` round trip of embedded Range values, their creation Versions, and
-  required lineage;
 - reload and supported compaction; and
 - edit and Block-move cost independent of the total retained Range count.
 
@@ -427,6 +425,9 @@ Verify:
 - a failed open never replaces the active engine;
 - stale serialization returns no artifact;
 - intrinsic formatting, boundary policies, Origin, copy/restore lineage, actor distinction, and embedded Range values round trip exactly;
+- every embedded Range retains its creation Version and required lineage and
+  resolves to the same surviving spans and exact concatenated text after
+  `.coedit` Save/Open;
 - reconstruction from physical checkpoint plus effects equals direct materialization; and
 - successful format-version-1 encode is always accepted by the format-version-1 decoder.
 
