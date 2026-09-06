@@ -57,9 +57,9 @@ check. Enable strict TypeScript and the reviewed additional compiler rules in
 `CODING_STYLE.md`. Add UTF-8/LF `.editorconfig` and `.gitattributes` policy so
 the required operating systems do not generate line-ending-only changes.
 
-There is no CI implementation in the current baseline. A future Linux CI
-process runs `npm run bootstrap`, `npm run check`, and `npm run build`; those
-commands cannot contain logic that works only in CI.
+The repository CI runs `npm run bootstrap`, `npm run check`, `npm run build`,
+and `npm run check` again after the build on Linux for pull requests and pushes
+to `main`. These commands cannot contain logic that works only in CI.
 
 Step 3 qualifies pinned Yjs v13 against pinned Automerge using the common suites in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. Track Yjs v14 only after a stable release. Use Loro as a cursor/movable-tree benchmark, not a current production dependency. Gate B records the winner. Step 4 then implements the selected collaborative core. Do not expose either candidate through a public API or freeze carrier-specific `.coedit` bytes before Gate B.
 
