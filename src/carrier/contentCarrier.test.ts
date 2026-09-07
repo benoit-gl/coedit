@@ -139,6 +139,84 @@ for (const factory of factories) {
       expect(visibleText(left.snapshot())).toBe("abc");
     });
 
+    it("converges three-way adjacent insert, delete, and formatting work", () => {
+      const base = factory.create();
+      base.insertText(0, "abcd", originA);
+      const insertReplica = factory.load(base.encode());
+      const deleteReplica = factory.load(base.encode());
+      const formatReplica = factory.load(base.encode());
+
+      insertReplica.insertText(2, "X", originB);
+      deleteReplica.deleteRange(1, 3);
+      formatReplica.addMark(2, 4, {
+        kind: "underline",
+        boundaryPolicy: "both",
+      });
+
+      const updates = [
+        insertReplica.encode(),
+        deleteReplica.encode(),
+        formatReplica.encode(),
+      ];
+      const first = factory.load(base.encode());
+      const second = factory.load(base.encode());
+      const third = factory.load(base.encode());
+      for (const update of updates) {
+        first.mergeEncoded(update);
+      }
+      for (const update of [...updates].reverse()) {
+        second.mergeEncoded(update);
+      }
+      third.mergeEncoded(updates[1]!);
+      third.mergeEncoded(updates[0]!);
+      third.mergeEncoded(updates[1]!);
+      third.mergeEncoded(updates[2]!);
+
+      expect(normalize(first.snapshot())).toEqual(normalize(second.snapshot()));
+      expect(normalize(first.snapshot())).toEqual(normalize(third.snapshot()));
+      expect(visibleText(first.snapshot())).toContain("X");
+      expect(
+        first.snapshot().items.some((item) => item.originId === originB.id),
+      ).toBe(true);
+    });
+
+    it("supports the complete initial formatting vocabulary", () => {
+      const carrier = factory.create();
+      carrier.insertText(0, "abcdef", originA);
+      const marks: readonly FormattingMark[] = [
+        { kind: "bold", boundaryPolicy: "both" },
+        { kind: "italic", boundaryPolicy: "both" },
+        { kind: "underline", boundaryPolicy: "both" },
+        { kind: "strikethrough", boundaryPolicy: "both" },
+        { kind: "inlineCode", boundaryPolicy: "none" },
+        {
+          kind: "link",
+          boundaryPolicy: "none",
+          target: { kind: "opaque", metadata: { value: "fixture" } },
+        },
+      ];
+
+      for (const mark of marks) {
+        carrier.addMark(0, 6, mark);
+      }
+      expect(uniqueMarkKinds(carrier.snapshot())).toEqual([
+        "bold",
+        "inlineCode",
+        "italic",
+        "link",
+        "strikethrough",
+        "underline",
+      ]);
+
+      for (const mark of marks) {
+        carrier.removeMark(0, 6, mark);
+      }
+      expect(uniqueMarkKinds(carrier.snapshot())).toEqual([]);
+      expect(
+        carrier.snapshot().items.every((item) => item.originId === originA.id),
+      ).toBe(true);
+    });
+
     it("removes formatting without changing protected Origin", () => {
       const carrier = factory.create();
       const bold: FormattingMark = { kind: "bold", boundaryPolicy: "both" };
@@ -227,6 +305,21 @@ for (const factory of factories) {
 
       const reloaded = factory.load(carrier.encode());
       expect(reloaded.resolveCursor(cursor)).toBe(2);
+    });
+
+    it("records native stable-cursor insertion affinity", () => {
+      const carrier = factory.create();
+      carrier.insertText(0, "ab", originA);
+      const before = carrier.createCursor(1, "before");
+      const after = carrier.createCursor(1, "after");
+
+      carrier.insertText(1, "X", originB);
+
+      const resolved = [
+        carrier.resolveCursor(before),
+        carrier.resolveCursor(after),
+      ];
+      expect(resolved).toEqual(factory.candidate === "yjs" ? [1, 2] : [2, 2]);
     });
 
     it("keeps UTF-16 confined to the candidate runtime boundary", () => {

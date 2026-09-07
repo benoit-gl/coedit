@@ -70,6 +70,38 @@ for (const candidate of ["yjs", "automerge"] as const) {
       expect(snapshot.origins).toHaveLength(1);
       expect(snapshot.items[0]?.originId).toBe(snapshot.origins[0]?.id);
     });
+
+    test("cut, ordinary paste, and editor remount preserve canonical state", async ({
+      page,
+    }) => {
+      const editor = page.locator(".ProseMirror");
+      await editor.pressSequentially("abc");
+      await page.evaluate(() => window.coeditQualification.select(1, 2));
+      await page.keyboard.press("Control+x");
+      await expect.poll(() => visibleText(page)).toBe("ac");
+
+      await page.evaluate(() => window.coeditQualification.select(2, 2));
+      await page.keyboard.press("Control+v");
+      await expect.poll(() => visibleText(page)).toBe("acb");
+      const beforeRemount = await page.evaluate(() =>
+        window.coeditQualification.snapshot(),
+      );
+      await page.evaluate(() => window.coeditQualification.remount());
+      expect(
+        await page.evaluate(() => window.coeditQualification.snapshot()),
+      ).toEqual(beforeRemount);
+    });
+
+    test("sanitizes external HTML before schema filtering", async ({
+      page,
+    }) => {
+      const sanitized = await page.evaluate(() =>
+        window.coeditQualification.sanitizeClipboardHtml(
+          '<strong onclick="attack()">safe</strong><script>attack()</script><img src=x onerror=attack()>',
+        ),
+      );
+      expect(sanitized).toBe("<strong>safe</strong>");
+    });
   });
 }
 

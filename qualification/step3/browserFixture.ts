@@ -3,6 +3,7 @@ import { history, redo, undo } from "@tiptap/pm/history";
 import { keymap } from "@tiptap/pm/keymap";
 import { EditorState, TextSelection, type Transaction } from "@tiptap/pm/state";
 import { EditorView } from "@tiptap/pm/view";
+import DOMPurify from "dompurify";
 
 import type { OriginRecord } from "../../src/domain/content.js";
 import {
@@ -30,6 +31,8 @@ interface BrowserQualificationApi {
   snapshot(): ReturnType<ContentCarrier["snapshot"]>;
   select(from: number, to: number): void;
   addBold(): void;
+  remount(): void;
+  sanitizeClipboardHtml(html: string): string;
   undo(): boolean;
   redo(): boolean;
 }
@@ -87,12 +90,7 @@ if (editorElement === null || snapshotElement === null) {
   throw new Error("Step 3 browser qualification fixture is incomplete.");
 }
 
-const view = new EditorView(editorElement, {
-  state,
-  dispatchTransaction(transaction) {
-    publishTransaction(transaction);
-  },
-});
+let view = createEditorView();
 
 window.coeditQualification = {
   snapshot: () => carrier.snapshot(),
@@ -113,6 +111,17 @@ window.coeditQualification = {
       state.tr.addMark(state.selection.from, state.selection.to, mark),
     );
   },
+  remount() {
+    view.destroy();
+    view = createEditorView();
+    view.focus();
+  },
+  sanitizeClipboardHtml(html) {
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ["strong", "em", "u", "s", "code", "br", "span"],
+      ALLOWED_ATTR: [],
+    });
+  },
   undo: () => runHistoryCommand(undo),
   redo: () => runHistoryCommand(redo),
 };
@@ -129,6 +138,15 @@ function publishTransaction(transaction: Transaction): void {
   state = state.apply(transaction);
   view.updateState(state);
   renderSnapshot();
+}
+
+function createEditorView(): EditorView {
+  return new EditorView(editorElement, {
+    state,
+    dispatchTransaction(transaction) {
+      publishTransaction(transaction);
+    },
+  });
 }
 
 function runHistoryCommand(command: typeof undo): boolean {

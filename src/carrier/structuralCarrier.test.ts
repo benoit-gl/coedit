@@ -154,6 +154,32 @@ for (const factory of structuralCarrierFactories) {
       expect(left.snapshot()).toEqual(right.snapshot());
     });
 
+    it("replicates collision normalization and its dependent insertion together", () => {
+      const base = factory.create(rootId);
+      base.applyChange({
+        placements: [
+          placement(blockA, 1, 1, "a-create"),
+          placement(blockB, 1, 1, "b-create"),
+        ],
+      });
+      const writer = factory.load(base.encode());
+      const peer = factory.load(base.encode());
+
+      writer.applyChange({
+        normalizations: [{ blockId: blockB, placement: position(3, 1) }],
+        placements: [placement(blockC, 2, 1, "c-create")],
+      });
+      peer.mergeEncoded(writer.encode());
+
+      expect(
+        projectStructuralSnapshot(
+          peer.snapshot(),
+          localDensePositionAllocator,
+        ).map((entry) => entry.blockId),
+      ).toEqual([rootId, blockA, blockC, blockB]);
+      expect(peer.snapshot()).toEqual(writer.snapshot());
+    });
+
     it("does not keep a deleted ancestor alive because a descendant changed", () => {
       const base = createTree(factory);
       const left = factory.load(base.encode());
@@ -222,6 +248,32 @@ for (const factory of structuralCarrierFactories) {
         ),
       );
     });
+
+    it("preserves update-over-delete after convergence and complete reload", () => {
+      const base = factory.create(rootId);
+      base.applyChange({ placements: [placement(blockA, 1, 1, "a-create")] });
+      const deletion = factory.load(base.encode());
+      const update = factory.load(base.encode());
+      deletion.applyChange({ deletes: [blockA] });
+      update.applyChange({
+        payloads: [
+          {
+            blockId: blockA,
+            key: "tag",
+            value: "retained",
+            liveToken: "a-update",
+          },
+        ],
+      });
+      converge(deletion, update);
+
+      const reloaded = factory.load(deletion.encode());
+      const entry = reloaded
+        .snapshot()
+        .entries.find((value) => value.blockId === blockA);
+      expect(entry?.live).toBe(true);
+      expect(entry?.payload.tag).toBe("retained");
+    });
   });
 }
 
@@ -258,7 +310,7 @@ function position(
     position: {
       digits: [order],
       run: "60000000-0000-4000-8000-000000000099",
-      member: 0,
+      member: 1,
     },
     depth,
   };

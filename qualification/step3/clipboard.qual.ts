@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import type { InlineContentValue, OriginRecord } from "../../src/domain/content.js";
+import type {
+  InlineContentValue,
+  OriginRecord,
+} from "../../src/domain/content.js";
 import {
   parseContributionId,
   parseContributorId,
@@ -12,15 +15,15 @@ import {
   coeditFragmentFormatVersion,
   encodeCoeditQualificationFragment,
   parseCoeditQualificationFragment,
+  routeCoeditQualificationClipboard,
+  type CoeditQualificationClipboardGuards,
   type CoeditQualificationFragment,
 } from "./clipboard.js";
 
 const sourceDocumentId = parseDocumentId(
   "6e000000-0000-4000-8000-000000000001",
 );
-const otherDocumentId = parseDocumentId(
-  "6e000000-0000-4000-8000-000000000002",
-);
+const otherDocumentId = parseDocumentId("6e000000-0000-4000-8000-000000000002");
 const sourceOrigin = origin(1);
 
 const content: InlineContentValue = {
@@ -40,6 +43,13 @@ const fragment: CoeditQualificationFragment = {
   sourceDocumentId,
   sourceVersion: "qualification-version-1",
   content,
+};
+const guards: CoeditQualificationClipboardGuards = {
+  maxEncodedBytes: 16_384,
+  maxDecodedNodes: 128,
+  maxNestingDepth: 12,
+  maxItems: 32,
+  maxOrigins: 32,
 };
 
 describe("Step 3 private clipboard qualification", () => {
@@ -79,12 +89,19 @@ describe("Step 3 private clipboard qualification", () => {
 
   it("preserves Origins only for a matching document and conflict-free catalog", () => {
     expect(
-      canPreservePrivateFragmentOrigins(fragment, sourceDocumentId, (candidate) =>
-        candidate.id === sourceOrigin.id ? sourceOrigin : undefined,
+      canPreservePrivateFragmentOrigins(
+        fragment,
+        sourceDocumentId,
+        (candidate) =>
+          candidate.id === sourceOrigin.id ? sourceOrigin : undefined,
       ),
     ).toBe(true);
     expect(
-      canPreservePrivateFragmentOrigins(fragment, otherDocumentId, () => sourceOrigin),
+      canPreservePrivateFragmentOrigins(
+        fragment,
+        otherDocumentId,
+        () => sourceOrigin,
+      ),
     ).toBe(false);
     expect(
       canPreservePrivateFragmentOrigins(fragment, sourceDocumentId, () => ({
@@ -92,6 +109,84 @@ describe("Step 3 private clipboard qualification", () => {
         kind: "imported",
       })),
     ).toBe(false);
+  });
+
+  it("rejects each configured hostile-input dimension before use", () => {
+    const encoded = encodeCoeditQualificationFragment(fragment);
+    expect(
+      parseCoeditQualificationFragment(encoded, {
+        ...guards,
+        maxEncodedBytes: 1,
+      }),
+    ).toMatchObject({ ok: false, reason: expect.stringMatching(/encoded/u) });
+    expect(
+      parseCoeditQualificationFragment(encoded, {
+        ...guards,
+        maxDecodedNodes: 1,
+      }),
+    ).toMatchObject({ ok: false, reason: expect.stringMatching(/decoded/u) });
+    expect(
+      parseCoeditQualificationFragment(encoded, {
+        ...guards,
+        maxNestingDepth: 1,
+      }),
+    ).toMatchObject({ ok: false, reason: expect.stringMatching(/nesting/u) });
+
+    const secondOrigin = origin(2);
+    const expanded: CoeditQualificationFragment = {
+      ...fragment,
+      content: {
+        items: [
+          ...content.items,
+          {
+            kind: "text",
+            text: "again",
+            originId: secondOrigin.id,
+            marks: [],
+          },
+        ],
+        origins: [sourceOrigin, secondOrigin],
+      },
+    };
+    expect(
+      parseCoeditQualificationFragment(
+        encodeCoeditQualificationFragment(expanded),
+        { ...guards, maxItems: 1 },
+      ),
+    ).toMatchObject({
+      ok: false,
+      reason: expect.stringMatching(/collection/u),
+    });
+    expect(
+      parseCoeditQualificationFragment(
+        encodeCoeditQualificationFragment(expanded),
+        { ...guards, maxOrigins: 1 },
+      ),
+    ).toMatchObject({
+      ok: false,
+      reason: expect.stringMatching(/collection/u),
+    });
+  });
+
+  it("keeps ordinary clipboard fallback available after private-data failure", () => {
+    expect(
+      routeCoeditQualificationClipboard(
+        "not-json",
+        { sanitizedHtml: "<strong>safe</strong>", plainText: "safe" },
+        guards,
+      ),
+    ).toEqual({
+      kind: "html",
+      sanitizedHtml: "<strong>safe</strong>",
+      privateFailure: "Private clipboard payload is not valid JSON.",
+    });
+    expect(
+      routeCoeditQualificationClipboard(
+        undefined,
+        { plainText: "safe" },
+        guards,
+      ),
+    ).toEqual({ kind: "text", plainText: "safe" });
   });
 });
 
