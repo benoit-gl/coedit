@@ -16,6 +16,7 @@ import {
   encodeCoeditQualificationFragment,
   parseCoeditQualificationFragment,
   routeCoeditQualificationClipboard,
+  selectedCoeditQualificationClipboardGuards,
   type CoeditQualificationClipboardGuards,
   type CoeditQualificationFragment,
 } from "./clipboard.js";
@@ -53,6 +54,14 @@ const guards: CoeditQualificationClipboardGuards = {
 };
 
 describe("Step 3 private clipboard qualification", () => {
+  it("accepts the representative fragment under the selected guards", () => {
+    expect(
+      parseCoeditQualificationFragment(
+        encodeCoeditQualificationFragment(fragment),
+        selectedCoeditQualificationClipboardGuards,
+      ),
+    ).toEqual({ ok: true, value: fragment });
+  });
   it("round trips a validated same-document fragment", () => {
     const parsed = parseCoeditQualificationFragment(
       encodeCoeditQualificationFragment(fragment),
@@ -113,24 +122,27 @@ describe("Step 3 private clipboard qualification", () => {
 
   it("rejects each configured hostile-input dimension before use", () => {
     const encoded = encodeCoeditQualificationFragment(fragment);
-    expect(
+    expectFailureReason(
       parseCoeditQualificationFragment(encoded, {
         ...guards,
         maxEncodedBytes: 1,
       }),
-    ).toMatchObject({ ok: false, reason: expect.stringMatching(/encoded/u) });
-    expect(
+      /encoded/u,
+    );
+    expectFailureReason(
       parseCoeditQualificationFragment(encoded, {
         ...guards,
         maxDecodedNodes: 1,
       }),
-    ).toMatchObject({ ok: false, reason: expect.stringMatching(/decoded/u) });
-    expect(
+      /decoded/u,
+    );
+    expectFailureReason(
       parseCoeditQualificationFragment(encoded, {
         ...guards,
         maxNestingDepth: 1,
       }),
-    ).toMatchObject({ ok: false, reason: expect.stringMatching(/nesting/u) });
+      /nesting/u,
+    );
 
     const secondOrigin = origin(2);
     const expanded: CoeditQualificationFragment = {
@@ -148,24 +160,20 @@ describe("Step 3 private clipboard qualification", () => {
         origins: [sourceOrigin, secondOrigin],
       },
     };
-    expect(
+    expectFailureReason(
       parseCoeditQualificationFragment(
         encodeCoeditQualificationFragment(expanded),
         { ...guards, maxItems: 1 },
       ),
-    ).toMatchObject({
-      ok: false,
-      reason: expect.stringMatching(/collection/u),
-    });
-    expect(
+      /collection/u,
+    );
+    expectFailureReason(
       parseCoeditQualificationFragment(
         encodeCoeditQualificationFragment(expanded),
         { ...guards, maxOrigins: 1 },
       ),
-    ).toMatchObject({
-      ok: false,
-      reason: expect.stringMatching(/collection/u),
-    });
+      /collection/u,
+    );
   });
 
   it("keeps ordinary clipboard fallback available after private-data failure", () => {
@@ -189,6 +197,16 @@ describe("Step 3 private clipboard qualification", () => {
     ).toEqual({ kind: "text", plainText: "safe" });
   });
 });
+
+function expectFailureReason(
+  result: ReturnType<typeof parseCoeditQualificationFragment>,
+  pattern: RegExp,
+): void {
+  expect(result.ok).toBe(false);
+  if (!result.ok) {
+    expect(result.reason).toMatch(pattern);
+  }
+}
 
 function origin(index: number): OriginRecord {
   const suffix = index.toString().padStart(12, "0");

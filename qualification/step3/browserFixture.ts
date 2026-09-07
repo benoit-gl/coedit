@@ -33,6 +33,7 @@ interface BrowserQualificationApi {
   addBold(): void;
   remount(): void;
   sanitizeClipboardHtml(html: string): string;
+  measureInsertion(sampleCount: number): number[];
   undo(): boolean;
   redo(): boolean;
 }
@@ -121,6 +122,20 @@ window.coeditQualification = {
       ALLOWED_TAGS: ["strong", "em", "u", "s", "code", "br", "span"],
       ALLOWED_ATTR: [],
     });
+  },
+  measureInsertion(sampleCount) {
+    if (!Number.isSafeInteger(sampleCount) || sampleCount <= 0) {
+      throw new TypeError(
+        "The insertion sample count must be a positive integer.",
+      );
+    }
+    const samples: number[] = [];
+    for (let index = 0; index < sampleCount; index += 1) {
+      const startedAt = performance.now();
+      publishTransaction(state.tr.insertText("x", state.doc.content.size));
+      samples.push(performance.now() - startedAt);
+    }
+    return samples;
   },
   undo: () => runHistoryCommand(undo),
   redo: () => runHistoryCommand(redo),

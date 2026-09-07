@@ -29,8 +29,14 @@ The `Step 3 Qualification` workflow uploads `artifacts/step3` as the `step3-qual
 
 The fixture sizes are calibration evidence. They are not document validity limits, API guarantees, or production performance thresholds.
 
+## Gate B result
+
+Gate B selects Yjs 13.6.32 and Fugue 3.0.0. The deciding rationale, rejected-candidate tradeoffs, and selected hostile-input guards are recorded in [`docs/decisions/0010-step-3-carrier-and-allocator-selection.md`](../../docs/decisions/0010-step-3-carrier-and-allocator-selection.md).
+
+The qualification retains both carrier adapters and all allocator candidates so the comparison remains reproducible. Step 4 promotes only the Yjs and Fugue behavior into the production collaborative core. The Range feasibility fixtures remain test-only compositions and do not select the Step 6 lineage representation.
+
 ## Selection boundary
 
 Do not select a carrier or allocator from a single timing number. Gate B must consider correctness, convergence, atomic multi-content transactions, editor behavior, Range feasibility, encoded growth, collision and interleaving behavior, adapter complexity, and the persisted measurements together.
 
-The Range tests in this step use test-only cursor compositions to prove carrier feasibility. They intentionally do not define the Step 6 Range representation or wire format.
+The Range tests in this step use test-only cursor compositions to prove carrier feasibility. They intentionally do not define the Step 6 Range representation or wire format. Automerge's inability to preserve both tested insertion affinities is recorded as candidate evidence rather than patched with a premature lineage design.

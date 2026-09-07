@@ -1,4 +1,19 @@
 import { expect, test, type Page } from "@playwright/test";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { cpus, freemem, totalmem } from "node:os";
+import { resolve } from "node:path";
+
+interface BrowserEvidence {
+  readonly candidate: "yjs" | "automerge";
+  readonly browser: string;
+  readonly insertionMilliseconds: {
+    readonly warmups: number;
+    readonly measured: number;
+    readonly samples: readonly number[];
+  };
+}
+
+const browserEvidence: BrowserEvidence[] = [];
 
 for (const candidate of ["yjs", "automerge"] as const) {
   test.describe(`${candidate} browser carrier`, () => {
@@ -102,8 +117,59 @@ for (const candidate of ["yjs", "automerge"] as const) {
       );
       expect(sanitized).toBe("<strong>safe</strong>");
     });
+
+    test("records browser insertion feedback", async ({ browser, page }) => {
+      const warmups = 2;
+      const measured = 7;
+      const samples = await page.evaluate(
+        (sampleCount) =>
+          window.coeditQualification.measureInsertion(sampleCount),
+        warmups + measured,
+      );
+      browserEvidence.push({
+        candidate,
+        browser: browser.version(),
+        insertionMilliseconds: {
+          warmups,
+          measured,
+          samples: samples.slice(warmups),
+        },
+      });
+      expect(samples).toHaveLength(warmups + measured);
+    });
   });
 }
+
+test.afterAll(() => {
+  const evidenceDirectory = resolve(
+    process.cwd(),
+    process.env.COEDIT_STEP3_EVIDENCE_DIR ?? "artifacts/step3",
+  );
+  mkdirSync(evidenceDirectory, { recursive: true });
+  writeFileSync(
+    resolve(evidenceDirectory, "browser-measurements.json"),
+    `${JSON.stringify(
+      {
+        environment: {
+          node: process.version,
+          cpuModel: cpus()[0]?.model ?? "unknown",
+          logicalCpuCount: cpus().length,
+          totalMemoryBytes: totalmem(),
+          freeMemoryBytesAtRecord: freemem(),
+        },
+        method: {
+          interval:
+            "performance.now() around one ProseMirror transaction, carrier mutation, projection, and EditorView update on an initially empty editor",
+          order: ["2 warmups", "7 measured samples"],
+        },
+        candidates: browserEvidence,
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+});
 
 async function visibleText(page: Page): Promise<string> {
   return page.evaluate(() =>

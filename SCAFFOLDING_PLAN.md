@@ -1,6 +1,6 @@
 # Coedit document-engine MVP scaffolding plan
 
-**Status:** Accepted implementation plan; Steps 0-2 are complete and Step 3 carrier qualification is next.
+**Status:** Accepted implementation plan; Steps 0-2 are complete and draft PR 13 records the Step 3 Gate B selection.
 
 **Target branch:** `main`
 
@@ -117,7 +117,7 @@ The former `TextAnchor` blocker is resolved. Formatting uses native collaborativ
 - no authoritative document silently contradicts a retained preserved decision; and
 - no unresolved implementation-blocking decision remains.
 
-This documentation set establishes and revalidates the Step 0 authority baseline with the durable Range authority and the revised Step 3-and-later sequence. Steps 1 and 2 subsequently established the browser scaffold and pure Block domain. Step 3 carrier qualification is next. Gate B selects the carrier; Gate C later selects the Range representation before `.coedit` version 1 is frozen.
+This documentation set establishes and revalidates the Step 0 authority baseline with the durable Range authority and the revised Step 3-and-later sequence. Steps 1 and 2 subsequently established the browser scaffold and pure Block domain. Draft PR 13 records the Step 3 qualification and Gate B selection of Yjs and Fugue. Gate C later selects the Range representation before `.coedit` version 1 is frozen.
 
 ### Step 1 — Establish the browser-only repository scaffold
 
@@ -170,6 +170,9 @@ Run the same pinned headless and Tiptap/ProseMirror suite against stable Yjs v13
 The suite covers canonical text, hard breaks, intrinsic formatting, protected Origin, flat Block placement, liveness, allocator behavior, one transaction across structure and several InlineContents, editor integration, reload, compaction, and representative growth. It also covers the Range-feasibility subset in `RANGE_MODEL.md`: direct multi-span creation, greedy and positional boundaries, structural tracking, lazy resolution, and practical cost.
 
 **Outcome:** The repository contains comparable fixtures, measurements, dependency/license review, adapter-complexity evidence, rejected-candidate rationale, and one recorded carrier selection. Qualification code uses the same abstractions intended for production, but this step does not freeze the final Range API or lineage representation.
+
+**Recorded selection:** Gate B selects Yjs 13.6.32 and Fugue 3.0.0 in
+[`docs/decisions/0010-step-3-carrier-and-allocator-selection.md`](docs/decisions/0010-step-3-carrier-and-allocator-selection.md).
 
 **Exit gate:** Gate B passes. The common functional, structural, concurrency, clipboard, restore, cursor, Range-feasibility, atomicity, portable, garbage-collection, collision/ordering, and representative-growth suite passes. Carrier and private-clipboard hostile-input guards are selected from profiling evidence and tested atomically. Experimental performance candidates are recorded as evidence rather than correctness thresholds unless deliberately promoted. Functional invariants are mandatory. Select Yjs when its protected carrier works incrementally without fragile repair. Select Automerge only if it passes the same suite and materially removes custom machinery despite its integration maturity. Record the winner before carrier-dependent format fields or fixtures are frozen.
 

@@ -3,5 +3,7 @@ dist/
 coverage/
 docs/api/
 .vite/
+/artifacts/
+/test-results/
 *.tsbuildinfo
 .DS_Store

@@ -13,6 +13,7 @@ import {
   parseBlockId,
   parseContributionId,
   parseContributorId,
+  parseDocumentId,
   parseInlineContentId,
   parseOriginId,
 } from "../../src/domain/ids.js";
@@ -39,6 +40,11 @@ import {
 } from "../../src/carrier/position.js";
 import { createYjsCollaborativeDocumentCarrierFactory } from "../../src/carrier/yjsCollaborativeDocumentCarrier.js";
 import { yjsContentCarrierFactory } from "../../src/carrier/yjsContentCarrier.js";
+import {
+  encodeCoeditQualificationFragment,
+  selectedCoeditQualificationClipboardGuards,
+} from "./clipboard.js";
+import { selectedCarrierEncodedByteGuard } from "./resourceGuards.js";
 
 interface SampleSummary {
   readonly samples: number;
@@ -118,6 +124,11 @@ interface QualificationEvidence {
     readonly concurrentRunMembers: 16;
   };
   readonly packageVersions: Readonly<Record<string, string>>;
+  readonly selectedImplementationGuards: {
+    readonly carrierEncodedBytes: number;
+    readonly privateClipboard: typeof selectedCoeditQualificationClipboardGuards;
+    readonly representativePrivateClipboardBytes: number;
+  };
   readonly content: readonly ContentMeasurement[];
   readonly logicalDocuments: readonly LogicalDocumentMeasurement[];
   readonly allocators: readonly AllocatorMeasurement[];
@@ -194,6 +205,23 @@ describe("Step 3 persisted qualification", () => {
         concurrentRunMembers: 16,
       },
       packageVersions: packageVersions(),
+      selectedImplementationGuards: {
+        carrierEncodedBytes: selectedCarrierEncodedByteGuard,
+        privateClipboard: selectedCoeditQualificationClipboardGuards,
+        representativePrivateClipboardBytes: new TextEncoder().encode(
+          encodeCoeditQualificationFragment({
+            formatVersion: 1,
+            sourceDocumentId: parseDocumentId(
+              "65000000-0000-4000-8000-000000000001",
+            ),
+            sourceVersion: "qualification-version",
+            content: createRepresentativeCarrier(
+              yjsContentCarrierFactory,
+              textWithCodePoints(100_000),
+            ).snapshot(),
+          }),
+        ).byteLength,
+      },
       content,
       logicalDocuments,
       allocators,
@@ -356,7 +384,9 @@ function measureAllocator<Position, Context>(
   );
   const sort1000 = measure(() => {
     expect(
-      [...representativePositions].reverse().sort(allocator.compare),
+      [...representativePositions]
+        .reverse()
+        .sort((left, right) => allocator.compare(left, right)),
     ).toHaveLength(1_000);
   });
   const left = allocator.allocateRun({

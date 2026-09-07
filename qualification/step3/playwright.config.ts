@@ -1,4 +1,10 @@
 import { defineConfig } from "@playwright/test";
+import { resolve } from "node:path";
+
+const evidenceDirectory = resolve(
+  process.cwd(),
+  process.env.COEDIT_STEP3_EVIDENCE_DIR ?? "artifacts/step3",
+);
 
 export default defineConfig({
   testDir: ".",
@@ -9,7 +15,7 @@ export default defineConfig({
   timeout: 15_000,
   reporter: [
     ["list"],
-    ["json", { outputFile: "artifacts/step3/playwright.json" }],
+    ["json", { outputFile: resolve(evidenceDirectory, "playwright.json") }],
   ],
   use: {
     baseURL: "http://127.0.0.1:5173",
