@@ -1,5 +1,5 @@
 import { baseKeymap } from "@tiptap/pm/commands";
-import { history, redo, undo } from "@tiptap/pm/history";
+import { closeHistory, history, redo, undo } from "@tiptap/pm/history";
 import { keymap } from "@tiptap/pm/keymap";
 import { EditorState, TextSelection, type Transaction } from "@tiptap/pm/state";
 import { EditorView } from "@tiptap/pm/view";
@@ -76,8 +76,10 @@ let state = EditorState.create({
           return false;
         }
         dispatch?.(
-          currentState.tr.replaceSelectionWith(
-            hardBreak.create(null, null, [originProseMirrorMark(origin.id)]),
+          closeHistory(
+            currentState.tr.replaceSelectionWith(
+              hardBreak.create(null, null, [originProseMirrorMark(origin.id)]),
+            ),
           ),
         );
         return true;
