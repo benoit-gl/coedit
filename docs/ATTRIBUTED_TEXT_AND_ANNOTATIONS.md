@@ -247,15 +247,21 @@ The private representation is untrusted input even when it originated in
 Coedit. Validate its version, sizes, IDs, formatting, Origin references, and
 source relationship before use.
 
-**Maturity:** Pending selection.
+**Maturity:** Frozen implementation guards.
 
 **Owner:** This document.
 
-**Promotion gate:** Step 3 carrier and clipboard qualification.
+**Change rule:** Revise with comparable profiling evidence and an amendment to
+ADR 0010; these values do not define document validity or interoperability.
 
-Step 3 must profile the selected carrier and private-fragment representation,
-then record and test any byte, nesting, collection, or decoded-allocation guards
-needed at this boundary. No numeric clipboard maximum is accepted in advance.
+Gate B selected a 16 MiB pre-decode bound for each untrusted encoded carrier
+update or snapshot. The private clipboard parser applies a 4 MiB UTF-8 bound
+before JSON decoding, then bounds decoded object/array nodes at 250,000, nesting
+depth at 32, attributed items at 100,000, and Origins at 100,000. Exceeding a
+guard is a capacity/resource failure and publishes no candidate state. These
+implementation guards retain substantial headroom over the recorded Step 3
+fixtures and are not semantic content maxima or portable-format limits. ADR
+0010 records the evidence and rationale.
 
 The strict MVP preserves Origins from a private fragment only when its source
 `DocumentId` matches the target document and every referenced Origin resolves
