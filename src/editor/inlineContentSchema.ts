@@ -46,6 +46,7 @@ const HardBreak = Node.create({
   inline: true,
   group: "inline",
   atom: true,
+  marks: "_",
   parseHTML() {
     return [{ tag: "br" }];
   },

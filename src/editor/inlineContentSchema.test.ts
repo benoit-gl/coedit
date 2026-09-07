@@ -14,6 +14,7 @@ import {
 import {
   inlineContentFromProseMirror,
   inlineContentSchema,
+  originProseMirrorMark,
   proseMirrorDocFromInlineContent,
 } from "./inlineContentSchema.js";
 
@@ -36,6 +37,21 @@ describe("CollaborativeContent Tiptap schema", () => {
       "inline*",
     );
     expect(inlineContentSchema.nodes.hardBreak?.isInline).toBe(true);
+  });
+
+  it("allows hard breaks to retain protected Origin and formatting marks", () => {
+    const hardBreak = inlineContentSchema.nodes.hardBreak;
+    if (hardBreak === undefined) {
+      throw new Error("Test schema is missing hardBreak.");
+    }
+    expect(
+      hardBreak.allowsMarks([
+        originProseMirrorMark(originA.id),
+        inlineContentSchema.marks.bold!.create({
+          boundaryPolicy: bold.boundaryPolicy,
+        }),
+      ]),
+    ).toBe(true);
   });
 
   it("projects canonical attributed content and Origin without loss", () => {
