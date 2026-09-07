@@ -23,6 +23,7 @@ import {
 } from "../../src/editor/contentTransactionBridge.js";
 import {
   inlineContentSchema,
+  originProseMirrorMark,
   proseMirrorDocFromInlineContent,
   proseMirrorMarkFromFormatting,
 } from "../../src/editor/inlineContentSchema.js";
@@ -74,7 +75,11 @@ let state = EditorState.create({
         if (hardBreak === undefined) {
           return false;
         }
-        dispatch?.(currentState.tr.replaceSelectionWith(hardBreak.create()));
+        dispatch?.(
+          currentState.tr.replaceSelectionWith(
+            hardBreak.create(null, null, [originProseMirrorMark(origin.id)]),
+          ),
+        );
         return true;
       },
       "Mod-z": () => runHistoryCommand(undo),
@@ -84,6 +89,9 @@ let state = EditorState.create({
     keymap(baseKeymap),
   ],
 });
+state = state.apply(
+  state.tr.setStoredMarks([originProseMirrorMark(origin.id)]),
+);
 
 const editorElement = document.querySelector<HTMLDivElement>("#editor");
 const snapshotElement = document.querySelector<HTMLPreElement>("#snapshot");
