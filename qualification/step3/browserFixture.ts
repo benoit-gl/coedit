@@ -79,6 +79,7 @@ let state = EditorState.create({
           closeHistory(
             currentState.tr.replaceSelectionWith(
               hardBreak.create(null, null, [originProseMirrorMark(origin.id)]),
+              false,
             ),
           ),
         );

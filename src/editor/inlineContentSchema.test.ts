@@ -1,3 +1,5 @@
+import { closeHistory, history, redo, undo } from "@tiptap/pm/history";
+import { EditorState } from "@tiptap/pm/state";
 import { describe, expect, it } from "vitest";
 
 import type {
@@ -52,6 +54,34 @@ describe("CollaborativeContent Tiptap schema", () => {
         }),
       ]),
     ).toBe(true);
+  });
+
+  it("retains the hard-break Origin mark through editor history", () => {
+    const hardBreak = inlineContentSchema.nodes.hardBreak;
+    if (hardBreak === undefined) {
+      throw new Error("Test schema is missing hardBreak.");
+    }
+    let state = EditorState.create({
+      schema: inlineContentSchema,
+      plugins: [history()],
+    });
+    state = state.apply(
+      closeHistory(
+        state.tr.replaceSelectionWith(
+          hardBreak.create(null, null, [originProseMirrorMark(originA.id)]),
+          false,
+        ),
+      ),
+    );
+    expect(
+      undo(state, (transaction) => (state = state.apply(transaction))),
+    ).toBe(true);
+    expect(
+      redo(state, (transaction) => (state = state.apply(transaction))),
+    ).toBe(true);
+    expect(state.doc.firstChild?.marks.map((mark) => mark.type.name)).toContain(
+      "coeditOrigin",
+    );
   });
 
   it("projects canonical attributed content and Origin without loss", () => {
