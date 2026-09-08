@@ -1,0 +1,66 @@
+name: Step 3 Split Verification
+
+on:
+  push:
+    branches:
+      - verification/step3-pr-split
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - stage: editor-linux
+            os: ubuntu-latest
+            revision: f8056f7434b423c1adaba43d110d9d14df3cad8c
+          - stage: editor-windows
+            os: windows-latest
+            revision: f8056f7434b423c1adaba43d110d9d14df3cad8c
+          - stage: gate-b-windows
+            os: windows-latest
+            revision: 35f28376428a242cb2e77880e0c701eed62fcc25
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ matrix.revision }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Bootstrap dependencies
+        run: npm run bootstrap
+      - name: Check source
+        run: npm run check
+      - name: Build production bundle
+        run: npm run build
+      - name: Recheck after build
+        run: npm run check
+      - name: Typecheck qualification
+        run: npm exec -- tsc --noEmit --project qualification/step3/tsconfig.json
+      - name: Install Chromium
+        run: npm exec -- playwright install --with-deps chromium
+      - name: Qualify headless boundaries
+        run: npm run qualify:step3:headless
+      - name: Qualify browser boundaries
+        run: npm run qualify:step3:browser
+      - name: Build browser qualification entry
+        run: >-
+          node --input-type=module -e "import { build } from 'vite'; await build({ build: { outDir: 'dist/step3-qualification', rollupOptions: { input: 'qualification/step3/browser.html' } } });"
+      - name: Record exact revision and environment
+        if: always()
+        env:
+          VERIFIED_REVISION: ${{ matrix.revision }}
+        run: >-
+          node --input-type=module -e "import { mkdirSync, writeFileSync } from 'node:fs'; import { cpus, totalmem } from 'node:os'; mkdirSync('artifacts/step3', { recursive: true }); writeFileSync('artifacts/step3/verification.json', JSON.stringify({ revision: process.env.VERIFIED_REVISION, node: process.version, platform: process.platform, arch: process.arch, cpu: cpus()[0]?.model, memory: totalmem() }, null, 2));"
+      - name: Preserve verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: step3-split-${{ matrix.stage }}
+          path: artifacts/step3
+          if-no-files-found: error
