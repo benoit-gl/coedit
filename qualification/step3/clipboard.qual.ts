@@ -167,6 +167,26 @@ describe("Step 3 private clipboard qualification", () => {
     );
   });
 
+  it("omits failure metadata when no private representation was supplied", () => {
+    expect(
+      routeCoeditQualificationClipboard(
+        undefined,
+        { sanitizedHtml: "<strong>safe</strong>" },
+        guards,
+      ),
+    ).toStrictEqual({ kind: "html", sanitizedHtml: "<strong>safe</strong>" });
+    expect(
+      routeCoeditQualificationClipboard(
+        undefined,
+        { plainText: "safe" },
+        guards,
+      ),
+    ).toStrictEqual({ kind: "text", plainText: "safe" });
+    expect(
+      routeCoeditQualificationClipboard(undefined, {}, guards),
+    ).toStrictEqual({ kind: "unavailable" });
+  });
+
   it("keeps ordinary clipboard fallback available after private-data failure", () => {
     expect(
       routeCoeditQualificationClipboard(

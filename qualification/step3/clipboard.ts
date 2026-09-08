@@ -175,17 +175,18 @@ export function routeCoeditQualificationClipboard(
     }
     privateFailure = parsed.reason;
   }
+  const failure = privateFailure === undefined ? {} : { privateFailure };
   if (fallback.sanitizedHtml !== undefined) {
     return {
       kind: "html",
       sanitizedHtml: fallback.sanitizedHtml,
-      privateFailure,
+      ...failure,
     };
   }
   if (fallback.plainText !== undefined) {
-    return { kind: "text", plainText: fallback.plainText, privateFailure };
+    return { kind: "text", plainText: fallback.plainText, ...failure };
   }
-  return { kind: "unavailable", privateFailure };
+  return { kind: "unavailable", ...failure };
 }
 
 /** Returns whether a private fragment can preserve Origins in the target document. */

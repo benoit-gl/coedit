@@ -102,6 +102,7 @@ if (editorElement === null || snapshotElement === null) {
   throw new Error("Step 3 browser qualification fixture is incomplete.");
 }
 
+const snapshotOutput = snapshotElement;
 let view = createEditorView();
 
 window.coeditQualification = {
@@ -187,7 +188,7 @@ function runHistoryCommand(command: typeof undo): boolean {
 }
 
 function renderSnapshot(): void {
-  snapshotElement.textContent = JSON.stringify(carrier.snapshot(), null, 2);
+  snapshotOutput.textContent = JSON.stringify(carrier.snapshot(), null, 2);
 }
 
 function qualificationOrigin(): OriginRecord {
