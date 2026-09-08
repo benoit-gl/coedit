@@ -43,6 +43,16 @@ export interface CoeditQualificationClipboardGuards {
   readonly maxOrigins: number;
 }
 
+/** Selected Step 3 implementation guards for untrusted private clipboard data. */
+export const selectedCoeditQualificationClipboardGuards: CoeditQualificationClipboardGuards =
+  {
+    maxEncodedBytes: 4 * 1024 * 1024,
+    maxDecodedNodes: 250_000,
+    maxNestingDepth: 32,
+    maxItems: 100_000,
+    maxOrigins: 100_000,
+  };
+
 /** Ordinary clipboard representations that remain available after private-data failure. */
 export interface CoeditQualificationClipboardFallback {
   /** Sanitized supported HTML, when the browser boundary produced it. */

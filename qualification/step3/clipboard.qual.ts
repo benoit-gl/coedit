@@ -16,6 +16,7 @@ import {
   encodeCoeditQualificationFragment,
   parseCoeditQualificationFragment,
   routeCoeditQualificationClipboard,
+  selectedCoeditQualificationClipboardGuards,
   type CoeditQualificationClipboardGuards,
   type CoeditQualificationFragment,
 } from "./clipboard.js";
@@ -53,6 +54,14 @@ const guards: CoeditQualificationClipboardGuards = {
 };
 
 describe("Step 3 private clipboard qualification", () => {
+  it("accepts the representative fragment under the selected guards", () => {
+    expect(
+      parseCoeditQualificationFragment(
+        encodeCoeditQualificationFragment(fragment),
+        selectedCoeditQualificationClipboardGuards,
+      ),
+    ).toEqual({ ok: true, value: fragment });
+  });
   it("round trips a validated same-document fragment", () => {
     const parsed = parseCoeditQualificationFragment(
       encodeCoeditQualificationFragment(fragment),

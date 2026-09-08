@@ -1,0 +1,62 @@
+name: Step 3 Qualification
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/step3-qualification.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "qualification/step3/**"
+      - "src/carrier/**"
+      - "src/editor/**"
+      - "src/domain/content.ts"
+      - "src/domain/ids.ts"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: step3-qualification-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Bootstrap dependencies
+        run: npm run bootstrap
+
+      - name: Install Chromium
+        run: npm exec -- playwright install --with-deps chromium
+
+      - name: Run Step 3 qualification
+        env:
+          COEDIT_STEP3_EVIDENCE_DIR: artifacts/step3
+        run: npm run qualify:step3
+
+      - name: Record runner metadata
+        if: always()
+        run: |
+          mkdir -p artifacts/step3
+          {
+            printf 'node=' && node --version
+            printf 'npm=' && npm --version
+            printf 'kernel=' && uname -a
+          } > artifacts/step3/environment.txt
+
+      - name: Upload qualification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: step3-qualification-evidence
+          path: artifacts/step3
+          if-no-files-found: error

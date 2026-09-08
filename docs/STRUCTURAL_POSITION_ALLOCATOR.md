@@ -1,7 +1,7 @@
 # Structural position allocator
 
-**Status:** Accepted allocator abstraction; Step 3 selects the concrete
-algorithm and Step 4 implements it in the selected collaborative core.
+**Status:** Accepted allocator abstraction; Gate B selects Fugue 3.0.0 and
+Step 4 implements it in the selected collaborative core.
 
 ## 1. Purpose and authority
 
@@ -163,7 +163,9 @@ qualification evidence. Record:
 - residual collision or interleaving behavior; and
 - reasons for rejecting the other viable candidates.
 
-Do not freeze the concrete position encoding before this selection exists.
+Gate B selects Fugue 3.0.0. ADR 0010 records the common evidence, important
+tradeoffs, residual behavior, and rejected-candidate rationale. Step 4 keeps the
+concrete encoding private behind this abstraction.
 
 ## 9. Consequences
 
@@ -176,4 +178,5 @@ Do not freeze the concrete position encoding before this selection exists.
   prevents collisions.
 - Structural collision normalization remains engine policy; position generation
   remains allocator policy.
-- Concrete allocator selection remains open until persisted evidence supports it.
+- Fugue 3.0.0 is the selected Step 4 allocator; future changes require new
+  comparable evidence and a recorded decision amendment.

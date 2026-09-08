@@ -1,6 +1,6 @@
 # MVP implementation specification
 
-**Status:** Accepted private MVP implementation contract; carrier selection is subject to Gate B and Range representation is subject to Gate C.
+**Status:** Accepted private MVP implementation contract; Gate B selects Yjs 13.6.32 and Fugue 3.0.0, while Range representation remains subject to Gate C.
 
 **Applies to:** `SCAFFOLDING_PLAN.md`, Steps 1-14.
 
@@ -61,7 +61,7 @@ The repository CI runs `npm run bootstrap`, `npm run check`, `npm run build`,
 and `npm run check` again after the build on Linux for pull requests and pushes
 to `main`. These commands cannot contain logic that works only in CI.
 
-Step 3 qualifies pinned Yjs v13 against pinned Automerge using the common suites in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. Track Yjs v14 only after a stable release. Use Loro as a cursor/movable-tree benchmark, not a current production dependency. Gate B records the winner. Step 4 then implements the selected collaborative core. Do not expose either candidate through a public API or freeze carrier-specific `.coedit` bytes before Gate B.
+Step 3 qualifies pinned Yjs v13 against pinned Automerge using the common suites in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. Track Yjs v14 only after a stable release. Use Loro as a cursor/movable-tree benchmark, not a current production dependency. Gate B selects Yjs 13.6.32 and Fugue 3.0.0 in ADR 0010. Step 4 then implements the selected collaborative core. Do not expose the carrier through a public API or freeze carrier-specific `.coedit` bytes at this gate.
 
 The ProseMirror/Tiptap schema for one InlineContent is deliberately flat: text, hard breaks, and the supported inline marks. The recursive Coedit Block tree remains outside ProseMirror.
 
