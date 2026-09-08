@@ -16,13 +16,13 @@ jobs:
         include:
           - stage: editor-linux
             os: ubuntu-latest
-            revision: f8056f7434b423c1adaba43d110d9d14df3cad8c
+            revision: 979e86bf8b14be1da009f97257133ee6fe42638c
           - stage: editor-windows
             os: windows-latest
-            revision: f8056f7434b423c1adaba43d110d9d14df3cad8c
+            revision: 979e86bf8b14be1da009f97257133ee6fe42638c
           - stage: gate-b-windows
             os: windows-latest
-            revision: 35f28376428a242cb2e77880e0c701eed62fcc25
+            revision: 46f9d9e3ce0a58bede4fe177954e0e6053a7d2b6
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
