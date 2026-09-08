@@ -9,7 +9,14 @@ const tsFiles = ["**/*.{ts,tsx}"];
 
 export default tseslint.config(
   {
-    ignores: ["dist/**", "coverage/**", "docs/api/**", "node_modules/**"],
+    ignores: [
+      "dist/**",
+      "coverage/**",
+      "docs/api/**",
+      "artifacts/**",
+      "test-results/**",
+      "node_modules/**",
+    ],
   },
   {
     linterOptions: {

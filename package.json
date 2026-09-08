@@ -21,10 +21,15 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "docs:check": "typedoc --options typedoc.json",
+    "qualify:step3:headless": "vitest run --config qualification/step3/vitest.config.ts",
+    "qualify:step3:browser": "playwright test --config qualification/step3/playwright.config.ts",
     "check": "npm run format:check && npm run typecheck && npm run lint && npm run lint:deps && npm run docs:check && npm run test"
   },
   "dependencies": {
     "@automerge/automerge": "3.4.1",
+    "@tiptap/core": "3.30.5",
+    "@tiptap/pm": "3.30.5",
+    "dompurify": "3.4.14",
     "fractional-indexing": "4.0.0",
     "fugue": "3.0.0",
     "react": "19.2.8",
@@ -33,6 +38,8 @@
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
+    "@playwright/test": "1.62.1",
+    "@types/node": "24.10.1",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "dependency-cruiser": "18.2.0",
