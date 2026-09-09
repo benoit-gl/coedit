@@ -4,26 +4,26 @@ These documents describe the clean-slate application on `main`. Each document ha
 
 ## Current authoritative documents
 
-| Document                                                                     | Authority                                                                                                                |
-| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md)                         | Logical product ontology and domain vocabulary                                                                           |
-| [`MVP_CONTRACT.md`](MVP_CONTRACT.md)                                         | Required proof boundary for the document-engine MVP                                                                      |
-| [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)                                 | Component authority, public engine behavior, and adapter workflows                                                       |
-| [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) | Capacity/resource classification, contract maturity, ownership, verification, and promotion rules                        |
-| [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md)                   | InlineContent payload kinds, universal whole-content replacement, Origin granularity, and payload convergence            |
-| [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)   | `coedit-text` formatting, fine-grained Origin, clipboard lineage, Range-holder behavior, and carrier qualification       |
-| [`TEXT_POSITION_MODEL.md`](TEXT_POSITION_MODEL.md)                           | `coedit-text` Unicode, transient editor coordinates, and durable carrier-position boundaries                            |
+| Document                                                                     | Authority                                                                                                                 |
+| ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md)                         | Logical product ontology and domain vocabulary                                                                            |
+| [`MVP_CONTRACT.md`](MVP_CONTRACT.md)                                         | Required proof boundary for the document-engine MVP                                                                       |
+| [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)                                 | Component authority, public engine behavior, and adapter workflows                                                        |
+| [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) | Capacity/resource classification, contract maturity, ownership, verification, and promotion rules                         |
+| [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md)                   | InlineContent payload kinds, universal whole-content replacement, Origin granularity, and payload convergence             |
+| [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)   | `coedit-text` formatting, fine-grained Origin, clipboard lineage, Range-holder behavior, and carrier qualification        |
+| [`TEXT_POSITION_MODEL.md`](TEXT_POSITION_MODEL.md)                           | `coedit-text` Unicode, transient editor coordinates, and durable carrier-position boundaries                              |
 | [`RANGE_MODEL.md`](RANGE_MODEL.md)                                           | Durable `coedit-text` multi-span and positional Range behavior, service boundary, serialization, and staged qualification |
-| [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md)                 | Flat Block placement, tree projection, structural concurrency policy, and position-order qualification                   |
-| [`STRUCTURAL_POSITION_ALLOCATOR.md`](STRUCTURAL_POSITION_ALLOCATOR.md)       | Production dense-order allocator abstraction, collision tolerance, characterization, and algorithm selection             |
-| [`CODING_STYLE.md`](CODING_STYLE.md)                                         | Source structure, as-implemented TSDoc, lint/format/dependency tooling, command-line interface, and platform portability |
-| [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md)                   | Private MVP implementation rules that are not owned by a focused specification                                           |
-| [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md)                         | Markdown import, export, diagnostics, and normalized `coedit-text` round-trip behavior                                   |
-| [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md)                 | Lossless `.coedit` typed-payload recovery contract, gated version-1 container, and hostile-input validation              |
-| [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md)                           | Incremental IndexedDB repository, recovery, multi-tab, quota, and backup behavior                                        |
-| [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md)                       | MVP test strategy, risk coverage, and qualification evidence                                                             |
-| [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md)                           | Post-MVP replication, typed-payload convergence, and causal History direction                                            |
-| [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md)                           | RUP-inspired work order, phase gates, and completion criteria                                                            |
+| [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md)                 | Flat Block placement, tree projection, structural concurrency policy, and position-order qualification                    |
+| [`STRUCTURAL_POSITION_ALLOCATOR.md`](STRUCTURAL_POSITION_ALLOCATOR.md)       | Production dense-order allocator abstraction, collision tolerance, characterization, and algorithm selection              |
+| [`CODING_STYLE.md`](CODING_STYLE.md)                                         | Source structure, as-implemented TSDoc, lint/format/dependency tooling, command-line interface, and platform portability  |
+| [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md)                   | Private MVP implementation rules that are not owned by a focused specification                                            |
+| [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md)                         | Markdown import, export, diagnostics, and normalized `coedit-text` round-trip behavior                                    |
+| [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md)                 | Lossless `.coedit` typed-payload recovery contract, gated version-1 container, and hostile-input validation               |
+| [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md)                           | Incremental IndexedDB repository, recovery, multi-tab, quota, and backup behavior                                         |
+| [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md)                       | MVP test strategy, risk coverage, and qualification evidence                                                              |
+| [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md)                           | Post-MVP replication, typed-payload convergence, and causal History direction                                             |
+| [`../SCAFFOLDING_PLAN.md`](../SCAFFING_PLAN.md)                           | RUP-inspired work order, phase gates, and completion criteria                                                             |
 
 All current design authority is local to `main`.
 
