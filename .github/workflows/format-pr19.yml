@@ -22,6 +22,8 @@ jobs:
           node-version: 24
       - name: Bootstrap dependencies
         run: npm run bootstrap
+      - name: Correct documentation index typo
+        run: sed -i 's#../SCAFFING_PLAN.md#../SCAFFOLDING_PLAN.md#g' docs/README.md
       - name: Apply repository formatting
         run: npm run format
       - name: Commit formatter output
