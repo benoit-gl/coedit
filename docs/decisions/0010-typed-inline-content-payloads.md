@@ -133,19 +133,13 @@ capabilities.
 
 ### 3.4 Whole-payload replacement is universal
 
-Every InlineContent supports one atomic, Media-Type-preserving whole-content
-replacement operation with explicit Origin behavior.
+Every InlineContent supports one atomic whole-payload replacement operation with explicit Origin behavior. The operation preserves the InlineContent identity and replaces the complete payload value: Media Type plus Media-Type-specific content.
 
 The operation is available for `application/vnd.coedit.text` and for every opaque
 Media Type. It is therefore not a blob-specific API. Fine-grained collaborative
 text operations remain available when their merge behavior is desired.
 
-Payload-specific operations fail explicitly against an incompatible Media Type.
-They do not sniff bytes, reinterpret arbitrary payloads as Coedit text, or
-silently change Media Type.
-
-The current contract does not include in-place Media Type conversion. Such a
-workflow requires a separate decision.
+Payload-specific fine-grained operations fail explicitly against an incompatible Media Type. They do not sniff bytes or reinterpret arbitrary payloads as Coedit text. Media Type changes only as part of an explicit whole-payload replacement that supplies matching content. The document model therefore needs no separate Media Type conversion operation.
 
 ### 3.5 Whole-payload replacement is eventually consistent
 
@@ -153,8 +147,7 @@ All payloads are collaborative in the convergence sense. Once authorized
 replicas receive the same complete set of valid Contributions, they must converge
 on the same current payload state.
 
-Fine-grained merge is not required for every Media Type. Whole-content
-replacement behaves as a convergent replicated register:
+Fine-grained merge is not required for every Media Type. Whole-payload replacement behaves as a convergent replicated register:
 
 - a causally later replacement supersedes replacements that it observed;
 - truly concurrent replacements select one deterministic current winner;
@@ -309,8 +302,7 @@ concurrent replacement convergence, mixed-Media-Type atomicity, and the existing
 collaborative-text suite against both carrier candidates. Gate B records the
 carrier winner and the private deterministic replacement tie-break.
 
-Step 6 remains responsible for the exact whole-payload replacement of `application/vnd.coedit.text` effect on durable
-Range lineage. Step 8 freezes Media Type values and opaque payload bytes into the
+Step 6 remains responsible for the exact effect of whole-payload replacement involving `application/vnd.coedit.text` on durable Range lineage. Step 8 freezes Media Type values and opaque payload bytes into the
 portable format only after Gates B and C pass.
 
 Future Media-Type-specific fine-grained editing, Media Type parameter rules, and non-text content-local addressing require

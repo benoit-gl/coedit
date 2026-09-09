@@ -282,7 +282,7 @@ Treat portable input as hostile. Validate a detached copy in this order:
 11. reconstructed `application/vnd.coedit.text` Unicode text, marks, boundary policies,
     fine-grained Origin coverage, opaque link-metadata shape/resource bounds, and typed internal-link shape;
 12. reconstructed opaque payload bytes and exactly one valid payload-level Origin for each current opaque payload value;
-13. payload-specific invariants, including rejection of incompatible operations and absence of implicit Media Type conversion; and
+13. payload-specific invariants, including rejection of incompatible fine-grained operations and no implicit Media Type change outside explicit whole-payload replacement; and
 14. History replay/materialization invariants.
 
 Validate a complete candidate engine before replacing the active engine or

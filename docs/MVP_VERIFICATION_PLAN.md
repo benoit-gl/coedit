@@ -148,8 +148,8 @@ Verify:
 - each materialized InlineContent has one Media Type and ordinary replacement preserves the InlineContent identity;
 - payload-specific operations reject an incompatible Media Type explicitly rather than coercing content;
 - no separate Media Type conversion operation is required; type change occurs only as part of atomic whole-payload replacement;
-- whole-payload replacement is available for both `application/vnd.coedit.text` and representative opaque Media Types;
-- a replacement publishes its complete value and required Origin effect atomically;
+- whole-payload replacement is available for every supported Media Type and can keep or change the Media Type;
+- a replacement publishes its complete Media Type, Media-Type-specific content, and required Origin effect atomically;
 - malformed replacement or a selected resource-guard failure leaves the base unchanged;
 - detached opaque payload bytes and caller-owned replacement buffers cannot mutate engine state after submission;
 - opaque payload bytes round trip exactly and the current opaque payload value has one payload-level Origin;
@@ -239,7 +239,7 @@ benchmark.
 Verify:
 
 - pairwise and three-way fine-grained text insert/delete/format at identical and adjacent boundaries under duplicate, delayed, reordered, partitioned, and reconnected updates;
-- pairwise concurrent whole-payload replacement for `application/vnd.coedit.text` and representative opaque Media Types under the same delivery faults;
+- pairwise concurrent whole-payload replacement under the same delivery faults, including same-Media-Type and different-Media-Type concurrent replacements;
 - equal logical payload state, formatting/Origin projection, opaque payload bytes/Origin, deterministic replacement winner, and durable text Range-position behavior rather than merely equal rendered text;
 - one atomic command spanning Block structure, a `application/vnd.coedit.text` InlineContent, an opaque InlineContent, Origins, and Contribution metadata publishes all or none;
 - a command that explicitly targets only one InlineContent cannot mutate unrelated InlineContents or Block structure;
@@ -247,7 +247,7 @@ Verify:
 - Range creation targeting opaque payload fails explicitly and atomically;
 - greedy Span boundaries and Block-local preceding-sticky Positional boundaries survive ordinary text edits and transaction-shape variation;
 - one Range retains creation and lineage order across split, merge, and Block move, including several current spans in one `application/vnd.coedit.text` InlineContent;
-- whole-content `application/vnd.coedit.text` replacement can be represented without preventing the Step 6 replacement-lineage decision;
+- whole-payload replacement involving `application/vnd.coedit.text`, including replacement to or from another Media Type, can be represented without preventing the Step 6 replacement-lineage decision;
 - an unresolved or ambiguous member is omitted without silent reattachment;
 - lazy Range resolution does not require normal edits or Block moves to scan all retained Range holders;
 - every Version and required text Range lineage survive the candidate's supported garbage-collection/compaction cycle; and

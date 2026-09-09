@@ -179,9 +179,7 @@ to a preceding Block. An explicit structural operation, such as a merge whose
 contract translates positions into a surviving content container, can move the
 position to another container.
 
-The Step 6 Range gate must define the result when a structural split occurs
-exactly at a Positional Range and when the owning InlineContent is deleted,
-whole-content replaced, or merged. Candidate qualification in Step 3 must prove
+The Step 6 Range gate must define the result when a structural split occurs exactly at a Positional Range and when the owning InlineContent is deleted, merged, or whole-payload replaced. If replacement changes the Media Type away from `application/vnd.coedit.text`, the member is unresolved in that Version. A later replacement back to `application/vnd.coedit.text` must not silently reattach the Range merely because the `InlineContentId` and Media Type match; Step 6 owns the exact lineage/resumption rule. Candidate qualification in Step 3 must prove
 that the carrier does not prevent the required Block-local behavior.
 
 ## 7. Structural lineage, deletion, and copy

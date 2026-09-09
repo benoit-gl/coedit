@@ -237,7 +237,7 @@ interface PortableDocumentInput {
 }
 ```
 
-The universal whole-payload replacement operation belongs to the ordinary `DocumentOperation` family. It is valid for every supported Media Type and is type-preserving under the current contract. Payload-specific text operations reject incompatible Media Types explicitly. Exact operation names and request shapes remain implementation details until their implementation step freezes them.
+The universal whole-payload replacement operation belongs to the ordinary `DocumentOperation` family. It preserves the target `InlineContentId` while atomically replacing the complete payload value: Media Type, Media-Type-specific content, and the required Origin effect. The Media Type can stay the same or change, and capability dispatch after success follows the resulting Media Type. Payload-specific fine-grained operations reject incompatible Media Types explicitly. Exact operation names and request shapes remain implementation details until their implementation step freezes them.
 
 `RANGE_MODEL.md` owns `application/vnd.coedit.text` Range behavior. The selected `DocumentEngine` supplies document context. Step 6 Gate C finalizes result wrappers, parse diagnostics, resource-guard behavior, and serialization types without exposing carrier-native objects.
 
@@ -255,7 +255,7 @@ Commands are typed, validated, attributed, atomic, and checked against an expect
 
 Each successful command atomically publishes one logical Contribution, its exact content/structure effect, any new Origin records, one resulting Version, and its successful idempotency receipt. When a durable repository is attached, publication occurs only after the repository transaction commits. A failed command publishes nothing.
 
-Whole-payload replacement is one such durable command effect. It preserves the target InlineContent Media Type and publishes its replacement value and Origin atomically. Under later replication, a causally later replacement supersedes replacements it observed and concurrent replacements select one deterministic current winner. That winner cannot depend on wall-clock time or delivery order. The losing Contributions and Versions remain in History.
+Whole-payload replacement is one such durable command effect. It preserves the target InlineContent identity and atomically publishes the replacement Media Type, Media-Type-specific content, and required Origin effect. Under later replication, a causally later replacement supersedes replacements it observed and concurrent replacements select one deterministic current winner. That winner cannot depend on wall-clock time or delivery order. The losing Contributions and Versions remain in History.
 
 Several immutable Contributions can share a semantic group ID for History presentation. Grouping never changes their identities, Versions, or durability.
 

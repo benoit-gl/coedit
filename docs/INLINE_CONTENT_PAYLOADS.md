@@ -116,12 +116,11 @@ A future implementation can add payload-specific operations for an existing Medi
 Type without changing stored documents merely because the capability set became
 richer. Such an extension requires an explicit focused contract.
 
-## 6. Media Type stability and creation
+## 6. Payload creation and replacement identity
 
-Each live InlineContent has exactly one Media Type. Ordinary whole-content
-replacement preserves that Media Type.
+Each live InlineContent owns exactly one current payload value consisting of a Media Type plus Media-Type-specific content. The payload has no independent product identity.
 
-The Media Type is part of the payload value. The whole-payload replacement operation can keep or change it atomically with the content. Application-level format conversion is an adapter concern; the document model does not define a second conversion operation.
+Whole-payload replacement preserves the `InlineContentId` but atomically replaces the complete payload value. The replacement can keep the existing Media Type or provide a different one. Application-level format conversion is an adapter concern; the document model does not define a second conversion operation.
 
 Step 2 can continue to use its typed opaque empty `InlineContentValue` while
 content internals are intentionally unavailable. Step 4 introduces the final
@@ -213,7 +212,8 @@ For `application/vnd.coedit.text`, fine-grained Origin is defined by
 `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`.
 
 For every other Media Type under the initial opaque handler, the current payload value has one Origin associated with the whole-payload creation or replacement. Replacing the payload creates the new Origin required by the operation context. A replacement that changes Media Type applies the Origin rules of the new Media Type.
-Moving the InlineContent preserves Media Type, bytes, and Origin. Same-document
+
+Moving the InlineContent preserves its complete payload, including Media Type, bytes, and Origin. Same-document
 entity copy and historical restore preserve source Origin when their operation
 contract treats the activity as placement/recovery rather than new authorship;
 their new Contribution records the acting Contributor and derivation separately.

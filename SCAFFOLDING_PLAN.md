@@ -375,7 +375,7 @@ The plan is complete when the browser prototype satisfies the MVP contract and a
 - the recursive Block model is the only structural ontology;
 - each InlineContent has one supported Media-Type-labelled payload and Block/InlineContent boundaries imply no text separator;
 - `application/vnd.coedit.text` and representative opaque Media Types are both represented, preserved, and replaceable through the engine;
-- universal whole-payload replacement is atomic, type-preserving, Origin-aware, and qualified for deterministic eventual convergence;
+- universal whole-payload replacement preserves InlineContent identity, atomically replaces Media Type/content/Origin state, and is qualified for deterministic eventual convergence;
 - opaque payload remains opaque and does not require fine-grained collaboration;
 - durable changes are attributed Contributions;
 - exact historical Versions, semantic checkpoints, and compensating restore are usable;
