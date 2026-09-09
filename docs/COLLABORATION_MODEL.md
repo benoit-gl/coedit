@@ -122,7 +122,7 @@ may be UX-adjacent, but its channel remains separate and ephemeral.
 
 | Layer             | Purpose                                                                                          | Portable/product History?                     |
 | ----------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------- |
-| Logical document  | Blocks, InlineContents, typed payloads, tags, Origins, durable comments/overlays                  | Yes                                           |
+| Logical document  | Blocks, InlineContents, typed payloads, tags, Origins, durable comments/overlays                 | Yes                                           |
 | Product History   | Immutable attributed Contributions and materializable Versions                                   | Yes                                           |
 | Replication state | CRDT identities, replacement-register state, placements, activity markers, tombstones, causality | Only what exact recovery/convergence requires |
 | Presence          | Online state, cursors, selections, typing indicators                                             | No                                            |

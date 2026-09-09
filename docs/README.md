@@ -23,7 +23,7 @@ These documents describe the clean-slate application on `main`. Each document ha
 | [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md)                           | Incremental IndexedDB repository, recovery, multi-tab, quota, and backup behavior                                         |
 | [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md)                       | MVP test strategy, risk coverage, and qualification evidence                                                              |
 | [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md)                           | Post-MVP replication, typed-payload convergence, and causal History direction                                             |
-| [`../SCAFFOLDING_PLAN.md`](../SCAFFING_PLAN.md)                           | RUP-inspired work order, phase gates, and completion criteria                                                             |
+| [`../SCAFFOLDING_PLAN.md`](../SCAFFING_PLAN.md)                              | RUP-inspired work order, phase gates, and completion criteria                                                             |
 
 All current design authority is local to `main`.
 
