@@ -99,8 +99,8 @@ contract before Step 4; no specific mixed-operation winner is accepted yet.
 
 These gates and their evidence are owned by `INLINE_CONTENT_PAYLOADS.md`,
 `RANGE_MODEL.md`, `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`,
-`MVP_VERIFICATION_PLAN.md`, and `SCAFFOLDING_PLAN.md`. They include the explicitly deferred mixed-operation decision and do not reopen
-the completed Steps 1 and 2.
+`MVP_VERIFICATION_PLAN.md`, and `SCAFFOLDING_PLAN.md`. They include the explicitly
+deferred mixed-operation decision and do not reopen the completed Steps 1 and 2.
 
 ## 4. Selective implementation reuse
 

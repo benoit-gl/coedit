@@ -440,7 +440,7 @@ The current ontology requires:
 
 No product-domain question blocks the completed Steps 1 and 2. Step 3 compares Yjs v13 with Automerge and Gate B records the carrier selection under the Media-Type-labelled payload contract. Step 6 owns the separate durable `application/vnd.coedit.text` Range implementation and Gate C records the Range API and lineage-representation decisions. Gate B also closes the explicitly deferred mixed replacement/text-edit semantics. These gates do not permit an adapter to change accepted Range behavior.
 
-Post-MVP or pre-network questions include:
+Remaining decisions include:
 
 - mixed whole-payload replacement/text-edit concurrency, selected at Gate B under `INLINE_CONTENT_PAYLOADS.md`;
 - additional fine-grained Media-Type-specific operation contracts; valid unfamiliar Media Types already use generic opaque handling;
