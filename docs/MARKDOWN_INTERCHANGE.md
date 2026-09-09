@@ -237,7 +237,7 @@ For a Coedit construct that the importer cannot reconstruct exactly, export must
 
 Examples include:
 
-- a selected InlineContent whose Media Type is generic opaque Media Type;
+- a selected InlineContent whose Media Type has no Markdown representation under this contract;
 - application or user tags with no Markdown representation;
 - multiple simultaneously selected InlineContents for one Block;
 - a structural grouping that is valid Coedit but not produced by the Markdown importer;

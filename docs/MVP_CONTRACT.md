@@ -22,7 +22,7 @@ The MVP must provide these capabilities:
 4. Edit headings, prose, and list items.
 5. Create, move, nest, reorder, and delete Blocks.
 6. Create, select, reorder, tag, and delete InlineContents.
-7. Support initial InlineContent Media Types `application/vnd.coedit.text` and generic opaque Media Type.
+7. Use Internet Media Types for InlineContent payloads; support `application/vnd.coedit.text` with fine-grained text operations and generic opaque handling for other supported Media Types.
 8. Replace the complete content of any InlineContent atomically with explicit Origin behavior and deterministic convergence semantics.
 9. Edit canonical `application/vnd.coedit.text`, intrinsic formatting, and protected fine-grained Origin through the engine command boundary.
 10. Preserve opaque payload bytes with payload-level Origin; no fine-grained opaque payload editing is required.
