@@ -315,3 +315,8 @@ portable format only after Gates B and C pass.
 Future Media-Type-specific fine-grained editing, in-place Media Type conversion,
 Media Type parameter rules, and non-text content-local addressing require
 separate explicit decisions when real application requirements exist.
+
+## 7. Standards references
+
+- [RFC 6838: Media Type Specifications and Registration Procedures](https://www.rfc-editor.org/rfc/rfc6838.html) defines the Internet Media Type registration framework and vendor tree.
+- [IANA Media Types](https://www.iana.org/assignments/media-types/media-types.xhtml) is the authoritative registry, including `application/octet-stream`.

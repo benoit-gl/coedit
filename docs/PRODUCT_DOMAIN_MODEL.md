@@ -142,9 +142,9 @@ The clean-slate model requires these invariants:
 5. Each InlineContent ID is unique within the document.
 6. Each InlineContent belongs to exactly one Block.
 7. Each InlineContent owns exactly one Media-Type-labelled payload.
-8. Each Media Type supports atomic whole-content replacement with explicit Origin behavior.
+8. Every InlineContent payload supports atomic Media-Type-preserving whole-content replacement with explicit Origin behavior.
 9. An `application/vnd.coedit.text` payload owns its text, intrinsic formatting, and fine-grained Origin metadata as one canonical collaborative state.
-10. A generic opaque Media Type payload owns opaque bytes and one payload-level Origin for its current value.
+10. A payload using the generic opaque capability set owns exact bytes and one payload-level Origin for its current value.
 11. Sibling order is the order of the parent's `children` vector.
 12. InlineContent order is the order of the Block's `contents` vector.
 13. The live Block tree contains no cycle.
@@ -220,7 +220,7 @@ Block tag:         topic:provenance
 InlineContent tag: view:main
 InlineContent tag: view:summary
 InlineContent tag: user:needs-citation
-Media Type:      application/vnd.coedit.text
+Media Type:        application/vnd.coedit.text
 History kind:      checkpoint
 ```
 
