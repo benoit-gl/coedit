@@ -159,7 +159,7 @@ Verify:
 - concurrent whole-content replacements select the same deterministic current winner on every replica with the same valid Contributions;
 - the winner is unchanged by duplicate, delayed, reordered, partitioned, or reconnected delivery;
 - wall-clock values and packet-arrival order do not affect the winner; and
-- losing concurrent replacements remain represented by immutable Contributions and exactly materializable Versions.
+- Step 3 retains both concurrent replacement inputs/effects as carrier-level evidence and can reconstruct each replacement value independently; section 7 verifies permanent losing-Contribution and Version materialization after Step 5 implements first-class History.
 
 Do not require the carrier to merge blob bytes or the internal structure of a blob.
 
