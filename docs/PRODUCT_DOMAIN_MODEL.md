@@ -142,7 +142,7 @@ The clean-slate model requires these invariants:
 5. Each InlineContent ID is unique within the document.
 6. Each InlineContent belongs to exactly one Block.
 7. Each InlineContent owns exactly one Media-Type-labelled payload.
-8. Every InlineContent payload supports atomic whole-payload replacement with explicit Origin behavior.
+8. Every InlineContent payload supports atomic whole-payload replacement that preserves InlineContent identity and can keep or change the Media Type, with explicit Origin behavior.
 9. An `application/vnd.coedit.text` payload owns its text, intrinsic formatting, and fine-grained Origin metadata as one canonical collaborative state.
 10. A payload using the generic opaque capability set owns exact bytes and one payload-level Origin for its current value.
 11. Sibling order is the order of the parent's `children` vector.
@@ -234,7 +234,7 @@ A Block tag describes the semantic structural unit across its contents. An Inlin
 
 Each InlineContent owns one payload labelled with an Internet Media Type. `INLINE_CONTENT_PAYLOADS.md` owns the detailed rules.
 
-The Media Type is stable for ordinary replacement during the current InlineContent lifetime. Whole-payload replacement can keep or change the Media Type atomically. Any application-level conversion semantics remain an adapter concern; the document model needs no separate conversion operation.
+The Media Type is part of the current payload value, not the InlineContent identity. Whole-payload replacement preserves the InlineContent identity while atomically replacing the Media Type and Media-Type-specific content; the replacement can keep or change the Media Type. Any application-level conversion semantics remain an adapter concern; the document model needs no separate conversion operation.
 
 Every payload supports atomic whole-payload replacement. Media-Type-specific contracts can expose additional fine-grained operations. `application/vnd.coedit.text` does; all other supported Media Types initially use the generic opaque capability set.
 

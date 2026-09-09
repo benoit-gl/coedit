@@ -385,8 +385,7 @@ carriage-return can be ordinary `application/vnd.coedit.text` data. Block and In
 boundaries remain structural and add no text character. Application adapters
 translate paragraph, line-break, list, section, opaque-payload rendering, or other intent.
 
-Every payload supports whole-payload replacement. The current
-Media Type does not change as a side effect of replacement. A Media Type changes occur only through atomic whole-payload replacement.
+Every payload supports whole-payload replacement. The operation preserves the InlineContent identity and atomically replaces the complete payload value. The Media Type can stay the same or change; capability dispatch then follows the resulting Media Type.
 
 The accepted structural representation uses one Block-local namespace per
 `BlockId` with one atomic `{ position, depth }` placement, a private semantic
@@ -403,9 +402,7 @@ preserving Block identity and relative order.
 The accepted concurrency preference is non-destructive:
 
 - a move concurrent with deletion of the same Block keeps the moved Block alive;
-- a semantic payload update, including fine-grained text work or whole-content
-  replacement, concurrent with deletion of the same Block keeps the updated
-  Block alive;
+- a semantic payload update, including fine-grained text work or whole-payload replacement, concurrent with deletion of the same Block keeps the updated Block alive;
 - payload mutation updates the Block's private activity marker in the same
   logical carrier change; and
 - activity is local to the Block that changed, so editing a descendant does not

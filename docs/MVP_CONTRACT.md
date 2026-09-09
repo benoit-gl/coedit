@@ -110,7 +110,7 @@ Semantic editor groups and physical recovery checkpoints are not semantic Checkp
 
 Each InlineContent owns one collaborative payload labelled with an Internet Media Type. `application/vnd.coedit.text` selects the fine-grained collaborative-text capability set; every other supported Media Type initially selects the generic opaque capability set. Block and InlineContent boundaries imply no text character or separator.
 
-Every InlineContent payload supports atomic whole-payload replacement with Origin information. A causally later replacement supersedes replacements it observes. Concurrent replacements choose one deterministic current winner without using packet arrival order, local wall-clock time, or an unsynchronized local sequence. Losing replacements remain represented by immutable Contributions and exactly materializable Versions.
+Every InlineContent payload supports atomic whole-payload replacement with Origin information. The operation preserves the InlineContent identity while replacing the complete payload value, and the Media Type can stay the same or change. A causally later replacement supersedes replacements it observes. Concurrent replacements choose one deterministic current winner without using packet arrival order, local wall-clock time, or an unsynchronized local sequence. Losing replacements remain represented by immutable Contributions and exactly materializable Versions.
 
 The document model does not interpret opaque payload bytes or prescribe application meaning for text characters. Payload-specific contracts decide which fine-grained operations are available.
 
@@ -153,7 +153,7 @@ The prototype must preserve these domain rules:
 - each InlineContent belongs to exactly one Block;
 - each InlineContent owns one Media-Type-labelled collaborative payload;
 - `application/vnd.coedit.text` selects the fine-grained collaborative-text capability set and other supported Media Types initially select the generic opaque capability set;
-- every payload can be replaced atomically with explicit Origin behavior;
+- every payload can be replaced atomically while preserving InlineContent identity and keeping or changing Media Type, with explicit Origin behavior;
 - concurrent whole-payload replacements converge deterministically;
 - `application/vnd.coedit.text` owns intrinsic formatting and protected fine-grained Origin;
 - generic opaque payload handling preserves exact bytes and payload-level Origin;
