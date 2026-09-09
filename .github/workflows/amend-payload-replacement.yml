@@ -19,82 +19,27 @@ jobs:
         with:
           node-version: 24
       - run: npm run bootstrap
-      - name: Reconcile replacement authorities
+      - name: Remove last stale wording
         shell: python
         run: |
           from pathlib import Path
-
-          changes = {
-              Path('docs/PRODUCT_DOMAIN_MODEL.md'): [
-                  (
-                      'The Media Type is stable for ordinary replacement during the current InlineContent lifetime. Whole-payload replacement can keep or change the Media Type atomically. Any application-level conversion semantics remain an adapter concern; the document model needs no separate conversion operation.',
-                      'The Media Type is part of the current payload value, not the InlineContent identity. Whole-payload replacement preserves the InlineContent identity while atomically replacing the Media Type and Media-Type-specific content; the replacement can keep or change the Media Type. Any application-level conversion semantics remain an adapter concern; the document model needs no separate conversion operation.'
-                  ),
-                  (
-                      '8. Every InlineContent payload supports atomic whole-payload replacement with explicit Origin behavior.',
-                      '8. Every InlineContent payload supports atomic whole-payload replacement that preserves InlineContent identity and can keep or change the Media Type, with explicit Origin behavior.'
-                  ),
-              ],
-              Path('docs/COLLABORATION_MODEL.md'): [
-                  (
-                      'Every payload supports whole-payload replacement. The current\nMedia Type does not change as a side effect of replacement. A Media Type changes occur only through atomic whole-payload replacement.',
-                      'Every payload supports whole-payload replacement. The operation preserves the InlineContent identity and atomically replaces the complete payload value. The Media Type can stay the same or change; capability dispatch then follows the resulting Media Type.'
-                  ),
-                  (
-                      '- a semantic payload update, including fine-grained text work or whole-content\n  replacement, concurrent with deletion of the same Block keeps the updated\n  Block alive;',
-                      '- a semantic payload update, including fine-grained text work or whole-payload replacement, concurrent with deletion of the same Block keeps the updated Block alive;'
-                  ),
-              ],
-              Path('docs/MVP_IMPLEMENTATION_SPEC.md'): [
-                  (
-                      'generic opaque Media Type stores opaque bytes with one payload-level Origin for the current value. The selected carrier must preserve those bytes and support atomic whole-payload replacement. It does not need a fine-grained opaque payload CRDT.',
-                      'Every supported Media Type other than `application/vnd.coedit.text` initially uses generic opaque handling: exact bytes plus one payload-level Origin for the current value. The selected carrier must preserve the Media Type and bytes and support atomic whole-payload replacement. It does not need a fine-grained opaque payload CRDT.'
-                  ),
-                  (
-                      'Every Media Type supports one whole-payload replacement operation. The logical operation targets one InlineContent, validates a complete replacement for its existing kind, and publishes the replacement plus Origin effect atomically. `application/vnd.coedit.text` also supports fine-grained text and formatting operations. Payload-specific operations reject incompatible kinds explicitly. Do not add dynamic capability dispatch or a generic replicated object model for this two-kind contract.',
-                      'Every InlineContent supports one whole-payload replacement operation. The logical operation targets one InlineContent, preserves its identity, validates a complete replacement against the replacement Media Type, and atomically publishes the new Media Type, Media-Type-specific content, and required Origin effect. The Media Type can stay the same or change. `application/vnd.coedit.text` also supports fine-grained text and formatting operations; other supported Media Types initially use generic opaque handling. Payload-specific fine-grained operations reject incompatible Media Types explicitly. Do not add dynamic capability dispatch or a generic replicated object model until a concrete additional fine-grained payload contract requires one.'
-                  ),
-              ],
-              Path('docs/MVP_CONTRACT.md'): [
-                  (
-                      'Every InlineContent payload supports atomic whole-payload replacement with Origin information. A causally later replacement supersedes replacements it observes.',
-                      'Every InlineContent payload supports atomic whole-payload replacement with Origin information. The operation preserves the InlineContent identity while replacing the complete payload value, and the Media Type can stay the same or change. A causally later replacement supersedes replacements it observes.'
-                  ),
-                  (
-                      '- every payload can be replaced atomically with explicit Origin behavior;',
-                      '- every payload can be replaced atomically while preserving InlineContent identity and keeping or changing Media Type, with explicit Origin behavior;'
-                  ),
-              ],
-              Path('docs/README.md'): [
-                  (
-                      'Every payload supports atomic whole-payload replacement with explicit Origin behavior. Under replication, a causally later replacement supersedes replacements it observes;',
-                      'Every payload supports atomic whole-payload replacement with explicit Origin behavior. Replacement preserves InlineContent identity while atomically replacing Media Type and content, so the Media Type can stay the same or change. Under replication, a causally later replacement supersedes replacements it observes;'
-                  ),
-              ],
-          }
-
-          for path, replacements in changes.items():
-              text = path.read_text(encoding='utf-8')
-              for source, target in replacements:
-                  if source not in text:
-                      raise SystemExit(f'Expected text not found in {path}: {source[:140]}')
-                  text = text.replace(source, target)
-              path.write_text(text, encoding='utf-8', newline='\n')
+          path = Path('docs/COLLABORATION_MODEL.md')
+          text = path.read_text(encoding='utf-8')
+          source = '`application/vnd.coedit.text` additionally supports fine-grained collaborative text,\n  formatting, and Origin operations. Other Media Types initially support only whole-content\n  replacement.'
+          target = '`application/vnd.coedit.text` additionally supports fine-grained collaborative text,\n  formatting, and Origin operations. Other Media Types initially support only whole-payload\n  replacement.'
+          if source not in text:
+              raise SystemExit('Expected collaboration summary text not found')
+          path.write_text(text.replace(source, target), encoding='utf-8', newline='\n')
       - name: Format
         run: npm run format
       - name: Scan payload contract
         run: |
-          echo '--- stale fixed-type wording ---'
-          grep -RInE 'Media Type is stable|current Media Type does not change|existing kind|two-kind contract|generic opaque Media Type|Media-Type-preserving|type-preserving' README.md SCAFFOLDING_PLAN.md docs || true
-          echo '--- stale whole-content wording ---'
-          grep -RInE 'whole-content replacement|whole-content[[:space:]]*$' README.md SCAFFOLDING_PLAN.md docs || true
-          echo '--- suspicious conversion wording ---'
-          grep -RInE 'future .*Media Type conversion|in-place Media Type conversion|format-conversion workflow' README.md SCAFFOLDING_PLAN.md docs || true
+          grep -RInE 'Media Type is stable|current Media Type does not change|existing kind|two-kind contract|Media-Type-preserving|type-preserving|whole-content replacement|future .*Media Type conversion|in-place Media Type conversion|format-conversion workflow' README.md SCAFFOLDING_PLAN.md docs || true
       - name: Commit
         run: |
           if git diff --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add --all
-          git commit -m "Reconcile whole-payload replacement authorities"
+          git commit -m "Remove last whole-content wording"
           git push origin HEAD:design/typed-inline-content-payloads
