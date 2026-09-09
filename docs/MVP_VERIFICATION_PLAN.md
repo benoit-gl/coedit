@@ -29,13 +29,13 @@ Do not use a test-count target. Require coverage of behavior, invariants, bounda
 Use these layers in order:
 
 1. pure domain invariant tests;
-2. headless attributed CollaborativeContent and carrier-qualification tests;
+2. headless typed-payload, attributed `coedit-text`, and carrier-qualification tests;
 3. operation and History tests;
-4. headless Range creation, resolution, serialization, and scaling tests;
+4. headless `coedit-text` Range creation, resolution, serialization, and scaling tests;
 5. Markdown planning, export, and round-trip fixtures;
 6. `.coedit` round-trip and hostile-input tests;
 7. in-memory and IndexedDB repository-adapter contract tests;
-8. editor integration tests with real collaborative state;
+8. editor integration tests with real collaborative `coedit-text` state;
 9. component interaction and accessibility tests; and
 10. a small browser end-to-end suite for the complete vertical slice.
 
@@ -55,11 +55,11 @@ The Step 0 gate requires:
 - deferred decisions to be explicit; and
 - no implementation-blocking decision to remain open.
 
-The documented baseline closes the former `TextAnchor` blocker by assigning intrinsic formatting, content-native Origin, durable Range values, Range-holder lifecycles, and transient selections to distinct mechanisms. A mechanical scan must find no normative external formatting/provenance Range or single-InlineContent durable-target assumption outside an explicitly superseded historical statement.
+The documented baseline closes the former `TextAnchor` blocker by assigning payload-neutral InlineContent ownership, `coedit-text` intrinsic formatting and fine-grained Origin, blob payload-level Origin, durable text Range values, Range-holder lifecycles, and transient selections to distinct mechanisms. A mechanical scan must find no normative external formatting/provenance Range, universal hard-break content-item requirement, implicit Block/InlineContent text separator, or single-InlineContent durable-target assumption outside an explicitly superseded historical statement.
 
-The Range authority and revised sequence revalidate the Step 0 authority baseline without reopening completed Steps 1 and 2. Gate B selects the collaborative carrier after Step 3. Gate C selects the Range representation after Step 6 and before `.coedit` version 1 or internal-link Range encoding is frozen.
+The typed-payload decision and Range authority revalidate the Step 0 authority baseline without reopening completed structural semantics in Steps 1 and 2. Gate B selects the collaborative carrier after Step 3. Gate C selects the text Range representation after Step 6 and before `.coedit` version 1 or internal-link Range encoding is frozen.
 
-The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, the actual qualification hardware/software environment, measurements, scaling behavior, and the selection rationale. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
+The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `INLINE_CONTENT_PAYLOADS.md`, `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, the deterministic whole-payload replacement tie-break used by each qualified adapter, the actual qualification hardware/software environment, measurements, scaling behavior, and the selection rationale. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
 
 ### 4.1 Step 1 tooling and platform evidence
 
@@ -119,8 +119,11 @@ Verify at least:
 - Step 2 keeps no lifetime-ID registry; retained-lifetime non-reuse is verified at the History and portable boundaries;
 - no Block has two parents;
 - no InlineContent has two owners;
-- Step 2 creates InlineContents only with the typed, opaque, valid empty `InlineContentValue` and never with partially valid attributed content;
+- completed Step 2 creates InlineContents only with the typed, opaque, valid empty `InlineContentValue` and never with partially valid attributed text;
 - structural operations never inspect `InlineContentValue` internals;
+- evolving the opaque Step 2 value to typed payloads in Step 4 does not change structural ownership or ordering semantics;
+- every materialized Step 4 InlineContent has exactly one supported payload kind;
+- Block and InlineContent boundaries imply no stored text character or separator;
 - cycles are rejected;
 - vector order is exact;
 - invalid indices fail without mutation;
@@ -132,30 +135,56 @@ Verify at least:
 - contentless grouping Blocks remain valid; and
 - every failed operation leaves its input unchanged.
 
-## 6. Attributed CollaborativeContent and carrier verification
+## 6. Typed payload and carrier verification
 
 Run the same carrier-neutral suite against both candidates before selecting one,
 then retain it as a production regression suite for the winner.
 
-### 6.1 Formatting carrier
+### 6.1 Payload kinds and universal replacement
 
 Verify:
 
-- empty and realistic rich text, hard breaks, overlapping marks, opaque link metadata, and typed internal Block links;
+- the initial runtime payload kinds are exactly `coedit-text` and `blob`;
+- each materialized InlineContent has one payload kind and ordinary replacement preserves it;
+- payload-specific operations reject an incompatible kind explicitly rather than coercing content;
+- no payload-kind conversion operation exists under the initial contract;
+- whole-content replacement is available for both `coedit-text` and blob;
+- a replacement publishes its complete value and required Origin effect atomically;
+- malformed replacement or a selected resource-guard failure leaves the base unchanged;
+- detached blob bytes and caller-owned replacement buffers cannot mutate engine state after submission;
+- blob bytes round trip exactly and the current blob value has one payload-level Origin;
+- moving a blob InlineContent preserves bytes and Origin;
+- same-document blob copy and restore preserve source Origin according to the payload contract while recording actor/derivation separately;
+- a causally later whole-content replacement supersedes replacements that it observes;
+- concurrent whole-content replacements select the same deterministic current winner on every replica with the same valid Contributions;
+- the winner is unchanged by duplicate, delayed, reordered, partitioned, or reconnected delivery;
+- wall-clock values and packet-arrival order do not affect the winner; and
+- losing concurrent replacements remain represented by immutable Contributions and exactly materializable Versions.
+
+Do not require the carrier to merge blob bytes or the internal structure of a blob.
+
+### 6.2 `coedit-text` formatting carrier
+
+Verify:
+
+- empty and realistic Unicode text, including representative line-feed and carriage-return characters, overlapping marks, opaque link metadata, and typed internal Block links;
+- the canonical projection contains no separate hard-break content item or sentinel;
+- line-feed, carriage-return, or another character is not rejected merely because one renderer can present it as a break;
 - bold, italic, underline, strikethrough, inline-code, and link toggle/clear;
 - `none`, `start`, `end`, and `both` boundary expansion at the exact start and end;
-- replacement, empty selection, mark exclusion, split, merge, and hard break;
+- replacement, empty selection, mark exclusion, split, and merge;
 - editor-to-carrier-to-editor projection without a second formatting authority;
 - formatting clear/change never alters Origin; and
 - malformed state or input that exceeds a selected carrier resource guard fails without changing the base.
 
-### 6.2 Protected Origin carrier
+### 6.3 Protected `coedit-text` Origin carrier
 
 Verify:
 
-- every live text item and hard break has exactly one valid Origin;
+- every live fine-grained authored text unit has exactly one valid Origin;
 - insertion before, inside, and after another Contributor's text receives only
   the inserting actor's new Origin;
+- newline characters receive Origin exactly like other inserted text;
 - separate Contributions by the same author receive distinct Origin records
   whose `agentId` can still support an author-level projection;
 - ordinary client and formatting operations cannot assign, inherit, spoof,
@@ -164,25 +193,27 @@ Verify:
   their product UI is deferred;
 - derived display runs can coalesce equal Origin without becoming durable range
   entities; and
-- detached values and caller-owned bytes cannot mutate engine state.
+- detached values cannot mutate engine state.
 
-### 6.3 Complete editor paths and lineage
+### 6.4 Complete editor paths and lineage
 
 Use a real browser where required to verify typing, backspace/delete, selection
-replacement, split/merge, hard break, IME, cut, paste, undo, redo, formatting,
-and editor mount/unmount.
+replacement, structural split/merge, application line-break intent, IME, cut,
+paste, undo, redo, formatting, and editor mount/unmount.
 
-Verify same-document internal paste and entity copy create new carrier identities
+Verify that the application/editor adapter translates paragraph or line-break intent into explicit text and/or structural operations. No editor action relies on a document-level hard-break item or on a Block/InlineContent boundary implicitly inserting a character.
+
+Verify same-document internal text paste and entity copy create new carrier identities
 but preserve Origin and record the acting Contributor plus derivation. Verify
 ordinary HTML/plain paste strips private Origin and receives imported/unknown
 Origin rather than false authorship. Verify a private fragment from another
 document also follows the imported/unknown path until cross-document lineage is
-implemented. Verify restore uses fresh carrier identities,
+implemented. Verify restore uses fresh text carrier identities,
 preserves historical Origin, and records the restoring actor and target Version.
 Before Step 3 closes, also verify that malformed or over-capacity private
 fragments fail atomically while ordinary HTML/plain fallback remains available.
 
-### 6.4 Convergence, atomicity, Range feasibility, and growth
+### 6.5 Convergence, atomicity, Range feasibility, and growth
 
 **Maturity:** Experimental targets.
 
@@ -190,56 +221,49 @@ fragments fail atomically while ordinary HTML/plain fallback remains available.
 
 **Promotion gate:** Step 3 carrier qualification.
 
-Use 100,000 Unicode code points in representative InlineContent and 5,000
+Use 100,000 Unicode code points in representative `coedit-text` and 5,000
 Contributions in representative History as initial characterization points.
 They are not hard limits, semantic maxima, implementation acceptance ceilings,
 product guarantees, or correctness-test thresholds. Run smaller growth points
 and larger characterization points when practical so scaling behavior is
-visible.
+visible. Include representative blob values in the qualification profile without treating their size as a semantic maximum.
 
 Before comparing carrier candidates, record one run-specific fixture profile
 for both candidates. It must state whether content and History loads are
-combined or separate, their formatting/Origin/InlineContent distribution, the
-operations performed, warm-up and sample counts, the reported tail percentile,
-and the exact measured interval. Those details make one comparison reproducible
-without freezing it as a permanent cross-version benchmark.
+combined or separate, their payload-kind/formatting/Origin/InlineContent
+distribution, the operations performed, warm-up and sample counts, the reported
+tail percentile, and the exact measured interval. Those details make one
+comparison reproducible without freezing it as a permanent cross-version
+benchmark.
 
 Verify:
 
-- pairwise and three-way insert/delete/format at identical and adjacent
-  boundaries under duplicate, delayed, reordered, partitioned, and reconnected
-  updates;
-- equal logical collaborative state, formatting/Origin projection, and durable
-  Range-position behavior rather than merely equal text;
-- one atomic command spanning Block structure, two InlineContents, Origins, and
-  Contribution metadata publishes all or none;
-- a command that explicitly targets only one InlineContent cannot mutate
-  unrelated InlineContents or Block structure;
-- direct one-span and multi-span Range creation is feasible through the same
-  carrier-neutral abstraction for each candidate;
-- greedy Span boundaries and Block-local preceding-sticky Positional boundaries
-  survive ordinary edits and transaction-shape variation;
-- one Range retains creation and lineage order across split, merge, and Block move,
-  including several current spans in one InlineContent;
+- pairwise and three-way fine-grained text insert/delete/format at identical and adjacent boundaries under duplicate, delayed, reordered, partitioned, and reconnected updates;
+- pairwise concurrent whole-content replacement for `coedit-text` and blob under the same delivery faults;
+- equal logical payload state, formatting/Origin projection, blob bytes/Origin, deterministic replacement winner, and durable text Range-position behavior rather than merely equal rendered text;
+- one atomic command spanning Block structure, a `coedit-text` InlineContent, a blob InlineContent, Origins, and Contribution metadata publishes all or none;
+- a command that explicitly targets only one InlineContent cannot mutate unrelated InlineContents or Block structure;
+- direct one-span and multi-span Range creation is feasible only against `coedit-text` through the same carrier-neutral abstraction for each candidate;
+- Range creation targeting blob fails explicitly and atomically;
+- greedy Span boundaries and Block-local preceding-sticky Positional boundaries survive ordinary text edits and transaction-shape variation;
+- one Range retains creation and lineage order across split, merge, and Block move, including several current spans in one `coedit-text` InlineContent;
+- whole-content `coedit-text` replacement can be represented without preventing the Step 6 replacement-lineage decision;
 - an unresolved or ambiguous member is omitted without silent reattachment;
-- lazy Range resolution does not require normal edits or Block moves to scan all
-  retained Range holders;
-- every Version and required Range lineage survive the candidate's supported
-  garbage-collection/compaction cycle; and
-- characterize load, edit, growth, materialization, and portable-open behavior
-  at the experimental content and History points defined above.
+- lazy Range resolution does not require normal edits or Block moves to scan all retained Range holders;
+- every Version and required text Range lineage survive the candidate's supported garbage-collection/compaction cycle; and
+- characterize load, edit, replacement, growth, materialization, and portable-open behavior at the experimental content and History points defined above.
 
-### 6.5 Performance qualification
+### 6.6 Performance qualification
 
 Use paired, same-machine measurements for Yjs and Automerge and record OS, Node/browser versions, CPU, RAM, and exact carrier/library versions. Warm up each case and repeat it. Record median and tail latency rather than one stopwatch value.
 
 Separate visible editor feedback from canonical local-model publication. Visible typing feedback is the critical hot path and must not wait for persistence, History materialization, network/replica delivery, or another slow subsystem. Use 50 ms from a normal local edit to canonical local collaborative state and projection back as an experimental calibration point. Missing that point records evidence; it does not alone fail correctness or select a carrier. Step 3 may promote, replace, or retire it after the run-specific method and target environment are recorded. It is not a throughput rate, product guarantee, or universal hardware requirement.
 
-Exercise ordinary typing, delete/backspace, insertion at start/middle/end, selection replacement, hard breaks, formatting, mark boundaries, and Unicode. Use smaller growth points plus the representative content workload defined in section 6.4 and multiple InlineContents. Detect accidental whole-document scans or reconstruction on a normal keystroke; whole-document work on routine typing is disqualifying even when one test runner is fast enough to hide the cost.
+Exercise ordinary typing, delete/backspace, insertion at start/middle/end, selection replacement, application line-feed insertion where supported, formatting, mark boundaries, and Unicode. Use smaller growth points plus the representative text workload defined in section 6.5 and multiple InlineContents. Detect accidental whole-document scans or reconstruction on a normal keystroke; whole-document work on routine typing is disqualifying even when one test runner is fast enough to hide the cost.
 
-Measure Block create, move, subtree move, delete, and structure-plus-multiple-InlineContent atomic changes separately. Characterize open/reload, carrier serialization, checkpoint-state capture, historical materialization, export, convergence workloads, serialized-state growth, and supported garbage collection/compaction. Repeat critical measurements after reload/compaction. Deliberately slow persistence and replica delivery in browser tests; local typing must remain responsive.
+Measure whole-content replacement separately for representative text and blob values. Measure Block create, move, subtree move, delete, and structure-plus-multiple-InlineContent atomic changes separately. Characterize open/reload, carrier serialization, checkpoint-state capture, historical materialization, export, convergence workloads, serialized-state growth, and supported garbage collection/compaction. Repeat critical measurements after reload/compaction. Deliberately slow persistence and replica delivery in browser tests; local typing must remain responsive.
 
-### 6.6 Structural carrier qualification
+### 6.7 Structural carrier qualification
 
 Run the complete structural suite in `STRUCTURAL_CARRIER_MODEL.md` against both
 candidates. This section records the high-risk acceptance cases; it does not
@@ -247,38 +271,26 @@ replace that authority.
 
 Verify at least:
 
-- `CreateBlock` and `MoveBlock` map to projected preorder at first, middle, and
-  last child positions;
-- a moved subtree receives the correct depth delta, fresh ordered positions, and
-  preserves identity and internal order;
+- `CreateBlock` and `MoveBlock` map to projected preorder at first, middle, and last child positions;
+- a moved subtree receives the correct depth delta, fresh ordered positions, and preserves identity and internal order;
 - concurrent moves to different destinations converge;
 - move versus delete keeps the moved Block alive after full peer convergence;
-- payload update versus delete keeps the updated Block alive after full peer
-  convergence;
-- move and payload-update liveness effects participate directly in the replicated
-  conflict that determines Block existence;
-- a nested-only activity representation is rejected when deletion of its
-  enclosing entry can discard the activity before existence resolution;
-- payload mutation, logical activity, and required liveness effect publish in one
-  logical carrier change;
-- update-over-delete behavior survives the candidate's supported
-  serialization/reload and garbage-collection or compaction path;
+- payload update versus delete keeps the updated Block alive after full peer convergence for both fine-grained text edits and whole-content replacement;
+- move and payload-update liveness effects participate directly in the replicated conflict that determines Block existence;
+- a nested-only activity representation is rejected when deletion of its enclosing entry can discard the activity before existence resolution;
+- payload mutation, logical activity, and required liveness effect publish in one logical carrier change;
+- update-over-delete behavior survives the candidate's supported serialization/reload and garbage-collection or compaction path;
 - descendant activity does not keep a deleted ancestor alive;
 - ordinary allocation avoids exact primary-position collisions where practical;
-- insertion inside two-way and multi-way collision runs preserves the previous
-  projected order and replicates required normalization;
+- insertion inside two-way and multi-way collision runs preserves the previous projected order and replicates required normalization;
 - any residual normalization-versus-delete behavior is recorded;
 - concurrent subtree/run insertion measures non-interleaving behavior;
-- narrow-gap stress records key growth, comparison/sort cost, and serialized
-  carrier growth; and
-- duplicate, delayed, reordered, partitioned, and reconnected updates converge to
-  equal projected structure and logically equivalent carrier state.
+- narrow-gap stress records key growth, comparison/sort cost, and serialized carrier growth; and
+- duplicate, delayed, reordered, partitioned, and reconnected updates converge to equal projected structure and logically equivalent typed payload state.
 
 Functional invariants are mandatory and cannot be traded for a faster carrier.
 Select Yjs unless Automerge passes the same suite and materially reduces custom
-protected-metadata, structural, heads, Range-position, or storage machinery
-enough to outweigh its integration maturity risk. This Gate B decision does not
-select the Step 6 Range-tracking representation.
+protected-metadata, replacement-register, structural, heads, Range-position, or storage machinery enough to outweigh its integration maturity risk. This Gate B decision does not select the Step 6 Range-tracking representation.
 
 ## 7. History verification
 
@@ -289,68 +301,53 @@ Verify at least:
 - later successful durable commands each create exactly one logical Contribution and resulting Version;
 - assigning any durable ID from a retained lifetime to a different entity, record, or lifetime is rejected even when the original entity is no longer live;
 - a failed command publishes neither;
-- same-base concurrent commands produce one success and one conflict;
+- same-base concurrent local commands produce one success and one conflict under the expected-Version boundary;
+- valid post-MVP concurrent replacement Contributions from different replicas can both remain in the causal History while deterministic materialization chooses one current payload winner;
+- losing whole-content replacement Contributions and their Versions remain exactly materializable;
 - stale commands publish nothing;
 - exact CommandId retry returns the original receipt and creates no new Contribution;
 - conflicting CommandId reuse fails;
 - historical materializations are exact, detached, and read-only;
-- every created Version remains exactly materializable after later edits,
-  physical checkpoints, reload, and supported compaction;
+- every created Version remains exactly materializable after later edits, physical checkpoints, reload, and supported compaction;
 - physical materialization snapshots create no product Version;
 - semantic Checkpoint creation adds one attributed Contribution and one content-identical Version;
 - multiple semantic Checkpoints remain separately materializable;
 - restore appends a new Contribution and does not rewind History;
-- local restore preserves historical Origin while recording the restoring actor and target Version;
-- Contributor display names beyond the former planning boundary recorded in
-  [`ADR 0008`](decisions/0008-capacity-contract-maturity.md) remain valid through
-  History and portable round trip;
+- local restore preserves historical fine-grained text Origin and blob payload Origin while recording the restoring actor and target Version;
+- Contributor display names beyond the former planning boundary recorded in [`ADR 0008`](decisions/0008-capacity-contract-maturity.md) remain valid through History and portable round trip;
 - restore preserves prior Contributions, Checkpoints, and Contributors; and
 - successful publication emits one invalidation event while failures and exact retries emit none.
 
-## 8. Durable Range verification
+## 8. Durable `coedit-text` Range verification
 
 Run the complete Step 6 suite in `RANGE_MODEL.md` against the selected carrier and every remaining lineage-representation candidate. Retain the winner's suite as production regression evidence.
 
 Verify at least:
 
-- atomic direct one-span, multi-span, and Positional Range creation, including
-  complete failure when any supplied target does not resolve at the visible tip;
-- preservation of arbitrary creation order, overlap, duplication, adjacency,
-  sparsity, and zero-length Span members without normalization;
-- immutable Span and Positional kinds after complete deletion or coincident Span
-  boundaries;
+- atomic direct one-span, multi-span, and Positional Range creation, including complete failure when any supplied target does not resolve as `coedit-text` at the visible tip;
+- explicit rejection of blob sub-content as a Range target;
+- preservation of arbitrary creation order, overlap, duplication, adjacency, sparsity, and zero-length Span members without normalization;
+- immutable Span and Positional kinds after complete deletion or coincident Span boundaries;
 - greedy Span insertion and replacement at both boundaries, independent of editor transaction shape;
 - Block-local preceding-stickiness without migration to a preceding Block when the target content becomes empty;
 - the accepted behavior for split exactly at a Positional Range;
-- split, merge, deletion, move, and owning-container replacement;
-- each split and merge applies the accepted continuing-identity rule for Blocks
-  and InlineContents;
-- references to identities consumed by a merge exhibit the accepted
-  follow-lineage, historical-only, or unresolved behavior, including an internal
-  link's primary Block fallback;
-- operations without a naturally designated semantic continuation select the
-  same identity deterministically on every replica without clocks or arrival
-  order;
-- complete one-to-many split and many-to-one merge lineage remains resolvable
-  independently of whichever entity identity continues;
-- no Range continuation through copy, clone, import, paste, or shared Origin and
-  derivation;
-- an exact-boundary Span split creates no zero-length descendant on the other
-  side;
+- split, merge, deletion, move, and owning-`coedit-text` whole-content replacement;
+- each split and merge applies the accepted continuing-identity rule for Blocks and InlineContents;
+- references to identities consumed by a merge exhibit the accepted follow-lineage, historical-only, or unresolved behavior, including an internal link's primary Block fallback;
+- operations without a naturally designated semantic continuation select the same identity deterministically on every replica without clocks or arrival order;
+- complete one-to-many split and many-to-one merge lineage remains resolvable independently of whichever entity identity continues;
+- no Range continuation through copy, clone, import, paste, or shared Origin and derivation;
+- an exact-boundary Span split creates no zero-length descendant on the other side;
 - zero, one, and several resolved spans, including several in one InlineContent;
-- independent enumeration in creation and descendant lineage order, regardless
-  of current tree order;
-- exact text concatenation without inferred separators, with duplicated output
-  for overlaps and duplicates and no output for missing members;
-- explicit rationalization that merges only consecutive exact adjacency caused
-  by a lineage-preserving structural merge;
+- independent enumeration in creation and descendant lineage order, regardless of current tree order;
+- exact text concatenation without inferred structural separators, with duplicated output for overlaps and duplicates and no output for missing members;
+- line-feed or another separator-like character already stored in text remains in exact resolved output;
+- explicit rationalization that merges only consecutive exact adjacency caused by a lineage-preserving structural merge;
 - no implicit rationalization during editing or ordinary resolution;
 - no silent rebinding by coincidental identity or quote equality;
 - serialization as a rebase against one explicit Version;
-- best-effort parsing that omits unresolved or ambiguous members and rebases the
-  surviving Range to the selected Version;
-- rejection when a resolution target predates or does not descend from the
-  Range's creation Version;
+- best-effort parsing that omits unresolved or ambiguous members and rebases the surviving Range to the selected Version;
+- rejection when a resolution target predates or does not descend from the Range's creation Version;
 - document-relative Range-fragment parse/serialize round trip;
 - application-owned external document URI parsing and document selection;
 - reinjection as internal-link refinement with primary Block fallback;
@@ -358,10 +355,10 @@ Verify at least:
 - edit and Block-move cost independent of the total retained Range count.
 
 Record the compared lineage representations, continuing-identity rules,
-merged-away-reference behavior, fixtures, measurements, rejected alternatives,
-and final selection. Gate C cannot pass on equal visible text alone; it requires
-equal entity-identity results, Range behavior, creation order, lineage order,
-omission, and rationalization behavior.
+merged-away-reference behavior, whole-content replacement behavior, fixtures,
+measurements, rejected alternatives, and final selection. Gate C cannot pass on
+equal visible text alone; it requires equal entity-identity results, Range behavior,
+creation order, lineage order, omission, and rationalization behavior.
 
 ## 9. Editor durability and semantic-group verification
 
@@ -372,21 +369,20 @@ turns unsealed private rows into Product History.
 
 Verify:
 
+- the rich-text editor binds only `coedit-text` and an incompatible payload is rejected or not offered;
 - IME composition is not split mid-composition;
 - paste, cut, replacement, formatting, undo, and redo are atomic actions;
+- paragraph and line-break intent is translated explicitly rather than relying on a canonical hard-break content item;
 - unrelated dirty work submits before an atomic action;
-- insertion/deletion mode change, configured idle, real focus/owner departure,
-  and controlled transitions seal the current semantic group;
+- insertion/deletion mode change, configured idle, real focus/owner departure, and controlled transitions seal the current semantic group;
 - clean navigation creates no command;
-- a controlled transition freezes, submits required work in FIFO order, and
-  drains before replacing or invalidating the editor context;
+- a controlled transition freezes, submits required work in FIFO order, and drains before replacing or invalidating the editor context;
 - every successful command is durably committed before notification/success;
 - a failed commit retains the exact detached command/draft for retry;
 - no later command overtakes a failed head;
 - quota/conflict/degraded durability is visible;
 - typing is not blocked by queued complete-artifact writes; and
-- History grouping never deletes, rewrites, or changes the Version identity of
-  underlying Contributions.
+- History grouping never deletes, rewrites, or changes the Version identity of underlying Contributions.
 
 Use fake clocks and deterministic semantic group IDs for grouping tests. The
 experimental comparison fixtures owned by `MVP_IMPLEMENTATION_SPEC.md` can seed
@@ -402,7 +398,9 @@ Markdown A -> Coedit X -> Markdown B -> Coedit Y
 
 Verify `X` and `Y` with the documented Markdown equivalence relation.
 
-The suite must also verify stable diagnostics for normalization, unsupported-source literal preservation, and unsupported nodes. Once Step 7 selects importer guards, verify the top-level distinction among malformed source and capacity failure, exercise each selected guard, and prove that failure publishes no candidate. Experimental guard candidates produce characterization evidence only. Link destinations are preserved as opaque metadata and are not classified as safe or unsafe by the importer.
+The suite must prove the adapter-specific distinction between Markdown syntax and generic text semantics. In particular, a CommonMark hard break maps to the canonical text character(s) selected by the Markdown contract rather than to a document-level hard-break item, while a soft break follows the separately documented normalization. Re-import must preserve the normalized semantic result.
+
+The suite must also verify stable diagnostics for normalization, unsupported-source literal preservation, unsupported nodes, and any selected blob/non-text export case. Once Step 7 selects importer guards, verify the top-level distinction among malformed source and capacity failure, exercise each selected guard, and prove that failure publishes no candidate. Experimental guard candidates produce characterization evidence only. Link destinations are preserved as opaque metadata and are not classified as safe or unsafe by the importer.
 
 Do not compare source Markdown text for equality. Canonical export spelling is allowed.
 
@@ -413,11 +411,15 @@ Treat `.coedit` input as hostile.
 Verify:
 
 - realistic current and historical state round trips;
+- payload kind is preserved for every InlineContent;
+- `coedit-text` text characters, intrinsic formatting, fine-grained Origin, and embedded text Ranges round trip exactly;
+- blob bytes and payload-level Origin round trip exactly;
+- whole-content replacement History, including deterministic concurrent-winner evidence where represented, survives round trip without rewriting Contributions;
 - Contributors, Origins, Contributions, derivation, semantic Checkpoints, Version identity, and command idempotency survive;
 - corrupt checksum fails;
 - unsupported versions fail;
 - unknown properties fail for version 1;
-- unknown carrier/schema, malformed base64/binary values, missing/mis-hashed chunks, and unreachable references fail;
+- unknown payload kind, carrier/schema, malformed base64/binary values, missing/mis-hashed chunks, and unreachable references fail;
 - malformed trees and ownership fail;
 - broken graph/frontier links and Contributor/Origin references fail;
 - identity reuse across retained lifetimes fails;
@@ -425,9 +427,7 @@ Verify:
 - a failed open never replaces the active engine;
 - stale serialization returns no artifact;
 - intrinsic formatting, boundary policies, Origin, copy/restore lineage, actor distinction, and embedded Range values round trip exactly;
-- every embedded Range retains its creation Version and required lineage and
-  resolves to the same surviving spans and exact concatenated text after
-  `.coedit` Save/Open;
+- every embedded text Range retains its creation Version and required lineage and resolves to the same surviving spans and exact concatenated text after `.coedit` Save/Open;
 - reconstruction from physical checkpoint plus effects equals direct materialization; and
 - successful format-version-1 encode is always accepted by the format-version-1 decoder.
 
@@ -438,7 +438,7 @@ Run the same repository contract against the in-memory and IndexedDB adapters wh
 Verify:
 
 - atomic Contribution/effect/head commit and reopen;
-- browser reload;
+- browser reload preserves payload kinds, blob bytes, text state, and Origins;
 - document isolation;
 - failed-commit reporting;
 - corrupt local record handling;
@@ -454,7 +454,7 @@ Verify:
 
 ## 13. UI and accessibility verification
 
-Verify keyboard-only structural creation and movement, predictable focus after operations, single-editor ownership, historical read-only behavior, visible failure/retry state, and no direct React mutation of durable document state.
+Verify keyboard-only structural creation and movement, predictable focus after operations, single-rich-text-editor ownership for `coedit-text`, payload-aware rendering, historical read-only behavior, visible failure/retry state, and no direct React mutation of durable document state.
 
 Use a real browser for IME, focus transfer, clipboard behavior, and other interactions that cannot be qualified reliably in a simulated DOM.
 
@@ -465,15 +465,18 @@ Keep the end-to-end suite small and high value. It must prove at least:
 1. obtain a free-form human Contributor display name and create a blank document;
 2. import a realistic Markdown fixture;
 3. inspect and edit structure;
-4. edit attributed formatted inline content through semantic grouping;
-5. verify internal and external paste lineage;
-6. create a semantic Checkpoint;
-7. inspect and restore History while preserving Origin and attributing the restore actor;
-8. create, resolve as spans and exact text, rationalize, serialize, parse, and reinject representative multi-span and Positional Ranges;
-9. export Markdown and re-import it to an equivalent Coedit document;
-10. save `.coedit` and reopen it;
-11. persist and reload through the incremental IndexedDB repository; and
-12. recover safely from representative stale, quota, failed-commit, and malformed-open cases.
+4. edit attributed formatted `coedit-text` through semantic grouping;
+5. create a blob InlineContent and replace its bytes with explicit Origin;
+6. verify internal and external text paste lineage;
+7. create a semantic Checkpoint;
+8. inspect and restore History while preserving text and blob Origin and attributing the restore actor;
+9. create, resolve as spans and exact text, rationalize, serialize, parse, and reinject representative multi-span and Positional text Ranges;
+10. export Markdown and re-import it to an equivalent Coedit text document;
+11. save `.coedit` and reopen it with both payload kinds intact;
+12. persist and reload through the incremental IndexedDB repository; and
+13. recover safely from representative stale, quota, failed-commit, and malformed-open cases.
+
+Carrier qualification additionally proves deterministic concurrent whole-payload replacement; the browser MVP need not expose a networked conflict UI.
 
 ## 15. Pre-network collaboration gate
 
@@ -481,35 +484,26 @@ Before real clients connect, qualify:
 
 - the exact causal Contribution envelope and atomic metadata/effect publication;
 - Principal, Contributor, Origin, Replica, Session, and connection separation;
-- a two-engine fault bus with duplicate, delay, reorder, missing dependency,
-  partition, reconnect, and conflicting-ID cases;
-- convergence of Contribution graph/frontier, hidden carrier state, Block tree,
-  formatting/Origin projection, and every Version materialization;
-- the accepted flat structural carrier and Block liveness semantics when effects
-  travel through the causal Contribution envelope;
-- causal restore that compensates only work observed by its author, preserves
-  unseen concurrent inserts, and surfaces unresolved overlap;
-- restart-safe outbox/inbox, catch-up, bootstrap, authorization/schema/resource-capacity
-  rejection, and quarantine; and
-- checkpoint/compaction that preserves every Version, Origin, required Range
-  lineage, Range behavior, and later comment-holder behavior.
+- a two-engine fault bus with duplicate, delay, reorder, missing dependency, partition, reconnect, and conflicting-ID cases;
+- convergence of Contribution graph/frontier, hidden carrier state, Block tree, payload kinds, deterministic whole-replacement winners, `coedit-text` formatting/fine-grained Origin, blob bytes/payload Origin, and every Version materialization;
+- a causally later whole-content replacement supersedes observed replacements while concurrent replacements use the qualified deterministic order;
+- losing concurrent replacement Contributions remain available in History;
+- the accepted flat structural carrier and Block liveness semantics when effects travel through the causal Contribution envelope;
+- causal restore that compensates only work observed by its author, preserves unseen concurrent inserts/replacements, and surfaces unresolved overlap;
+- restart-safe outbox/inbox, catch-up, bootstrap, authorization/schema/resource-capacity rejection, and quarantine; and
+- checkpoint/compaction that preserves every Version, Origin, required text Range lineage, Range behavior, and later comment-holder behavior.
 
 Carrier convergence alone cannot pass this gate. History, transport,
 authorization, restore, and structural integration must pass together.
 
 ## 16. Later feature gates
 
-- **Comments:** Range-holder state, multi-span presentation, confidence policy,
-  explicit repair, restore, and compaction fixtures.
-- **AI:** explicit source Version, typed operations, software-agent Origin,
-  separate human acceptance, provider/model/version/derivation, and stale
-  proposal behavior.
-- **Cross-document lineage:** private fragment versioning, origin-catalog import,
-  source accessibility/privacy, and spoof resistance.
-- **Signed publication:** local assertion versus authenticated enforcement versus
-  C2PA/equivalent export attestation, including tamper/key/revocation tests.
-- **Storage/platform replacement:** measured evidence plus the existing
-  engine/repository/portable contract suite for OPFS, SQL, or a native shell.
+- **Additional payload kinds:** explicit payload semantics, Origin granularity, fine-grained operations if any, content-local addressing if needed, portable representation, and convergence tests. Whole-content replacement remains the baseline collaborative operation.
+- **Comments:** text Range-holder state, multi-span presentation, confidence policy, explicit repair, restore, and compaction fixtures.
+- **AI:** explicit source Version, typed operations, software-agent Origin, separate human acceptance, provider/model/version/derivation, and stale proposal behavior.
+- **Cross-document lineage:** private fragment versioning, origin-catalog import, source accessibility/privacy, and spoof resistance.
+- **Signed publication:** local assertion versus authenticated enforcement versus C2PA/equivalent export attestation, including tamper/key/revocation tests.
+- **Storage/platform replacement:** measured evidence plus the existing engine/repository/portable contract suite for OPFS, SQL, or a native shell.
 
 ## 17. Traceability rule
 
