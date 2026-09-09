@@ -135,12 +135,12 @@ kind into another.
 
 The initial operation availability is:
 
-| Operation class | `coedit-text` | `blob` |
-| --- | --- | --- |
-| Whole-content replacement | yes | yes |
-| Fine-grained text insertion/deletion/replacement | yes | no |
-| Intrinsic formatting | yes | no |
-| Text positions and durable text Range operations | yes | no |
+| Operation class                                  | `coedit-text` | `blob` |
+| ------------------------------------------------ | ------------- | ------ |
+| Whole-content replacement                        | yes           | yes    |
+| Fine-grained text insertion/deletion/replacement | yes           | no     |
+| Intrinsic formatting                             | yes           | no     |
+| Text positions and durable text Range operations | yes           | no     |
 
 This table defines capability, not exact API surface. The implementation can use
 simple explicit payload-kind validation. Do not introduce a generic capability
