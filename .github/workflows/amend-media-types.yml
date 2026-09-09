@@ -19,50 +19,49 @@ jobs:
         with:
           node-version: 24
       - run: npm run bootstrap
-      - name: Polish Media Type contract wording
+      - name: Remove closed Media Type vocabulary
         shell: python
         run: |
           from pathlib import Path
 
           changes = {
-              Path('docs/README.md'): [
-                  (
-                      'Each InlineContent owns one Media-Type-labelled collaborative payload. The initial kinds are `application/vnd.coedit.text` and representative opaque Media Types. Every payload supports atomic type-preserving whole-content replacement with explicit Origin behavior. Under replication, a causally later replacement supersedes replacements it observes; concurrent replacements select one deterministic current winner without wall-clock or packet-arrival arbitration. Losing replacements remain in immutable History and their Versions remain materializable. `application/vnd.coedit.text` additionally supports fine-grained collaborative editing, intrinsic formatting, fine-grained protected Origin, and durable text Ranges. Blob preserves opaque bytes with payload-level Origin and initially has no finer mutation than replacement.',
-                      'Each InlineContent owns one collaborative payload labelled with an Internet Media Type. `application/vnd.coedit.text` has the fine-grained collaborative-text capability set. Every other supported Media Type initially uses the generic opaque capability set; its exact bytes and payload-level Origin are preserved. Use `application/octet-stream` when the actual format is unknown. Every payload supports atomic Media-Type-preserving whole-content replacement with explicit Origin behavior. Under replication, a causally later replacement supersedes replacements it observes; concurrent replacements select one deterministic current winner without wall-clock or packet-arrival arbitration. Losing replacements remain in immutable History and their Versions remain materializable.'
-                  ),
-                  (
-                      'The payload suite covers `application/vnd.coedit.text`, opaque payload, universal whole-content replacement, and the deterministic concurrent-replacement tie-break.',
-                      'The payload suite covers `application/vnd.coedit.text`, representative generic opaque Media Types, universal whole-content replacement, and the deterministic concurrent-replacement tie-break.'
-                  ),
+              Path('docs/COLLABORATION_MODEL.md'): [(
+                  'The initial Media Types are:\n\n- `application/vnd.coedit.text`, which supports fine-grained Unicode text, intrinsic formatting,\n  protected fine-grained Origin, and the text Range service; and\n- generic opaque Media Type, which stores opaque bytes with payload-level Origin and initially has\n  no fine-grained mutation beyond whole-content replacement.',
+                  'The initial capability dispatch recognizes `application/vnd.coedit.text` as the fine-grained collaborative-text format. Every other supported Media Type initially uses the generic opaque capability set, which preserves exact bytes and payload-level Origin and provides no fine-grained mutation beyond whole-content replacement.'
+              )],
+              Path('docs/MVP_VERIFICATION_PLAN.md'): [
+                  ('### 6.1 Payload kinds and universal replacement', '### 6.1 Media Types and universal replacement'),
+                  ('- the initial runtime Media Types are exactly `application/vnd.coedit.text` and generic opaque Media Type;',
+                   '- each materialized InlineContent carries a valid Media Type; `application/vnd.coedit.text` selects the fine-grained text capability set and representative other Media Types select the generic opaque capability set;'),
+                  ('- payload-specific operations reject an incompatible kind explicitly rather than coercing content;',
+                   '- payload-specific operations reject an incompatible Media Type explicitly rather than coercing content;'),
               ],
-              Path('docs/PRODUCT_DOMAIN_MODEL.md'): [
-                  (
-                      '8. Each Media Type supports atomic whole-content replacement with explicit Origin behavior.',
-                      '8. Every InlineContent payload supports atomic Media-Type-preserving whole-content replacement with explicit Origin behavior.'
-                  ),
-                  (
-                      '10. A generic opaque Media Type payload owns opaque bytes and one payload-level Origin for its current value.',
-                      '10. A payload using the generic opaque capability set owns exact bytes and one payload-level Origin for its current value.'
-                  ),
-                  ('Media Type:      application/vnd.coedit.text', 'Media Type:        application/vnd.coedit.text'),
-              ],
-              Path('docs/decisions/0010-typed-inline-content-payloads.md'): [
-                  (
-                      'Future Media-Type-specific fine-grained editing, in-place Media Type conversion,\nMedia Type parameter rules, and non-text content-local addressing require\nseparate explicit decisions when real application requirements exist.\n',
-                      'Future Media-Type-specific fine-grained editing, in-place Media Type conversion,\nMedia Type parameter rules, and non-text content-local addressing require\nseparate explicit decisions when real application requirements exist.\n\n## 7. Standards references\n\n- [RFC 6838: Media Type Specifications and Registration Procedures](https://www.rfc-editor.org/rfc/rfc6838.html) defines the Internet Media Type registration framework and vendor tree.\n- [IANA Media Types](https://www.iana.org/assignments/media-types/media-types.xhtml) is the authoritative registry, including `application/octet-stream`.\n'
-                  ),
+              Path('docs/PRODUCT_DOMAIN_MODEL.md'): [(
+                  'The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and one Media-Type-labelled collaborative payload. The initial Media Types are `application/vnd.coedit.text`, with fine-grained collaborative text, intrinsic formatting, and protected Origin, and generic opaque Media Type, with opaque bytes and payload-level Origin. Every payload supports atomic whole-content replacement and deterministic convergence; only `application/vnd.coedit.text` initially supports fine-grained editing.',
+                  'The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and one collaborative payload labelled with an Internet Media Type. `application/vnd.coedit.text` has fine-grained collaborative text, intrinsic formatting, protected Origin, and text Range capabilities. Every other supported Media Type initially uses the generic opaque capability set with exact bytes and payload-level Origin. Every payload supports atomic Media-Type-preserving whole-content replacement and deterministic convergence.'
+              )],
+              Path('docs/MVP_CONTRACT.md'): [
+                  ('### 4.7 Typed collaborative InlineContent payloads', '### 4.7 Media-Type-labelled collaborative InlineContent payloads'),
+                  ('Each InlineContent owns one Media-Type-labelled collaborative payload. The initial kinds are `application/vnd.coedit.text` and generic opaque Media Type. Block and InlineContent boundaries imply no text character or separator.',
+                   'Each InlineContent owns one collaborative payload labelled with an Internet Media Type. `application/vnd.coedit.text` selects the fine-grained collaborative-text capability set; every other supported Media Type initially selects the generic opaque capability set. Block and InlineContent boundaries imply no text character or separator.'),
+                  ('Every Media Type supports atomic whole-content replacement with Origin information.',
+                   'Every InlineContent payload supports atomic Media-Type-preserving whole-content replacement with Origin information.'),
+                  ('A opaque payload contains opaque bytes and one payload-level Origin for the current value. It has no fine-grained MVP mutation beyond whole-content replacement.',
+                   'A payload using the generic opaque capability set contains exact bytes and one payload-level Origin for the current value. It has no fine-grained MVP mutation beyond whole-content replacement.'),
+                  ('- initial Media Types are `application/vnd.coedit.text` and generic opaque Media Type;',
+                   '- `application/vnd.coedit.text` selects the fine-grained collaborative-text capability set and other supported Media Types initially select the generic opaque capability set;'),
+                  ('- opaque payload owns opaque bytes and payload-level Origin;',
+                   '- generic opaque payload handling preserves exact bytes and payload-level Origin;'),
               ],
           }
 
           for path, replacements in changes.items():
               text = path.read_text(encoding='utf-8')
-              old = text
               for source, target in replacements:
                   if source not in text:
-                      raise SystemExit(f'Expected text not found in {path}: {source[:80]}')
+                      raise SystemExit(f'Expected text not found in {path}: {source[:100]}')
                   text = text.replace(source, target)
-              if text != old:
-                  path.write_text(text, encoding='utf-8', newline='\n')
+              path.write_text(text, encoding='utf-8', newline='\n')
       - name: Format
         run: npm run format
       - name: Report remaining live terminology
@@ -74,12 +73,12 @@ jobs:
           echo '--- legacy coedit-text token ---'
           grep -RIn 'coedit-text' README.md SCAFFOLDING_PLAN.md docs --exclude='0010-typed-inline-content-payloads.md' || true
           echo '--- suspicious closed-type wording ---'
-          grep -RInE 'initial kinds|initial Media Types are|Media Types are .* and' README.md SCAFFOLDING_PLAN.md docs --exclude='0010-typed-inline-content-payloads.md' || true
+          grep -RInE 'initial kinds|initial Media Types are|generic opaque Media Type[,.;]|exactly .*generic opaque' README.md SCAFFOLDING_PLAN.md docs --exclude='0010-typed-inline-content-payloads.md' || true
       - name: Commit
         run: |
           if git diff --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add --all
-          git commit -m "Polish Media Type payload contract"
+          git commit -m "Use open Media Type vocabulary"
           git push origin HEAD:design/typed-inline-content-payloads
