@@ -1,0 +1,157 @@
+name: Amend PR 19 whole payload replacement
+
+on:
+  push:
+    branches:
+      - design/typed-inline-content-payloads
+
+permissions:
+  contents: write
+
+jobs:
+  amend:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: design/typed-inline-content-payloads
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm run bootstrap
+      - name: Amend replacement semantics
+        shell: python
+        run: |
+          from pathlib import Path
+
+          files = [Path('README.md'), Path('SCAFFOLDING_PLAN.md')]
+          files += list(Path('docs').rglob('*.md'))
+
+          replacements = [
+              ('Media-Type-preserving whole-content replacement', 'whole-payload replacement'),
+              ('type-preserving whole-content replacement', 'whole-payload replacement'),
+              ('type-preserving whole-content replacements', 'whole-payload replacements'),
+              ('type-preserving whole-content replacement operation', 'whole-payload replacement operation'),
+              ('whole-content replacement preserves that Media Type', 'whole-payload replacement can replace the Media Type together with the payload value'),
+              ('replacement preserves the target InlineContent Media Type', 'replacement preserves the target InlineContent identity while atomically replacing its Media Type and payload value'),
+              ('replacement preserves Media Type', 'replacement preserves InlineContent identity while allowing Media Type to change'),
+              ('replacement preserves it', 'replacement preserves the InlineContent identity'),
+              ('replacement preserves the existing Media Type', 'replacement preserves the InlineContent identity and can supply a new Media Type'),
+              ('replacement preserves that InlineContent\'s Media Type', 'replacement preserves the InlineContent identity and supplies the Media Type of the new payload'),
+              ('The current Media Type does not change as a side effect of replacement. A future in-place\nMedia Type conversion is a separate design decision.', 'The Media Type is part of the replaceable payload value. A replacement can keep or change it atomically with the new content. The document model does not require a separate Media Type conversion operation.'),
+              ('The current contract does not need an operation that silently changes it. A later format-conversion workflow requires an explicit design decision.', 'Whole-payload replacement can keep or change the Media Type atomically. Any application-level conversion semantics remain an adapter concern; the document model needs no separate conversion operation.'),
+              ('The current API does not need an operation that changes an existing\nInlineContent from one Media Type to another. A future content-format conversion\nworkflow requires an explicit design decision rather than being hidden inside\nordinary replacement.', 'The Media Type is part of the payload value. The whole-payload replacement operation can keep or change it atomically with the content. Application-level format conversion is an adapter concern; the document model does not define a second conversion operation.'),
+              ('Media Type conversion for an existing InlineContent;', 'a separate document-level Media Type conversion operation;'),
+              ('no Media Type conversion operation exists under the initial contract;', 'no separate Media Type conversion operation is required; type change occurs only as part of atomic whole-payload replacement;'),
+              ('no current Media Type conversion operation;', 'no separate Media Type conversion operation;'),
+              ('no current Media Type conversion operation', 'no separate Media Type conversion operation'),
+              ('no current Media Type conversion', 'no separate Media Type conversion'),
+              ('Media Type conversion, future comments', 'future comments'),
+              ('in-place Media Type conversion,\n', ''),
+              ('in-place Media Type conversion, ', ''),
+              ('future in-place\nMedia Type conversion is a separate design decision.', 'Media Type changes occur only through atomic whole-payload replacement.'),
+              ('does not define in-place Media Type conversion;', 'does not define a separate Media Type conversion operation;'),
+              ('define in-place Media Type conversion;', 'define a separate Media Type conversion operation;'),
+              ('A future in-place\nMedia Type conversion is a separate design decision.', 'Media Type changes occur only through atomic whole-payload replacement.'),
+              ('universal whole-content replacement', 'universal whole-payload replacement'),
+              ('Universal whole-content replacement', 'Universal whole-payload replacement'),
+              ('whole-content replacement', 'whole-payload replacement'),
+              ('Whole-content replacement', 'Whole-payload replacement'),
+              ('whole-content replacements', 'whole-payload replacements'),
+              ('Whole-content replacements', 'Whole-payload replacements'),
+              ('whole-value replacement', 'whole-payload replacement'),
+              ('whole-value replacements', 'whole-payload replacements'),
+              ('whole-value `application/vnd.coedit.text` replacement', 'whole-payload `application/vnd.coedit.text` replacement'),
+              ('whole-text replacement', 'whole-payload replacement of `application/vnd.coedit.text`'),
+              ('whole-text-replacement', 'whole-payload-replacement'),
+              ('whole-`application/vnd.coedit.text` replacement', 'whole-payload replacement of `application/vnd.coedit.text`'),
+          ]
+
+          for path in files:
+              if not path.exists():
+                  continue
+              text = path.read_text(encoding='utf-8')
+              old = text
+              for source, target in replacements:
+                  text = text.replace(source, target)
+              if text != old:
+                  path.write_text(text, encoding='utf-8', newline='\n')
+
+          focused = Path('docs/INLINE_CONTENT_PAYLOADS.md')
+          text = focused.read_text(encoding='utf-8')
+          text = text.replace(
+              '## 6. Media Type stability and creation\n\nEach live InlineContent has exactly one Media Type. Ordinary whole-payload\nreplacement preserves that Media Type.\n\nThe Media Type is part of the payload value. The whole-payload replacement operation can keep or change it atomically with the content. Application-level format conversion is an adapter concern; the document model does not define a second conversion operation.',
+              '## 6. Payload creation and replacement identity\n\nEach live InlineContent owns exactly one current payload value consisting of a Media Type plus Media-Type-specific content. The payload has no independent product identity.\n\nWhole-payload replacement preserves the `InlineContentId` but atomically replaces the complete payload value. The replacement can keep the existing Media Type or provide a different one. Application-level format conversion is an adapter concern; the document model does not define a second conversion operation.'
+          )
+          text = text.replace(
+              'replaceInlineContentContent(inlineContentId, replacement, origin)',
+              'replaceInlineContentPayload(inlineContentId, mediaType, replacement, origin)'
+          )
+          text = text.replace(
+              '1. replacement targets one existing InlineContent;\n2. replacement preserves the InlineContent identity and supplies the Media Type of the new payload;\n3. the replacement value must be valid at the consuming implementation boundary\n   for that Media Type;\n4. the operation supplies or derives explicit Origin information at the trusted\n   engine/import boundary;\n5. success publishes the complete replacement and its Origin effect atomically;\n6. failure publishes none of the replacement; and\n7. the replacement is a semantic payload update for Block liveness and History.',
+              '1. replacement targets one existing InlineContent and preserves its identity;\n2. replacement supplies the complete new payload: Media Type plus Media-Type-specific content;\n3. the replacement value must be valid at the consuming implementation boundary for the supplied Media Type;\n4. capability dispatch after success follows the new Media Type;\n5. the operation supplies or derives Origin information required by the new payload at the trusted engine/import boundary;\n6. Media Type, content, and the required Origin effect publish atomically;\n7. failure leaves the previous complete payload unchanged; and\n8. the replacement is a semantic payload update for Block liveness and History.'
+          )
+          text = text.replace(
+              'Payload-specific operations must fail explicitly when used with an incompatible\nMedia Type. Do not silently reinterpret arbitrary bytes as Coedit collaborative\ntext, sniff payload contents to select capabilities, or change Media Type as a\nside effect of an editing operation.',
+              'Payload-specific fine-grained operations must fail explicitly when used with an incompatible Media Type. Do not silently reinterpret arbitrary bytes as Coedit collaborative text or sniff payload contents to select capabilities. A Media Type changes only when an explicit whole-payload replacement supplies the new type and matching content.'
+          )
+          text = text.replace(
+              'For every other Media Type under the initial opaque handler, the current payload\nvalue has one Origin associated with the whole-value creation or replacement.\nReplacing the content creates the new Origin required by the operation context.',
+              'For every other Media Type under the initial opaque handler, the current payload value has one Origin associated with the whole-payload creation or replacement. Replacing the payload creates the new Origin required by the operation context. A replacement that changes Media Type applies the Origin rules of the new Media Type.'
+          )
+          text = text.replace(
+              '- whole-payload replacement works for collaborative text and opaque payloads;\n- replacement preserves InlineContent identity while allowing Media Type to change;',
+              '- whole-payload replacement works for collaborative text and opaque payloads;\n- replacement preserves InlineContent identity while allowing Media Type to stay the same or change;\n- Media Type, content, and the required Origin effect change atomically;\n- capability dispatch after replacement follows the new Media Type;'
+          )
+          focused.write_text(text, encoding='utf-8', newline='\n')
+
+          adr = Path('docs/decisions/0010-typed-inline-content-payloads.md')
+          text = adr.read_text(encoding='utf-8')
+          text = text.replace(
+              '### 3.4 Whole-payload replacement is universal\n\nEvery InlineContent supports one atomic, Media-Type-preserving whole-payload\nreplacement operation with explicit Origin behavior.',
+              '### 3.4 Whole-payload replacement is universal\n\nEvery InlineContent supports one atomic whole-payload replacement operation with explicit Origin behavior. The operation preserves the InlineContent identity and replaces the complete payload value: Media Type plus Media-Type-specific content.'
+          )
+          text = text.replace(
+              'Payload-specific operations fail explicitly against an incompatible Media Type.\nThey do not sniff bytes, reinterpret arbitrary payloads as Coedit text, or\nsilently change Media Type.\n\nThe current contract does not include a separate Media Type conversion operation. Such a\nworkflow requires a separate decision.',
+              'Payload-specific fine-grained operations fail explicitly against an incompatible Media Type. They do not sniff bytes or reinterpret arbitrary payloads as Coedit text. Media Type changes only as part of an explicit atomic whole-payload replacement that supplies matching content. The document model therefore needs no separate Media Type conversion operation.'
+          )
+          text = text.replace(
+              '- data-format identity remains separate from Coedit\'s current editing capability;',
+              '- data-format identity remains separate from Coedit\'s current editing capability;\n- replacing content across formats requires no new payload identity or separate conversion primitive;'
+          )
+          text = text.replace(
+              '- Media Type becomes part of the durable logical state and portable recovery;',
+              '- Media Type becomes part of the replaceable durable payload value and portable recovery;'
+          )
+          text = text.replace(
+              'Future Media-Type-specific fine-grained editing, Media Type parameter rules, and non-text content-local addressing require',
+              'Future Media-Type-specific fine-grained editing, Media Type parameter rules, and non-text content-local addressing require'
+          )
+          adr.write_text(text, encoding='utf-8', newline='\n')
+
+          range_model = Path('docs/RANGE_MODEL.md')
+          text = range_model.read_text(encoding='utf-8')
+          text = text.replace(
+              'If the target InlineContent no longer has a resolvable `application/vnd.coedit.text` lineage at\nthe selected Version, that source member is unresolved. The current payload\ncontract does not define a separate Media Type conversion operation, so such a mismatch can\narise only through future evolution or a lineage rule that Step 6 must define\nexplicitly.',
+              'If whole-payload replacement changes the target InlineContent away from `application/vnd.coedit.text`, that source member is unresolved in that Version. A later replacement can change the InlineContent back to `application/vnd.coedit.text`, but Step 6 must define whether and how text lineage can resume; resolution must not reattach merely because the `InlineContentId` and Media Type match again.'
+          )
+          range_model.write_text(text, encoding='utf-8', newline='\n')
+
+      - name: Format
+        run: npm run format
+      - name: Report replacement terminology
+        run: |
+          echo '--- stale type-preserving language ---'
+          grep -RInE 'Media-Type-preserving|type-preserving|preserves (the )?(existing |target )?Media Type|Media Type stability|conversion operation exists|in-place Media Type conversion|future .*Media Type conversion' README.md SCAFFOLDING_PLAN.md docs || true
+          echo '--- whole-content leftovers ---'
+          grep -RIn 'whole-content replacement' README.md SCAFFOLDING_PLAN.md docs || true
+          echo '--- separate conversion leftovers ---'
+          grep -RInE 'Media Type conversion|format-conversion' README.md SCAFFOLDING_PLAN.md docs || true
+      - name: Commit
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git commit -m "Allow whole-payload Media Type replacement"
+          git push origin HEAD:design/typed-inline-content-payloads
