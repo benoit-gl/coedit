@@ -2,7 +2,7 @@
 
 **Status:** Accepted clean-slate MVP direction.
 
-This document is authoritative for component ownership and the public document-engine boundary. Product ontology belongs in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Implementation order belongs in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md). Capacity classification belongs in [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md). InlineContent payload kinds and universal replacement belong in [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md). Attributed `coedit-text`, durable text Range behavior, Markdown interchange, `.coedit`, and browser persistence details belong in their focused specifications. Post-MVP replication belongs in [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md).
+This document is authoritative for component ownership and the public document-engine boundary. Product ontology belongs in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Implementation order belongs in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md). Capacity classification belongs in [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md). InlineContent Media Types and universal replacement belong in [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md). Attributed `application/vnd.coedit.text`, durable text Range behavior, Markdown interchange, `.coedit`, and browser persistence details belong in their focused specifications. Post-MVP replication belongs in [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md).
 
 The document engine is a logical backend. In the MVP it runs locally in the browser process. It does not need to be a server, worker, native process, or separate package.
 
@@ -26,7 +26,7 @@ Portable file transport -----+                    repository port  portable code
                                                  memory / IndexedDB    .coedit bytes
 ```
 
-The strict MVP can import Markdown, inspect and edit the Block tree and InlineContents, use `coedit-text` and blob payloads, replace any InlineContent content atomically, use lenses, inspect and restore History, create semantic Checkpoints, create and resolve durable text Ranges, export Markdown, save/reopen `.coedit`, and survive browser reload.
+The strict MVP can import Markdown, inspect and edit the Block tree and InlineContents, use `application/vnd.coedit.text` and opaque payloads, replace any InlineContent content atomically, use lenses, inspect and restore History, create semantic Checkpoints, create and resolve durable text Ranges, export Markdown, save/reopen `.coedit`, and survive browser reload.
 
 Tauri, Rust, SQLite, AI providers, provenance visualization, comments, durable discussions, multi-user networking, fine-grained non-text editing, signed claims, and final History compaction are not MVP requirements. Minimum protected Origin metadata is an MVP foundation even though a provenance product is not.
 
@@ -36,15 +36,15 @@ Tauri, Rust, SQLite, AI providers, provenance visualization, comments, durable d
 
 The engine owns:
 
-- `Block`, `InlineContent`, typed InlineContent payloads, payload-kind validation, Origin records, and tags;
-- the universal atomic whole-content replacement contract for every payload kind;
-- `coedit-text` canonical text state, intrinsic formatting, and protected fine-grained Origin;
-- blob byte state and payload-level Origin;
+- `Block`, `InlineContent`, Media-Type-labelled InlineContent payloads, Media-Type validation, Origin records, and tags;
+- the universal atomic whole-content replacement contract for every Media Type;
+- `application/vnd.coedit.text` canonical text state, intrinsic formatting, and protected fine-grained Origin;
+- opaque payload byte state and payload-level Origin;
 - document and History invariants;
 - typed, attributed, version-checked, atomic command application;
 - stable document, content, Contribution, and Version identities;
 - current projections and exact historical materialization;
-- carrier-neutral `coedit-text` Range creation, span and text resolution, rationalization, parsing, serialization, and reinjection;
+- carrier-neutral `application/vnd.coedit.text` Range creation, span and text resolution, rationalization, parsing, serialization, and reinjection;
 - lightweight History listing and semantic changeset summaries;
 - semantic Checkpoint creation;
 - compensating restore;
@@ -62,7 +62,7 @@ The engine does not assign application meaning to payload text or bytes. Block a
 The UX owns:
 
 - rendering query results and diagnostics;
-- selecting the application editor/renderer appropriate to an InlineContent payload kind;
+- selecting the application editor/renderer appropriate to an InlineContent Media Type;
 - selection, focus, disclosure, active lens, dialogs, and editor lifecycle;
 - gathering and grouping user intent;
 - translating presentation intent such as paragraph, line-break, list, or section actions into document operations;
@@ -80,9 +80,9 @@ The UX does not mutate returned domain objects, read a private ledger/archive, r
 
 Adapters translate between an external concern and the engine:
 
-- the Markdown importer plans ordinary typed `coedit-text` and structural operations plus imported Origin claims;
+- the Markdown importer plans ordinary typed `application/vnd.coedit.text` and structural operations plus imported Origin claims;
 - the Markdown renderer queries an explicit Version and emits Markdown plus diagnostics;
-- the `coedit-text` editor translates editor transactions into fine-grained text operations;
+- the `application/vnd.coedit.text` editor translates editor transactions into fine-grained text operations;
 - a future blob or structured-data application adapter can use universal whole-content replacement without receiving direct carrier authority;
 - file adapters transport opaque `.coedit` artifacts;
 - the browser repository persists private immutable engine records behind its port;
@@ -237,9 +237,9 @@ interface PortableDocumentInput {
 }
 ```
 
-The universal whole-content replacement operation belongs to the ordinary `DocumentOperation` family. It is valid for every supported payload kind and is type-preserving under the current contract. Payload-specific text operations reject incompatible payload kinds explicitly. Exact operation names and request shapes remain implementation details until their implementation step freezes them.
+The universal whole-content replacement operation belongs to the ordinary `DocumentOperation` family. It is valid for every supported Media Type and is type-preserving under the current contract. Payload-specific text operations reject incompatible Media Types explicitly. Exact operation names and request shapes remain implementation details until their implementation step freezes them.
 
-`RANGE_MODEL.md` owns `coedit-text` Range behavior. The selected `DocumentEngine` supplies document context. Step 6 Gate C finalizes result wrappers, parse diagnostics, resource-guard behavior, and serialization types without exposing carrier-native objects.
+`RANGE_MODEL.md` owns `application/vnd.coedit.text` Range behavior. The selected `DocumentEngine` supplies document context. Step 6 Gate C finalizes result wrappers, parse diagnostics, resource-guard behavior, and serialization types without exposing carrier-native objects.
 
 `PORTABLE_DOCUMENT_FORMAT.md` owns the exact `.coedit` wire contract. The UX treats `bytes` as opaque. No specific MIME type is part of the accepted MVP design yet.
 
@@ -255,7 +255,7 @@ Commands are typed, validated, attributed, atomic, and checked against an expect
 
 Each successful command atomically publishes one logical Contribution, its exact content/structure effect, any new Origin records, one resulting Version, and its successful idempotency receipt. When a durable repository is attached, publication occurs only after the repository transaction commits. A failed command publishes nothing.
 
-Whole-content replacement is one such durable command effect. It preserves the target InlineContent payload kind and publishes its replacement value and Origin atomically. Under later replication, a causally later replacement supersedes replacements it observed and concurrent replacements select one deterministic current winner. That winner cannot depend on wall-clock time or delivery order. The losing Contributions and Versions remain in History.
+Whole-content replacement is one such durable command effect. It preserves the target InlineContent Media Type and publishes its replacement value and Origin atomically. Under later replication, a causally later replacement supersedes replacements it observed and concurrent replacements select one deterministic current winner. That winner cannot depend on wall-clock time or delivery order. The losing Contributions and Versions remain in History.
 
 Several immutable Contributions can share a semantic group ID for History presentation. Grouping never changes their identities, Versions, or durability.
 
@@ -278,7 +278,7 @@ Initial query behavior supports:
 - outline projection;
 - local document descriptor;
 - one current payload-aware InlineContent projection;
-- one current `coedit-text` editor-content projection;
+- one current `application/vnd.coedit.text` editor-content projection;
 - lens/subtree projection;
 - exact historical materialization;
 - paginated History summaries; and
@@ -290,14 +290,14 @@ Historical materialization is detached and read-only. Restore always enters thro
 
 ## 6. Payload and editor-content boundary
 
-A query can return a detached InlineContent payload value sufficient for an application adapter to inspect the payload kind and render or replace the content without carrier access.
+A query can return a detached InlineContent payload value sufficient for an application adapter to inspect the Media Type and render or replace the content without carrier access.
 
-The rich-text editor boundary is specifically for `coedit-text`. Conceptually:
+The rich-text editor boundary is specifically for `application/vnd.coedit.text`. Conceptually:
 
 ```ts
 interface CoeditTextEditorContentValue {
   readonly inlineContentId: InlineContentId;
-  readonly kind: "coedit-text";
+  readonly kind: "application/vnd.coedit.text";
   readonly content: DetachedCoeditText;
 }
 ```
@@ -310,7 +310,7 @@ A durable fine-grained text commit must pass through `execute` and preserve the 
 
 A blob adapter receives detached bytes and payload metadata. It can request universal whole-content replacement but receives no fine-grained blob mutation or raw carrier authority.
 
-Do not expose a live engine-owned Y.Doc/Automerge object, a formatting-only side channel, an Origin mutation side channel, or a generic payload capability registry merely to support the two initial payload kinds.
+Do not expose a live engine-owned Y.Doc/Automerge object, a formatting-only side channel, an Origin mutation side channel, or a generic payload capability registry merely to support the collaborative-text and generic opaque capability classes.
 
 ## 7. Change notification contract
 
@@ -333,7 +333,7 @@ The MVP need not emit the `remote` change source. Implementations can coalesce n
 
 ## 8. Required workflows
 
-### Interactive `coedit-text` editing
+### Interactive `application/vnd.coedit.text` editing
 
 ```text
 UX holds transient editor/composition state
@@ -354,7 +354,7 @@ If a commit fails, canonical state is unchanged and the UX retains recoverable t
 
 ```text
 payload-aware client intent
-  -> validated replacement for the target payload kind + Origin context
+  -> validated replacement for the target Media Type + Origin context
   -> one attributed command against observed VersionToken
   -> engine replaces the complete payload value atomically
   -> repository commits immutable effect/Contribution + CAS head
@@ -362,7 +362,7 @@ payload-aware client intent
   -> engine emits invalidation
 ```
 
-This workflow is always available for `coedit-text` and blob. It does not change the target payload kind. Fine-grained blob mutation is not an MVP operation.
+This workflow is always available for `application/vnd.coedit.text` and representative opaque Media Types. It does not change the target Media Type. Fine-grained blob mutation is not an MVP operation.
 
 ### Semantic Checkpoint
 
@@ -385,7 +385,7 @@ Markdown bytes
   -> active session replaced only after success
 ```
 
-`MARKDOWN_INTERCHANGE.md` owns detailed rules. Markdown import initially creates `coedit-text`; it does not require a blob interchange convention.
+`MARKDOWN_INTERCHANGE.md` owns detailed rules. Markdown import initially creates `application/vnd.coedit.text`; it does not require a blob interchange convention.
 
 ### Markdown export
 
@@ -397,7 +397,7 @@ VersionToken + optional lens/subtree
   -> UX transports output
 ```
 
-For imported/canonical Markdown-representable `coedit-text` structures, export/re-import must satisfy the normalized Coedit round-trip invariant. Unsupported payload kinds produce the focused Markdown non-representability behavior rather than being silently decoded as text.
+For imported/canonical Markdown-representable `application/vnd.coedit.text` structures, export/re-import must satisfy the normalized Coedit round-trip invariant. Unsupported Media Types produce the focused Markdown non-representability behavior rather than being silently decoded as text.
 
 ### `.coedit` Save and Open
 
@@ -452,20 +452,20 @@ Product Contributions remain distinct from carrier transport effects. `COLLABORA
 The MVP must prove:
 
 - core commands, queries, History, and serialization require no React, file API, or IndexedDB;
-- `coedit-text` and blob are explicit payload kinds and no payload-specific operation silently coerces between them;
-- whole-content replacement succeeds for both initial payload kinds, preserves kind, assigns the required Origin, and fails atomically;
+- `application/vnd.coedit.text` and representative opaque Media Types are explicit Media Types and no payload-specific operation silently coerces between them;
+- whole-content replacement succeeds for both the collaborative-text and generic opaque capability classes, preserves kind, assigns the required Origin, and fails atomically;
 - concurrent whole-content replacements choose the same deterministic winner on every replica with the same valid causal input, independent of arrival order and wall-clock time;
 - every losing concurrent replacement remains represented by immutable History and exactly materializable Versions;
 - interactive text edits and Markdown import use the same validation, attribution, atomicity, and History boundary;
 - text and formatting cannot publish in mismatched state;
-- every live fine-grained `coedit-text` unit has one protected Origin, and ordinary formatting cannot alter it;
+- every live fine-grained `application/vnd.coedit.text` unit has one protected Origin, and ordinary formatting cannot alter it;
 - each current blob value has its required payload-level Origin;
 - copy and restore preserve Origin according to the payload contract while attributing their new Contributions to the acting Contributor;
 - no Block or InlineContent boundary manufactures a character or textual separator;
 - line-feed, carriage-return, or another text character is not invalid merely because an application can present it as a break;
 - semantic Checkpoints publish one attributed Contribution and one content-identical Version;
 - historical materialization is exact, detached, and read-only;
-- the headless Range service accepts only `coedit-text`, records each Range's creation Version, rejects direct creation when any supplied target is unresolved or non-text, preserves arbitrary source order and multiplicity, resolves surviving spans in creation and lineage order, concatenates exact stored text without inferred separators, and never follows copied content;
+- the headless Range service accepts only `application/vnd.coedit.text`, records each Range's creation Version, rejects direct creation when any supplied target is unresolved or non-text, preserves arbitrary source order and multiplicity, resolves surviving spans in creation and lineage order, concatenates exact stored text without inferred separators, and never follows copied content;
 - explicit rationalization merges only consecutive exact adjacency caused by a lineage merge;
 - best-effort parsing omits unresolved or ambiguous members without speculative rebinding, and document-relative serialization round trips each surviving member;
 - Range operations expose no live carrier object, document-wide holder registry, or universal blob locator;
@@ -473,10 +473,10 @@ The MVP must prove:
 - restore appends instead of rewinding;
 - `.coedit` serialization checks its expected Version;
 - a failed Save/Open does not claim success or replace the active engine;
-- `.coedit` round trip preserves payload kinds, blob bytes, Origins, current and historical behavior, and command idempotency;
+- `.coedit` round trip preserves Media Types, opaque payload bytes, Origins, current and historical behavior, and command idempotency;
 - repository commit and CAS-head advancement are atomic, and failure publishes no partial in-memory state;
 - IndexedDB recovery, competing-tab conflict, quota denial, and explicit backup paths are verified;
-- Markdown imported documents satisfy the export/re-import normalized equivalence property for their `coedit-text` subset; and
+- Markdown imported documents satisfy the export/re-import normalized equivalence property for their `application/vnd.coedit.text` subset; and
 - a different private History representation can pass the same public contract suite.
 
-The strict MVP deliberately does not prove the complete network protocol, a provenance UI, Comment records or repair UX, authenticated attribution, signed claims, fine-grained non-text collaboration, or AI-provider collaboration. It does prove typed payload replacement/convergence, the reusable headless text Range service, minimum Origin invariants, and carrier feasibility those capabilities require.
+The strict MVP deliberately does not prove the complete network protocol, a provenance UI, Comment records or repair UX, authenticated attribution, signed claims, fine-grained non-text collaboration, or AI-provider collaboration. It does prove Media-Type-labelled payload replacement/convergence, the reusable headless text Range service, minimum Origin invariants, and carrier feasibility those capabilities require.

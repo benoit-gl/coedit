@@ -1,14 +1,14 @@
 # Text position model
 
-**Status:** Accepted `coedit-text` position contract; Step 3 qualifies carrier
+**Status:** Accepted `application/vnd.coedit.text` position contract; Step 3 qualifies carrier
 behavior and Step 6 selects the durable Range representation.
 
 ## 1. Purpose and authority
 
 This document defines how Coedit separates Unicode text, editor positions, and
-durable collaborative positions inside a `coedit-text` payload. It supplies
+durable collaborative positions inside a `application/vnd.coedit.text` payload. It supplies
 position primitives to [`RANGE_MODEL.md`](RANGE_MODEL.md), which owns durable
-`coedit-text` Range behavior, and supplements
+`application/vnd.coedit.text` Range behavior, and supplements
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), which
 owns attributed-text behavior. [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md)
 owns the broader InlineContent payload boundary.
@@ -19,7 +19,7 @@ requirements. Blob payloads have no internal text-position contract.
 
 ## 2. Canonical text
 
-A `coedit-text` payload stores Unicode text. The document model does not
+A `application/vnd.coedit.text` payload stores Unicode text. The document model does not
 prescribe UTF-8, UTF-16, or another storage encoding as document semantics.
 
 Preserve authored Unicode text exactly. Do not silently apply NFC, NFD, or
@@ -36,7 +36,7 @@ into the payload. Structural traversal and text coordinates remain separate.
 
 ## 3. Editing positions
 
-The `coedit-text` editor owns transient editing coordinates. ProseMirror, Tiptap,
+The `application/vnd.coedit.text` editor owns transient editing coordinates. ProseMirror, Tiptap,
 the browser, or another future text editor can use its native position model for
 selection, composition, keyboard operations, and local transactions.
 
@@ -59,7 +59,7 @@ and are not portable document identities.
 
 ## 4. Durable collaborative positions
 
-A durable live position inside `coedit-text` uses the selected carrier's stable
+A durable live position inside `application/vnd.coedit.text` uses the selected carrier's stable
 relative-position primitive or an equivalent opaque carrier position. Examples
 include a Yjs relative position or an Automerge cursor.
 
@@ -74,8 +74,8 @@ createStableTextPosition(editorPosition, affinity) -> StableTextPosition
 resolveStableTextPosition(stablePosition) -> editorPosition | unresolved
 ```
 
-The target InlineContent must have a `coedit-text` payload. Asking for a text
-position inside blob content is invalid under this contract.
+The target InlineContent must have a `application/vnd.coedit.text` payload. Asking for a text
+position inside opaque content is invalid under this contract.
 
 The exact types and encoding are carrier-private. Public detached values and the
 portable format must not expose a live carrier object.
@@ -84,7 +84,7 @@ Stable positions are one candidate primitive for live Range tracking. They are
 not the Range API, semantic-order representation, or portable serialized Range.
 The Step 3 carrier gate qualifies their behavior. The Step 6 Range gate decides
 how carrier positions combine with carrier-neutral verification and lineage
-evidence, including the still-open whole-`coedit-text` replacement cases.
+evidence, including the still-open whole-`application/vnd.coedit.text` replacement cases.
 
 ## 5. Numeric offsets at boundaries
 
@@ -94,7 +94,7 @@ that boundary must name the unit explicitly.
 For example, a JavaScript parser diagnostic can use UTF-16 source offsets if its
 parser exposes UTF-16 positions. A portable fallback can use a format-defined
 coordinate if that format requires one. Such offsets do not become the canonical
-`coedit-text` coordinate system.
+`application/vnd.coedit.text` coordinate system.
 
 Do not use an unqualified field name such as `offset` for a persisted or
 cross-boundary numeric position when more than one unit is possible. Name or
@@ -107,7 +107,7 @@ outside the carrier instance that created them. A serialized Range must therefor
 retain enough carrier-neutral evidence to recover or report its semantic text
 target without treating a carrier cursor as a universal document coordinate.
 
-One Range can refer to several semantic spans across Blocks and `coedit-text`
+One Range can refer to several semantic spans across Blocks and `application/vnd.coedit.text`
 InlineContents. No portable position rule in this document reduces that Range to
 one owning InlineContent or one start/end pair. `RANGE_MODEL.md` owns the
 document-relative Range-fragment contract, creation and lineage order, rebasing,
@@ -125,8 +125,8 @@ ambiguous member; do not rebind it by similarity.
 
 Each carrier/editor candidate must prove:
 
-- conversion from `coedit-text` editor positions to stable carrier positions and back;
-- explicit rejection of position creation against a blob payload;
+- conversion from `application/vnd.coedit.text` editor positions to stable carrier positions and back;
+- explicit rejection of position creation against a opaque payload;
 - the Step 3 Range-position feasibility cases through insertion, deletion,
   replacement, split, merge, move, undo, redo, whole-text replacement
   feasibility, reload, and supported compaction;
@@ -139,7 +139,7 @@ Each carrier/editor candidate must prove:
 - practical local-edit latency without full-text coordinate rescans.
 
 The qualification evidence must use the same position abstraction that the
-production `coedit-text` editor path uses.
+production `application/vnd.coedit.text` editor path uses.
 
 ## 8. Consequences
 
@@ -147,13 +147,13 @@ production `coedit-text` editor path uses.
   semantics.
 - Unicode scalar-value and grapheme indexes are not universal durable Coedit
   coordinates.
-- Durable live `coedit-text` Range tracking can use opaque carrier-stable
+- Durable live `application/vnd.coedit.text` Range tracking can use opaque carrier-stable
   positions behind the engine service.
 - The text editor remains the authority for transient selection and normal
   Unicode editing behavior.
 - Portable text Range evidence remains carrier-neutral and separate from live
   carrier position identity.
 - Blob payloads do not gain a byte-position or sub-content Range model merely
-  because `coedit-text` has one.
+  because `application/vnd.coedit.text` has one.
 - `RANGE_MODEL.md` owns multi-span text behavior and does not expose a live
   carrier object as the public Range representation.

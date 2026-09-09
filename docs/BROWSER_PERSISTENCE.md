@@ -11,7 +11,7 @@ IndexedDB repository and the portable `.coedit` artifact.
 
 [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) controls engine and adapter
 authority. [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) controls
-payload kinds and replacement semantics. [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md) controls
+Media Types and replacement semantics. [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md) controls
 portable Save/Open. This document controls browser repository behavior.
 [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md) controls qualification
 evidence.
@@ -20,7 +20,7 @@ evidence.
 
 The `DocumentEngine` is the only document authority. It commits through a
 repository port supplied by the browser composition root. The repository stores
-and retrieves opaque engine records; it does not interpret Blocks, payload kinds
+and retrieves opaque engine records; it does not interpret Blocks, Media Types
 or bytes, formatting, Origins, History semantics, replacement-register state, or
 CRDT effects independently.
 
@@ -60,8 +60,8 @@ or vocabulary.
 Effect and checkpoint chunks can be content-addressed. SHA-256 detects
 corruption and supports deduplication; it is not authentication.
 
-The logical records must be sufficient to recover the exact payload kind and
-payload state of every InlineContent, including `coedit-text`, blob bytes,
+The logical records must be sufficient to recover the exact Media Type and
+payload state of every InlineContent, including `application/vnd.coedit.text`, opaque payload bytes,
 payload-specific Origin, and whole-content replacement History. The repository
 need not understand those semantics.
 
@@ -101,7 +101,7 @@ Every accepted engine command produces one immutable Contribution and Version.
 Its repository record is the crash journal; there is no second set of unsealed
 document mutations that later becomes History.
 
-The `coedit-text` editor can combine transient ProseMirror transactions before it
+The `application/vnd.coedit.text` editor can combine transient ProseMirror transactions before it
 submits a command, subject to controlled-transition and resource rules. Once
 submitted, the command is immutable. Several prompt editor Contributions can
 share a `semanticGroupId`, and History presentation can group them without
@@ -132,7 +132,7 @@ Opening a local document:
 2. validates the referenced physical checkpoint and its hashes;
 3. replays subsequent reachable immutable Contributions/effects in the private
    order required by the selected carrier;
-4. verifies command receipts, contributor/origin references, typed payload
+4. verifies command receipts, contributor/origin references, Media-Type-labelled payload
    reconstruction, document invariants, and the resulting Version/frontier; and
 5. publishes a candidate engine only after complete success.
 
@@ -161,7 +161,7 @@ maximum is accepted in advance.
 Prepared maintenance/checkpoint chunks or records left unreachable by a
 superseded head are not current document state. A later bounded garbage collector
 may remove verified unreachable records after accounting for active heads,
-every product Version, required `coedit-text` Range lineage, concurrent tabs, and
+every product Version, required `application/vnd.coedit.text` Range lineage, concurrent tabs, and
 recovery checkpoints.
 
 ## 7. Checkpoint and compaction rules
@@ -172,8 +172,8 @@ Contribution or Version.
 
 Compaction can replace private replay paths only after a new checkpoint is fully
 written and validated. It cannot make any VersionToken, semantic Checkpoint,
-Origin, payload kind, blob bytes, losing whole-replacement Version, required
-`coedit-text` Range lineage, durable Range behavior, or future comment-holder
+Origin, Media Type, opaque payload bytes, losing whole-replacement Version, required
+`application/vnd.coedit.text` Range lineage, durable Range behavior, or future comment-holder
 behavior unavailable. Every Version remains exactly materializable for the
 lifetime of the retained document.
 
@@ -211,7 +211,7 @@ export/backup while sufficient committed state remains available.
 
 The UX should warn before measured usage approaches a browser-specific safe
 margin. The exact warning threshold is a Step 14 measurement outcome, not a
-portable document or blob-size limit.
+portable document or opaque-payload-size limit.
 
 ## 10. `.coedit` separation
 
@@ -220,7 +220,7 @@ The `.coedit` artifact is optimized for explicit portable Save/Open, backup, and
 interchange between Coedit installations.
 
 An explicit Save asks the engine to assemble the current Version and complete
-History, including typed payloads and blob bytes, into `.coedit` bytes under
+History, including Media-Type-labelled payloads and opaque payload bytes, into `.coedit` bytes under
 [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md). Normal autosave
 does not repeatedly assemble or rewrite those bytes.
 
@@ -255,7 +255,7 @@ limits.
 The repository contract suite must cover:
 
 - save, reopen, browser reload, and document isolation;
-- exact recovery of payload kinds, `coedit-text`, blob bytes, and payload Origins;
+- exact recovery of Media Types, `application/vnd.coedit.text`, opaque payload bytes, and payload Origins;
 - exact recovery of whole-content replacement Contributions and deterministic current-winner state;
 - exact CommandId retry and conflicting reuse;
 - stale head and competing-tab compare-and-swap behavior;

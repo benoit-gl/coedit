@@ -4,7 +4,7 @@
 
 This document defines what the Coedit MVP must prove. The MVP is a **document-engine prototype**, not a complete collaborative writing product.
 
-Detailed implementation rules are in [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md). Domain meaning remains in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Public authority boundaries remain in [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md). Capacity and resource semantics are specified in [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md). InlineContent payload kinds and universal replacement are specified in [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md). Attributed collaborative text is specified in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md). Durable text Range behavior is specified in [`RANGE_MODEL.md`](RANGE_MODEL.md). Markdown interchange is specified in [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md). Lossless recovery is specified in [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md). Browser persistence is specified in [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Implementation order remains in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md).
+Detailed implementation rules are in [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md). Domain meaning remains in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Public authority boundaries remain in [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md). Capacity and resource semantics are specified in [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md). InlineContent Media Types and universal replacement are specified in [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md). Attributed collaborative text is specified in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md). Durable text Range behavior is specified in [`RANGE_MODEL.md`](RANGE_MODEL.md). Markdown interchange is specified in [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md). Lossless recovery is specified in [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md). Browser persistence is specified in [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Implementation order remains in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md).
 
 ## 1. Purpose
 
@@ -22,10 +22,10 @@ The MVP must provide these capabilities:
 4. Edit headings, prose, and list items.
 5. Create, move, nest, reorder, and delete Blocks.
 6. Create, select, reorder, tag, and delete InlineContents.
-7. Support initial InlineContent payload kinds `coedit-text` and `blob`.
+7. Support initial InlineContent Media Types `application/vnd.coedit.text` and `blob`.
 8. Replace the complete content of any InlineContent atomically with explicit Origin behavior and deterministic convergence semantics.
-9. Edit canonical `coedit-text`, intrinsic formatting, and protected fine-grained Origin through the engine command boundary.
-10. Preserve blob bytes with payload-level Origin; no fine-grained blob editing is required.
+9. Edit canonical `application/vnd.coedit.text`, intrinsic formatting, and protected fine-grained Origin through the engine command boundary.
+10. Preserve opaque payload bytes with payload-level Origin; no fine-grained blob editing is required.
 11. Use optional content-selection lenses, including a summary convention.
 12. List and summarize durable Contributions.
 13. Inspect an exact historical Version read-only.
@@ -38,7 +38,7 @@ The MVP must provide these capabilities:
 20. Save a lossless opaque `.coedit` document.
 21. Reopen that `.coedit` document with equivalent current state and History.
 22. Persist documents incrementally in browser storage and survive a browser reload.
-23. Create one-span, multi-span, and Positional Ranges against current visible `coedit-text`; resolve spans or exact concatenated text against a descendant Version; rationalize them explicitly; serialize and parse them; and embed a Range value as optional internal-link refinement.
+23. Create one-span, multi-span, and Positional Ranges against current visible `application/vnd.coedit.text`; resolve spans or exact concatenated text against a descendant Version; rationalize them explicitly; serialize and parse them; and embed a Range value as optional internal-link refinement.
 24. Qualify Yjs and Automerge against the accepted payload, attributed-text, structure, Range-feasibility, convergence, editor, and growth suite before selecting the production carrier.
 25. Select and record the Range-tracking representation before freezing `.coedit` version 1 or the internal-link Range encoding.
 
@@ -53,7 +53,7 @@ The MVP does not require:
 - Comment records, durable discussions, or comment repair UX;
 - post-genesis AI or automation Contributor registration;
 - fine-grained collaborative editing for blob, SVG, image, table, JSON, or other future structured payloads;
-- payload-kind conversion for an existing InlineContent;
+- Media Type conversion for an existing InlineContent;
 - a generic structured-data CRDT or plugin-dispatched payload system;
 - Tauri or another native shell;
 - Rust;
@@ -108,13 +108,13 @@ Semantic editor groups and physical recovery checkpoints are not semantic Checkp
 
 ### 4.7 Typed collaborative InlineContent payloads
 
-Each InlineContent owns one typed collaborative payload. The initial kinds are `coedit-text` and `blob`. Block and InlineContent boundaries imply no text character or separator.
+Each InlineContent owns one typed collaborative payload. The initial kinds are `application/vnd.coedit.text` and `blob`. Block and InlineContent boundaries imply no text character or separator.
 
-Every payload kind supports atomic whole-content replacement with Origin information. A causally later replacement supersedes replacements it observes. Concurrent replacements choose one deterministic current winner without using packet arrival order, local wall-clock time, or an unsynchronized local sequence. Losing replacements remain represented by immutable Contributions and exactly materializable Versions.
+Every Media Type supports atomic whole-content replacement with Origin information. A causally later replacement supersedes replacements it observes. Concurrent replacements choose one deterministic current winner without using packet arrival order, local wall-clock time, or an unsynchronized local sequence. Losing replacements remain represented by immutable Contributions and exactly materializable Versions.
 
-The document model does not interpret blob bytes or prescribe application meaning for text characters. Payload-specific contracts decide which fine-grained operations are available.
+The document model does not interpret opaque payload bytes or prescribe application meaning for text characters. Payload-specific contracts decide which fine-grained operations are available.
 
-`coedit-text` contains authored Unicode text, intrinsic formatting marks, and protected fine-grained Origin attribution. It has no document-level `HardBreak` item. Line-feed, carriage-return, and other characters are text data; application/editor/interchange layers decide how to create, normalize, restrict, or present them.
+`application/vnd.coedit.text` contains authored Unicode text, intrinsic formatting marks, and protected fine-grained Origin attribution. It has no document-level `HardBreak` item. Line-feed, carriage-return, and other characters are text data; application/editor/interchange layers decide how to create, normalize, restrict, or present them.
 
 A blob contains opaque bytes and one payload-level Origin for the current value. It has no fine-grained MVP mutation beyond whole-content replacement.
 
@@ -126,7 +126,7 @@ A live editor can hold transient adapter state, but canonical payload effects be
 
 ### 4.8 Lossless portable recovery
 
-Within the implementation's actual supported resource capacity, the `.coedit` document contains enough information to reopen the document with equivalent current typed payloads, complete History and derivation, stable Version identities, text Range creation Versions and lineage, and command-idempotency behavior. A codec capacity failure is explicit and is not a claim that the document is semantically invalid.
+Within the implementation's actual supported resource capacity, the `.coedit` document contains enough information to reopen the document with equivalent current Media-Type-labelled payloads, complete History and derivation, stable Version identities, text Range creation Versions and lineage, and command-idempotency behavior. A codec capacity failure is explicit and is not a claim that the document is semantically invalid.
 
 Markdown is not the native recovery format.
 
@@ -136,9 +136,9 @@ Selection, focus, disclosure, active lens, dialogs, editor composition state, re
 
 ### 4.10 Durable text Range service
 
-The headless engine creates and resolves document-relative durable Range values for `coedit-text`. Each Range records its document-scoped creation Version and its original Block and InlineContent locations. A Range can contain arbitrarily ordered, overlapping, duplicated, adjacent, sparse, or zero-length Span members, or it can refer to one logical text position. Range is not a canonical entity, has no independent identity, creates no document-wide holder registry, and is not a universal blob locator.
+The headless engine creates and resolves document-relative durable Range values for `application/vnd.coedit.text`. Each Range records its document-scoped creation Version and its original Block and InlineContent locations. A Range can contain arbitrarily ordered, overlapping, duplicated, adjacent, sparse, or zero-length Span members, or it can refer to one logical text position. Range is not a canonical entity, has no independent identity, creates no document-wide holder registry, and is not a universal blob locator.
 
-Direct creation fails atomically if any supplied target does not resolve as `coedit-text`. Resolution returns surviving spans in creation and lineage order, skips unresolved members, and can concatenate exact stored text without adding separators. Copy creates no Range lineage. Explicit rationalization can merge only sequential, exactly adjacent spans made adjacent by a lineage merge.
+Direct creation fails atomically if any supplied target does not resolve as `application/vnd.coedit.text`. Resolution returns surviving spans in creation and lineage order, skips unresolved members, and can concatenate exact stored text without adding separators. Copy creates no Range lineage. Explicit rationalization can merge only sequential, exactly adjacent spans made adjacent by a lineage merge.
 
 Range serialization is a non-mutating document-relative rebase. Parsing is best-effort and omits unresolved or ambiguous members without speculative rebinding. The application owns any enclosing document URI and selects the document supplied to the Range service. `RANGE_MODEL.md` owns the detailed behavior and the Step 6 decision boundary.
 
@@ -152,10 +152,10 @@ The prototype must preserve these domain rules:
 - Block and InlineContent identities are unique in live structure, while History and portable validation reject reuse across retained lifetimes;
 - each InlineContent belongs to exactly one Block;
 - each InlineContent owns one typed collaborative payload;
-- initial payload kinds are `coedit-text` and `blob`;
+- initial Media Types are `application/vnd.coedit.text` and `blob`;
 - every payload can be replaced atomically with explicit Origin behavior;
 - concurrent whole-content replacements converge deterministically;
-- `coedit-text` owns intrinsic formatting and protected fine-grained Origin;
+- `application/vnd.coedit.text` owns intrinsic formatting and protected fine-grained Origin;
 - blob owns opaque bytes and payload-level Origin;
 - Block and InlineContent tags have independent ownership;
 - `childrenPresentation` belongs to the parent;
@@ -166,7 +166,7 @@ The prototype must preserve these domain rules:
 - current entities do not use lifecycle timestamps or tombstones as product fields;
 - earlier working and checkpointed states live in History;
 - historical materializations are detached and read-only;
-- a Range is a durable `coedit-text` value and engine service, not a canonical entity or registry; and
+- a Range is a durable `application/vnd.coedit.text` value and engine service, not a canonical entity or registry; and
 - moving Blocks does not reorder the semantic parts of an existing text Range.
 
 `PRODUCT_DOMAIN_MODEL.md` is authoritative when this summary is insufficient.
@@ -181,11 +181,11 @@ The browser can render and inspect the resulting Block tree through engine queri
 
 ### Scenario B — Edit through the engine
 
-A user can reorganize an imported document and edit rich `coedit-text`. Every durable structural, text, formatting, or whole-payload replacement uses an attributed command.
+A user can reorganize an imported document and edit rich `application/vnd.coedit.text`. Every durable structural, text, formatting, or whole-payload replacement uses an attributed command.
 
 New text receives the correct human/imported/unknown Origin. Clearing formatting preserves Origin. Same-document internal paste preserves source Origin while recording the paster; external paste does not import private Origin or falsely claim authorship.
 
-The suite also creates a blob InlineContent, replaces its bytes with explicit Origin, and proves byte preservation. Whole-content replacement of either payload kind is atomic.
+The suite also creates a opaque InlineContent, replaces its bytes with explicit Origin, and proves byte preservation. Whole-content replacement of either Media Type is atomic.
 
 Durable commits happen promptly and can share a semantic group for History presentation. A failed or stale commit leaves canonical state unchanged and retains a recoverable UI draft or an explicit retry/discard path.
 
@@ -195,7 +195,7 @@ After several structural, text, blob replacement, and formatting changes, the us
 
 The Checkpoint appears as one attributed Contribution and creates a new content-identical Version. Its resulting VersionToken remains available through History and can be materialized exactly.
 
-The restore appears as a new Contribution attributed to the restoring actor. Reinserted historical text receives new private carrier identities while preserving its historical Origin; restored blob content preserves its historical payload Origin. Earlier History and Checkpoints remain intact.
+The restore appears as a new Contribution attributed to the restoring actor. Reinserted historical text receives new private carrier identities while preserving its historical Origin; restored opaque content preserves its historical payload Origin. Earlier History and Checkpoints remain intact.
 
 ### Scenario D — Optional contents and lenses
 
@@ -211,17 +211,17 @@ For every successfully imported Markdown fixture, the implementation proves:
 Markdown A -> Coedit X -> Markdown B -> Coedit Y
 ```
 
-`X` and `Y` must be equivalent under the normalized structural and `coedit-text` semantic equivalence rules in `MARKDOWN_INTERCHANGE.md`.
+`X` and `Y` must be equivalent under the normalized structural and `application/vnd.coedit.text` semantic equivalence rules in `MARKDOWN_INTERCHANGE.md`.
 
 `Markdown A` and `Markdown B` do not need textual equality. Canonical export spelling is allowed.
 
-If an arbitrary edited Coedit selection is outside the canonical Markdown-representable subset, including an unsupported blob payload, export reports stable loss or non-representability diagnostics. The UI does not claim exact Markdown interchange for that selection.
+If an arbitrary edited Coedit selection is outside the canonical Markdown-representable subset, including an unsupported opaque payload, export reports stable loss or non-representability diagnostics. The UI does not claim exact Markdown interchange for that selection.
 
 ### Scenario F — `.coedit` round trip
 
-A document with realistic `coedit-text`, blob content, and History can serialize to an opaque `.coedit` artifact and reopen into a candidate engine.
+A document with realistic `application/vnd.coedit.text`, opaque content, and History can serialize to an opaque `.coedit` artifact and reopen into a candidate engine.
 
-The round trip preserves current and historical behavior, payload kinds, blob bytes, payload Origins, Checkpoint Contributions and Versions, every stable VersionToken, text Range creation Versions and lineage, exact text/formatting/Origin state, Contribution actor and derivation, and successful command-idempotency records.
+The round trip preserves current and historical behavior, Media Types, opaque payload bytes, payload Origins, Checkpoint Contributions and Versions, every stable VersionToken, text Range creation Versions and lineage, exact text/formatting/Origin state, Contribution actor and derivation, and successful command-idempotency records.
 
 Malformed or unsupported input does not replace the current engine.
 
@@ -233,17 +233,17 @@ A failed repository commit does not report success or publish partial state. Com
 
 ### Scenario H — Headless contract
 
-Core commands, queries, History, Checkpoints, restore, typed payload operations, text Range operations, Markdown adapters, and portable serialization run in tests without React, file pickers, or IndexedDB. Pure engine behavior does not depend on UI state.
+Core commands, queries, History, Checkpoints, restore, Media-Type-labelled payload operations, text Range operations, Markdown adapters, and portable serialization run in tests without React, file pickers, or IndexedDB. Pure engine behavior does not depend on UI state.
 
 ### Scenario I — Durable text Range round trip
 
-Create a Span Range directly from several arbitrarily ordered, overlapping, duplicated, adjacent, sparse, and zero-length `coedit-text` spans, and create a separate Positional Range. Reject the complete creation if any supplied target does not resolve in `coedit-text` at the current visible Version. Edit and restructure the selected document so the Span Range resolves across Blocks, changes current span count, and retains creation and lineage order despite current tree order. Verify greedy Span boundaries, zero-length Span behavior, Block-local preceding-stickiness, no continuation through copy, and exact-boundary split without a manufactured zero-length descendant.
+Create a Span Range directly from several arbitrarily ordered, overlapping, duplicated, adjacent, sparse, and zero-length `application/vnd.coedit.text` spans, and create a separate Positional Range. Reject the complete creation if any supplied target does not resolve in `application/vnd.coedit.text` at the current visible Version. Edit and restructure the selected document so the Span Range resolves across Blocks, changes current span count, and retains creation and lineage order despite current tree order. Verify greedy Span boundaries, zero-length Span behavior, Block-local preceding-stickiness, no continuation through copy, and exact-boundary split without a manufactured zero-length descendant.
 
 Resolve exact text by concatenating surviving spans without inferred separators or deduplication. Stored newline characters remain part of the result; structural boundaries add nothing. Rationalize only merge-caused exact adjacency after an explicit request. Serialize each Range as a document-relative value, parse it best-effort with unresolved or ambiguous members omitted, and resolve the rebased result. Embed a Range value as same-document internal-link refinement, preserve the primary Block fallback, and round trip it and its creation Version through `.coedit`. The application composes external deep links from a document URI and Range fragment. Ordinary edits and Block moves must not scan or rewrite every retained Range value.
 
 ### Scenario J — Concurrent whole-payload replacement
 
-From one common Version, create concurrent whole-content replacements of the same `coedit-text` InlineContent and the same blob InlineContent. After replicas receive the same valid Contributions, both choose the same deterministic current replacement without using wall-clock or delivery order. Then apply a causally later replacement and verify that it supersedes the replacements it observed.
+From one common Version, create concurrent whole-content replacements of the same `application/vnd.coedit.text` InlineContent and the same opaque InlineContent. After replicas receive the same valid Contributions, both choose the same deterministic current replacement without using wall-clock or delivery order. Then apply a causally later replacement and verify that it supersedes the replacements it observed.
 
 Every replacement Contribution and its resulting Version remains materializable, including losing concurrent replacements.
 

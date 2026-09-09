@@ -1,41 +1,41 @@
 # Durable Range model
 
-**Status:** Accepted `coedit-text` behavioral contract; the lineage
+**Status:** Accepted `application/vnd.coedit.text` behavioral contract; the lineage
 representation and a small set of Step 6 API and wire decisions remain
 unresolved.
 
 ## 1. Purpose and authority
 
-This document defines durable Range behavior across `coedit-text` edits,
+This document defines durable Range behavior across `application/vnd.coedit.text` edits,
 structural changes, Version materialization, parsing, and serialization. It
 defines observable semantics and the required engine service boundary. It does
 not select the private representation used to track text lineage and does not
-define sub-payload addressing for blob content.
+define sub-payload addressing for opaque content.
 
 `PRODUCT_DOMAIN_MODEL.md` controls product meaning. `INLINE_CONTENT_PAYLOADS.md`
-controls InlineContent payload kinds and universal whole-content replacement.
+controls InlineContent Media Types and universal whole-content replacement.
 `MVP_ARCHITECTURE.md` controls the public engine boundary.
 `CAPACITY_AND_PERFORMANCE_TARGETS.md` controls cross-cutting capacity semantics
-and contract maturity. `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns `coedit-text`
+and contract maturity. `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns `application/vnd.coedit.text`
 formatting, Origin, link, and comment behavior outside this Range contract.
 `TEXT_POSITION_MODEL.md` owns editor and carrier text-position boundaries.
 `SCAFFOLDING_PLAN.md` owns the implementation order and decision gates.
 
 A Range is a durable text-reference value, not a document entity. A comment can
 keep the value in an external record. An intrinsic internal-link mark can embed
-the value in `coedit-text`. Neither use creates a Range registry, independent
+the value in `application/vnd.coedit.text`. Neither use creates a Range registry, independent
 Range identity, or a document-owned table of retained references.
 
-A blob InlineContent is addressable by its ordinary `InlineContentId`, but this
+A opaque InlineContent is addressable by its ordinary `InlineContentId`, but this
 Range service does not address byte regions or application-defined structures
-inside a blob. A future payload kind that needs internal durable references
+inside a blob. A future Media Type that needs internal durable references
 requires its own content-local addressing contract.
 
 ## 2. Terms
 
 Use these terms consistently:
 
-- **Range:** one document-relative durable reference to authored `coedit-text` or
+- **Range:** one document-relative durable reference to authored `application/vnd.coedit.text` or
   to one logical text position.
 - **Span Range:** a Range whose source members follow greedy Span semantics,
   including any zero-length member.
@@ -49,7 +49,7 @@ Use these terms consistently:
 - **Range holder:** a comment, link, navigation record, or another feature that
   stores or embeds a Range value.
 - **Range-tracking lineage:** the private mechanism that lets a Range follow
-  `coedit-text` through edits, movement, split, and merge. Copy does not create
+  `application/vnd.coedit.text` through edits, movement, split, and merge. Copy does not create
   Range-tracking lineage. This lineage is not Origin provenance or Contribution
   derivation.
 - **Rationalization:** an explicit application-requested operation that can
@@ -57,14 +57,14 @@ Use these terms consistently:
 
 ## 3. Document, payload, and Version scope
 
-A Range is always relative to one document and addresses only `coedit-text`
+A Range is always relative to one document and addresses only `application/vnd.coedit.text`
 payloads. Its bare value and serialized Range suffix do not identify a globally
 addressable document.
 
 Each Range records the `VersionToken` against which it was created or rebased.
 Each source member records its original `BlockId`, `InlineContentId`, and text
 boundaries in that Version. The referenced InlineContent must contain a
-`coedit-text` payload in the creation or rebasing Version. The `VersionToken`
+`application/vnd.coedit.text` payload in the creation or rebasing Version. The `VersionToken`
 remains opaque and document-scoped. No globally unique Version identifier is
 required; the complete scope is the document context plus the recorded creation
 Version.
@@ -86,9 +86,9 @@ a Range ledger or a document-wide Range registry. Physical materialization
 snapshots can accelerate reconstruction, but they are private and create no
 additional product Versions.
 
-If the target InlineContent no longer has a resolvable `coedit-text` lineage at
+If the target InlineContent no longer has a resolvable `application/vnd.coedit.text` lineage at
 the selected Version, that source member is unresolved. The current payload
-contract does not define in-place payload-kind conversion, so such a mismatch can
+contract does not define in-place Media Type conversion, so such a mismatch can
 arise only through future evolution or a lineage rule that Step 6 must define
 explicitly.
 
@@ -108,8 +108,8 @@ parseRange(serializedRange, documentContext, selectedVersion) -> Range | RangeEr
 ```
 
 Creation is atomic against the current Version visible to the creator. Every
-supplied source span or position must resolve inside a `coedit-text` payload in
-that Version. If any input does not resolve or targets another payload kind,
+supplied source span or position must resolve inside a `application/vnd.coedit.text` payload in
+that Version. If any input does not resolve or targets another Media Type,
 creation fails and returns no Range.
 
 `createSpanRange` preserves the supplied members exactly. It does not sort,
@@ -155,12 +155,12 @@ A Span is greedy at both boundaries:
 A source member can resolve to zero, one, or several current spans. Structural
 and text operations can increase or decrease that count.
 
-Several resolved spans can exist in one `coedit-text` InlineContent. For example,
+Several resolved spans can exist in one `application/vnd.coedit.text` InlineContent. For example,
 a merge can place included material, excluded material, and included material in
 one current InlineContent. Resolution preserves the two included spans instead
 of expanding across the excluded material.
 
-Whole-content replacement of a `coedit-text` payload exists under
+Whole-content replacement of a `application/vnd.coedit.text` payload exists under
 `INLINE_CONTENT_PAYLOADS.md`. Step 6 must ensure its final lineage mapping is
 consistent with these replacement semantics and the explicit positional rules
 below; this PR does not select a carrier representation for that mapping.
@@ -174,7 +174,7 @@ A Positional Range is preceding-sticky in logical text order. `Preceding` does
 not mean visual left and does not depend on writing direction.
 
 Stickiness is local to the Range's current Block, InlineContent, and
-`coedit-text` payload. Emptying that text does not by itself migrate the position
+`application/vnd.coedit.text` payload. Emptying that text does not by itself migrate the position
 to a preceding Block. An explicit structural operation, such as a merge whose
 contract translates positions into a surviving content container, can move the
 position to another container.
@@ -186,13 +186,13 @@ that the carrier does not prevent the required Block-local behavior.
 
 ## 7. Structural lineage, deletion, and copy
 
-A Range can span several Blocks and `coedit-text` InlineContents. Each source
+A Range can span several Blocks and `application/vnd.coedit.text` InlineContents. Each source
 member follows the lineage of its original Block, InlineContent, and text.
 
 Moving a Block or InlineContent preserves its identity, payload, and Range
-lineage. Splitting a Block or `coedit-text` InlineContent can distribute one
+lineage. Splitting a Block or `application/vnd.coedit.text` InlineContent can distribute one
 source member across several descendants. Merging Blocks or compatible
-`coedit-text` InlineContents can recombine those descendants. These operations
+`application/vnd.coedit.text` InlineContents can recombine those descendants. These operations
 preserve the source member's lineage order even when current Block tree order
 differs.
 
@@ -236,7 +236,7 @@ Rationalization can merge two resolved spans only when all these conditions
 hold:
 
 1. they are consecutive in creation and lineage order;
-2. they are exactly adjacent in the same current `coedit-text` InlineContent; and
+2. they are exactly adjacent in the same current `application/vnd.coedit.text` InlineContent; and
 3. lineage proves that their current adjacency resulted from adjacent Blocks or
    InlineContents being merged through a lineage-preserving operation.
 
@@ -256,7 +256,7 @@ fresh portable representation of the Range at that Version and can remove
 obsolete tracking references. It does not require eager reconciliation of every
 Range after each document edit.
 
-An internal `coedit-text` link always resolves its optional Range or Positional
+An internal `application/vnd.coedit.text` link always resolves its optional Range or Positional
 Range against the current document. Its primary `BlockId` remains the fallback
 when the Range produces no target and the Block still exists.
 
@@ -336,7 +336,7 @@ such as `member`, `span`, and `lineage order` describe observable behavior only.
 
 Step 3 carrier qualification must prove at least:
 
-- creation rejects non-`coedit-text` targets and fails atomically when any
+- creation rejects non-`application/vnd.coedit.text` targets and fails atomically when any
   supplied text target does not resolve;
 - preservation of arbitrary creation order, overlap, duplication, adjacency,
   sparsity, and zero-length Span members;
@@ -406,7 +406,7 @@ The remaining decisions are:
   members;
 - the zero-length Span tie-break when a split occurs at its sole boundary;
 - Positional Range behavior for split, merge, deletion, and whole-content replacement;
-- exact `coedit-text` whole-content replacement lineage semantics where the
+- exact `application/vnd.coedit.text` whole-content replacement lineage semantics where the
   final representation needs a distinction beyond ordinary replacement;
 - exact fragment grammar, encoding, versioning, escaping, and resource-guard
   behavior;
