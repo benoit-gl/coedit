@@ -216,10 +216,17 @@ At minimum prove:
 - deterministic convergence of concurrent whole-content replacements under
   duplicate, delayed, reordered, partitioned, and reconnected delivery;
 - causal later replacement superseding observed replacements;
-- preservation of losing concurrent replacements in exact History fixtures;
+- both concurrent replacement effects remain distinct and recoverable by the
+  qualification harness even though one value wins current materialization;
 - payload-specific operations rejecting an incompatible payload kind; and
 - one transaction spanning Block structure and several InlineContents without
   requiring every InlineContent to use the same payload kind.
+
+Step 3 can use carrier-level causal/effect surrogates for History because first-class
+Contributions and permanent Version materialization are implemented in Step 5.
+Step 5 and later regression suites must then prove the complete product invariant:
+losing replacement Contributions remain immutable and their Versions remain
+exactly materializable.
 
 **Maturity:** Pending selection for carrier/payload resource guards; shared
 performance workloads remain experimental under `MVP_VERIFICATION_PLAN.md`.
