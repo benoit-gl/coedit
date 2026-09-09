@@ -5,7 +5,7 @@
 **Decision date:** 2026-09-08
 
 **Scope:** InlineContent payload semantics, Media Type discrimination,
-whole-content replacement, payload convergence, and the boundary between
+whole-payload replacement, payload convergence, and the boundary between
 document structure and payload-specific behavior.
 
 ## 1. Authority and relationship to earlier decisions
@@ -14,7 +14,7 @@ This record preserves why the decision was made. Normative behavior belongs in:
 
 - [`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md) for product meaning;
 - [`../INLINE_CONTENT_PAYLOADS.md`](../INLINE_CONTENT_PAYLOADS.md) for Media Type
-  discrimination, universal whole-content replacement, Origin granularity, and
+  discrimination, universal whole-payload replacement, Origin granularity, and
   convergence;
 - [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
   for Coedit collaborative-text formatting and fine-grained Origin;
@@ -131,7 +131,7 @@ Media-Type-specific contract can add finer operations or finer Origin granularit
 without changing the stored Media Type merely because Coedit learned new
 capabilities.
 
-### 3.4 Whole-content replacement is universal
+### 3.4 Whole-payload replacement is universal
 
 Every InlineContent supports one atomic, Media-Type-preserving whole-content
 replacement operation with explicit Origin behavior.
@@ -147,7 +147,7 @@ silently change Media Type.
 The current contract does not include in-place Media Type conversion. Such a
 workflow requires a separate decision.
 
-### 3.5 Whole-content replacement is eventually consistent
+### 3.5 Whole-payload replacement is eventually consistent
 
 All payloads are collaborative in the convergence sense. Once authorized
 replicas receive the same complete set of valid Contributions, they must converge
@@ -192,7 +192,7 @@ An opaque InlineContent remains addressable by `InlineContentId`. A future Media
 Type that needs stable internal addressing can define its own content-local
 contract.
 
-Whole-content replacement of `application/vnd.coedit.text` can interact with
+Whole-payload replacement of `application/vnd.coedit.text` can interact with
 retained Ranges. Step 6 already owns replacement and positional lineage behavior,
 so this ADR does not choose the final representation or mapping prematurely.
 
@@ -204,13 +204,14 @@ Positive consequences:
 - standard Media Types preserve real format information instead of collapsing
   everything non-text into a `blob` enum value;
 - data-format identity remains separate from Coedit's current editing capability;
+- replacing content across formats requires no new payload identity or separate conversion primitive;
 - presentation breaks and structural boundaries do not contaminate canonical
   payload semantics;
 - the existing text carrier can remain highly collaborative without forcing the
   same machinery onto every other Media Type;
 - `application/octet-stream` provides a standard fallback for unknown binary
   content;
-- whole-content replacement gives every Media Type a simple collaborative
+- whole-payload replacement gives every Media Type a simple collaborative
   baseline with deterministic convergence;
 - Origin can remain meaningful without pretending every payload is a sequence of
   text items; and
@@ -219,7 +220,7 @@ Positive consequences:
 
 Costs and constraints:
 
-- Media Type becomes part of the durable logical state and portable recovery;
+- Media Type becomes part of the replaceable durable payload value and portable recovery;
 - public/application adapters must inspect Media Type before using
   payload-specific operations;
 - the Coedit collaborative-text Media Type needs a standards-compatible
@@ -228,7 +229,7 @@ Costs and constraints:
   replacement-register convergence in addition to fine-grained text;
 - Markdown can represent only the current collaborative-text subset unless a
   future Media-Type-specific convention is added; and
-- whole-text replacement requires an explicit Step 6 Range-lineage rule before
+- whole-payload replacement of `application/vnd.coedit.text` requires an explicit Step 6 Range-lineage rule before
   the Range representation is frozen.
 
 ## 5. Alternatives considered
@@ -265,7 +266,7 @@ separator semantics.
 
 ### Make opaque replacement a non-text-only operation
 
-Rejected. Whole-content replacement is useful for text, import, restore, future
+Rejected. Whole-payload replacement is useful for text, import, restore, future
 structured payloads, and application integrations. It is the common mutation
 baseline, not a special case for binary data.
 
@@ -308,12 +309,11 @@ concurrent replacement convergence, mixed-Media-Type atomicity, and the existing
 collaborative-text suite against both carrier candidates. Gate B records the
 carrier winner and the private deterministic replacement tie-break.
 
-Step 6 remains responsible for the exact whole-text replacement effect on durable
+Step 6 remains responsible for the exact whole-payload replacement of `application/vnd.coedit.text` effect on durable
 Range lineage. Step 8 freezes Media Type values and opaque payload bytes into the
 portable format only after Gates B and C pass.
 
-Future Media-Type-specific fine-grained editing, in-place Media Type conversion,
-Media Type parameter rules, and non-text content-local addressing require
+Future Media-Type-specific fine-grained editing, Media Type parameter rules, and non-text content-local addressing require
 separate explicit decisions when real application requirements exist.
 
 ## 7. Standards references

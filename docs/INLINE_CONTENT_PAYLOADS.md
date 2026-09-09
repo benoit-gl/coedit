@@ -7,7 +7,7 @@ to Gate B.
 
 This document defines the content payload owned by an `InlineContent`, the Media
 Type discriminator used for that payload, the mutation behavior common to every
-payload, and the convergence requirement for whole-content replacement.
+payload, and the convergence requirement for whole-payload replacement.
 
 [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls product ontology.
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) owns
@@ -121,10 +121,7 @@ richer. Such an extension requires an explicit focused contract.
 Each live InlineContent has exactly one Media Type. Ordinary whole-content
 replacement preserves that Media Type.
 
-The current API does not need an operation that changes an existing
-InlineContent from one Media Type to another. A future content-format conversion
-workflow requires an explicit design decision rather than being hidden inside
-ordinary replacement.
+The Media Type is part of the payload value. The whole-payload replacement operation can keep or change it atomically with the content. Application-level format conversion is an adapter concern; the document model does not define a second conversion operation.
 
 Step 2 can continue to use its typed opaque empty `InlineContentValue` while
 content internals are intentionally unavailable. Step 4 introduces the final
@@ -132,50 +129,46 @@ Media-Type-labelled payload representation without changing the Step 2 structura
 ownership rules. The ordinary initial authored-text path can continue to create
 empty `application/vnd.coedit.text` content.
 
-## 7. Universal whole-content replacement
+## 7. Universal whole-payload replacement
 
-Every InlineContent supports one logical whole-content replacement operation.
+Every InlineContent supports one logical whole-payload replacement operation.
 Conceptually:
 
 ```text
-replaceInlineContentContent(inlineContentId, replacement, origin)
+replaceInlineContentPayload(inlineContentId, mediaType, replacement, origin)
 ```
 
 The exact public command name and TypeScript shape are implementation details.
 The required behavior is:
 
-1. replacement targets one existing InlineContent;
-2. replacement preserves that InlineContent's Media Type;
-3. the replacement value must be valid at the consuming implementation boundary
-   for that Media Type;
-4. the operation supplies or derives explicit Origin information at the trusted
-   engine/import boundary;
-5. success publishes the complete replacement and its Origin effect atomically;
-6. failure publishes none of the replacement; and
-7. the replacement is a semantic payload update for Block liveness and History.
+1. replacement targets one existing InlineContent and preserves its identity;
+2. replacement supplies the complete new payload: Media Type plus Media-Type-specific content;
+3. the replacement value must be valid at the consuming implementation boundary for the supplied Media Type;
+4. capability dispatch after success follows the new Media Type;
+5. the operation supplies or derives Origin information required by the new payload at the trusted engine/import boundary;
+6. Media Type, content, and the required Origin effect publish atomically;
+7. failure leaves the previous complete payload unchanged; and
+8. the replacement is a semantic payload update for Block liveness and History.
 
 For an opaque payload, replacement is the only initial content mutation and the
 current value has one payload-level Origin.
 
-For `application/vnd.coedit.text`, whole-content replacement is available in
+For `application/vnd.coedit.text`, whole-payload replacement is available in
 addition to fine-grained text operations. An ordinary authored replacement can
 attribute the new replacement material to the supplied Origin. Validated internal
 copy, restore, or import paths can preserve pre-existing fine-grained Origins when
 their focused contract requires it. The engine must not expose a client Origin
-spoofing path merely because whole-content replacement exists.
+spoofing path merely because whole-payload replacement exists.
 
 ## 8. Payload-specific operations
 
-Payload-specific operations must fail explicitly when used with an incompatible
-Media Type. Do not silently reinterpret arbitrary bytes as Coedit collaborative
-text, sniff payload contents to select capabilities, or change Media Type as a
-side effect of an editing operation.
+Payload-specific fine-grained operations must fail explicitly when used with an incompatible Media Type. Do not silently reinterpret arbitrary bytes as Coedit collaborative text or sniff payload contents to select capabilities. A Media Type changes only when an explicit whole-payload replacement supplies the new type and matching content.
 
 The initial capability classes are:
 
 | Operation class                                  | `application/vnd.coedit.text` | Other Media Types |
 | ------------------------------------------------ | ----------------------------- | ----------------- |
-| Whole-content replacement                        | yes                           | yes               |
+| Whole-payload replacement                        | yes                           | yes               |
 | Fine-grained text insertion/deletion/replacement | yes                           | no                |
 | Intrinsic formatting                             | yes                           | no                |
 | Text positions and durable text Range operations | yes                           | no                |
@@ -185,14 +178,14 @@ simple explicit Media Type checks. Do not introduce a generic capability registr
 generic replicated object model, or plugin-dispatched mutation system until a
 concrete additional fine-grained payload type requires it.
 
-## 9. Convergence of whole-content replacement
+## 9. Convergence of whole-payload replacement
 
 All payloads are collaborative in the sense that replicas that eventually receive
 the same complete set of valid Contributions must converge on the same current
 payload state.
 
 Fine-grained merging is not required for every Media Type. Concurrent
-whole-content replacements behave as a convergent replicated register:
+whole-payload replacements behave as a convergent replicated register:
 
 - a causally later replacement supersedes replacements that it observes;
 - concurrent replacements choose one current winner deterministically;
@@ -219,9 +212,7 @@ who performed an operation in this document.
 For `application/vnd.coedit.text`, fine-grained Origin is defined by
 `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`.
 
-For every other Media Type under the initial opaque handler, the current payload
-value has one Origin associated with the whole-value creation or replacement.
-Replacing the content creates the new Origin required by the operation context.
+For every other Media Type under the initial opaque handler, the current payload value has one Origin associated with the whole-payload creation or replacement. Replacing the payload creates the new Origin required by the operation context. A replacement that changes Media Type applies the Origin rules of the new Media Type.
 Moving the InlineContent preserves Media Type, bytes, and Origin. Same-document
 entity copy and historical restore preserve source Origin when their operation
 contract treats the activity as placement/recovery rather than new authorship;
@@ -251,10 +242,12 @@ minimum prove:
 - representative opaque Media Types preserve their exact Media Type, bytes, and
   payload-level Origin;
 - `application/octet-stream` works as the generic unknown-binary case;
-- whole-content replacement works for collaborative text and opaque payloads;
-- replacement preserves Media Type;
+- whole-payload replacement works for collaborative text and opaque payloads;
+- replacement preserves InlineContent identity while allowing Media Type to stay the same or change;
+- Media Type, content, and the required Origin effect change atomically;
+- capability dispatch after replacement follows the new Media Type;
 - atomic failure of invalid replacement;
-- deterministic convergence of concurrent whole-content replacements under
+- deterministic convergence of concurrent whole-payload replacements under
   duplicate, delayed, reordered, partitioned, and reconnected delivery;
 - causal later replacement superseding observed replacements;
 - both concurrent replacement effects remain distinct and recoverable by the
@@ -297,7 +290,7 @@ This contract does not:
 - define fine-grained collaborative SVG, image, table, JSON, or binary editing;
 - invent a Coedit-specific payload-type registry when Media Types already provide
   the format namespace;
-- define in-place Media Type conversion;
+- define a separate Media Type conversion operation;
 - generalize the current text Range service to arbitrary payloads; or
 - require a renderer to treat a Block or InlineContent boundary as textual
   whitespace or a break.

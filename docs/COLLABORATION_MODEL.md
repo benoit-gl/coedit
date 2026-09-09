@@ -8,7 +8,7 @@ This document records how collaboration should fit around the document engine
 and what eventual consistency must mean for Coedit. It complements
 [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md), which defines the local engine API,
 [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md), which defines typed
-InlineContent payloads and whole-content replacement convergence,
+InlineContent payloads and whole-payload replacement convergence,
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), which
 defines `application/vnd.coedit.text` attribution and Range-holder behavior,
 [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md), which defines the
@@ -42,7 +42,7 @@ implementation order.
 - `application/vnd.coedit.text` additionally supports fine-grained collaborative text,
   formatting, and Origin operations. Other Media Types initially support only whole-content
   replacement.
-- Whole-content replacement is a convergent replicated register. A causally
+- Whole-payload replacement is a convergent replicated register. A causally
   later replacement supersedes replacements it observes. Truly concurrent
   replacements select one deterministic current winner without using packet
   arrival order, wall-clock time, or an unsynchronized local sequence. Losing
@@ -352,7 +352,7 @@ Contributions, they must have:
    heads.
 
 This is eventual consistency. It does not require fine-grained merging for every
-Media Type. Generic opaque payloads can converge by deterministic whole-value replacement while
+Media Type. Generic opaque payloads can converge by deterministic whole-payload replacement while
 `application/vnd.coedit.text` also merges fine-grained collaborative edits.
 
 This implies convergence tests must compare Contribution sets/graphs, causal
@@ -378,16 +378,15 @@ inside one logical collaborative document, and Step 4 implements the selected
 carrier. `INLINE_CONTENT_PAYLOADS.md` owns payload semantics and
 `STRUCTURAL_CARRIER_MODEL.md` owns the structural contract.
 
-The initial capability dispatch recognizes `application/vnd.coedit.text` as the fine-grained collaborative-text format. Every other supported Media Type initially uses the generic opaque capability set, which preserves exact bytes and payload-level Origin and provides no fine-grained mutation beyond whole-content replacement.
+The initial capability dispatch recognizes `application/vnd.coedit.text` as the fine-grained collaborative-text format. Every other supported Media Type initially uses the generic opaque capability set, which preserves exact bytes and payload-level Origin and provides no fine-grained mutation beyond whole-payload replacement.
 
 The document model has no canonical hard-break content item. A line-feed or
 carriage-return can be ordinary `application/vnd.coedit.text` data. Block and InlineContent
 boundaries remain structural and add no text character. Application adapters
 translate paragraph, line-break, list, section, opaque-payload rendering, or other intent.
 
-Every payload supports type-preserving whole-content replacement. The current
-Media Type does not change as a side effect of replacement. A future in-place
-Media Type conversion is a separate design decision.
+Every payload supports whole-payload replacement. The current
+Media Type does not change as a side effect of replacement. A Media Type changes occur only through atomic whole-payload replacement.
 
 The accepted structural representation uses one Block-local namespace per
 `BlockId` with one atomic `{ position, depth }` placement, a private semantic
@@ -494,7 +493,7 @@ Contribution records the actor, target, observed frontier, and exact effect.
 A restore command names target Version `T` and the author-observed frontier `B`.
 When applied to current merged frontier `H`, it compensates only effects known at
 `B` that differ from `T`; it does not delete material introduced outside `B`.
-Concurrent whole-content replacement outside `B` is unseen work and must not be
+Concurrent whole-payload replacement outside `B` is unseen work and must not be
 silently erased merely because the restore author did not observe it. The exact
 same-target overlap representation and UX must pass the pre-network gate.
 
@@ -599,7 +598,7 @@ The MVP does not implement networking. It does establish the following seams:
 - atomic attributed commands whose Contributions may share a semantic group ID;
 - one logical collaborative document boundary with atomic structure-plus-content effects;
 - typed `application/vnd.coedit.text` and opaque InlineContent payloads;
-- universal type-preserving whole-content replacement with deterministic eventual convergence semantics;
+- universal whole-payload replacement with deterministic eventual convergence semantics;
 - the accepted flat Block placement and Block activity compatibility contract;
 - intrinsic `application/vnd.coedit.text` formatting and protected, non-inheriting fine-grained Origin semantics;
 - opaque-payload Origin;
@@ -644,8 +643,8 @@ pass together.
 - offline edits followed by reconnect;
 - equal Contribution sets produce the same graph, frontiers, Media-Type-labelled payload state, deterministic replacement winners, and every Version materialization;
 - identical rendering with different hidden carrier or replacement-register state is detected as insufficient;
-- concurrent whole-content replacement of the same `application/vnd.coedit.text` and opaque payload, with a deterministic winner independent of delivery order and clocks;
-- a causally later whole-content replacement supersedes observed replacements;
+- concurrent whole-payload replacement of the same `application/vnd.coedit.text` and opaque payload, with a deterministic winner independent of delivery order and clocks;
+- a causally later whole-payload replacement supersedes observed replacements;
 - losing replacement Contributions remain materializable;
 - atomic publication of a Contribution spanning structure and several InlineContents of different Media Types;
 - concurrent text insert, delete, formatting, Block move, and Block payload-update operations;
@@ -672,9 +671,9 @@ pass together.
 - end-to-end encryption;
 - criteria and migration for any future sharding of the one logical collaborative document;
 - whether any workflow eventually requires a coordinated canonical sequence; and
-- collaboration semantics for future Media Types beyond the universal whole-content replacement baseline.
+- collaboration semantics for future Media Types beyond the universal whole-payload replacement baseline.
 
-The initial Media Types, deterministic whole-content replacement policy, flat Block carrier, command-to-placement mapping, semantic-update-over-delete preference, and exceptional collision-normalization policy are not unresolved product choices. `INLINE_CONTENT_PAYLOADS.md` and `STRUCTURAL_CARRIER_MODEL.md` own those rules. Gate B selects only their carrier-private implementation details.
+The initial Media Types, deterministic whole-payload replacement policy, flat Block carrier, command-to-placement mapping, semantic-update-over-delete preference, and exceptional collision-normalization policy are not unresolved product choices. `INLINE_CONTENT_PAYLOADS.md` and `STRUCTURAL_CARRIER_MODEL.md` own those rules. Gate B selects only their carrier-private implementation details.
 
 ## 17. Technical references
 

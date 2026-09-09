@@ -145,18 +145,18 @@ then retain it as a production regression suite for the winner.
 Verify:
 
 - each materialized InlineContent carries a valid Media Type; `application/vnd.coedit.text` selects the fine-grained text capability set and representative other Media Types select the generic opaque capability set;
-- each materialized InlineContent has one Media Type and ordinary replacement preserves it;
+- each materialized InlineContent has one Media Type and ordinary replacement preserves the InlineContent identity;
 - payload-specific operations reject an incompatible Media Type explicitly rather than coercing content;
-- no Media Type conversion operation exists under the initial contract;
-- whole-content replacement is available for both `application/vnd.coedit.text` and representative opaque Media Types;
+- no separate Media Type conversion operation is required; type change occurs only as part of atomic whole-payload replacement;
+- whole-payload replacement is available for both `application/vnd.coedit.text` and representative opaque Media Types;
 - a replacement publishes its complete value and required Origin effect atomically;
 - malformed replacement or a selected resource-guard failure leaves the base unchanged;
 - detached opaque payload bytes and caller-owned replacement buffers cannot mutate engine state after submission;
 - opaque payload bytes round trip exactly and the current opaque payload value has one payload-level Origin;
 - moving an opaque InlineContent preserves bytes and Origin;
 - same-document opaque payload copy and restore preserve source Origin according to the payload contract while recording actor/derivation separately;
-- a causally later whole-content replacement supersedes replacements that it observes;
-- concurrent whole-content replacements select the same deterministic current winner on every replica with the same valid Contributions;
+- a causally later whole-payload replacement supersedes replacements that it observes;
+- concurrent whole-payload replacements select the same deterministic current winner on every replica with the same valid Contributions;
 - the winner is unchanged by duplicate, delayed, reordered, partitioned, or reconnected delivery;
 - wall-clock values and packet-arrival order do not affect the winner; and
 - Step 3 retains both concurrent replacement inputs/effects as carrier-level evidence and can reconstruct each replacement value independently; section 7 verifies permanent losing-Contribution and Version materialization after Step 5 implements first-class History.
@@ -239,7 +239,7 @@ benchmark.
 Verify:
 
 - pairwise and three-way fine-grained text insert/delete/format at identical and adjacent boundaries under duplicate, delayed, reordered, partitioned, and reconnected updates;
-- pairwise concurrent whole-content replacement for `application/vnd.coedit.text` and representative opaque Media Types under the same delivery faults;
+- pairwise concurrent whole-payload replacement for `application/vnd.coedit.text` and representative opaque Media Types under the same delivery faults;
 - equal logical payload state, formatting/Origin projection, opaque payload bytes/Origin, deterministic replacement winner, and durable text Range-position behavior rather than merely equal rendered text;
 - one atomic command spanning Block structure, a `application/vnd.coedit.text` InlineContent, an opaque InlineContent, Origins, and Contribution metadata publishes all or none;
 - a command that explicitly targets only one InlineContent cannot mutate unrelated InlineContents or Block structure;
@@ -261,7 +261,7 @@ Separate visible editor feedback from canonical local-model publication. Visible
 
 Exercise ordinary typing, delete/backspace, insertion at start/middle/end, selection replacement, application line-feed insertion where supported, formatting, mark boundaries, and Unicode. Use smaller growth points plus the representative text workload defined in section 6.5 and multiple InlineContents. Detect accidental whole-document scans or reconstruction on a normal keystroke; whole-document work on routine typing is disqualifying even when one test runner is fast enough to hide the cost.
 
-Measure whole-content replacement separately for representative text and opaque payload values. Measure Block create, move, subtree move, delete, and structure-plus-multiple-InlineContent atomic changes separately. Characterize open/reload, carrier serialization, checkpoint-state capture, historical materialization, export, convergence workloads, serialized-state growth, and supported garbage collection/compaction. Repeat critical measurements after reload/compaction. Deliberately slow persistence and replica delivery in browser tests; local typing must remain responsive.
+Measure whole-payload replacement separately for representative text and opaque payload values. Measure Block create, move, subtree move, delete, and structure-plus-multiple-InlineContent atomic changes separately. Characterize open/reload, carrier serialization, checkpoint-state capture, historical materialization, export, convergence workloads, serialized-state growth, and supported garbage collection/compaction. Repeat critical measurements after reload/compaction. Deliberately slow persistence and replica delivery in browser tests; local typing must remain responsive.
 
 ### 6.7 Structural carrier qualification
 
@@ -275,7 +275,7 @@ Verify at least:
 - a moved subtree receives the correct depth delta, fresh ordered positions, and preserves identity and internal order;
 - concurrent moves to different destinations converge;
 - move versus delete keeps the moved Block alive after full peer convergence;
-- payload update versus delete keeps the updated Block alive after full peer convergence for both fine-grained text edits and whole-content replacement;
+- payload update versus delete keeps the updated Block alive after full peer convergence for both fine-grained text edits and whole-payload replacement;
 - move and payload-update liveness effects participate directly in the replicated conflict that determines Block existence;
 - a nested-only activity representation is rejected when deletion of its enclosing entry can discard the activity before existence resolution;
 - payload mutation, logical activity, and required liveness effect publish in one logical carrier change;
@@ -303,7 +303,7 @@ Verify at least:
 - a failed command publishes neither;
 - same-base concurrent local commands produce one success and one conflict under the expected-Version boundary;
 - valid post-MVP concurrent replacement Contributions from different replicas can both remain in the causal History while deterministic materialization chooses one current payload winner;
-- losing whole-content replacement Contributions and their Versions remain exactly materializable;
+- losing whole-payload replacement Contributions and their Versions remain exactly materializable;
 - stale commands publish nothing;
 - exact CommandId retry returns the original receipt and creates no new Contribution;
 - conflicting CommandId reuse fails;
@@ -331,7 +331,7 @@ Verify at least:
 - greedy Span insertion and replacement at both boundaries, independent of editor transaction shape;
 - Block-local preceding-stickiness without migration to a preceding Block when the target content becomes empty;
 - the accepted behavior for split exactly at a Positional Range;
-- split, merge, deletion, move, and owning-`application/vnd.coedit.text` whole-content replacement;
+- split, merge, deletion, move, and owning-`application/vnd.coedit.text` whole-payload replacement;
 - each split and merge applies the accepted continuing-identity rule for Blocks and InlineContents;
 - references to identities consumed by a merge exhibit the accepted follow-lineage, historical-only, or unresolved behavior, including an internal link's primary Block fallback;
 - operations without a naturally designated semantic continuation select the same identity deterministically on every replica without clocks or arrival order;
@@ -355,7 +355,7 @@ Verify at least:
 - edit and Block-move cost independent of the total retained Range count.
 
 Record the compared lineage representations, continuing-identity rules,
-merged-away-reference behavior, whole-content replacement behavior, fixtures,
+merged-away-reference behavior, whole-payload replacement behavior, fixtures,
 measurements, rejected alternatives, and final selection. Gate C cannot pass on
 equal visible text alone; it requires equal entity-identity results, Range behavior,
 creation order, lineage order, omission, and rationalization behavior.
@@ -414,7 +414,7 @@ Verify:
 - Media Type is preserved for every InlineContent;
 - `application/vnd.coedit.text` text characters, intrinsic formatting, fine-grained Origin, and embedded text Ranges round trip exactly;
 - opaque payload bytes and payload-level Origin round trip exactly;
-- whole-content replacement History, including deterministic concurrent-winner evidence where represented, survives round trip without rewriting Contributions;
+- whole-payload replacement History, including deterministic concurrent-winner evidence where represented, survives round trip without rewriting Contributions;
 - Contributors, Origins, Contributions, derivation, semantic Checkpoints, Version identity, and command idempotency survive;
 - corrupt checksum fails;
 - unsupported versions fail;
@@ -486,7 +486,7 @@ Before real clients connect, qualify:
 - Principal, Contributor, Origin, Replica, Session, and connection separation;
 - a two-engine fault bus with duplicate, delay, reorder, missing dependency, partition, reconnect, and conflicting-ID cases;
 - convergence of Contribution graph/frontier, hidden carrier state, Block tree, Media Types, deterministic whole-replacement winners, `application/vnd.coedit.text` formatting/fine-grained Origin, opaque payload bytes/payload Origin, and every Version materialization;
-- a causally later whole-content replacement supersedes observed replacements while concurrent replacements use the qualified deterministic order;
+- a causally later whole-payload replacement supersedes observed replacements while concurrent replacements use the qualified deterministic order;
 - losing concurrent replacement Contributions remain available in History;
 - the accepted flat structural carrier and Block liveness semantics when effects travel through the causal Contribution envelope;
 - causal restore that compensates only work observed by its author, preserves unseen concurrent inserts/replacements, and surfaces unresolved overlap;
@@ -498,7 +498,7 @@ authorization, restore, and structural integration must pass together.
 
 ## 16. Later feature gates
 
-- **Additional Media Types:** explicit payload semantics, Origin granularity, fine-grained operations if any, content-local addressing if needed, portable representation, and convergence tests. Whole-content replacement remains the baseline collaborative operation.
+- **Additional Media Types:** explicit payload semantics, Origin granularity, fine-grained operations if any, content-local addressing if needed, portable representation, and convergence tests. Whole-payload replacement remains the baseline collaborative operation.
 - **Comments:** text Range-holder state, multi-span presentation, confidence policy, explicit repair, restore, and compaction fixtures.
 - **AI:** explicit source Version, typed operations, software-agent Origin, separate human acceptance, provider/model/version/derivation, and stale proposal behavior.
 - **Cross-document lineage:** private fragment versioning, origin-catalog import, source accessibility/privacy, and spoof resistance.

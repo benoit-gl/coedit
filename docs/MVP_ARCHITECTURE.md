@@ -37,7 +37,7 @@ Tauri, Rust, SQLite, AI providers, provenance visualization, comments, durable d
 The engine owns:
 
 - `Block`, `InlineContent`, Media-Type-labelled InlineContent payloads, Media-Type validation, Origin records, and tags;
-- the universal atomic whole-content replacement contract for every Media Type;
+- the universal atomic whole-payload replacement contract for every Media Type;
 - `application/vnd.coedit.text` canonical text state, intrinsic formatting, and protected fine-grained Origin;
 - opaque payload byte state and payload-level Origin;
 - document and History invariants;
@@ -83,7 +83,7 @@ Adapters translate between an external concern and the engine:
 - the Markdown importer plans ordinary typed `application/vnd.coedit.text` and structural operations plus imported Origin claims;
 - the Markdown renderer queries an explicit Version and emits Markdown plus diagnostics;
 - the `application/vnd.coedit.text` editor translates editor transactions into fine-grained text operations;
-- a future opaque payload or structured-data application adapter can use universal whole-content replacement without receiving direct carrier authority;
+- a future opaque payload or structured-data application adapter can use universal whole-payload replacement without receiving direct carrier authority;
 - file adapters transport opaque `.coedit` artifacts;
 - the browser repository persists private immutable engine records behind its port;
 - clipboard adapters validate private Coedit text fragments and sanitize ordinary HTML; and
@@ -237,7 +237,7 @@ interface PortableDocumentInput {
 }
 ```
 
-The universal whole-content replacement operation belongs to the ordinary `DocumentOperation` family. It is valid for every supported Media Type and is type-preserving under the current contract. Payload-specific text operations reject incompatible Media Types explicitly. Exact operation names and request shapes remain implementation details until their implementation step freezes them.
+The universal whole-payload replacement operation belongs to the ordinary `DocumentOperation` family. It is valid for every supported Media Type and is type-preserving under the current contract. Payload-specific text operations reject incompatible Media Types explicitly. Exact operation names and request shapes remain implementation details until their implementation step freezes them.
 
 `RANGE_MODEL.md` owns `application/vnd.coedit.text` Range behavior. The selected `DocumentEngine` supplies document context. Step 6 Gate C finalizes result wrappers, parse diagnostics, resource-guard behavior, and serialization types without exposing carrier-native objects.
 
@@ -255,7 +255,7 @@ Commands are typed, validated, attributed, atomic, and checked against an expect
 
 Each successful command atomically publishes one logical Contribution, its exact content/structure effect, any new Origin records, one resulting Version, and its successful idempotency receipt. When a durable repository is attached, publication occurs only after the repository transaction commits. A failed command publishes nothing.
 
-Whole-content replacement is one such durable command effect. It preserves the target InlineContent Media Type and publishes its replacement value and Origin atomically. Under later replication, a causally later replacement supersedes replacements it observed and concurrent replacements select one deterministic current winner. That winner cannot depend on wall-clock time or delivery order. The losing Contributions and Versions remain in History.
+Whole-payload replacement is one such durable command effect. It preserves the target InlineContent Media Type and publishes its replacement value and Origin atomically. Under later replication, a causally later replacement supersedes replacements it observed and concurrent replacements select one deterministic current winner. That winner cannot depend on wall-clock time or delivery order. The losing Contributions and Versions remain in History.
 
 Several immutable Contributions can share a semantic group ID for History presentation. Grouping never changes their identities, Versions, or durability.
 
@@ -308,7 +308,7 @@ The editor adapter can reconstruct or bind transient ProseMirror/Tiptap/carrier 
 
 A durable fine-grained text commit must pass through `execute` and preserve the accepted atomic text-plus-formatting-plus-Origin contract. The client can request ordinary editing intent but cannot assign arbitrary Origin through formatting or raw carrier updates.
 
-A opaque payload adapter receives detached bytes and payload metadata. It can request universal whole-content replacement but receives no fine-grained opaque-payload mutation or raw carrier authority.
+A opaque payload adapter receives detached bytes and payload metadata. It can request universal whole-payload replacement but receives no fine-grained opaque-payload mutation or raw carrier authority.
 
 Do not expose a live engine-owned Y.Doc/Automerge object, a formatting-only side channel, an Origin mutation side channel, or a generic payload capability registry merely to support the collaborative-text and generic opaque capability classes.
 
@@ -350,7 +350,7 @@ IME is not split mid-composition, and paste/cut/replacement/formatting/undo/redo
 
 If a commit fails, canonical state is unchanged and the UX retains recoverable transient work or presents an explicit retry/discard path.
 
-### Whole-content replacement
+### Whole-payload replacement
 
 ```text
 payload-aware client intent
@@ -441,7 +441,7 @@ The browser target uses immutable Contributions/effect chunks, periodic physical
 
 A future AI tool queries an explicit Version and submits typed attributed commands. AI content receives software-agent Origin according to the target payload contract; human acceptance is a separate Contribution. It has no privileged mutation or raw-carrier path.
 
-A future structured payload can initially use the same whole-content replacement boundary without adding fine-grained CRDT operations. Additional payload-specific editing or content-local addressing requires an explicit focused contract.
+A future structured payload can initially use the same whole-payload replacement boundary without adding fine-grained CRDT operations. Additional payload-specific editing or content-local addressing requires an explicit focused contract.
 
 For collaboration, each UX talks to a local engine. Replication integrates remote work through private engine machinery and surfaces ordinary invalidation notifications.
 
@@ -453,8 +453,8 @@ The MVP must prove:
 
 - core commands, queries, History, and serialization require no React, file API, or IndexedDB;
 - `application/vnd.coedit.text` and representative opaque Media Types are explicit Media Types and no payload-specific operation silently coerces between them;
-- whole-content replacement succeeds for both the collaborative-text and generic opaque capability classes, preserves kind, assigns the required Origin, and fails atomically;
-- concurrent whole-content replacements choose the same deterministic winner on every replica with the same valid causal input, independent of arrival order and wall-clock time;
+- whole-payload replacement succeeds for both the collaborative-text and generic opaque capability classes, preserves kind, assigns the required Origin, and fails atomically;
+- concurrent whole-payload replacements choose the same deterministic winner on every replica with the same valid causal input, independent of arrival order and wall-clock time;
 - every losing concurrent replacement remains represented by immutable History and exactly materializable Versions;
 - interactive text edits and Markdown import use the same validation, attribution, atomicity, and History boundary;
 - text and formatting cannot publish in mismatched state;

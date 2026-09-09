@@ -53,7 +53,7 @@ The MVP does not require:
 - Comment records, durable discussions, or comment repair UX;
 - post-genesis AI or automation Contributor registration;
 - fine-grained collaborative editing for opaque payload, SVG, image, table, JSON, or other future structured payloads;
-- Media Type conversion for an existing InlineContent;
+- a separate document-level Media Type conversion operation;
 - a generic structured-data CRDT or plugin-dispatched payload system;
 - Tauri or another native shell;
 - Rust;
@@ -110,13 +110,13 @@ Semantic editor groups and physical recovery checkpoints are not semantic Checkp
 
 Each InlineContent owns one collaborative payload labelled with an Internet Media Type. `application/vnd.coedit.text` selects the fine-grained collaborative-text capability set; every other supported Media Type initially selects the generic opaque capability set. Block and InlineContent boundaries imply no text character or separator.
 
-Every InlineContent payload supports atomic Media-Type-preserving whole-content replacement with Origin information. A causally later replacement supersedes replacements it observes. Concurrent replacements choose one deterministic current winner without using packet arrival order, local wall-clock time, or an unsynchronized local sequence. Losing replacements remain represented by immutable Contributions and exactly materializable Versions.
+Every InlineContent payload supports atomic whole-payload replacement with Origin information. A causally later replacement supersedes replacements it observes. Concurrent replacements choose one deterministic current winner without using packet arrival order, local wall-clock time, or an unsynchronized local sequence. Losing replacements remain represented by immutable Contributions and exactly materializable Versions.
 
 The document model does not interpret opaque payload bytes or prescribe application meaning for text characters. Payload-specific contracts decide which fine-grained operations are available.
 
 `application/vnd.coedit.text` contains authored Unicode text, intrinsic formatting marks, and protected fine-grained Origin attribution. It has no document-level `HardBreak` item. Line-feed, carriage-return, and other characters are text data; application/editor/interchange layers decide how to create, normalize, restrict, or present them.
 
-A payload using the generic opaque capability set contains exact bytes and one payload-level Origin for the current value. It has no fine-grained MVP mutation beyond whole-content replacement.
+A payload using the generic opaque capability set contains exact bytes and one payload-level Origin for the current value. It has no fine-grained MVP mutation beyond whole-payload replacement.
 
 Formatting has explicit insertion-boundary behavior. New fine-grained text Origin is assigned by the trusted engine/import boundary and never inherited from neighboring text. Formatting commands cannot erase or rewrite Origin.
 
@@ -154,7 +154,7 @@ The prototype must preserve these domain rules:
 - each InlineContent owns one Media-Type-labelled collaborative payload;
 - `application/vnd.coedit.text` selects the fine-grained collaborative-text capability set and other supported Media Types initially select the generic opaque capability set;
 - every payload can be replaced atomically with explicit Origin behavior;
-- concurrent whole-content replacements converge deterministically;
+- concurrent whole-payload replacements converge deterministically;
 - `application/vnd.coedit.text` owns intrinsic formatting and protected fine-grained Origin;
 - generic opaque payload handling preserves exact bytes and payload-level Origin;
 - Block and InlineContent tags have independent ownership;
@@ -185,7 +185,7 @@ A user can reorganize an imported document and edit rich `application/vnd.coedit
 
 New text receives the correct human/imported/unknown Origin. Clearing formatting preserves Origin. Same-document internal paste preserves source Origin while recording the paster; external paste does not import private Origin or falsely claim authorship.
 
-The suite also creates an opaque InlineContent, replaces its bytes with explicit Origin, and proves byte preservation. Whole-content replacement of either Media Type is atomic.
+The suite also creates an opaque InlineContent, replaces its bytes with explicit Origin, and proves byte preservation. Whole-payload replacement of either Media Type is atomic.
 
 Durable commits happen promptly and can share a semantic group for History presentation. A failed or stale commit leaves canonical state unchanged and retains a recoverable UI draft or an explicit retry/discard path.
 
@@ -243,7 +243,7 @@ Resolve exact text by concatenating surviving spans without inferred separators 
 
 ### Scenario J — Concurrent whole-payload replacement
 
-From one common Version, create concurrent whole-content replacements of the same `application/vnd.coedit.text` InlineContent and the same opaque InlineContent. After replicas receive the same valid Contributions, both choose the same deterministic current replacement without using wall-clock or delivery order. Then apply a causally later replacement and verify that it supersedes the replacements it observed.
+From one common Version, create concurrent whole-payload replacements of the same `application/vnd.coedit.text` InlineContent and the same opaque InlineContent. After replicas receive the same valid Contributions, both choose the same deterministic current replacement without using wall-clock or delivery order. Then apply a causally later replacement and verify that it supersedes the replacements it observed.
 
 Every replacement Contribution and its resulting Version remains materializable, including losing concurrent replacements.
 

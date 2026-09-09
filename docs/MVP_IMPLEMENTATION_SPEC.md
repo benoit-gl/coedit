@@ -14,7 +14,7 @@ Use these focused authorities first:
 - [`MVP_CONTRACT.md`](MVP_CONTRACT.md) for the MVP proof boundary;
 - [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) for public engine behavior and component authority;
 - [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) for cross-cutting capacity and resource semantics;
-- [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) for Media Types, universal whole-content replacement, and payload convergence;
+- [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) for Media Types, universal whole-payload replacement, and payload convergence;
 - [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for `application/vnd.coedit.text` formatting, fine-grained Origin, clipboard, and Range-holder behavior;
 - [`RANGE_MODEL.md`](RANGE_MODEL.md) for durable `application/vnd.coedit.text` Range behavior, the Range service, and staged representation selection;
 - [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md) for flat Block placement, Block-local carrier state, structural concurrency, and position-order qualification;
@@ -276,17 +276,17 @@ Each InlineContent owns one Media-Type-labelled collaborative payload. The initi
 
 `application/vnd.coedit.text` stores authored Unicode text, intrinsic formatting marks, and protected fine-grained Origin in one atomic collaborative state. It has no separate document-level hard-break item. Newline and other control characters are ordinary text data at this layer. HTML, plain-text projections, ProseMirror JSON, and rendered Origin runs are derived. Do not persist them as a parallel authority.
 
-generic opaque Media Type stores opaque bytes with one payload-level Origin for the current value. The selected carrier must preserve those bytes and support atomic whole-content replacement. It does not need a fine-grained opaque payload CRDT.
+generic opaque Media Type stores opaque bytes with one payload-level Origin for the current value. The selected carrier must preserve those bytes and support atomic whole-payload replacement. It does not need a fine-grained opaque payload CRDT.
 
-Every Media Type supports one type-preserving whole-content replacement operation. The logical operation targets one InlineContent, validates a complete replacement for its existing kind, and publishes the replacement plus Origin effect atomically. `application/vnd.coedit.text` also supports fine-grained text and formatting operations. Payload-specific operations reject incompatible kinds explicitly. Do not add dynamic capability dispatch or a generic replicated object model for this two-kind contract.
+Every Media Type supports one whole-payload replacement operation. The logical operation targets one InlineContent, validates a complete replacement for its existing kind, and publishes the replacement plus Origin effect atomically. `application/vnd.coedit.text` also supports fine-grained text and formatting operations. Payload-specific operations reject incompatible kinds explicitly. Do not add dynamic capability dispatch or a generic replicated object model for this two-kind contract.
 
-Under replicated qualification, whole-content replacement behaves as a convergent register. A causally later replacement supersedes replacements it observes. Truly concurrent replacements select one current winner through a stable deterministic carrier-private order. The order must not depend on packet arrival, wall-clock time, or an unsynchronized local sequence. Losing replacements remain immutable Contributions and their Versions remain materializable. Gate B records the qualified tie-break mechanism without exposing it as product chronology.
+Under replicated qualification, whole-payload replacement behaves as a convergent register. A causally later replacement supersedes replacements it observes. Truly concurrent replacements select one current winner through a stable deterministic carrier-private order. The order must not depend on packet arrival, wall-clock time, or an unsynchronized local sequence. Losing replacements remain immutable Contributions and their Versions remain materializable. Gate B records the qualified tie-break mechanism without exposing it as product chronology.
 
 Use one logical collaborative document per Coedit document so one engine transaction can span Block structure, several InlineContents of either Media Type, Origin records, and Contribution metadata. Within that document, each `BlockId` owns one private carrier namespace for placement, a semantic activity marker, and Block-local payload. Do not create one independently committed Yjs or Automerge document per Block.
 
 `STRUCTURAL_CARRIER_MODEL.md` owns the exact structural contract. In summary, placement is one atomic `{ position, depth }` value; structural commands map through projected preorder; a subtree move allocates fresh ordered positions and applies one depth delta; and normal allocation should avoid exact position collisions.
 
-A semantic payload mutation, including whole-content replacement, updates a carrier-private Block activity marker in the same logical carrier transaction or change. A semantic Block update that is concurrent with deletion of that same Block wins over deletion. The marker is not a product field, payload hash, public counter, or timestamp. Editing a descendant does not refresh each ancestor. The selected adapter can encode this rule differently for Yjs and Automerge.
+A semantic payload mutation, including whole-payload replacement, updates a carrier-private Block activity marker in the same logical carrier transaction or change. A semantic Block update that is concurrent with deletion of that same Block wins over deletion. The marker is not a product field, payload hash, public counter, or timestamp. Editing a descendant does not refresh each ancestor. The selected adapter can encode this rule differently for Yjs and Automerge.
 
 Do not hash the whole Block payload into placement metadata. A payload hash would make compatible structural moves and payload edits compete on one placement register and would not reliably describe the result of merged concurrent CRDT or register payload effects.
 
@@ -365,7 +365,7 @@ Gate C must close and record:
 - complete one-to-many split and many-to-one merge lineage independent of the continuing entity identity;
 - the zero-length Span tie-break at an exact structural split;
 - Positional Range split, merge, deletion, and whole-content-replacement behavior;
-- any `application/vnd.coedit.text` whole-content replacement lineage rule required by the selected representation;
+- any `application/vnd.coedit.text` whole-payload replacement lineage rule required by the selected representation;
 - document-relative fragment grammar and resource-guard behavior;
 - internal-link Range encoding; and
 - the selected Range-tracking lineage representation.

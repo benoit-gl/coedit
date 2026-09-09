@@ -17,7 +17,7 @@ position-allocation algorithm.
 Use these documents with this contract:
 
 - [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) owns the logical Block ontology;
-- [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) owns InlineContent Media Types, whole-content replacement, and payload convergence;
+- [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) owns InlineContent Media Types, whole-payload replacement, and payload convergence;
 - [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md) owns private MVP implementation rules;
 - [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md) owns executable evidence;
 - [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md) owns post-MVP causal History and replication constraints; and
@@ -210,7 +210,7 @@ conflict as deletion. Otherwise, the adapter must emit a separate carrier-privat
 liveness effect in the same logical change.
 
 A semantic payload mutation includes a fine-grained `application/vnd.coedit.text` edit and a
-whole-content replacement of either capability class. It must update the
+whole-payload replacement of either capability class. It must update the
 logical Block activity marker and emit the required liveness effect in the same
 logical carrier transaction or change. A nested activity mutation is
 insufficient when deletion of its enclosing Block entry can discard that
@@ -231,7 +231,7 @@ payload value again, or on a nested mutation that can vanish with its enclosing
 entry. Yjs and Automerge can use different private encodings if they preserve the
 same logical result.
 
-The deterministic whole-content replacement register defined by
+The deterministic whole-payload replacement register defined by
 `INLINE_CONTENT_PAYLOADS.md` is separate from Block existence. The replacement
 tie-break chooses the current payload value when concurrent replacements both
 survive; it does not replace or weaken the update-over-delete liveness rule.
@@ -363,11 +363,11 @@ candidates. At minimum verify:
 - concurrent move of one Block to different destinations;
 - concurrent move versus delete, with move winning after full peer convergence;
 - concurrent fine-grained text update versus delete, with the payload update keeping that Block alive after full peer convergence;
-- concurrent whole-content replacement versus delete for both the collaborative-text and generic opaque capability classes, with the payload update keeping that Block alive after full peer convergence;
+- concurrent whole-payload replacement versus delete for both the collaborative-text and generic opaque capability classes, with the payload update keeping that Block alive after full peer convergence;
 - move and payload-update liveness effects participate directly in the replicated conflict that determines Block existence;
 - a nested-only activity representation is rejected if deletion of its enclosing entry can discard the activity before existence resolution;
 - payload mutation, logical activity update, and required liveness effect publish together;
-- deterministic whole-content replacement winner selection remains separate from Block liveness and survives convergence/reload;
+- deterministic whole-payload replacement winner selection remains separate from Block liveness and survives convergence/reload;
 - update-over-delete behavior survives the candidate's supported serialization/reload and garbage-collection or compaction path;
 - descendant activity does not keep a deleted ancestor alive;
 - concurrent insertion into one destination gap;
@@ -391,7 +391,7 @@ Use qualification surrogates for later History, text Range, restore, and portabl
 
 Step 3 must select the concrete position allocator and prove its behavior. Step
 4 implements it behind the accepted allocator abstraction. Gate B also records
-the carrier-private deterministic whole-content replacement tie-break required
+the carrier-private deterministic whole-payload replacement tie-break required
 by `INLINE_CONTENT_PAYLOADS.md`. The exact encoded `Placement` scalar,
 activity/liveness encoding, Media-Type-labelled payload nesting, replacement-register encoding,
 existence-conflict mapping, carrier transaction format, and adapter-private

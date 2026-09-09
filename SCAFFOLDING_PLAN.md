@@ -18,7 +18,7 @@ Use the companion documents for authority:
 - [`docs/MVP_CONTRACT.md`](docs/MVP_CONTRACT.md) defines what the document-engine MVP must prove.
 - [`docs/MVP_ARCHITECTURE.md`](docs/MVP_ARCHITECTURE.md) defines component authority and the public engine boundary.
 - [`docs/CAPACITY_AND_PERFORMANCE_TARGETS.md`](docs/CAPACITY_AND_PERFORMANCE_TARGETS.md) defines cross-cutting capacity, resource, and numeric-ownership rules.
-- [`docs/INLINE_CONTENT_PAYLOADS.md`](docs/INLINE_CONTENT_PAYLOADS.md) defines InlineContent Media Types, universal whole-content replacement, and payload convergence.
+- [`docs/INLINE_CONTENT_PAYLOADS.md`](docs/INLINE_CONTENT_PAYLOADS.md) defines InlineContent Media Types, universal whole-payload replacement, and payload convergence.
 - [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines `application/vnd.coedit.text` attributed text, clipboard lineage, Range-holder behavior, and carrier qualification.
 - [`docs/RANGE_MODEL.md`](docs/RANGE_MODEL.md) defines durable multi-span and positional `application/vnd.coedit.text` Range behavior, the Range service boundary, and its staged qualification.
 - [`docs/STRUCTURAL_CARRIER_MODEL.md`](docs/STRUCTURAL_CARRIER_MODEL.md) defines Block placement, Block-local carrier state, structural concurrency, and position-order qualification.
@@ -174,15 +174,15 @@ Run the same pinned headless and Tiptap/ProseMirror suite against stable Yjs v13
 The suite covers:
 
 - the `application/vnd.coedit.text` and representative opaque Media Types Media Types;
-- universal type-preserving whole-content replacement;
-- deterministic convergence of concurrent whole-content replacements without wall-clock or arrival-order arbitration;
+- universal whole-payload replacement;
+- deterministic convergence of concurrent whole-payload replacements without wall-clock or arrival-order arbitration;
 - exact arbitrary Unicode `application/vnd.coedit.text` without a document-level hard-break item;
 - intrinsic `application/vnd.coedit.text` formatting and protected fine-grained Origin;
 - exact opaque payload bytes and payload-level Origin;
 - flat Block placement, liveness, and allocator behavior;
 - one transaction across structure and several InlineContents of mixed Media Types;
 - text editor integration, reload, compaction, and representative growth; and
-- the `application/vnd.coedit.text` Range-feasibility subset in `RANGE_MODEL.md`: direct multi-span creation, greedy and positional boundaries, structural tracking, lazy resolution, whole-text replacement feasibility, and practical cost.
+- the `application/vnd.coedit.text` Range-feasibility subset in `RANGE_MODEL.md`: direct multi-span creation, greedy and positional boundaries, structural tracking, lazy resolution, whole-payload replacement of `application/vnd.coedit.text` feasibility, and practical cost.
 
 **Outcome:** The repository contains comparable fixtures, measurements, dependency/license review, adapter-complexity evidence, rejected-candidate rationale, the qualified replacement tie-break mechanism, and one recorded carrier selection. Qualification code uses the same abstractions intended for production, but this step does not freeze the final Range API or lineage representation.
 
@@ -194,7 +194,7 @@ See [`docs/INLINE_CONTENT_PAYLOADS.md`](docs/INLINE_CONTENT_PAYLOADS.md), [`docs
 
 **Objective:** Establish the production Media-Type-labelled InlineContent payload and structural carrier using the winner recorded by Gate B.
 
-**Outcome:** Headless code can create, validate, project, clone, replace, edit, copy/paste, restore, and serialize carrier state. Each InlineContent has one initial Media Type: `application/vnd.coedit.text` or another supported Media Type. Every payload supports whole-content replacement with explicit Origin and deterministic replicated convergence. `application/vnd.coedit.text` additionally supports fine-grained editing, intrinsic formatting, and protected non-inheriting Origin. Other supported Media Types preserve opaque bytes with payload-level Origin and initially have no finer mutation. One logical collaborative document contains the accepted flat Block carrier and Block-local payload namespaces, transacts across structure and several InlineContents, and supports semantic-update-over-delete. The selected carrier suite remains a production regression suite.
+**Outcome:** Headless code can create, validate, project, clone, replace, edit, copy/paste, restore, and serialize carrier state. Each InlineContent has one initial Media Type: `application/vnd.coedit.text` or another supported Media Type. Every payload supports whole-payload replacement with explicit Origin and deterministic replicated convergence. `application/vnd.coedit.text` additionally supports fine-grained editing, intrinsic formatting, and protected non-inheriting Origin. Other supported Media Types preserve opaque bytes with payload-level Origin and initially have no finer mutation. One logical collaborative document contains the accepted flat Block carrier and Block-local payload namespaces, transacts across structure and several InlineContents, and supports semantic-update-over-delete. The selected carrier suite remains a production regression suite.
 
 **Exit gate:** Production code uses no rejected-candidate or carrier-specific public API. Functional, payload, structural, concurrency, atomicity, clipboard, restore, allocator, reload, compaction, and growth regressions pass for the winner. No Block or InlineContent boundary implies a textual separator, and no document-level hard-break item exists.
 
@@ -215,7 +215,7 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 Close the remaining result-wrapper, split/merge continuing-identity,
 merged-away-reference, deterministic identity tie-break, complete structural
 lineage, exact structural boundary, positional structural behavior,
-whole-`application/vnd.coedit.text` replacement lineage, fragment-encoding, resource-guard, and
+whole-payload replacement of `application/vnd.coedit.text` lineage, fragment-encoding, resource-guard, and
 internal-link wire decisions listed in `RANGE_MODEL.md`. Compare the remaining
 lineage candidates against the accepted behavior and record the selected
 representation.
@@ -242,7 +242,7 @@ See [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md).
 
 **Outcome:** After Gates B and C pass, the engine can assemble logical records, Media-Type-labelled payload state, carrier chunks, opaque payload bytes, and embedded text Range values into an opaque version-1 `.coedit` artifact and open it into a validated candidate engine.
 
-**Exit gate:** Current and historical Media Types, `application/vnd.coedit.text`, opaque payload bytes, Origins, Contributions, derivation, Checkpoints, embedded text Range values, stable VersionTokens, whole-content replacement History, and idempotency round trip for the representative fixtures recorded by the qualification run. Profiling covers raw and decoded allocation, collection cardinality, graph work, carrier chunks, opaque-payload chunks, and content size; it selects and records the portable implementation guards before version 1 freezes. Selected guards return explicit capacity failures, and corrupt, hostile, unsupported, missing/mis-hashed, or inconsistent input fails without replacing the active document.
+**Exit gate:** Current and historical Media Types, `application/vnd.coedit.text`, opaque payload bytes, Origins, Contributions, derivation, Checkpoints, embedded text Range values, stable VersionTokens, whole-payload replacement History, and idempotency round trip for the representative fixtures recorded by the qualification run. Profiling covers raw and decoded allocation, collection cardinality, graph work, carrier chunks, opaque-payload chunks, and content size; it selects and records the portable implementation guards before version 1 freezes. Selected guards return explicit capacity failures, and corrupt, hostile, unsupported, missing/mis-hashed, or inconsistent input fails without replacing the active document.
 
 See [`docs/PORTABLE_DOCUMENT_FORMAT.md`](docs/PORTABLE_DOCUMENT_FORMAT.md).
 
@@ -322,7 +322,7 @@ Gate A passes when the authority set, ADR rationale, preserved-branch classifica
 
 ### Gate B — Collaborative carrier selection
 
-Gate B follows Step 3. Do not begin production carrier implementation or freeze carrier-dependent History effects, editor integration, or `.coedit` version 1 before the Yjs/Automerge common suite passes and the winner is recorded. The gate includes Media-Type-labelled payloads, whole-content replacement, deterministic concurrent replacement convergence, attributed `application/vnd.coedit.text`, opaque payload byte/Origin preservation, structure, allocator behavior, text editor integration, atomicity, Range feasibility, one run-specific comparison method, and selected and tested carrier/private-text-clipboard guards. Experimental performance candidates do not become acceptance thresholds merely because the gate measured them. Gate B records the carrier-private replacement tie-break mechanism but does not select the Range-tracking representation.
+Gate B follows Step 3. Do not begin production carrier implementation or freeze carrier-dependent History effects, editor integration, or `.coedit` version 1 before the Yjs/Automerge common suite passes and the winner is recorded. The gate includes Media-Type-labelled payloads, whole-payload replacement, deterministic concurrent replacement convergence, attributed `application/vnd.coedit.text`, opaque payload byte/Origin preservation, structure, allocator behavior, text editor integration, atomicity, Range feasibility, one run-specific comparison method, and selected and tested carrier/private-text-clipboard guards. Experimental performance candidates do not become acceptance thresholds merely because the gate measured them. Gate B records the carrier-private replacement tie-break mechanism but does not select the Range-tracking representation.
 
 ### Gate C — Durable Range freeze
 
@@ -330,7 +330,7 @@ Gate C follows Step 6. It closes the carrier-neutral `application/vnd.coedit.tex
 split/merge continuing identities, merged-away-reference behavior, the
 deterministic identity rule when no semantic continuation is naturally
 designated, complete one-to-many and many-to-one lineage, remaining positional
-and exact-boundary structural behavior, whole-text replacement lineage,
+and exact-boundary structural behavior, whole-payload replacement of `application/vnd.coedit.text` lineage,
 fragment serialization and reinjection rules, resource-guard behavior,
 internal-link encoding, and lineage representation. Do not freeze `.coedit`
 version 1 or the internal-link Range wire shape before Gate C passes.
@@ -375,7 +375,7 @@ The plan is complete when the browser prototype satisfies the MVP contract and a
 - the recursive Block model is the only structural ontology;
 - each InlineContent has one supported Media-Type-labelled payload and Block/InlineContent boundaries imply no text separator;
 - `application/vnd.coedit.text` and representative opaque Media Types are both represented, preserved, and replaceable through the engine;
-- universal whole-content replacement is atomic, type-preserving, Origin-aware, and qualified for deterministic eventual convergence;
+- universal whole-payload replacement is atomic, type-preserving, Origin-aware, and qualified for deterministic eventual convergence;
 - opaque payload remains opaque and does not require fine-grained collaboration;
 - durable changes are attributed Contributions;
 - exact historical Versions, semantic checkpoints, and compensating restore are usable;

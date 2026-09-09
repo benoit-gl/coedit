@@ -11,7 +11,7 @@ Use these documents for those concerns:
 - [`MVP_CONTRACT.md`](MVP_CONTRACT.md) defines what the document-engine prototype must prove.
 - [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) defines component authority and the public engine boundary.
 - [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) defines cross-cutting capacity and resource semantics.
-- [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) defines InlineContent Media Types, universal whole-content replacement, and payload convergence.
+- [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) defines InlineContent Media Types, universal whole-payload replacement, and payload convergence.
 - [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines detailed `application/vnd.coedit.text` formatting, Origin, clipboard, link-holder, and comment-holder behavior.
 - [`RANGE_MODEL.md`](RANGE_MODEL.md) defines durable multi-span and positional Range behavior inside `application/vnd.coedit.text` payloads.
 - [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md) defines private MVP implementation contracts that are not owned by focused specifications.
@@ -125,7 +125,7 @@ OriginRecord
 
 The payload has no independent product identity, tags, lifecycle, or sharing relationship. A storage implementation can index carrier state by `InlineContentId`, but that index does not create another domain entity.
 
-The document model does not interpret payload text or bytes. Payload-specific contracts define valid fine-grained operations. Every Media Type supports whole-content replacement through the engine boundary and must converge under replication.
+The document model does not interpret payload text or bytes. Payload-specific contracts define valid fine-grained operations. Every Media Type supports whole-payload replacement through the engine boundary and must converge under replication.
 
 There is no current `BlockContent` entity. The preserved experimental branch used `BlockContent` as a separate identity layer. On `main`, `InlineContent` owns that identity and those tags directly.
 
@@ -142,7 +142,7 @@ The clean-slate model requires these invariants:
 5. Each InlineContent ID is unique within the document.
 6. Each InlineContent belongs to exactly one Block.
 7. Each InlineContent owns exactly one Media-Type-labelled payload.
-8. Every InlineContent payload supports atomic Media-Type-preserving whole-content replacement with explicit Origin behavior.
+8. Every InlineContent payload supports atomic whole-payload replacement with explicit Origin behavior.
 9. An `application/vnd.coedit.text` payload owns its text, intrinsic formatting, and fine-grained Origin metadata as one canonical collaborative state.
 10. A payload using the generic opaque capability set owns exact bytes and one payload-level Origin for its current value.
 11. Sibling order is the order of the parent's `children` vector.
@@ -234,11 +234,11 @@ A Block tag describes the semantic structural unit across its contents. An Inlin
 
 Each InlineContent owns one payload labelled with an Internet Media Type. `INLINE_CONTENT_PAYLOADS.md` owns the detailed rules.
 
-The Media Type is stable for ordinary replacement during the current InlineContent lifetime. The current contract does not need an operation that silently changes it. A later format-conversion workflow requires an explicit design decision.
+The Media Type is stable for ordinary replacement during the current InlineContent lifetime. Whole-payload replacement can keep or change the Media Type atomically. Any application-level conversion semantics remain an adapter concern; the document model needs no separate conversion operation.
 
-Every payload supports atomic whole-content replacement. Media-Type-specific contracts can expose additional fine-grained operations. `application/vnd.coedit.text` does; all other supported Media Types initially use the generic opaque capability set.
+Every payload supports atomic whole-payload replacement. Media-Type-specific contracts can expose additional fine-grained operations. `application/vnd.coedit.text` does; all other supported Media Types initially use the generic opaque capability set.
 
-Concurrent whole-content replacements converge deterministically. Causally later replacements supersede observed replacements. Concurrent replacements choose one deterministic current winner without using packet arrival order or wall-clock time. Losing replacements remain in immutable History and their Versions remain materializable.
+Concurrent whole-payload replacements converge deterministically. Causally later replacements supersede observed replacements. Concurrent replacements choose one deterministic current winner without using packet arrival order or wall-clock time. Losing replacements remain in immutable History and their Versions remain materializable.
 
 ### 4.5 `application/vnd.coedit.text` is canonical collaborative text
 
@@ -264,7 +264,7 @@ Origin identifies the human, imported source, automation, AI/software agent, or 
 
 In `application/vnd.coedit.text`, newly inserted material receives explicit fine-grained Origin and never inherits Origin from adjacent text. Ordinary formatting operations cannot create, alter, or erase it. A query or renderer can coalesce adjacent equal origins into display spans, but those spans are not durable `RangeAnnotation<Provenance>` entities.
 
-For every Media Type using the generic opaque capability set, the current whole payload has one Origin. Whole-content replacement supplies the new payload Origin. A future structured payload can define finer Origin granularity only through its own payload contract.
+For every Media Type using the generic opaque capability set, the current whole payload has one Origin. Whole-payload replacement supplies the new payload Origin. A future structured payload can define finer Origin granularity only through its own payload contract.
 
 There is no `restored` origin kind. Restore is an activity, not an authorship category.
 
@@ -399,9 +399,9 @@ The current ontology requires:
 4. Block-owned tags, child presentation, ordered InlineContents, and ordered child Blocks;
 5. InlineContent-owned identity, tags, and one Media-Type-labelled collaborative payload;
 6. the fine-grained `application/vnd.coedit.text` Media Type and generic opaque Media Types;
-7. universal atomic whole-content replacement for every Media Type;
-8. deterministic convergence for concurrent whole-content replacements without arrival-order or wall-clock arbitration;
-9. no current Media Type conversion operation;
+7. universal atomic whole-payload replacement for every Media Type;
+8. deterministic convergence for concurrent whole-payload replacements without arrival-order or wall-clock arbitration;
+9. no separate Media Type conversion operation;
 10. no current `BlockContent` entity;
 11. no independent product identity for an InlineContent payload;
 12. contextual title/heading/prose/list-item rendering;
@@ -482,7 +482,7 @@ A future design is compatible with this domain direction only if it preserves th
 
 ## 14. Summary
 
-The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and one collaborative payload labelled with an Internet Media Type. `application/vnd.coedit.text` has fine-grained collaborative text, intrinsic formatting, protected Origin, and text Range capabilities. Every other supported Media Type initially uses the generic opaque capability set with exact bytes and payload-level Origin. Every payload supports atomic Media-Type-preserving whole-content replacement and deterministic convergence.
+The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and one collaborative payload labelled with an Internet Media Type. `application/vnd.coedit.text` has fine-grained collaborative text, intrinsic formatting, protected Origin, and text Range capabilities. Every other supported Media Type initially uses the generic opaque capability set with exact bytes and payload-level Origin. Every payload supports atomic whole-payload replacement and deterministic convergence.
 
 Block and InlineContent boundaries are structural and imply no textual separator. Application adapters decide how content and structure are presented.
 

@@ -11,7 +11,7 @@ This document defines lossless portable recovery for the document-engine MVP.
 The user-facing extension is `.coedit`. A portable artifact retains current Media-Type-labelled InlineContent payloads, every Version, product History, Contributors and Origins, semantic Checkpoints, source/derivation information, stable public Version identity, and command idempotency subject to explicit implementation resource capacity.
 
 [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls domain meaning.
-[`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) controls InlineContent Media Types, universal whole-content replacement, and convergence semantics.
+[`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) controls InlineContent Media Types, universal whole-payload replacement, and convergence semantics.
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
 controls `application/vnd.coedit.text` formatting and fine-grained Origin behavior. [`RANGE_MODEL.md`](RANGE_MODEL.md)
 controls embedded durable `application/vnd.coedit.text` Range values. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
@@ -54,7 +54,7 @@ Step 8 encoder until Gate B has recorded:
 - the selected carrier and exact supported version range;
 - its canonical checkpoint and incremental-effect encodings;
 - the initial Media-Type encoding for `application/vnd.coedit.text` and representative opaque Media Types;
-- whole-content replacement encoding and deterministic concurrent-winner behavior;
+- whole-payload replacement encoding and deterministic concurrent-winner behavior;
 - logical-state and historical-materialization verification;
 - native `application/vnd.coedit.text` formatting and Origin round-trip behavior;
 - exact opaque payload byte and payload-Origin round-trip behavior;
@@ -128,7 +128,7 @@ effects to reconstruct every Version and the text lineage needed by embedded
 Ranges. Current state is the materialization named by `currentVersionToken`; it
 is not a second independent document object.
 
-A losing concurrent whole-content replacement remains represented by its
+A losing concurrent whole-payload replacement remains represented by its
 Contribution and materializable Version even when another concurrent replacement
 wins the current replicated register. Portable recovery must not discard or
 rewrite that History merely because only one value is current.
@@ -166,7 +166,7 @@ Carrier state preserves exactly:
 - opaque payload bytes and their payload-level Origin reference;
 - stable Block and InlineContent identities and ordering;
 - the private identities and retained evidence required for accepted editing,
-  whole-content replacement, restore, and text Range behavior;
+  whole-payload replacement, restore, and text Range behavior;
 - embedded internal-link Range values in the Gate C carrier-neutral encoding; and
 - atomic effects spanning structure and several InlineContents of either capability class.
 
@@ -307,8 +307,8 @@ For each Contribution:
 - verify that its exact effect applies to its declared base/frontier;
 - verify the resulting Version/frontier mapping and affected targets;
 - verify acting Contributor, Origin, source, and derivation references;
-- verify whole-content replacement preserves Media Type and records its exact value/Origin effect;
-- verify deterministic current-state selection for concurrent whole-content replacements from the reconstructed causal state;
+- verify whole-payload replacement preserves InlineContent identity while allowing Media Type to change and records its exact value/Origin effect;
+- verify deterministic current-state selection for concurrent whole-payload replacements from the reconstructed causal state;
 - verify semantic Checkpoints are content-identical to their declared base; and
 - verify successful CommandId records reproduce the original receipt and reject conflicting reuse.
 
@@ -407,7 +407,7 @@ At minimum, verify:
 - `application/vnd.coedit.text` characters, intrinsic formatting, and boundary policies survive;
 - no hard-break item or implicit structural separator appears after round trip;
 - opaque payload bytes and payload-level Origin survive exactly;
-- universal whole-content replacement and deterministic current-winner behavior survive without losing the History of concurrent replacements;
+- universal whole-payload replacement and deterministic current-winner behavior survive without losing the History of concurrent replacements;
 - Origin, actor, derivation, and text Range-tracking lineage remain distinct and exact;
 - semantic Checkpoints and physical recovery checkpoints remain distinct;
 - every VersionToken remains stable and exactly materializable after Save/Open;
@@ -439,7 +439,7 @@ a supported migration through carrier-neutral logical materialization or a new
 container version. Public engine APIs and product IDs must not expose carrier
 bytes merely to avoid that migration boundary.
 
-Additional Media Types, Media Type conversion, future comments,
+Additional Media Types, future comments,
 conversations, authenticated claims, signatures, attachments, or replicated
 protocol records do not enter version 1 silently. A later Media Type must
 define its portable representation and Origin semantics explicitly. Minimum

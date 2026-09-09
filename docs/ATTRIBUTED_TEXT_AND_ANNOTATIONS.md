@@ -9,7 +9,7 @@ This document defines the detailed behavior of the `application/vnd.coedit.text`
 payload: authored text, intrinsic formatting, fine-grained Origin attribution,
 link holders, copy/paste/restore lineage, future comment holders, and transient
 selections. `INLINE_CONTENT_PAYLOADS.md` owns Media Types and universal
-whole-content replacement. `RANGE_MODEL.md` owns the shared durable text Range
+whole-payload replacement. `RANGE_MODEL.md` owns the shared durable text Range
 value and engine service used by internal links and future comments.
 
 [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls product meaning.
@@ -147,7 +147,7 @@ can map Enter to structural commands, map Shift+Enter to a line-feed character,
 or reject a character in one context. Such rules are application intent
 translation, not generic `application/vnd.coedit.text` validity.
 
-Whole-content replacement of an `application/vnd.coedit.text` payload is also available under
+Whole-payload replacement of an `application/vnd.coedit.text` payload is also available under
 `INLINE_CONTENT_PAYLOADS.md`. Normal text editing should use the fine-grained
 operations in this document when their merge behavior is desired.
 

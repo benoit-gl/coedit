@@ -62,7 +62,7 @@ corruption and supports deduplication; it is not authentication.
 
 The logical records must be sufficient to recover the exact Media Type and
 payload state of every InlineContent, including `application/vnd.coedit.text`, opaque payload bytes,
-payload-specific Origin, and whole-content replacement History. The repository
+payload-specific Origin, and whole-payload replacement History. The repository
 need not understand those semantics.
 
 ## 4. Commit protocol
@@ -113,7 +113,7 @@ Idle, focus/owner transfer, change of edit mode, and controlled transitions seal
 the current semantic group. Exact time and character thresholds are tunable UX
 parameters, not durable semantics.
 
-A generic whole-content replacement, including opaque-payload replacement, is already one
+A generic whole-payload replacement, including opaque-payload replacement, is already one
 atomic engine command and Contribution. It does not require an editor-specific
 journal or another persistence path.
 
@@ -256,7 +256,7 @@ The repository contract suite must cover:
 
 - save, reopen, browser reload, and document isolation;
 - exact recovery of Media Types, `application/vnd.coedit.text`, opaque payload bytes, and payload Origins;
-- exact recovery of whole-content replacement Contributions and deterministic current-winner state;
+- exact recovery of whole-payload replacement Contributions and deterministic current-winner state;
 - exact CommandId retry and conflicting reuse;
 - stale head and competing-tab compare-and-swap behavior;
 - injected failure before each commit-protocol boundary;

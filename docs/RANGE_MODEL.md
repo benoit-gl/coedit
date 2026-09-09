@@ -13,7 +13,7 @@ not select the private representation used to track text lineage and does not
 define sub-payload addressing for opaque content.
 
 `PRODUCT_DOMAIN_MODEL.md` controls product meaning. `INLINE_CONTENT_PAYLOADS.md`
-controls InlineContent Media Types and universal whole-content replacement.
+controls InlineContent Media Types and universal whole-payload replacement.
 `MVP_ARCHITECTURE.md` controls the public engine boundary.
 `CAPACITY_AND_PERFORMANCE_TARGETS.md` controls cross-cutting capacity semantics
 and contract maturity. `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns `application/vnd.coedit.text`
@@ -88,7 +88,7 @@ additional product Versions.
 
 If the target InlineContent no longer has a resolvable `application/vnd.coedit.text` lineage at
 the selected Version, that source member is unresolved. The current payload
-contract does not define in-place Media Type conversion, so such a mismatch can
+contract does not define so such a mismatch can
 arise only through future evolution or a lineage rule that Step 6 must define
 explicitly.
 
@@ -160,7 +160,7 @@ a merge can place included material, excluded material, and included material in
 one current InlineContent. Resolution preserves the two included spans instead
 of expanding across the excluded material.
 
-Whole-content replacement of an `application/vnd.coedit.text` payload exists under
+Whole-payload replacement of an `application/vnd.coedit.text` payload exists under
 `INLINE_CONTENT_PAYLOADS.md`. Step 6 must ensure its final lineage mapping is
 consistent with these replacement semantics and the explicit positional rules
 below; this PR does not select a carrier representation for that mapping.
@@ -342,7 +342,7 @@ Step 3 carrier qualification must prove at least:
   sparsity, and zero-length Span members;
 - greedy insertion and replacement at both Span boundaries;
 - Positional Range non-greediness and preceding-stickiness;
-- split, merge, delete, whole-content replacement feasibility, and Block-move
+- split, merge, delete, whole-payload replacement feasibility, and Block-move
   feasibility without losing required lineage order;
 - no Range continuation through copy operations;
 - several resolved spans in one InlineContent;
@@ -361,7 +361,7 @@ Step 6 Range acceptance must additionally prove:
 - immutable Span and Positional kinds, including zero-length Spans;
 - complete deletion followed by insertion without changing Range kind;
 - independent enumeration of resolved spans in creation and lineage order;
-- exact split, merge, deletion, move, whole-content replacement, and no-copy behavior;
+- exact split, merge, deletion, move, whole-payload replacement, and no-copy behavior;
 - exact-boundary split without a manufactured zero-length descendant;
 - explicit rationalization limited to merge-caused adjacency;
 - best-effort parsing with unresolved and ambiguous members omitted;
@@ -405,8 +405,8 @@ The remaining decisions are:
 - the result and optional diagnostics when parsing omits members, including all
   members;
 - the zero-length Span tie-break when a split occurs at its sole boundary;
-- Positional Range behavior for split, merge, deletion, and whole-content replacement;
-- exact `application/vnd.coedit.text` whole-content replacement lineage semantics where the
+- Positional Range behavior for split, merge, deletion, and whole-payload replacement;
+- exact `application/vnd.coedit.text` whole-payload replacement lineage semantics where the
   final representation needs a distinction beyond ordinary replacement;
 - exact fragment grammar, encoding, versioning, escaping, and resource-guard
   behavior;

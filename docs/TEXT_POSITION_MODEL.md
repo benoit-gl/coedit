@@ -84,7 +84,7 @@ Stable positions are one candidate primitive for live Range tracking. They are
 not the Range API, semantic-order representation, or portable serialized Range.
 The Step 3 carrier gate qualifies their behavior. The Step 6 Range gate decides
 how carrier positions combine with carrier-neutral verification and lineage
-evidence, including the still-open whole-`application/vnd.coedit.text` replacement cases.
+evidence, including the still-open whole-payload replacement of `application/vnd.coedit.text` cases.
 
 ## 5. Numeric offsets at boundaries
 
@@ -128,7 +128,7 @@ Each carrier/editor candidate must prove:
 - conversion from `application/vnd.coedit.text` editor positions to stable carrier positions and back;
 - explicit rejection of position creation against an opaque payload;
 - the Step 3 Range-position feasibility cases through insertion, deletion,
-  replacement, split, merge, move, undo, redo, whole-text replacement
+  replacement, split, merge, move, undo, redo, whole-payload replacement of `application/vnd.coedit.text`
   feasibility, reload, and supported compaction;
 - no selection drift or endpoint corruption for combining sequences, astral
   characters, emoji sequences, variation selectors, newline characters, and
