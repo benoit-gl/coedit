@@ -8,16 +8,13 @@ pending or experimental until Gates B and C pass and Step 8 freezes version 1.
 
 This document defines lossless portable recovery for the document-engine MVP.
 
-The user-facing extension is `.coedit`. A portable artifact retains current
-attributed content, every Version, product History,
-Contributors and Origins, semantic Checkpoints, source/derivation information,
-stable public Version identity, and command idempotency subject to explicit
-implementation resource capacity.
+The user-facing extension is `.coedit`. A portable artifact retains current typed InlineContent payloads, every Version, product History, Contributors and Origins, semantic Checkpoints, source/derivation information, stable public Version identity, and command idempotency subject to explicit implementation resource capacity.
 
 [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls domain meaning.
+[`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) controls InlineContent payload kinds, universal whole-content replacement, and convergence semantics.
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
-controls formatting and Origin behavior. [`RANGE_MODEL.md`](RANGE_MODEL.md)
-controls embedded durable Range values. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
+controls `coedit-text` formatting and fine-grained Origin behavior. [`RANGE_MODEL.md`](RANGE_MODEL.md)
+controls embedded durable `coedit-text` Range values. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
 controls the public serialization boundary. This document controls portable
 logical records, validation, compatibility, and the candidate version-1
 container.
@@ -56,13 +53,16 @@ Step 8 encoder until Gate B has recorded:
 
 - the selected carrier and exact supported version range;
 - its canonical checkpoint and incremental-effect encodings;
+- the initial payload-kind encoding for `coedit-text` and blob;
+- whole-content replacement encoding and deterministic concurrent-winner behavior;
 - logical-state and historical-materialization verification;
-- native formatting and Origin round-trip behavior;
+- native `coedit-text` formatting and Origin round-trip behavior;
+- exact blob byte and payload-Origin round-trip behavior;
 - garbage collection and compaction that preserve every Version and required
-  Range lineage; and
+  text Range lineage; and
 - the measured JSON/base64 size and load cost.
 
-Gate C must also record the carrier-neutral Range API result wrappers, the
+Gate C must also record the carrier-neutral text Range API result wrappers, the
 selected Range-tracking representation, the document-relative Range-fragment
 encoding, and the exact embedded internal-link Range encoding. Version 1 can
 then preserve those values without making the portable format a second Range
@@ -124,10 +124,14 @@ Clients never decode that mapping.
 not create a Contribution or Version.
 
 The package contains sufficient physical recovery checkpoints and immutable
-effects to reconstruct every Version and the lineage needed by embedded Ranges.
-Current state is the
-materialization named by `currentVersionToken`; it is not a second independent
-document object.
+effects to reconstruct every Version and the text lineage needed by embedded
+Ranges. Current state is the materialization named by `currentVersionToken`; it
+is not a second independent document object.
+
+A losing concurrent whole-content replacement remains represented by its
+Contribution and materializable Version even when another concurrent replacement
+wins the current replicated register. Portable recovery must not discard or
+rewrite that History merely because only one value is current.
 
 ## 4. Physical and semantic records stay distinct
 
@@ -145,47 +149,64 @@ Contribution and its exact convergence effect.
 Complete snapshots per Contribution can be used by bounded early prototype
 fixtures, but version 1 must not require them if the selected carrier can provide
 immutable effects plus periodic checkpoints. A codec optimization cannot make
-any Version or required Range lineage unavailable.
+any Version or required text Range lineage unavailable.
 
 ## 5. Canonical collaborative state
 
 One logical carrier checkpoint/update set reconstructs the Coedit document's
-Block registry/order and every InlineContent's CollaborativeContent. The format
-does not default to one independent carrier document or blob per InlineContent.
+Block registry/order and every InlineContent's typed payload. The format does not
+default to one independent carrier document or blob per InlineContent.
 
 Carrier state preserves exactly:
 
-- text and hard breaks;
-- intrinsic formatting marks and their boundary policies;
-- protected Origin references;
+- each InlineContent payload kind;
+- `coedit-text` authored Unicode text, including newline/control characters that are valid text data;
+- `coedit-text` intrinsic formatting marks and their boundary policies;
+- protected fine-grained `coedit-text` Origin references;
+- blob payload bytes and their payload-level Origin reference;
 - stable Block and InlineContent identities and ordering;
 - the private identities and retained evidence required for accepted editing,
-  restore, and Range behavior;
+  whole-content replacement, restore, and text Range behavior;
 - embedded internal-link Range values in the Gate C carrier-neutral encoding; and
-- atomic effects spanning structure and several InlineContents.
+- atomic effects spanning structure and several InlineContents of either initial payload kind.
 
-A normalized Block/text/mark projection can be computed during validation. If
+There is no canonical `HardBreak` item in the portable logical state. A line-feed
+or carriage-return that exists in `coedit-text` is serialized as text according
+to the final text codec. Block and InlineContent boundaries do not synthesize
+separator characters during encoding or decoding.
+
+A blob is opaque to the document model. Its bytes can be stored in a carrier
+chunk or another version-1 binary chunk selected by Gate B/Step 8. That physical
+choice does not make the blob an independent document entity or assign it an
+application media type.
+
+A normalized Block/payload projection can be computed during validation. If
 stored as an index or diagnostic aid, it is derived and must be verified against
 the carrier state; it is never a competing authority.
 
 The format does not contain external formatting or provenance Ranges. External
 comment records are not added to the strict MVP package. A Range value embedded
-in intrinsic internal-link metadata is canonical content and must round trip.
+in an intrinsic `coedit-text` internal-link mark is canonical text payload data
+and must round trip. Blob sub-content has no Range encoding in version 1 under
+the current contract.
 
 ## 6. Origin, actor, and derivation
 
-The package preserves immutable Origin records and every reference from content
-to those records. Each record names its claimed agent kind/Contributor and any
-source or upstream Origin reference required by the current document.
+The package preserves immutable Origin records and every reference from payload
+material to those records. Each record names its claimed agent kind/Contributor
+and any source or upstream Origin reference required by the current document.
+
+`coedit-text` can reference Origins at fine granularity. A current blob value has
+one payload-level Origin. A future payload kind can add finer Origin semantics
+only through its own accepted contract and format evolution.
 
 The Contribution that introduces, pastes, copies, restores, imports, formats,
-or accepts material separately names the acting Contributor. In particular:
+or replaces material separately names the acting Contributor. In particular:
 
-- internal copy and restore retain source Origin while recording the new actor;
-- restored material uses fresh carrier identities without a new `restored`
-  Origin category;
-- external material uses imported or unknown Origin unless a validated source
-  claim exists; and
+- internal copy and restore retain source Origin according to the payload contract while recording the new actor;
+- restored `coedit-text` uses fresh carrier identities without a new `restored` Origin category;
+- restored blob bytes preserve their historical payload Origin;
+- external textual material uses imported or unknown Origin unless a validated source claim exists; and
 - a human accepting AI material does not replace its software-agent Origin.
 
 These records are descriptive attribution. SHA-256 integrity and local
@@ -228,12 +249,14 @@ length maximum. Display names are descriptive metadata, not authenticated identi
 A later separately managed profile can change presentation without changing stable
 attribution IDs.
 
-Human editing creates human Origin records. Markdown/file import creates
-imported or unknown Origin for source content while the import Contribution is
-attributed to the human or system actor that performed the action. The source
-file is not impersonated as the actor.
+Human `coedit-text` editing creates human Origin records. Markdown/file import
+creates imported or unknown Origin for textual source material while the import
+Contribution is attributed to the human or system actor that performed the
+action. The source file is not impersonated as the actor. Blob creation or
+replacement obtains its payload Origin from the same trusted attribution
+boundary rather than from a raw caller-controlled metadata field.
 
-Every content Origin reference and Contribution actor must resolve to a valid
+Every payload Origin reference and Contribution actor must resolve to a valid
 record under the accepted identity rules. A portable file cannot cause a local
 session identity, CRDT client ID, or transport connection to become a durable
 Contributor implicitly.
@@ -253,12 +276,14 @@ Treat portable input as hostile. Validate a detached copy in this order:
 7. Contribution graph/frontier acyclicity, parent/result references, retained
    Version mappings, current pointer, and reachability;
 8. Contributor, Origin, source, derivation, effect, and checkpoint references;
-9. carrier checkpoint/effect schema, dependency closure, and implementation resource guards;
-10. reconstructed Block topology, ownership, ordering, tags, and structural
-    invariants plus implementation capacity;
-11. reconstructed text, hard breaks, marks, boundary policies, Origin coverage,
-    opaque link-metadata shape/resource bounds, and typed internal-link shape; and
-12. History replay/materialization invariants.
+9. carrier checkpoint/effect schema, dependency closure, deterministic whole-replacement register state, and implementation resource guards;
+10. reconstructed Block topology, ownership, ordering, tags, payload-kind values,
+    and structural invariants plus implementation capacity;
+11. reconstructed `coedit-text` Unicode text, marks, boundary policies,
+    fine-grained Origin coverage, opaque link-metadata shape/resource bounds, and typed internal-link shape;
+12. reconstructed blob bytes and exactly one valid payload-level Origin for each current blob value;
+13. payload-specific invariants, including rejection of incompatible operations and absence of implicit payload-kind conversion; and
+14. History replay/materialization invariants.
 
 Validate a complete candidate engine before replacing the active engine or
 committing it to the browser repository.
@@ -282,15 +307,17 @@ For each Contribution:
 - verify that its exact effect applies to its declared base/frontier;
 - verify the resulting Version/frontier mapping and affected targets;
 - verify acting Contributor, Origin, source, and derivation references;
+- verify whole-content replacement preserves payload kind and records its exact value/Origin effect;
+- verify deterministic current-state selection for concurrent whole-content replacements from the reconstructed causal state;
 - verify semantic Checkpoints are content-identical to their declared base; and
-- verify successful CommandId records reproduce the original receipt and reject
-  conflicting reuse.
+- verify successful CommandId records reproduce the original receipt and reject conflicting reuse.
 
 For local single-writer restore, verify that visible material equals the selected
-target while restored items retain historical Origin and the restore
-Contribution names the new actor and target. A future replicated format verifies
-the causal compensation rules in `COLLABORATION_MODEL.md`, including preservation
-of work outside the restore author's observed frontier.
+target while restored `coedit-text` items retain historical Origin, restored
+blob values retain their payload Origin, and the restore Contribution names the
+new actor and target. A future replicated format verifies the causal compensation
+rules in `COLLABORATION_MODEL.md`, including preservation of work outside the
+restore author's observed frontier.
 
 Recompute derived projection hashes, affected targets, indexes, and reserved-ID
 sets. Do not trust serialized derived claims.
@@ -315,7 +342,7 @@ Use these values as initial characterization points:
 - 1,000,000 semantic operations in one archive;
 - 8 MiB for one decoded carrier checkpoint/effect chunk;
 - 48 MiB decoded binary chunk data across the archive; and
-- 1,000,000 Unicode code points in one InlineContent.
+- 1,000,000 Unicode code points in one `coedit-text` InlineContent.
 
 These candidates do not define current acceptance, rejection, compatibility, or
 correctness-test thresholds. They are possible implementation resource guards,
@@ -323,16 +350,17 @@ not version-1 document maxima. Shared content and History qualification
 workloads belong only in `MVP_VERIFICATION_PLAN.md`.
 
 Step 8 profiling must characterize raw bytes, decoded allocation, nesting,
-collection cardinality, and graph-processing work. The selection record must
-consider Versions, Contributions, Blocks, InlineContents, per-Contribution and
-archive operations, carrier chunks, and InlineContent size. It must record
-which dimensions need explicit guards, why the selected values are safe on
-target environments, and why an omitted guard is safely bounded elsewhere.
+collection cardinality, graph-processing work, blob bytes, and text decoding. The selection record must
+consider Versions, Contributions, Blocks, InlineContents, payload kinds,
+per-Contribution and archive operations, carrier chunks, blob chunks, and
+`coedit-text` size. It must record which dimensions need explicit guards, why
+the selected values are safe on target environments, and why an omitted guard
+is safely bounded elsewhere.
 
 After promotion, the encoder preflights the selected resource guards that apply
 to the artifact it produces. Return a typed capacity error rather than truncate
-History, Origins, or document state. A capacity failure does not make the
-document semantically invalid.
+History, Origins, blob bytes, or document state. A capacity failure does not make
+the document semantically invalid.
 
 Before freezing version 1, verify that the selected container can round-trip the
 representative fixtures recorded by the qualification run. If monolithic
@@ -345,13 +373,14 @@ Use SHA-256 for corruption detection and content addressing. Do not describe it
 as authentication or tamper-proofing.
 
 Each immutable binary chunk records the digest of its decoded canonical bytes.
+This rule applies equally when a chunk stores carrier state or blob payload bytes.
 The envelope also records a digest over canonical UTF-8 JSON with the envelope
 digest field omitted. Sort object keys recursively and retain array order.
 
 After the carrier gate, check in:
 
 - one minimal canonical version-1 fixture;
-- one realistic attributed/history fixture;
+- one realistic typed-payload/history fixture containing `coedit-text` and blob;
 - their exact canonical bytes and digests; and
 - malformed/mis-hashed variants.
 
@@ -372,20 +401,22 @@ serializes the complete artifact.
 
 At minimum, verify:
 
-- realistic imported, edited, formatted, copied, and restored content round
-  trips;
+- realistic imported, edited, formatted, copied, blob-replaced, and restored content round trips;
 - exact current and historical materialization;
-- intrinsic formatting and boundary policies survive;
-- Origin, actor, derivation, and Range-tracking lineage remain distinct and exact;
+- payload kinds survive exactly;
+- `coedit-text` characters, intrinsic formatting, and boundary policies survive;
+- no hard-break item or implicit structural separator appears after round trip;
+- blob bytes and payload-level Origin survive exactly;
+- universal whole-content replacement and deterministic current-winner behavior survive without losing the History of concurrent replacements;
+- Origin, actor, derivation, and text Range-tracking lineage remain distinct and exact;
 - semantic Checkpoints and physical recovery checkpoints remain distinct;
 - every VersionToken remains stable and exactly materializable after Save/Open;
 - successful CommandId retries remain idempotent after Save/Open;
-- every embedded Range retains its creation Version and resolves to the same
-  surviving spans and exact concatenated text after Save/Open;
+- every embedded text Range retains its creation Version and resolves to the same surviving spans and exact concatenated text after Save/Open;
 - missing, duplicate, unreachable, mis-hashed, or conflicting chunks fail;
 - malformed graph/frontiers, Contributor/Origin references, carrier state,
-  topology, ownership, marks, opaque link metadata, typed internal links, and
-  embedded serialized Range values fail;
+  topology, ownership, payload kinds, marks, blob bytes, opaque link metadata,
+  typed internal links, and embedded serialized Range values fail;
 - malformed, truncated, duplicate-key, unknown-property, or unsupported
   container/carrier versions fail;
 - every resource guard selected and promoted under section 11 is exercised safely;
@@ -393,16 +424,14 @@ At minimum, verify:
 - stale serialization returns no artifact;
 - caller mutation of input bytes after open starts cannot alter the candidate;
 - a failed open never replaces the active engine;
-- reconstruction from periodic checkpoint plus effects equals direct current and
-  historical materialization; and
+- reconstruction from periodic checkpoint plus effects equals direct current and historical materialization; and
 - every successful version-1 encode is accepted by the version-1 decoder on the same supported implementation envelope.
 
 ## 15. Compatibility and evolution
 
 Any durable schema change requires one of:
 
-- a proven backward-compatible version-1 change explicitly permitted by the
-  final version-1 contract; or
+- a proven backward-compatible version-1 change explicitly permitted by the final version-1 contract; or
 - a new format version with explicit migration and compatibility rules.
 
 A carrier name/version/schema change is not assumed binary-compatible. It needs
@@ -410,9 +439,12 @@ a supported migration through carrier-neutral logical materialization or a new
 container version. Public engine APIs and product IDs must not expose carrier
 bytes merely to avoid that migration boundary.
 
-Future comments, conversations, authenticated claims, signatures, attachments,
-or replicated protocol records do not enter version 1 silently. Minimum Origin
-metadata is already part of the version-1 logical requirement.
+Additional payload kinds, payload-kind conversion, future comments,
+conversations, authenticated claims, signatures, attachments, or replicated
+protocol records do not enter version 1 silently. A later payload kind must
+define its portable representation and Origin semantics explicitly. Minimum
+Origin metadata for the two initial payload kinds is already part of the
+version-1 logical requirement.
 
 Measurements can justify a later manifest plus compressed binary chunks instead
 of monolithic JSON/base64. Such a container change can preserve the same logical
