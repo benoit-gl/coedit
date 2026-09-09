@@ -1,0 +1,103 @@
+name: Amend PR 19 media types
+
+on:
+  push:
+    branches:
+      - design/typed-inline-content-payloads
+
+permissions:
+  contents: write
+
+jobs:
+  amend:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: design/typed-inline-content-payloads
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm run bootstrap
+      - name: Amend terminology
+        shell: python
+        run: |
+          from pathlib import Path
+
+          skip = {
+              Path('docs/INLINE_CONTENT_PAYLOADS.md'),
+              Path('docs/decisions/0010-typed-inline-content-payloads.md'),
+          }
+          files = [Path('README.md'), Path('SCAFFOLDING_PLAN.md')]
+          files += list(Path('docs').rglob('*.md'))
+
+          replacements = [
+              ('typed InlineContent payloads', 'Media-Type-labelled InlineContent payloads'),
+              ('typed InlineContent payload', 'Media-Type-labelled InlineContent payload'),
+              ('typed payloads', 'Media-Type-labelled payloads'),
+              ('typed payload', 'Media-Type-labelled payload'),
+              ('payload-kind conversion', 'Media Type conversion'),
+              ('payload-kind', 'Media-Type'),
+              ('payload kinds', 'Media Types'),
+              ('payload kind', 'Media Type'),
+              ('mixed payload kinds', 'mixed Media Types'),
+              ('different payload kinds', 'different Media Types'),
+              ('same payload kind', 'same Media Type'),
+              ('`coedit-text`', '`application/vnd.coedit.text`'),
+              ('coedit-text', 'application/vnd.coedit.text'),
+              ('blob payload-level Origin', 'opaque-payload Origin'),
+              ('blob payload Origin', 'opaque-payload Origin'),
+              ('blob Origin', 'opaque-payload Origin'),
+              ('blob bytes', 'opaque payload bytes'),
+              ('blob byte', 'opaque payload byte'),
+              ('blob payloads', 'opaque payloads'),
+              ('blob payload', 'opaque payload'),
+              ('blob InlineContents', 'opaque InlineContents'),
+              ('blob InlineContent', 'opaque InlineContent'),
+              ('blob content', 'opaque content'),
+              ('blob chunks', 'opaque-payload chunks'),
+              ('blob chunk', 'opaque-payload chunk'),
+              ('blob size', 'opaque-payload size'),
+              ('blob-size', 'opaque-payload-size'),
+              ('blob resource', 'opaque-payload resource'),
+              ('blob/non-text', 'opaque/non-text'),
+          ]
+
+          exact = [
+              ('The initial Media Types are `application/vnd.coedit.text` and `blob`.',
+               'The fine-grained Media Type is `application/vnd.coedit.text`; all other supported Media Types initially use the generic opaque capability set.'),
+              ('initial Media Types `application/vnd.coedit.text` and `blob`',
+               'the fine-grained `application/vnd.coedit.text` Media Type and generic opaque Media Types'),
+              ('initial Media Types are exactly `application/vnd.coedit.text` and `blob`',
+               'fine-grained dispatch recognizes `application/vnd.coedit.text` and all other supported Media Types use the generic opaque handler'),
+              ('`application/vnd.coedit.text` and blob',
+               '`application/vnd.coedit.text` and representative opaque Media Types'),
+              ('`application/vnd.coedit.text` or blob',
+               '`application/vnd.coedit.text` or another supported Media Type'),
+              ('both initial Media Types', 'both the collaborative-text and generic opaque capability classes'),
+              ('either initial Media Type', 'either capability class'),
+              ('for both initial Media Types', 'for collaborative text and representative opaque Media Types'),
+              ('the two initial Media Types', 'the collaborative-text and generic opaque capability classes'),
+          ]
+
+          for path in files:
+              if path in skip or not path.exists():
+                  continue
+              text = path.read_text(encoding='utf-8')
+              old = text
+              for a, b in replacements:
+                  text = text.replace(a, b)
+              for a, b in exact:
+                  text = text.replace(a, b)
+              if text != old:
+                  path.write_text(text, encoding='utf-8', newline='\n')
+      - name: Format
+        run: npm run format
+      - name: Commit
+        run: |
+          if git diff --quiet; then exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git commit -m "Align payload docs with media types"
+          git push origin HEAD:design/typed-inline-content-payloads
