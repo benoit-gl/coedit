@@ -13,11 +13,11 @@ the convergence requirement for whole-payload replacement.
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) owns
 fine-grained behavior for the `coedit-text` payload. [`RANGE_MODEL.md`](RANGE_MODEL.md)
 owns durable references inside `coedit-text`. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
-owns the public engine boundary. [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md)
+owns the public engine boundary. [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md)
+owns cross-cutting capacity classification. [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md)
 owns the later network protocol and causal History model.
 
-This document controls payload-kind meaning when summaries elsewhere are
-insufficient.
+This document controls payload-kind meaning and payload-level carrier/resource behavior when summaries elsewhere are insufficient.
 
 ## 2. Separation of concerns
 
@@ -165,8 +165,8 @@ whole-content replacements behave as a convergent replicated register:
 - losing concurrent replacements remain immutable Contributions and their
   Versions remain exactly materializable through History.
 
-The exact carrier-private tie-break representation can be selected during
-carrier qualification. It must be stable and deterministic and must not become a
+The exact carrier-private tie-break representation is selected during carrier
+qualification. It must be stable and deterministic and must not become a
 presentation claim that the winning replacement was semantically better or
 chronologically later.
 
@@ -202,7 +202,7 @@ future payload kind that needs stable internal references can define a suitable
 content-local addressing contract without turning the current text Range into a
 universal binary or structured-data locator.
 
-## 10. Qualification and verification
+## 10. Qualification, capacity, and verification
 
 Step 3 must qualify both carrier candidates against the same payload contract.
 At minimum prove:
@@ -220,6 +220,21 @@ At minimum prove:
 - payload-specific operations rejecting an incompatible payload kind; and
 - one transaction spanning Block structure and several InlineContents without
   requiring every InlineContent to use the same payload kind.
+
+**Maturity:** Pending selection for carrier/payload resource guards; shared
+performance workloads remain experimental under `MVP_VERIFICATION_PLAN.md`.
+
+**Owner:** This document for payload/carrier replacement and blob resource guards;
+`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` separately owns private text-clipboard guards.
+
+**Promotion gate:** Step 3 carrier qualification / Gate B.
+
+Step 3 profiles text size, blob bytes, replacement allocation/copy behavior,
+carrier encoding, decoded allocation, and mixed-payload atomic work. Record and
+test any finite implementation guards that the selected carrier needs at these
+boundaries. No numeric text or blob maximum is accepted in advance. Exceeding a
+selected implementation guard returns a capacity/resource failure and publishes
+no partial replacement; it does not make the payload semantically invalid.
 
 Step 4 retains these cases as production regression tests for the selected
 carrier.
