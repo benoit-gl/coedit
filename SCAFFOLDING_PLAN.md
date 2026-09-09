@@ -173,7 +173,7 @@ Run the same pinned headless and Tiptap/ProseMirror suite against stable Yjs v13
 
 The suite covers:
 
-- the `application/vnd.coedit.text` and representative opaque Media Types Media Types;
+- `application/vnd.coedit.text` and representative opaque Media Types, including a valid unfamiliar type;
 - universal whole-payload replacement;
 - deterministic convergence of concurrent whole-payload replacements without wall-clock or arrival-order arbitration;
 - exact arbitrary Unicode `application/vnd.coedit.text` without a document-level hard-break item;
@@ -324,6 +324,12 @@ Gate A passes when the authority set, ADR rationale, preserved-branch classifica
 
 Gate B follows Step 3. Do not begin production carrier implementation or freeze carrier-dependent History effects, editor integration, or `.coedit` version 1 before the Yjs/Automerge common suite passes and the winner is recorded. The gate includes Media-Type-labelled payloads, whole-payload replacement, deterministic concurrent replacement convergence, attributed `application/vnd.coedit.text`, opaque payload byte/Origin preservation, structure, allocator behavior, text editor integration, atomicity, Range feasibility, one run-specific comparison method, and selected and tested carrier/private-text-clipboard guards. Experimental performance candidates do not become acceptance thresholds merely because the gate measured them. Gate B records the carrier-private replacement tie-break mechanism but does not select the Range-tracking representation.
 
+Gate B also closes the mixed replacement/text-edit semantics in
+`INLINE_CONTENT_PAYLOADS.md` section 9.1 and records its Media Type syntax,
+parameter, and capability-matching rules. The selected behavior and regression
+evidence must exist before Step 4 production implementation. This does not move
+Range lineage out of Gate C or the network protocol out of the pre-network gate.
+
 ### Gate C — Durable Range freeze
 
 Gate C follows Step 6. It closes the carrier-neutral `application/vnd.coedit.text` Range API result wrappers,
@@ -341,7 +347,7 @@ Do not treat the architecture as executable until Steps 1-8 pass. At that point 
 
 ### Gate E — Interactive rich editing
 
-Do not attach the interactive rich-text editor before Steps 2-10 are usable. The selected carrier, History, text Range service, import, portable format, read-only workspace, and structural editing must exist first. The rich-text editor is a `application/vnd.coedit.text` adapter, not a universal InlineContent editor.
+Do not attach the interactive rich-text editor before Steps 2-10 are usable. The selected carrier, History, text Range service, import, portable format, read-only workspace, and structural editing must exist first. The rich-text editor is an `application/vnd.coedit.text` adapter, not a universal InlineContent editor.
 
 ### Gate F — SQL or native packaging
 

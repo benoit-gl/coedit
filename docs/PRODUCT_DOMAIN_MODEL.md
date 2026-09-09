@@ -69,7 +69,7 @@ Human users, imports, automation, and later AI collaborators use the same durabl
 
 `InlineContent` is payload-neutral at the document level. The fine-grained Media Type is `application/vnd.coedit.text`; all other supported Media Types initially use the generic opaque capability set.
 
-Formatting is intrinsic metadata of `application/vnd.coedit.text`. Fine-grained Origin provenance is protected `application/vnd.coedit.text` metadata that travels with authored text but never inherits from neighboring text. A opaque payload has one payload-level Origin for its current whole value. Comments are external records with repairable text targets. Ordinary selections are transient.
+Formatting is intrinsic metadata of `application/vnd.coedit.text`. Fine-grained Origin provenance is protected `application/vnd.coedit.text` metadata that travels with authored text but never inherits from neighboring text. An opaque payload has one payload-level Origin for its current whole value. Comments are external records with repairable text targets. Ordinary selections are transient.
 
 These concerns share atomic versioning where required, but formatting and Origin do not use a generic external anchor. Internal links, comments, navigation, and later durable reference holders can use the shared Range value for `application/vnd.coedit.text` without making Range a universal payload, formatting, or provenance entity.
 
@@ -387,7 +387,7 @@ materialized Version
 
 The product can show several projections at the same time. No fixed pane layout is a domain requirement.
 
-Only one `application/vnd.coedit.text` InlineContent needs to own active rich-text editor machinery at one time in the initial browser implementation. A opaque payload can use a different application adapter without changing the document ontology.
+Only one `application/vnd.coedit.text` InlineContent needs to own active rich-text editor machinery at one time in the initial browser implementation. An opaque payload can use a different application adapter without changing the document ontology.
 
 ## 11. Recorded clean-slate decisions
 
@@ -438,12 +438,12 @@ The current ontology requires:
 
 ## 12. Open questions
 
-No product-domain question blocks the completed Steps 1 and 2. Step 3 compares Yjs v13 with Automerge and Gate B records the carrier selection under the Media-Type-labelled payload contract. Step 6 owns the separate durable `application/vnd.coedit.text` Range implementation and Gate C records the Range API and lineage-representation decisions. These are bounded implementation decisions, not permission for an adapter to change the accepted Range behavior.
+No product-domain question blocks the completed Steps 1 and 2. Step 3 compares Yjs v13 with Automerge and Gate B records the carrier selection under the Media-Type-labelled payload contract. Step 6 owns the separate durable `application/vnd.coedit.text` Range implementation and Gate C records the Range API and lineage-representation decisions. Gate B also closes the explicitly deferred mixed replacement/text-edit semantics. These gates do not permit an adapter to change accepted Range behavior.
 
 Post-MVP or pre-network questions include:
 
-- additional Media Types and their fine-grained operation contracts;
-- whether any future workflow requires changing an InlineContent Media Type in place;
+- mixed whole-payload replacement/text-edit concurrency, selected at Gate B under `INLINE_CONTENT_PAYLOADS.md`;
+- additional fine-grained Media-Type-specific operation contracts; valid unfamiliar Media Types already use generic opaque handling;
 - content-local addressing for future non-text payloads;
 - provenance visualization, retention, anonymization, and signed-claim policy;
 - exact comment repair confidence and conversation target scopes;

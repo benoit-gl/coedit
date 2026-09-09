@@ -108,7 +108,7 @@ src/
   content/
     payload.ts
     coeditText.ts
-    opaque payload.ts
+    opaquePayload.ts
     carrier.ts
     formatting.ts
     origin.ts
@@ -276,13 +276,13 @@ Each InlineContent owns one Media-Type-labelled collaborative payload. The initi
 
 `application/vnd.coedit.text` stores authored Unicode text, intrinsic formatting marks, and protected fine-grained Origin in one atomic collaborative state. It has no separate document-level hard-break item. Newline and other control characters are ordinary text data at this layer. HTML, plain-text projections, ProseMirror JSON, and rendered Origin runs are derived. Do not persist them as a parallel authority.
 
-Every supported Media Type other than `application/vnd.coedit.text` initially uses generic opaque handling: exact bytes plus one payload-level Origin for the current value. The selected carrier must preserve the Media Type and bytes and support atomic whole-payload replacement. It does not need a fine-grained opaque payload CRDT.
+Every valid Media Type other than the recognized Coedit collaborative-text type initially uses generic opaque handling: exact bytes plus one payload-level Origin for the current value. An unfamiliar type is not invalid syntax and needs no decoder or renderer at this boundary. `INLINE_CONTENT_PAYLOADS.md` section 3.1 owns syntax and capability matching. The selected carrier must preserve the Media Type and bytes and support atomic whole-payload replacement. It does not need a fine-grained opaque payload CRDT.
 
 Every InlineContent supports one whole-payload replacement operation. The logical operation targets one InlineContent, preserves its identity, validates a complete replacement against the replacement Media Type, and atomically publishes the new Media Type, Media-Type-specific content, and required Origin effect. The Media Type can stay the same or change. `application/vnd.coedit.text` also supports fine-grained text and formatting operations; other supported Media Types initially use generic opaque handling. Payload-specific fine-grained operations reject incompatible Media Types explicitly. Do not add dynamic capability dispatch or a generic replicated object model until a concrete additional fine-grained payload contract requires one.
 
-Under replicated qualification, whole-payload replacement behaves as a convergent register. A causally later replacement supersedes replacements it observes. Truly concurrent replacements select one current winner through a stable deterministic carrier-private order. The order must not depend on packet arrival, wall-clock time, or an unsynchronized local sequence. Losing replacements remain immutable Contributions and their Versions remain materializable. Gate B records the qualified tie-break mechanism without exposing it as product chronology.
+Under replicated qualification, whole-payload replacement follows the register invariants in `INLINE_CONTENT_PAYLOADS.md`. Gate B records its tie-break mechanism and separately selects the mixed replacement/text-edit behavior deferred in section 9.1 of that authority. Production implementation in Step 4 must not treat a candidate's mixed-operation behavior as an accepted policy before that decision. Step 5 implements permanent losing-Contribution and Version materialization.
 
-Use one logical collaborative document per Coedit document so one engine transaction can span Block structure, several InlineContents of either Media Type, Origin records, and Contribution metadata. Within that document, each `BlockId` owns one private carrier namespace for placement, a semantic activity marker, and Block-local payload. Do not create one independently committed Yjs or Automerge document per Block.
+Use one logical collaborative document per Coedit document so one engine transaction can span Block structure, several InlineContents of either capability class, Origin records, and Contribution metadata. Within that document, each `BlockId` owns one private carrier namespace for placement, a semantic activity marker, and Block-local payload. Do not create one independently committed Yjs or Automerge document per Block.
 
 `STRUCTURAL_CARRIER_MODEL.md` owns the exact structural contract. In summary, placement is one atomic `{ position, depth }` value; structural commands map through projected preorder; a subtree move allocates fresh ordered positions and applies one depth delta; and normal allocation should avoid exact position collisions.
 
@@ -292,7 +292,7 @@ Do not hash the whole Block payload into placement metadata. A payload hash woul
 
 Exact primary-position collisions are exceptional carrier cases. When insertion requires normalization of an existing collision run, that normalization is replicated as part of the structural Contribution that needs it. It is not a separate product operation or History action. Prefer deterministic normalization and suppression of normalization-only resurrection when they are inexpensive; record residual behavior if those properties would require disproportionate machinery.
 
-Bind the rich-text editor only to an active `application/vnd.coedit.text` InlineContent. A opaque payload can be projected to an application adapter, but no rich-text editor or text operation is offered for it. Do not expose the logical document, carrier objects, raw updates, Block activity setters, or client-supplied Origin setters through the public API.
+Bind the rich-text editor only to an active `application/vnd.coedit.text` InlineContent. An opaque payload can be projected to an application adapter, but no rich-text editor or text operation is offered for it. Do not expose the logical document, carrier objects, raw updates, Block activity setters, or client-supplied Origin setters through the public API.
 
 Formatting follows the vocabulary and boundary defaults in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`. Carrier adapters translate those logical policies to native marks/attributes and must prove exact round trip. Clearing formatting cannot change Origin.
 

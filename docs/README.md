@@ -52,6 +52,12 @@ When implementation evidence invalidates an accepted rule, update the responsibl
 
 ## Current implementation status
 
+Only Steps 1 and 2 have implemented behavior. The payload requirements below are
+accepted design direction, not an implemented carrier or public API. Mixed
+replacement/text-edit semantics and Media Type boundary details remain Gate B
+decisions; Range lineage remains a Gate C decision. The stage-by-stage status is
+in [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md#121-implementation-status-and-decision-ownership).
+
 The documentation authority, coding/tooling agreement, and preserved-decision reconciliation required by Step 0 are complete. The baseline includes the Media-Type-labelled InlineContent payload contract, the durable `application/vnd.coedit.text` Range contract, and the revised Step 3-and-later work order.
 
 Each InlineContent owns one collaborative payload labelled with an Internet Media Type. `application/vnd.coedit.text` has the fine-grained collaborative-text capability set. Every other supported Media Type initially uses the generic opaque capability set; its exact bytes and payload-level Origin are preserved. Use `application/octet-stream` when the actual format is unknown. Every payload supports atomic whole-payload replacement with explicit Origin behavior. Replacement preserves InlineContent identity while atomically replacing Media Type and content, so the Media Type can stay the same or change. Under replication, a causally later replacement supersedes replacements it observes; concurrent replacements select one deterministic current winner without wall-clock or packet-arrival arbitration. Losing replacements remain in immutable History and their Versions remain materializable.

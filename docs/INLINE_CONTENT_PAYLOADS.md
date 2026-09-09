@@ -1,7 +1,8 @@
 # InlineContent payload contract
 
-**Status:** Accepted logical content contract; carrier implementation is subject
-to Gate B.
+**Status:** Accepted logical content direction; mixed replacement/edit semantics
+and carrier selection remain Gate B decisions. Production payload behavior is
+not implemented in the completed Step 2 structural domain.
 
 ## 1. Purpose and authority
 
@@ -78,10 +79,46 @@ Use the actual known Media Type when available. Use
 `application/octet-stream` only when the payload format is genuinely unknown or
 no more specific type is available.
 
-The exact validation/canonicalization rules for Media Type parameters and the
-portable version-1 textual encoding are implementation details to freeze before
-portable version 1. Capability selection is based on the Media Type identity, not
-on sniffing payload bytes.
+Capability selection is based on Media Type identity, not on sniffing payload
+bytes. Type and subtype names are case-insensitive. Preserving the supplied
+Media Type value does not require case-sensitive capability matching.
+
+### 3.1 Syntax, recognition, and capability are separate
+
+Validate Media Type syntax at creation, replacement, and decoding boundaries.
+A Media Type identifies a concrete `type/subtype`, with parameters when present;
+an absent subtype such as `image/` is malformed. An HTTP media range such as
+`image/*` is not a concrete payload Media Type.
+
+A syntactically valid type that Coedit does not recognize is not malformed.
+It uses the generic opaque handler: preserve its Media Type, bytes, and
+payload-level Origin. Recognition does not require a live IANA lookup or a
+closed application allowlist. This does not claim that every syntactically valid
+name is registered, or that opaque bytes conform to the labelled format.
+
+| Condition                                                    | Required behavior                                                                         |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------- |
+| Malformed Media Type syntax                                  | Reject atomically as invalid input.                                                       |
+| Valid unfamiliar Media Type                                  | Accept through generic opaque handling, subject to ordinary envelope and resource checks. |
+| Known opaque format, such as `image/png`, without a renderer | Preserve it; lack of rendering capability is not document invalidity.                     |
+| Invalid Coedit collaborative-text state                      | Reject under the text contract; do not disguise it as opaque content.                     |
+| Unsupported carrier or container schema                      | Report incompatibility; this is not an unknown Media Type.                                |
+| Exceeded selected implementation guard                       | Report capacity/resource failure without partial publication.                             |
+
+The generic handler does not decode PNG, JSON, or other labelled bytes to certify
+their format. A consumer that renders, executes, or interprets those bytes owns
+its format validation and security policy. Media Type recognition alone grants
+no permission to activate content.
+
+Gate B records the parser, parameter-handling and capability-matching rules used
+by qualification before Step 4 implements them. Step 8 freezes their portable
+textual encoding and compatibility rules. These details must preserve the
+distinction above; they must not introduce a closed list of opaque formats.
+
+The standards basis is [RFC 6838, sections 3 and 4](https://www.rfc-editor.org/rfc/rfc6838.html)
+for names and registration, and [RFC 9110, section 8.3.1](https://www.rfc-editor.org/rfc/rfc9110.html#section-8.3.1)
+for Media Type syntax and case-insensitive type/subtype identity. A registration
+decision and a syntax check answer different questions.
 
 ## 4. Coedit collaborative text media type
 
@@ -203,6 +240,29 @@ chronologically later.
 A future application can add explicit conflict presentation if needed without
 changing this convergence requirement.
 
+### 9.1 Deferred mixed-operation semantics
+
+This contract does not yet choose the result of whole-payload replacement
+concurrent with fine-grained text insertion, deletion, or formatting. This
+includes text-to-text replacement, replacement to a non-text Media Type, and
+edits authored against a replacement that later loses the register conflict.
+
+**Owner:** This document. **Decision gate:** Step 3 / Gate B, before production
+carrier implementation in Step 4. Qualification must compare the candidates,
+record the selected observable behavior and its rationale, and add regression
+cases before this decision is treated as closed. Carrier defaults are evidence,
+not an implicit product decision.
+
+The selection must preserve atomic payload/Origin publication, deterministic
+convergence, causal History recoverability, and the accepted replacement-register
+rules above. Validity must be evaluated in the operation's causal context, not
+only against the Media Type visible when a packet happens to arrive. No winner,
+operation ordering, or mixed-operation merge policy is selected here.
+
+Gate C separately closes the Range-lineage consequences of the selected behavior.
+Transport, authorization, and replicated restore overlap remain subject to the
+pre-network gate in `COLLABORATION_MODEL.md`.
+
 ## 10. Origin and copy/restore behavior
 
 Origin answers who or what created payload material. Contribution actor answers
@@ -242,6 +302,11 @@ minimum prove:
 - representative opaque Media Types preserve their exact Media Type, bytes, and
   payload-level Origin;
 - `application/octet-stream` works as the generic unknown-binary case;
+- valid unfamiliar Media Types use opaque handling without a registry lookup;
+- malformed Media Type syntax fails atomically, separately from unsupported
+  schemas, unavailable renderers, and capacity failures;
+- case variants and the selected parameter rules produce consistent capability
+  matching and preserve the Media Type value through reload;
 - whole-payload replacement works for collaborative text and opaque payloads;
 - replacement preserves InlineContent identity while allowing Media Type to stay the same or change;
 - Media Type, content, and the required Origin effect change atomically;
@@ -255,6 +320,11 @@ minimum prove:
 - payload-specific operations reject an incompatible Media Type; and
 - one transaction can span Block structure and several InlineContents with
   different Media Types.
+
+Gate B must first close section 9.1 with same-type and cross-type replacement
+versus insertion, deletion, and formatting cases, including edits to a losing
+replacement. Exercise both delivery orders, duplication, reload, and causal
+recoverability. Record the policy before asserting its expected outcomes.
 
 Step 3 can use carrier-level causal/effect surrogates for History because
 first-class Contributions and permanent Version materialization are implemented
@@ -281,6 +351,20 @@ make the payload semantically invalid.
 
 Step 4 retains these cases as production regression tests for the selected
 carrier.
+
+### 12.1 Implementation status and decision ownership
+
+| Stage               | Status or responsibility                                                                                                                                       |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Completed Steps 1-2 | Browser scaffold and pure structural domain; `InlineContentValue` remains an opaque empty value. No Media Type dispatch or replacement carrier is implemented. |
+| Step 3 / Gate B     | Qualify carriers; select the replacement tie-break, mixed replacement/edit semantics, Media Type boundary rules, and required resource guards.                 |
+| Step 4              | Implement the selected payload and carrier behavior.                                                                                                           |
+| Step 5              | Implement first-class Contributions and permanent exact Version materialization, including losing replacement History.                                         |
+| Step 6 / Gate C     | Select and implement durable Range lineage and remaining Range behavior.                                                                                       |
+| Step 8              | Freeze portable encoding and the standards-compatible disposition of the Coedit text Media Type before public interoperability.                                |
+| Pre-network gate    | Qualify causal transport, authorization, and replicated restore overlap before network collaboration ships.                                                    |
+
+Accepted design requirements are not claims that these later stages have run.
 
 ## 13. Non-goals
 

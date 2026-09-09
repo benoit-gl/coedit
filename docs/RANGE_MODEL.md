@@ -87,10 +87,10 @@ snapshots can accelerate reconstruction, but they are private and create no
 additional product Versions.
 
 If the target InlineContent no longer has a resolvable `application/vnd.coedit.text` lineage at
-the selected Version, that source member is unresolved. The current payload
-contract does not define so such a mismatch can
-arise only through future evolution or a lineage rule that Step 6 must define
-explicitly.
+the selected Version, that source member is unresolved. Whole-payload replacement
+can change the Media Type away from text. A later return to text must not reattach
+a source member merely because the identity and Media Type match. Step 6 / Gate C
+defines the exact lineage/resumption rule for both Span and Positional Ranges.
 
 ## 4. Required logical service boundary
 
@@ -163,7 +163,7 @@ of expanding across the excluded material.
 Whole-payload replacement of an `application/vnd.coedit.text` payload exists under
 `INLINE_CONTENT_PAYLOADS.md`. Step 6 must ensure its final lineage mapping is
 consistent with these replacement semantics and the explicit positional rules
-below; this PR does not select a carrier representation for that mapping.
+below; this contract does not select a carrier representation for that mapping.
 
 ## 6. Positional Range behavior
 

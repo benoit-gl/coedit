@@ -144,7 +144,8 @@ then retain it as a production regression suite for the winner.
 
 Verify:
 
-- each materialized InlineContent carries a valid Media Type; `application/vnd.coedit.text` selects the fine-grained text capability set and representative other Media Types select the generic opaque capability set;
+- each materialized InlineContent carries a syntactically valid Media Type; `application/vnd.coedit.text` selects the fine-grained text capability set and valid unfamiliar types select generic opaque handling;
+- malformed syntax fails atomically; case variants and the Gate B parameter rules give consistent capability matching without a registry lookup;
 - each materialized InlineContent has one Media Type and ordinary replacement preserves the InlineContent identity;
 - payload-specific operations reject an incompatible Media Type explicitly rather than coercing content;
 - no separate Media Type conversion operation is required; type change occurs only as part of atomic whole-payload replacement;
@@ -162,6 +163,14 @@ Verify:
 - Step 3 retains both concurrent replacement inputs/effects as carrier-level evidence and can reconstruct each replacement value independently; section 7 verifies permanent losing-Contribution and Version materialization after Step 5 implements first-class History.
 
 Do not require the carrier to merge opaque payload bytes or the internal structure of an opaque payload.
+
+Gate B must select and record mixed whole-payload replacement/text-edit behavior
+under `INLINE_CONTENT_PAYLOADS.md` section 9.1. Compare same-type and cross-type
+replacement against insertion, deletion, and formatting, including edits to a
+replacement that loses. Test reordered and duplicate delivery, reload, atomic
+Origin effects, and causal recoverability. Candidate behavior is not an accepted
+policy until the gate records the decision. Step 4 retains the selected cases as
+regressions; Step 5 supplies the permanent History proof.
 
 ### 6.2 `application/vnd.coedit.text` formatting carrier
 
@@ -241,7 +250,7 @@ Verify:
 - pairwise and three-way fine-grained text insert/delete/format at identical and adjacent boundaries under duplicate, delayed, reordered, partitioned, and reconnected updates;
 - pairwise concurrent whole-payload replacement under the same delivery faults, including same-Media-Type and different-Media-Type concurrent replacements;
 - equal logical payload state, formatting/Origin projection, opaque payload bytes/Origin, deterministic replacement winner, and durable text Range-position behavior rather than merely equal rendered text;
-- one atomic command spanning Block structure, a `application/vnd.coedit.text` InlineContent, an opaque InlineContent, Origins, and Contribution metadata publishes all or none;
+- one atomic command spanning Block structure, an `application/vnd.coedit.text` InlineContent, an opaque InlineContent, Origins, and Contribution metadata publishes all or none;
 - a command that explicitly targets only one InlineContent cannot mutate unrelated InlineContents or Block structure;
 - direct one-span and multi-span Range creation is feasible only against `application/vnd.coedit.text` through the same carrier-neutral abstraction for each candidate;
 - Range creation targeting opaque payload fails explicitly and atomically;
@@ -419,7 +428,8 @@ Verify:
 - corrupt checksum fails;
 - unsupported versions fail;
 - unknown properties fail for version 1;
-- unknown Media Type, carrier/schema, malformed base64/binary values, missing/mis-hashed chunks, and unreachable references fail;
+- valid unfamiliar Media Types round trip through generic opaque handling with their exact labels, bytes, and Origins, without a registry lookup or renderer;
+- malformed Media Type syntax, unsupported carrier/schema versions, malformed base64/binary values, missing/mis-hashed chunks, and unreachable references fail with the appropriate invalid-input or incompatibility result;
 - malformed trees and ownership fail;
 - broken graph/frontier links and Contributor/Origin references fail;
 - identity reuse across retained lifetimes fails;
@@ -472,7 +482,7 @@ Keep the end-to-end suite small and high value. It must prove at least:
 8. inspect and restore History while preserving text and opaque-payload Origin and attributing the restore actor;
 9. create, resolve as spans and exact text, rationalize, serialize, parse, and reinject representative multi-span and Positional text Ranges;
 10. export Markdown and re-import it to an equivalent Coedit text document;
-11. save `.coedit` and reopen it with both Media Types intact;
+11. save `.coedit` and reopen it with text and opaque payloads intact;
 12. persist and reload through the incremental IndexedDB repository; and
 13. recover safely from representative stale, quota, failed-commit, and malformed-open cases.
 
@@ -498,7 +508,7 @@ authorization, restore, and structural integration must pass together.
 
 ## 16. Later feature gates
 
-- **Additional Media Types:** explicit payload semantics, Origin granularity, fine-grained operations if any, content-local addressing if needed, portable representation, and convergence tests. Whole-payload replacement remains the baseline collaborative operation.
+- **Additional fine-grained payload capabilities:** explicit semantics, Origin granularity, operations, content-local addressing if needed, portable representation, and convergence tests. Valid unfamiliar Media Types already use generic opaque handling; they do not require a new fine-grained contract.
 - **Comments:** text Range-holder state, multi-span presentation, confidence policy, explicit repair, restore, and compaction fixtures.
 - **AI:** explicit source Version, typed operations, software-agent Origin, separate human acceptance, provider/model/version/derivation, and stale proposal behavior.
 - **Cross-document lineage:** private fragment versioning, origin-catalog import, source accessibility/privacy, and spoof resistance.

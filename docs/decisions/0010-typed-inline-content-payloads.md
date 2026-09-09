@@ -1,6 +1,6 @@
 # ADR-0010: Media-Type-labelled InlineContent payloads and universal replacement
 
-**Status:** Accepted
+**Status:** Accepted direction; mixed replacement/edit semantics deferred to Gate B
 
 **Decision date:** 2026-09-08
 
@@ -131,6 +131,10 @@ Media-Type-specific contract can add finer operations or finer Origin granularit
 without changing the stored Media Type merely because Coedit learned new
 capabilities.
 
+A valid unfamiliar Media Type uses this same opaque handler. Syntax validity,
+registration, and available rendering/editing capabilities are separate concerns.
+`INLINE_CONTENT_PAYLOADS.md` section 3.1 owns their validation and failure rules.
+
 ### 3.4 Whole-payload replacement is universal
 
 Every InlineContent supports one atomic whole-payload replacement operation with explicit Origin behavior. The operation preserves the InlineContent identity and replaces the complete payload value: Media Type plus Media-Type-specific content.
@@ -161,6 +165,12 @@ Fine-grained merge is not required for every Media Type. Whole-payload replaceme
 Gate B qualifies and records the carrier-private deterministic tie-break
 mechanism. That tie-break is convergence machinery. It does not mean that the
 winning replacement was semantically better or happened later in human time.
+
+Replacement concurrent with fine-grained text editing is explicitly deferred to
+Gate B under `INLINE_CONTENT_PAYLOADS.md` section 9.1. Qualification must select
+and record that observable behavior before Step 4 implements it. Deferring this
+interaction avoids choosing a policy without carrier evidence; it does not
+weaken the accepted register invariants or defer it until network deployment.
 
 ### 3.6 Origin granularity belongs to the Media-Type-specific contract
 
@@ -305,8 +315,11 @@ carrier winner and the private deterministic replacement tie-break.
 Step 6 remains responsible for the exact effect of whole-payload replacement involving `application/vnd.coedit.text` on durable Range lineage. Step 8 freezes Media Type values and opaque payload bytes into the
 portable format only after Gates B and C pass.
 
-Future Media-Type-specific fine-grained editing, Media Type parameter rules, and non-text content-local addressing require
-separate explicit decisions when real application requirements exist.
+Gate B selects the Media Type parameter and capability-matching rules used by
+the carriers; Step 8 freezes portable encoding. Future fine-grained editing and
+non-text content-local addressing require separate contracts when real
+application requirements exist. Valid unfamiliar Media Types already use the
+opaque contract and need no schema change merely because they are unfamiliar.
 
 ## 7. Standards references
 

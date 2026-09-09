@@ -185,7 +185,7 @@ A user can reorganize an imported document and edit rich `application/vnd.coedit
 
 New text receives the correct human/imported/unknown Origin. Clearing formatting preserves Origin. Same-document internal paste preserves source Origin while recording the paster; external paste does not import private Origin or falsely claim authorship.
 
-The suite also creates an opaque InlineContent, replaces its bytes with explicit Origin, and proves byte preservation. Whole-payload replacement of either Media Type is atomic.
+The suite also creates an opaque InlineContent, replaces its bytes with explicit Origin, and proves byte preservation. Whole-payload replacement of either capability class is atomic.
 
 Durable commits happen promptly and can share a semantic group for History presentation. A failed or stale commit leaves canonical state unchanged and retains a recoverable UI draft or an explicit retry/discard path.
 

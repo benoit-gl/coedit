@@ -421,13 +421,13 @@ Deterministic normalization and suppression of normalization-only resurrection
 are preferred when inexpensive, but residual behavior can be accepted and
 recorded because exact collisions should be exceptional.
 
-These accepted carrier semantics close the former representation-level questions
-for Step 3 except for the bounded carrier selections that Gate B must record,
-including the exact deterministic whole-replacement tie-break. They do not by
-themselves complete the network protocol. Before real clients connect, the
-system must still qualify causal Contribution envelopes, transport, dependency
-buffering, authorization, restart recovery, hostile input, restore overlap, and
-exact integration rules.
+These accepted carrier semantics constrain Step 3. Gate B must still select the
+carrier-private replacement tie-break and the observable mixed replacement/edit
+behavior deferred in `INLINE_CONTENT_PAYLOADS.md` section 9.1. Those decisions
+precede production carrier implementation; they do not complete the network
+protocol. Before real clients connect, the system must still qualify causal
+Contribution envelopes, transport, dependency buffering, authorization, restart
+recovery, hostile input, restore overlap, and exact integration rules.
 
 ### Collaborative-document and annotation boundaries
 
@@ -670,7 +670,7 @@ pass together.
 - whether any workflow eventually requires a coordinated canonical sequence; and
 - collaboration semantics for future Media Types beyond the universal whole-payload replacement baseline.
 
-The initial Media Types, deterministic whole-payload replacement policy, flat Block carrier, command-to-placement mapping, semantic-update-over-delete preference, and exceptional collision-normalization policy are not unresolved product choices. `INLINE_CONTENT_PAYLOADS.md` and `STRUCTURAL_CARRIER_MODEL.md` own those rules. Gate B selects only their carrier-private implementation details.
+The Media Type boundary, replacement-versus-replacement invariants, flat Block carrier, command-to-placement mapping, semantic-update-over-delete preference, and exceptional collision-normalization policy are accepted. `INLINE_CONTENT_PAYLOADS.md` and `STRUCTURAL_CARRIER_MODEL.md` own those rules. Gate B selects their carrier mechanisms and closes the explicitly deferred mixed replacement/edit semantics; it does not reopen the accepted invariants. Gate C owns Range lineage. The pre-network gate owns transport and replicated restore overlap.
 
 ## 17. Technical references
 

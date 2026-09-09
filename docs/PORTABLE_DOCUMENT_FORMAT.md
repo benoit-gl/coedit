@@ -175,7 +175,7 @@ or carriage-return that exists in `application/vnd.coedit.text` is serialized as
 to the final text codec. Block and InlineContent boundaries do not synthesize
 separator characters during encoding or decoding.
 
-A opaque payload is opaque to the document model. Its bytes can be stored in a carrier
+An opaque payload is opaque to the document model. Its bytes can be stored in a carrier
 chunk or another version-1 binary chunk selected by Gate B/Step 8. That physical
 choice does not make the opaque payload an independent document entity or assign it an
 application media type.
@@ -439,12 +439,17 @@ a supported migration through carrier-neutral logical materialization or a new
 container version. Public engine APIs and product IDs must not expose carrier
 bytes merely to avoid that migration boundary.
 
-Additional Media Types, future comments,
-conversations, authenticated claims, signatures, attachments, or replicated
-protocol records do not enter version 1 silently. A later Media Type must
-define its portable representation and Origin semantics explicitly. Minimum
-Origin metadata for the collaborative-text and generic opaque capability classes is already part of the
-version-1 logical requirement.
+Valid unfamiliar Media Types use the existing opaque payload representation and
+payload-level Origin. Their labels and bytes do not require a format revision
+merely because Coedit has no decoder or renderer for them. Malformed Media Type
+syntax still fails; `INLINE_CONTENT_PAYLOADS.md` section 3.1 defines that boundary.
+
+New fine-grained payload state or operations, future comments, conversations,
+authenticated claims, signatures, attachment records, or replicated protocol
+records require an explicit compatibility decision. An additional fine-grained
+Media-Type-specific contract must define its portable state and Origin behavior.
+Minimum Origin metadata for text and generic opaque payloads is already part of
+the version-1 logical requirement.
 
 Measurements can justify a later manifest plus compressed binary chunks instead
 of monolithic JSON/base64. Such a container change can preserve the same logical

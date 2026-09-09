@@ -308,7 +308,7 @@ The editor adapter can reconstruct or bind transient ProseMirror/Tiptap/carrier 
 
 A durable fine-grained text commit must pass through `execute` and preserve the accepted atomic text-plus-formatting-plus-Origin contract. The client can request ordinary editing intent but cannot assign arbitrary Origin through formatting or raw carrier updates.
 
-A opaque payload adapter receives detached bytes and payload metadata. It can request universal whole-payload replacement but receives no fine-grained opaque-payload mutation or raw carrier authority.
+An opaque payload adapter receives detached bytes and payload metadata. It can request universal whole-payload replacement but receives no fine-grained opaque-payload mutation or raw carrier authority.
 
 Do not expose a live engine-owned Y.Doc/Automerge object, a formatting-only side channel, an Origin mutation side channel, or a generic payload capability registry merely to support the collaborative-text and generic opaque capability classes.
 
@@ -362,7 +362,7 @@ payload-aware client intent
   -> engine emits invalidation
 ```
 
-This workflow is always available for `application/vnd.coedit.text` and representative opaque Media Types. It does not change the target Media Type. Fine-grained opaque-payload mutation is not an MVP operation.
+This workflow is available for every Media Type under the payload contract. It preserves InlineContent identity and can keep or change the Media Type atomically with the content and Origin effect. Fine-grained opaque-payload mutation is not an MVP operation. Mixed replacement/text-edit concurrency remains a Gate B decision under `INLINE_CONTENT_PAYLOADS.md`.
 
 ### Semantic Checkpoint
 
@@ -453,7 +453,7 @@ The MVP must prove:
 
 - core commands, queries, History, and serialization require no React, file API, or IndexedDB;
 - `application/vnd.coedit.text` and representative opaque Media Types are explicit Media Types and no payload-specific operation silently coerces between them;
-- whole-payload replacement succeeds for both the collaborative-text and generic opaque capability classes, preserves kind, assigns the required Origin, and fails atomically;
+- whole-payload replacement succeeds for both the collaborative-text and generic opaque capability classes, preserves InlineContent identity, can keep or change Media Type, assigns the required Origin, and fails atomically;
 - concurrent whole-payload replacements choose the same deterministic winner on every replica with the same valid causal input, independent of arrival order and wall-clock time;
 - every losing concurrent replacement remains represented by immutable History and exactly materializable Versions;
 - interactive text edits and Markdown import use the same validation, attribution, atomicity, and History boundary;

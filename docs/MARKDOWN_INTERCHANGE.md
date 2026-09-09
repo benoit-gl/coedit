@@ -193,7 +193,7 @@ Initially apply this fallback to:
 
 If an unsupported source node has no usable source offsets, reject the import with `unsupported-node-without-source`.
 
-A opaque payload already present in an edited Coedit document is not an unsupported Markdown source node. It is a valid Coedit payload with no current Markdown representation and is handled by export diagnostics in section 11.
+An opaque payload already present in an edited Coedit document is not an unsupported Markdown source node. It is a valid Coedit payload with no current Markdown representation and is handled by export diagnostics in section 11.
 
 ## 10. Import diagnostics
 
@@ -241,7 +241,7 @@ Examples include:
 - application or user tags with no Markdown representation;
 - multiple simultaneously selected InlineContents for one Block;
 - a structural grouping that is valid Coedit but not produced by the Markdown importer;
-- a `application/vnd.coedit.text` character with no accepted Markdown round-trip spelling under this contract;
+- an `application/vnd.coedit.text` character with no accepted Markdown round-trip spelling under this contract;
 - future overlays such as comments or conversations; and
 - future presentation modes with no importer mapping.
 
