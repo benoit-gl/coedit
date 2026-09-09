@@ -251,7 +251,7 @@ In completed Step 2, `InlineContentValue` is a typed, opaque, valid empty value.
 
 Step 4 evolves that opaque boundary into the Media-Type-labelled payload representation defined by `INLINE_CONTENT_PAYLOADS.md`. The initial runtime kinds are `application/vnd.coedit.text` and generic opaque Media Type. The ordinary authored empty-content path creates an empty `application/vnd.coedit.text` value; creation/import paths that deliberately require opaque content use a trusted complete opaque payload value with explicit Origin. This documentation evolution does not require reopening the already completed structural semantics of Step 2.
 
-At the public human-edit boundary, text creation supplies visible content and formatting intent and the engine assigns Origin from the attributed command context. A complete pre-attributed `application/vnd.coedit.text` value is accepted only by validated internal import, copy, restore, or remote-integration paths; it is not a client Origin-spoofing surface. Blob creation/replacement likewise obtains Origin from a trusted context rather than a caller-controlled attribution side channel.
+At the public human-edit boundary, text creation supplies visible content and formatting intent and the engine assigns Origin from the attributed command context. A complete pre-attributed `application/vnd.coedit.text` value is accepted only by validated internal import, copy, restore, or remote-integration paths; it is not a client Origin-spoofing surface. Generic opaque creation/replacement likewise obtains Origin from a trusted context rather than a caller-controlled attribution side channel.
 
 Operation rules:
 
@@ -272,7 +272,7 @@ Do not add entity tombstones or lifecycle timestamps to the logical live entitie
 
 ## 6. Carrier qualification and selected collaborative core
 
-Each InlineContent owns one typed collaborative payload. The initial Media Types and universal replacement behavior are defined by `INLINE_CONTENT_PAYLOADS.md`.
+Each InlineContent owns one Media-Type-labelled collaborative payload. The initial Media Types and universal replacement behavior are defined by `INLINE_CONTENT_PAYLOADS.md`.
 
 `application/vnd.coedit.text` stores authored Unicode text, intrinsic formatting marks, and protected fine-grained Origin in one atomic collaborative state. It has no separate document-level hard-break item. Newline and other control characters are ordinary text data at this layer. HTML, plain-text projections, ProseMirror JSON, and rendered Origin runs are derived. Do not persist them as a parallel authority.
 
@@ -296,7 +296,7 @@ Bind the rich-text editor only to an active `application/vnd.coedit.text` Inline
 
 Formatting follows the vocabulary and boundary defaults in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`. Carrier adapters translate those logical policies to native marks/attributes and must prove exact round trip. Clearing formatting cannot change Origin.
 
-The trusted engine boundary assigns Origin for human text insertion, import, external paste, automation, AI, and whole-payload replacement. Same-document internal copy and restore preserve existing Origins according to the payload contract under fresh carrier item identities where applicable. Ordinary editor or blob-replacement clients cannot forge another Contributor's Origin.
+The trusted engine boundary assigns Origin for human text insertion, import, external paste, automation, AI, and whole-payload replacement. Same-document internal copy and restore preserve existing Origins according to the payload contract under fresh carrier item identities where applicable. Ordinary editor or opaque-replacement clients cannot forge another Contributor's Origin.
 
 Step 3 runs the same carrier-neutral payload, headless text, structural, and ProseMirror-integrated suites against Yjs v13 and Automerge. Functional invariants are mandatory. Range work in this step proves only the `application/vnd.coedit.text` feasibility subset in `RANGE_MODEL.md`; it does not select the Range-tracking representation. Select Yjs when its Media-Type-labelled payload, attributed-text, and structural carrier passes without fragile full-state repair. Select Automerge only if its richer native model materially reduces custom code and its editor/storage integrations pass the same suites. Record the selected versions, dependency/license review, replacement tie-break mechanism, fixtures, measurements, and rejected-candidate rationale.
 
@@ -372,7 +372,7 @@ Gate C must close and record:
 
 Range holders do not register with the document. Ordinary text edits and Block moves cannot enumerate or rewrite all retained holders. Permanent Version materialization supplies the starting point for lazy lineage resolution. Resolution, rationalization, parsing, and serialization can perform work for the one supplied Range. Serialization rebases that Range against the selected Version and removes obsolete tracking evidence when the accepted representation permits it.
 
-Embedded internal-link Range values resolve only in the current document and retain the primary Block fallback. External deep links combine an application-owned document URI with a Range fragment; the Range service performs no cross-document reconciliation. Blob sub-content has no Range representation in the MVP. Comment records and repair UX remain post-MVP consumers of the text service.
+Embedded internal-link Range values resolve only in the current document and retain the primary Block fallback. External deep links combine an application-owned document URI with a Range fragment; the Range service performs no cross-document reconciliation. Generic opaque sub-content has no Range representation in the MVP. Comment records and repair UX remain post-MVP consumers of the text service.
 
 ## 9. Semantic Checkpoint and restore
 
@@ -469,7 +469,7 @@ If several contents match, select the first in vector order and return a project
 
 Initial lenses preserve the complete Block tree. They do not silently reparent Blocks.
 
-A renderer must inspect the selected Media Type. The current Markdown/writing projection expects `application/vnd.coedit.text`; a opaque payload requires a payload-aware renderer or a non-representability diagnostic rather than implicit byte-to-text conversion.
+A renderer must inspect the selected Media Type. The current Markdown/writing projection expects `application/vnd.coedit.text`; an opaque payload requires a payload-aware renderer or a non-representability diagnostic rather than implicit byte-to-text conversion.
 
 Historical comparison aligns Blocks by stable `BlockId` and reports unmatched subtrees. Do not guess correspondence.
 
@@ -491,7 +491,7 @@ Portable-file dirty state is the comparison between the engine's current token a
 
 After the strict MVP vertical slice works, measure before adopting new infrastructure.
 
-Before SQL or OPFS, require evidence about document size, payload/update/chunk growth, recovery and materialization latency, query needs, large blob/attachment needs, compaction, and atomicity limits. Do not adopt PGlite, RxDB, SQLite-WASM, or `y-indexeddb` as a substitute for Coedit's semantic repository transaction.
+Before SQL or OPFS, require evidence about document size, payload/update/chunk growth, recovery and materialization latency, query needs, large opaque-payload/attachment needs, compaction, and atomicity limits. Do not adopt PGlite, RxDB, SQLite-WASM, or `y-indexeddb` as a substitute for Coedit's semantic repository transaction.
 
 Before a native shell, require a concrete browser-inadequate need. Tauri can wrap the validated application through the same ports; it does not redefine the document engine or recreate a Rust domain authority. Electron requires a demonstrated need for a bundled consistent Chromium runtime.
 

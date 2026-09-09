@@ -29,7 +29,7 @@ Do not use a test-count target. Require coverage of behavior, invariants, bounda
 Use these layers in order:
 
 1. pure domain invariant tests;
-2. headless typed-payload, attributed `application/vnd.coedit.text`, and carrier-qualification tests;
+2. headless Media-Type-labelled-payload, attributed `application/vnd.coedit.text`, and carrier-qualification tests;
 3. operation and History tests;
 4. headless `application/vnd.coedit.text` Range creation, resolution, serialization, and scaling tests;
 5. Markdown planning, export, and round-trip fixtures;
@@ -57,7 +57,7 @@ The Step 0 gate requires:
 
 The documented baseline closes the former `TextAnchor` blocker by assigning payload-neutral InlineContent ownership, `application/vnd.coedit.text` intrinsic formatting and fine-grained Origin, opaque-payload Origin, durable text Range values, Range-holder lifecycles, and transient selections to distinct mechanisms. A mechanical scan must find no normative external formatting/provenance Range, universal hard-break content-item requirement, implicit Block/InlineContent text separator, or single-InlineContent durable-target assumption outside an explicitly superseded historical statement.
 
-The typed-payload decision and Range authority revalidate the Step 0 authority baseline without reopening completed structural semantics in Steps 1 and 2. Gate B selects the collaborative carrier after Step 3. Gate C selects the text Range representation after Step 6 and before `.coedit` version 1 or internal-link Range encoding is frozen.
+The Media-Type-labelled-payload decision and Range authority revalidate the Step 0 authority baseline without reopening completed structural semantics in Steps 1 and 2. Gate B selects the collaborative carrier after Step 3. Gate C selects the text Range representation after Step 6 and before `.coedit` version 1 or internal-link Range encoding is frozen.
 
 The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `INLINE_CONTENT_PAYLOADS.md`, `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, the deterministic whole-payload replacement tie-break used by each qualified adapter, the actual qualification hardware/software environment, measurements, scaling behavior, and the selection rationale. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
 
@@ -161,7 +161,7 @@ Verify:
 - wall-clock values and packet-arrival order do not affect the winner; and
 - Step 3 retains both concurrent replacement inputs/effects as carrier-level evidence and can reconstruct each replacement value independently; section 7 verifies permanent losing-Contribution and Version materialization after Step 5 implements first-class History.
 
-Do not require the carrier to merge opaque payload bytes or the internal structure of a opaque payload.
+Do not require the carrier to merge opaque payload bytes or the internal structure of an opaque payload.
 
 ### 6.2 `application/vnd.coedit.text` formatting carrier
 

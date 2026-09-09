@@ -297,14 +297,14 @@ The rich-text editor boundary is specifically for `application/vnd.coedit.text`.
 ```ts
 interface CoeditTextEditorContentValue {
   readonly inlineContentId: InlineContentId;
-  readonly kind: "application/vnd.coedit.text";
+  readonly mediaType: "application/vnd.coedit.text";
   readonly content: DetachedCoeditText;
 }
 ```
 
 `DetachedCoeditText` contains authored text, native formatting semantics, and protected fine-grained Origin information required for correct editing. It has no document-level `HardBreak` variant. Characters such as line feed remain ordinary text data. It is carrier-neutral at the public boundary.
 
-The editor adapter can reconstruct or bind transient ProseMirror/Tiptap/carrier state from this value or a controlled engine session. Mutating detached local state does not mutate engine state. Requesting a text-editor session for a opaque payload fails explicitly or is not offered by the application.
+The editor adapter can reconstruct or bind transient ProseMirror/Tiptap/carrier state from this value or a controlled engine session. Mutating detached local state does not mutate engine state. Requesting a text-editor session for an opaque payload fails explicitly or is not offered by the application.
 
 A durable fine-grained text commit must pass through `execute` and preserve the accepted atomic text-plus-formatting-plus-Origin contract. The client can request ordinary editing intent but cannot assign arbitrary Origin through formatting or raw carrier updates.
 
@@ -385,7 +385,7 @@ Markdown bytes
   -> active session replaced only after success
 ```
 
-`MARKDOWN_INTERCHANGE.md` owns detailed rules. Markdown import initially creates `application/vnd.coedit.text`; it does not require a opaque payload interchange convention.
+`MARKDOWN_INTERCHANGE.md` owns detailed rules. Markdown import initially creates `application/vnd.coedit.text`; it does not require an opaque payload interchange convention.
 
 ### Markdown export
 

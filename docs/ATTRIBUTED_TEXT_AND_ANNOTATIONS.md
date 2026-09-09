@@ -19,7 +19,7 @@ insufficient. [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md) controls th
 evidence required to qualify an implementation.
 
 The accepted rationale and evaluated alternatives are recorded in
-[`decisions/0001-collaborative-content-provenance-history.md`](decisions/0001-collaborative-content-provenance-history.md), as refined by the typed-payload
+[`decisions/0001-collaborative-content-provenance-history.md`](decisions/0001-collaborative-content-provenance-history.md), as refined by the Media-Type-labelled-payload
 decision.
 
 ## 2. Scope by phase
@@ -37,7 +37,7 @@ The strict MVP and its carrier qualification must implement for `application/vnd
 - exact `.coedit` recovery of that state.
 
 The same carrier qualification also proves the payload-level replacement and
-blob behavior in `INLINE_CONTENT_PAYLOADS.md`.
+generic opaque behavior in `INLINE_CONTENT_PAYLOADS.md`.
 
 The Step 3 carrier gate proves that both carrier candidates can support the
 accepted text Range behavior. The Step 6 Range gate finalizes and implements the
@@ -299,8 +299,8 @@ sanitizer. Link metadata remains inert in canonical content; any presentation
 layer that emits an active HTML link or navigation action validates its own
 interpretation before activation.
 
-Blob clipboard/drag-drop transport is an application concern until a focused
-blob interchange contract exists. It does not redefine this text clipboard
+Generic opaque clipboard/drag-drop transport is an application concern until a focused
+opaque-payload interchange contract exists. It does not redefine this text clipboard
 contract.
 
 ## 8. Restore and deletion
@@ -350,7 +350,7 @@ UX are post-MVP decisions. Step 3 proves carrier feasibility. Step 6 implements
 the reusable headless text Range service without adding an external formatting
 or provenance anchor model.
 
-Blob sub-content comment targeting is not defined by the current Range service.
+Generic opaque sub-content comment targeting is not defined by the current Range service.
 
 ## 10. Selection and awareness
 

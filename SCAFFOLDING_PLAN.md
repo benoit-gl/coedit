@@ -167,7 +167,7 @@ See [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md), [`docs/MVP_I
 
 ### Step 3 — Qualify collaborative carrier candidates
 
-**Objective:** Compare pinned Yjs v13 and Automerge through the same production-shaped carrier-neutral abstractions before production typed-payload implementation, History, Range, editor, or portable formats depend on one carrier.
+**Objective:** Compare pinned Yjs v13 and Automerge through the same production-shaped carrier-neutral abstractions before production Media-Type-labelled-payload implementation, History, Range, editor, or portable formats depend on one carrier.
 
 Run the same pinned headless and Tiptap/ProseMirror suite against stable Yjs v13 and Automerge. Track Yjs v14 only after stable release; use Loro as a cursor/movable-tree benchmark, not a current candidate. Before comparing candidates, record one run-specific fixture profile and measurement method used for both. Record dependency/license review, adapter complexity, target devices, measurements, deterministic whole-payload replacement tie-break behavior, and the selection rationale.
 
@@ -194,7 +194,7 @@ See [`docs/INLINE_CONTENT_PAYLOADS.md`](docs/INLINE_CONTENT_PAYLOADS.md), [`docs
 
 **Objective:** Establish the production Media-Type-labelled InlineContent payload and structural carrier using the winner recorded by Gate B.
 
-**Outcome:** Headless code can create, validate, project, clone, replace, edit, copy/paste, restore, and serialize carrier state. Each InlineContent has one initial Media Type: `application/vnd.coedit.text` or another supported Media Type. Every payload supports whole-content replacement with explicit Origin and deterministic replicated convergence. `application/vnd.coedit.text` additionally supports fine-grained editing, intrinsic formatting, and protected non-inheriting Origin. Blob preserves opaque bytes with payload-level Origin and has no finer initial mutation. One logical collaborative document contains the accepted flat Block carrier and Block-local payload namespaces, transacts across structure and several InlineContents, and supports semantic-update-over-delete. The selected carrier suite remains a production regression suite.
+**Outcome:** Headless code can create, validate, project, clone, replace, edit, copy/paste, restore, and serialize carrier state. Each InlineContent has one initial Media Type: `application/vnd.coedit.text` or another supported Media Type. Every payload supports whole-content replacement with explicit Origin and deterministic replicated convergence. `application/vnd.coedit.text` additionally supports fine-grained editing, intrinsic formatting, and protected non-inheriting Origin. Other supported Media Types preserve opaque bytes with payload-level Origin and initially have no finer mutation. One logical collaborative document contains the accepted flat Block carrier and Block-local payload namespaces, transacts across structure and several InlineContents, and supports semantic-update-over-delete. The selected carrier suite remains a production regression suite.
 
 **Exit gate:** Production code uses no rejected-candidate or carrier-specific public API. Functional, payload, structural, concurrency, atomicity, clipboard, restore, allocator, reload, compaction, and growth regressions pass for the winner. No Block or InlineContent boundary implies a textual separator, and no document-level hard-break item exists.
 
@@ -220,7 +220,7 @@ internal-link wire decisions listed in `RANGE_MODEL.md`. Compare the remaining
 lineage candidates against the accepted behavior and record the selected
 representation.
 
-**Outcome:** Headless code can create one-span, multi-span, and Positional Ranges against `application/vnd.coedit.text` in the visible Version; resolve surviving spans in creation and lineage order; concatenate exact stored text without inferred separators; rationalize eligible merge-caused adjacency explicitly; serialize a document-relative Range fragment; parse it best-effort in an application-selected document; rebase tracking evidence; and reinject a value as internal-link metadata or another text Range holder. Blob sub-content is not addressed by this service.
+**Outcome:** Headless code can create one-span, multi-span, and Positional Ranges against `application/vnd.coedit.text` in the visible Version; resolve surviving spans in creation and lineage order; concatenate exact stored text without inferred separators; rationalize eligible merge-caused adjacency explicitly; serialize a document-relative Range fragment; parse it best-effort in an application-selected document; rebase tracking evidence; and reinject a value as internal-link metadata or another text Range holder. Generic opaque sub-content is not addressed by this service.
 
 **Exit gate:** Gate C passes. The complete Range suite proves atomic direct text creation, rejection of non-text targets, permissive source-member preservation, structural and no-copy lineage, best-effort omission, exact text assembly, explicit rationalization, reload, compaction with every Version preserved, serialization, internal-link fallback, no speculative rebinding, and cost that does not scale with the total retained Range count.
 
@@ -270,7 +270,7 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 **Objective:** Connect one active rich-text editor to canonical `application/vnd.coedit.text` through the engine command boundary with prompt durable Contributions and separate human-readable grouping.
 
-**Outcome:** Headings, prose, and list items can be edited in place with attributed durable commits. Several immutable Contributions can share one human-visible semantic group without redefining the semantic History Checkpoint concept. The editor/application maps line-break or paragraph intent into explicit text and/or structural operations; it does not depend on a document hard-break item. Blob remains replaceable through the generic payload boundary but has no rich-text editor requirement.
+**Outcome:** Headings, prose, and list items can be edited in place with attributed durable commits. Several immutable Contributions can share one human-visible semantic group without redefining the semantic History Checkpoint concept. The editor/application maps line-break or paragraph intent into explicit text and/or structural operations; it does not depend on a document hard-break item. Generic opaque payloads remain replaceable through the generic payload boundary but have no rich-text editor requirement.
 
 **Exit gate:** Editor ownership transitions do not lose text, formatting, or Origin. IME and atomic edit paths, prompt commit, semantic grouping, failure retry, internal/external clipboard, History restore, and `.coedit` round trips preserve exact committed state. An incompatible opaque payload target is not silently bound to the text editor. No whole-artifact queue threshold blocks ordinary typing.
 
@@ -310,7 +310,7 @@ Assess:
 - validation placement; and
 - attachment and large-asset needs.
 
-**Exit gate:** Each adopted infrastructure change has measured justification and preserves the public engine, repository, typed-payload, and portable contracts. Do not add OPFS, Tauri, Rust, SQL, PGlite, RxDB, or another persistence model only to regain parity with the preserved experiment.
+**Exit gate:** Each adopted infrastructure change has measured justification and preserves the public engine, repository, Media-Type-labelled-payload, and portable contracts. Do not add OPFS, Tauri, Rust, SQL, PGlite, RxDB, or another persistence model only to regain parity with the preserved experiment.
 
 See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
@@ -318,7 +318,7 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 ### Gate A — Documentation authority baseline
 
-Gate A passes when the authority set, ADR rationale, preserved-branch classifications, and work order are consistent. The typed-payload and Range authorities revalidate this gate. Steps 1 and 2 remain complete; no implementation work is repeated.
+Gate A passes when the authority set, ADR rationale, preserved-branch classifications, and work order are consistent. The Media-Type-labelled-payload and Range authorities revalidate this gate. Steps 1 and 2 remain complete; no implementation work is repeated.
 
 ### Gate B — Collaborative carrier selection
 

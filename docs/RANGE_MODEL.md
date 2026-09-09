@@ -28,7 +28,7 @@ Range identity, or a document-owned table of retained references.
 
 An opaque InlineContent is addressable by its ordinary `InlineContentId`, but this
 Range service does not address byte regions or application-defined structures
-inside a opaque payload. A future Media Type that needs internal durable references
+inside an opaque payload. A future Media Type that needs internal durable references
 requires its own content-local addressing contract.
 
 ## 2. Terms
@@ -297,7 +297,7 @@ Range work is distributed across these steps:
    structural tracking, lazy resolution, reload, compaction, and practical cost.
    This step does not select the final Range representation.
 2. **Step 4 — selected collaborative core.** The winner implements the accepted
-   typed-payload, attributed-text, and structural carrier contracts behind
+   Media-Type-labelled-payload, attributed-text, and structural carrier contracts behind
    carrier-neutral boundaries.
 3. **Step 5 — History and Versions.** The engine establishes permanent exact
    Version materialization before version-aware Range resolution is frozen.

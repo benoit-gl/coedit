@@ -187,7 +187,7 @@ the carrier state; it is never a competing authority.
 The format does not contain external formatting or provenance Ranges. External
 comment records are not added to the strict MVP package. A Range value embedded
 in an intrinsic `application/vnd.coedit.text` internal-link mark is canonical text payload data
-and must round trip. Blob sub-content has no Range encoding in version 1 under
+and must round trip. Generic opaque sub-content has no Range encoding in version 1 under
 the current contract.
 
 ## 6. Origin, actor, and derivation
@@ -252,7 +252,7 @@ attribution IDs.
 Human `application/vnd.coedit.text` editing creates human Origin records. Markdown/file import
 creates imported or unknown Origin for textual source material while the import
 Contribution is attributed to the human or system actor that performed the
-action. The source file is not impersonated as the actor. Blob creation or
+action. The source file is not impersonated as the actor. Generic opaque creation or
 replacement obtains its payload Origin from the same trusted attribution
 boundary rather than from a raw caller-controlled metadata field.
 
@@ -380,7 +380,7 @@ digest field omitted. Sort object keys recursively and retain array order.
 After the carrier gate, check in:
 
 - one minimal canonical version-1 fixture;
-- one realistic typed-payload/history fixture containing `application/vnd.coedit.text` and representative opaque Media Types;
+- one realistic Media-Type-labelled-payload/history fixture containing `application/vnd.coedit.text` and representative opaque Media Types;
 - their exact canonical bytes and digests; and
 - malformed/mis-hashed variants.
 
@@ -401,7 +401,7 @@ serializes the complete artifact.
 
 At minimum, verify:
 
-- realistic imported, edited, formatted, copied, blob-replaced, and restored content round trips;
+- realistic imported, edited, formatted, copied, opaque-payload-replaced, and restored content round trips;
 - exact current and historical materialization;
 - Media Types survive exactly;
 - `application/vnd.coedit.text` characters, intrinsic formatting, and boundary policies survive;

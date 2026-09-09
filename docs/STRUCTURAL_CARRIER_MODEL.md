@@ -71,9 +71,9 @@ when the outer Block entry is deleted.
 
 `payload` is the Block-local namespace for replicated Block data. It can contain
 Block tags, `childrenPresentation`, InlineContents, each InlineContent's payload
-kind and canonical kind-specific state, and adapter-private metadata. Exact
+Media Type and canonical Media-Type-specific state, and adapter-private metadata. Exact
 nesting is an implementation choice. The `BlockId` namespace does not create
-another product entity. Blob bytes remain opaque to this structural contract,
+another product entity. Opaque payload bytes remain opaque to this structural contract,
 and `application/vnd.coedit.text` internals remain owned by their focused content contract.
 
 `activity` is the logical carrier-private semantic-update marker. It records that

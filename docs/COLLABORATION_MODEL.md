@@ -40,7 +40,7 @@ implementation order.
   replicas with the same complete set of valid Contributions converge on the
   same current payload state.
 - `application/vnd.coedit.text` additionally supports fine-grained collaborative text,
-  formatting, and Origin operations. Blob initially supports only whole-content
+  formatting, and Origin operations. Other Media Types initially support only whole-content
   replacement.
 - Whole-content replacement is a convergent replicated register. A causally
   later replacement supersedes replacements it observes. Truly concurrent
@@ -352,7 +352,7 @@ Contributions, they must have:
    heads.
 
 This is eventual consistency. It does not require fine-grained merging for every
-Media Type. Blob can converge by deterministic whole-value replacement while
+Media Type. Generic opaque payloads can converge by deterministic whole-value replacement while
 `application/vnd.coedit.text` also merges fine-grained collaborative edits.
 
 This implies convergence tests must compare Contribution sets/graphs, causal
@@ -388,7 +388,7 @@ The initial Media Types are:
 The document model has no canonical hard-break content item. A line-feed or
 carriage-return can be ordinary `application/vnd.coedit.text` data. Block and InlineContent
 boundaries remain structural and add no text character. Application adapters
-translate paragraph, line-break, list, section, blob-rendering, or other intent.
+translate paragraph, line-break, list, section, opaque-payload rendering, or other intent.
 
 Every payload supports type-preserving whole-content replacement. The current
 Media Type does not change as a side effect of replacement. A future in-place
@@ -451,17 +451,17 @@ Subdocuments or sharding require measured evidence and must preserve atomic
 multi-target behavior and portable recovery.
 
 `application/vnd.coedit.text` formatting and fine-grained Origin do not use external anchors.
-Blob has payload-level Origin rather than text-like ranges. The MVP headless Range
+Generic opaque payloads have payload-level Origin rather than text-like ranges. The MVP headless Range
 service can use carrier-stable text positions plus qualified lineage and
 carrier-neutral evidence behind its public value contract. Internal text links
 can embed a Range; future comments can hold one externally with comment-specific
-repair state. Blob sub-content addressing is not defined by that service.
+repair state. Generic opaque sub-content addressing is not defined by that service.
 
 Copying `application/vnd.coedit.text` creates new carrier identities and same-document copy
 retains Origins, but shared Origin or derivation creates no Range-tracking
 lineage to the copy. Moving an InlineContent while preserving its identity and
 payload state preserves applicable text Range tracking. Split and merge
-operations can create explicit text Range-continuation lineage. Blob copy and
+operations can create explicit text Range-continuation lineage. Generic opaque copy and
 restore operate at whole-payload granularity under the initial contract.
 
 ## 9. Frontend-facing History behavior
@@ -624,7 +624,7 @@ Contract tests and types keep all of these private.
 
 ## 14. Staged implementation path
 
-1. Qualify Yjs v13 against Automerge with the typed-payload, attributed-text, structural, and text Range-feasibility suites; record the winner and deterministic whole-replacement tie-break at Gate B.
+1. Qualify Yjs v13 against Automerge with the Media-Type-labelled-payload, attributed-text, structural, and text Range-feasibility suites; record the winner and deterministic whole-replacement tie-break at Gate B.
 2. Implement the selected collaborative core and retain the common suite as regression evidence.
 3. Establish local History and permanent exact Version materialization.
 4. Implement the durable `application/vnd.coedit.text` Range service and record its lineage representation at Gate C.

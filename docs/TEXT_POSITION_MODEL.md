@@ -15,7 +15,7 @@ owns the broader InlineContent payload boundary.
 
 The document model must not invent one universal numeric character coordinate.
 Text editing, durable collaboration, and interchange have different position
-requirements. Blob payloads have no internal text-position contract.
+requirements. Generic opaque payloads have no internal text-position contract.
 
 ## 2. Canonical text
 
@@ -113,8 +113,8 @@ one owning InlineContent or one start/end pair. `RANGE_MODEL.md` owns the
 document-relative Range-fragment contract, creation and lineage order, rebasing,
 and omission behavior.
 
-Blob InlineContents remain addressable as document entities by
-`InlineContentId`; this document does not create byte offsets or blob-subregion
+Generic opaque InlineContents remain addressable as document entities by
+`InlineContentId`; this document does not create byte offsets or opaque-payload subregion
 Range semantics for them.
 
 On parse or reconstruction, create new live carrier positions only after the
@@ -126,7 +126,7 @@ ambiguous member; do not rebind it by similarity.
 Each carrier/editor candidate must prove:
 
 - conversion from `application/vnd.coedit.text` editor positions to stable carrier positions and back;
-- explicit rejection of position creation against a opaque payload;
+- explicit rejection of position creation against an opaque payload;
 - the Step 3 Range-position feasibility cases through insertion, deletion,
   replacement, split, merge, move, undo, redo, whole-text replacement
   feasibility, reload, and supported compaction;
@@ -153,7 +153,7 @@ production `application/vnd.coedit.text` editor path uses.
   Unicode editing behavior.
 - Portable text Range evidence remains carrier-neutral and separate from live
   carrier position identity.
-- Blob payloads do not gain a byte-position or sub-content Range model merely
+- Generic opaque payloads do not gain a byte-position or sub-content Range model merely
   because `application/vnd.coedit.text` has one.
 - `RANGE_MODEL.md` owns multi-span text behavior and does not expose a live
   carrier object as the public Range representation.

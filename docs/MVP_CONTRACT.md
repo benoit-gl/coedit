@@ -108,7 +108,7 @@ Semantic editor groups and physical recovery checkpoints are not semantic Checkp
 
 ### 4.7 Typed collaborative InlineContent payloads
 
-Each InlineContent owns one typed collaborative payload. The initial kinds are `application/vnd.coedit.text` and generic opaque Media Type. Block and InlineContent boundaries imply no text character or separator.
+Each InlineContent owns one Media-Type-labelled collaborative payload. The initial kinds are `application/vnd.coedit.text` and generic opaque Media Type. Block and InlineContent boundaries imply no text character or separator.
 
 Every Media Type supports atomic whole-content replacement with Origin information. A causally later replacement supersedes replacements it observes. Concurrent replacements choose one deterministic current winner without using packet arrival order, local wall-clock time, or an unsynchronized local sequence. Losing replacements remain represented by immutable Contributions and exactly materializable Versions.
 
@@ -151,7 +151,7 @@ The prototype must preserve these domain rules:
 - trusted code allocates UUID-v4 durable identities and pure reducers never generate them;
 - Block and InlineContent identities are unique in live structure, while History and portable validation reject reuse across retained lifetimes;
 - each InlineContent belongs to exactly one Block;
-- each InlineContent owns one typed collaborative payload;
+- each InlineContent owns one Media-Type-labelled collaborative payload;
 - initial Media Types are `application/vnd.coedit.text` and generic opaque Media Type;
 - every payload can be replaced atomically with explicit Origin behavior;
 - concurrent whole-content replacements converge deterministically;
@@ -256,4 +256,4 @@ exposes the vertical slice without violating the engine authority boundary.
 Completion does not create arbitrary product-level size maxima or promote an
 experimental target implicitly.
 
-Completion does not mean that the product has a provenance explorer, Comment records or repair UX, authenticated collaboration, an AI provider, signatures, fine-grained non-text collaboration, or a final networked replicated-tree algorithm. It means their accepted invariants are protected by a tested typed-payload, attributed-text, Range, and document-engine foundation instead of UI state or an experimental storage layout.
+Completion does not mean that the product has a provenance explorer, Comment records or repair UX, authenticated collaboration, an AI provider, signatures, fine-grained non-text collaboration, or a final networked replicated-tree algorithm. It means their accepted invariants are protected by a tested Media-Type-labelled-payload, attributed-text, Range, and document-engine foundation instead of UI state or an experimental storage layout.

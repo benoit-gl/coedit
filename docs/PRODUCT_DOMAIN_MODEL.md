@@ -121,7 +121,7 @@ OriginRecord
   source and derivation references when applicable
 ```
 
-`InlineContent` is the independently addressable content entity owned by a Block. It owns identity, tags, and one typed collaborative payload.
+`InlineContent` is the independently addressable content entity owned by a Block. It owns identity, tags, and one Media-Type-labelled collaborative payload.
 
 The payload has no independent product identity, tags, lifecycle, or sharing relationship. A storage implementation can index carrier state by `InlineContentId`, but that index does not create another domain entity.
 
@@ -397,7 +397,7 @@ The current ontology requires:
 2. one real root Block;
 3. no persisted `Idea`, `Heading`, `Body`, `Paragraph`, or `Leaf` entity types;
 4. Block-owned tags, child presentation, ordered InlineContents, and ordered child Blocks;
-5. InlineContent-owned identity, tags, and one typed collaborative payload;
+5. InlineContent-owned identity, tags, and one Media-Type-labelled collaborative payload;
 6. the fine-grained `application/vnd.coedit.text` Media Type and generic opaque Media Types;
 7. universal atomic whole-content replacement for every Media Type;
 8. deterministic convergence for concurrent whole-content replacements without arrival-order or wall-clock arbitration;
@@ -482,7 +482,7 @@ A future design is compatible with this domain direction only if it preserves th
 
 ## 14. Summary
 
-The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and one typed collaborative payload. The initial Media Types are `application/vnd.coedit.text`, with fine-grained collaborative text, intrinsic formatting, and protected Origin, and generic opaque Media Type, with opaque bytes and payload-level Origin. Every payload supports atomic whole-content replacement and deterministic convergence; only `application/vnd.coedit.text` initially supports fine-grained editing.
+The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and one Media-Type-labelled collaborative payload. The initial Media Types are `application/vnd.coedit.text`, with fine-grained collaborative text, intrinsic formatting, and protected Origin, and generic opaque Media Type, with opaque bytes and payload-level Origin. Every payload supports atomic whole-content replacement and deterministic convergence; only `application/vnd.coedit.text` initially supports fine-grained editing.
 
 Block and InlineContent boundaries are structural and imply no textual separator. Application adapters decide how content and structure are presented.
 
