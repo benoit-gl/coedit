@@ -10,12 +10,13 @@ This document defines private implementation rules that are not owned by a more 
 
 Use these focused authorities first:
 
-- [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) for product ontology and logical attributed-content meaning;
+- [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) for product ontology and logical content meaning;
 - [`MVP_CONTRACT.md`](MVP_CONTRACT.md) for the MVP proof boundary;
 - [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) for public engine behavior and component authority;
 - [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) for cross-cutting capacity and resource semantics;
-- [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for formatting, Origin, clipboard, and Range-holder behavior;
-- [`RANGE_MODEL.md`](RANGE_MODEL.md) for durable Range behavior, the Range service, and staged representation selection;
+- [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) for payload kinds, universal whole-content replacement, and payload convergence;
+- [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for `coedit-text` formatting, fine-grained Origin, clipboard, and Range-holder behavior;
+- [`RANGE_MODEL.md`](RANGE_MODEL.md) for durable `coedit-text` Range behavior, the Range service, and staged representation selection;
 - [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md) for flat Block placement, Block-local carrier state, structural concurrency, and position-order qualification;
 - [`CODING_STYLE.md`](CODING_STYLE.md) for source structure, TSDoc, linting, formatting, dependency checks, package commands, and platform portability;
 - [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md) for Markdown import/export and round-trip behavior;
@@ -37,8 +38,8 @@ Use:
 - strict TypeScript;
 - Vite;
 - Vitest;
-- Tiptap/ProseMirror as the interactive editor adapter;
-- pinned stable Yjs v13 as the provisional collaborative-content carrier;
+- Tiptap/ProseMirror as the interactive `coedit-text` editor adapter;
+- pinned stable Yjs v13 as the provisional collaborative carrier;
 - the Markdown parser stack specified in `MARKDOWN_INTERCHANGE.md`;
 - DOMPurify or an equivalently reviewed sanitizer at DOM/clipboard boundaries; and
 - IndexedDB for the browser-local engine repository.
@@ -61,9 +62,9 @@ The repository CI runs `npm run bootstrap`, `npm run check`, `npm run build`,
 and `npm run check` again after the build on Linux for pull requests and pushes
 to `main`. These commands cannot contain logic that works only in CI.
 
-Step 3 qualifies pinned Yjs v13 against pinned Automerge using the common suites in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. Track Yjs v14 only after a stable release. Use Loro as a cursor/movable-tree benchmark, not a current production dependency. Gate B records the winner. Step 4 then implements the selected collaborative core. Do not expose either candidate through a public API or freeze carrier-specific `.coedit` bytes before Gate B.
+Step 3 qualifies pinned Yjs v13 against pinned Automerge using the common suites in `INLINE_CONTENT_PAYLOADS.md`, `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. Track Yjs v14 only after a stable release. Use Loro as a cursor/movable-tree benchmark, not a current production dependency. Gate B records the winner. Step 4 then implements the selected collaborative core. Do not expose either candidate through a public API or freeze carrier-specific `.coedit` bytes before Gate B.
 
-The ProseMirror/Tiptap schema for one InlineContent is deliberately flat: text, hard breaks, and the supported inline marks. The recursive Coedit Block tree remains outside ProseMirror.
+The ProseMirror/Tiptap schema applies only to `coedit-text` and is deliberately flat: authored text plus the supported inline marks. The document model does not require a distinct hard-break node. If the application wants a line break inside one text payload, the editor adapter can represent that intent with an ordinary text character according to its editor mapping. The recursive Coedit Block tree remains outside ProseMirror.
 
 Do not initially add:
 
@@ -72,6 +73,8 @@ Do not initially add:
 - SQLite;
 - multiple frontend entry points;
 - host capability variants;
+- a generic payload capability/plugin registry;
+- a generic structured-data CRDT;
 - filesystem plugins;
 - outbound network providers;
 - a service worker or PWA package;
@@ -103,7 +106,9 @@ src/
     restore.ts
 
   content/
-    collaborativeContent.ts
+    payload.ts
+    coeditText.ts
+    blob.ts
     carrier.ts
     formatting.ts
     origin.ts
@@ -140,7 +145,7 @@ src/
     DomainInspector.tsx
 ```
 
-Do not split the application into packages before an independent consumer exists.
+The exact filenames remain implementation details; the important boundary is payload-neutral domain ownership with payload-specific content helpers. Do not split the application into packages before an independent consumer exists.
 
 ## 4. IDs, tags, and implementation capacity
 
@@ -242,9 +247,11 @@ type StructuralOperation =
     };
 ```
 
-In Step 2, `InlineContentValue` is a typed, opaque, valid empty CollaborativeContent value. Obtain it through a typed trusted constructor rather than representing it with `{}`, `unknown`, raw text, or a partially attributed placeholder. Structural code can store, preserve, move, reorder, and delete it but must not inspect or manufacture content internals. This permits complete InlineContent structural behavior before a carrier is selected without creating partially valid attributed content.
+In completed Step 2, `InlineContentValue` is a typed, opaque, valid empty value. Structural code can store, preserve, move, reorder, and delete it but must not inspect or manufacture payload internals. This permits complete InlineContent structural behavior before a carrier is selected without creating partially valid attributed text or interpreting blob bytes.
 
-Step 4 expands the same `InlineContentValue` type with text, hard breaks, intrinsic marks, protected Origin, and carrier-neutral behavior after Gate B selects the carrier. Its private carrier representation is finalized behind the selected adapter. At the public human-edit boundary, creation supplies visible content and formatting intent and the engine assigns Origin from the attributed command context. A complete pre-attributed value is accepted only by validated internal import, copy, restore, or remote-integration paths; it is not a client Origin-spoofing surface.
+Step 4 evolves that opaque boundary into the typed payload representation defined by `INLINE_CONTENT_PAYLOADS.md`. The initial runtime kinds are `coedit-text` and `blob`. The ordinary authored empty-content path creates an empty `coedit-text` value; creation/import paths that deliberately require blob content use a trusted complete blob value with explicit Origin. This documentation evolution does not require reopening the already completed structural semantics of Step 2.
+
+At the public human-edit boundary, text creation supplies visible content and formatting intent and the engine assigns Origin from the attributed command context. A complete pre-attributed `coedit-text` value is accepted only by validated internal import, copy, restore, or remote-integration paths; it is not a client Origin-spoofing surface. Blob creation/replacement likewise obtains Origin from a trusted context rather than a caller-controlled attribution side channel.
 
 Operation rules:
 
@@ -265,25 +272,33 @@ Do not add entity tombstones or lifecycle timestamps to the logical live entitie
 
 ## 6. Carrier qualification and selected collaborative core
 
-Each InlineContent owns canonical CollaborativeContent. The selected carrier stores visible text/hard breaks, intrinsic formatting marks, and protected Origin in one atomic collaborative state. HTML, plain text, ProseMirror JSON, and rendered Origin runs are derived. Do not persist any of them as a parallel authority.
+Each InlineContent owns one typed collaborative payload. The initial payload kinds and universal replacement behavior are defined by `INLINE_CONTENT_PAYLOADS.md`.
 
-Use one logical collaborative document per Coedit document so one engine transaction can span Block structure, several InlineContents, Origin records, and Contribution metadata. Within that document, each `BlockId` owns one private carrier namespace for placement, a semantic activity marker, and Block-local payload. Do not create one independently committed Yjs or Automerge document per Block.
+`coedit-text` stores authored Unicode text, intrinsic formatting marks, and protected fine-grained Origin in one atomic collaborative state. It has no separate document-level hard-break item. Newline and other control characters are ordinary text data at this layer. HTML, plain-text projections, ProseMirror JSON, and rendered Origin runs are derived. Do not persist them as a parallel authority.
+
+`blob` stores opaque bytes with one payload-level Origin for the current value. The selected carrier must preserve those bytes and support atomic whole-content replacement. It does not need a fine-grained blob CRDT.
+
+Every payload kind supports one type-preserving whole-content replacement operation. The logical operation targets one InlineContent, validates a complete replacement for its existing kind, and publishes the replacement plus Origin effect atomically. `coedit-text` also supports fine-grained text and formatting operations. Payload-specific operations reject incompatible kinds explicitly. Do not add dynamic capability dispatch or a generic replicated object model for this two-kind contract.
+
+Under replicated qualification, whole-content replacement behaves as a convergent register. A causally later replacement supersedes replacements it observes. Truly concurrent replacements select one current winner through a stable deterministic carrier-private order. The order must not depend on packet arrival, wall-clock time, or an unsynchronized local sequence. Losing replacements remain immutable Contributions and their Versions remain materializable. Gate B records the qualified tie-break mechanism without exposing it as product chronology.
+
+Use one logical collaborative document per Coedit document so one engine transaction can span Block structure, several InlineContents of either payload kind, Origin records, and Contribution metadata. Within that document, each `BlockId` owns one private carrier namespace for placement, a semantic activity marker, and Block-local payload. Do not create one independently committed Yjs or Automerge document per Block.
 
 `STRUCTURAL_CARRIER_MODEL.md` owns the exact structural contract. In summary, placement is one atomic `{ position, depth }` value; structural commands map through projected preorder; a subtree move allocates fresh ordered positions and applies one depth delta; and normal allocation should avoid exact position collisions.
 
-A semantic payload mutation updates a carrier-private Block activity marker in the same logical carrier transaction or change. A semantic Block update that is concurrent with deletion of that same Block wins over deletion. The marker is not a product field, payload hash, public counter, or timestamp. Editing a descendant does not refresh each ancestor. The selected adapter can encode this rule differently for Yjs and Automerge.
+A semantic payload mutation, including whole-content replacement, updates a carrier-private Block activity marker in the same logical carrier transaction or change. A semantic Block update that is concurrent with deletion of that same Block wins over deletion. The marker is not a product field, payload hash, public counter, or timestamp. Editing a descendant does not refresh each ancestor. The selected adapter can encode this rule differently for Yjs and Automerge.
 
-Do not hash the whole Block payload into placement metadata. A payload hash would make compatible structural moves and payload edits compete on one placement register and would not reliably describe the result of merged concurrent CRDT payload edits.
+Do not hash the whole Block payload into placement metadata. A payload hash would make compatible structural moves and payload edits compete on one placement register and would not reliably describe the result of merged concurrent CRDT or register payload effects.
 
 Exact primary-position collisions are exceptional carrier cases. When insertion requires normalization of an existing collision run, that normalization is replicated as part of the structural Contribution that needs it. It is not a separate product operation or History action. Prefer deterministic normalization and suppression of normalization-only resurrection when they are inexpensive; record residual behavior if those properties would require disproportionate machinery.
 
-Bind the interactive editor only to the active InlineContent. Do not expose the logical document, carrier objects, raw updates, Block activity setters, or client-supplied Origin setters through the public API.
+Bind the rich-text editor only to an active `coedit-text` InlineContent. A blob can be projected to an application adapter, but no rich-text editor or text operation is offered for it. Do not expose the logical document, carrier objects, raw updates, Block activity setters, or client-supplied Origin setters through the public API.
 
 Formatting follows the vocabulary and boundary defaults in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`. Carrier adapters translate those logical policies to native marks/attributes and must prove exact round trip. Clearing formatting cannot change Origin.
 
-The trusted engine boundary assigns Origin for human typing, import, external paste, automation, and AI. Same-document internal copy and restore preserve existing Origins under fresh carrier item identities. Ordinary editor operations cannot forge another Contributor's Origin.
+The trusted engine boundary assigns Origin for human text insertion, import, external paste, automation, AI, and whole-payload replacement. Same-document internal copy and restore preserve existing Origins according to the payload contract under fresh carrier item identities where applicable. Ordinary editor or blob-replacement clients cannot forge another Contributor's Origin.
 
-Step 3 runs the same headless and ProseMirror-integrated suites against Yjs v13 and Automerge. Functional invariants are mandatory. Range work in this step proves only the feasibility subset in `RANGE_MODEL.md`; it does not select the Range-tracking representation. Select Yjs when its attributed-content and structural carrier passes without fragile full-state repair. Select Automerge only if its richer native model materially reduces custom code and its editor/storage integrations pass the same suites. Record the selected versions, dependency/license review, fixtures, measurements, and rejected-candidate rationale.
+Step 3 runs the same carrier-neutral payload, headless text, structural, and ProseMirror-integrated suites against Yjs v13 and Automerge. Functional invariants are mandatory. Range work in this step proves only the `coedit-text` feasibility subset in `RANGE_MODEL.md`; it does not select the Range-tracking representation. Select Yjs when its typed payload, attributed-text, and structural carrier passes without fragile full-state repair. Select Automerge only if its richer native model materially reduces custom code and its editor/storage integrations pass the same suites. Record the selected versions, dependency/license review, replacement tie-break mechanism, fixtures, measurements, and rejected-candidate rationale.
 
 Step 4 converts the selected candidate into the production collaborative core and retains the common suite as regression evidence. Do not retain rejected-candidate types in public or domain APIs. Do not finalize the carrier codec, portable bytes, History effect encoding, editor transaction bridge, or compaction behavior before Gate B passes.
 
@@ -316,26 +331,26 @@ The domain vocabulary retains Contributor/agent kinds `human`, `imported`, `auto
 
 Each successful durable command publishes one logical Contribution, its exact effect/update, any new Origin records, one resulting private Version, and its successful command receipt atomically. Several Contributions can share a semantic group ID for presentation.
 
-The early in-memory implementation may use a full snapshot per Contribution for prototype and qualification fixtures that fit within actual implementation resource capacity. The Step 13 browser target uses immutable effects/update chunks, periodic physical recovery checkpoints or cached materializations, and a small CAS head. Every product Version remains exactly materializable for the lifetime of the document. A physical snapshot creates no product Version, and compaction cannot discard a Version or required Range lineage. Product History remains independent of the physical representation.
+The early in-memory implementation may use a full snapshot per Contribution for prototype and qualification fixtures that fit within actual implementation resource capacity. The Step 13 browser target uses immutable effects/update chunks, periodic physical recovery checkpoints or cached materializations, and a small CAS head. Every product Version remains exactly materializable for the lifetime of the document. A physical snapshot creates no product Version, and compaction cannot discard a Version or required text Range lineage. Product History remains independent of the physical representation.
 
 Use globally unique `CommandId` values. Check a previously successful CommandId before stale-version rejection:
 
 - an exact retry returns the original receipt and emits no new Contribution or notification;
 - reuse with different canonical request content is an error.
 
-Serialize local commits internally. Perform expected-Version checking inside that serialization boundary. Two concurrent requests against the same base produce exactly one success.
+Serialize local commits internally. Perform expected-Version checking inside that serialization boundary. Two concurrent local requests against the same expected Version still produce exactly one success and one stale-version failure. The post-MVP replicated whole-replacement tie-break applies to valid concurrent Contributions created on different replicas; it does not weaken local expected-Version checking.
 
-Use canonical RFC 3339 UTC timestamps with millisecond precision.
+Use canonical RFC 3339 UTC timestamps with millisecond precision for display metadata. Never use those timestamps to choose a concurrent payload replacement winner.
 
-## 8. Durable Range service
+## 8. Durable `coedit-text` Range service
 
 Step 6 implements the headless service defined by `RANGE_MODEL.md` after Step 5 establishes exact Version materialization.
 
-The public boundary remains carrier-neutral. It accepts detached creation input against the current Version visible to the caller. The returned Range records that document-scoped creation Version and the original Block and InlineContent location of each member. It never returns a live Yjs relative position, Automerge cursor, carrier object, internal lineage node, or mutable engine-owned collection.
+The public boundary remains carrier-neutral and text-specific. It accepts detached creation input against the current Version visible to the caller. Every supplied target must resolve in `coedit-text`. The returned Range records that document-scoped creation Version and the original Block and InlineContent location of each member. It never returns a live Yjs relative position, Automerge cursor, carrier object, internal lineage node, or mutable engine-owned collection.
 
-Direct creation is all-or-none. If any supplied span or position does not resolve in the named current Version, creation fails. Span creation otherwise preserves the caller's arbitrary order, overlap, duplication, adjacency, sparsity, and zero-length members without normalization. A zero-length Span uses greedy Span semantics; it does not become a Positional Range.
+Direct creation is all-or-none. If any supplied span or position does not resolve in `coedit-text` in the named current Version, creation fails. Span creation otherwise preserves the caller's arbitrary order, overlap, duplication, adjacency, sparsity, and zero-length members without normalization. A zero-length Span uses greedy Span semantics; it does not become a Positional Range.
 
-Resolution is valid only at the creation Version or a descendant Version in the same document. It returns surviving spans in creation and lineage order and omits unresolved, ambiguous, or deleted members. Text resolution concatenates exact span text without inserted separators or deduplication. Split and merge can extend Range lineage; copy, clone, import, and paste cannot.
+Resolution is valid only at the creation Version or a descendant Version in the same document. It returns surviving spans in creation and lineage order and omits unresolved, ambiguous, deleted, or non-text members. Text resolution concatenates exact stored span text without inserted structural separators or deduplication. A stored line-feed or another separator-like character remains part of the returned text because it is content. Split and merge can extend Range lineage; copy, clone, import, and paste cannot.
 
 Parsing a serialized Range is best-effort. It resolves members in the document and Version supplied by the application, omits unresolved or ambiguous members, and rebases the returned Range to that Version. The application, not the Range service, parses an enclosing external document URI and selects the document engine.
 
@@ -344,24 +359,20 @@ Explicit rationalization returns a rebased Range and can merge only consecutive,
 Gate C must close and record:
 
 - exact result wrappers, all-members-omitted parsing, and optional parse diagnostics;
-- split and merge rules that designate the continuing Block and InlineContent
-  identities;
-- whether references to identities consumed by a merge follow structural
-  lineage, remain historical-only, or become unresolved, including internal-link
-  Block fallback;
-- the deterministic identity rule when no semantic continuation is naturally
-  designated, without using clocks or incidental replica order;
-- complete one-to-many split and many-to-one merge lineage independent of the
-  continuing entity identity;
+- split and merge rules that designate the continuing Block and InlineContent identities;
+- whether references to identities consumed by a merge follow structural lineage, remain historical-only, or become unresolved, including internal-link Block fallback;
+- the deterministic identity rule when no semantic continuation is naturally designated, without using clocks or incidental replica order;
+- complete one-to-many split and many-to-one merge lineage independent of the continuing entity identity;
 - the zero-length Span tie-break at an exact structural split;
-- Positional Range split, merge, deletion, and replacement behavior;
+- Positional Range split, merge, deletion, and whole-content-replacement behavior;
+- any `coedit-text` whole-content replacement lineage rule required by the selected representation;
 - document-relative fragment grammar and resource-guard behavior;
-- internal-link Range encoding;
+- internal-link Range encoding; and
 - the selected Range-tracking lineage representation.
 
 Range holders do not register with the document. Ordinary text edits and Block moves cannot enumerate or rewrite all retained holders. Permanent Version materialization supplies the starting point for lazy lineage resolution. Resolution, rationalization, parsing, and serialization can perform work for the one supplied Range. Serialization rebases that Range against the selected Version and removes obsolete tracking evidence when the accepted representation permits it.
 
-Embedded internal-link Range values resolve only in the current document and retain the primary Block fallback. External deep links combine an application-owned document URI with a Range fragment; the Range service performs no cross-document reconciliation. Comment records and repair UX remain post-MVP consumers of the same service.
+Embedded internal-link Range values resolve only in the current document and retain the primary Block fallback. External deep links combine an application-owned document URI with a Range fragment; the Range service performs no cross-document reconciliation. Blob sub-content has no Range representation in the MVP. Comment records and repair UX remain post-MVP consumers of the text service.
 
 ## 9. Semantic Checkpoint and restore
 
@@ -377,15 +388,15 @@ It must:
 
 Do not use `checkpoint` for semantic editor groups or ordinary durable editor Contributions.
 
-Restore validates its expected current Version and historical target, then appends a new restore Contribution. In the local single-writer MVP its resulting material matches the historical target. Reinserted content has fresh carrier identities and preserves historical Origin; the new Contribution records the restoring actor and target Version. Restore never rewinds or deletes History.
+Restore validates its expected current Version and historical target, then appends a new restore Contribution. In the local single-writer MVP its resulting material matches the historical target. Reinserted `coedit-text` has fresh carrier identities and preserves historical fine-grained Origin. Restored blob payloads preserve their historical payload Origin. The new Contribution records the restoring actor and target Version. Restore never rewinds or deletes History.
 
 The future replicated form is causal compensation against the frontier observed by the restoring actor and preserves unseen concurrent work. `COLLABORATION_MODEL.md` owns that extension.
 
 ## 10. Read isolation and notifications
 
-Queries, History pages, summaries, exact materializations, and editor-content reads return detached values.
+Queries, History pages, summaries, exact materializations, payload reads, and editor-content reads return detached values.
 
-No frontend API exposes private `RevisionRecord`, archive objects, engine-owned byte arrays, live Y.Doc/Automerge references, or storage collections.
+No frontend API exposes private `RevisionRecord`, archive objects, engine-owned byte arrays, live Y.Doc/Automerge references, or storage collections. A detached blob byte array must not alias engine-owned mutable storage.
 
 After successful publication, emit one invalidation notification. Failed commands and exact idempotent retries emit none.
 
@@ -403,7 +414,8 @@ Welcome actions:
 Workspace behavior:
 
 - render the continuous Block document from engine queries;
-- derive outline labels from the same selected InlineContent as manuscript text;
+- use payload-aware rendering and treat Block/InlineContent boundaries as structural rather than implicit text;
+- derive outline labels from the same selected `coedit-text` InlineContent as manuscript text when that application convention applies;
 - show import diagnostics;
 - support current/historical selection without mutating History;
 - provide a development-only inspector; and
@@ -415,7 +427,7 @@ Support create, move, nest, reorder, delete, tag, InlineContent selection/reorde
 
 ## 12. Interactive editor durability and semantic grouping
 
-Separate durable publication from human-readable grouping. Every submitted editor command that succeeds creates one immutable Contribution and Version and commits through the repository protocol. Adjacent Contributions can share one `semanticGroupId`; History can collapse them for presentation without rewriting physical History.
+Separate durable publication from human-readable grouping. Every submitted `coedit-text` editor command that succeeds creates one immutable Contribution and Version and commits through the repository protocol. Adjacent Contributions can share one `semanticGroupId`; History can collapse them for presentation without rewriting physical History.
 
 The editor may combine transient ProseMirror transactions before submission, but it must submit promptly at a minimal safe boundary and before a controlled transition can hide, replace, retarget, export, save, restore, or close the editor context.
 
@@ -423,6 +435,7 @@ Accepted behavior:
 
 - IME composition is not split mid-composition;
 - paste, cut, selection replacement, formatting, undo, and redo are atomic editor actions;
+- line-break or paragraph intent is translated by the application/editor adapter into text and/or structural operations; the document model does not require a hard-break item;
 - unrelated dirty work is submitted before an atomic action;
 - insertion/deletion mode changes, idle, real focus/editor-owner departure, and controlled transitions seal the current semantic group;
 - clean navigation creates neither a command nor a Contribution;
@@ -456,6 +469,8 @@ If several contents match, select the first in vector order and return a project
 
 Initial lenses preserve the complete Block tree. They do not silently reparent Blocks.
 
+A renderer must inspect the selected payload kind. The current Markdown/writing projection expects `coedit-text`; a blob requires a payload-aware renderer or a non-representability diagnostic rather than implicit byte-to-text conversion.
+
 Historical comparison aligns Blocks by stable `BlockId` and reports unmatched subtrees. Do not guess correspondence.
 
 Markdown rendering belongs to `MARKDOWN_INTERCHANGE.md`.
@@ -476,13 +491,13 @@ Portable-file dirty state is the comparison between the engine's current token a
 
 After the strict MVP vertical slice works, measure before adopting new infrastructure.
 
-Before SQL or OPFS, require evidence about document size, update/chunk growth, recovery and materialization latency, query needs, attachment needs, compaction, and atomicity limits. Do not adopt PGlite, RxDB, SQLite-WASM, or `y-indexeddb` as a substitute for Coedit's semantic repository transaction.
+Before SQL or OPFS, require evidence about document size, payload/update/chunk growth, recovery and materialization latency, query needs, large blob/attachment needs, compaction, and atomicity limits. Do not adopt PGlite, RxDB, SQLite-WASM, or `y-indexeddb` as a substitute for Coedit's semantic repository transaction.
 
 Before a native shell, require a concrete browser-inadequate need. Tauri can wrap the validated application through the same ports; it does not redefine the document engine or recreate a Rust domain authority. Electron requires a demonstrated need for a bundled consistent Chromium runtime.
 
 Before networked collaboration, apply `COLLABORATION_MODEL.md` in full. Local linear History and bounded full snapshots are private MVP choices, not distributed-system contracts. One logical collaborative document per Coedit document is the default; sharding requires measured evidence and preservation of atomic multi-target Contributions.
 
-Provenance visualization/analytics, comments, durable discussions, AI-provider integration, authenticated claims, signing, and collaboration are post-MVP phases. Minimum Origin carrier behavior is part of MVP qualification and recovery.
+Provenance visualization/analytics, comments, durable discussions, AI-provider integration, authenticated claims, signing, fine-grained structured-payload editing, and collaboration are post-MVP phases. Minimum Origin and whole-payload convergence behavior are part of MVP qualification and recovery.
 
 ## 16. Reuse rule
 
