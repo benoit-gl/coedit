@@ -113,7 +113,7 @@ Idle, focus/owner transfer, change of edit mode, and controlled transitions seal
 the current semantic group. Exact time and character thresholds are tunable UX
 parameters, not durable semantics.
 
-A generic whole-content replacement, including blob replacement, is already one
+A generic whole-content replacement, including opaque-payload replacement, is already one
 atomic engine command and Contribution. It does not require an editor-specific
 journal or another persistence path.
 
@@ -153,7 +153,7 @@ cannot become an accidental winner selector.
 evidence revisited in Step 14.
 
 Before Step 13 closes, profile checkpoint decoding, effect replay, collection
-cardinality, blob decoding, and reconstructed-state allocation on target
+cardinality, opaque payload decoding, and reconstructed-state allocation on target
 browsers. Record any selected guards, the capacity error behavior, and why work
 without an explicit guard is safely bounded elsewhere. No numeric recovery
 maximum is accepted in advance.
@@ -237,7 +237,7 @@ acceptance budgets here.
 For the browser repository, measure those shared workloads plus:
 
 - cold open, warm open, ordinary text commit, whole-payload replacement, checkpoint, History materialization, and `.coedit` assembly latency;
-- representative blob persistence and recovery;
+- representative opaque payload persistence and recovery;
 - peak encoded and decoded memory;
 - write amplification and database growth; and
 - quota behavior in supported browsers and private modes.

@@ -83,7 +83,7 @@ Adapters translate between an external concern and the engine:
 - the Markdown importer plans ordinary typed `application/vnd.coedit.text` and structural operations plus imported Origin claims;
 - the Markdown renderer queries an explicit Version and emits Markdown plus diagnostics;
 - the `application/vnd.coedit.text` editor translates editor transactions into fine-grained text operations;
-- a future blob or structured-data application adapter can use universal whole-content replacement without receiving direct carrier authority;
+- a future opaque payload or structured-data application adapter can use universal whole-content replacement without receiving direct carrier authority;
 - file adapters transport opaque `.coedit` artifacts;
 - the browser repository persists private immutable engine records behind its port;
 - clipboard adapters validate private Coedit text fragments and sanitize ordinary HTML; and
@@ -304,11 +304,11 @@ interface CoeditTextEditorContentValue {
 
 `DetachedCoeditText` contains authored text, native formatting semantics, and protected fine-grained Origin information required for correct editing. It has no document-level `HardBreak` variant. Characters such as line feed remain ordinary text data. It is carrier-neutral at the public boundary.
 
-The editor adapter can reconstruct or bind transient ProseMirror/Tiptap/carrier state from this value or a controlled engine session. Mutating detached local state does not mutate engine state. Requesting a text-editor session for a blob fails explicitly or is not offered by the application.
+The editor adapter can reconstruct or bind transient ProseMirror/Tiptap/carrier state from this value or a controlled engine session. Mutating detached local state does not mutate engine state. Requesting a text-editor session for a opaque payload fails explicitly or is not offered by the application.
 
 A durable fine-grained text commit must pass through `execute` and preserve the accepted atomic text-plus-formatting-plus-Origin contract. The client can request ordinary editing intent but cannot assign arbitrary Origin through formatting or raw carrier updates.
 
-A blob adapter receives detached bytes and payload metadata. It can request universal whole-content replacement but receives no fine-grained blob mutation or raw carrier authority.
+A opaque payload adapter receives detached bytes and payload metadata. It can request universal whole-content replacement but receives no fine-grained opaque-payload mutation or raw carrier authority.
 
 Do not expose a live engine-owned Y.Doc/Automerge object, a formatting-only side channel, an Origin mutation side channel, or a generic payload capability registry merely to support the collaborative-text and generic opaque capability classes.
 
@@ -362,7 +362,7 @@ payload-aware client intent
   -> engine emits invalidation
 ```
 
-This workflow is always available for `application/vnd.coedit.text` and representative opaque Media Types. It does not change the target Media Type. Fine-grained blob mutation is not an MVP operation.
+This workflow is always available for `application/vnd.coedit.text` and representative opaque Media Types. It does not change the target Media Type. Fine-grained opaque-payload mutation is not an MVP operation.
 
 ### Semantic Checkpoint
 
@@ -385,7 +385,7 @@ Markdown bytes
   -> active session replaced only after success
 ```
 
-`MARKDOWN_INTERCHANGE.md` owns detailed rules. Markdown import initially creates `application/vnd.coedit.text`; it does not require a blob interchange convention.
+`MARKDOWN_INTERCHANGE.md` owns detailed rules. Markdown import initially creates `application/vnd.coedit.text`; it does not require a opaque payload interchange convention.
 
 ### Markdown export
 
@@ -459,7 +459,7 @@ The MVP must prove:
 - interactive text edits and Markdown import use the same validation, attribution, atomicity, and History boundary;
 - text and formatting cannot publish in mismatched state;
 - every live fine-grained `application/vnd.coedit.text` unit has one protected Origin, and ordinary formatting cannot alter it;
-- each current blob value has its required payload-level Origin;
+- each current opaque payload value has its required payload-level Origin;
 - copy and restore preserve Origin according to the payload contract while attributing their new Contributions to the acting Contributor;
 - no Block or InlineContent boundary manufactures a character or textual separator;
 - line-feed, carriage-return, or another text character is not invalid merely because an application can present it as a break;
@@ -468,7 +468,7 @@ The MVP must prove:
 - the headless Range service accepts only `application/vnd.coedit.text`, records each Range's creation Version, rejects direct creation when any supplied target is unresolved or non-text, preserves arbitrary source order and multiplicity, resolves surviving spans in creation and lineage order, concatenates exact stored text without inferred separators, and never follows copied content;
 - explicit rationalization merges only consecutive exact adjacency caused by a lineage merge;
 - best-effort parsing omits unresolved or ambiguous members without speculative rebinding, and document-relative serialization round trips each surviving member;
-- Range operations expose no live carrier object, document-wide holder registry, or universal blob locator;
+- Range operations expose no live carrier object, document-wide holder registry, or universal opaque payload locator;
 - editor-content and payload values are detached and cannot mutate engine state;
 - restore appends instead of rewinding;
 - `.coedit` serialization checks its expected Version;

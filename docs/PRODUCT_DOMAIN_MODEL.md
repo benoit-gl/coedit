@@ -69,7 +69,7 @@ Human users, imports, automation, and later AI collaborators use the same durabl
 
 `InlineContent` is payload-neutral at the document level. The fine-grained Media Type is `application/vnd.coedit.text`; all other supported Media Types initially use the generic opaque capability set.
 
-Formatting is intrinsic metadata of `application/vnd.coedit.text`. Fine-grained Origin provenance is protected `application/vnd.coedit.text` metadata that travels with authored text but never inherits from neighboring text. A blob has one payload-level Origin for its current whole value. Comments are external records with repairable text targets. Ordinary selections are transient.
+Formatting is intrinsic metadata of `application/vnd.coedit.text`. Fine-grained Origin provenance is protected `application/vnd.coedit.text` metadata that travels with authored text but never inherits from neighboring text. A opaque payload has one payload-level Origin for its current whole value. Comments are external records with repairable text targets. Ordinary selections are transient.
 
 These concerns share atomic versioning where required, but formatting and Origin do not use a generic external anchor. Internal links, comments, navigation, and later durable reference holders can use the shared Range value for `application/vnd.coedit.text` without making Range a universal payload, formatting, or provenance entity.
 
@@ -102,16 +102,16 @@ InlineContent
   payload: InlineContentPayload
 
 InlineContentPayload
-  kind: application/vnd.coedit.text | blob
-  value: kind-specific collaborative state
+  mediaType: MediaType
+  value: Media-Type-specific collaborative state
 
-CoeditTextPayload
+application/vnd.coedit.text capability
   authored Unicode text
   intrinsic formatting marks
   protected fine-grained origin attribution
 
-BlobPayload
-  opaque bytes
+Generic opaque capability
+  exact payload bytes
   payload-level Origin
 
 OriginRecord
@@ -143,8 +143,8 @@ The clean-slate model requires these invariants:
 6. Each InlineContent belongs to exactly one Block.
 7. Each InlineContent owns exactly one Media-Type-labelled payload.
 8. Each Media Type supports atomic whole-content replacement with explicit Origin behavior.
-9. A `application/vnd.coedit.text` payload owns its text, intrinsic formatting, and fine-grained Origin metadata as one canonical collaborative state.
-10. A `blob` payload owns opaque bytes and one payload-level Origin for its current value.
+9. An `application/vnd.coedit.text` payload owns its text, intrinsic formatting, and fine-grained Origin metadata as one canonical collaborative state.
+10. A generic opaque Media Type payload owns opaque bytes and one payload-level Origin for its current value.
 11. Sibling order is the order of the parent's `children` vector.
 12. InlineContent order is the order of the Block's `contents` vector.
 13. The live Block tree contains no cycle.
@@ -168,7 +168,7 @@ The initial writing application renders selected `application/vnd.coedit.text` p
 4. selected content on a child of `bullets` or `numbers` renders as a list item; and
 5. a contentless Block renders no content of its own.
 
-These rules select application presentation. They do not manufacture characters inside the payload. A future blob renderer can use the same structural context without redefining Block ontology.
+These rules select application presentation. They do not manufacture characters inside the payload. A future opaque-payload renderer can use the same structural context without redefining Block ontology.
 
 A contentful Block can also own children. Its `childrenPresentation` controls how those children render.
 
@@ -205,7 +205,7 @@ When one section contains both body material and subsections, transparent groupi
 
 Most Blocks can contain one InlineContent. Zero contents are valid for grouping Blocks. Additional InlineContents exist only when the product needs simultaneous material.
 
-During Step 2, `InlineContentValue` is typed and opaque to structural code. Structural operations can create, move, tag, reorder, and delete InlineContents without inspecting payload internals. Step 3 qualifies the candidate carriers against the initial `application/vnd.coedit.text` and `blob` contracts. Step 4 implements that behavior with the selected carrier. No intermediate step creates partially valid attributed text or interprets opaque payload bytes.
+During Step 2, `InlineContentValue` is typed and opaque to structural code. Structural operations can create, move, tag, reorder, and delete InlineContents without inspecting payload internals. Step 3 qualifies the candidate carriers against `application/vnd.coedit.text` plus representative generic opaque Media Types, including `application/octet-stream`. Step 4 implements that behavior with the selected carrier. No intermediate step creates partially valid attributed text or interprets opaque payload bytes.
 
 ### 4.2 No mandatory content role enum
 
@@ -220,7 +220,7 @@ Block tag:         topic:provenance
 InlineContent tag: view:main
 InlineContent tag: view:summary
 InlineContent tag: user:needs-citation
-Payload kind:      application/vnd.coedit.text
+Media Type:      application/vnd.coedit.text
 History kind:      checkpoint
 ```
 
@@ -230,19 +230,19 @@ Block tags and InlineContent tags use the same normalization rules. Their owners
 
 A Block tag describes the semantic structural unit across its contents. An InlineContent tag describes one specific content value. Tags do not inherit or synchronize automatically between these owners.
 
-### 4.4 Payload kind is explicit
+### 4.4 Media Type is explicit
 
-Each InlineContent owns one payload whose kind is initially `application/vnd.coedit.text` or `blob`. `INLINE_CONTENT_PAYLOADS.md` owns the detailed rules.
+Each InlineContent owns one payload labelled with an Internet Media Type. `INLINE_CONTENT_PAYLOADS.md` owns the detailed rules.
 
-The Media Type is stable for the current InlineContent lifetime. The current contract does not need an operation that silently converts one InlineContent from collaborative text to blob or vice versa. A later conversion workflow requires an explicit design decision.
+The Media Type is stable for ordinary replacement during the current InlineContent lifetime. The current contract does not need an operation that silently changes it. A later format-conversion workflow requires an explicit design decision.
 
-Every payload supports atomic whole-content replacement. Payload kinds can expose additional fine-grained operations. `application/vnd.coedit.text` does; `blob` initially does not.
+Every payload supports atomic whole-content replacement. Media-Type-specific contracts can expose additional fine-grained operations. `application/vnd.coedit.text` does; all other supported Media Types initially use the generic opaque capability set.
 
 Concurrent whole-content replacements converge deterministically. Causally later replacements supersede observed replacements. Concurrent replacements choose one deterministic current winner without using packet arrival order or wall-clock time. Losing replacements remain in immutable History and their Versions remain materializable.
 
 ### 4.5 `application/vnd.coedit.text` is canonical collaborative text
 
-A `application/vnd.coedit.text` payload is the canonical state of authored Unicode text, intrinsic formatting, and protected fine-grained Origin attribution. HTML, plain text projections, ProseMirror JSON, rendered attribution runs, and Markdown are derived representations. They are not parallel authorities.
+An `application/vnd.coedit.text` payload is the canonical state of authored Unicode text, intrinsic formatting, and protected fine-grained Origin attribution. HTML, plain text projections, ProseMirror JSON, rendered attribution runs, and Markdown are derived representations. They are not parallel authorities.
 
 There is no document-level `HardBreak` content item. Line-feed, carriage-return, and other characters can exist as text data. The writing application, editor adapter, Markdown adapter, or renderer decides whether to accept, reject, normalize, insert, or present them. That policy does not change the generic document validity of the textual payload.
 
@@ -256,7 +256,7 @@ Each mark has explicit start/end expansion behavior. Initial defaults expand bol
 
 Formatting marks commit atomically with the text they describe. There is no external formatting table or general-purpose formatting `TextAnchor`.
 
-Blob payloads have no intrinsic formatting operations under the initial contract.
+Generic opaque payloads have no intrinsic formatting operations under the initial contract.
 
 ### 4.7 Origin follows payload semantics
 
@@ -264,7 +264,7 @@ Origin identifies the human, imported source, automation, AI/software agent, or 
 
 In `application/vnd.coedit.text`, newly inserted material receives explicit fine-grained Origin and never inherits Origin from adjacent text. Ordinary formatting operations cannot create, alter, or erase it. A query or renderer can coalesce adjacent equal origins into display spans, but those spans are not durable `RangeAnnotation<Provenance>` entities.
 
-In `blob`, the current whole payload has one Origin. Whole-content replacement supplies the new payload Origin. A future structured payload can define finer Origin granularity only through its own payload contract.
+For every Media Type using the generic opaque capability set, the current whole payload has one Origin. Whole-content replacement supplies the new payload Origin. A future structured payload can define finer Origin granularity only through its own payload contract.
 
 There is no `restored` origin kind. Restore is an activity, not an authorship category.
 
@@ -276,7 +276,7 @@ Copying an InlineContent entity creates a new InlineContent ID and new carrier i
 
 Ordinary `application/vnd.coedit.text` copy/paste inserts text into the target InlineContent. It does not transfer the source InlineContent identity. A validated private Coedit clipboard representation preserves same-document Origins; ordinary external HTML or plain text receives imported or unknown Origin and never manufactures authorship for the paster.
 
-Blob copy and restore operate at whole-payload granularity under the initial contract.
+Generic opaque copy and restore operate at whole-payload granularity under the initial contract.
 
 ### 4.9 Durable Range references are `application/vnd.coedit.text` values
 
@@ -284,7 +284,7 @@ A Range is a document-relative durable semantic reference value supplied and res
 
 A Range can be stored outside the document, as with a future comment, or embedded as inert target metadata in an intrinsic internal-link mark. A Span Range preserves its source members in creation order without sorting, merging, or deduplication. Its members follow movement, split, and merge lineage but not copy lineage. A Positional Range refers to one logical text position and remains distinct from a zero-length Span. `RANGE_MODEL.md` owns their detailed behavior and staged representation decision.
 
-A opaque InlineContent remains addressable by its `InlineContentId`, but the current Range service does not address subregions inside opaque payload bytes.
+An opaque InlineContent remains addressable by its `InlineContentId`, but the current Range service does not address subregions inside opaque payload bytes.
 
 ## 5. History, Versions, Contributions, and Checkpoints
 
@@ -387,7 +387,7 @@ materialized Version
 
 The product can show several projections at the same time. No fixed pane layout is a domain requirement.
 
-Only one `application/vnd.coedit.text` InlineContent needs to own active rich-text editor machinery at one time in the initial browser implementation. A blob can use a different application adapter without changing the document ontology.
+Only one `application/vnd.coedit.text` InlineContent needs to own active rich-text editor machinery at one time in the initial browser implementation. A opaque payload can use a different application adapter without changing the document ontology.
 
 ## 11. Recorded clean-slate decisions
 
@@ -478,11 +478,11 @@ A future design is compatible with this domain direction only if it preserves th
 14. Local portability, verification, and recovery remain product constraints.
 15. UI layout, structural separators, and transient navigation do not leak into durable payload state by accident.
 16. Private implementation choices do not become product concepts without an explicit decision.
-17. Durable text Range references preserve creation and lineage order and holder independence without creating a document-wide registry or universal blob locator.
+17. Durable text Range references preserve creation and lineage order and holder independence without creating a document-wide registry or universal opaque payload locator.
 
 ## 14. Summary
 
-The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and one typed collaborative payload. The initial Media Types are `application/vnd.coedit.text`, with fine-grained collaborative text, intrinsic formatting, and protected Origin, and `blob`, with opaque bytes and payload-level Origin. Every payload supports atomic whole-content replacement and deterministic convergence; only `application/vnd.coedit.text` initially supports fine-grained editing.
+The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and one typed collaborative payload. The initial Media Types are `application/vnd.coedit.text`, with fine-grained collaborative text, intrinsic formatting, and protected Origin, and generic opaque Media Type, with opaque bytes and payload-level Origin. Every payload supports atomic whole-content replacement and deterministic convergence; only `application/vnd.coedit.text` initially supports fine-grained editing.
 
 Block and InlineContent boundaries are structural and imply no textual separator. Application adapters decide how content and structure are presented.
 

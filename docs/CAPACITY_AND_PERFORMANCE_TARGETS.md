@@ -68,7 +68,7 @@ recovery paths must bound dangerous CPU, memory, stack, allocation, and
 graph-processing work before they ship.
 
 A hostile-input guard protects one consuming implementation. It does not define
-the largest valid Coedit document, text payload, or blob. Exact values can change
+the largest valid Coedit document, text payload, or opaque payload. Exact values can change
 when evidence changes unless an explicit interoperability contract deliberately
 freezes them.
 

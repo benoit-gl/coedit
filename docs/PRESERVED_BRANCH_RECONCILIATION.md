@@ -67,15 +67,15 @@ semantics:
 
 - `application/vnd.coedit.text` formatting is intrinsic carrier-native rich-text metadata;
 - fine-grained `application/vnd.coedit.text` Origin is protected, non-inheriting content metadata;
-- blob uses payload-level Origin rather than text-like spans; and
-- durable text target holders use the `application/vnd.coedit.text` Range value and engine service without making Range a universal formatting, provenance, or blob entity.
+- opaque payload uses payload-level Origin rather than text-like spans; and
+- durable text target holders use the `application/vnd.coedit.text` Range value and engine service without making Range a universal formatting, provenance, or opaque payload entity.
 
 Ordinary selection remains transient. No concrete anchor is therefore required
 before the browser scaffold or pure Block domain begins.
 
 The later typed-payload correction also closes the accidental assumption that all
 InlineContent is rich text. `INLINE_CONTENT_PAYLOADS.md` defines `application/vnd.coedit.text`
-and blob, makes whole-content replacement universal, and requires deterministic
+and opaque payload, makes whole-content replacement universal, and requires deterministic
 replicated convergence for concurrent replacements. ADR 0010 preserves that
 rationale. The completed Step 2 structural domain remains valid because it treats
 `InlineContentValue` as opaque.

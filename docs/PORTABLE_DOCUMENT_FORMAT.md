@@ -155,7 +155,7 @@ any Version or required text Range lineage unavailable.
 
 One logical carrier checkpoint/update set reconstructs the Coedit document's
 Block registry/order and every InlineContent's Media-Type-labelled payload. The format does not
-default to one independent carrier document or blob per InlineContent.
+default to one independent carrier document or opaque payload per InlineContent.
 
 Carrier state preserves exactly:
 
@@ -175,9 +175,9 @@ or carriage-return that exists in `application/vnd.coedit.text` is serialized as
 to the final text codec. Block and InlineContent boundaries do not synthesize
 separator characters during encoding or decoding.
 
-A blob is opaque to the document model. Its bytes can be stored in a carrier
+A opaque payload is opaque to the document model. Its bytes can be stored in a carrier
 chunk or another version-1 binary chunk selected by Gate B/Step 8. That physical
-choice does not make the blob an independent document entity or assign it an
+choice does not make the opaque payload an independent document entity or assign it an
 application media type.
 
 A normalized Block/payload projection can be computed during validation. If
@@ -196,7 +196,7 @@ The package preserves immutable Origin records and every reference from payload
 material to those records. Each record names its claimed agent kind/Contributor
 and any source or upstream Origin reference required by the current document.
 
-`application/vnd.coedit.text` can reference Origins at fine granularity. A current blob value has
+`application/vnd.coedit.text` can reference Origins at fine granularity. A current opaque payload value has
 one payload-level Origin. A future Media Type can add finer Origin semantics
 only through its own accepted contract and format evolution.
 
@@ -281,7 +281,7 @@ Treat portable input as hostile. Validate a detached copy in this order:
     and structural invariants plus implementation capacity;
 11. reconstructed `application/vnd.coedit.text` Unicode text, marks, boundary policies,
     fine-grained Origin coverage, opaque link-metadata shape/resource bounds, and typed internal-link shape;
-12. reconstructed opaque payload bytes and exactly one valid payload-level Origin for each current blob value;
+12. reconstructed opaque payload bytes and exactly one valid payload-level Origin for each current opaque payload value;
 13. payload-specific invariants, including rejection of incompatible operations and absence of implicit Media Type conversion; and
 14. History replay/materialization invariants.
 
@@ -314,7 +314,7 @@ For each Contribution:
 
 For local single-writer restore, verify that visible material equals the selected
 target while restored `application/vnd.coedit.text` items retain historical Origin, restored
-blob values retain their payload Origin, and the restore Contribution names the
+opaque payload values retain their payload Origin, and the restore Contribution names the
 new actor and target. A future replicated format verifies the causal compensation
 rules in `COLLABORATION_MODEL.md`, including preservation of work outside the
 restore author's observed frontier.

@@ -144,7 +144,7 @@ then retain it as a production regression suite for the winner.
 
 Verify:
 
-- the initial runtime Media Types are exactly `application/vnd.coedit.text` and `blob`;
+- the initial runtime Media Types are exactly `application/vnd.coedit.text` and generic opaque Media Type;
 - each materialized InlineContent has one Media Type and ordinary replacement preserves it;
 - payload-specific operations reject an incompatible kind explicitly rather than coercing content;
 - no Media Type conversion operation exists under the initial contract;
@@ -152,16 +152,16 @@ Verify:
 - a replacement publishes its complete value and required Origin effect atomically;
 - malformed replacement or a selected resource-guard failure leaves the base unchanged;
 - detached opaque payload bytes and caller-owned replacement buffers cannot mutate engine state after submission;
-- opaque payload bytes round trip exactly and the current blob value has one payload-level Origin;
-- moving a opaque InlineContent preserves bytes and Origin;
-- same-document blob copy and restore preserve source Origin according to the payload contract while recording actor/derivation separately;
+- opaque payload bytes round trip exactly and the current opaque payload value has one payload-level Origin;
+- moving an opaque InlineContent preserves bytes and Origin;
+- same-document opaque payload copy and restore preserve source Origin according to the payload contract while recording actor/derivation separately;
 - a causally later whole-content replacement supersedes replacements that it observes;
 - concurrent whole-content replacements select the same deterministic current winner on every replica with the same valid Contributions;
 - the winner is unchanged by duplicate, delayed, reordered, partitioned, or reconnected delivery;
 - wall-clock values and packet-arrival order do not affect the winner; and
 - Step 3 retains both concurrent replacement inputs/effects as carrier-level evidence and can reconstruct each replacement value independently; section 7 verifies permanent losing-Contribution and Version materialization after Step 5 implements first-class History.
 
-Do not require the carrier to merge opaque payload bytes or the internal structure of a blob.
+Do not require the carrier to merge opaque payload bytes or the internal structure of a opaque payload.
 
 ### 6.2 `application/vnd.coedit.text` formatting carrier
 
@@ -226,7 +226,7 @@ Contributions in representative History as initial characterization points.
 They are not hard limits, semantic maxima, implementation acceptance ceilings,
 product guarantees, or correctness-test thresholds. Run smaller growth points
 and larger characterization points when practical so scaling behavior is
-visible. Include representative blob values in the qualification profile without treating their size as a semantic maximum.
+visible. Include representative opaque payload values in the qualification profile without treating their size as a semantic maximum.
 
 Before comparing carrier candidates, record one run-specific fixture profile
 for both candidates. It must state whether content and History loads are
@@ -241,10 +241,10 @@ Verify:
 - pairwise and three-way fine-grained text insert/delete/format at identical and adjacent boundaries under duplicate, delayed, reordered, partitioned, and reconnected updates;
 - pairwise concurrent whole-content replacement for `application/vnd.coedit.text` and representative opaque Media Types under the same delivery faults;
 - equal logical payload state, formatting/Origin projection, opaque payload bytes/Origin, deterministic replacement winner, and durable text Range-position behavior rather than merely equal rendered text;
-- one atomic command spanning Block structure, a `application/vnd.coedit.text` InlineContent, a opaque InlineContent, Origins, and Contribution metadata publishes all or none;
+- one atomic command spanning Block structure, a `application/vnd.coedit.text` InlineContent, an opaque InlineContent, Origins, and Contribution metadata publishes all or none;
 - a command that explicitly targets only one InlineContent cannot mutate unrelated InlineContents or Block structure;
 - direct one-span and multi-span Range creation is feasible only against `application/vnd.coedit.text` through the same carrier-neutral abstraction for each candidate;
-- Range creation targeting blob fails explicitly and atomically;
+- Range creation targeting opaque payload fails explicitly and atomically;
 - greedy Span boundaries and Block-local preceding-sticky Positional boundaries survive ordinary text edits and transaction-shape variation;
 - one Range retains creation and lineage order across split, merge, and Block move, including several current spans in one `application/vnd.coedit.text` InlineContent;
 - whole-content `application/vnd.coedit.text` replacement can be represented without preventing the Step 6 replacement-lineage decision;
@@ -261,7 +261,7 @@ Separate visible editor feedback from canonical local-model publication. Visible
 
 Exercise ordinary typing, delete/backspace, insertion at start/middle/end, selection replacement, application line-feed insertion where supported, formatting, mark boundaries, and Unicode. Use smaller growth points plus the representative text workload defined in section 6.5 and multiple InlineContents. Detect accidental whole-document scans or reconstruction on a normal keystroke; whole-document work on routine typing is disqualifying even when one test runner is fast enough to hide the cost.
 
-Measure whole-content replacement separately for representative text and blob values. Measure Block create, move, subtree move, delete, and structure-plus-multiple-InlineContent atomic changes separately. Characterize open/reload, carrier serialization, checkpoint-state capture, historical materialization, export, convergence workloads, serialized-state growth, and supported garbage collection/compaction. Repeat critical measurements after reload/compaction. Deliberately slow persistence and replica delivery in browser tests; local typing must remain responsive.
+Measure whole-content replacement separately for representative text and opaque payload values. Measure Block create, move, subtree move, delete, and structure-plus-multiple-InlineContent atomic changes separately. Characterize open/reload, carrier serialization, checkpoint-state capture, historical materialization, export, convergence workloads, serialized-state growth, and supported garbage collection/compaction. Repeat critical measurements after reload/compaction. Deliberately slow persistence and replica delivery in browser tests; local typing must remain responsive.
 
 ### 6.7 Structural carrier qualification
 
@@ -325,7 +325,7 @@ Run the complete Step 6 suite in `RANGE_MODEL.md` against the selected carrier a
 Verify at least:
 
 - atomic direct one-span, multi-span, and Positional Range creation, including complete failure when any supplied target does not resolve as `application/vnd.coedit.text` at the visible tip;
-- explicit rejection of blob sub-content as a Range target;
+- explicit rejection of opaque payload sub-content as a Range target;
 - preservation of arbitrary creation order, overlap, duplication, adjacency, sparsity, and zero-length Span members without normalization;
 - immutable Span and Positional kinds after complete deletion or coincident Span boundaries;
 - greedy Span insertion and replacement at both boundaries, independent of editor transaction shape;
@@ -466,7 +466,7 @@ Keep the end-to-end suite small and high value. It must prove at least:
 2. import a realistic Markdown fixture;
 3. inspect and edit structure;
 4. edit attributed formatted `application/vnd.coedit.text` through semantic grouping;
-5. create a opaque InlineContent and replace its bytes with explicit Origin;
+5. create an opaque InlineContent and replace its bytes with explicit Origin;
 6. verify internal and external text paste lineage;
 7. create a semantic Checkpoint;
 8. inspect and restore History while preserving text and opaque-payload Origin and attributing the restore actor;

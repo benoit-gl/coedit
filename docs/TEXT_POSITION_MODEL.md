@@ -6,7 +6,7 @@ behavior and Step 6 selects the durable Range representation.
 ## 1. Purpose and authority
 
 This document defines how Coedit separates Unicode text, editor positions, and
-durable collaborative positions inside a `application/vnd.coedit.text` payload. It supplies
+durable collaborative positions inside an `application/vnd.coedit.text` payload. It supplies
 position primitives to [`RANGE_MODEL.md`](RANGE_MODEL.md), which owns durable
 `application/vnd.coedit.text` Range behavior, and supplements
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), which
@@ -19,7 +19,7 @@ requirements. Blob payloads have no internal text-position contract.
 
 ## 2. Canonical text
 
-A `application/vnd.coedit.text` payload stores Unicode text. The document model does not
+An `application/vnd.coedit.text` payload stores Unicode text. The document model does not
 prescribe UTF-8, UTF-16, or another storage encoding as document semantics.
 
 Preserve authored Unicode text exactly. Do not silently apply NFC, NFD, or
@@ -74,7 +74,7 @@ createStableTextPosition(editorPosition, affinity) -> StableTextPosition
 resolveStableTextPosition(stablePosition) -> editorPosition | unresolved
 ```
 
-The target InlineContent must have a `application/vnd.coedit.text` payload. Asking for a text
+The target InlineContent must have an `application/vnd.coedit.text` payload. Asking for a text
 position inside opaque content is invalid under this contract.
 
 The exact types and encoding are carrier-private. Public detached values and the

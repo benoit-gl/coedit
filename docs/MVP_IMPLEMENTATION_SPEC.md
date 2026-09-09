@@ -108,7 +108,7 @@ src/
   content/
     payload.ts
     coeditText.ts
-    blob.ts
+    opaque payload.ts
     carrier.ts
     formatting.ts
     origin.ts
@@ -249,7 +249,7 @@ type StructuralOperation =
 
 In completed Step 2, `InlineContentValue` is a typed, opaque, valid empty value. Structural code can store, preserve, move, reorder, and delete it but must not inspect or manufacture payload internals. This permits complete InlineContent structural behavior before a carrier is selected without creating partially valid attributed text or interpreting opaque payload bytes.
 
-Step 4 evolves that opaque boundary into the Media-Type-labelled payload representation defined by `INLINE_CONTENT_PAYLOADS.md`. The initial runtime kinds are `application/vnd.coedit.text` and `blob`. The ordinary authored empty-content path creates an empty `application/vnd.coedit.text` value; creation/import paths that deliberately require opaque content use a trusted complete blob value with explicit Origin. This documentation evolution does not require reopening the already completed structural semantics of Step 2.
+Step 4 evolves that opaque boundary into the Media-Type-labelled payload representation defined by `INLINE_CONTENT_PAYLOADS.md`. The initial runtime kinds are `application/vnd.coedit.text` and generic opaque Media Type. The ordinary authored empty-content path creates an empty `application/vnd.coedit.text` value; creation/import paths that deliberately require opaque content use a trusted complete opaque payload value with explicit Origin. This documentation evolution does not require reopening the already completed structural semantics of Step 2.
 
 At the public human-edit boundary, text creation supplies visible content and formatting intent and the engine assigns Origin from the attributed command context. A complete pre-attributed `application/vnd.coedit.text` value is accepted only by validated internal import, copy, restore, or remote-integration paths; it is not a client Origin-spoofing surface. Blob creation/replacement likewise obtains Origin from a trusted context rather than a caller-controlled attribution side channel.
 
@@ -276,7 +276,7 @@ Each InlineContent owns one typed collaborative payload. The initial Media Types
 
 `application/vnd.coedit.text` stores authored Unicode text, intrinsic formatting marks, and protected fine-grained Origin in one atomic collaborative state. It has no separate document-level hard-break item. Newline and other control characters are ordinary text data at this layer. HTML, plain-text projections, ProseMirror JSON, and rendered Origin runs are derived. Do not persist them as a parallel authority.
 
-`blob` stores opaque bytes with one payload-level Origin for the current value. The selected carrier must preserve those bytes and support atomic whole-content replacement. It does not need a fine-grained blob CRDT.
+generic opaque Media Type stores opaque bytes with one payload-level Origin for the current value. The selected carrier must preserve those bytes and support atomic whole-content replacement. It does not need a fine-grained opaque payload CRDT.
 
 Every Media Type supports one type-preserving whole-content replacement operation. The logical operation targets one InlineContent, validates a complete replacement for its existing kind, and publishes the replacement plus Origin effect atomically. `application/vnd.coedit.text` also supports fine-grained text and formatting operations. Payload-specific operations reject incompatible kinds explicitly. Do not add dynamic capability dispatch or a generic replicated object model for this two-kind contract.
 
@@ -292,7 +292,7 @@ Do not hash the whole Block payload into placement metadata. A payload hash woul
 
 Exact primary-position collisions are exceptional carrier cases. When insertion requires normalization of an existing collision run, that normalization is replicated as part of the structural Contribution that needs it. It is not a separate product operation or History action. Prefer deterministic normalization and suppression of normalization-only resurrection when they are inexpensive; record residual behavior if those properties would require disproportionate machinery.
 
-Bind the rich-text editor only to an active `application/vnd.coedit.text` InlineContent. A blob can be projected to an application adapter, but no rich-text editor or text operation is offered for it. Do not expose the logical document, carrier objects, raw updates, Block activity setters, or client-supplied Origin setters through the public API.
+Bind the rich-text editor only to an active `application/vnd.coedit.text` InlineContent. A opaque payload can be projected to an application adapter, but no rich-text editor or text operation is offered for it. Do not expose the logical document, carrier objects, raw updates, Block activity setters, or client-supplied Origin setters through the public API.
 
 Formatting follows the vocabulary and boundary defaults in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`. Carrier adapters translate those logical policies to native marks/attributes and must prove exact round trip. Clearing formatting cannot change Origin.
 
@@ -469,7 +469,7 @@ If several contents match, select the first in vector order and return a project
 
 Initial lenses preserve the complete Block tree. They do not silently reparent Blocks.
 
-A renderer must inspect the selected Media Type. The current Markdown/writing projection expects `application/vnd.coedit.text`; a blob requires a payload-aware renderer or a non-representability diagnostic rather than implicit byte-to-text conversion.
+A renderer must inspect the selected Media Type. The current Markdown/writing projection expects `application/vnd.coedit.text`; a opaque payload requires a payload-aware renderer or a non-representability diagnostic rather than implicit byte-to-text conversion.
 
 Historical comparison aligns Blocks by stable `BlockId` and reports unmatched subtrees. Do not guess correspondence.
 

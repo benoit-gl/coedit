@@ -26,9 +26,9 @@ keep the value in an external record. An intrinsic internal-link mark can embed
 the value in `application/vnd.coedit.text`. Neither use creates a Range registry, independent
 Range identity, or a document-owned table of retained references.
 
-A opaque InlineContent is addressable by its ordinary `InlineContentId`, but this
+An opaque InlineContent is addressable by its ordinary `InlineContentId`, but this
 Range service does not address byte regions or application-defined structures
-inside a blob. A future Media Type that needs internal durable references
+inside a opaque payload. A future Media Type that needs internal durable references
 requires its own content-local addressing contract.
 
 ## 2. Terms
@@ -108,7 +108,7 @@ parseRange(serializedRange, documentContext, selectedVersion) -> Range | RangeEr
 ```
 
 Creation is atomic against the current Version visible to the creator. Every
-supplied source span or position must resolve inside a `application/vnd.coedit.text` payload in
+supplied source span or position must resolve inside an `application/vnd.coedit.text` payload in
 that Version. If any input does not resolve or targets another Media Type,
 creation fails and returns no Range.
 
@@ -160,7 +160,7 @@ a merge can place included material, excluded material, and included material in
 one current InlineContent. Resolution preserves the two included spans instead
 of expanding across the excluded material.
 
-Whole-content replacement of a `application/vnd.coedit.text` payload exists under
+Whole-content replacement of an `application/vnd.coedit.text` payload exists under
 `INLINE_CONTENT_PAYLOADS.md`. Step 6 must ensure its final lineage mapping is
 consistent with these replacement semantics and the explicit positional rules
 below; this PR does not select a carrier representation for that mapping.

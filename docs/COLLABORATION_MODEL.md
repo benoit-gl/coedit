@@ -382,7 +382,7 @@ The initial Media Types are:
 
 - `application/vnd.coedit.text`, which supports fine-grained Unicode text, intrinsic formatting,
   protected fine-grained Origin, and the text Range service; and
-- `blob`, which stores opaque bytes with payload-level Origin and initially has
+- generic opaque Media Type, which stores opaque bytes with payload-level Origin and initially has
   no fine-grained mutation beyond whole-content replacement.
 
 The document model has no canonical hard-break content item. A line-feed or
@@ -492,7 +492,7 @@ A replicated restore does not install an old carrier snapshot or resurrect old
 carrier state wholesale. It emits fresh deterministic payload/tree effects
 relative to its declared base. For `application/vnd.coedit.text`, historically deleted material
 is reinserted under fresh carrier identities while historical Origin is retained.
-For blob, restore can reintroduce the historical whole payload and its payload
+For opaque payload, restore can reintroduce the historical whole payload and its payload
 Origin through the same replacement/convergence boundary. The restore
 Contribution records the actor, target, observed frontier, and exact effect.
 
@@ -609,7 +609,7 @@ The MVP does not implement networking. It does establish the following seams:
 - intrinsic `application/vnd.coedit.text` formatting and protected, non-inheriting fine-grained Origin semantics;
 - opaque-payload Origin;
 - first-class checkpoint Contributions;
-- a carrier-neutral durable `application/vnd.coedit.text` Range service with no document-wide holder registry or blob sub-content locator;
+- a carrier-neutral durable `application/vnd.coedit.text` Range service with no document-wide holder registry or opaque payload sub-content locator;
 - History listing, summary, permanent exact Version materialization, and compensating restore;
 - change subscriptions followed by re-query;
 - opaque lossless serialization/opening;

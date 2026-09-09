@@ -22,10 +22,10 @@ The MVP must provide these capabilities:
 4. Edit headings, prose, and list items.
 5. Create, move, nest, reorder, and delete Blocks.
 6. Create, select, reorder, tag, and delete InlineContents.
-7. Support initial InlineContent Media Types `application/vnd.coedit.text` and `blob`.
+7. Support initial InlineContent Media Types `application/vnd.coedit.text` and generic opaque Media Type.
 8. Replace the complete content of any InlineContent atomically with explicit Origin behavior and deterministic convergence semantics.
 9. Edit canonical `application/vnd.coedit.text`, intrinsic formatting, and protected fine-grained Origin through the engine command boundary.
-10. Preserve opaque payload bytes with payload-level Origin; no fine-grained blob editing is required.
+10. Preserve opaque payload bytes with payload-level Origin; no fine-grained opaque payload editing is required.
 11. Use optional content-selection lenses, including a summary convention.
 12. List and summarize durable Contributions.
 13. Inspect an exact historical Version read-only.
@@ -52,7 +52,7 @@ The MVP does not require:
 - provenance visualization, analytics, authenticated identity, retention controls, or signed claims beyond the minimum Origin carrier;
 - Comment records, durable discussions, or comment repair UX;
 - post-genesis AI or automation Contributor registration;
-- fine-grained collaborative editing for blob, SVG, image, table, JSON, or other future structured payloads;
+- fine-grained collaborative editing for opaque payload, SVG, image, table, JSON, or other future structured payloads;
 - Media Type conversion for an existing InlineContent;
 - a generic structured-data CRDT or plugin-dispatched payload system;
 - Tauri or another native shell;
@@ -108,7 +108,7 @@ Semantic editor groups and physical recovery checkpoints are not semantic Checkp
 
 ### 4.7 Typed collaborative InlineContent payloads
 
-Each InlineContent owns one typed collaborative payload. The initial kinds are `application/vnd.coedit.text` and `blob`. Block and InlineContent boundaries imply no text character or separator.
+Each InlineContent owns one typed collaborative payload. The initial kinds are `application/vnd.coedit.text` and generic opaque Media Type. Block and InlineContent boundaries imply no text character or separator.
 
 Every Media Type supports atomic whole-content replacement with Origin information. A causally later replacement supersedes replacements it observes. Concurrent replacements choose one deterministic current winner without using packet arrival order, local wall-clock time, or an unsynchronized local sequence. Losing replacements remain represented by immutable Contributions and exactly materializable Versions.
 
@@ -116,7 +116,7 @@ The document model does not interpret opaque payload bytes or prescribe applicat
 
 `application/vnd.coedit.text` contains authored Unicode text, intrinsic formatting marks, and protected fine-grained Origin attribution. It has no document-level `HardBreak` item. Line-feed, carriage-return, and other characters are text data; application/editor/interchange layers decide how to create, normalize, restrict, or present them.
 
-A blob contains opaque bytes and one payload-level Origin for the current value. It has no fine-grained MVP mutation beyond whole-content replacement.
+A opaque payload contains opaque bytes and one payload-level Origin for the current value. It has no fine-grained MVP mutation beyond whole-content replacement.
 
 Formatting has explicit insertion-boundary behavior. New fine-grained text Origin is assigned by the trusted engine/import boundary and never inherited from neighboring text. Formatting commands cannot erase or rewrite Origin.
 
@@ -136,7 +136,7 @@ Selection, focus, disclosure, active lens, dialogs, editor composition state, re
 
 ### 4.10 Durable text Range service
 
-The headless engine creates and resolves document-relative durable Range values for `application/vnd.coedit.text`. Each Range records its document-scoped creation Version and its original Block and InlineContent locations. A Range can contain arbitrarily ordered, overlapping, duplicated, adjacent, sparse, or zero-length Span members, or it can refer to one logical text position. Range is not a canonical entity, has no independent identity, creates no document-wide holder registry, and is not a universal blob locator.
+The headless engine creates and resolves document-relative durable Range values for `application/vnd.coedit.text`. Each Range records its document-scoped creation Version and its original Block and InlineContent locations. A Range can contain arbitrarily ordered, overlapping, duplicated, adjacent, sparse, or zero-length Span members, or it can refer to one logical text position. Range is not a canonical entity, has no independent identity, creates no document-wide holder registry, and is not a universal opaque payload locator.
 
 Direct creation fails atomically if any supplied target does not resolve as `application/vnd.coedit.text`. Resolution returns surviving spans in creation and lineage order, skips unresolved members, and can concatenate exact stored text without adding separators. Copy creates no Range lineage. Explicit rationalization can merge only sequential, exactly adjacent spans made adjacent by a lineage merge.
 
@@ -152,15 +152,15 @@ The prototype must preserve these domain rules:
 - Block and InlineContent identities are unique in live structure, while History and portable validation reject reuse across retained lifetimes;
 - each InlineContent belongs to exactly one Block;
 - each InlineContent owns one typed collaborative payload;
-- initial Media Types are `application/vnd.coedit.text` and `blob`;
+- initial Media Types are `application/vnd.coedit.text` and generic opaque Media Type;
 - every payload can be replaced atomically with explicit Origin behavior;
 - concurrent whole-content replacements converge deterministically;
 - `application/vnd.coedit.text` owns intrinsic formatting and protected fine-grained Origin;
-- blob owns opaque bytes and payload-level Origin;
+- opaque payload owns opaque bytes and payload-level Origin;
 - Block and InlineContent tags have independent ownership;
 - `childrenPresentation` belongs to the parent;
 - contentless non-root Blocks are transparent grouping containers;
-- heading, prose, list-item, separator, and blob presentation comes from structural/application context, not implicit payload characters;
+- heading, prose, list-item, separator, and opaque payload presentation comes from structural/application context, not implicit payload characters;
 - a Block can contain zero, one, or several InlineContents;
 - several InlineContents are optional, not mandatory;
 - current entities do not use lifecycle timestamps or tombstones as product fields;
@@ -185,13 +185,13 @@ A user can reorganize an imported document and edit rich `application/vnd.coedit
 
 New text receives the correct human/imported/unknown Origin. Clearing formatting preserves Origin. Same-document internal paste preserves source Origin while recording the paster; external paste does not import private Origin or falsely claim authorship.
 
-The suite also creates a opaque InlineContent, replaces its bytes with explicit Origin, and proves byte preservation. Whole-content replacement of either Media Type is atomic.
+The suite also creates an opaque InlineContent, replaces its bytes with explicit Origin, and proves byte preservation. Whole-content replacement of either Media Type is atomic.
 
 Durable commits happen promptly and can share a semantic group for History presentation. A failed or stale commit leaves canonical state unchanged and retains a recoverable UI draft or an explicit retry/discard path.
 
 ### Scenario C — History, Checkpoints, and restore
 
-After several structural, text, blob replacement, and formatting changes, the user can list History, inspect an earlier Version read-only, create a Checkpoint, restore an earlier Version, and continue editing.
+After several structural, text, opaque-payload replacement, and formatting changes, the user can list History, inspect an earlier Version read-only, create a Checkpoint, restore an earlier Version, and continue editing.
 
 The Checkpoint appears as one attributed Contribution and creates a new content-identical Version. Its resulting VersionToken remains available through History and can be materialized exactly.
 

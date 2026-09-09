@@ -112,7 +112,7 @@ For every material design decision found in the preserved branch, classify it as
 
 The reconciliation record must identify the current authority for retained, adapted, and superseded decisions. It must also identify any deferred decision that blocks implementation.
 
-The former `TextAnchor` blocker is resolved. Formatting uses native collaborative marks inside `application/vnd.coedit.text`; fine-grained text Origin is protected content-native metadata; blob uses payload-level Origin; future comments and internal text links can use the shared durable `application/vnd.coedit.text` Range value; ordinary selections are transient. InlineContent itself owns a Media-Type-labelled payload and is not universally synonymous with rich text. The accepted rationale is recorded in `docs/decisions/0001-collaborative-content-provenance-history.md`, `docs/decisions/0009-durable-range-semantics.md`, and `docs/decisions/0010-typed-inline-content-payloads.md`.
+The former `TextAnchor` blocker is resolved. Formatting uses native collaborative marks inside `application/vnd.coedit.text`; fine-grained text Origin is protected content-native metadata; opaque payload uses payload-level Origin; future comments and internal text links can use the shared durable `application/vnd.coedit.text` Range value; ordinary selections are transient. InlineContent itself owns a Media-Type-labelled payload and is not universally synonymous with rich text. The accepted rationale is recorded in `docs/decisions/0001-collaborative-content-provenance-history.md`, `docs/decisions/0009-durable-range-semantics.md`, and `docs/decisions/0010-typed-inline-content-payloads.md`.
 
 **Exit gate:**
 
@@ -272,7 +272,7 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 **Outcome:** Headings, prose, and list items can be edited in place with attributed durable commits. Several immutable Contributions can share one human-visible semantic group without redefining the semantic History Checkpoint concept. The editor/application maps line-break or paragraph intent into explicit text and/or structural operations; it does not depend on a document hard-break item. Blob remains replaceable through the generic payload boundary but has no rich-text editor requirement.
 
-**Exit gate:** Editor ownership transitions do not lose text, formatting, or Origin. IME and atomic edit paths, prompt commit, semantic grouping, failure retry, internal/external clipboard, History restore, and `.coedit` round trips preserve exact committed state. An incompatible blob target is not silently bound to the text editor. No whole-artifact queue threshold blocks ordinary typing.
+**Exit gate:** Editor ownership transitions do not lose text, formatting, or Origin. IME and atomic edit paths, prompt commit, semantic grouping, failure retry, internal/external clipboard, History restore, and `.coedit` round trips preserve exact committed state. An incompatible opaque payload target is not silently bound to the text editor. No whole-artifact queue threshold blocks ordinary typing.
 
 See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
@@ -280,7 +280,7 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) and [`d
 
 **Objective:** Prove optional simultaneous content, exact Version projections, payload-aware rendering, and reversible Markdown interchange for imported text documents.
 
-**Outcome:** The user can select main or summary content, inspect exact historical Versions, compare Versions, and export a selected Version, lens, or subtree to Markdown. The renderer reports stable non-representability when a selected blob or another unsupported payload participates.
+**Outcome:** The user can select main or summary content, inspect exact historical Versions, compare Versions, and export a selected Version, lens, or subtree to Markdown. The renderer reports stable non-representability when a selected opaque payload or another unsupported payload participates.
 
 **Exit gate:** Lens and historical selection create no durable mutation. Markdown output is deterministic. For the canonical Markdown-representable subset, `Markdown A -> Coedit X -> Markdown B -> Coedit Y` yields equivalent normalized Coedit structure and semantic `application/vnd.coedit.text` for `X` and `Y`. Export outside that subset reports stable loss or non-representability diagnostics.
 
@@ -376,7 +376,7 @@ The plan is complete when the browser prototype satisfies the MVP contract and a
 - each InlineContent has one supported Media-Type-labelled payload and Block/InlineContent boundaries imply no text separator;
 - `application/vnd.coedit.text` and representative opaque Media Types are both represented, preserved, and replaceable through the engine;
 - universal whole-content replacement is atomic, type-preserving, Origin-aware, and qualified for deterministic eventual convergence;
-- blob remains opaque and does not require fine-grained collaboration;
+- opaque payload remains opaque and does not require fine-grained collaboration;
 - durable changes are attributed Contributions;
 - exact historical Versions, semantic checkpoints, and compensating restore are usable;
 - the headless `application/vnd.coedit.text` Range service and embedded internal-link Range values pass Gate C;

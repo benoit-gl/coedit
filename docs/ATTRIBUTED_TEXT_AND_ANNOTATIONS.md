@@ -147,7 +147,7 @@ can map Enter to structural commands, map Shift+Enter to a line-feed character,
 or reject a character in one context. Such rules are application intent
 translation, not generic `application/vnd.coedit.text` validity.
 
-Whole-content replacement of a `application/vnd.coedit.text` payload is also available under
+Whole-content replacement of an `application/vnd.coedit.text` payload is also available under
 `INLINE_CONTENT_PAYLOADS.md`. Normal text editing should use the fine-grained
 operations in this document when their merge behavior is desired.
 
@@ -251,7 +251,7 @@ When a user edits another contributor's sentence, only newly inserted logical
 text receives the editor's new Origin. Unchanged surrounding text retains its
 existing Origin.
 
-Payload-level Origin for blob replacement is specified separately in
+Payload-level Origin for opaque-payload replacement is specified separately in
 `INLINE_CONTENT_PAYLOADS.md`.
 
 ## 7. Clipboard contract
@@ -417,7 +417,7 @@ selection. At minimum it covers:
 - exact portable round trip and historical materialization; and
 - representative growth and load behavior.
 
-The carrier gate also runs the `blob` and whole-payload replacement cases in
+The carrier gate also runs the generic opaque Media Type and whole-payload replacement cases in
 `INLINE_CONTENT_PAYLOADS.md`.
 
 Functional invariants are mandatory. `MVP_VERIFICATION_PLAN.md` owns the
