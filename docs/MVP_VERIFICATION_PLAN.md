@@ -140,13 +140,13 @@ Verify at least:
 Run the same carrier-neutral suite against both candidates before selecting one,
 then retain it as a production regression suite for the winner.
 
-### 6.1 Payload kinds and universal replacement
+### 6.1 Media Types and universal replacement
 
 Verify:
 
-- the initial runtime Media Types are exactly `application/vnd.coedit.text` and generic opaque Media Type;
+- each materialized InlineContent carries a valid Media Type; `application/vnd.coedit.text` selects the fine-grained text capability set and representative other Media Types select the generic opaque capability set;
 - each materialized InlineContent has one Media Type and ordinary replacement preserves it;
-- payload-specific operations reject an incompatible kind explicitly rather than coercing content;
+- payload-specific operations reject an incompatible Media Type explicitly rather than coercing content;
 - no Media Type conversion operation exists under the initial contract;
 - whole-content replacement is available for both `application/vnd.coedit.text` and representative opaque Media Types;
 - a replacement publishes its complete value and required Origin effect atomically;

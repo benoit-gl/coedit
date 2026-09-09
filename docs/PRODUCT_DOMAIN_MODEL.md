@@ -482,7 +482,7 @@ A future design is compatible with this domain direction only if it preserves th
 
 ## 14. Summary
 
-The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and one Media-Type-labelled collaborative payload. The initial Media Types are `application/vnd.coedit.text`, with fine-grained collaborative text, intrinsic formatting, and protected Origin, and generic opaque Media Type, with opaque bytes and payload-level Origin. Every payload supports atomic whole-content replacement and deterministic convergence; only `application/vnd.coedit.text` initially supports fine-grained editing.
+The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and one collaborative payload labelled with an Internet Media Type. `application/vnd.coedit.text` has fine-grained collaborative text, intrinsic formatting, protected Origin, and text Range capabilities. Every other supported Media Type initially uses the generic opaque capability set with exact bytes and payload-level Origin. Every payload supports atomic Media-Type-preserving whole-content replacement and deterministic convergence.
 
 Block and InlineContent boundaries are structural and imply no textual separator. Application adapters decide how content and structure are presented.
 

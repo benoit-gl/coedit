@@ -106,17 +106,17 @@ A Checkpoint does not mean final, published, approved, or immutable. A document 
 
 Semantic editor groups and physical recovery checkpoints are not semantic Checkpoints. They can support History presentation or storage recovery without redefining this concept.
 
-### 4.7 Typed collaborative InlineContent payloads
+### 4.7 Media-Type-labelled collaborative InlineContent payloads
 
-Each InlineContent owns one Media-Type-labelled collaborative payload. The initial kinds are `application/vnd.coedit.text` and generic opaque Media Type. Block and InlineContent boundaries imply no text character or separator.
+Each InlineContent owns one collaborative payload labelled with an Internet Media Type. `application/vnd.coedit.text` selects the fine-grained collaborative-text capability set; every other supported Media Type initially selects the generic opaque capability set. Block and InlineContent boundaries imply no text character or separator.
 
-Every Media Type supports atomic whole-content replacement with Origin information. A causally later replacement supersedes replacements it observes. Concurrent replacements choose one deterministic current winner without using packet arrival order, local wall-clock time, or an unsynchronized local sequence. Losing replacements remain represented by immutable Contributions and exactly materializable Versions.
+Every InlineContent payload supports atomic Media-Type-preserving whole-content replacement with Origin information. A causally later replacement supersedes replacements it observes. Concurrent replacements choose one deterministic current winner without using packet arrival order, local wall-clock time, or an unsynchronized local sequence. Losing replacements remain represented by immutable Contributions and exactly materializable Versions.
 
 The document model does not interpret opaque payload bytes or prescribe application meaning for text characters. Payload-specific contracts decide which fine-grained operations are available.
 
 `application/vnd.coedit.text` contains authored Unicode text, intrinsic formatting marks, and protected fine-grained Origin attribution. It has no document-level `HardBreak` item. Line-feed, carriage-return, and other characters are text data; application/editor/interchange layers decide how to create, normalize, restrict, or present them.
 
-A opaque payload contains opaque bytes and one payload-level Origin for the current value. It has no fine-grained MVP mutation beyond whole-content replacement.
+A payload using the generic opaque capability set contains exact bytes and one payload-level Origin for the current value. It has no fine-grained MVP mutation beyond whole-content replacement.
 
 Formatting has explicit insertion-boundary behavior. New fine-grained text Origin is assigned by the trusted engine/import boundary and never inherited from neighboring text. Formatting commands cannot erase or rewrite Origin.
 
@@ -152,11 +152,11 @@ The prototype must preserve these domain rules:
 - Block and InlineContent identities are unique in live structure, while History and portable validation reject reuse across retained lifetimes;
 - each InlineContent belongs to exactly one Block;
 - each InlineContent owns one Media-Type-labelled collaborative payload;
-- initial Media Types are `application/vnd.coedit.text` and generic opaque Media Type;
+- `application/vnd.coedit.text` selects the fine-grained collaborative-text capability set and other supported Media Types initially select the generic opaque capability set;
 - every payload can be replaced atomically with explicit Origin behavior;
 - concurrent whole-content replacements converge deterministically;
 - `application/vnd.coedit.text` owns intrinsic formatting and protected fine-grained Origin;
-- opaque payload owns opaque bytes and payload-level Origin;
+- generic opaque payload handling preserves exact bytes and payload-level Origin;
 - Block and InlineContent tags have independent ownership;
 - `childrenPresentation` belongs to the parent;
 - contentless non-root Blocks are transparent grouping containers;

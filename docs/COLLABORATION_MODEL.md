@@ -378,12 +378,7 @@ inside one logical collaborative document, and Step 4 implements the selected
 carrier. `INLINE_CONTENT_PAYLOADS.md` owns payload semantics and
 `STRUCTURAL_CARRIER_MODEL.md` owns the structural contract.
 
-The initial Media Types are:
-
-- `application/vnd.coedit.text`, which supports fine-grained Unicode text, intrinsic formatting,
-  protected fine-grained Origin, and the text Range service; and
-- generic opaque Media Type, which stores opaque bytes with payload-level Origin and initially has
-  no fine-grained mutation beyond whole-content replacement.
+The initial capability dispatch recognizes `application/vnd.coedit.text` as the fine-grained collaborative-text format. Every other supported Media Type initially uses the generic opaque capability set, which preserves exact bytes and payload-level Origin and provides no fine-grained mutation beyond whole-content replacement.
 
 The document model has no canonical hard-break content item. A line-feed or
 carriage-return can be ordinary `application/vnd.coedit.text` data. Block and InlineContent
