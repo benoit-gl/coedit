@@ -19,80 +19,50 @@ jobs:
         with:
           node-version: 24
       - run: npm run bootstrap
-      - name: Finish Media Type terminology cleanup
+      - name: Polish Media Type contract wording
         shell: python
         run: |
           from pathlib import Path
 
-          files = [Path('README.md'), Path('SCAFFOLDING_PLAN.md')]
-          files += list(Path('docs').rglob('*.md'))
-          skip = {Path('docs/decisions/0010-typed-inline-content-payloads.md')}
+          changes = {
+              Path('docs/README.md'): [
+                  (
+                      'Each InlineContent owns one Media-Type-labelled collaborative payload. The initial kinds are `application/vnd.coedit.text` and representative opaque Media Types. Every payload supports atomic type-preserving whole-content replacement with explicit Origin behavior. Under replication, a causally later replacement supersedes replacements it observes; concurrent replacements select one deterministic current winner without wall-clock or packet-arrival arbitration. Losing replacements remain in immutable History and their Versions remain materializable. `application/vnd.coedit.text` additionally supports fine-grained collaborative editing, intrinsic formatting, fine-grained protected Origin, and durable text Ranges. Blob preserves opaque bytes with payload-level Origin and initially has no finer mutation than replacement.',
+                      'Each InlineContent owns one collaborative payload labelled with an Internet Media Type. `application/vnd.coedit.text` has the fine-grained collaborative-text capability set. Every other supported Media Type initially uses the generic opaque capability set; its exact bytes and payload-level Origin are preserved. Use `application/octet-stream` when the actual format is unknown. Every payload supports atomic Media-Type-preserving whole-content replacement with explicit Origin behavior. Under replication, a causally later replacement supersedes replacements it observes; concurrent replacements select one deterministic current winner without wall-clock or packet-arrival arbitration. Losing replacements remain in immutable History and their Versions remain materializable.'
+                  ),
+                  (
+                      'The payload suite covers `application/vnd.coedit.text`, opaque payload, universal whole-content replacement, and the deterministic concurrent-replacement tie-break.',
+                      'The payload suite covers `application/vnd.coedit.text`, representative generic opaque Media Types, universal whole-content replacement, and the deterministic concurrent-replacement tie-break.'
+                  ),
+              ],
+              Path('docs/PRODUCT_DOMAIN_MODEL.md'): [
+                  (
+                      '8. Each Media Type supports atomic whole-content replacement with explicit Origin behavior.',
+                      '8. Every InlineContent payload supports atomic Media-Type-preserving whole-content replacement with explicit Origin behavior.'
+                  ),
+                  (
+                      '10. A generic opaque Media Type payload owns opaque bytes and one payload-level Origin for its current value.',
+                      '10. A payload using the generic opaque capability set owns exact bytes and one payload-level Origin for its current value.'
+                  ),
+                  ('Media Type:      application/vnd.coedit.text', 'Media Type:        application/vnd.coedit.text'),
+              ],
+              Path('docs/decisions/0010-typed-inline-content-payloads.md'): [
+                  (
+                      'Future Media-Type-specific fine-grained editing, in-place Media Type conversion,\nMedia Type parameter rules, and non-text content-local addressing require\nseparate explicit decisions when real application requirements exist.\n',
+                      'Future Media-Type-specific fine-grained editing, in-place Media Type conversion,\nMedia Type parameter rules, and non-text content-local addressing require\nseparate explicit decisions when real application requirements exist.\n\n## 7. Standards references\n\n- [RFC 6838: Media Type Specifications and Registration Procedures](https://www.rfc-editor.org/rfc/rfc6838.html) defines the Internet Media Type registration framework and vendor tree.\n- [IANA Media Types](https://www.iana.org/assignments/media-types/media-types.xhtml) is the authoritative registry, including `application/octet-stream`.\n'
+                  ),
+              ],
+          }
 
-          replacements = [
-              ('readonly kind: "application/vnd.coedit.text";', 'readonly mediaType: "application/vnd.coedit.text";'),
-              ('kind and canonical kind-specific state', 'Media Type and canonical Media-Type-specific state'),
-              ('Blob preserves opaque bytes with payload-level Origin and has no finer initial mutation.',
-               'Other supported Media Types preserve opaque bytes with payload-level Origin and initially have no finer mutation.'),
-              ('Blob sub-content is not addressed by this service.',
-               'Generic opaque sub-content is not addressed by this service.'),
-              ('Blob remains replaceable through the generic payload boundary but has no rich-text editor requirement.',
-               'Generic opaque payloads remain replaceable through the generic payload boundary but have no rich-text editor requirement.'),
-              ('Blob initially supports only whole-content', 'Other Media Types initially support only whole-content'),
-              ('Blob can converge by deterministic whole-value replacement', 'Generic opaque payloads can converge by deterministic whole-value replacement'),
-              ('blob-rendering', 'opaque-payload rendering'),
-              ('Blob has payload-level Origin rather than text-like ranges.',
-               'Generic opaque payloads have payload-level Origin rather than text-like ranges.'),
-              ('Blob sub-content addressing is not defined by that service.',
-               'Generic opaque sub-content addressing is not defined by that service.'),
-              ('Blob copy and', 'Generic opaque copy and'),
-              ('Blob payloads have no internal text-position contract.',
-               'Generic opaque payloads have no internal text-position contract.'),
-              ('Blob InlineContents remain addressable as document entities by',
-               'Generic opaque InlineContents remain addressable as document entities by'),
-              ('blob-subregion', 'opaque-payload subregion'),
-              ('Blob payloads do not gain a byte-position or sub-content Range model merely',
-               'Generic opaque payloads do not gain a byte-position or sub-content Range model merely'),
-              ('Blob creation/replacement likewise obtains Origin',
-               'Generic opaque creation/replacement likewise obtains Origin'),
-              ('editor or blob-replacement clients', 'editor or opaque-replacement clients'),
-              ('Blob sub-content has no Range representation in the MVP.',
-               'Generic opaque sub-content has no Range representation in the MVP.'),
-              ('large blob/attachment needs', 'large opaque-payload/attachment needs'),
-              ('Blob bytes remain opaque to this structural contract,',
-               'Opaque payload bytes remain opaque to this structural contract,'),
-              ('Blob sub-content has no Range contract.',
-               'Generic opaque sub-content has no Range contract.'),
-              ('Blob has payload-level Origin.', 'Generic opaque payloads have payload-level Origin.'),
-              ('Blob Origin is whole-payload.', 'Generic opaque Origin is whole-payload.'),
-              ('Blob sub-content has no Range encoding in version 1 under',
-               'Generic opaque sub-content has no Range encoding in version 1 under'),
-              ('Blob creation or', 'Generic opaque creation or'),
-              ('blob-replaced', 'opaque-payload-replaced'),
-              ('blob behavior in `INLINE_CONTENT_PAYLOADS.md`.',
-               'generic opaque behavior in `INLINE_CONTENT_PAYLOADS.md`.'),
-              ('Blob clipboard/drag-drop transport', 'Generic opaque clipboard/drag-drop transport'),
-              ('blob interchange contract', 'opaque-payload interchange contract'),
-              ('Blob sub-content comment targeting', 'Generic opaque sub-content comment targeting'),
-              ('typed collaborative payload', 'Media-Type-labelled collaborative payload'),
-              ('typed collaborative state', 'Media-Type-labelled collaborative state'),
-              ('typed-payload', 'Media-Type-labelled-payload'),
-              ('typed payload', 'Media-Type-labelled payload'),
-              ('payload kinds', 'Media Types'),
-              ('payload kind', 'Media Type'),
-          ]
-
-          for path in files:
-              if path in skip or not path.exists():
-                  continue
+          for path, replacements in changes.items():
               text = path.read_text(encoding='utf-8')
               old = text
-              for a, b in replacements:
-                  text = text.replace(a, b)
-              text = text.replace('a opaque payload', 'an opaque payload')
-              text = text.replace('a opaque InlineContent', 'an opaque InlineContent')
+              for source, target in replacements:
+                  if source not in text:
+                      raise SystemExit(f'Expected text not found in {path}: {source[:80]}')
+                  text = text.replace(source, target)
               if text != old:
                   path.write_text(text, encoding='utf-8', newline='\n')
-
       - name: Format
         run: npm run format
       - name: Report remaining live terminology
@@ -103,11 +73,13 @@ jobs:
           grep -RInE '\bBlob\b|\bblob\b' README.md SCAFFOLDING_PLAN.md docs --exclude='0010-typed-inline-content-payloads.md' | grep -v 'github.com/.*/blob/' || true
           echo '--- legacy coedit-text token ---'
           grep -RIn 'coedit-text' README.md SCAFFOLDING_PLAN.md docs --exclude='0010-typed-inline-content-payloads.md' || true
+          echo '--- suspicious closed-type wording ---'
+          grep -RInE 'initial kinds|initial Media Types are|Media Types are .* and' README.md SCAFFOLDING_PLAN.md docs --exclude='0010-typed-inline-content-payloads.md' || true
       - name: Commit
         run: |
           if git diff --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add --all
-          git commit -m "Finish Media Type documentation cleanup"
+          git commit -m "Polish Media Type payload contract"
           git push origin HEAD:design/typed-inline-content-payloads
