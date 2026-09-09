@@ -19,7 +19,7 @@ jobs:
         with:
           node-version: 24
       - run: npm run bootstrap
-      - name: Amend terminology
+      - name: Refine Media Type terminology
         shell: python
         run: |
           from pathlib import Path
@@ -32,52 +32,48 @@ jobs:
           files += list(Path('docs').rglob('*.md'))
 
           replacements = [
-              ('typed InlineContent payloads', 'Media-Type-labelled InlineContent payloads'),
-              ('typed InlineContent payload', 'Media-Type-labelled InlineContent payload'),
-              ('typed payloads', 'Media-Type-labelled payloads'),
-              ('typed payload', 'Media-Type-labelled payload'),
-              ('payload-kind conversion', 'Media Type conversion'),
-              ('payload-kind', 'Media-Type'),
-              ('payload kinds', 'Media Types'),
-              ('payload kind', 'Media Type'),
-              ('mixed payload kinds', 'mixed Media Types'),
-              ('different payload kinds', 'different Media Types'),
-              ('same payload kind', 'same Media Type'),
-              ('`coedit-text`', '`application/vnd.coedit.text`'),
-              ('coedit-text', 'application/vnd.coedit.text'),
-              ('blob payload-level Origin', 'opaque-payload Origin'),
-              ('blob payload Origin', 'opaque-payload Origin'),
-              ('blob Origin', 'opaque-payload Origin'),
-              ('blob bytes', 'opaque payload bytes'),
-              ('blob byte', 'opaque payload byte'),
-              ('blob payloads', 'opaque payloads'),
-              ('blob payload', 'opaque payload'),
-              ('blob InlineContents', 'opaque InlineContents'),
-              ('blob InlineContent', 'opaque InlineContent'),
-              ('blob content', 'opaque content'),
-              ('blob chunks', 'opaque-payload chunks'),
-              ('blob chunk', 'opaque-payload chunk'),
-              ('blob size', 'opaque-payload size'),
-              ('blob-size', 'opaque-payload-size'),
-              ('blob resource', 'opaque-payload resource'),
+              ('kind: application/vnd.coedit.text | blob\n  value: kind-specific collaborative state',
+               'mediaType: MediaType\n  value: Media-Type-specific collaborative state'),
+              ('CoeditTextPayload\n  authored Unicode text\n  intrinsic formatting marks\n  protected fine-grained origin attribution\n\nBlobPayload\n  opaque bytes\n  payload-level Origin',
+               'application/vnd.coedit.text capability\n  authored Unicode text\n  intrinsic formatting marks\n  protected fine-grained origin attribution\n\nGeneric opaque capability\n  exact payload bytes\n  payload-level Origin'),
+              ('A `application/vnd.coedit.text` payload', 'An `application/vnd.coedit.text` payload'),
+              ('a `application/vnd.coedit.text` payload', 'an `application/vnd.coedit.text` payload'),
+              ('A opaque InlineContent', 'An opaque InlineContent'),
+              ('a opaque InlineContent', 'an opaque InlineContent'),
+              ('Payload kind:', 'Media Type:'),
+              ('### 4.4 Payload kind is explicit', '### 4.4 Media Type is explicit'),
+              ('Each InlineContent owns one payload whose kind is initially `application/vnd.coedit.text` or `blob`. `INLINE_CONTENT_PAYLOADS.md` owns the detailed rules.',
+               'Each InlineContent owns one payload labelled with an Internet Media Type. `INLINE_CONTENT_PAYLOADS.md` owns the detailed rules.'),
+              ('The Media Type is stable for the current InlineContent lifetime. The current contract does not need an operation that silently converts one InlineContent from collaborative text to blob or vice versa. A later conversion workflow requires an explicit design decision.',
+               'The Media Type is stable for ordinary replacement during the current InlineContent lifetime. The current contract does not need an operation that silently changes it. A later format-conversion workflow requires an explicit design decision.'),
+              ('Every payload supports atomic whole-content replacement. Payload kinds can expose additional fine-grained operations. `application/vnd.coedit.text` does; `blob` initially does not.',
+               'Every payload supports atomic whole-content replacement. Media-Type-specific contracts can expose additional fine-grained operations. `application/vnd.coedit.text` does; all other supported Media Types initially use the generic opaque capability set.'),
+              ('Blob payloads have no intrinsic formatting operations under the initial contract.',
+               'Generic opaque payloads have no intrinsic formatting operations under the initial contract.'),
+              ('In `blob`, the current whole payload has one Origin.',
+               'For every Media Type using the generic opaque capability set, the current whole payload has one Origin.'),
+              ('Blob copy and restore operate at whole-payload granularity under the initial contract.',
+               'Generic opaque copy and restore operate at whole-payload granularity under the initial contract.'),
+              ('Step 3 qualifies the candidate carriers against the initial `application/vnd.coedit.text` and `blob` contracts.',
+               'Step 3 qualifies the candidate carriers against `application/vnd.coedit.text` plus representative generic opaque Media Types, including `application/octet-stream`.'),
+              ('future blob renderer', 'future opaque-payload renderer'),
+              ('blob renderer', 'opaque-payload renderer'),
+              ('blob values', 'opaque payload values'),
+              ('blob value', 'opaque payload value'),
+              ('blob mutation', 'opaque-payload mutation'),
+              ('blob mutations', 'opaque-payload mutations'),
+              ('blob replacement', 'opaque-payload replacement'),
+              ('blob replacements', 'opaque-payload replacements'),
+              ('blob preservation', 'opaque-payload preservation'),
+              ('blob handling', 'opaque-payload handling'),
+              ('blob-specific', 'opaque-payload-specific'),
               ('blob/non-text', 'opaque/non-text'),
-          ]
-
-          exact = [
-              ('The initial Media Types are `application/vnd.coedit.text` and `blob`.',
-               'The fine-grained Media Type is `application/vnd.coedit.text`; all other supported Media Types initially use the generic opaque capability set.'),
-              ('initial Media Types `application/vnd.coedit.text` and `blob`',
-               'the fine-grained `application/vnd.coedit.text` Media Type and generic opaque Media Types'),
-              ('initial Media Types are exactly `application/vnd.coedit.text` and `blob`',
-               'fine-grained dispatch recognizes `application/vnd.coedit.text` and all other supported Media Types use the generic opaque handler'),
-              ('`application/vnd.coedit.text` and blob',
-               '`application/vnd.coedit.text` and representative opaque Media Types'),
-              ('`application/vnd.coedit.text` or blob',
-               '`application/vnd.coedit.text` or another supported Media Type'),
-              ('both initial Media Types', 'both the collaborative-text and generic opaque capability classes'),
-              ('either initial Media Type', 'either capability class'),
-              ('for both initial Media Types', 'for collaborative text and representative opaque Media Types'),
-              ('the two initial Media Types', 'the collaborative-text and generic opaque capability classes'),
+              ('`blob`', 'generic opaque Media Type'),
+              (' blob ', ' opaque payload '),
+              (' blob.', ' opaque payload.'),
+              (' blob,', ' opaque payload,'),
+              (' blob;', ' opaque payload;'),
+              (' blob\n', ' opaque payload\n'),
           ]
 
           for path in files:
@@ -87,17 +83,26 @@ jobs:
               old = text
               for a, b in replacements:
                   text = text.replace(a, b)
-              for a, b in exact:
-                  text = text.replace(a, b)
               if text != old:
                   path.write_text(text, encoding='utf-8', newline='\n')
+
       - name: Format
         run: npm run format
+      - name: Report stale discriminator wording
+        run: |
+          echo '--- backticked blob ---'
+          grep -RInF '`blob`' README.md SCAFFOLDING_PLAN.md docs || true
+          echo '--- payload-kind wording ---'
+          grep -RInE 'payload[- ]kind|kind-specific|kind:' README.md SCAFFOLDING_PLAN.md docs || true
+          echo '--- coedit-text legacy token ---'
+          grep -RIn 'coedit-text' README.md SCAFFOLDING_PLAN.md docs || true
+          echo '--- suspicious blob references ---'
+          grep -RIn '\b[Bb]lob\b' README.md SCAFFOLDING_PLAN.md docs || true
       - name: Commit
         run: |
           if git diff --quiet; then exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add --all
-          git commit -m "Align payload docs with media types"
+          git commit -m "Refine Media Type payload contract"
           git push origin HEAD:design/typed-inline-content-payloads
