@@ -40,7 +40,7 @@ implementation order.
   replicas with the same complete set of valid Contributions converge on the
   same current payload state.
 - `application/vnd.coedit.text` additionally supports fine-grained collaborative text,
-  formatting, and Origin operations. Other Media Types initially support only whole-content
+  formatting, and Origin operations. Other Media Types initially support only whole-payload
   replacement.
 - Whole-payload replacement is a convergent replicated register. A causally
   later replacement supersedes replacements it observes. Truly concurrent
