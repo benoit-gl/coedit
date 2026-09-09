@@ -16,26 +16,24 @@ position-allocation algorithm.
 
 Use these documents with this contract:
 
-- [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) owns the logical Block
-  ontology;
-- [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md) owns private MVP
-  implementation rules;
+- [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) owns the logical Block ontology;
+- [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) owns InlineContent payload kinds, whole-content replacement, and payload convergence;
+- [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md) owns private MVP implementation rules;
 - [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md) owns executable evidence;
-- [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md) owns post-MVP causal History
-  and replication constraints; and
-- [`decisions/0003-flat-structural-placement.md`](decisions/0003-flat-structural-placement.md)
-  preserves the rationale and rejected alternatives.
+- [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md) owns post-MVP causal History and replication constraints; and
+- [`decisions/0003-flat-structural-placement.md`](decisions/0003-flat-structural-placement.md) preserves the rationale and rejected alternatives.
 
 ## 2. Context
 
 Step 2 implements one recursive logical Block tree. Step 3 proves that each
-candidate can carry attributed InlineContent and publish one atomic change across
-structure and several InlineContents. Step 4 implements that behavior for the
-selected carrier.
+candidate can carry typed InlineContent payloads and publish one atomic change
+across structure and several InlineContents. Step 4 implements that behavior for
+the selected carrier.
 
 Yjs and Automerge both provide structured collaborative data. The Block tree does
 not need to be serialized as JSON, YAML, indentation text, or another textual
-format before it enters the carrier.
+format before it enters the carrier. Likewise, structural placement does not
+interpret whether one InlineContent contains `coedit-text` or blob bytes.
 
 The main structural risk is therefore not storage. It is convergence under
 concurrent structural work. A generic CRDT map or sequence does not know Coedit's
@@ -72,9 +70,11 @@ as Block existence instead of living only inside a nested value that disappears
 when the outer Block entry is deleted.
 
 `payload` is the Block-local namespace for replicated Block data. It can contain
-Block tags, `childrenPresentation`, InlineContents, their canonical collaborative
-content, and adapter-private metadata. Exact nesting is an implementation choice.
-The `BlockId` namespace does not create another product entity.
+Block tags, `childrenPresentation`, InlineContents, each InlineContent's payload
+kind and canonical kind-specific state, and adapter-private metadata. Exact
+nesting is an implementation choice. The `BlockId` namespace does not create
+another product entity. Blob bytes remain opaque to this structural contract,
+and `coedit-text` internals remain owned by their focused content contract.
 
 `activity` is the logical carrier-private semantic-update marker. It records that
 the Block received a semantic update. It does not describe the payload and is not
@@ -111,8 +111,8 @@ combines `position` from one concurrent move with `depth` from another.
 
 Do not put a hash of the whole Block payload into `Placement`. A whole-payload
 hash would make an otherwise compatible move and payload edit compete on the
-same placement register. A merged CRDT payload can also differ from every hash
-that concurrent writers observed before convergence.
+same placement register. A merged collaborative payload can also differ from
+every hash that concurrent writers observed before convergence.
 
 ## 4. Tree projection
 
@@ -138,6 +138,11 @@ projects `B` directly under `A`. No anonymous depth-2 Block exists.
 The projection must be deterministic for the same complete carrier state.
 Because parentage is derived from preceding shallower Blocks, the projected tree
 cannot contain a structural cycle.
+
+Tree projection creates no text. Crossing from one Block or InlineContent to
+another does not insert a space, line break, paragraph break, or another payload
+value. A renderer applies `childrenPresentation` and payload-aware presentation
+rules separately.
 
 ## 5. Command-to-placement mapping
 
@@ -204,11 +209,12 @@ as the liveness effect only when it participates directly in the same existence
 conflict as deletion. Otherwise, the adapter must emit a separate carrier-private
 liveness effect in the same logical change.
 
-A semantic payload mutation must update the logical Block activity marker and
-emit the required liveness effect in the same logical carrier transaction or
-change. A nested activity mutation is insufficient when deletion of its enclosing
-Block entry can discard that mutation before it participates in the existence
-conflict.
+A semantic payload mutation includes a fine-grained `coedit-text` edit and a
+whole-content replacement of either initial payload kind. It must update the
+logical Block activity marker and emit the required liveness effect in the same
+logical carrier transaction or change. A nested activity mutation is
+insufficient when deletion of its enclosing Block entry can discard that
+mutation before it participates in the existence conflict.
 
 The activity/liveness effect is local to the Block that changed. Editing a
 descendant does not update each ancestor. If a parent is deleted while a
@@ -224,6 +230,11 @@ semantics. Do not rely on an undocumented last-writer rule, on writing the same
 payload value again, or on a nested mutation that can vanish with its enclosing
 entry. Yjs and Automerge can use different private encodings if they preserve the
 same logical result.
+
+The deterministic whole-content replacement register defined by
+`INLINE_CONTENT_PAYLOADS.md` is separate from Block existence. The replacement
+tie-break chooses the current payload value when concurrent replacements both
+survive; it does not replace or weaken the update-over-delete liveness rule.
 
 Position normalization described below is allocator work, not user intent. When
 it is inexpensive, an adapter should avoid letting normalization alone defeat a
@@ -311,13 +322,14 @@ change containing several placement assignments, but the published operation is
 all-or-none at the engine boundary.
 
 The same atomic-publication rule applies to one Contribution that spans Block
-structure and several InlineContents. One logical collaborative document must
-therefore contain the Block registry and the Block-local payload namespaces that
-the Contribution can affect.
+structure and several InlineContents, including mixed `coedit-text` and blob
+payloads. One logical collaborative document must therefore contain the Block
+registry and the Block-local payload namespaces that the Contribution can affect.
 
 Do not create a separate product operation class for collision normalization,
-activity/liveness refresh, or other carrier-internal effects. The adapter can
-organize those effects as private implementation helpers.
+activity/liveness refresh, replacement-register maintenance, or other
+carrier-internal effects. The adapter can organize those effects as private
+implementation helpers.
 
 ## 11. History and recovery
 
@@ -342,24 +354,21 @@ candidates. At minimum verify:
 - root immutability and root-first projection;
 - one visible placement per live `BlockId`;
 - one Block-local logical payload namespace inside one collaborative document;
+- typed InlineContent payload state can coexist in that namespace without structural interpretation;
+- structural projection and InlineContent boundaries manufacture no text characters;
 - deterministic projection from `position` and `depth`;
 - non-sequential depth behavior;
-- preorder command-to-placement mapping at the first, middle, and last child
-  positions;
-- subtree move with the correct depth delta, identity preservation, and internal
-  order preservation;
+- preorder command-to-placement mapping at the first, middle, and last child positions;
+- subtree move with the correct depth delta, identity preservation, and internal order preservation;
 - concurrent move of one Block to different destinations;
 - concurrent move versus delete, with move winning after full peer convergence;
-- concurrent payload update versus delete, with the payload update keeping that
-  Block alive after full peer convergence;
-- move and payload-update liveness effects participate directly in the replicated
-  conflict that determines Block existence;
-- a nested-only activity representation is rejected if deletion of its enclosing
-  entry can discard the activity before existence resolution;
-- payload mutation, logical activity update, and required liveness effect publish
-  together;
-- update-over-delete behavior survives the candidate's supported
-  serialization/reload and garbage-collection or compaction path;
+- concurrent fine-grained text update versus delete, with the payload update keeping that Block alive after full peer convergence;
+- concurrent whole-content replacement versus delete for both initial payload kinds, with the payload update keeping that Block alive after full peer convergence;
+- move and payload-update liveness effects participate directly in the replicated conflict that determines Block existence;
+- a nested-only activity representation is rejected if deletion of its enclosing entry can discard the activity before existence resolution;
+- payload mutation, logical activity update, and required liveness effect publish together;
+- deterministic whole-content replacement winner selection remains separate from Block liveness and survives convergence/reload;
+- update-over-delete behavior survives the candidate's supported serialization/reload and garbage-collection or compaction path;
 - descendant activity does not keep a deleted ancestor alive;
 - concurrent insertion into one destination gap;
 - collision avoidance during ordinary allocation;
@@ -370,23 +379,21 @@ candidates. At minimum verify:
 - concurrent subtree/run moves into one destination gap;
 - non-interleaving behavior or measured residual interleaving;
 - all-or-none publication of a multi-Block placement change;
-- all-or-none publication of structure plus several InlineContent changes;
+- all-or-none publication of structure plus several InlineContent changes of mixed payload kinds;
 - repeated narrow-gap insertion and move stress;
 - maximum and average position-key length;
 - comparison/sort cost and serialized carrier growth; and
-- equal projected structure after duplicate, delayed, reordered, partitioned,
-  and reconnected carrier updates.
+- equal projected structure and typed payload state after duplicate, delayed, reordered, partitioned, and reconnected carrier updates.
 
-Use qualification surrogates for later History, Range, restore, and portable-format
-machinery that does not exist in Step 3. Step 4 retains the suite for the selected
-carrier. Repeat the real cross-subsystem tests when those later steps are
-implemented.
+Use qualification surrogates for later History, text Range, restore, and portable-format machinery that does not exist in Step 3. Step 4 retains the suite for the selected carrier. Repeat the real cross-subsystem tests when those later steps are implemented.
 
 ## 13. What remains open
 
 Step 3 must select the concrete position allocator and prove its behavior. Step
-4 implements it behind the accepted allocator abstraction. The exact encoded
-`Placement` scalar, activity/liveness encoding, payload nesting,
+4 implements it behind the accepted allocator abstraction. Gate B also records
+the carrier-private deterministic whole-content replacement tie-break required
+by `INLINE_CONTENT_PAYLOADS.md`. The exact encoded `Placement` scalar,
+activity/liveness encoding, typed payload nesting, replacement-register encoding,
 existence-conflict mapping, carrier transaction format, and adapter-private
 metadata are implementation decisions.
 
