@@ -4,9 +4,9 @@
 
 **Decision date:** 2026-09-08
 
-**Scope:** InlineContent payload semantics, Media Type discrimination,
-whole-payload replacement, payload convergence, and the boundary between
-document structure and payload-specific behavior.
+**Scope:** InlineContent payload semantics, Media Type preservation and capability
+dispatch, whole-payload replacement, payload convergence, and the boundary
+between document structure and payload-specific behavior.
 
 ## 1. Authority and relationship to earlier decisions
 
@@ -14,12 +14,12 @@ This record preserves why the decision was made. Normative behavior belongs in:
 
 - [`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md) for product meaning;
 - [`../INLINE_CONTENT_PAYLOADS.md`](../INLINE_CONTENT_PAYLOADS.md) for Media Type
-  discrimination, universal whole-payload replacement, Origin granularity, and
-  convergence;
+  preservation, fine-grained capability dispatch, universal whole-payload
+  replacement, raw/coarse materialization, Origin granularity, and convergence;
 - [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
-  for Coedit collaborative-text formatting and fine-grained Origin;
-- [`../RANGE_MODEL.md`](../RANGE_MODEL.md) for durable references inside Coedit
-  collaborative text;
+  for fine-grained text formatting and Origin;
+- [`../RANGE_MODEL.md`](../RANGE_MODEL.md) for durable references inside
+  fine-grained text;
 - [`../MVP_ARCHITECTURE.md`](../MVP_ARCHITECTURE.md) for the public engine
   boundary;
 - [`../COLLABORATION_MODEL.md`](../COLLABORATION_MODEL.md) for later causal
@@ -28,130 +28,136 @@ This record preserves why the decision was made. Normative behavior belongs in:
   gates.
 
 ADR 0001 remains accepted for intrinsic collaborative-text formatting, protected
-fine-grained text Origin, causal History, persistence, and the carrier
-qualification direction. This ADR refines and supersedes the parts of ADR 0001
-that treated attributed rich text and hard breaks as the universal shape of all
-InlineContent content.
+fine-grained Origin, causal History, persistence, and carrier qualification. This
+ADR refines and supersedes the parts of ADR 0001 that treated attributed rich
+text and hard breaks as the universal shape of all InlineContent content.
 
 ## 2. Context
 
-The clean-slate documentation initially treated every InlineContent as owning one
-`CollaborativeContent` value whose universal logical shape was text, hard-break
-items, intrinsic formatting, and protected Origin.
+The clean-slate documentation initially treated every InlineContent as rich text.
+PR 19 first generalized this into Media-Type-labelled payloads but provisionally
+introduced `application/vnd.coedit.text` as a Coedit-specific fine-grained text
+format. Design review showed that this conflated media-format identity with the
+editing capability that Coedit currently implements.
 
-That shape was sufficient for the first rich-text use case but made application
-presentation semantics part of the document ontology. Carrier qualification then
-made the assumption concrete by separating text insertion from a special
-hard-break insertion operation and rejecting newline characters inside ordinary
-text operations.
+The intended boundary is simpler:
 
-The intended product boundary is broader:
+- each InlineContent keeps the actual Internet Media Type supplied for its media
+  representation, including parameters;
+- every payload supports coarse whole-payload replacement;
+- only explicitly qualified formats receive fine-grained text collaboration;
+- fine-grained text is maintained as the carrier's native string state rather
+  than continuously encoded media bytes;
+- raw/coarse access to allowlisted text materializes bytes according to the
+  preserved Media Type and fails if exact representation is not possible; and
+- Coedit does not sniff content or maintain a dynamic format-capability registry.
 
-- a Block or InlineContent boundary is structural and does not itself mean a
-  space, line break, paragraph break, list separator, or another character;
-- the current application needs fine-grained collaborative text;
-- future applications may need strongly structured textual or binary payloads,
-  such as SVG, images, tabular data, JSON-derived structures, or other opaque
-  application formats; and
-- those future payloads do not need a general-purpose fine-grained CRDT merely
-  to participate in a collaborative document.
-
-A Coedit-specific `coedit-text | blob` enum would separate text from opaque data,
-but it would also discard standard format information such as `image/png` or
-`application/json`. Internet Media Types already provide an extensible namespace
-for describing payload formats. The document model should use that standard
-namespace and keep editing capability separate from format identity.
+This gives the prototype a small, testable boundary without claiming that all
+`text/*` formats are equally suitable for fine-grained collaboration or that
+textual `application/*` formats can never gain it later.
 
 ## 3. Decision
 
-### 3.1 InlineContent owns one Media-Type-labelled collaborative payload
+### 3.1 InlineContent preserves one complete Media Type
 
-Each InlineContent owns exactly one payload and one Internet Media Type that
-identifies its format.
+Each InlineContent owns exactly one payload and one syntactically valid Internet
+Media Type that identifies its media representation. The complete supplied Media
+Type value, including parameters, is durable metadata and is preserved exactly.
 
-The InlineContent owns document identity, Block ownership, ordering, tags,
-History participation, and Media Type. The payload has no independent product
-identity.
+The document model parses the value for validation and capability dispatch, but
+it does not rewrite the stored value merely because a type is recognized.
+Type/subtype comparison is case-insensitive. Parameter values retain the semantics
+specified by their media type.
 
-The document model does not interpret application meaning inside the payload
-except where an accepted Media-Type-specific contract defines additional
-operations. Media Type answers what format the data has; Coedit capability
-selection answers what this implementation can do with that format.
+### 3.2 Fine-grained text capability uses a compile-time allowlist
 
-### 3.2 Coedit collaborative text uses a vendor-tree Media Type
-
-The initial fine-grained collaborative text format is identified by:
+The initial fine-grained allowlist contains exactly:
 
 ```text
-application/vnd.coedit.text
+text/markdown
+text/plain
 ```
 
-This Media Type identifies the Coedit collaborative-text payload format. It
-stores authored Unicode text, intrinsic formatting, and protected fine-grained
-Origin.
+Capability dispatch compares the parsed, case-normalized `type/subtype` identity
+to this one compile-time list. Parameters do not participate in the lookup. Raw
+string-prefix matching is not used.
 
-The repository does not claim that `application/vnd.coedit.text` is already an
-IANA-registered Media Type. Before it is frozen as a public interoperability
-contract, registration or another explicit standards-compatible disposition must
-be recorded.
+Every other valid Media Type initially uses generic opaque handling, even if it
+is another `text/*` type or a character-oriented `application/*` format. This is
+a deliberate prototype boundary. Additional types can be added after prototype
+evidence supports their semantics and qualification cost.
 
-The format has no document-level `HardBreak` item. Line-feed, carriage-return,
-and other characters are text data. An application, editor, renderer, or
-interchange adapter can decide whether to insert, reject, normalize, or present
-those characters.
+A valid unfamiliar Media Type is therefore valid document content. It does not
+need a decoder, renderer, registry lookup, or schema migration to participate in
+coarse collaboration.
 
-Block and InlineContent boundaries add no text character. Application structure
-and `childrenPresentation` can influence rendering without mutating the payload.
+### 3.3 Fine-grained text uses native strings; raw access uses media bytes
 
-Existing intrinsic-formatting and Origin decisions from ADR 0001 continue to
-apply inside `application/vnd.coedit.text`.
+For an allowlisted type, the collaborative logical value is a native ECMAScript
+string plus Coedit collaboration metadata such as intrinsic formatting and
+fine-grained Origin. Fine-grained APIs operate directly on native strings and the
+selected carrier's native text representation. They do not encode and decode the
+media representation for every edit.
 
-### 3.3 Other Media Types use the generic opaque capability set initially
+The raw/coarse boundary remains byte-oriented. On raw input, a type-specific text
+processor decodes the supplied bytes according to the full declared Media Type.
+On raw output, it encodes the current string according to the preserved Media
+Type.
 
-Any supported Media Type other than `application/vnd.coedit.text` initially uses
-the generic opaque-content behavior. The document model preserves the exact Media
-Type, bytes, and payload-level Origin but does not parse or interpret the bytes.
+Raw conversion must fail explicitly if an encoding is unsupported, input is
+invalid, or the current string cannot be represented exactly. It must not replace
+characters, silently change a charset, or rewrite the stored Media Type to make
+serialization succeed.
 
-Examples include:
+For opaque types, the document model keeps the exact supplied bytes and raw
+retrieval returns them unchanged.
 
-```text
-image/png
-image/svg+xml
-application/json
-application/pdf
-application/octet-stream
-```
+### 3.4 Media-type parameters are preserved, not generalized into document rules
 
-Use the actual known Media Type when possible. `application/octet-stream` is the
-generic fallback when the format is unknown or no more specific type is
-available.
+The generic document model does not classify parameters into persistent versus
+discardable categories. It preserves the complete supplied Media Type.
 
-The generic opaque handler has no fine-grained MVP mutation. A future
-Media-Type-specific contract can add finer operations or finer Origin granularity
-without changing the stored Media Type merely because Coedit learned new
-capabilities.
+`text/markdown` parameters such as `charset` and `variant`, and `text/plain`
+parameters such as `charset`, `format`, and `delsp`, remain part of that value.
+Only a media-type-aware raw processor interprets parameters required to convert
+between bytes and the native string. Markdown dialect, flowed-text semantics,
+rendering, and application interpretation remain outside the generic document
+model unless a later focused contract says otherwise.
 
-A valid unfamiliar Media Type uses this same opaque handler. Syntax validity,
-registration, and available rendering/editing capabilities are separate concerns.
-`INLINE_CONTENT_PAYLOADS.md` section 3.1 owns their validation and failure rules.
+### 3.5 Fine-grained text has no document-level hard-break item
 
-### 3.4 Whole-payload replacement is universal
+Line-feed, carriage-return, and other characters are text data. Block and
+InlineContent boundaries add no character. Applications, editors, renderers, and
+interchange adapters decide how those characters and structural boundaries are
+presented.
 
-Every InlineContent supports one atomic whole-payload replacement operation with explicit Origin behavior. The operation preserves the InlineContent identity and replaces the complete payload value: Media Type plus Media-Type-specific content.
+Intrinsic Coedit formatting and Origin metadata can accompany both initial
+allowlisted text formats. That collaboration metadata is part of `.coedit` state;
+it is not necessarily representable in the raw `text/markdown` or `text/plain`
+byte stream.
 
-The operation is available for `application/vnd.coedit.text` and for every opaque
-Media Type. It is therefore not a blob-specific API. Fine-grained collaborative
-text operations remain available when their merge behavior is desired.
+### 3.6 Whole-payload replacement is universal
 
-Payload-specific fine-grained operations fail explicitly against an incompatible Media Type. They do not sniff bytes or reinterpret arbitrary payloads as Coedit text. Media Type changes only as part of an explicit whole-payload replacement that supplies matching content. The document model therefore needs no separate Media Type conversion operation.
+Every InlineContent supports one atomic whole-payload replacement operation. The
+operation preserves InlineContent identity and replaces the complete current
+payload value: Media Type plus its media content and required Origin effect.
 
-### 3.5 Whole-payload replacement is eventually consistent
+For opaque types, replacement stores the supplied bytes. For allowlisted text,
+coarse replacement decodes the supplied media bytes to the collaborative native
+string before publication. Fine-grained text operations remain available when
+merge behavior is desired.
+
+Payload-specific operations fail explicitly against an incompatible Media Type.
+The document model does not sniff payload bytes or define a separate implicit
+conversion operation.
+
+### 3.7 Whole-payload replacement is eventually consistent
 
 All payloads are collaborative in the convergence sense. Once authorized
 replicas receive the same complete set of valid Contributions, they must converge
 on the same current payload state.
 
-Fine-grained merge is not required for every Media Type. Whole-payload replacement behaves as a convergent replicated register:
+Whole-payload replacement behaves as a convergent replicated register:
 
 - a causally later replacement supersedes replacements that it observed;
 - truly concurrent replacements select one deterministic current winner;
@@ -162,166 +168,151 @@ Fine-grained merge is not required for every Media Type. Whole-payload replaceme
 - losing replacement Contributions and their Versions remain immutable and
   exactly materializable in History.
 
-Gate B qualifies and records the carrier-private deterministic tie-break
-mechanism. That tie-break is convergence machinery. It does not mean that the
-winning replacement was semantically better or happened later in human time.
+Gate B qualifies and records the carrier-private deterministic tie-break.
+Replacement concurrent with fine-grained text editing is also explicitly deferred
+to Gate B. Qualification must select and record that observable behavior before
+Step 4 implements it.
 
-Replacement concurrent with fine-grained text editing is explicitly deferred to
-Gate B under `INLINE_CONTENT_PAYLOADS.md` section 9.1. Qualification must select
-and record that observable behavior before Step 4 implements it. Deferring this
-interaction avoids choosing a policy without carrier evidence; it does not
-weaken the accepted register invariants or defer it until network deployment.
+### 3.8 Origin and Range granularity follow the fine-grained text contract
 
-### 3.6 Origin granularity belongs to the Media-Type-specific contract
+Allowlisted text uses protected fine-grained Origin and the durable text Range
+service. Opaque payloads initially use one payload-level Origin and have no
+sub-payload Range semantics.
 
-Origin remains distinct from Contribution actor.
-
-`application/vnd.coedit.text` has fine-grained non-inheriting Origin for authored
-text. Other Media Types initially have one payload-level Origin for the current
-whole value. Copy, move, replacement, and restore apply Origin according to the
-applicable payload contract while the Contribution separately records the actor
-and derivation.
-
-The document model does not require every future Media Type to mimic text
-character granularity.
-
-### 3.7 Durable Range remains a collaborative-text facility
-
-The current durable Range service addresses spans and positions inside
-`application/vnd.coedit.text`. It is not generalized into a universal binary or
-structured-data locator.
-
-An opaque InlineContent remains addressable by `InlineContentId`. A future Media
-Type that needs stable internal addressing can define its own content-local
-contract.
-
-Whole-payload replacement of `application/vnd.coedit.text` can interact with
-retained Ranges. Step 6 already owns replacement and positional lineage behavior,
-so this ADR does not choose the final representation or mapping prematurely.
+A future Media Type can join the existing fine-grained text contract or define a
+different focused addressing contract after qualification. Stored media labels do
+not need to change merely because Coedit learns a new operation set.
 
 ## 4. Consequences
 
 Positive consequences:
 
 - the document ontology no longer equates all InlineContent with rich text;
-- standard Media Types preserve real format information instead of collapsing
-  everything non-text into a `blob` enum value;
-- data-format identity remains separate from Coedit's current editing capability;
-- replacing content across formats requires no new payload identity or separate conversion primitive;
-- presentation breaks and structural boundaries do not contaminate canonical
-  payload semantics;
-- the existing text carrier can remain highly collaborative without forcing the
-  same machinery onto every other Media Type;
-- `application/octet-stream` provides a standard fallback for unknown binary
-  content;
-- whole-payload replacement gives every Media Type a simple collaborative
-  baseline with deterministic convergence;
-- Origin can remain meaningful without pretending every payload is a sequence of
-  text items; and
-- text Range work stays focused rather than turning into a premature universal
-  content-addressing framework.
+- actual Internet Media Types preserve format identity and all supplied
+  parameters;
+- the prototype tests two real standardized fine-grained formats instead of a
+  provisional Coedit-specific media type;
+- capability dispatch has one small compile-time source of truth;
+- there is no content sniffing, dynamic plugin registry, or MIME-taxonomy
+  inference;
+- ordinary fine-grained edits stay in native string space;
+- opaque content keeps exact stored bytes;
+- raw/coarse text access has an explicit lossless encoding contract;
+- universal replacement gives every Media Type a deterministic collaborative
+  baseline; and
+- text Range work remains focused rather than becoming universal binary
+  addressing.
 
 Costs and constraints:
 
-- Media Type becomes part of the replaceable durable payload value and portable recovery;
-- public/application adapters must inspect Media Type before using
-  payload-specific operations;
-- the Coedit collaborative-text Media Type needs a standards-compatible
-  registration decision before it is frozen for public interoperability;
-- carrier qualification must cover representative opaque Media Types and
-  replacement-register convergence in addition to fine-grained text;
-- Markdown can represent only the current collaborative-text subset unless a
-  future Media-Type-specific convention is added; and
-- whole-payload replacement of `application/vnd.coedit.text` requires an explicit Step 6 Range-lineage rule before
-  the Range representation is frozen.
+- the preserved Media Type can name an encoding that cannot represent a later
+  collaboratively edited string, so raw materialization can fail;
+- Gate B must qualify the initial raw text processor and Unicode edge behavior in
+  addition to carrier behavior;
+- `text/plain` without an explicit charset uses its registered default, which can
+  expose the raw-output failure path after non-ASCII edits;
+- adding another fine-grained Media Type is an explicit contract and
+  qualification change rather than an automatic consequence of its top-level
+  `text` type; and
+- raw media output cannot carry all Coedit-only collaboration metadata when that
+  metadata is not part of the declared media format.
 
 ## 5. Alternatives considered
 
-### Keep a Coedit-specific `coedit-text | blob` discriminator
+### Use a Coedit-specific collaborative-text Media Type
 
-Rejected. It expresses current capabilities rather than the actual payload
-format. A PNG, SVG, JSON document, PDF, and unknown binary value would all become
-`blob`, discarding standard format identity and making future capability growth
-harder to express without schema migration.
+Rejected. A private media type would make the label describe Coedit's current
+capability rather than the actual content format. Markdown should remain
+`text/markdown`, plain text should remain `text/plain`, and future capability
+changes should not require relabelling stored content.
+
+### Treat every `text/*` Media Type as fine-grained
+
+Deferred rather than adopted. The MIME top-level taxonomy does not guarantee the
+local edit or recovery properties that Coedit wants to qualify. Some textual
+formats also live under `application/*`. The prototype therefore uses an explicit
+allowlist and expands it only with evidence.
+
+### Keep a separate `Text | Opaque` discriminator in addition to Media Type
+
+Rejected for the prototype. It creates a second persistent classification that
+can disagree with the Media Type and still requires a policy for unknown formats.
+The compile-time allowlist derives the current capability without adding durable
+state.
+
+### Match fine-grained types by string prefix
+
+Rejected. Media type type/subtype matching is case-insensitive, parameters can be
+present, and prefix matching would incorrectly accept names such as
+`text/markdown-extra`. Parse once, preserve the original value, and compare the
+normalized type/subtype structurally.
+
+### Normalize or discard recognized Media Type parameters
+
+Rejected. Parameter semantics belong to their Media Type. Type-specific
+exceptions would make persistence rules grow with every recognized format. The
+generic model preserves the complete supplied value.
+
+### Restrict fine-grained edits to the declared character encoding
+
+Rejected. It would make every text edit perform byte-encoding policy checks and
+leak interchange representation rules into the collaborative hot path. Native
+string collaboration remains valid; raw byte materialization reports an explicit
+failure if the current text cannot be represented.
+
+### Silently re-encode as UTF-8 when raw output fails
+
+Rejected. That would mutate the meaning of durable Media Type metadata and hide a
+real representation failure.
 
 ### Keep universal attributed rich text
 
 Rejected. It makes the first application payload the ontology for every future
-InlineContent and forces presentation concepts such as hard breaks into the
-canonical document model.
-
-### Allow newline characters but retain a separate hard-break item
-
-Rejected as the generic contract. A renderer can interpret a line-feed as a
-presentation break, but the document model does not need two separate semantic
-representations for text that differ only because one application presents one
-as a break.
-
-An interchange adapter such as Markdown can still define how its own hard-break
-syntax maps to canonical text characters.
-
-### Infer text separators from Block or InlineContent boundaries
-
-Rejected. Structural boundaries do not necessarily correspond to paragraph or
-line boundaries. A single rendered paragraph can span several structural units,
-and a non-text payload can occupy the same structure without any textual
-separator semantics.
+InlineContent and forces presentation concepts into the generic content model.
 
 ### Make opaque replacement a non-text-only operation
 
 Rejected. Whole-payload replacement is useful for text, import, restore, future
-structured payloads, and application integrations. It is the common mutation
-baseline, not a special case for binary data.
-
-### Resolve concurrent replacements as an explicit multi-value conflict
-
-Rejected for the initial contract. Retaining multiple current values would
-require another document/application conflict state. A deterministic single
-winner is simpler, remains eventually consistent, and does not destroy the
-losing operation because immutable History preserves every Contribution and
-Version.
+structured payloads, and integrations. It is the common mutation baseline.
 
 ### Use last-writer-wins wall-clock timestamps
 
-Rejected. Unsynchronized clocks do not provide a trustworthy causal or semantic
-ordering and can make replicas disagree or misrepresent chronology. The
-replacement order must be derived from immutable replicated causal/effect state.
+Rejected. Unsynchronized clocks do not provide trustworthy causal ordering. The
+replacement order must derive from immutable replicated causal/effect state.
 
 ### Introduce a generic structured-data CRDT or dynamic capability registry now
 
-Rejected by YAGNI. The MVP has one fine-grained Media Type and one generic opaque
-capability set. Simple explicit Media Type checks are sufficient. A future
-concrete payload can justify a new abstraction when its requirements are known.
-
-### Generalize Range to arbitrary Media Types now
-
-Rejected. Text Ranges have specific greedy, positional, split/merge, and lineage
-semantics. Future structured content can require materially different addressing.
-A universal locator would freeze an abstraction before those needs exist.
+Rejected by YAGNI. Two fine-grained Media Types and one generic opaque handler are
+sufficient for the prototype.
 
 ## 6. Compatibility and follow-up
 
-This decision is a documentation and qualification correction before Gate B. It
-does not require the already completed Step 2 structural domain to interpret
-payload internals. Step 4 evolves the opaque Step 2 InlineContent value into the
-Media-Type-labelled payload representation.
+This is a documentation and qualification correction before Gate B. It does not
+require the completed Step 2 structural domain to interpret payload internals.
+Step 4 evolves the existing opaque InlineContent value into the Media-Type-labelled
+payload representation.
 
-Step 3 must qualify `application/vnd.coedit.text`, representative opaque Media
+Step 3 must qualify `text/markdown`, `text/plain`, representative opaque Media
 Types including `application/octet-stream`, universal replacement, deterministic
-concurrent replacement convergence, mixed-Media-Type atomicity, and the existing
-collaborative-text suite against both carrier candidates. Gate B records the
-carrier winner and the private deterministic replacement tie-break.
+concurrent replacement convergence, exact Media Type preservation, raw/coarse
+encoding failure behavior, and the existing fine-grained text suite against both
+carrier candidates. Gate B records the carrier winner, raw text processor
+boundary, Unicode edge policy, and private replacement tie-break.
 
-Step 6 remains responsible for the exact effect of whole-payload replacement involving `application/vnd.coedit.text` on durable Range lineage. Step 8 freezes Media Type values and opaque payload bytes into the
-portable format only after Gates B and C pass.
+Step 6 remains responsible for the exact effect of whole-payload replacement on
+durable Range lineage. Step 8 freezes exact Media Type values, collaborative text
+state, opaque payload bytes, and required metadata into the portable format only
+after Gates B and C pass.
 
-Gate B selects the Media Type parameter and capability-matching rules used by
-the carriers; Step 8 freezes portable encoding. Future fine-grained editing and
-non-text content-local addressing require separate contracts when real
-application requirements exist. Valid unfamiliar Media Types already use the
-opaque contract and need no schema change merely because they are unfamiliar.
+Future fine-grained formats require an explicit allowlist and qualification
+update. Valid unfamiliar Media Types already use the opaque contract and need no
+schema change merely because they are unfamiliar.
 
 ## 7. Standards references
 
-- [RFC 6838: Media Type Specifications and Registration Procedures](https://www.rfc-editor.org/rfc/rfc6838.html) defines the Internet Media Type registration framework and vendor tree.
-- [IANA Media Types](https://www.iana.org/assignments/media-types/media-types.xhtml) is the authoritative registry, including `application/octet-stream`.
+- [RFC 6838: Media Type Specifications and Registration Procedures](https://www.rfc-editor.org/rfc/rfc6838.html) defines the Internet Media Type framework.
+- [RFC 9110, section 8.3.1](https://www.rfc-editor.org/rfc/rfc9110.html#section-8.3.1) defines Media Type syntax and type/subtype comparison.
+- [RFC 7763: The `text/markdown` Media Type](https://www.rfc-editor.org/rfc/rfc7763.html) registers Markdown and its parameters.
+- [RFC 6657: Update to MIME regarding `charset` Parameter Handling in Textual Media Types](https://www.rfc-editor.org/rfc/rfc6657.html) records `text/plain` charset behavior.
+- [RFC 3676: The Text/Plain Format and DelSp Parameters](https://www.rfc-editor.org/rfc/rfc3676.html) defines `format` and `delsp` for `text/plain`.
+- [IANA Media Types](https://www.iana.org/assignments/media-types/media-types.xhtml) is the authoritative media-type registry.
