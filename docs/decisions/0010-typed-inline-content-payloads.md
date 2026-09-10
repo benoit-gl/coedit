@@ -4,6 +4,8 @@
 
 **Decision date:** 2026-09-08
 
+**Amended:** 2026-09-10
+
 **Scope:** InlineContent payload semantics, Media Type preservation and capability
 dispatch, whole-payload replacement, payload convergence, and the boundary
 between document structure and payload-specific behavior.
@@ -27,14 +29,25 @@ This record preserves why the decision was made. Normative behavior belongs in:
 - [`../../SCAFFOLDING_PLAN.md`](../../SCAFFOLDING_PLAN.md) for work order and
   gates.
 
-ADR 0001 remains accepted for protected fine-grained Origin, causal History, persistence, and carrier qualification. This ADR supersedes its engine-owned rich-text formatting assumptions and the parts that treated rich text and hard breaks as the universal shape of InlineContent content.
+ADR 0001 remains accepted for protected fine-grained Origin, causal History,
+persistence, and carrier qualification. This ADR supersedes its engine-owned
+rich-text formatting assumptions and the parts that treated rich text and hard
+breaks as the universal shape of InlineContent content.
+
+ADR 0004 is superseded where it defines links as intrinsic engine-owned formatting
+marks, typed internal Block-link state, and link-specific fallback in canonical
+content. Applications can still store or serialize the reusable durable Range
+value defined by ADR 0009 in Markdown links, comments, navigation metadata, or
+other holders. ADR 0009 remains accepted for Range behavior, as refined here to
+allowlisted fine-grained text and application-owned holders.
 
 ## 2. Context
 
 The clean-slate documentation initially treated every InlineContent as rich text.
 PR 19 first generalized this into Media-Type-labelled payloads but provisionally
-introduced a provisional Coedit-specific fine-grained text format. Design review showed that this conflated media-format identity with the
-editing capability that Coedit currently implements.
+introduced a Coedit-specific fine-grained text format. Design review showed that
+this conflated media-format identity with the editing capability that Coedit
+currently implements.
 
 The intended boundary is simpler:
 
@@ -65,6 +78,16 @@ it does not rewrite the stored value merely because a type is recognized.
 Type/subtype comparison is case-insensitive. Parameter values retain the semantics
 specified by their media type.
 
+Generic Media Type syntax validity and payload-specific representation validity
+are distinct. A valid unfamiliar Media Type can use opaque handling without Coedit
+certifying its format-specific parameters. When Coedit owns a processor for an
+allowlisted fine-grained type, that processor must also validate prerequisites
+needed for the representation it handles. For example, `text/markdown` requires a
+`charset` parameter for raw byte conversion. A syntactically valid
+`text/markdown` value that omits that required parameter is not reclassified as
+opaque and is not treated as malformed generic Media Type syntax; the applicable
+fine-grained/raw boundary rejects it as an invalid or incomplete representation.
+
 ### 3.2 Fine-grained text capability uses a compile-time allowlist
 
 The initial fine-grained allowlist contains exactly:
@@ -90,18 +113,20 @@ coarse collaboration.
 ### 3.3 Fine-grained text uses native strings; raw access uses media bytes
 
 For an allowlisted type, the collaborative logical value is a native ECMAScript
-string plus Coedit collaboration metadata such as fine-grained Origin and Range lineage. Fine-grained APIs operate directly on native strings and the
-selected carrier's native text representation. They do not encode and decode the
-media representation for every edit.
+string plus Coedit collaboration metadata such as fine-grained Origin and Range
+lineage. Fine-grained APIs operate directly on native strings and the selected
+carrier's native text representation. They do not encode and decode the media
+representation for every edit.
 
 The raw/coarse boundary remains byte-oriented. On raw input, a type-specific text
-processor decodes the supplied bytes according to the full declared Media Type.
-On raw output, it encodes the current string according to the preserved Media
-Type.
+processor validates representation prerequisites and decodes the supplied bytes
+according to the full declared Media Type. On raw output, it encodes the current
+string according to the preserved Media Type.
 
-Raw conversion must fail explicitly if an encoding is unsupported, input is
-invalid, or the current string cannot be represented exactly. It must not replace
-characters, silently change a charset, or rewrite the stored Media Type to make
+Raw conversion must fail explicitly if required Media Type parameters are absent,
+an encoding is unsupported, input is invalid, or the current string cannot be
+represented exactly. It must not replace characters, silently change a charset,
+rewrite the stored Media Type, or fall back to opaque handling merely to make
 serialization succeed.
 
 For opaque types, the document model keeps the exact supplied bytes and raw
@@ -126,7 +151,10 @@ InlineContent boundaries add no character. Applications, editors, renderers, and
 interchange adapters decide how those characters and structural boundaries are
 presented.
 
-Fine-grained Origin and Range lineage can accompany both initial allowlisted text formats. Formatting, Markdown parsing/rendering, and link interpretation are application concerns. For `text/markdown`, inline formatting is represented by Markdown source syntax when present, not by a parallel engine-owned mark model.
+Fine-grained Origin and Range lineage can accompany both initial allowlisted text
+formats. Formatting, Markdown parsing/rendering, and link interpretation are
+application concerns. For `text/markdown`, inline formatting is represented by
+Markdown source syntax when present, not by a parallel engine-owned mark model.
 
 ### 3.6 Whole-payload replacement is universal
 
@@ -135,13 +163,13 @@ operation preserves InlineContent identity and replaces the complete current
 payload value: Media Type plus its media content and required Origin effect.
 
 For opaque types, replacement stores the supplied bytes. For allowlisted text,
-coarse replacement decodes the supplied media bytes to the collaborative native
-string before publication. Fine-grained text operations remain available when
-merge behavior is desired.
+coarse replacement validates the declared representation and decodes the supplied
+media bytes to the collaborative native string before publication. Fine-grained
+text operations remain available when merge behavior is desired.
 
-Payload-specific operations fail explicitly against an incompatible Media Type.
-The document model does not sniff payload bytes or define a separate implicit
-conversion operation.
+Payload-specific operations fail explicitly against an incompatible or invalid
+fine-grained representation. The document model does not sniff payload bytes or
+define a separate implicit conversion operation.
 
 ### 3.7 Whole-payload replacement is eventually consistent
 
@@ -160,7 +188,12 @@ Whole-payload replacement behaves as a convergent replicated register:
 - losing replacement Contributions and their Versions remain immutable and
   exactly materializable in History.
 
-Gate B qualifies and records the carrier-private deterministic tie-break.
+Gate B qualifies and records the **observable deterministic winner rule** and the
+carrier-private representation, effect identity, or metadata used to implement
+it. Carrier-native conflict order is evidence, not product policy by itself; two
+conforming adapters must not expose different logical winners for the same valid
+causal input after Gate B closes the rule.
+
 Replacement concurrent with fine-grained text editing is also explicitly deferred
 to Gate B. Qualification must select and record that observable behavior before
 Step 4 implements it.
@@ -186,9 +219,9 @@ A Markdown importer can consume recognized structural syntax into the Block tree
 while preserving unconsumed inline or unknown syntax in the `text/markdown`
 source string. Editors can translate user actions into structural operations and
 source-string edits. Renderers can parse the resulting hierarchy and payload
-syntax. Link targets, including whether a URL is local or remote, are application
-interpretation. These are application behaviors, not canonical document-engine
-semantics.
+syntax. Link targets, including whether a URL is local or remote and whether a
+serialized Coedit Range is present, are application interpretation. These are
+application behaviors, not canonical document-engine semantics.
 
 ## 4. Consequences
 
@@ -216,6 +249,7 @@ Costs and constraints:
   collaboratively edited string, so raw materialization can fail;
 - Gate B must qualify the initial raw text processor and Unicode edge behavior in
   addition to carrier behavior;
+- `text/markdown` requires `charset` for the Coedit-owned raw processor;
 - `text/plain` without an explicit charset uses its registered default, which can
   expose the raw-output failure path after non-ASCII edits;
 - adding another fine-grained Media Type is an explicit contract and
@@ -287,6 +321,12 @@ structured payloads, and integrations. It is the common mutation baseline.
 Rejected. Unsynchronized clocks do not provide trustworthy causal ordering. The
 replacement order must derive from immutable replicated causal/effect state.
 
+### Let each carrier expose its native concurrent-register winner
+
+Rejected as product semantics. Carrier-native ordering can inform the Gate B
+implementation, but the selected observable rule must be stable across conforming
+adapters and portable materialization.
+
 ### Introduce a generic structured-data CRDT or dynamic capability registry now
 
 Rejected by YAGNI. Two fine-grained Media Types and one generic opaque handler are
@@ -301,10 +341,12 @@ payload representation.
 
 Step 3 must qualify `text/markdown`, `text/plain`, representative opaque Media
 Types including `application/octet-stream`, universal replacement, deterministic
-concurrent replacement convergence, exact Media Type preservation, raw/coarse
-encoding failure behavior, and the existing fine-grained text suite against both
-carrier candidates. Gate B records the carrier winner, raw text processor
-boundary, Unicode edge policy, and private replacement tie-break.
+concurrent replacement convergence, exact Media Type preservation, parameter and
+representation validation, raw/coarse encoding failure behavior, and the existing
+fine-grained text suite against both carrier candidates. Gate B records the
+carrier winner, raw text processor boundary, Unicode edge policy, observable
+replacement winner rule, its private implementation, and mixed replacement/edit
+semantics.
 
 Step 6 remains responsible for the exact effect of whole-payload replacement on
 durable Range lineage. Step 8 freezes exact Media Type values, collaborative text
