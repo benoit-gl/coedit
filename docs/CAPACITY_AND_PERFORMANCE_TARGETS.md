@@ -20,7 +20,7 @@ maturity model was adopted and preserves the earlier planning values.
 ## 2. Default rule
 
 The Coedit document model has no application-defined finite maximum for
-otherwise valid `application/vnd.coedit.text` size, opaque payload size, tag count or length, Block
+otherwise valid allowlisted fine-grained text size, opaque payload size, tag count or length, Block
 count, InlineContent count, Block depth, Contributor display-name length, or
 retained History length.
 

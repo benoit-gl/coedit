@@ -8,7 +8,7 @@ This document defines Markdown import, export, diagnostics, and the Markdown rou
 
 The input dialect is CommonMark plus GitHub Flavored Markdown (GFM). Markdown is an interchange and rendering format. It is not the lossless Coedit recovery format.
 
-`PRODUCT_DOMAIN_MODEL.md` controls domain meaning. `INLINE_CONTENT_PAYLOADS.md` controls InlineContent Media Types and generic payload behavior. `MVP_CONTRACT.md` controls the MVP proof boundary. `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` controls `application/vnd.coedit.text` formatting and fine-grained Origin behavior. `MVP_IMPLEMENTATION_SPEC.md` controls implementation details that are not defined here. `CAPACITY_AND_PERFORMANCE_TARGETS.md` controls cross-cutting capacity semantics and contract maturity. This document owns Markdown hostile-input behavior, Markdown-to-`application/vnd.coedit.text` normalization, experimental guard candidates, and the guards selected during Step 7.
+`PRODUCT_DOMAIN_MODEL.md` controls domain meaning. `INLINE_CONTENT_PAYLOADS.md` controls InlineContent Media Types and generic payload behavior. `MVP_CONTRACT.md` controls the MVP proof boundary. `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` controls `text/markdown` fine-grained text formatting and fine-grained Origin behavior. `MVP_IMPLEMENTATION_SPEC.md` controls implementation details that are not defined here. `CAPACITY_AND_PERFORMANCE_TARGETS.md` controls cross-cutting capacity semantics and contract maturity. This document owns Markdown hostile-input behavior, Markdown-to-`text/markdown` fine-grained text normalization, experimental guard candidates, and the guards selected during Step 7.
 
 ## 2. Core round-trip invariant
 
@@ -38,7 +38,7 @@ For Markdown round-trip verification, two Coedit documents are equivalent when t
 - the same sibling order;
 - the same `childrenPresentation` values;
 - the same number and order of InlineContents per Block;
-- `application/vnd.coedit.text` Media Type for every imported textual InlineContent;
+- `text/markdown` fine-grained text Media Type for every imported textual InlineContent;
 - the same semantic Unicode text, intrinsic formatting marks, mark-boundary policies, and preserved link metadata; and
 - the same importer normalization semantics where a source construct requires normalization.
 
@@ -58,7 +58,7 @@ Separate pure planning from engine mutation. The planner receives Markdown bytes
 
 The initial importer creates a new document. It does not merge Markdown into an already open document.
 
-Markdown textual source creates `application/vnd.coedit.text` payloads. The importer does not infer or manufacture opaque payloads from Markdown syntax under this contract.
+Markdown textual source creates `text/markdown` fine-grained text payloads. The importer does not infer or manufacture opaque payloads from Markdown syntax under this contract.
 
 The UX obtains a free-form human Contributor display name before document-session creation. Import creates an imported or unknown Origin agent/record for source material. The import Contribution is attributed to the human or system Contributor that performed the import; a source file is not impersonated as the operation actor. Available source name/hash and any separately supported author claims are derivation metadata.
 
@@ -66,7 +66,7 @@ The UX obtains a free-form human Contributor display name before document-sessio
 
 Decode source as UTF-8 with fatal error handling. Permit one optional UTF-8 BOM. Normalize CRLF and CR to LF before parsing.
 
-This source-byte newline normalization is an interchange rule. It does not imply that the generic `application/vnd.coedit.text` payload rejects carriage-return characters supplied through another valid application path.
+This source-byte newline normalization is an interchange rule. It does not imply that the generic `text/markdown` fine-grained text payload rejects carriage-return characters supplied through another valid application path.
 
 `sourceName` is display metadata only. Retain a basename, not an absolute local path.
 
@@ -113,7 +113,7 @@ A first H1 becomes root content only when it is the first manuscript AST child a
 
 Each later H1 attaches to the root. Each other heading attaches to the nearest open lower-depth heading. A skipped heading level creates no synthetic heading and produces `heading-level-skipped`.
 
-An empty heading creates one InlineContent with an empty `application/vnd.coedit.text` payload.
+An empty heading creates one InlineContent with an empty `text/markdown` fine-grained text payload.
 
 For a root or section that contains both body material and subsections:
 
@@ -133,15 +133,15 @@ Block boundaries remain structural. The importer does not insert newline charact
 Use these initial mappings:
 
 ```text
-paragraph                 -> terminal Block with one application/vnd.coedit.text InlineContent
+paragraph                 -> terminal Block with one `text/markdown` fine-grained text InlineContent
 unordered list            -> transparent grouping Block with bullets children
 ordered list              -> transparent grouping Block with numbers children
-list item first paragraph -> list-item application/vnd.coedit.text InlineContent
+list item first paragraph -> list-item `text/markdown` fine-grained text InlineContent
 remaining item material   -> flow children of the list item
 nested list               -> transparent list grouping among those flow children
 ```
 
-A list item with no leading paragraph receives one empty `application/vnd.coedit.text` InlineContent.
+A list item with no leading paragraph receives one empty `text/markdown` fine-grained text InlineContent.
 
 An ordered list whose start is not one is normalized to one and produces `ordered-list-start-normalized` until explicit start-number semantics exist.
 
@@ -152,8 +152,8 @@ GFM task markers are preserved as literal `[ ]` or `[x]` prefixes and produce `t
 The Markdown interchange model supports:
 
 ```text
-text                  -> application/vnd.coedit.text Unicode text
-hard break            -> U+000A LINE FEED in application/vnd.coedit.text
+text                  -> `text/markdown` fine-grained text Unicode text
+hard break            -> U+000A LINE FEED in `text/markdown` fine-grained text
 CommonMark soft break -> one U+0020 SPACE
 emphasis              -> intrinsic italic mark
 strong                -> intrinsic bold mark
@@ -162,13 +162,13 @@ inline code           -> intrinsic inline-code mark
 link                  -> intrinsic link mark with opaque destination metadata
 ```
 
-The hard-break mapping is deliberately an **adapter rule**, not a document-model primitive. Markdown distinguishes a hard line break from a soft source line ending, so the importer preserves that distinction by inserting one U+000A character for a hard break and normalizing a soft break to one ordinary space. The generic `application/vnd.coedit.text` model simply preserves those resulting characters.
+The hard-break mapping is deliberately an **adapter rule**, not a document-model primitive. Markdown distinguishes a hard line break from a soft source line ending, so the importer preserves that distinction by inserting one U+000A character for a hard break and normalizing a soft break to one ordinary space. The generic `text/markdown` fine-grained text model simply preserves those resulting characters.
 
 The exporter emits a deterministic Markdown hard-break spelling for U+000A characters that occur inside one Markdown-representable inline text flow. Re-import must reconstruct the same U+000A character. It must not infer additional breaks from Block or InlineContent boundaries.
 
-A carriage-return character or another control character that enters `application/vnd.coedit.text` through a non-Markdown path is valid generic text but is outside the canonical Markdown-imported subset unless this document defines an export spelling for it. Export reports non-representability or a stable normalization diagnostic rather than silently treating it as a structural boundary.
+A carriage-return character or another control character that enters `text/markdown` fine-grained text through a non-Markdown path is valid generic text but is outside the canonical Markdown-imported subset unless this document defines an export spelling for it. Export reports non-representability or a stable normalization diagnostic rather than silently treating it as a structural boundary.
 
-The importer and exporter use the intrinsic formatting vocabulary and boundary defaults in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`. The selected collaborative carrier's native marks are canonical for `application/vnd.coedit.text`; ProseMirror and Markdown remain adapters/projections.
+The importer and exporter use the intrinsic formatting vocabulary and boundary defaults in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`. The selected collaborative carrier's native marks are canonical for `text/markdown` fine-grained text; ProseMirror and Markdown remain adapters/projections.
 
 Markdown link destinations are preserved as opaque bounded link metadata. The importer does not classify destinations as safe or unsafe and does not decide whether they are URLs, commands, citations, or activatable targets. A renderer or integration that activates the metadata applies its own policy at that boundary.
 
@@ -178,7 +178,7 @@ Raw HTML remains literal fallback under this contract and is never rendered with
 
 Unsupported source must not disappear silently.
 
-When a source node has a usable normalized source slice, preserve that exact slice as plain authored `application/vnd.coedit.text` and produce a warning that identifies the lost presentation. Do not add a durable tag whose only meaning is that the current Markdown importer could not represent the original syntax. For an unsupported block node, preserve the complete source slice in one terminal `application/vnd.coedit.text` InlineContent. For an unsupported inline node, preserve that node's source slice as literal text inside the containing InlineContent.
+When a source node has a usable normalized source slice, preserve that exact slice as plain authored `text/markdown` fine-grained text and produce a warning that identifies the lost presentation. Do not add a durable tag whose only meaning is that the current Markdown importer could not represent the original syntax. For an unsupported block node, preserve the complete source slice in one terminal `text/markdown` fine-grained text InlineContent. For an unsupported inline node, preserve that node's source slice as literal text inside the containing InlineContent.
 
 Initially apply this fallback to:
 
@@ -241,7 +241,7 @@ Examples include:
 - application or user tags with no Markdown representation;
 - multiple simultaneously selected InlineContents for one Block;
 - a structural grouping that is valid Coedit but not produced by the Markdown importer;
-- an `application/vnd.coedit.text` character with no accepted Markdown round-trip spelling under this contract;
+- an `text/markdown` fine-grained text character with no accepted Markdown round-trip spelling under this contract;
 - future overlays such as comments or conversations; and
 - future presentation modes with no importer mapping.
 

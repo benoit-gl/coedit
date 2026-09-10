@@ -10,7 +10,7 @@ and what eventual consistency must mean for Coedit. It complements
 [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md), which defines typed
 InlineContent payloads and whole-payload replacement convergence,
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), which
-defines `application/vnd.coedit.text` attribution and Range-holder behavior,
+defines allowlisted fine-grained text attribution and Range-holder behavior,
 [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md), which defines the
 accepted Block carrier and structural merge semantics,
 [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md),
@@ -39,7 +39,7 @@ implementation order.
 - Every InlineContent Media Type is collaborative in the convergence sense:
   replicas with the same complete set of valid Contributions converge on the
   same current payload state.
-- `application/vnd.coedit.text` additionally supports fine-grained collaborative text,
+- allowlisted fine-grained text additionally supports fine-grained collaborative text,
   formatting, and Origin operations. Other Media Types initially support only whole-payload
   replacement.
 - Whole-payload replacement is a convergent replicated register. A causally
@@ -342,7 +342,7 @@ Contributions, they must have:
 1. the same immutable causal Contribution graph and metadata;
 2. collaborative-state-equivalent carrier state, including identity, placement,
    Block activity, deletes, Media Types, whole-replacement register state,
-   `application/vnd.coedit.text` formatting/fine-grained Origin, opaque payload bytes/payload Origin, and
+   allowlisted fine-grained text formatting/fine-grained Origin, opaque payload bytes/payload Origin, and
    text Range-position behavior, even if byte encodings differ;
 3. the same deterministic current whole-payload replacement winner for every
    affected InlineContent;
@@ -353,7 +353,7 @@ Contributions, they must have:
 
 This is eventual consistency. It does not require fine-grained merging for every
 Media Type. Generic opaque payloads can converge by deterministic whole-payload replacement while
-`application/vnd.coedit.text` also merges fine-grained collaborative edits.
+allowlisted fine-grained text also merges fine-grained collaborative edits.
 
 This implies convergence tests must compare Contribution sets/graphs, causal
 frontiers, carrier state equivalence, replacement winners, and logical
@@ -378,10 +378,10 @@ inside one logical collaborative document, and Step 4 implements the selected
 carrier. `INLINE_CONTENT_PAYLOADS.md` owns payload semantics and
 `STRUCTURAL_CARRIER_MODEL.md` owns the structural contract.
 
-The initial capability dispatch recognizes `application/vnd.coedit.text` as the fine-grained collaborative-text format. Every other supported Media Type initially uses the generic opaque capability set, which preserves exact bytes and payload-level Origin and provides no fine-grained mutation beyond whole-payload replacement.
+The initial capability dispatch recognizes allowlisted fine-grained text as the fine-grained collaborative-text format. Every other supported Media Type initially uses the generic opaque capability set, which preserves exact bytes and payload-level Origin and provides no fine-grained mutation beyond whole-payload replacement.
 
 The document model has no canonical hard-break content item. A line-feed or
-carriage-return can be ordinary `application/vnd.coedit.text` data. Block and InlineContent
+carriage-return can be ordinary allowlisted fine-grained text data. Block and InlineContent
 boundaries remain structural and add no text character. Application adapters
 translate paragraph, line-break, list, section, opaque-payload rendering, or other intent.
 
@@ -434,21 +434,21 @@ recovery, hostile input, restore overlap, and exact integration rules.
 Use one logical collaborative document per Coedit document by default. It holds
 the Block registry and Block-local payload namespaces so one transaction can
 publish structure, several Media-Type-labelled payload values, Origins, and Contribution
-effects atomically. A rich-text editor binds only one active `application/vnd.coedit.text`
+effects atomically. A rich-text editor binds only one active allowlisted fine-grained text
 InlineContent; the recursive Block tree is not a ProseMirror tree.
 
 This is a private carrier boundary, not a public `Y.Doc` or Automerge type.
 Subdocuments or sharding require measured evidence and must preserve atomic
 multi-target behavior and portable recovery.
 
-`application/vnd.coedit.text` formatting and fine-grained Origin do not use external anchors.
+allowlisted fine-grained text formatting and fine-grained Origin do not use external anchors.
 Generic opaque payloads have payload-level Origin rather than text-like ranges. The MVP headless Range
 service can use carrier-stable text positions plus qualified lineage and
 carrier-neutral evidence behind its public value contract. Internal text links
 can embed a Range; future comments can hold one externally with comment-specific
 repair state. Generic opaque sub-content addressing is not defined by that service.
 
-Copying `application/vnd.coedit.text` creates new carrier identities and same-document copy
+Copying allowlisted fine-grained text creates new carrier identities and same-document copy
 retains Origins, but shared Origin or derivation creates no Range-tracking
 lineage to the copy. Moving an InlineContent while preserving its identity and
 payload state preserves applicable text Range tracking. Split and merge
@@ -481,7 +481,7 @@ It creates a new attributed compensating Contribution that targets a stable
 
 A replicated restore does not install an old carrier snapshot or resurrect old
 carrier state wholesale. It emits fresh deterministic payload/tree effects
-relative to its declared base. For `application/vnd.coedit.text`, historically deleted material
+relative to its declared base. For allowlisted fine-grained text, historically deleted material
 is reinserted under fresh carrier identities while historical Origin is retained.
 For opaque payload, restore can reintroduce the historical whole payload and its payload
 Origin through the same replacement/convergence boundary. The restore
@@ -594,13 +594,13 @@ The MVP does not implement networking. It does establish the following seams:
 - globally unique document, entity, command, Contribution, and contributor IDs;
 - atomic attributed commands whose Contributions may share a semantic group ID;
 - one logical collaborative document boundary with atomic structure-plus-content effects;
-- typed `application/vnd.coedit.text` and opaque InlineContent payloads;
+- typed allowlisted fine-grained text and opaque InlineContent payloads;
 - universal whole-payload replacement with deterministic eventual convergence semantics;
 - the accepted flat Block placement and Block activity compatibility contract;
-- intrinsic `application/vnd.coedit.text` formatting and protected, non-inheriting fine-grained Origin semantics;
+- intrinsic allowlisted fine-grained text formatting and protected, non-inheriting fine-grained Origin semantics;
 - opaque-payload Origin;
 - first-class checkpoint Contributions;
-- a carrier-neutral durable `application/vnd.coedit.text` Range service with no document-wide holder registry or opaque payload sub-content locator;
+- a carrier-neutral durable allowlisted fine-grained text Range service with no document-wide holder registry or opaque payload sub-content locator;
 - History listing, summary, permanent exact Version materialization, and compensating restore;
 - change subscriptions followed by re-query;
 - opaque lossless serialization/opening;
@@ -618,7 +618,7 @@ Contract tests and types keep all of these private.
 1. Qualify Yjs v13 against Automerge with the Media-Type-labelled-payload, attributed-text, structural, and text Range-feasibility suites; record the winner and deterministic whole-replacement tie-break at Gate B.
 2. Implement the selected collaborative core and retain the common suite as regression evidence.
 3. Establish local History and permanent exact Version materialization.
-4. Implement the durable `application/vnd.coedit.text` Range service and record its lineage representation at Gate C.
+4. Implement the durable allowlisted fine-grained text Range service and record its lineage representation at Gate C.
 5. Complete and validate the remaining local-only MVP behind the engine and repository boundaries.
 6. Replace chunk/checkpoint details behind those same contracts as measurements require.
 7. Build an in-process two-engine replication test bus before using a network.
@@ -640,7 +640,7 @@ pass together.
 - offline edits followed by reconnect;
 - equal Contribution sets produce the same graph, frontiers, Media-Type-labelled payload state, deterministic replacement winners, and every Version materialization;
 - identical rendering with different hidden carrier or replacement-register state is detected as insufficient;
-- concurrent whole-payload replacement of the same `application/vnd.coedit.text` and opaque payload, with a deterministic winner independent of delivery order and clocks;
+- concurrent whole-payload replacement of the same allowlisted fine-grained text and opaque payload, with a deterministic winner independent of delivery order and clocks;
 - a causally later whole-payload replacement supersedes observed replacements;
 - losing replacement Contributions remain materializable;
 - atomic publication of a Contribution spanning structure and several InlineContents of different Media Types;

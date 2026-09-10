@@ -15,8 +15,8 @@ Use these focused authorities first:
 - [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) for public engine behavior and component authority;
 - [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) for cross-cutting capacity and resource semantics;
 - [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) for Media Types, universal whole-payload replacement, and payload convergence;
-- [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for `application/vnd.coedit.text` formatting, fine-grained Origin, clipboard, and Range-holder behavior;
-- [`RANGE_MODEL.md`](RANGE_MODEL.md) for durable `application/vnd.coedit.text` Range behavior, the Range service, and staged representation selection;
+- [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for allowlisted fine-grained text formatting, fine-grained Origin, clipboard, and Range-holder behavior;
+- [`RANGE_MODEL.md`](RANGE_MODEL.md) for durable allowlisted fine-grained text Range behavior, the Range service, and staged representation selection;
 - [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md) for flat Block placement, Block-local carrier state, structural concurrency, and position-order qualification;
 - [`CODING_STYLE.md`](CODING_STYLE.md) for source structure, TSDoc, linting, formatting, dependency checks, package commands, and platform portability;
 - [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md) for Markdown import/export and round-trip behavior;
@@ -38,7 +38,7 @@ Use:
 - strict TypeScript;
 - Vite;
 - Vitest;
-- Tiptap/ProseMirror as the interactive `application/vnd.coedit.text` editor adapter;
+- Tiptap/ProseMirror as the interactive allowlisted fine-grained text editor adapter;
 - pinned stable Yjs v13 as the provisional collaborative carrier;
 - the Markdown parser stack specified in `MARKDOWN_INTERCHANGE.md`;
 - DOMPurify or an equivalently reviewed sanitizer at DOM/clipboard boundaries; and
@@ -64,7 +64,7 @@ to `main`. These commands cannot contain logic that works only in CI.
 
 Step 3 qualifies pinned Yjs v13 against pinned Automerge using the common suites in `INLINE_CONTENT_PAYLOADS.md`, `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. Track Yjs v14 only after a stable release. Use Loro as a cursor/movable-tree benchmark, not a current production dependency. Gate B records the winner. Step 4 then implements the selected collaborative core. Do not expose either candidate through a public API or freeze carrier-specific `.coedit` bytes before Gate B.
 
-The ProseMirror/Tiptap schema applies only to `application/vnd.coedit.text` and is deliberately flat: authored text plus the supported inline marks. The document model does not require a distinct hard-break node. If the application wants a line break inside one text payload, the editor adapter can represent that intent with an ordinary text character according to its editor mapping. The recursive Coedit Block tree remains outside ProseMirror.
+The ProseMirror/Tiptap schema applies only to allowlisted fine-grained text and is deliberately flat: authored text plus the supported inline marks. The document model does not require a distinct hard-break node. If the application wants a line break inside one text payload, the editor adapter can represent that intent with an ordinary text character according to its editor mapping. The recursive Coedit Block tree remains outside ProseMirror.
 
 Do not initially add:
 
@@ -249,9 +249,9 @@ type StructuralOperation =
 
 In completed Step 2, `InlineContentValue` is a typed, opaque, valid empty value. Structural code can store, preserve, move, reorder, and delete it but must not inspect or manufacture payload internals. This permits complete InlineContent structural behavior before a carrier is selected without creating partially valid attributed text or interpreting opaque payload bytes.
 
-Step 4 evolves that opaque boundary into the Media-Type-labelled payload representation defined by `INLINE_CONTENT_PAYLOADS.md`. Runtime payloads carry an Internet Media Type. `application/vnd.coedit.text` selects the fine-grained collaborative-text capability set; other supported Media Types initially use generic opaque handling. The ordinary authored empty-content path creates an empty `application/vnd.coedit.text` value; creation/import paths that deliberately require opaque content supply the actual Media Type when known, complete opaque bytes, and explicit Origin, using `application/octet-stream` only when no more specific type is available. This documentation evolution does not require reopening the already completed structural semantics of Step 2.
+Step 4 evolves that opaque boundary into the Media-Type-labelled payload representation defined by `INLINE_CONTENT_PAYLOADS.md`. Runtime payloads carry an Internet Media Type. allowlisted fine-grained text selects the fine-grained collaborative-text capability set; other supported Media Types initially use generic opaque handling. The ordinary authored empty-content path creates an empty allowlisted fine-grained text value; creation/import paths that deliberately require opaque content supply the actual Media Type when known, complete opaque bytes, and explicit Origin, using `application/octet-stream` only when no more specific type is available. This documentation evolution does not require reopening the already completed structural semantics of Step 2.
 
-At the public human-edit boundary, text creation supplies visible content and formatting intent and the engine assigns Origin from the attributed command context. A complete pre-attributed `application/vnd.coedit.text` value is accepted only by validated internal import, copy, restore, or remote-integration paths; it is not a client Origin-spoofing surface. Generic opaque creation/replacement likewise obtains Origin from a trusted context rather than a caller-controlled attribution side channel.
+At the public human-edit boundary, text creation supplies visible content and formatting intent and the engine assigns Origin from the attributed command context. A complete pre-attributed allowlisted fine-grained text value is accepted only by validated internal import, copy, restore, or remote-integration paths; it is not a client Origin-spoofing surface. Generic opaque creation/replacement likewise obtains Origin from a trusted context rather than a caller-controlled attribution side channel.
 
 Operation rules:
 
@@ -274,11 +274,11 @@ Do not add entity tombstones or lifecycle timestamps to the logical live entitie
 
 Each InlineContent owns one Media-Type-labelled collaborative payload. The initial Media Types and universal replacement behavior are defined by `INLINE_CONTENT_PAYLOADS.md`.
 
-`application/vnd.coedit.text` stores authored Unicode text, intrinsic formatting marks, and protected fine-grained Origin in one atomic collaborative state. It has no separate document-level hard-break item. Newline and other control characters are ordinary text data at this layer. HTML, plain-text projections, ProseMirror JSON, and rendered Origin runs are derived. Do not persist them as a parallel authority.
+allowlisted fine-grained text stores authored Unicode text, intrinsic formatting marks, and protected fine-grained Origin in one atomic collaborative state. It has no separate document-level hard-break item. Newline and other control characters are ordinary text data at this layer. HTML, plain-text projections, ProseMirror JSON, and rendered Origin runs are derived. Do not persist them as a parallel authority.
 
 Every valid Media Type other than the recognized Coedit collaborative-text type initially uses generic opaque handling: exact bytes plus one payload-level Origin for the current value. An unfamiliar type is not invalid syntax and needs no decoder or renderer at this boundary. `INLINE_CONTENT_PAYLOADS.md` section 3.1 owns syntax and capability matching. The selected carrier must preserve the Media Type and bytes and support atomic whole-payload replacement. It does not need a fine-grained opaque payload CRDT.
 
-Every InlineContent supports one whole-payload replacement operation. The logical operation targets one InlineContent, preserves its identity, validates a complete replacement against the replacement Media Type, and atomically publishes the new Media Type, Media-Type-specific content, and required Origin effect. The Media Type can stay the same or change. `application/vnd.coedit.text` also supports fine-grained text and formatting operations; other supported Media Types initially use generic opaque handling. Payload-specific fine-grained operations reject incompatible Media Types explicitly. Do not add dynamic capability dispatch or a generic replicated object model until a concrete additional fine-grained payload contract requires one.
+Every InlineContent supports one whole-payload replacement operation. The logical operation targets one InlineContent, preserves its identity, validates a complete replacement against the replacement Media Type, and atomically publishes the new Media Type, Media-Type-specific content, and required Origin effect. The Media Type can stay the same or change. allowlisted fine-grained text also supports fine-grained text and formatting operations; other supported Media Types initially use generic opaque handling. Payload-specific fine-grained operations reject incompatible Media Types explicitly. Do not add dynamic capability dispatch or a generic replicated object model until a concrete additional fine-grained payload contract requires one.
 
 Under replicated qualification, whole-payload replacement follows the register invariants in `INLINE_CONTENT_PAYLOADS.md`. Gate B records its tie-break mechanism and separately selects the mixed replacement/text-edit behavior deferred in section 9.1 of that authority. Production implementation in Step 4 must not treat a candidate's mixed-operation behavior as an accepted policy before that decision. Step 5 implements permanent losing-Contribution and Version materialization.
 
@@ -292,13 +292,13 @@ Do not hash the whole Block payload into placement metadata. A payload hash woul
 
 Exact primary-position collisions are exceptional carrier cases. When insertion requires normalization of an existing collision run, that normalization is replicated as part of the structural Contribution that needs it. It is not a separate product operation or History action. Prefer deterministic normalization and suppression of normalization-only resurrection when they are inexpensive; record residual behavior if those properties would require disproportionate machinery.
 
-Bind the rich-text editor only to an active `application/vnd.coedit.text` InlineContent. An opaque payload can be projected to an application adapter, but no rich-text editor or text operation is offered for it. Do not expose the logical document, carrier objects, raw updates, Block activity setters, or client-supplied Origin setters through the public API.
+Bind the rich-text editor only to an active allowlisted fine-grained text InlineContent. An opaque payload can be projected to an application adapter, but no rich-text editor or text operation is offered for it. Do not expose the logical document, carrier objects, raw updates, Block activity setters, or client-supplied Origin setters through the public API.
 
 Formatting follows the vocabulary and boundary defaults in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`. Carrier adapters translate those logical policies to native marks/attributes and must prove exact round trip. Clearing formatting cannot change Origin.
 
 The trusted engine boundary assigns Origin for human text insertion, import, external paste, automation, AI, and whole-payload replacement. Same-document internal copy and restore preserve existing Origins according to the payload contract under fresh carrier item identities where applicable. Ordinary editor or opaque-replacement clients cannot forge another Contributor's Origin.
 
-Step 3 runs the same carrier-neutral payload, headless text, structural, and ProseMirror-integrated suites against Yjs v13 and Automerge. Functional invariants are mandatory. Range work in this step proves only the `application/vnd.coedit.text` feasibility subset in `RANGE_MODEL.md`; it does not select the Range-tracking representation. Select Yjs when its Media-Type-labelled payload, attributed-text, and structural carrier passes without fragile full-state repair. Select Automerge only if its richer native model materially reduces custom code and its editor/storage integrations pass the same suites. Record the selected versions, dependency/license review, replacement tie-break mechanism, fixtures, measurements, and rejected-candidate rationale.
+Step 3 runs the same carrier-neutral payload, headless text, structural, and ProseMirror-integrated suites against Yjs v13 and Automerge. Functional invariants are mandatory. Range work in this step proves only the allowlisted fine-grained text feasibility subset in `RANGE_MODEL.md`; it does not select the Range-tracking representation. Select Yjs when its Media-Type-labelled payload, attributed-text, and structural carrier passes without fragile full-state repair. Select Automerge only if its richer native model materially reduces custom code and its editor/storage integrations pass the same suites. Record the selected versions, dependency/license review, replacement tie-break mechanism, fixtures, measurements, and rejected-candidate rationale.
 
 Step 4 converts the selected candidate into the production collaborative core and retains the common suite as regression evidence. Do not retain rejected-candidate types in public or domain APIs. Do not finalize the carrier codec, portable bytes, History effect encoding, editor transaction bridge, or compaction behavior before Gate B passes.
 
@@ -342,13 +342,13 @@ Serialize local commits internally. Perform expected-Version checking inside tha
 
 Use canonical RFC 3339 UTC timestamps with millisecond precision for display metadata. Never use those timestamps to choose a concurrent payload replacement winner.
 
-## 8. Durable `application/vnd.coedit.text` Range service
+## 8. Durable allowlisted fine-grained text Range service
 
 Step 6 implements the headless service defined by `RANGE_MODEL.md` after Step 5 establishes exact Version materialization.
 
-The public boundary remains carrier-neutral and text-specific. It accepts detached creation input against the current Version visible to the caller. Every supplied target must resolve in `application/vnd.coedit.text`. The returned Range records that document-scoped creation Version and the original Block and InlineContent location of each member. It never returns a live Yjs relative position, Automerge cursor, carrier object, internal lineage node, or mutable engine-owned collection.
+The public boundary remains carrier-neutral and text-specific. It accepts detached creation input against the current Version visible to the caller. Every supplied target must resolve in allowlisted fine-grained text. The returned Range records that document-scoped creation Version and the original Block and InlineContent location of each member. It never returns a live Yjs relative position, Automerge cursor, carrier object, internal lineage node, or mutable engine-owned collection.
 
-Direct creation is all-or-none. If any supplied span or position does not resolve in `application/vnd.coedit.text` in the named current Version, creation fails. Span creation otherwise preserves the caller's arbitrary order, overlap, duplication, adjacency, sparsity, and zero-length members without normalization. A zero-length Span uses greedy Span semantics; it does not become a Positional Range.
+Direct creation is all-or-none. If any supplied span or position does not resolve in allowlisted fine-grained text in the named current Version, creation fails. Span creation otherwise preserves the caller's arbitrary order, overlap, duplication, adjacency, sparsity, and zero-length members without normalization. A zero-length Span uses greedy Span semantics; it does not become a Positional Range.
 
 Resolution is valid only at the creation Version or a descendant Version in the same document. It returns surviving spans in creation and lineage order and omits unresolved, ambiguous, deleted, or non-text members. Text resolution concatenates exact stored span text without inserted structural separators or deduplication. A stored line-feed or another separator-like character remains part of the returned text because it is content. Split and merge can extend Range lineage; copy, clone, import, and paste cannot.
 
@@ -365,7 +365,7 @@ Gate C must close and record:
 - complete one-to-many split and many-to-one merge lineage independent of the continuing entity identity;
 - the zero-length Span tie-break at an exact structural split;
 - Positional Range split, merge, deletion, and whole-content-replacement behavior;
-- any `application/vnd.coedit.text` whole-payload replacement lineage rule required by the selected representation;
+- any allowlisted fine-grained text whole-payload replacement lineage rule required by the selected representation;
 - document-relative fragment grammar and resource-guard behavior;
 - internal-link Range encoding; and
 - the selected Range-tracking lineage representation.
@@ -388,7 +388,7 @@ It must:
 
 Do not use `checkpoint` for semantic editor groups or ordinary durable editor Contributions.
 
-Restore validates its expected current Version and historical target, then appends a new restore Contribution. In the local single-writer MVP its resulting material matches the historical target. Reinserted `application/vnd.coedit.text` has fresh carrier identities and preserves historical fine-grained Origin. Restored opaque payloads preserve their historical payload Origin. The new Contribution records the restoring actor and target Version. Restore never rewinds or deletes History.
+Restore validates its expected current Version and historical target, then appends a new restore Contribution. In the local single-writer MVP its resulting material matches the historical target. Reinserted allowlisted fine-grained text has fresh carrier identities and preserves historical fine-grained Origin. Restored opaque payloads preserve their historical payload Origin. The new Contribution records the restoring actor and target Version. Restore never rewinds or deletes History.
 
 The future replicated form is causal compensation against the frontier observed by the restoring actor and preserves unseen concurrent work. `COLLABORATION_MODEL.md` owns that extension.
 
@@ -415,7 +415,7 @@ Workspace behavior:
 
 - render the continuous Block document from engine queries;
 - use payload-aware rendering and treat Block/InlineContent boundaries as structural rather than implicit text;
-- derive outline labels from the same selected `application/vnd.coedit.text` InlineContent as manuscript text when that application convention applies;
+- derive outline labels from the same selected allowlisted fine-grained text InlineContent as manuscript text when that application convention applies;
 - show import diagnostics;
 - support current/historical selection without mutating History;
 - provide a development-only inspector; and
@@ -427,7 +427,7 @@ Support create, move, nest, reorder, delete, tag, InlineContent selection/reorde
 
 ## 12. Interactive editor durability and semantic grouping
 
-Separate durable publication from human-readable grouping. Every submitted `application/vnd.coedit.text` editor command that succeeds creates one immutable Contribution and Version and commits through the repository protocol. Adjacent Contributions can share one `semanticGroupId`; History can collapse them for presentation without rewriting physical History.
+Separate durable publication from human-readable grouping. Every submitted allowlisted fine-grained text editor command that succeeds creates one immutable Contribution and Version and commits through the repository protocol. Adjacent Contributions can share one `semanticGroupId`; History can collapse them for presentation without rewriting physical History.
 
 The editor may combine transient ProseMirror transactions before submission, but it must submit promptly at a minimal safe boundary and before a controlled transition can hide, replace, retarget, export, save, restore, or close the editor context.
 
@@ -469,7 +469,7 @@ If several contents match, select the first in vector order and return a project
 
 Initial lenses preserve the complete Block tree. They do not silently reparent Blocks.
 
-A renderer must inspect the selected Media Type. The current Markdown/writing projection expects `application/vnd.coedit.text`; an opaque payload requires a payload-aware renderer or a non-representability diagnostic rather than implicit byte-to-text conversion.
+A renderer must inspect the selected Media Type. The current Markdown/writing projection expects allowlisted fine-grained text; an opaque payload requires a payload-aware renderer or a non-representability diagnostic rather than implicit byte-to-text conversion.
 
 Historical comparison aligns Blocks by stable `BlockId` and reports unmatched subtrees. Do not guess correspondence.
 

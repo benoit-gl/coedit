@@ -1,12 +1,12 @@
 # Attributed collaborative text and annotation specification
 
-**Status:** Accepted `application/vnd.coedit.text` behavioral contract; carrier implementation is
+**Status:** Accepted fine-grained text behavioral contract; carrier implementation is
 subject to the Elaboration qualification gate.
 
 ## 1. Purpose and authority
 
-This document defines the detailed behavior of the `application/vnd.coedit.text` InlineContent
-payload: authored text, intrinsic formatting, fine-grained Origin attribution,
+This document defines the detailed behavior shared by allowlisted fine-grained text InlineContent
+payloads (`text/markdown` and `text/plain` initially): authored text, intrinsic formatting, fine-grained Origin attribution,
 link holders, copy/paste/restore lineage, future comment holders, and transient
 selections. `INLINE_CONTENT_PAYLOADS.md` owns Media Types and universal
 whole-payload replacement. `RANGE_MODEL.md` owns the shared durable text Range
@@ -24,7 +24,7 @@ decision.
 
 ## 2. Scope by phase
 
-The strict MVP and its carrier qualification must implement for `application/vnd.coedit.text`:
+The strict MVP and its carrier qualification must implement for every allowlisted fine-grained text payload:
 
 - canonical collaborative Unicode text without a document-level hard-break item;
 - intrinsic formatting marks with explicit boundary behavior;
@@ -53,9 +53,8 @@ signed publication claims.
 
 Use these terms consistently:
 
-- **`application/vnd.coedit.text`:** the Media-Type-labelled InlineContent payload whose canonical state is
-  authored Unicode text, intrinsic formatting, and protected fine-grained Origin.
-- **Formatting mark:** intrinsic rich-text presentation metadata of `application/vnd.coedit.text`.
+- **Fine-grained text payload:** an InlineContent whose normalized Media Type `type/subtype` is in the compile-time allowlist. The initial entries are `text/markdown` and `text/plain`. Its canonical collaborative state is authored native-string text, intrinsic formatting, and protected fine-grained Origin.
+- **Formatting mark:** intrinsic presentation metadata of a fine-grained text payload; it is Coedit collaboration state and is not necessarily part of the raw media representation.
 - **Opaque link metadata:** inert formatting metadata that the document model
   preserves but does not interpret.
 - **Internal Block link:** a document-local link target identified by `BlockId`,
@@ -113,7 +112,7 @@ those activities change placement or recovery, not authorship.
 
 ## 4. Canonical text rules
 
-An empty `application/vnd.coedit.text` value is valid. It contains no authored text and therefore
+An empty allowlisted fine-grained text payload is valid. It contains no authored text and therefore
 needs no partial formatting or Origin placeholder. Step 2 represents InlineContent
 content with the typed opaque `InlineContentValue`. Step 3 qualifies the
 candidate carriers against the complete carrier-neutral behavior below. Step 4
@@ -138,16 +137,16 @@ implements that behavior with the selected carrier.
 9. The text value can contain line-feed, carriage-return, and other Unicode
    characters. The generic text carrier does not reject them because an
    application can present them as line breaks.
-10. `application/vnd.coedit.text` has no canonical `HardBreak` item, sentinel, or presentation
+10. fine-grained text has no canonical `HardBreak` item, sentinel, or presentation
     separator distinct from authored text characters.
 11. A Block or InlineContent boundary adds no character to the text value.
 
 An application can define stricter editing behavior. For example, a prose editor
 can map Enter to structural commands, map Shift+Enter to a line-feed character,
 or reject a character in one context. Such rules are application intent
-translation, not generic `application/vnd.coedit.text` validity.
+translation, not generic fine-grained text validity.
 
-Whole-payload replacement of an `application/vnd.coedit.text` payload is also available under
+Whole-payload replacement of an allowlisted fine-grained text payload is also available under
 `INLINE_CONTENT_PAYLOADS.md`. Normal text editing should use the fine-grained
 operations in this document when their merge behavior is desired.
 
@@ -173,7 +172,7 @@ InternalBlockLinkTarget
   range?: Range
 ```
 
-Opaque link metadata is inert document data. The `application/vnd.coedit.text` model validates
+Opaque link metadata is inert document data. The fine-grained text model validates
 only its carrier shape and applicable implementation resource guards. It does
 not interpret the metadata as a URL, URI, command, citation, or another
 application concept. The presentation or integration layer decides whether and
@@ -182,7 +181,7 @@ how to interpret or activate it.
 An internal Block link is a document-local typed reference. `blockId` is the
 primary target. The optional Range refines navigation to one semantic text
 target and resolves only against the current document. It can resolve across
-several `application/vnd.coedit.text` InlineContents or Blocks in that document. Embedding the
+several allowlisted fine-grained text InlineContents or Blocks in that document. Embedding the
 value in an intrinsic link mark does not create a Range entity or make comments
 intrinsic formatting. `RANGE_MODEL.md` owns creation, resolution, lineage order,
 and serialization.
@@ -341,7 +340,7 @@ and presentation.
 
 Internal Block-link Range refinement uses the same Range service but not the same
 holder lifecycle. A comment is an external record whose attachment state can
-require explicit repair. An internal link is intrinsic `application/vnd.coedit.text` formatting
+require explicit repair. An internal link is intrinsic fine-grained text formatting
 whose `BlockId` remains the primary target; an unresolved optional Range uses the
 accepted Block fallback when possible.
 
@@ -393,7 +392,7 @@ required challenger. Yjs v14 is reevaluated after stable release; Loro is a
 benchmark for cursor and movable-tree semantics, not a current implementation
 candidate.
 
-Both candidates must run the same `application/vnd.coedit.text` qualification suite before
+Both candidates must run the same fine-grained text qualification suite for both initial allowlisted Media Types before
 selection. At minimum it covers:
 
 - exact arbitrary Unicode text preservation, including newline/control-character

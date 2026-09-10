@@ -13,8 +13,8 @@ The user-facing extension is `.coedit`. A portable artifact retains current Medi
 [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls domain meaning.
 [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) controls InlineContent Media Types, universal whole-payload replacement, and convergence semantics.
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
-controls `application/vnd.coedit.text` formatting and fine-grained Origin behavior. [`RANGE_MODEL.md`](RANGE_MODEL.md)
-controls embedded durable `application/vnd.coedit.text` Range values. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
+controls allowlisted fine-grained text formatting and fine-grained Origin behavior. [`RANGE_MODEL.md`](RANGE_MODEL.md)
+controls embedded durable allowlisted fine-grained text Range values. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
 controls the public serialization boundary. This document controls portable
 logical records, validation, compatibility, and the candidate version-1
 container.
@@ -53,10 +53,10 @@ Step 8 encoder until Gate B has recorded:
 
 - the selected carrier and exact supported version range;
 - its canonical checkpoint and incremental-effect encodings;
-- the initial Media-Type encoding for `application/vnd.coedit.text` and representative opaque Media Types;
+- the initial Media-Type encoding for allowlisted fine-grained text and representative opaque Media Types;
 - whole-payload replacement encoding and deterministic concurrent-winner behavior;
 - logical-state and historical-materialization verification;
-- native `application/vnd.coedit.text` formatting and Origin round-trip behavior;
+- native allowlisted fine-grained text formatting and Origin round-trip behavior;
 - exact opaque payload byte and payload-Origin round-trip behavior;
 - garbage collection and compaction that preserve every Version and required
   text Range lineage; and
@@ -160,9 +160,9 @@ default to one independent carrier document or opaque payload per InlineContent.
 Carrier state preserves exactly:
 
 - each InlineContent Media Type;
-- `application/vnd.coedit.text` authored Unicode text, including newline/control characters that are valid text data;
-- `application/vnd.coedit.text` intrinsic formatting marks and their boundary policies;
-- protected fine-grained `application/vnd.coedit.text` Origin references;
+- allowlisted fine-grained text authored Unicode text, including newline/control characters that are valid text data;
+- allowlisted fine-grained text intrinsic formatting marks and their boundary policies;
+- protected fine-grained allowlisted fine-grained text Origin references;
 - opaque payload bytes and their payload-level Origin reference;
 - stable Block and InlineContent identities and ordering;
 - the private identities and retained evidence required for accepted editing,
@@ -171,7 +171,7 @@ Carrier state preserves exactly:
 - atomic effects spanning structure and several InlineContents of either capability class.
 
 There is no canonical `HardBreak` item in the portable logical state. A line-feed
-or carriage-return that exists in `application/vnd.coedit.text` is serialized as text according
+or carriage-return that exists in allowlisted fine-grained text is serialized as text according
 to the final text codec. Block and InlineContent boundaries do not synthesize
 separator characters during encoding or decoding.
 
@@ -186,7 +186,7 @@ the carrier state; it is never a competing authority.
 
 The format does not contain external formatting or provenance Ranges. External
 comment records are not added to the strict MVP package. A Range value embedded
-in an intrinsic `application/vnd.coedit.text` internal-link mark is canonical text payload data
+in an intrinsic allowlisted fine-grained text internal-link mark is canonical text payload data
 and must round trip. Generic opaque sub-content has no Range encoding in version 1 under
 the current contract.
 
@@ -196,7 +196,7 @@ The package preserves immutable Origin records and every reference from payload
 material to those records. Each record names its claimed agent kind/Contributor
 and any source or upstream Origin reference required by the current document.
 
-`application/vnd.coedit.text` can reference Origins at fine granularity. A current opaque payload value has
+allowlisted fine-grained text can reference Origins at fine granularity. A current opaque payload value has
 one payload-level Origin. A future Media Type can add finer Origin semantics
 only through its own accepted contract and format evolution.
 
@@ -204,7 +204,7 @@ The Contribution that introduces, pastes, copies, restores, imports, formats,
 or replaces material separately names the acting Contributor. In particular:
 
 - internal copy and restore retain source Origin according to the payload contract while recording the new actor;
-- restored `application/vnd.coedit.text` uses fresh carrier identities without a new `restored` Origin category;
+- restored allowlisted fine-grained text uses fresh carrier identities without a new `restored` Origin category;
 - restored opaque payload bytes preserve their historical payload Origin;
 - external textual material uses imported or unknown Origin unless a validated source claim exists; and
 - a human accepting AI material does not replace its software-agent Origin.
@@ -249,7 +249,7 @@ length maximum. Display names are descriptive metadata, not authenticated identi
 A later separately managed profile can change presentation without changing stable
 attribution IDs.
 
-Human `application/vnd.coedit.text` editing creates human Origin records. Markdown/file import
+Human allowlisted fine-grained text editing creates human Origin records. Markdown/file import
 creates imported or unknown Origin for textual source material while the import
 Contribution is attributed to the human or system actor that performed the
 action. The source file is not impersonated as the actor. Generic opaque creation or
@@ -279,7 +279,7 @@ Treat portable input as hostile. Validate a detached copy in this order:
 9. carrier checkpoint/effect schema, dependency closure, deterministic whole-replacement register state, and implementation resource guards;
 10. reconstructed Block topology, ownership, ordering, tags, Media-Type values,
     and structural invariants plus implementation capacity;
-11. reconstructed `application/vnd.coedit.text` Unicode text, marks, boundary policies,
+11. reconstructed allowlisted fine-grained text Unicode text, marks, boundary policies,
     fine-grained Origin coverage, opaque link-metadata shape/resource bounds, and typed internal-link shape;
 12. reconstructed opaque payload bytes and exactly one valid payload-level Origin for each current opaque payload value;
 13. payload-specific invariants, including rejection of incompatible fine-grained operations and no implicit Media Type change outside explicit whole-payload replacement; and
@@ -313,7 +313,7 @@ For each Contribution:
 - verify successful CommandId records reproduce the original receipt and reject conflicting reuse.
 
 For local single-writer restore, verify that visible material equals the selected
-target while restored `application/vnd.coedit.text` items retain historical Origin, restored
+target while restored allowlisted fine-grained text items retain historical Origin, restored
 opaque payload values retain their payload Origin, and the restore Contribution names the
 new actor and target. A future replicated format verifies the causal compensation
 rules in `COLLABORATION_MODEL.md`, including preservation of work outside the
@@ -342,7 +342,7 @@ Use these values as initial characterization points:
 - 1,000,000 semantic operations in one archive;
 - 8 MiB for one decoded carrier checkpoint/effect chunk;
 - 48 MiB decoded binary chunk data across the archive; and
-- 1,000,000 Unicode code points in one `application/vnd.coedit.text` InlineContent.
+- 1,000,000 Unicode code points in one allowlisted fine-grained text InlineContent.
 
 These candidates do not define current acceptance, rejection, compatibility, or
 correctness-test thresholds. They are possible implementation resource guards,
@@ -353,7 +353,7 @@ Step 8 profiling must characterize raw bytes, decoded allocation, nesting,
 collection cardinality, graph-processing work, opaque payload bytes, and text decoding. The selection record must
 consider Versions, Contributions, Blocks, InlineContents, Media Types,
 per-Contribution and archive operations, carrier chunks, opaque-payload chunks, and
-`application/vnd.coedit.text` size. It must record which dimensions need explicit guards, why
+allowlisted fine-grained text size. It must record which dimensions need explicit guards, why
 the selected values are safe on target environments, and why an omitted guard
 is safely bounded elsewhere.
 
@@ -380,7 +380,7 @@ digest field omitted. Sort object keys recursively and retain array order.
 After the carrier gate, check in:
 
 - one minimal canonical version-1 fixture;
-- one realistic Media-Type-labelled-payload/history fixture containing `application/vnd.coedit.text` and representative opaque Media Types;
+- one realistic Media-Type-labelled-payload/history fixture containing allowlisted fine-grained text and representative opaque Media Types;
 - their exact canonical bytes and digests; and
 - malformed/mis-hashed variants.
 
@@ -404,7 +404,7 @@ At minimum, verify:
 - realistic imported, edited, formatted, copied, opaque-payload-replaced, and restored content round trips;
 - exact current and historical materialization;
 - Media Types survive exactly;
-- `application/vnd.coedit.text` characters, intrinsic formatting, and boundary policies survive;
+- allowlisted fine-grained text characters, intrinsic formatting, and boundary policies survive;
 - no hard-break item or implicit structural separator appears after round trip;
 - opaque payload bytes and payload-level Origin survive exactly;
 - universal whole-payload replacement and deterministic current-winner behavior survive without losing the History of concurrent replacements;

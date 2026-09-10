@@ -61,7 +61,7 @@ Effect and checkpoint chunks can be content-addressed. SHA-256 detects
 corruption and supports deduplication; it is not authentication.
 
 The logical records must be sufficient to recover the exact Media Type and
-payload state of every InlineContent, including `application/vnd.coedit.text`, opaque payload bytes,
+payload state of every InlineContent, including allowlisted fine-grained text, opaque payload bytes,
 payload-specific Origin, and whole-payload replacement History. The repository
 need not understand those semantics.
 
@@ -101,7 +101,7 @@ Every accepted engine command produces one immutable Contribution and Version.
 Its repository record is the crash journal; there is no second set of unsealed
 document mutations that later becomes History.
 
-The `application/vnd.coedit.text` editor can combine transient ProseMirror transactions before it
+The allowlisted fine-grained text editor can combine transient ProseMirror transactions before it
 submits a command, subject to controlled-transition and resource rules. Once
 submitted, the command is immutable. Several prompt editor Contributions can
 share a `semanticGroupId`, and History presentation can group them without
@@ -161,7 +161,7 @@ maximum is accepted in advance.
 Prepared maintenance/checkpoint chunks or records left unreachable by a
 superseded head are not current document state. A later bounded garbage collector
 may remove verified unreachable records after accounting for active heads,
-every product Version, required `application/vnd.coedit.text` Range lineage, concurrent tabs, and
+every product Version, required allowlisted fine-grained text Range lineage, concurrent tabs, and
 recovery checkpoints.
 
 ## 7. Checkpoint and compaction rules
@@ -173,7 +173,7 @@ Contribution or Version.
 Compaction can replace private replay paths only after a new checkpoint is fully
 written and validated. It cannot make any VersionToken, semantic Checkpoint,
 Origin, Media Type, opaque payload bytes, losing whole-replacement Version, required
-`application/vnd.coedit.text` Range lineage, durable Range behavior, or future comment-holder
+allowlisted fine-grained text Range lineage, durable Range behavior, or future comment-holder
 behavior unavailable. Every Version remains exactly materializable for the
 lifetime of the retained document.
 
@@ -255,7 +255,7 @@ limits.
 The repository contract suite must cover:
 
 - save, reopen, browser reload, and document isolation;
-- exact recovery of Media Types, `application/vnd.coedit.text`, opaque payload bytes, and payload Origins;
+- exact recovery of Media Types, allowlisted fine-grained text, opaque payload bytes, and payload Origins;
 - exact recovery of whole-payload replacement Contributions and deterministic current-winner state;
 - exact CommandId retry and conflicting reuse;
 - stale head and competing-tab compare-and-swap behavior;

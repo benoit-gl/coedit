@@ -22,9 +22,9 @@ The MVP must provide these capabilities:
 4. Edit headings, prose, and list items.
 5. Create, move, nest, reorder, and delete Blocks.
 6. Create, select, reorder, tag, and delete InlineContents.
-7. Use Internet Media Types for InlineContent payloads; support `application/vnd.coedit.text` with fine-grained text operations and generic opaque handling for other supported Media Types.
+7. Use Internet Media Types for InlineContent payloads; support allowlisted fine-grained text with fine-grained text operations and generic opaque handling for other supported Media Types.
 8. Replace the complete content of any InlineContent atomically with explicit Origin behavior and deterministic convergence semantics.
-9. Edit canonical `application/vnd.coedit.text`, intrinsic formatting, and protected fine-grained Origin through the engine command boundary.
+9. Edit canonical allowlisted fine-grained text, intrinsic formatting, and protected fine-grained Origin through the engine command boundary.
 10. Preserve opaque payload bytes with payload-level Origin; no fine-grained opaque payload editing is required.
 11. Use optional content-selection lenses, including a summary convention.
 12. List and summarize durable Contributions.
@@ -38,7 +38,7 @@ The MVP must provide these capabilities:
 20. Save a lossless opaque `.coedit` document.
 21. Reopen that `.coedit` document with equivalent current state and History.
 22. Persist documents incrementally in browser storage and survive a browser reload.
-23. Create one-span, multi-span, and Positional Ranges against current visible `application/vnd.coedit.text`; resolve spans or exact concatenated text against a descendant Version; rationalize them explicitly; serialize and parse them; and embed a Range value as optional internal-link refinement.
+23. Create one-span, multi-span, and Positional Ranges against current visible allowlisted fine-grained text; resolve spans or exact concatenated text against a descendant Version; rationalize them explicitly; serialize and parse them; and embed a Range value as optional internal-link refinement.
 24. Qualify Yjs and Automerge against the accepted payload, attributed-text, structure, Range-feasibility, convergence, editor, and growth suite before selecting the production carrier.
 25. Select and record the Range-tracking representation before freezing `.coedit` version 1 or the internal-link Range encoding.
 
@@ -108,13 +108,13 @@ Semantic editor groups and physical recovery checkpoints are not semantic Checkp
 
 ### 4.7 Media-Type-labelled collaborative InlineContent payloads
 
-Each InlineContent owns one collaborative payload labelled with an Internet Media Type. `application/vnd.coedit.text` selects the fine-grained collaborative-text capability set; every other supported Media Type initially selects the generic opaque capability set. Block and InlineContent boundaries imply no text character or separator.
+Each InlineContent owns one collaborative payload labelled with an Internet Media Type. allowlisted fine-grained text selects the fine-grained collaborative-text capability set; every other supported Media Type initially selects the generic opaque capability set. Block and InlineContent boundaries imply no text character or separator.
 
 Every InlineContent payload supports atomic whole-payload replacement with Origin information. The operation preserves the InlineContent identity while replacing the complete payload value, and the Media Type can stay the same or change. A causally later replacement supersedes replacements it observes. Concurrent replacements choose one deterministic current winner without using packet arrival order, local wall-clock time, or an unsynchronized local sequence. Losing replacements remain represented by immutable Contributions and exactly materializable Versions.
 
 The document model does not interpret opaque payload bytes or prescribe application meaning for text characters. Payload-specific contracts decide which fine-grained operations are available.
 
-`application/vnd.coedit.text` contains authored Unicode text, intrinsic formatting marks, and protected fine-grained Origin attribution. It has no document-level `HardBreak` item. Line-feed, carriage-return, and other characters are text data; application/editor/interchange layers decide how to create, normalize, restrict, or present them.
+allowlisted fine-grained text contains authored Unicode text, intrinsic formatting marks, and protected fine-grained Origin attribution. It has no document-level `HardBreak` item. Line-feed, carriage-return, and other characters are text data; application/editor/interchange layers decide how to create, normalize, restrict, or present them.
 
 A payload using the generic opaque capability set contains exact bytes and one payload-level Origin for the current value. It has no fine-grained MVP mutation beyond whole-payload replacement.
 
@@ -136,9 +136,9 @@ Selection, focus, disclosure, active lens, dialogs, editor composition state, re
 
 ### 4.10 Durable text Range service
 
-The headless engine creates and resolves document-relative durable Range values for `application/vnd.coedit.text`. Each Range records its document-scoped creation Version and its original Block and InlineContent locations. A Range can contain arbitrarily ordered, overlapping, duplicated, adjacent, sparse, or zero-length Span members, or it can refer to one logical text position. Range is not a canonical entity, has no independent identity, creates no document-wide holder registry, and is not a universal opaque payload locator.
+The headless engine creates and resolves document-relative durable Range values for allowlisted fine-grained text. Each Range records its document-scoped creation Version and its original Block and InlineContent locations. A Range can contain arbitrarily ordered, overlapping, duplicated, adjacent, sparse, or zero-length Span members, or it can refer to one logical text position. Range is not a canonical entity, has no independent identity, creates no document-wide holder registry, and is not a universal opaque payload locator.
 
-Direct creation fails atomically if any supplied target does not resolve as `application/vnd.coedit.text`. Resolution returns surviving spans in creation and lineage order, skips unresolved members, and can concatenate exact stored text without adding separators. Copy creates no Range lineage. Explicit rationalization can merge only sequential, exactly adjacent spans made adjacent by a lineage merge.
+Direct creation fails atomically if any supplied target does not resolve as allowlisted fine-grained text. Resolution returns surviving spans in creation and lineage order, skips unresolved members, and can concatenate exact stored text without adding separators. Copy creates no Range lineage. Explicit rationalization can merge only sequential, exactly adjacent spans made adjacent by a lineage merge.
 
 Range serialization is a non-mutating document-relative rebase. Parsing is best-effort and omits unresolved or ambiguous members without speculative rebinding. The application owns any enclosing document URI and selects the document supplied to the Range service. `RANGE_MODEL.md` owns the detailed behavior and the Step 6 decision boundary.
 
@@ -152,10 +152,10 @@ The prototype must preserve these domain rules:
 - Block and InlineContent identities are unique in live structure, while History and portable validation reject reuse across retained lifetimes;
 - each InlineContent belongs to exactly one Block;
 - each InlineContent owns one Media-Type-labelled collaborative payload;
-- `application/vnd.coedit.text` selects the fine-grained collaborative-text capability set and other supported Media Types initially select the generic opaque capability set;
+- allowlisted fine-grained text selects the fine-grained collaborative-text capability set and other supported Media Types initially select the generic opaque capability set;
 - every payload can be replaced atomically while preserving InlineContent identity and keeping or changing Media Type, with explicit Origin behavior;
 - concurrent whole-payload replacements converge deterministically;
-- `application/vnd.coedit.text` owns intrinsic formatting and protected fine-grained Origin;
+- allowlisted fine-grained text owns intrinsic formatting and protected fine-grained Origin;
 - generic opaque payload handling preserves exact bytes and payload-level Origin;
 - Block and InlineContent tags have independent ownership;
 - `childrenPresentation` belongs to the parent;
@@ -166,7 +166,7 @@ The prototype must preserve these domain rules:
 - current entities do not use lifecycle timestamps or tombstones as product fields;
 - earlier working and checkpointed states live in History;
 - historical materializations are detached and read-only;
-- a Range is a durable `application/vnd.coedit.text` value and engine service, not a canonical entity or registry; and
+- a Range is a durable allowlisted fine-grained text value and engine service, not a canonical entity or registry; and
 - moving Blocks does not reorder the semantic parts of an existing text Range.
 
 `PRODUCT_DOMAIN_MODEL.md` is authoritative when this summary is insufficient.
@@ -181,7 +181,7 @@ The browser can render and inspect the resulting Block tree through engine queri
 
 ### Scenario B — Edit through the engine
 
-A user can reorganize an imported document and edit rich `application/vnd.coedit.text`. Every durable structural, text, formatting, or whole-payload replacement uses an attributed command.
+A user can reorganize an imported document and edit rich allowlisted fine-grained text. Every durable structural, text, formatting, or whole-payload replacement uses an attributed command.
 
 New text receives the correct human/imported/unknown Origin. Clearing formatting preserves Origin. Same-document internal paste preserves source Origin while recording the paster; external paste does not import private Origin or falsely claim authorship.
 
@@ -211,7 +211,7 @@ For every successfully imported Markdown fixture, the implementation proves:
 Markdown A -> Coedit X -> Markdown B -> Coedit Y
 ```
 
-`X` and `Y` must be equivalent under the normalized structural and `application/vnd.coedit.text` semantic equivalence rules in `MARKDOWN_INTERCHANGE.md`.
+`X` and `Y` must be equivalent under the normalized structural and allowlisted fine-grained text semantic equivalence rules in `MARKDOWN_INTERCHANGE.md`.
 
 `Markdown A` and `Markdown B` do not need textual equality. Canonical export spelling is allowed.
 
@@ -219,7 +219,7 @@ If an arbitrary edited Coedit selection is outside the canonical Markdown-repres
 
 ### Scenario F — `.coedit` round trip
 
-A document with realistic `application/vnd.coedit.text`, opaque content, and History can serialize to an opaque `.coedit` artifact and reopen into a candidate engine.
+A document with realistic allowlisted fine-grained text, opaque content, and History can serialize to an opaque `.coedit` artifact and reopen into a candidate engine.
 
 The round trip preserves current and historical behavior, Media Types, opaque payload bytes, payload Origins, Checkpoint Contributions and Versions, every stable VersionToken, text Range creation Versions and lineage, exact text/formatting/Origin state, Contribution actor and derivation, and successful command-idempotency records.
 
@@ -237,13 +237,13 @@ Core commands, queries, History, Checkpoints, restore, Media-Type-labelled paylo
 
 ### Scenario I — Durable text Range round trip
 
-Create a Span Range directly from several arbitrarily ordered, overlapping, duplicated, adjacent, sparse, and zero-length `application/vnd.coedit.text` spans, and create a separate Positional Range. Reject the complete creation if any supplied target does not resolve in `application/vnd.coedit.text` at the current visible Version. Edit and restructure the selected document so the Span Range resolves across Blocks, changes current span count, and retains creation and lineage order despite current tree order. Verify greedy Span boundaries, zero-length Span behavior, Block-local preceding-stickiness, no continuation through copy, and exact-boundary split without a manufactured zero-length descendant.
+Create a Span Range directly from several arbitrarily ordered, overlapping, duplicated, adjacent, sparse, and zero-length allowlisted fine-grained text spans, and create a separate Positional Range. Reject the complete creation if any supplied target does not resolve in allowlisted fine-grained text at the current visible Version. Edit and restructure the selected document so the Span Range resolves across Blocks, changes current span count, and retains creation and lineage order despite current tree order. Verify greedy Span boundaries, zero-length Span behavior, Block-local preceding-stickiness, no continuation through copy, and exact-boundary split without a manufactured zero-length descendant.
 
 Resolve exact text by concatenating surviving spans without inferred separators or deduplication. Stored newline characters remain part of the result; structural boundaries add nothing. Rationalize only merge-caused exact adjacency after an explicit request. Serialize each Range as a document-relative value, parse it best-effort with unresolved or ambiguous members omitted, and resolve the rebased result. Embed a Range value as same-document internal-link refinement, preserve the primary Block fallback, and round trip it and its creation Version through `.coedit`. The application composes external deep links from a document URI and Range fragment. Ordinary edits and Block moves must not scan or rewrite every retained Range value.
 
 ### Scenario J — Concurrent whole-payload replacement
 
-From one common Version, create concurrent whole-payload replacements of the same `application/vnd.coedit.text` InlineContent and the same opaque InlineContent. After replicas receive the same valid Contributions, both choose the same deterministic current replacement without using wall-clock or delivery order. Then apply a causally later replacement and verify that it supersedes the replacements it observed.
+From one common Version, create concurrent whole-payload replacements of the same allowlisted fine-grained text InlineContent and the same opaque InlineContent. After replicas receive the same valid Contributions, both choose the same deterministic current replacement without using wall-clock or delivery order. Then apply a causally later replacement and verify that it supersedes the replacements it observed.
 
 Every replacement Contribution and its resulting Version remains materializable, including losing concurrent replacements.
 

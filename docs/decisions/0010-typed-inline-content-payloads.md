@@ -36,7 +36,7 @@ text and hard breaks as the universal shape of all InlineContent content.
 
 The clean-slate documentation initially treated every InlineContent as rich text.
 PR 19 first generalized this into Media-Type-labelled payloads but provisionally
-introduced `application/vnd.coedit.text` as a Coedit-specific fine-grained text
+introduced allowlisted fine-grained text as a Coedit-specific fine-grained text
 format. Design review showed that this conflated media-format identity with the
 editing capability that Coedit currently implements.
 

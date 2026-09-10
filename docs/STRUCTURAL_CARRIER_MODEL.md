@@ -33,7 +33,7 @@ the selected carrier.
 Yjs and Automerge both provide structured collaborative data. The Block tree does
 not need to be serialized as JSON, YAML, indentation text, or another textual
 format before it enters the carrier. Likewise, structural placement does not
-interpret whether one InlineContent contains `application/vnd.coedit.text` or opaque payload bytes.
+interpret whether one InlineContent contains allowlisted fine-grained text or opaque payload bytes.
 
 The main structural risk is therefore not storage. It is convergence under
 concurrent structural work. A generic CRDT map or sequence does not know Coedit's
@@ -74,7 +74,7 @@ Block tags, `childrenPresentation`, InlineContents, each InlineContent's payload
 Media Type and canonical Media-Type-specific state, and adapter-private metadata. Exact
 nesting is an implementation choice. The `BlockId` namespace does not create
 another product entity. Opaque payload bytes remain opaque to this structural contract,
-and `application/vnd.coedit.text` internals remain owned by their focused content contract.
+and allowlisted fine-grained text internals remain owned by their focused content contract.
 
 `activity` is the logical carrier-private semantic-update marker. It records that
 the Block received a semantic update. It does not describe the payload and is not
@@ -209,7 +209,7 @@ as the liveness effect only when it participates directly in the same existence
 conflict as deletion. Otherwise, the adapter must emit a separate carrier-private
 liveness effect in the same logical change.
 
-A semantic payload mutation includes a fine-grained `application/vnd.coedit.text` edit and a
+A semantic payload mutation includes a fine-grained allowlisted fine-grained text edit and a
 whole-payload replacement of either capability class. It must update the
 logical Block activity marker and emit the required liveness effect in the same
 logical carrier transaction or change. A nested activity mutation is
@@ -322,7 +322,7 @@ change containing several placement assignments, but the published operation is
 all-or-none at the engine boundary.
 
 The same atomic-publication rule applies to one Contribution that spans Block
-structure and several InlineContents, including mixed `application/vnd.coedit.text` and representative opaque Media Types
+structure and several InlineContents, including mixed allowlisted fine-grained text and representative opaque Media Types
 payloads. One logical collaborative document must therefore contain the Block
 registry and the Block-local payload namespaces that the Contribution can affect.
 
