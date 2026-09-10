@@ -55,11 +55,11 @@ The Step 0 gate requires:
 - deferred decisions to be explicit; and
 - no implementation-blocking decision to remain open.
 
-The documented baseline closes the former `TextAnchor` blocker by assigning payload-neutral InlineContent ownership, allowlisted fine-grained text intrinsic fine-grained Origin, opaque-payload Origin, durable text Range values, Range-holder lifecycles, and transient selections to distinct mechanisms. A mechanical scan must find no normative external formatting/provenance Range, universal hard-break content-item requirement, implicit Block/InlineContent text separator, or single-InlineContent durable-target assumption outside an explicitly superseded historical statement.
+The documented baseline closes the former `TextAnchor` blocker by assigning payload-neutral InlineContent ownership, protected fine-grained text Origin, opaque-payload Origin, durable text Range values, Range-holder lifecycles, application-owned formatting/link interpretation, and transient selections to distinct mechanisms. A mechanical scan must find no normative external formatting/provenance Range, engine-owned formatting/link state, universal hard-break content-item requirement, implicit Block/InlineContent text separator, or single-InlineContent durable-target assumption outside an explicitly superseded historical statement.
 
-The Media-Type-labelled-payload decision and Range authority revalidate the Step 0 authority baseline without reopening completed structural semantics in Steps 1 and 2. Gate B selects the collaborative carrier after Step 3. Gate C selects the text Range representation after Step 6 and before `.coedit` version 1 or internal-link Range encoding is frozen.
+The Media-Type-labelled-payload decision and Range authority revalidate the Step 0 authority baseline without reopening completed structural semantics in Steps 1 and 2. Gate B selects the collaborative carrier and closes the observable concurrent-replacement winner rule plus its private implementation. Gate C selects the text Range representation after Step 6 and before `.coedit` version 1 freezes a portable Range encoding.
 
-The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `INLINE_CONTENT_PAYLOADS.md`, `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, the deterministic whole-payload replacement tie-break used by each qualified adapter, the actual qualification hardware/software environment, measurements, scaling behavior, and the selection rationale. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
+The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `INLINE_CONTENT_PAYLOADS.md`, `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, the observable deterministic whole-payload replacement winner rule and the carrier-private mechanism that implements it, the actual qualification hardware/software environment, measurements, scaling behavior, and the selection rationale. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
 
 ### 4.1 Step 1 tooling and platform evidence
 
@@ -145,46 +145,56 @@ then retain it as a production regression suite for the winner.
 Verify:
 
 - each materialized InlineContent carries a syntactically valid Media Type; allowlisted fine-grained text selects the fine-grained text capability set and valid unfamiliar types select generic opaque handling;
-- malformed syntax fails atomically; case variants and the Gate B parameter rules give consistent capability matching without a registry lookup;
+- malformed generic Media Type syntax, a valid unfamiliar Media Type, and a syntactically valid allowlisted type with invalid or incomplete representation prerequisites are distinct cases;
+- `text/markdown` without its required `charset` is rejected at a boundary that must validate or decode its media representation; it is not reclassified as opaque and is not reported as malformed generic Media Type syntax;
+- case variants and parameters give consistent type/subtype capability matching without a registry lookup while the complete supplied Media Type survives unchanged;
 - each materialized InlineContent has one Media Type and ordinary replacement preserves the InlineContent identity;
 - payload-specific operations reject an incompatible Media Type explicitly rather than coercing content;
 - no separate Media Type conversion operation is required; type change occurs only as part of atomic whole-payload replacement;
 - whole-payload replacement is available for every supported Media Type and can keep or change the Media Type;
 - a replacement publishes its complete Media Type, Media-Type-specific content, and required Origin effect atomically;
-- malformed replacement or a selected resource-guard failure leaves the base unchanged;
+- malformed replacement, invalid fine-grained representation metadata, decode failure, or a selected resource-guard failure leaves the base unchanged;
 - detached opaque payload bytes and caller-owned replacement buffers cannot mutate engine state after submission;
 - opaque payload bytes round trip exactly and the current opaque payload value has one payload-level Origin;
 - moving an opaque InlineContent preserves bytes and Origin;
 - same-document opaque payload copy and restore preserve source Origin according to the payload contract while recording actor/derivation separately;
 - a causally later whole-payload replacement supersedes replacements that it observes;
-- concurrent whole-payload replacements select the same deterministic current winner on every replica with the same valid Contributions;
+- concurrent whole-payload replacements select the same deterministic current winner on every replica with the same valid causal input;
 - the winner is unchanged by duplicate, delayed, reordered, partitioned, or reconnected delivery;
-- wall-clock values and packet-arrival order do not affect the winner; and
+- wall-clock values, packet-arrival order, and carrier-specific incidental ordering do not define the observable winner;
+- Gate B records one observable concurrent-replacement winner rule and verifies that each qualified adapter implements it; and
 - Step 3 retains both concurrent replacement inputs/effects as carrier-level evidence and can reconstruct each replacement value independently; section 7 verifies permanent losing-Contribution and Version materialization after Step 5 implements first-class History.
 
 Do not require the carrier to merge opaque payload bytes or the internal structure of an opaque payload.
 
 Gate B must select and record mixed whole-payload replacement/text-edit behavior
 under `INLINE_CONTENT_PAYLOADS.md` section 10.1. Compare same-type and cross-type
-replacement against insertion, deletion, and including edits to a
-replacement that loses. Test reordered and duplicate delivery, reload, atomic
-Origin effects, and causal recoverability. Candidate behavior is not an accepted
-policy until the gate records the decision. Step 4 retains the selected cases as
-regressions; Step 5 supplies the permanent History proof.
+replacement against insertion, deletion, and edits to a replacement that loses.
+Test reordered and duplicate delivery, reload, atomic Origin effects, and causal
+recoverability. Candidate behavior is not an accepted policy until the gate
+records the decision. Step 4 retains the selected cases as regressions; Step 5
+supplies the permanent History proof.
 
-### 6.2 allowlisted fine-grained text carrier
+### 6.2 Allowlisted fine-grained text carrier
 
 Verify:
 
-- empty and realistic Unicode text, including representative line-feed and carriage-return characters, overlapping marks, opaque link metadata, and typed internal Block links;
+- empty and realistic native Unicode strings, including representative line-feed and carriage-return characters;
+- `text/markdown` and `text/plain` use the same carrier-neutral fine-grained text operation surface while preserving their distinct full Media Type values;
+- insertion, deletion, and replacement at the start, middle, end, and exact operation boundaries;
+- concurrent insertion, deletion, and replacement under equivalent transaction shapes and delivery faults;
 - the canonical projection contains no separate hard-break content item or sentinel;
 - line-feed, carriage-return, or another character is not rejected merely because one renderer can present it as a break;
-- bold, italic, underline, strikethrough, inline-code, and link toggle/clear;
-- `none`, `start`, `end`, and `both` boundary expansion at the exact start and end;
-- replacement, empty selection, mark exclusion, split, and merge;
-- editor-to-carrier-to-editor projection without a second formatting authority;
-- text edit/change never alters Origin; and
+- Markdown delimiters, link syntax, and other application syntax remain ordinary source-string characters to the document engine;
+- the engine does not create, preserve, or require a parallel formatting-mark or link-object model for allowlisted text;
+- editor-to-carrier-to-editor projection preserves the canonical source string and Origin without making editor formatting state a second document authority;
+- fine-grained text operations never alter Origin except through the explicit trusted insertion/replacement attribution rules; and
 - malformed state or input that exceeds a selected carrier resource guard fails without changing the base.
+
+Formatting commands, Markdown rendering, and link activation can be tested at the
+application/editor adapter boundary where those features exist. Such tests must
+assert the resulting source-string or structural operations, not a hidden
+engine-owned formatting representation.
 
 ### 6.3 Protected allowlisted fine-grained text Origin carrier
 
@@ -196,8 +206,8 @@ Verify:
 - newline characters receive Origin exactly like other inserted text;
 - separate Contributions by the same author receive distinct Origin records
   whose `agentId` can still support an author-level projection;
-- ordinary client and formatting operations cannot assign, inherit, spoof,
-  clear, or rewrite Origin;
+- ordinary client and text-edit operations cannot assign, inherit, spoof, clear,
+  or rewrite Origin;
 - imported, unknown, automation, and AI fixtures can be represented even when
   their product UI is deferred;
 - derived display runs can coalesce equal Origin without becoming durable range
@@ -210,7 +220,11 @@ Use a real browser where required to verify typing, backspace/delete, selection
 replacement, structural split/merge, application line-break intent, IME, cut,
 paste, undo, redo, and editor mount/unmount.
 
-Verify that the application/editor adapter translates paragraph or line-break intent into explicit text and/or structural operations. No editor action relies on a document-level hard-break item or on a Block/InlineContent boundary implicitly inserting a character.
+Verify that the application/editor adapter translates paragraph, formatting,
+link, or line-break intent into explicit source-string and/or structural
+operations. No editor action relies on a document-level hard-break item, an
+engine-owned formatting/link model, or on a Block/InlineContent boundary
+implicitly inserting a character.
 
 Verify same-document internal text paste and entity copy create new carrier identities
 but preserve Origin and record the acting Contributor plus derivation. Verify
@@ -239,7 +253,7 @@ visible. Include representative opaque payload values in the qualification profi
 
 Before comparing carrier candidates, record one run-specific fixture profile
 for both candidates. It must state whether content and History loads are
-combined or separate, their Media-Type/formatting/Origin/InlineContent
+combined or separate, their Media-Type/source-text/Origin/InlineContent
 distribution, the operations performed, warm-up and sample counts, the reported
 tail percentile, and the exact measured interval. Those details make one
 comparison reproducible without freezing it as a permanent cross-version
@@ -247,9 +261,9 @@ benchmark.
 
 Verify:
 
-- pairwise and three-way fine-grained text insert/delete/format at identical and adjacent boundaries under duplicate, delayed, reordered, partitioned, and reconnected updates;
+- pairwise and three-way fine-grained text insert/delete/replace at identical and adjacent boundaries under duplicate, delayed, reordered, partitioned, and reconnected updates;
 - pairwise concurrent whole-payload replacement under the same delivery faults, including same-Media-Type and different-Media-Type concurrent replacements;
-- equal logical payload state, formatting/Origin projection, opaque payload bytes/Origin, deterministic replacement winner, and durable text Range-position behavior rather than merely equal rendered text;
+- equal logical Media Type and payload state, fine-grained text/Origin projection, opaque payload bytes/Origin, deterministic replacement winner, and durable text Range-position behavior rather than merely equal rendered output;
 - one atomic command spanning Block structure, an allowlisted fine-grained text InlineContent, an opaque InlineContent, Origins, and Contribution metadata publishes all or none;
 - a command that explicitly targets only one InlineContent cannot mutate unrelated InlineContents or Block structure;
 - direct one-span and multi-span Range creation is feasible only against allowlisted fine-grained text through the same carrier-neutral abstraction for each candidate;
@@ -268,7 +282,7 @@ Use paired, same-machine measurements for Yjs and Automerge and record OS, Node/
 
 Separate visible editor feedback from canonical local-model publication. Visible typing feedback is the critical hot path and must not wait for persistence, History materialization, network/replica delivery, or another slow subsystem. Use 50 ms from a normal local edit to canonical local collaborative state and projection back as an experimental calibration point. Missing that point records evidence; it does not alone fail correctness or select a carrier. Step 3 may promote, replace, or retire it after the run-specific method and target environment are recorded. It is not a throughput rate, product guarantee, or universal hardware requirement.
 
-Exercise ordinary typing, delete/backspace, insertion at start/middle/end, selection replacement, application line-feed insertion where supported, mark boundaries, and Unicode. Use smaller growth points plus the representative text workload defined in section 6.5 and multiple InlineContents. Detect accidental whole-document scans or reconstruction on a normal keystroke; whole-document work on routine typing is disqualifying even when one test runner is fast enough to hide the cost.
+Exercise ordinary typing, delete/backspace, insertion at start/middle/end, selection replacement, application line-feed insertion where supported, Markdown/source-syntax editing, and Unicode. Use smaller growth points plus the representative text workload defined in section 6.5 and multiple InlineContents. Detect accidental whole-document scans or reconstruction on a normal keystroke; whole-document work on routine typing is disqualifying even when one test runner is fast enough to hide the cost.
 
 Measure whole-payload replacement separately for representative text and opaque payload values. Measure Block create, move, subtree move, delete, and structure-plus-multiple-InlineContent atomic changes separately. Characterize open/reload, carrier serialization, checkpoint-state capture, historical materialization, export, convergence workloads, serialized-state growth, and supported garbage collection/compaction. Repeat critical measurements after reload/compaction. Deliberately slow persistence and replica delivery in browser tests; local typing must remain responsive.
 
@@ -342,7 +356,7 @@ Verify at least:
 - the accepted behavior for split exactly at a Positional Range;
 - split, merge, deletion, move, and owning-allowlisted fine-grained text whole-payload replacement;
 - each split and merge applies the accepted continuing-identity rule for Blocks and InlineContents;
-- references to identities consumed by a merge exhibit the accepted follow-lineage, historical-only, or unresolved behavior, including an internal link's primary Block fallback;
+- references to identities consumed by a merge exhibit the accepted follow-lineage, historical-only, or unresolved behavior;
 - operations without a naturally designated semantic continuation select the same identity deterministically on every replica without clocks or arrival order;
 - complete one-to-many split and many-to-one merge lineage remains resolvable independently of whichever entity identity continues;
 - no Range continuation through copy, clone, import, paste, or shared Origin and derivation;
@@ -359,7 +373,7 @@ Verify at least:
 - rejection when a resolution target predates or does not descend from the Range's creation Version;
 - document-relative Range-fragment parse/serialize round trip;
 - application-owned external document URI parsing and document selection;
-- reinjection as internal-link refinement with primary Block fallback;
+- reinjection into representative application-owned holders without adding holder-specific fallback or link semantics to the Range service;
 - reload and supported compaction; and
 - edit and Block-move cost independent of the total retained Range count.
 
@@ -381,7 +395,7 @@ Verify:
 - the text editor binds only allowlisted fine-grained text and an incompatible payload is rejected or not offered;
 - IME composition is not split mid-composition;
 - paste, cut, replacement, undo, and redo are atomic actions;
-- paragraph and line-break intent is translated explicitly rather than relying on a canonical hard-break content item;
+- paragraph, formatting, link, and line-break intent are translated explicitly to application/source-string or structural operations rather than relying on canonical engine formatting/link state or a hard-break content item;
 - unrelated dirty work submits before an atomic action;
 - insertion/deletion mode change, configured idle, real focus/owner departure, and controlled transitions seal the current semantic group;
 - clean navigation creates no command;
@@ -409,7 +423,7 @@ Verify `X` and `Y` with the documented Markdown equivalence relation.
 
 The suite must prove the adapter-specific distinction between Markdown syntax and generic text semantics. In particular, a CommonMark hard break maps to the canonical text character(s) selected by the Markdown contract rather than to a document-level hard-break item, while a soft break follows the separately documented normalization. Re-import must preserve the normalized semantic result.
 
-The suite must also verify stable diagnostics for normalization, unsupported-source literal preservation, unsupported nodes, and any selected opaque/non-text export case. Once Step 7 selects importer guards, verify the top-level distinction among malformed source and capacity failure, exercise each selected guard, and prove that failure publishes no candidate. Experimental guard candidates produce characterization evidence only. Link destinations are preserved as opaque metadata and are not classified as safe or unsafe by the importer.
+The suite must also verify stable diagnostics for normalization, unsupported-source literal preservation, unsupported nodes, and any selected opaque/non-text export case. Once Step 7 selects importer guards, verify the top-level distinction among malformed source and capacity failure, exercise each selected guard, and prove that failure publishes no candidate. Experimental guard candidates produce characterization evidence only. Markdown link destinations remain source text and are interpreted or activated only by the application.
 
 Do not compare source Markdown text for equality. Canonical export spelling is allowed.
 
@@ -420,8 +434,8 @@ Treat `.coedit` input as hostile.
 Verify:
 
 - realistic current and historical state round trips;
-- Media Type is preserved for every InlineContent;
-- allowlisted fine-grained text text characters, intrinsic fine-grained Origin, and embedded text Ranges round trip exactly;
+- Media Type is preserved exactly for every InlineContent;
+- allowlisted fine-grained source-text characters and fine-grained Origin round trip exactly;
 - opaque payload bytes and payload-level Origin round trip exactly;
 - whole-payload replacement History, including deterministic concurrent-winner evidence where represented, survives round trip without rewriting Contributions;
 - Contributors, Origins, Contributions, derivation, semantic Checkpoints, Version identity, and command idempotency survive;
@@ -429,15 +443,17 @@ Verify:
 - unsupported versions fail;
 - unknown properties fail for version 1;
 - valid unfamiliar Media Types round trip through generic opaque handling with their exact labels, bytes, and Origins, without a registry lookup or renderer;
-- malformed Media Type syntax, unsupported carrier/schema versions, malformed base64/binary values, missing/mis-hashed chunks, and unreachable references fail with the appropriate invalid-input or incompatibility result;
+- malformed generic Media Type syntax and valid allowlisted Media Types with invalid or incomplete representation prerequisites fail as distinct validation classes;
+- `text/markdown` without required `charset` is rejected when the portable decoder must validate or decode that representation and is never silently reclassified as opaque;
+- unsupported carrier/schema versions, malformed base64/binary values, missing/mis-hashed chunks, and unreachable references fail with the appropriate invalid-input or incompatibility result;
 - malformed trees and ownership fail;
 - broken graph/frontier links and Contributor/Origin references fail;
 - identity reuse across retained lifetimes fails;
 - every portable resource guard selected and promoted under `PORTABLE_DOCUMENT_FORMAT.md` fails safely when exceeded;
 - a failed open never replaces the active engine;
 - stale serialization returns no artifact;
-- intrinsic boundary policies, Origin, copy/restore lineage, actor distinction, and embedded Range values round trip exactly;
-- every embedded text Range retains its creation Version and required lineage and resolves to the same surviving spans and exact concatenated text after `.coedit` Save/Open;
+- source text, Origin, copy/restore lineage, actor distinction, and required Range-tracking lineage round trip exactly;
+- a serialized Range value retained by the test outside the `.coedit` artifact resolves to the same surviving spans and exact concatenated text before and after Save/Open; the format need not invent an engine-owned holder record for that Range;
 - reconstruction from physical checkpoint plus effects equals direct materialization; and
 - successful format-version-1 encode is always accepted by the format-version-1 decoder.
 
@@ -475,12 +491,12 @@ Keep the end-to-end suite small and high value. It must prove at least:
 1. obtain a free-form human Contributor display name and create a blank document;
 2. import a realistic Markdown fixture;
 3. inspect and edit structure;
-4. edit attributed formatted allowlisted fine-grained text through semantic grouping;
+4. edit attributed allowlisted fine-grained source text through semantic grouping, including application formatting/link actions that compile to source-string or structural operations;
 5. create an opaque InlineContent and replace its bytes with explicit Origin;
 6. verify internal and external text paste lineage;
 7. create a semantic Checkpoint;
 8. inspect and restore History while preserving text and opaque-payload Origin and attributing the restore actor;
-9. create, resolve as spans and exact text, rationalize, serialize, parse, and reinject representative multi-span and Positional text Ranges;
+9. create, resolve as spans and exact text, rationalize, serialize, parse, and reinject representative multi-span and Positional text Ranges into application-owned holders;
 10. export Markdown and re-import it to an equivalent Coedit text document;
 11. save `.coedit` and reopen it with text and opaque payloads intact;
 12. persist and reload through the incremental IndexedDB repository; and
