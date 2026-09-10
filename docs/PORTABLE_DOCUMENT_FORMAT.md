@@ -1,7 +1,7 @@
 # `.coedit` portable document format
 
-**Status:** Accepted logical recovery contract; carrier-specific fields,
-embedded Range fields, container details, and implementation guards remain
+**Status:** Accepted logical recovery contract; carrier-specific fields, Range
+lineage/encoding details, container details, and implementation guards remain
 pending or experimental until Gates B and C pass and Step 8 freezes version 1.
 
 ## 1. Purpose and authority
@@ -14,7 +14,7 @@ The user-facing extension is `.coedit`. A portable artifact retains current Medi
 [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) controls InlineContent Media Types, universal whole-payload replacement, and convergence semantics.
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
 controls allowlisted fine-grained text and fine-grained Origin behavior. [`RANGE_MODEL.md`](RANGE_MODEL.md)
-controls embedded durable allowlisted fine-grained text Range values. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
+controls durable allowlisted fine-grained text Range values and required lineage. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
 controls the public serialization boundary. This document controls portable
 logical records, validation, compatibility, and the candidate version-1
 container.
@@ -54,7 +54,7 @@ Step 8 encoder until Gate B has recorded:
 - the selected carrier and exact supported version range;
 - its canonical checkpoint and incremental-effect encodings;
 - the initial Media-Type encoding for allowlisted fine-grained text and representative opaque Media Types;
-- whole-payload replacement encoding and deterministic concurrent-winner behavior;
+- whole-payload replacement encoding and the observable deterministic concurrent-winner rule plus its private implementation;
 - logical-state and historical-materialization verification;
 - native allowlisted fine-grained text and Origin round-trip behavior;
 - exact opaque payload byte and payload-Origin round-trip behavior;
@@ -63,10 +63,10 @@ Step 8 encoder until Gate B has recorded:
 - the measured JSON/base64 size and load cost.
 
 Gate C must also record the carrier-neutral text Range API result wrappers, the
-selected Range-tracking representation, the document-relative Range-fragment
-encoding, and the exact embedded internal-link Range encoding. Version 1 can
-then preserve those values without making the portable format a second Range
-authority.
+selected Range-tracking representation, and the document-relative Range-fragment
+encoding. Version 1 must preserve the document state and lineage required to
+resolve a Range after reopen without creating a document-owned Range registry or
+an engine-owned link-holder representation.
 
 These are implementation qualification gates. They do not reopen the product
 semantics defined by current authorities.
@@ -124,9 +124,9 @@ Clients never decode that mapping.
 not create a Contribution or Version.
 
 The package contains sufficient physical recovery checkpoints and immutable
-effects to reconstruct every Version and the text lineage needed by embedded
-Ranges. Current state is the materialization named by `currentVersionToken`; it
-is not a second independent document object.
+effects to reconstruct every Version and the text lineage needed to resolve
+Ranges created against retained Versions. Current state is the materialization
+named by `currentVersionToken`; it is not a second independent document object.
 
 A losing concurrent whole-payload replacement remains represented by its
 Contribution and materializable Version even when another concurrent replacement
@@ -160,20 +160,22 @@ default to one independent carrier document or opaque payload per InlineContent.
 Carrier state preserves exactly:
 
 - each InlineContent Media Type;
-- allowlisted fine-grained text authored Unicode text, including newline/control characters that are valid text data;
-- allowlisted fine-grained text intrinsic formatting marks and their boundary policies;
-- protected fine-grained allowlisted fine-grained text Origin references;
+- allowlisted fine-grained text authored Unicode source text, including newline/control characters that are valid text data;
+- protected fine-grained text Origin references;
 - opaque payload bytes and their payload-level Origin reference;
 - stable Block and InlineContent identities and ordering;
 - the private identities and retained evidence required for accepted editing,
   whole-payload replacement, restore, and text Range behavior;
-- embedded internal-link Range values in the Gate C carrier-neutral encoding; and
+- the History and lineage required to resolve portable Range values supplied by an application holder; and
 - atomic effects spanning structure and several InlineContents of either capability class.
 
-There is no canonical `HardBreak` item in the portable logical state. A line-feed
-or carriage-return that exists in allowlisted fine-grained text is serialized as text according
-to the final text codec. Block and InlineContent boundaries do not synthesize
-separator characters during encoding or decoding.
+There is no canonical `HardBreak` item, formatting-mark layer, or engine-owned
+link object in the portable logical state. A line-feed or carriage-return that
+exists in allowlisted fine-grained text is serialized as text according to the
+final text codec. Markdown formatting/link syntax remains in the source string
+unless an application has translated it into structural operations. Block and
+InlineContent boundaries do not synthesize separator characters during encoding
+or decoding.
 
 An opaque payload is opaque to the document model. Its bytes can be stored in a carrier
 chunk or another version-1 binary chunk selected by Gate B/Step 8. That physical
@@ -185,10 +187,11 @@ stored as an index or diagnostic aid, it is derived and must be verified against
 the carrier state; it is never a competing authority.
 
 The format does not contain external formatting or provenance Ranges. External
-comment records are not added to the strict MVP package. A Range value embedded
-in an intrinsic allowlisted fine-grained text internal-link mark is canonical text payload data
-and must round trip. Generic opaque sub-content has no Range encoding in version 1 under
-the current contract.
+comment, navigation, and application-link records are not added to the strict MVP
+package. An application can retain a serialized Range value outside the package
+and resolve it after reopen because `.coedit` preserves the referenced Versions
+and required lineage. Generic opaque sub-content has no Range encoding under the
+current contract.
 
 ## 6. Origin, actor, and derivation
 
@@ -196,12 +199,12 @@ The package preserves immutable Origin records and every reference from payload
 material to those records. Each record names its claimed agent kind/Contributor
 and any source or upstream Origin reference required by the current document.
 
-allowlisted fine-grained text can reference Origins at fine granularity. A current opaque payload value has
+Allowlisted fine-grained text can reference Origins at fine granularity. A current opaque payload value has
 one payload-level Origin. A future Media Type can add finer Origin semantics
 only through its own accepted contract and format evolution.
 
-The Contribution that introduces, pastes, copies, restores, imports, formats,
-or replaces material separately names the acting Contributor. In particular:
+The Contribution that introduces, edits, pastes, copies, restores, imports, or
+replaces material separately names the acting Contributor. In particular:
 
 - internal copy and restore retain source Origin according to the payload contract while recording the new actor;
 - restored allowlisted fine-grained text uses fresh carrier identities without a new `restored` Origin category;
@@ -279,11 +282,22 @@ Treat portable input as hostile. Validate a detached copy in this order:
 9. carrier checkpoint/effect schema, dependency closure, deterministic whole-replacement register state, and implementation resource guards;
 10. reconstructed Block topology, ownership, ordering, tags, Media-Type values,
     and structural invariants plus implementation capacity;
-11. reconstructed allowlisted fine-grained text Unicode text, marks, boundary policies,
-    fine-grained Origin coverage, opaque link-metadata shape/resource bounds, and typed internal-link shape;
-12. reconstructed opaque payload bytes and exactly one valid payload-level Origin for each current opaque payload value;
-13. payload-specific invariants, including rejection of incompatible fine-grained operations and no implicit Media Type change outside explicit whole-payload replacement; and
-14. History replay/materialization invariants.
+11. generic Media Type syntax and capability classification, followed by
+    allowlisted representation prerequisites where Coedit owns the processor;
+12. reconstructed allowlisted fine-grained Unicode source text and fine-grained
+    Origin coverage, including required raw-decoding metadata such as the
+    `text/markdown` `charset` parameter;
+13. reconstructed opaque payload bytes and exactly one valid payload-level Origin for each current opaque payload value;
+14. payload-specific invariants, including rejection of incompatible fine-grained operations and no implicit Media Type change outside explicit whole-payload replacement; and
+15. History replay/materialization and required text Range-lineage invariants.
+
+A syntactically valid unfamiliar Media Type is accepted through generic opaque
+handling without format-specific validation. A syntactically valid allowlisted
+Media Type can still fail its Coedit-owned representation rules. For example,
+`text/markdown` without its required `charset` is not reclassified as opaque and
+is not reported as malformed generic Media Type syntax; reject it as invalid or
+incomplete representation metadata at a boundary that must validate or decode
+that media representation.
 
 Validate a complete candidate engine before replacing the active engine or
 committing it to the browser repository.
@@ -308,7 +322,7 @@ For each Contribution:
 - verify the resulting Version/frontier mapping and affected targets;
 - verify acting Contributor, Origin, source, and derivation references;
 - verify whole-payload replacement preserves InlineContent identity while allowing Media Type to change and records its exact value/Origin effect;
-- verify deterministic current-state selection for concurrent whole-payload replacements from the reconstructed causal state;
+- verify deterministic current-state selection for concurrent whole-payload replacements from the reconstructed causal state using the Gate B observable winner rule;
 - verify semantic Checkpoints are content-identical to their declared base; and
 - verify successful CommandId records reproduce the original receipt and reject conflicting reuse.
 
@@ -401,22 +415,23 @@ serializes the complete artifact.
 
 At minimum, verify:
 
-- realistic imported, edited, formatted, copied, opaque-payload-replaced, and restored content round trips;
+- realistic imported, edited, copied, opaque-payload-replaced, and restored content round trips;
 - exact current and historical materialization;
 - Media Types survive exactly;
-- allowlisted fine-grained text characters, intrinsic and boundary policies survive;
-- no hard-break item or implicit structural separator appears after round trip;
+- allowlisted fine-grained source-text characters and fine-grained Origin survive;
+- no formatting-mark layer, engine-owned link object, hard-break item, or implicit structural separator appears after round trip;
 - opaque payload bytes and payload-level Origin survive exactly;
 - universal whole-payload replacement and deterministic current-winner behavior survive without losing the History of concurrent replacements;
 - Origin, actor, derivation, and text Range-tracking lineage remain distinct and exact;
 - semantic Checkpoints and physical recovery checkpoints remain distinct;
 - every VersionToken remains stable and exactly materializable after Save/Open;
 - successful CommandId retries remain idempotent after Save/Open;
-- every embedded text Range retains its creation Version and resolves to the same surviving spans and exact concatenated text after Save/Open;
+- a serialized Range value retained by the test outside the package resolves to the same surviving spans and exact concatenated text after Save/Open;
 - missing, duplicate, unreachable, mis-hashed, or conflicting chunks fail;
 - malformed graph/frontiers, Contributor/Origin references, carrier state,
-  topology, ownership, Media Types, marks, opaque payload bytes, opaque link metadata,
-  typed internal links, and embedded serialized Range values fail;
+  topology, ownership, generic Media Type syntax, allowlisted representation
+  metadata, and opaque payload bytes fail in their appropriate validation class;
+- `text/markdown` without required `charset` fails when representation validation is required, while valid unfamiliar Media Types remain opaque;
 - malformed, truncated, duplicate-key, unknown-property, or unsupported
   container/carrier versions fail;
 - every resource guard selected and promoted under section 11 is exercised safely;
@@ -441,15 +456,16 @@ bytes merely to avoid that migration boundary.
 
 Valid unfamiliar Media Types use the existing opaque payload representation and
 payload-level Origin. Their labels and bytes do not require a format revision
-merely because Coedit has no decoder or renderer for them. Malformed Media Type
-syntax still fails; `INLINE_CONTENT_PAYLOADS.md` section 3.1 defines that boundary.
+merely because Coedit has no decoder or renderer for them. Malformed generic
+Media Type syntax and invalid allowlisted representation metadata remain distinct
+failures; `INLINE_CONTENT_PAYLOADS.md` section 3.1 defines that boundary.
 
 New fine-grained payload state or operations, future comments, conversations,
-authenticated claims, signatures, attachment records, or replicated protocol
-records require an explicit compatibility decision. An additional fine-grained
-Media-Type-specific contract must define its portable state and Origin behavior.
-Minimum Origin metadata for text and generic opaque payloads is already part of
-the version-1 logical requirement.
+authenticated claims, signatures, attachment records, in-package Range holders,
+or replicated protocol records require an explicit compatibility decision. An
+additional fine-grained Media-Type-specific contract must define its portable
+state and Origin behavior. Minimum Origin metadata for text and generic opaque
+payloads is already part of the version-1 logical requirement.
 
 Measurements can justify a later manifest plus compressed binary chunks instead
 of monolithic JSON/base64. Such a container change can preserve the same logical
