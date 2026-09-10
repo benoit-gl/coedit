@@ -91,12 +91,12 @@ format later is an explicit contract change supported by prototype evidence. Do
 not scatter media-type checks through unrelated subsystems or introduce a dynamic
 capability registry before a real requirement exists.
 
-### 3.1 Syntax, recognition, and capability are separate
+### 3.1 Syntax, recognition, and representation validity are separate
 
-Validate Media Type syntax at creation, replacement, and decoding boundaries. A
-Media Type identifies a concrete `type/subtype`, with parameters when present;
-an absent subtype such as `image/` is malformed. An HTTP media range such as
-`image/*` is not a concrete payload Media Type.
+Validate generic Media Type syntax at creation, replacement, and decoding
+boundaries. A Media Type identifies a concrete `type/subtype`, with parameters
+when present; an absent subtype such as `image/` is malformed. An HTTP media
+range such as `image/*` is not a concrete payload Media Type.
 
 A syntactically valid type that is not in the fine-grained allowlist is not
 malformed or unsupported as document content. It uses the generic opaque handler:
@@ -104,15 +104,30 @@ preserve its exact Media Type, bytes, and payload-level Origin. This does not
 claim that every syntactically valid name is IANA-registered, or that opaque bytes
 conform to the labelled format.
 
-| Condition                                                                                                     | Required behavior                                                                         |
-| ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Malformed Media Type syntax                                                                                   | Reject atomically as invalid input.                                                       |
-| Valid Media Type not in the fine-grained allowlist                                                            | Accept through generic opaque handling, subject to ordinary envelope and resource checks. |
-| Known opaque format, such as `image/png`, without a renderer                                                  | Preserve it; lack of rendering capability is not document invalidity.                     |
-| Invalid byte representation for a fine-grained type at a raw/coarse decode boundary                           | Fail explicitly; do not reinterpret it as opaque content.                                 |
-| Fine-grained text that cannot be represented exactly by the declared encoding at a raw/coarse encode boundary | Fail explicitly; do not substitute characters or rewrite the Media Type.                  |
-| Unsupported carrier or container schema                                                                       | Report incompatibility; this is not an unknown Media Type.                                |
-| Exceeded selected implementation guard                                                                        | Report capacity/resource failure without partial publication.                             |
+Capability selection occurs after generic syntax validation. If the normalized
+`type/subtype` is allowlisted, Coedit does not fall back to opaque handling merely
+because a required representation parameter is absent or unusable. A
+media-type-aware text processor validates the representation prerequisites that
+Coedit needs at the applicable creation, replacement, raw-input, or portable-
+decoding boundary.
+
+For `text/markdown`, RFC 7763 requires a `charset` parameter. Therefore a value
+such as `text/markdown` can be valid generic Media Type syntax and still be an
+invalid or incomplete fine-grained media representation for a Coedit boundary
+that must decode or validate its bytes. Reject that representation explicitly;
+do not call it malformed Media Type syntax and do not reinterpret it as opaque.
+For `text/plain`, the registered default applies when `charset` is absent.
+
+| Condition                                                                                                     | Required behavior                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Malformed Media Type syntax                                                                                   | Reject atomically as invalid input.                                                                                |
+| Valid Media Type not in the fine-grained allowlist                                                            | Accept through generic opaque handling, subject to ordinary envelope and resource checks.                          |
+| Known opaque format, such as `image/png`, without a renderer                                                  | Preserve it; lack of rendering capability is not document invalidity.                                              |
+| Valid allowlisted type with missing or invalid representation prerequisites                                  | Reject at the applicable fine-grained/raw boundary; do not reinterpret it as opaque or as malformed generic syntax. |
+| Invalid byte representation for a fine-grained type at a raw/coarse decode boundary                           | Fail explicitly; do not reinterpret it as opaque content.                                                          |
+| Fine-grained text that cannot be represented exactly by the declared encoding at a raw/coarse encode boundary | Fail explicitly; do not substitute characters or rewrite the Media Type.                                           |
+| Unsupported carrier or container schema                                                                       | Report incompatibility; this is not an unknown Media Type.                                                         |
+| Exceeded selected implementation guard                                                                        | Report capacity/resource failure without partial publication.                                                      |
 
 The generic opaque handler does not decode PNG, JSON, XML, or other labelled
 bytes to certify their format. A consumer that renders, executes, or otherwise
@@ -142,13 +157,15 @@ or interpret those characters according to its own command or interchange
 contract without changing document validity merely because a character is a
 presentation break in one renderer.
 
-Fine-grained insertion, deletion, replacement, protected fine-grained Origin, text positions, and durable Range operations are available for allowlisted text. Media-type-specific source
-semantics remain application concerns. For example, a Markdown URL is Markdown
-source; an application decides whether it denotes an external URL, a local Coedit
-reference, or something else.
+Fine-grained insertion, deletion, replacement, protected fine-grained Origin,
+text positions, and durable Range operations are available for allowlisted text.
+Media-type-specific source semantics remain application concerns. For example, a
+Markdown URL is Markdown source; an application decides whether it denotes an
+external URL, a local Coedit reference, or something else.
 
-Coedit collaboration metadata such as Origin, Range lineage, History, and carrier state is not part of the raw `text/markdown` or `text/plain` byte stream.
-The portable `.coedit` representation preserves that document state separately.
+Coedit collaboration metadata such as Origin, Range lineage, History, and carrier
+state is not part of the raw `text/markdown` or `text/plain` byte stream. The
+portable `.coedit` representation preserves that document state separately.
 Raw/coarse media retrieval materializes the current media content, not the
 complete `.coedit` collaboration envelope.
 
@@ -169,7 +186,8 @@ Parameter preservation and capability dispatch therefore remain simple:
 - capability dispatch uses only normalized `type/subtype`;
 - the complete Media Type string remains durable and retrievable; and
 - a type-specific raw processor interprets only the parameters required to
-  decode or encode the media representation when that byte boundary is used.
+  validate, decode, or encode the media representation when that boundary is
+  used.
 
 ## 5. Generic opaque payloads
 
@@ -200,17 +218,18 @@ For an allowlisted text payload, the durable collaborative value is the native
 string. Raw/coarse input and output cross a byte boundary through a
 Media-Type-aware text processor:
 
-- raw/coarse input decodes supplied representation bytes according to the full
-  declared Media Type and stores the resulting native string;
-- raw/coarse output encodes the current native string according to the preserved
-  Media Type and returns the resulting media-representation bytes;
+- raw/coarse input validates required representation parameters and decodes
+  supplied representation bytes according to the full declared Media Type;
+- raw/coarse output validates the declared representation and encodes the current
+  native string according to the preserved Media Type;
 - encoding or decoding is not performed for ordinary fine-grained string
   operations;
-- the operation must fail explicitly when the declared encoding is unsupported,
-  input bytes are invalid for it, or the current string cannot be represented
-  exactly;
+- the operation must fail explicitly when required representation parameters are
+  absent, the declared encoding is unsupported, input bytes are invalid for it,
+  or the current string cannot be represented exactly;
 - the processor must not silently replace unrepresentable characters, change the
-  declared charset, rewrite the Media Type, or fall back to another encoding;
+  declared charset, rewrite the Media Type, or fall back to another encoding or
+  to opaque handling;
 - failure publishes no partial document change; and
 - media-type representation rules can be implemented by the processor without
   changing the collaborative logical string.
@@ -262,8 +281,9 @@ The required behavior is:
 1. replacement targets one existing InlineContent and preserves its identity;
 2. replacement supplies the complete new payload: exact Media Type plus a valid
    media representation for the applicable raw/coarse boundary;
-3. a fine-grained allowlisted text replacement decodes the supplied bytes to the
-   native collaborative string before publication;
+3. a fine-grained allowlisted text replacement validates its representation
+   prerequisites and decodes the supplied bytes to the native collaborative
+   string before publication;
 4. capability dispatch after success follows the normalized type/subtype of the
    new Media Type;
 5. the operation supplies or derives Origin information required by the new
@@ -321,8 +341,13 @@ whole-payload replacements behave as a convergent replicated register:
 - losing concurrent replacements remain immutable Contributions and their
   Versions remain exactly materializable through History.
 
-The exact carrier-private tie-break representation is selected during carrier
-qualification. It must be stable and deterministic and must not become a
+Gate B selects and records the observable deterministic winner rule and the
+carrier-private representation, effect identity, or metadata that implements it.
+Carrier-native conflict ordering is qualification evidence, not product policy by
+itself. After Gate B closes the rule, conforming adapters must select the same
+logical winner for the same valid causal input.
+
+The private representation must be stable and deterministic and must not become a
 presentation claim that the winning replacement was semantically better or
 chronologically later.
 
@@ -397,12 +422,18 @@ minimum prove:
   not use raw string-prefix matching;
 - parameters do not change capability matching and the exact supplied Media Type,
   including parameter spelling/order/value syntax, survives reload;
+- malformed generic Media Type syntax, a valid unfamiliar Media Type, and a valid
+  allowlisted type with invalid or incomplete representation prerequisites are
+  three distinct cases;
+- `text/markdown` without its required `charset` is rejected at a boundary that
+  must validate or decode its media representation and is not reclassified as
+  opaque;
 - Markdown `charset` requirements and plain-text default/declared charset behavior
   are handled at the raw processor boundary rather than during fine-grained edits;
 - fine-grained APIs exchange native strings without continuous media-byte
   encoding/decoding;
 - raw/coarse decode succeeds for supported valid representations and fails
-  atomically for invalid or unsupported encodings;
+  atomically for invalid or unsupported encodings or representation metadata;
 - raw/coarse encode returns an exact representation under the unchanged declared
   Media Type or fails explicitly when the current string is not representable;
 - encoding failure never substitutes characters or silently rewrites `charset` or
@@ -415,8 +446,9 @@ minimum prove:
   payload-level Origin;
 - `application/octet-stream` works as the generic unknown-binary case;
 - valid unfamiliar Media Types use opaque handling without a registry lookup;
-- malformed Media Type syntax fails atomically, separately from unsupported
-  schemas, unavailable renderers, encoding failures, and capacity failures;
+- malformed Media Type syntax fails atomically, separately from invalid
+  allowlisted representation metadata, unsupported schemas, unavailable
+  renderers, encoding failures, and capacity failures;
 - whole-payload replacement works for both fine-grained text types and opaque
   payloads;
 - replacement preserves InlineContent identity while allowing Media Type to stay
@@ -426,6 +458,9 @@ minimum prove:
 - deterministic convergence of concurrent whole-payload replacements under
   duplicate, delayed, reordered, partitioned, and reconnected delivery;
 - causal later replacement superseding observed replacements;
+- the selected observable concurrent-replacement winner rule is independent of
+  carrier-specific incidental ordering and is implemented equivalently by every
+  qualified adapter;
 - both concurrent replacement effects remain distinct and recoverable by the
   qualification harness even though one value wins current materialization;
 - payload-specific operations reject an incompatible Media Type; and
@@ -467,15 +502,15 @@ carrier.
 
 ### 13.1 Implementation status and decision ownership
 
-| Stage               | Status or responsibility                                                                                                                                                    |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Completed Steps 1-2 | Browser scaffold and pure structural domain; `InlineContentValue` remains an opaque empty value. No Media Type dispatch or replacement carrier is implemented.              |
-| Step 3 / Gate B     | Qualify carriers; select the replacement tie-break, mixed replacement/edit semantics, raw text-encoding mechanism, Media Type boundary rules, and required resource guards. |
-| Step 4              | Implement the selected payload, compile-time allowlist, raw/coarse processor boundary, and carrier behavior.                                                                |
-| Step 5              | Implement first-class Contributions and permanent exact Version materialization, including losing replacement History.                                                      |
-| Step 6 / Gate C     | Select and implement durable text Range lineage and remaining Range behavior.                                                                                               |
-| Step 8              | Freeze portable encoding of exact Media Type values, fine-grained text state, collaboration metadata, and opaque bytes.                                                     |
-| Pre-network gate    | Qualify causal transport, authorization, and replicated restore overlap before network collaboration ships.                                                                 |
+| Stage               | Status or responsibility                                                                                                                                                                                   |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Completed Steps 1-2 | Browser scaffold and pure structural domain; `InlineContentValue` remains an opaque empty value. No Media Type dispatch or replacement carrier is implemented.                                             |
+| Step 3 / Gate B     | Qualify carriers; select the observable replacement winner rule and its private implementation, mixed replacement/edit semantics, raw text-encoding mechanism, boundary rules, and required resource guards. |
+| Step 4              | Implement the selected payload, compile-time allowlist, raw/coarse processor boundary, and carrier behavior.                                                                                               |
+| Step 5              | Implement first-class Contributions and permanent exact Version materialization, including losing replacement History.                                                                                     |
+| Step 6 / Gate C     | Select and implement durable text Range lineage and remaining Range behavior.                                                                                                                              |
+| Step 8              | Freeze portable encoding of exact Media Type values, fine-grained text state, collaboration metadata, and opaque bytes.                                                                                    |
+| Pre-network gate    | Qualify causal transport, authorization, and replicated restore overlap before network collaboration ships.                                                                                                |
 
 Accepted design requirements are not claims that these later stages have run.
 
