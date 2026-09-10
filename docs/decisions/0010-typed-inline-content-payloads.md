@@ -17,7 +17,7 @@ This record preserves why the decision was made. Normative behavior belongs in:
   preservation, fine-grained capability dispatch, universal whole-payload
   replacement, raw/coarse materialization, Origin granularity, and convergence;
 - [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
-  for fine-grained text formatting and Origin;
+  for fine-grained text and Origin;
 - [`../RANGE_MODEL.md`](../RANGE_MODEL.md) for durable references inside
   fine-grained text;
 - [`../MVP_ARCHITECTURE.md`](../MVP_ARCHITECTURE.md) for the public engine
@@ -27,17 +27,13 @@ This record preserves why the decision was made. Normative behavior belongs in:
 - [`../../SCAFFOLDING_PLAN.md`](../../SCAFFOLDING_PLAN.md) for work order and
   gates.
 
-ADR 0001 remains accepted for intrinsic collaborative-text formatting, protected
-fine-grained Origin, causal History, persistence, and carrier qualification. This
-ADR refines and supersedes the parts of ADR 0001 that treated attributed rich
-text and hard breaks as the universal shape of all InlineContent content.
+ADR 0001 remains accepted for protected fine-grained Origin, causal History, persistence, and carrier qualification. This ADR supersedes its engine-owned rich-text formatting assumptions and the parts that treated rich text and hard breaks as the universal shape of InlineContent content.
 
 ## 2. Context
 
 The clean-slate documentation initially treated every InlineContent as rich text.
 PR 19 first generalized this into Media-Type-labelled payloads but provisionally
-introduced allowlisted fine-grained text as a Coedit-specific fine-grained text
-format. Design review showed that this conflated media-format identity with the
+introduced a provisional Coedit-specific fine-grained text format. Design review showed that this conflated media-format identity with the
 editing capability that Coedit currently implements.
 
 The intended boundary is simpler:
@@ -179,6 +175,21 @@ A future Media Type can join the existing fine-grained text contract or define a
 different focused addressing contract after qualification. Stored media labels do
 not need to change merely because Coedit learns a new operation set.
 
+### 3.9 Formatting and media syntax belong to the application
+
+The document engine is agnostic to formatting. It owns structural relationships,
+payload Media Types, payload content, attribution/History/Range mechanics,
+serialization, and collaboration. It does not own bold, italic, link, list, or
+other rendering semantics and does not keep a parallel rich-text mark layer.
+
+A Markdown importer can consume recognized structural syntax into the Block tree
+while preserving unconsumed inline or unknown syntax in the `text/markdown`
+source string. Editors can translate user actions into structural operations and
+source-string edits. Renderers can parse the resulting hierarchy and payload
+syntax. Link targets, including whether a URL is local or remote, are application
+interpretation. These are application behaviors, not canonical document-engine
+semantics.
+
 ## 4. Consequences
 
 Positive consequences:
@@ -313,9 +324,3 @@ schema change merely because they are unfamiliar.
 - [RFC 3676: The Text/Plain Format and DelSp Parameters](https://www.rfc-editor.org/rfc/rfc3676.html) defines `format` and `delsp` for `text/plain`.
 - [IANA Media Types](https://www.iana.org/assignments/media-types/media-types.xhtml) is the authoritative media-type registry.
 
-
-### 3.9 Formatting and media syntax belong to the application
-
-The document engine is agnostic to formatting. It owns structural relationships, payload Media Types, payload content, attribution/History/Range mechanics, serialization, and collaboration. It does not own bold/italic/link/list rendering semantics or a parallel rich-text mark layer.
-
-A Markdown importer can consume recognized structural syntax into the Block tree while preserving unconsumed inline or unknown syntax in the `text/markdown` source string. Editors can translate user actions into structural operations and source-string edits. Renderers can parse the resulting hierarchy and payload syntax. These are application behaviors, not canonical document-engine semantics.

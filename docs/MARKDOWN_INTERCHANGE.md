@@ -42,7 +42,7 @@ For Markdown round-trip verification, two Coedit documents are equivalent when t
 - the same normalized `text/markdown` source strings after recognized structural syntax is consumed; and
 - the same importer normalization semantics where a source construct requires normalization.
 
-There is no separate hard-break content item in this relation. A Markdown hard break is represented by the canonical text character selected in section 8. A structural Block or InlineContent boundary contributes no character merely because the boundary exists.
+There is no separate hard-break content item in this relation. Markdown line-break spelling remains source syntax unless the application deliberately translates it during editing or structural import. A structural Block or InlineContent boundary contributes no character merely because the boundary exists.
 
 Generated IDs, Contributor IDs, Origin IDs, Contribution IDs, VersionTokens, timestamps, carrier internal identities, encoded update-byte order, and source-file metadata are not part of Markdown structural equivalence.
 
@@ -226,7 +226,7 @@ Examples include:
 - application or user tags with no Markdown representation;
 - multiple simultaneously selected InlineContents for one Block;
 - a structural grouping that is valid Coedit but not produced by the Markdown importer;
-- an `text/markdown` fine-grained text character with no accepted Markdown round-trip spelling under this contract;
+- a `text/markdown` fine-grained text character with no accepted Markdown round-trip spelling under this contract;
 - future overlays such as comments or conversations; and
 - future presentation modes with no importer mapping.
 

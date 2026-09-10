@@ -13,7 +13,7 @@ whole-payload replacement.
 
 [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls product ontology.
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) owns
-fine-grained text formatting and Origin behavior. [`RANGE_MODEL.md`](RANGE_MODEL.md)
+fine-grained text and Origin behavior. [`RANGE_MODEL.md`](RANGE_MODEL.md)
 owns durable references inside fine-grained text. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
 owns the public engine boundary. [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md)
 owns cross-cutting capacity classification. [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md)
@@ -142,15 +142,12 @@ or interpret those characters according to its own command or interchange
 contract without changing document validity merely because a character is a
 presentation break in one renderer.
 
-Fine-grained insertion, deletion, replacement, intrinsic collaborative
-formatting/annotations, protected fine-grained Origin, text positions, and durable
-Range operations are available for allowlisted text. Media-type-specific source
+Fine-grained insertion, deletion, replacement, protected fine-grained Origin, text positions, and durable Range operations are available for allowlisted text. Media-type-specific source
 semantics remain application concerns. For example, a Markdown URL is Markdown
 source; an application decides whether it denotes an external URL, a local Coedit
 reference, or something else.
 
-Coedit collaboration metadata such as Origin, formatting, Range lineage, and
-carrier state is not part of the raw `text/markdown` or `text/plain` byte stream.
+Coedit collaboration metadata such as Origin, Range lineage, History, and carrier state is not part of the raw `text/markdown` or `text/plain` byte stream.
 The portable `.coedit` representation preserves that document state separately.
 Raw/coarse media retrieval materializes the current media content, not the
 complete `.coedit` collaboration envelope.
@@ -298,7 +295,6 @@ The initial capability classes are:
 | --- | --- | --- | --- |
 | Raw/coarse media retrieval and whole-payload replacement | yes | yes | yes |
 | Fine-grained text insertion/deletion/replacement | yes | yes | no |
-| Intrinsic collaborative formatting/annotations | yes | yes | no |
 | Fine-grained Origin | yes | yes | no |
 | Text positions and durable text Range operations | yes | yes | no |
 
@@ -336,7 +332,7 @@ changing this convergence requirement.
 ### 10.1 Deferred mixed-operation semantics
 
 This contract does not yet choose the result of whole-payload replacement
-concurrent with fine-grained text insertion, deletion, or formatting. This
+concurrent with fine-grained text insertion, deletion, or replacement. This
 includes replacement between allowlisted text types, replacement between
 fine-grained and opaque types, and edits authored against a replacement that
 later loses the register conflict.
@@ -396,7 +392,7 @@ Step 3 must qualify both carrier candidates against the same payload contract. A
 minimum prove:
 
 - `text/markdown` and `text/plain` use the same compile-time fine-grained
-  allowlist path for editing, formatting, Origin, cursor, and Range feasibility;
+  allowlist path for editing, Origin, cursor, and Range feasibility;
 - capability matching uses parsed case-insensitive type/subtype identity and does
   not use raw string-prefix matching;
 - parameters do not change capability matching and the exact supplied Media Type,
@@ -437,7 +433,7 @@ minimum prove:
   fine-grained and opaque Media Types.
 
 Gate B must first close section 10.1 with same-type and cross-type replacement
-versus insertion, deletion, and formatting cases, including edits to a losing
+versus insertion, deletion, and replacement cases, including edits to a losing
 replacement. Exercise both delivery orders, duplication, reload, and causal
 recoverability. Record the policy before asserting its expected outcomes.
 
