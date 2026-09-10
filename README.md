@@ -1,6 +1,6 @@
 # Coedit
 
-Coedit is a browser-first collaborative document engine. The repository contains the completed Step 1 browser scaffold and Step 2 pure Block domain. Step 3 carrier qualification is the next implementation step; it qualifies Media-Type-labelled InlineContent payloads (`text/markdown`, `text/plain`, and representative opaque Media Types), universal whole-payload replacement, fine-grained text, structure, and text Range feasibility against Yjs and Automerge. Gate B then selects the carrier, Step 4 implements the selected collaborative core, Step 5 establishes permanent exact History and Version materialization, and Step 6 implements the durable fine-grained text Range service.
+Coedit is a browser-first collaborative document engine. The repository contains the completed Step 1 browser scaffold and Step 2 pure Block domain. Step 3 carrier qualification is the next implementation step; it qualifies Media-Type-labelled InlineContent payloads (`text/markdown`, `text/plain`, and representative opaque Media Types), universal whole-payload replacement, native-string fine-grained text, structure, and text Range feasibility against Yjs and Automerge. Gate B then selects the carrier, Step 4 implements the selected collaborative core, Step 5 establishes permanent exact History and Version materialization, and Step 6 implements the durable fine-grained text Range service.
 
 The authoritative documentation index is [`docs/README.md`](docs/README.md). The ordered implementation plan is [`SCAFFOLDING_PLAN.md`](SCAFFOLDING_PLAN.md).
 
