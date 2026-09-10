@@ -165,7 +165,7 @@ Verify:
 Do not require the carrier to merge opaque payload bytes or the internal structure of an opaque payload.
 
 Gate B must select and record mixed whole-payload replacement/text-edit behavior
-under `INLINE_CONTENT_PAYLOADS.md` section 9.1. Compare same-type and cross-type
+under `INLINE_CONTENT_PAYLOADS.md` section 10.1. Compare same-type and cross-type
 replacement against insertion, deletion, and  including edits to a
 replacement that loses. Test reordered and duplicate delivery, reload, atomic
 Origin effects, and causal recoverability. Candidate behavior is not an accepted

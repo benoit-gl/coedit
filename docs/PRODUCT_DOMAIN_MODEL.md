@@ -259,7 +259,7 @@ For every Media Type using the generic opaque capability set, the current whole 
 
 There is no `restored` origin kind. Restore is an activity, not an authorship category.
 
-### 4.8 Copy and move preserve different identities
+### 4.7 Copy and move preserve different identities
 
 Moving a Block or reordering an InlineContent preserves the InlineContent identity, Media Type, complete payload state, and Origins.
 
@@ -269,7 +269,7 @@ Ordinary allowlisted fine-grained text copy/paste inserts text into the target I
 
 Generic opaque copy and restore operate at whole-payload granularity under the initial contract.
 
-### 4.9 Durable Range references are allowlisted fine-grained text values
+### 4.8 Durable Range references are allowlisted fine-grained text values
 
 A Range is a document-relative durable semantic reference value supplied and resolved by the document engine for allowlisted fine-grained text. It records a document-scoped creation Version and the original Block and InlineContent location of each source member. It is not an independently identified product entity, document-owned registry entry, formatting annotation, provenance record, or universal payload locator.
 

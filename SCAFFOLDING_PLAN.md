@@ -325,7 +325,7 @@ Gate A passes when the authority set, ADR rationale, preserved-branch classifica
 Gate B follows Step 3. Do not begin production carrier implementation or freeze carrier-dependent History effects, editor integration, or `.coedit` version 1 before the Yjs/Automerge common suite passes and the winner is recorded. The gate includes Media-Type-labelled payloads, whole-payload replacement, deterministic concurrent replacement convergence, attributed allowlisted fine-grained text, opaque payload byte/Origin preservation, structure, allocator behavior, application text-editor integration, atomicity, Range feasibility, one run-specific comparison method, and selected and tested carrier/private-text-clipboard guards. Experimental performance candidates do not become acceptance thresholds merely because the gate measured them. Gate B records the carrier-private replacement tie-break mechanism but does not select the Range-tracking representation.
 
 Gate B also closes the mixed replacement/text-edit semantics in
-`INLINE_CONTENT_PAYLOADS.md` section 9.1 and records its Media Type syntax,
+`INLINE_CONTENT_PAYLOADS.md` section 10.1 and records its Media Type syntax,
 parameter, and capability-matching rules. The selected behavior and regression
 evidence must exist before Step 4 production implementation. This does not move
 Range lineage out of Gate C or the network protocol out of the pre-network gate.
