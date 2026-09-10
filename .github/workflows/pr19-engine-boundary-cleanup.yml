@@ -1,0 +1,22 @@
+name: PR19 engine boundary cleanup
+on:
+  push:
+    branches: [design/typed-inline-content-payloads]
+permissions:
+  contents: write
+jobs:
+  rewrite:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: python .github/pr19_engine_boundary_cleanup.py
+      - run: |
+          git rm .github/pr19_engine_boundary_cleanup.py .github/workflows/pr19-engine-boundary-cleanup.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add SCAFFOLDING_PLAN.md docs
+          git commit -m "Keep formatting and media interpretation in application adapters"
+          git push origin HEAD:${GITHUB_REF_NAME}
