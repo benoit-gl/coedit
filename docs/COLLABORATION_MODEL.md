@@ -440,7 +440,7 @@ This is a private carrier boundary, not a public `Y.Doc` or Automerge type.
 Subdocuments or sharding require measured evidence and must preserve atomic
 multi-target behavior and portable recovery.
 
-allowlisted fine-grained text formatting and fine-grained Origin do not use external anchors.
+allowlisted fine-grained text and fine-grained Origin do not use external anchors.
 Generic opaque payloads have payload-level Origin rather than text-like ranges. The MVP headless Range
 service can use carrier-stable text positions plus qualified lineage and
 carrier-neutral evidence behind its public value contract. Internal text links
@@ -643,10 +643,10 @@ pass together.
 - a causally later whole-payload replacement supersedes observed replacements;
 - losing replacement Contributions remain materializable;
 - atomic publication of a Contribution spanning structure and several InlineContents of different Media Types;
-- concurrent text insert, delete, formatting, Block move, and Block payload-update operations;
+- concurrent text insert, delete, Block move, and Block payload-update operations;
 - semantic Block update versus delete keeps the updated Block alive;
 - collision normalization remains a private carrier effect of its structural Contribution and converges under delayed/reordered delivery;
-- fine-grained text Origin never inherits or spoofs under concurrent insertion, copy, paste, formatting clear, or restore;
+- fine-grained text Origin never inherits or spoofs under concurrent insertion, copy, paste, or restore;
 - opaque-payload Origin remains exact through replacement, copy, restore, and convergence;
 - durable text Range creation order, lineage order, omission, exact text resolution, and rationalization converge;
 - future Comment holders preserve comment-specific repair behavior without redefining text Range semantics;

@@ -15,7 +15,7 @@ Use these focused authorities first:
 - [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) for public engine behavior and component authority;
 - [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) for cross-cutting capacity and resource semantics;
 - [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) for Media Types, universal whole-payload replacement, and payload convergence;
-- [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for allowlisted fine-grained text formatting, fine-grained Origin, clipboard, and Range-holder behavior;
+- [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for fine-grained text, Origin, clipboard, and Range-holder behavior;
 - [`RANGE_MODEL.md`](RANGE_MODEL.md) for durable allowlisted fine-grained text Range behavior, the Range service, and staged representation selection;
 - [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md) for flat Block placement, Block-local carrier state, structural concurrency, and position-order qualification;
 - [`CODING_STYLE.md`](CODING_STYLE.md) for source structure, TSDoc, linting, formatting, dependency checks, package commands, and platform portability;
@@ -38,7 +38,7 @@ Use:
 - strict TypeScript;
 - Vite;
 - Vitest;
-- Tiptap/ProseMirror as the interactive allowlisted fine-grained text editor adapter;
+- Tiptap/ProseMirror as an application-level text/Markdown editor adapter;
 - pinned stable Yjs v13 as the provisional collaborative carrier;
 - the Markdown parser stack specified in `MARKDOWN_INTERCHANGE.md`;
 - DOMPurify or an equivalently reviewed sanitizer at DOM/clipboard boundaries; and
@@ -64,7 +64,7 @@ to `main`. These commands cannot contain logic that works only in CI.
 
 Step 3 qualifies pinned Yjs v13 against pinned Automerge using the common suites in `INLINE_CONTENT_PAYLOADS.md`, `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. Track Yjs v14 only after a stable release. Use Loro as a cursor/movable-tree benchmark, not a current production dependency. Gate B records the winner. Step 4 then implements the selected collaborative core. Do not expose either candidate through a public API or freeze carrier-specific `.coedit` bytes before Gate B.
 
-The ProseMirror/Tiptap schema applies only to allowlisted fine-grained text and is deliberately flat: authored text plus the supported inline marks. The document model does not require a distinct hard-break node. If the application wants a line break inside one text payload, the editor adapter can represent that intent with an ordinary text character according to its editor mapping. The recursive Coedit Block tree remains outside ProseMirror.
+ProseMirror/Tiptap is an application adapter. Its schema, Markdown parsing, formatting model, and rendered hierarchy are not canonical engine state. It translates user intent into Block operations and native-string text operations. The recursive Coedit Block tree remains outside ProseMirror.
 
 Do not initially add:
 
@@ -110,7 +110,6 @@ src/
     coeditText.ts
     opaquePayload.ts
     carrier.ts
-    formatting.ts
     origin.ts
     clipboardFragment.ts
     projection.ts
@@ -251,7 +250,7 @@ In completed Step 2, `InlineContentValue` is a typed, opaque, valid empty value.
 
 Step 4 evolves that opaque boundary into the Media-Type-labelled payload representation defined by `INLINE_CONTENT_PAYLOADS.md`. Runtime payloads carry an Internet Media Type. allowlisted fine-grained text selects the fine-grained collaborative-text capability set; other supported Media Types initially use generic opaque handling. The ordinary authored empty-content path creates an empty allowlisted fine-grained text value; creation/import paths that deliberately require opaque content supply the actual Media Type when known, complete opaque bytes, and explicit Origin, using `application/octet-stream` only when no more specific type is available. This documentation evolution does not require reopening the already completed structural semantics of Step 2.
 
-At the public human-edit boundary, text creation supplies visible content and formatting intent and the engine assigns Origin from the attributed command context. A complete pre-attributed allowlisted fine-grained text value is accepted only by validated internal import, copy, restore, or remote-integration paths; it is not a client Origin-spoofing surface. Generic opaque creation/replacement likewise obtains Origin from a trusted context rather than a caller-controlled attribution side channel.
+At the public human-edit boundary, text creation supplies native string content and the engine assigns Origin from the attributed command context. A complete pre-attributed allowlisted fine-grained text value is accepted only by validated internal import, copy, restore, or remote-integration paths; it is not a client Origin-spoofing surface. Generic opaque creation/replacement likewise obtains Origin from a trusted context rather than a caller-controlled attribution side channel.
 
 Operation rules:
 
@@ -274,11 +273,11 @@ Do not add entity tombstones or lifecycle timestamps to the logical live entitie
 
 Each InlineContent owns one Media-Type-labelled collaborative payload. The initial Media Types and universal replacement behavior are defined by `INLINE_CONTENT_PAYLOADS.md`.
 
-allowlisted fine-grained text stores authored Unicode text, intrinsic formatting marks, and protected fine-grained Origin in one atomic collaborative state. It has no separate document-level hard-break item. Newline and other control characters are ordinary text data at this layer. HTML, plain-text projections, ProseMirror JSON, and rendered Origin runs are derived. Do not persist them as a parallel authority.
+Allowlisted fine-grained text stores a native source string and protected fine-grained Origin. For `text/markdown`, Markdown syntax remains in that string unless the application consumes recognized structural syntax into the Block tree. The engine does not own formatting marks, rendered rich-text state, or link interpretation.
 
 Every valid Media Type other than the recognized Coedit collaborative-text type initially uses generic opaque handling: exact bytes plus one payload-level Origin for the current value. An unfamiliar type is not invalid syntax and needs no decoder or renderer at this boundary. `INLINE_CONTENT_PAYLOADS.md` section 3.1 owns syntax and capability matching. The selected carrier must preserve the Media Type and bytes and support atomic whole-payload replacement. It does not need a fine-grained opaque payload CRDT.
 
-Every InlineContent supports one whole-payload replacement operation. The logical operation targets one InlineContent, preserves its identity, validates a complete replacement against the replacement Media Type, and atomically publishes the new Media Type, Media-Type-specific content, and required Origin effect. The Media Type can stay the same or change. allowlisted fine-grained text also supports fine-grained text and formatting operations; other supported Media Types initially use generic opaque handling. Payload-specific fine-grained operations reject incompatible Media Types explicitly. Do not add dynamic capability dispatch or a generic replicated object model until a concrete additional fine-grained payload contract requires one.
+Every InlineContent supports one whole-payload replacement operation. The logical operation targets one InlineContent, preserves its identity, validates a complete replacement against the replacement Media Type, and atomically publishes the new Media Type, Media-Type-specific content, and required Origin effect. The Media Type can stay the same or change. allowlisted fine-grained text also supports fine-grained native-string operations; other supported Media Types initially use generic opaque handling. Payload-specific fine-grained operations reject incompatible Media Types explicitly. Do not add dynamic capability dispatch or a generic replicated object model until a concrete additional fine-grained payload contract requires one.
 
 Under replicated qualification, whole-payload replacement follows the register invariants in `INLINE_CONTENT_PAYLOADS.md`. Gate B records its tie-break mechanism and separately selects the mixed replacement/text-edit behavior deferred in section 9.1 of that authority. Production implementation in Step 4 must not treat a candidate's mixed-operation behavior as an accepted policy before that decision. Step 5 implements permanent losing-Contribution and Version materialization.
 
@@ -294,11 +293,9 @@ Exact primary-position collisions are exceptional carrier cases. When insertion 
 
 Bind the text editor only to an active allowlisted fine-grained text InlineContent. An opaque payload can be projected to an application adapter, but no text editor or text operation is offered for it. Do not expose the logical document, carrier objects, raw updates, Block activity setters, or client-supplied Origin setters through the public API.
 
-Formatting follows the vocabulary and boundary defaults in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`. Carrier adapters translate those logical policies to native marks/attributes and must prove exact round trip. Clearing formatting cannot change Origin.
-
 The trusted engine boundary assigns Origin for human text insertion, import, external paste, automation, AI, and whole-payload replacement. Same-document internal copy and restore preserve existing Origins according to the payload contract under fresh carrier item identities where applicable. Ordinary editor or opaque-replacement clients cannot forge another Contributor's Origin.
 
-Step 3 runs the same carrier-neutral payload, headless text, structural, and ProseMirror-integrated suites against Yjs v13 and Automerge. Functional invariants are mandatory. Range work in this step proves only the allowlisted fine-grained text feasibility subset in `RANGE_MODEL.md`; it does not select the Range-tracking representation. Select Yjs when its Media-Type-labelled payload, attributed-text, and structural carrier passes without fragile full-state repair. Select Automerge only if its richer native model materially reduces custom code and its editor/storage integrations pass the same suites. Record the selected versions, dependency/license review, replacement tie-break mechanism, fixtures, measurements, and rejected-candidate rationale.
+Step 3 runs the same carrier-neutral payload, headless text, structural, and ProseMirror-integrated suites against Yjs v13 and Automerge. Functional invariants are mandatory. Range work in this step proves only the allowlisted fine-grained text feasibility subset in `RANGE_MODEL.md`; it does not select the Range-tracking representation. Select Yjs when its Media-Type-labelled payload, attributed text/Origin, and structural carrier passes without fragile full-state repair. Select Automerge only if its richer native model materially reduces custom code and its editor/storage integrations pass the same suites. Record the selected versions, dependency/license review, replacement tie-break mechanism, fixtures, measurements, and rejected-candidate rationale.
 
 Step 4 converts the selected candidate into the production collaborative core and retains the common suite as regression evidence. Do not retain rejected-candidate types in public or domain APIs. Do not finalize the carrier codec, portable bytes, History effect encoding, editor transaction bridge, or compaction behavior before Gate B passes.
 
@@ -360,19 +357,19 @@ Gate C must close and record:
 
 - exact result wrappers, all-members-omitted parsing, and optional parse diagnostics;
 - split and merge rules that designate the continuing Block and InlineContent identities;
-- whether references to identities consumed by a merge follow structural lineage, remain historical-only, or become unresolved, including internal-link Block fallback;
+- whether references to identities consumed by a merge follow structural lineage, remain historical-only, or become unresolved, including any application-owned Range holder fallback that Gate C deliberately standardizes;
 - the deterministic identity rule when no semantic continuation is naturally designated, without using clocks or incidental replica order;
 - complete one-to-many split and many-to-one merge lineage independent of the continuing entity identity;
 - the zero-length Span tie-break at an exact structural split;
 - Positional Range split, merge, deletion, and whole-content-replacement behavior;
 - any allowlisted fine-grained text whole-payload replacement lineage rule required by the selected representation;
 - document-relative fragment grammar and resource-guard behavior;
-- internal-link Range encoding; and
+- Range fragment encoding and reinjection; and
 - the selected Range-tracking lineage representation.
 
 Range holders do not register with the document. Ordinary text edits and Block moves cannot enumerate or rewrite all retained holders. Permanent Version materialization supplies the starting point for lazy lineage resolution. Resolution, rationalization, parsing, and serialization can perform work for the one supplied Range. Serialization rebases that Range against the selected Version and removes obsolete tracking evidence when the accepted representation permits it.
 
-Embedded internal-link Range values resolve only in the current document and retain the primary Block fallback. External deep links combine an application-owned document URI with a Range fragment; the Range service performs no cross-document reconciliation. Generic opaque sub-content has no Range representation in the MVP. Comment records and repair UX remain post-MVP consumers of the text service.
+Applications can store or serialize Range values in comments, URLs, Markdown link destinations, navigation metadata, or other holders. The Range service resolves only the Range value against the application-selected document; holder-specific fallback and activation policy remain outside the engine. Generic opaque sub-content has no Range representation in the MVP.
 
 ## 9. Semantic Checkpoint and restore
 
@@ -434,7 +431,7 @@ The editor may combine transient ProseMirror transactions before submission, but
 Accepted behavior:
 
 - IME composition is not split mid-composition;
-- paste, cut, selection replacement, formatting, undo, and redo are atomic editor actions;
+- paste, cut, selection replacement, undo, and redo are atomic editor actions;
 - line-break or paragraph intent is translated by the application/editor adapter into text and/or structural operations; the document model does not require a hard-break item;
 - unrelated dirty work is submitted before an atomic action;
 - insertion/deletion mode changes, idle, real focus/editor-owner departure, and controlled transitions seal the current semantic group;

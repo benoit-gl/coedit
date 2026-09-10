@@ -181,7 +181,7 @@ The suite covers:
 - exact opaque payload bytes and payload-level Origin;
 - flat Block placement, liveness, and allocator behavior;
 - one transaction across structure and several InlineContents of mixed Media Types;
-- text editor integration, reload, compaction, and representative growth; and
+- application text-editor integration, reload, compaction, and representative growth; and
 - the fine-grained text Range-feasibility subset in `RANGE_MODEL.md`: direct multi-span creation, greedy and positional boundaries, structural tracking, lazy resolution, whole-payload replacement of fine-grained text feasibility, and practical cost.
 
 **Outcome:** The repository contains comparable fixtures, measurements, dependency/license review, adapter-complexity evidence, rejected-candidate rationale, the qualified replacement tie-break mechanism, and one recorded carrier selection. Qualification code uses the same abstractions intended for production, but this step does not freeze the final Range API or lineage representation.
@@ -216,13 +216,13 @@ Close the remaining result-wrapper, split/merge continuing-identity,
 merged-away-reference, deterministic identity tie-break, complete structural
 lineage, exact structural boundary, positional structural behavior,
 whole-payload replacement of fine-grained text lineage, fragment-encoding, resource-guard, and
-internal-link wire decisions listed in `RANGE_MODEL.md`. Compare the remaining
+Range-holder wire decisions listed in `RANGE_MODEL.md`. Compare the remaining
 lineage candidates against the accepted behavior and record the selected
 representation.
 
 **Outcome:** Headless code can create one-span, multi-span, and Positional Ranges against allowlisted fine-grained text in the visible Version; resolve surviving spans in creation and lineage order; concatenate exact stored text without inferred separators; rationalize eligible merge-caused adjacency explicitly; serialize a document-relative Range fragment; parse it best-effort in an application-selected document; rebase tracking evidence; and reinject a value as internal-link metadata or another text Range holder. Generic opaque sub-content is not addressed by this service.
 
-**Exit gate:** Gate C passes. The complete Range suite proves atomic direct text creation, rejection of non-text targets, permissive source-member preservation, structural and no-copy lineage, best-effort omission, exact text assembly, explicit rationalization, reload, compaction with every Version preserved, serialization, internal-link fallback, no speculative rebinding, and cost that does not scale with the total retained Range count.
+**Exit gate:** Gate C passes. The complete Range suite proves atomic direct text creation, rejection of non-text targets, permissive source-member preservation, structural and no-copy lineage, best-effort omission, exact text assembly, explicit rationalization, reload, compaction with every Version preserved, serialization, application-holder fallback, no speculative rebinding, and cost that does not scale with the total retained Range count.
 
 See [`docs/RANGE_MODEL.md`](docs/RANGE_MODEL.md), [`docs/TEXT_POSITION_MODEL.md`](docs/TEXT_POSITION_MODEL.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
@@ -322,7 +322,7 @@ Gate A passes when the authority set, ADR rationale, preserved-branch classifica
 
 ### Gate B — Collaborative carrier selection
 
-Gate B follows Step 3. Do not begin production carrier implementation or freeze carrier-dependent History effects, editor integration, or `.coedit` version 1 before the Yjs/Automerge common suite passes and the winner is recorded. The gate includes Media-Type-labelled payloads, whole-payload replacement, deterministic concurrent replacement convergence, attributed allowlisted fine-grained text, opaque payload byte/Origin preservation, structure, allocator behavior, text editor integration, atomicity, Range feasibility, one run-specific comparison method, and selected and tested carrier/private-text-clipboard guards. Experimental performance candidates do not become acceptance thresholds merely because the gate measured them. Gate B records the carrier-private replacement tie-break mechanism but does not select the Range-tracking representation.
+Gate B follows Step 3. Do not begin production carrier implementation or freeze carrier-dependent History effects, editor integration, or `.coedit` version 1 before the Yjs/Automerge common suite passes and the winner is recorded. The gate includes Media-Type-labelled payloads, whole-payload replacement, deterministic concurrent replacement convergence, attributed allowlisted fine-grained text, opaque payload byte/Origin preservation, structure, allocator behavior, application text-editor integration, atomicity, Range feasibility, one run-specific comparison method, and selected and tested carrier/private-text-clipboard guards. Experimental performance candidates do not become acceptance thresholds merely because the gate measured them. Gate B records the carrier-private replacement tie-break mechanism but does not select the Range-tracking representation.
 
 Gate B also closes the mixed replacement/text-edit semantics in
 `INLINE_CONTENT_PAYLOADS.md` section 9.1 and records its Media Type syntax,
@@ -339,7 +339,7 @@ designated, complete one-to-many and many-to-one lineage, remaining positional
 and exact-boundary structural behavior, whole-payload replacement of fine-grained text lineage,
 fragment serialization and reinjection rules, resource-guard behavior,
 internal-link encoding, and lineage representation. Do not freeze `.coedit`
-version 1 or the internal-link Range wire shape before Gate C passes.
+version 1 or the portable Range-fragment wire shape before Gate C passes.
 
 ### Gate D — Elaboration baseline
 

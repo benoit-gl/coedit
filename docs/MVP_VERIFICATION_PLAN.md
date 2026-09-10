@@ -55,7 +55,7 @@ The Step 0 gate requires:
 - deferred decisions to be explicit; and
 - no implementation-blocking decision to remain open.
 
-The documented baseline closes the former `TextAnchor` blocker by assigning payload-neutral InlineContent ownership, allowlisted fine-grained text intrinsic formatting and fine-grained Origin, opaque-payload Origin, durable text Range values, Range-holder lifecycles, and transient selections to distinct mechanisms. A mechanical scan must find no normative external formatting/provenance Range, universal hard-break content-item requirement, implicit Block/InlineContent text separator, or single-InlineContent durable-target assumption outside an explicitly superseded historical statement.
+The documented baseline closes the former `TextAnchor` blocker by assigning payload-neutral InlineContent ownership, allowlisted fine-grained text intrinsic fine-grained Origin, opaque-payload Origin, durable text Range values, Range-holder lifecycles, and transient selections to distinct mechanisms. A mechanical scan must find no normative external formatting/provenance Range, universal hard-break content-item requirement, implicit Block/InlineContent text separator, or single-InlineContent durable-target assumption outside an explicitly superseded historical statement.
 
 The Media-Type-labelled-payload decision and Range authority revalidate the Step 0 authority baseline without reopening completed structural semantics in Steps 1 and 2. Gate B selects the collaborative carrier after Step 3. Gate C selects the text Range representation after Step 6 and before `.coedit` version 1 or internal-link Range encoding is frozen.
 
@@ -166,13 +166,13 @@ Do not require the carrier to merge opaque payload bytes or the internal structu
 
 Gate B must select and record mixed whole-payload replacement/text-edit behavior
 under `INLINE_CONTENT_PAYLOADS.md` section 9.1. Compare same-type and cross-type
-replacement against insertion, deletion, and formatting, including edits to a
+replacement against insertion, deletion, and  including edits to a
 replacement that loses. Test reordered and duplicate delivery, reload, atomic
 Origin effects, and causal recoverability. Candidate behavior is not an accepted
 policy until the gate records the decision. Step 4 retains the selected cases as
 regressions; Step 5 supplies the permanent History proof.
 
-### 6.2 allowlisted fine-grained text formatting carrier
+### 6.2 allowlisted fine-grained text carrier
 
 Verify:
 
@@ -183,7 +183,7 @@ Verify:
 - `none`, `start`, `end`, and `both` boundary expansion at the exact start and end;
 - replacement, empty selection, mark exclusion, split, and merge;
 - editor-to-carrier-to-editor projection without a second formatting authority;
-- formatting clear/change never alters Origin; and
+- text edit/change never alters Origin; and
 - malformed state or input that exceeds a selected carrier resource guard fails without changing the base.
 
 ### 6.3 Protected allowlisted fine-grained text Origin carrier
@@ -208,7 +208,7 @@ Verify:
 
 Use a real browser where required to verify typing, backspace/delete, selection
 replacement, structural split/merge, application line-break intent, IME, cut,
-paste, undo, redo, formatting, and editor mount/unmount.
+paste, undo, redo,  and editor mount/unmount.
 
 Verify that the application/editor adapter translates paragraph or line-break intent into explicit text and/or structural operations. No editor action relies on a document-level hard-break item or on a Block/InlineContent boundary implicitly inserting a character.
 
@@ -268,7 +268,7 @@ Use paired, same-machine measurements for Yjs and Automerge and record OS, Node/
 
 Separate visible editor feedback from canonical local-model publication. Visible typing feedback is the critical hot path and must not wait for persistence, History materialization, network/replica delivery, or another slow subsystem. Use 50 ms from a normal local edit to canonical local collaborative state and projection back as an experimental calibration point. Missing that point records evidence; it does not alone fail correctness or select a carrier. Step 3 may promote, replace, or retire it after the run-specific method and target environment are recorded. It is not a throughput rate, product guarantee, or universal hardware requirement.
 
-Exercise ordinary typing, delete/backspace, insertion at start/middle/end, selection replacement, application line-feed insertion where supported, formatting, mark boundaries, and Unicode. Use smaller growth points plus the representative text workload defined in section 6.5 and multiple InlineContents. Detect accidental whole-document scans or reconstruction on a normal keystroke; whole-document work on routine typing is disqualifying even when one test runner is fast enough to hide the cost.
+Exercise ordinary typing, delete/backspace, insertion at start/middle/end, selection replacement, application line-feed insertion where supported,  mark boundaries, and Unicode. Use smaller growth points plus the representative text workload defined in section 6.5 and multiple InlineContents. Detect accidental whole-document scans or reconstruction on a normal keystroke; whole-document work on routine typing is disqualifying even when one test runner is fast enough to hide the cost.
 
 Measure whole-payload replacement separately for representative text and opaque payload values. Measure Block create, move, subtree move, delete, and structure-plus-multiple-InlineContent atomic changes separately. Characterize open/reload, carrier serialization, checkpoint-state capture, historical materialization, export, convergence workloads, serialized-state growth, and supported garbage collection/compaction. Repeat critical measurements after reload/compaction. Deliberately slow persistence and replica delivery in browser tests; local typing must remain responsive.
 
@@ -380,7 +380,7 @@ Verify:
 
 - the text editor binds only allowlisted fine-grained text and an incompatible payload is rejected or not offered;
 - IME composition is not split mid-composition;
-- paste, cut, replacement, formatting, undo, and redo are atomic actions;
+- paste, cut, replacement,  undo, and redo are atomic actions;
 - paragraph and line-break intent is translated explicitly rather than relying on a canonical hard-break content item;
 - unrelated dirty work submits before an atomic action;
 - insertion/deletion mode change, configured idle, real focus/owner departure, and controlled transitions seal the current semantic group;
@@ -421,7 +421,7 @@ Verify:
 
 - realistic current and historical state round trips;
 - Media Type is preserved for every InlineContent;
-- allowlisted fine-grained text text characters, intrinsic formatting, fine-grained Origin, and embedded text Ranges round trip exactly;
+- allowlisted fine-grained text text characters, intrinsic  fine-grained Origin, and embedded text Ranges round trip exactly;
 - opaque payload bytes and payload-level Origin round trip exactly;
 - whole-payload replacement History, including deterministic concurrent-winner evidence where represented, survives round trip without rewriting Contributions;
 - Contributors, Origins, Contributions, derivation, semantic Checkpoints, Version identity, and command idempotency survive;
@@ -436,7 +436,7 @@ Verify:
 - every portable resource guard selected and promoted under `PORTABLE_DOCUMENT_FORMAT.md` fails safely when exceeded;
 - a failed open never replaces the active engine;
 - stale serialization returns no artifact;
-- intrinsic formatting, boundary policies, Origin, copy/restore lineage, actor distinction, and embedded Range values round trip exactly;
+- intrinsic  boundary policies, Origin, copy/restore lineage, actor distinction, and embedded Range values round trip exactly;
 - every embedded text Range retains its creation Version and required lineage and resolves to the same surviving spans and exact concatenated text after `.coedit` Save/Open;
 - reconstruction from physical checkpoint plus effects equals direct materialization; and
 - successful format-version-1 encode is always accepted by the format-version-1 decoder.

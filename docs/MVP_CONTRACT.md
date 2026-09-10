@@ -38,9 +38,9 @@ The MVP must provide these capabilities:
 20. Save a lossless opaque `.coedit` document.
 21. Reopen that `.coedit` document with equivalent current state and History.
 22. Persist documents incrementally in browser storage and survive a browser reload.
-23. Create one-span, multi-span, and Positional Ranges against current visible allowlisted fine-grained text; resolve spans or exact concatenated text against a descendant Version; rationalize them explicitly; serialize and parse them; and embed a Range value as optional internal-link refinement.
+23. Create one-span, multi-span, and Positional Ranges against current visible allowlisted fine-grained text; resolve spans or exact concatenated text against a descendant Version; rationalize them explicitly; serialize and parse them; and make the Range value available for application-owned comments, URLs, links, and navigation metadata.
 24. Qualify Yjs and Automerge against the accepted payload, attributed-text, structure, Range-feasibility, convergence, editor, and growth suite before selecting the production carrier.
-25. Select and record the Range-tracking representation before freezing `.coedit` version 1 or the internal-link Range encoding.
+25. Select and record the Range-tracking representation before freezing `.coedit` version 1 or the portable Range-fragment encoding.
 
 ## 3. Out of scope
 
@@ -235,7 +235,7 @@ Core commands, queries, History, Checkpoints, restore, Media-Type-labelled paylo
 
 Create a Span Range directly from several arbitrarily ordered, overlapping, duplicated, adjacent, sparse, and zero-length allowlisted fine-grained text spans, and create a separate Positional Range. Reject the complete creation if any supplied target does not resolve in allowlisted fine-grained text at the current visible Version. Edit and restructure the selected document so the Span Range resolves across Blocks, changes current span count, and retains creation and lineage order despite current tree order. Verify greedy Span boundaries, zero-length Span behavior, Block-local preceding-stickiness, no continuation through copy, and exact-boundary split without a manufactured zero-length descendant.
 
-Resolve exact text by concatenating surviving spans without inferred separators or deduplication. Stored newline characters remain part of the result; structural boundaries add nothing. Rationalize only merge-caused exact adjacency after an explicit request. Serialize each Range as a document-relative value, parse it best-effort with unresolved or ambiguous members omitted, and resolve the rebased result. Embed a Range value as same-document internal-link refinement, preserve the primary Block fallback, and round trip it and its creation Version through `.coedit`. The application composes external deep links from a document URI and Range fragment. Ordinary edits and Block moves must not scan or rewrite every retained Range value.
+Resolve exact text by concatenating surviving spans without inferred separators or deduplication. Stored newline characters remain part of the result; structural boundaries add nothing. Rationalize only merge-caused exact adjacency after an explicit request. Serialize each Range as a document-relative value, parse it best-effort with unresolved or ambiguous members omitted, and resolve the rebased result. Round trip the Range and its creation Version through `.coedit`. The application can compose links from its own document URI plus a serialized Range fragment and owns any fallback or activation policy. Ordinary edits and Block moves must not scan or rewrite every retained Range value.
 
 ### Scenario J — Concurrent whole-payload replacement
 

@@ -108,7 +108,7 @@ share a `semanticGroupId`, and History presentation can group them without
 changing their identities or Versions.
 
 IME composition is not split mid-composition. Paste, cut, selection
-replacement, formatting, undo, and redo are submitted as atomic editor actions.
+replacement,  undo, and redo are submitted as atomic editor actions.
 Idle, focus/owner transfer, change of edit mode, and controlled transitions seal
 the current semantic group. Exact time and character thresholds are tunable UX
 parameters, not durable semantics.

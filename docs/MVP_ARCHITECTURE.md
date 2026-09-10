@@ -2,7 +2,7 @@
 
 **Status:** Accepted clean-slate MVP direction.
 
-This document is authoritative for component ownership and the public document-engine boundary. Product ontology belongs in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Implementation order belongs in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md). Capacity classification belongs in [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md). InlineContent Media Types and universal replacement belong in [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md). Attributed allowlisted fine-grained text, durable text Range behavior, Markdown interchange, `.coedit`, and browser persistence details belong in their focused specifications. Post-MVP replication belongs in [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md).
+This document is authoritative for component ownership and the public document-engine boundary. Product ontology belongs in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Implementation order belongs in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md). Capacity classification belongs in [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md). InlineContent Media Types and universal replacement belong in [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md). Fine-grained text attribution, durable text Range behavior, Markdown interchange, `.coedit`, and browser persistence details belong in their focused specifications. Post-MVP replication belongs in [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md).
 
 The document engine is a logical backend. In the MVP it runs locally in the browser process. It does not need to be a server, worker, native process, or separate package.
 
@@ -307,7 +307,7 @@ The value contains the exact supplied Media Type, the current native string, and
 
 The application editor can parse or render the source string and can reconstruct or bind transient editor/carrier state from this value or a controlled engine session. Mutating detached local state does not mutate engine state. Requesting a text-editor session for an opaque payload fails explicitly or is not offered by the application.
 
-A durable fine-grained text commit must pass through `execute` and preserve the accepted atomic text-plus-Origin contract. The client can request ordinary editing intent but cannot assign arbitrary Origin through formatting or raw carrier updates.
+A durable fine-grained text commit must pass through `execute` and preserve the accepted atomic text-plus-Origin contract. The client can request ordinary editing intent but cannot assign arbitrary Origin or submit raw carrier updates.
 
 An opaque payload adapter receives detached bytes and payload metadata. It can request universal whole-payload replacement but receives no fine-grained opaque-payload mutation or raw carrier authority.
 
@@ -459,7 +459,7 @@ The MVP must prove:
 - every losing concurrent replacement remains represented by immutable History and exactly materializable Versions;
 - interactive text edits and Markdown import use the same validation, attribution, atomicity, and History boundary;
 - text and its fine-grained Origin cannot publish in mismatched state;
-- every live fine-grained allowlisted fine-grained text unit has one protected Origin, and ordinary text operations cannot spoof or alter existing Origin;
+- every live fine-grained text unit has one protected Origin, and ordinary text operations cannot spoof or alter existing Origin;
 - each current opaque payload value has its required payload-level Origin;
 - copy and restore preserve Origin according to the payload contract while attributing their new Contributions to the acting Contributor;
 - no Block or InlineContent boundary manufactures a character or textual separator;

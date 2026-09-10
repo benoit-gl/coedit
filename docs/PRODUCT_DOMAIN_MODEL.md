@@ -12,7 +12,7 @@ Use these documents for those concerns:
 - [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) defines component authority and the public engine boundary.
 - [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) defines cross-cutting capacity and resource semantics.
 - [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) defines InlineContent Media Types, universal whole-payload replacement, and payload convergence.
-- [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines detailed allowlisted fine-grained text formatting, Origin, clipboard, link-holder, and comment-holder behavior.
+- [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines detailed fine-grained text, Origin, clipboard, and Range-holder behavior.
 - [`RANGE_MODEL.md`](RANGE_MODEL.md) defines durable multi-span and positional Range behavior inside allowlisted fine-grained text payloads.
 - [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md) defines private MVP implementation contracts that are not owned by focused specifications.
 - [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md) defines Markdown interchange semantics.
@@ -69,9 +69,9 @@ Human users, imports, automation, and later AI collaborators use the same durabl
 
 `InlineContent` is payload-neutral at the document level. The fine-grained Media Type is allowlisted fine-grained text; all other supported Media Types initially use the generic opaque capability set.
 
-Formatting is intrinsic metadata of allowlisted fine-grained text. Fine-grained Origin provenance is protected allowlisted fine-grained text metadata that travels with authored text but never inherits from neighboring text. An opaque payload has one payload-level Origin for its current whole value. Comments are external records with repairable text targets. Ordinary selections are transient.
+Formatting and media syntax are application concerns. Fine-grained Origin provenance is protected metadata that travels with authored allowlisted text but never inherits from neighboring text. An opaque payload has one payload-level Origin for its current whole value. Comments are external records with repairable text targets. Ordinary selections are transient.
 
-These concerns share atomic versioning where required, but formatting and Origin do not use a generic external anchor. Internal links, comments, navigation, and later durable reference holders can use the shared Range value for allowlisted fine-grained text without making Range a universal payload, formatting, or provenance entity.
+Origin and Range lineage share atomic versioning with text where required. Comments, navigation, application links, and later durable reference holders can store or serialize the shared Range value for allowlisted fine-grained text without making Range a universal payload or provenance entity.
 
 ### 2.8 Presentation is a projection
 
@@ -106,8 +106,7 @@ InlineContentPayload
   value: Media-Type-specific collaborative state
 
 allowlisted fine-grained text capability
-  authored Unicode text
-  intrinsic formatting marks
+  native source string
   protected fine-grained origin attribution
 
 Generic opaque capability
@@ -143,7 +142,7 @@ The clean-slate model requires these invariants:
 6. Each InlineContent belongs to exactly one Block.
 7. Each InlineContent owns exactly one Media-Type-labelled payload.
 8. Every InlineContent payload supports atomic whole-payload replacement that preserves InlineContent identity and can keep or change the Media Type, with explicit Origin behavior.
-9. An allowlisted fine-grained text payload owns its text, intrinsic formatting, and fine-grained Origin metadata as one canonical collaborative state.
+9. An allowlisted fine-grained text payload owns its native source string and fine-grained Origin metadata as canonical collaborative state.
 10. A payload using the generic opaque capability set owns exact bytes and one payload-level Origin for its current value.
 11. Sibling order is the order of the parent's `children` vector.
 12. InlineContent order is the order of the Block's `contents` vector.
@@ -240,29 +239,21 @@ Every payload supports atomic whole-payload replacement. Media-Type-specific con
 
 Concurrent whole-payload replacements converge deterministically. Causally later replacements supersede observed replacements. Concurrent replacements choose one deterministic current winner without using packet arrival order or wall-clock time. Losing replacements remain in immutable History and their Versions remain materializable.
 
-### 4.5 allowlisted fine-grained text is canonical collaborative text
+### 4.5 Allowlisted fine-grained text is canonical source text
 
-An allowlisted fine-grained text payload is the canonical state of authored Unicode text, intrinsic formatting, and protected fine-grained Origin attribution. HTML, plain text projections, ProseMirror JSON, rendered attribution runs, and Markdown are derived representations. They are not parallel authorities.
+An allowlisted fine-grained text payload stores a native source string plus protected fine-grained Origin. For `text/markdown`, the string is Markdown source. For `text/plain`, it is plain source text. The engine does not parse, render, or normalize application syntax merely because a Media Type is allowlisted.
 
-There is no document-level `HardBreak` content item. Line-feed, carriage-return, and other characters can exist as text data. The writing application, editor adapter, Markdown adapter, or renderer decides whether to accept, reject, normalize, insert, or present them. That policy does not change the generic document validity of the textual payload.
+There is no document-level `HardBreak` content item. Line-feed, carriage-return, delimiters, and other characters are text data. Block and InlineContent boundaries add no character.
+
+Formatting, Markdown parsing/rendering, list interpretation, and link interpretation belong to application adapters. A Markdown application can consume recognized structural syntax into the Block tree while leaving inline or unrecognized syntax in the payload string. It can serialize a Coedit Range into a Markdown URL if that application convention is useful. None of these interpretations creates an engine-owned formatting or link object.
 
 The carrier is private behind the document engine. Yjs stable v13 is the provisional implementation default, not a public domain type. The Elaboration carrier gate compares it with Automerge before carrier-dependent implementation and portable encoding are frozen.
 
-### 4.6 Formatting belongs to allowlisted fine-grained text
+### 4.6 Origin follows payload semantics
 
-Initial formatting values include bold, italic, underline, strikethrough, inline code, and link with a carrier-neutral target. Ordinary link metadata is opaque to the document model; typed internal Block links are interpreted only according to the focused attributed-text contract.
+Origin identifies the human, imported source, automation, AI/software agent, or unknown source that created logical payload material. It is distinct from the Contributor who later copies, moves, pastes, replaces, or restores that material.
 
-Each mark has explicit start/end expansion behavior. Initial defaults expand bold, italic, underline, and strikethrough at both boundaries; inline code and links expand at neither boundary. Detailed insertion, overlap, replacement, and clearing semantics are defined in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`.
-
-Formatting marks commit atomically with the text they describe. There is no external formatting table or general-purpose formatting `TextAnchor`.
-
-Generic opaque payloads have no intrinsic formatting operations under the initial contract.
-
-### 4.7 Origin follows payload semantics
-
-Origin identifies the human, imported source, automation, AI/software agent, or unknown source that created logical payload material. It is distinct from the Contributor who later copies, moves, formats, pastes, replaces, or restores that material.
-
-In allowlisted fine-grained text, newly inserted material receives explicit fine-grained Origin and never inherits Origin from adjacent text. Ordinary formatting operations cannot create, alter, or erase it. A query or renderer can coalesce adjacent equal origins into display spans, but those spans are not durable `RangeAnnotation<Provenance>` entities.
+In allowlisted fine-grained text, newly inserted material receives explicit fine-grained Origin and never inherits Origin from adjacent text. A query or renderer can coalesce adjacent equal origins into display spans, but those spans are not durable `RangeAnnotation<Provenance>` entities.
 
 For every Media Type using the generic opaque capability set, the current whole payload has one Origin. Whole-payload replacement supplies the new payload Origin. A future structured payload can define finer Origin granularity only through its own payload contract.
 
@@ -282,7 +273,7 @@ Generic opaque copy and restore operate at whole-payload granularity under the i
 
 A Range is a document-relative durable semantic reference value supplied and resolved by the document engine for allowlisted fine-grained text. It records a document-scoped creation Version and the original Block and InlineContent location of each source member. It is not an independently identified product entity, document-owned registry entry, formatting annotation, provenance record, or universal payload locator.
 
-A Range can be stored outside the document, as with a future comment, or embedded as inert target metadata in an intrinsic internal-link mark. A Span Range preserves its source members in creation order without sorting, merging, or deduplication. Its members follow movement, split, and merge lineage but not copy lineage. A Positional Range refers to one logical text position and remains distinct from a zero-length Span. `RANGE_MODEL.md` owns their detailed behavior and staged representation decision.
+A Range can be stored outside the document, as with a future comment, or serialized by an application into a URL, Markdown link destination, navigation record, or other holder. A Span Range preserves its source members in creation order without sorting, merging, or deduplication. Its members follow movement, split, and merge lineage but not copy lineage. A Positional Range refers to one logical text position and remains distinct from a zero-length Span. `RANGE_MODEL.md` owns their detailed behavior and staged representation decision.
 
 An opaque InlineContent remains addressable by its `InlineContentId`, but the current Range service does not address subregions inside opaque payload bytes.
 
@@ -360,7 +351,7 @@ Minimum allowlisted fine-grained text Origin and its copy/restore invariants and
 
 Comments and durable conversations are typed external records that can hold a Range value plus comment-specific attachment and repair state for allowlisted fine-grained text. They are not disguised manuscript Blocks, InlineContents, or Range entities. They never silently reattach to an uncertain match.
 
-Comments are a primary durable use case for a target outside authored text. Internal links can embed the same Range value as a finer text target while retaining a primary Block fallback. Ordinary selections and remote cursors remain transient. `RANGE_MODEL.md` owns text Range behavior; `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns link and comment-holder behavior.
+Comments are a primary durable use case for a target outside authored text. Applications can also serialize the same Range value into links or navigation metadata and define their own fallback behavior. Ordinary selections and remote cursors remain transient. `RANGE_MODEL.md` owns text Range behavior.
 
 ## 9. Contributor model and future AI collaboration
 
@@ -420,21 +411,20 @@ The current ontology requires:
 25. detached read-only historical viewing;
 26. append-only compensating restore;
 27. Contribution-level MVP activity attribution;
-28. intrinsic native formatting marks with explicit boundary expansion for allowlisted fine-grained text;
-29. protected, non-inheriting fine-grained allowlisted fine-grained text Origin and payload-level opaque-payload Origin, both distinct from Contribution actor;
-30. origin-preserving copy and restore with separate operation derivation;
-31. external repairable text targets for comments rather than formatting or provenance;
-32. transient ordinary selections and presence;
-33. one shared Block spine for initial lenses within a Version;
-34. one logical collaborative document per Coedit document by default, hidden behind the engine;
-35. Range as a durable allowlisted fine-grained text value and engine service rather than a canonical entity or registry;
-36. direct one-span and multi-span Range creation;
-37. greedy Span Ranges and Block-local preceding-sticky Positional Ranges;
-38. Range resolution in creation and lineage order, independent of current Block tree order;
-39. exact text concatenation without inferred structural separators or deduplication;
-40. Range lineage through movement, split, and merge but not copy;
-41. permanent exact materialization of every Version while its document is retained; and
-42. future AI through the ordinary engine and provenance boundary.
+28. protected, non-inheriting fine-grained text Origin and payload-level opaque-payload Origin, both distinct from Contribution actor;
+29. origin-preserving copy and restore with separate operation derivation;
+30. external repairable text targets for comments rather than formatting or provenance;
+31. transient ordinary selections and presence;
+32. one shared Block spine for initial lenses within a Version;
+33. one logical collaborative document per Coedit document by default, hidden behind the engine;
+34. Range as a durable allowlisted fine-grained text value and engine service rather than a canonical entity or registry;
+35. direct one-span and multi-span Range creation;
+36. greedy Span Ranges and Block-local preceding-sticky Positional Ranges;
+37. Range resolution in creation and lineage order, independent of current Block tree order;
+38. exact text concatenation without inferred structural separators or deduplication;
+39. Range lineage through movement, split, and merge but not copy;
+40. permanent exact materialization of every Version while its document is retained; and
+41. future AI through the ordinary engine and provenance boundary.
 
 ## 12. Open questions
 
@@ -472,7 +462,7 @@ A future design is compatible with this domain direction only if it preserves th
 8. Durable mutations, including Checkpoints, are attributed Contributions.
 9. Payload type is explicit while payload semantics remain outside generic Block structure.
 10. Every payload can be replaced atomically and converges under replicated replacement.
-11. allowlisted fine-grained text formatting is intrinsic, co-versioned with text, and has explicit boundary semantics.
+11. formatting and media-syntax interpretation remain application concerns rather than engine state.
 12. AI can be added later through the ordinary mutation boundary.
 13. Content Origin remains distinct from Contribution activity and survives copy and restore according to the payload contract.
 14. Local portability, verification, and recovery remain product constraints.
@@ -482,7 +472,7 @@ A future design is compatible with this domain direction only if it preserves th
 
 ## 14. Summary
 
-The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and one collaborative payload labelled with an Internet Media Type. allowlisted fine-grained text has fine-grained collaborative text, intrinsic formatting, protected Origin, and text Range capabilities. Every other supported Media Type initially uses the generic opaque capability set with exact bytes and payload-level Origin. Every payload supports atomic whole-payload replacement and deterministic convergence.
+The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and one collaborative payload labelled with an Internet Media Type. allowlisted fine-grained text has native-string collaboration, protected Origin, and text Range capabilities. Every other supported Media Type initially uses the generic opaque capability set with exact bytes and payload-level Origin. Every payload supports atomic whole-payload replacement and deterministic convergence.
 
 Block and InlineContent boundaries are structural and imply no textual separator. Application adapters decide how content and structure are presented.
 

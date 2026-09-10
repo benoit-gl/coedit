@@ -22,9 +22,7 @@ formatting, Origin, link, and comment behavior outside this Range contract.
 `SCAFFOLDING_PLAN.md` owns the implementation order and decision gates.
 
 A Range is a durable text-reference value, not a document entity. A comment can
-keep the value in an external record. An intrinsic internal-link mark can embed
-the value in allowlisted fine-grained text. Neither use creates a Range registry, independent
-Range identity, or a document-owned table of retained references.
+keep the value in an external record. An application can serialize the value into a URL, Markdown link destination, navigation record, or another holder. These uses create no Range registry, independent Range identity, or document-owned table of retained references.
 
 An opaque InlineContent is addressable by its ordinary `InlineContentId`, but this
 Range service does not address byte regions or application-defined structures
@@ -254,10 +252,6 @@ fresh portable representation of the Range at that Version and can remove
 obsolete tracking references. It does not require eager reconciliation of every
 Range after each document edit.
 
-An internal allowlisted fine-grained text link always resolves its optional Range or Positional
-Range against the current document. Its primary `BlockId` remains the fallback
-when the Range produces no target and the Block still exists.
-
 An external deep link has the conceptual form:
 
 ```text
@@ -269,7 +263,7 @@ and fragment extraction. The Range service parses and resolves only the supplied
 Range fragment against the document selected by the application. It performs no
 cross-document reconciliation or identifier matching.
 
-If an internal link is transferred to another document, application policy must
+If an application link is transferred to another document, application policy must
 reject it, remove it, or convert it to an external deep link. The Range service
 does not remap it.
 
@@ -309,7 +303,7 @@ representation. A carrier can win Gate B while the Range service later uses
 carrier-native identity, persistent content lineage, a piece-oriented or
 derivation structure, or a qualified hybrid.
 
-Gate C must pass before `.coedit` version 1 or the internal-link Range encoding
+Gate C must pass before `.coedit` version 1 or the application-link Range encoding
 is frozen. It does not block merging this representation-neutral behavioral
 contract.
 
@@ -366,7 +360,7 @@ Step 6 Range acceptance must additionally prove:
 - document-relative fragment serialization, parsing, and reinjection;
 - application-owned external document URI handling;
 - serialization and rationalization that rebase the supplied Range;
-- internal-link fallback without cross-document reconciliation;
+- application-holder fallback without cross-document reconciliation;
 - representative retained-Range scaling; and
 - recorded comparison and selection of the lineage representation.
 
@@ -394,7 +388,7 @@ The remaining decisions are:
   identity is the continuing identity;
 - whether references to a BlockId or InlineContentId consumed by a merge follow
   structural lineage, remain historical-only, or become unresolved, including
-  the effect on an internal link's primary Block fallback;
+  the effect on an application link's primary Block fallback;
 - the deterministic identity rule when an operation has no naturally designated
   semantic continuation; clocks and incidental replica order cannot decide it;
 - how complete one-to-many split lineage and many-to-one merge lineage remain
@@ -410,7 +404,7 @@ The remaining decisions are:
   behavior;
 - whether source-member count or serialized size needs an explicit finite
   implementation guard and, if so, its selected value and failure behavior; and
-- the final internal-link serialized shape.
+- the final application-link serialized shape.
 
 Detailed comment repair policy remains a post-MVP comments decision. It does not
 block the headless MVP Range service.

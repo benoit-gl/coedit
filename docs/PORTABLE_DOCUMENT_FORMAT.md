@@ -13,7 +13,7 @@ The user-facing extension is `.coedit`. A portable artifact retains current Medi
 [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls domain meaning.
 [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) controls InlineContent Media Types, universal whole-payload replacement, and convergence semantics.
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
-controls allowlisted fine-grained text formatting and fine-grained Origin behavior. [`RANGE_MODEL.md`](RANGE_MODEL.md)
+controls allowlisted fine-grained text and fine-grained Origin behavior. [`RANGE_MODEL.md`](RANGE_MODEL.md)
 controls embedded durable allowlisted fine-grained text Range values. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
 controls the public serialization boundary. This document controls portable
 logical records, validation, compatibility, and the candidate version-1
@@ -56,7 +56,7 @@ Step 8 encoder until Gate B has recorded:
 - the initial Media-Type encoding for allowlisted fine-grained text and representative opaque Media Types;
 - whole-payload replacement encoding and deterministic concurrent-winner behavior;
 - logical-state and historical-materialization verification;
-- native allowlisted fine-grained text formatting and Origin round-trip behavior;
+- native allowlisted fine-grained text and Origin round-trip behavior;
 - exact opaque payload byte and payload-Origin round-trip behavior;
 - garbage collection and compaction that preserve every Version and required
   text Range lineage; and
@@ -404,7 +404,7 @@ At minimum, verify:
 - realistic imported, edited, formatted, copied, opaque-payload-replaced, and restored content round trips;
 - exact current and historical materialization;
 - Media Types survive exactly;
-- allowlisted fine-grained text characters, intrinsic formatting, and boundary policies survive;
+- allowlisted fine-grained text characters, intrinsic  and boundary policies survive;
 - no hard-break item or implicit structural separator appears after round trip;
 - opaque payload bytes and payload-level Origin survive exactly;
 - universal whole-payload replacement and deterministic current-winner behavior survive without losing the History of concurrent replacements;
