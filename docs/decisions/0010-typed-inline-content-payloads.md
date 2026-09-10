@@ -323,4 +323,3 @@ schema change merely because they are unfamiliar.
 - [RFC 6657: Update to MIME regarding `charset` Parameter Handling in Textual Media Types](https://www.rfc-editor.org/rfc/rfc6657.html) records `text/plain` charset behavior.
 - [RFC 3676: The Text/Plain Format and DelSp Parameters](https://www.rfc-editor.org/rfc/rfc3676.html) defines `format` and `delsp` for `text/plain`.
 - [IANA Media Types](https://www.iana.org/assignments/media-types/media-types.xhtml) is the authoritative media-type registry.
-

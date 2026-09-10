@@ -404,7 +404,7 @@ At minimum, verify:
 - realistic imported, edited, formatted, copied, opaque-payload-replaced, and restored content round trips;
 - exact current and historical materialization;
 - Media Types survive exactly;
-- allowlisted fine-grained text characters, intrinsic  and boundary policies survive;
+- allowlisted fine-grained text characters, intrinsic and boundary policies survive;
 - no hard-break item or implicit structural separator appears after round trip;
 - opaque payload bytes and payload-level Origin survive exactly;
 - universal whole-payload replacement and deterministic current-winner behavior survive without losing the History of concurrent replacements;

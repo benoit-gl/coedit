@@ -140,16 +140,16 @@ one authorship/source event, not a mutable Contributor profile.
 
 The initial behavior is:
 
-| Operation | Content Origin | Contribution actor and derivation |
-| --- | --- | --- |
-| Human typing or replacement | New human Origin for newly inserted material | Acting human |
-| Markdown or external text import | Imported or unknown Origin with source metadata | Human/system actor that initiated the import |
-| Same-document internal paste | Preserve each source Origin; create new carrier text identities | Paster; derive from source content/Version |
-| External text/HTML paste | New imported or unknown Origin | Paster; record available external source metadata |
-| Move | Preserve payload state and Origin | Mover |
-| Entity copy | New entity and carrier text identities; preserve Origins | Copier; derive from source entity/Version |
-| Restore | Fresh carrier text identities for reinserted material; preserve historical Origins | Restoring actor; derive from target Version |
-| AI generation | AI/software-agent Origin | AI execution Contribution; later human acceptance is separate |
+| Operation                        | Content Origin                                                                     | Contribution actor and derivation                             |
+| -------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Human typing or replacement      | New human Origin for newly inserted material                                       | Acting human                                                  |
+| Markdown or external text import | Imported or unknown Origin with source metadata                                    | Human/system actor that initiated the import                  |
+| Same-document internal paste     | Preserve each source Origin; create new carrier text identities                    | Paster; derive from source content/Version                    |
+| External text/HTML paste         | New imported or unknown Origin                                                     | Paster; record available external source metadata             |
+| Move                             | Preserve payload state and Origin                                                  | Mover                                                         |
+| Entity copy                      | New entity and carrier text identities; preserve Origins                           | Copier; derive from source entity/Version                     |
+| Restore                          | Fresh carrier text identities for reinserted material; preserve historical Origins | Restoring actor; derive from target Version                   |
+| AI generation                    | AI/software-agent Origin                                                           | AI execution Contribution; later human acceptance is separate |
 
 There is no `restored` Origin kind. Restore is an activity, not an authorship
 category.
