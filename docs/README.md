@@ -96,7 +96,7 @@ Use [`PRESERVED_BRANCH_RECONCILIATION.md`](PRESERVED_BRANCH_RECONCILIATION.md) b
 
 Examples of useful evidence include tag normalization, tree invariants, semantic edit grouping, controlled editor transitions, History behavior, and recovery tests.
 
-Examples of assumptions that are not current authority include Tauri, SQLite, `DocumentNode`, title/body separation, separate current `BlockContent`, one universal rich-text InlineContent payload, and the old SQLite `.coedit` bytes.
+Examples of assumptions that are not current authority include Tauri, SQLite, `DocumentNode`, title/body separation, separate current `BlockContent`, one universal text InlineContent payload, and the old SQLite `.coedit` bytes.
 
 Inspect preserved material without changing branches, for example:
 

@@ -21,7 +21,7 @@ evidence.
 The `DocumentEngine` is the only document authority. It commits through a
 repository port supplied by the browser composition root. The repository stores
 and retrieves opaque engine records; it does not interpret Blocks, Media Types
-or bytes, formatting, Origins, History semantics, replacement-register state, or
+or bytes, Origins, History semantics, replacement-register state, or
 CRDT effects independently.
 
 The UX can list local document descriptors, display durability status, request

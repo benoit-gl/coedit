@@ -387,7 +387,7 @@ materialized Version
 
 The product can show several projections at the same time. No fixed pane layout is a domain requirement.
 
-Only one allowlisted fine-grained text InlineContent needs to own active rich-text editor machinery at one time in the initial browser implementation. An opaque payload can use a different application adapter without changing the document ontology.
+Only one allowlisted fine-grained text InlineContent needs to own active text editor machinery at one time in the initial browser implementation. An opaque payload can use a different application adapter without changing the document ontology.
 
 ## 11. Recorded clean-slate decisions
 

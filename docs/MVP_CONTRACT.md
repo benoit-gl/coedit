@@ -4,11 +4,11 @@
 
 This document defines what the Coedit MVP must prove. The MVP is a **document-engine prototype**, not a complete collaborative writing product.
 
-Detailed implementation rules are in [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md). Domain meaning remains in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Public authority boundaries remain in [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md). Capacity and resource semantics are specified in [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md). InlineContent Media Types and universal replacement are specified in [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md). Attributed collaborative text is specified in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md). Durable text Range behavior is specified in [`RANGE_MODEL.md`](RANGE_MODEL.md). Markdown interchange is specified in [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md). Lossless recovery is specified in [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md). Browser persistence is specified in [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Implementation order remains in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md).
+Detailed implementation rules are in [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md). Domain meaning remains in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Public authority boundaries remain in [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md). Capacity and resource semantics are specified in [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md). InlineContent Media Types and universal replacement are specified in [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md). Fine-grained collaborative text is specified in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md). Durable text Range behavior is specified in [`RANGE_MODEL.md`](RANGE_MODEL.md). Markdown interchange is specified in [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md). Lossless recovery is specified in [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md). Browser persistence is specified in [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Implementation order remains in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md).
 
 ## 1. Purpose
 
-The MVP must prove that Coedit can support one durable structured document through a headless document engine with clear authority, exact History, typed collaborative InlineContent payloads, attributed collaborative text, durable multi-span and positional text Ranges, deterministic projections, reversible Markdown interchange for imported documents, incremental browser durability, and lossless `.coedit` recovery.
+The MVP must prove that Coedit can support one durable structured document through a headless document engine with clear authority, exact History, typed collaborative InlineContent payloads, fine-grained collaborative text, durable multi-span and positional text Ranges, deterministic projections, reversible Markdown interchange for imported documents, incremental browser durability, and lossless `.coedit` recovery.
 
 The prototype must make later AI, richer payload types, and collaboration work possible without implementing those systems now.
 
@@ -24,7 +24,7 @@ The MVP must provide these capabilities:
 6. Create, select, reorder, tag, and delete InlineContents.
 7. Use Internet Media Types for InlineContent payloads; support allowlisted fine-grained text with fine-grained text operations and generic opaque handling for other supported Media Types.
 8. Replace the complete content of any InlineContent atomically with explicit Origin behavior and deterministic convergence semantics.
-9. Edit canonical allowlisted fine-grained text, intrinsic formatting, and protected fine-grained Origin through the engine command boundary.
+9. Edit canonical allowlisted native-string text with protected fine-grained Origin through the engine command boundary.
 10. Preserve opaque payload bytes with payload-level Origin; no fine-grained opaque payload editing is required.
 11. Use optional content-selection lenses, including a summary convention.
 12. List and summarize durable Contributions.
@@ -114,11 +114,7 @@ Every InlineContent payload supports atomic whole-payload replacement with Origi
 
 The document model does not interpret opaque payload bytes or prescribe application meaning for text characters. Payload-specific contracts decide which fine-grained operations are available.
 
-allowlisted fine-grained text contains authored Unicode text, intrinsic formatting marks, and protected fine-grained Origin attribution. It has no document-level `HardBreak` item. Line-feed, carriage-return, and other characters are text data; application/editor/interchange layers decide how to create, normalize, restrict, or present them.
-
-A payload using the generic opaque capability set contains exact bytes and one payload-level Origin for the current value. It has no fine-grained MVP mutation beyond whole-payload replacement.
-
-Formatting has explicit insertion-boundary behavior. New fine-grained text Origin is assigned by the trusted engine/import boundary and never inherited from neighboring text. Formatting commands cannot erase or rewrite Origin.
+Allowlisted fine-grained text contains a native source string and protected fine-grained Origin attribution. The engine does not parse or render Markdown, own formatting marks, or interpret links. Application/editor/interchange layers own those semantics. New fine-grained text Origin is assigned by the trusted engine/import boundary and never inherited from neighboring text.
 
 Origin identifies who or what created material. The Contribution identifies who performed the operation in this document. Copy and restore preserve Origin according to the payload contract while recording the copy/restore actor and source/derivation separately.
 
@@ -155,7 +151,7 @@ The prototype must preserve these domain rules:
 - allowlisted fine-grained text selects the fine-grained collaborative-text capability set and other supported Media Types initially select the generic opaque capability set;
 - every payload can be replaced atomically while preserving InlineContent identity and keeping or changing Media Type, with explicit Origin behavior;
 - concurrent whole-payload replacements converge deterministically;
-- allowlisted fine-grained text owns intrinsic formatting and protected fine-grained Origin;
+- allowlisted fine-grained text owns native-string content and protected fine-grained Origin;
 - generic opaque payload handling preserves exact bytes and payload-level Origin;
 - Block and InlineContent tags have independent ownership;
 - `childrenPresentation` belongs to the parent;
@@ -181,9 +177,9 @@ The browser can render and inspect the resulting Block tree through engine queri
 
 ### Scenario B — Edit through the engine
 
-A user can reorganize an imported document and edit rich allowlisted fine-grained text. Every durable structural, text, formatting, or whole-payload replacement uses an attributed command.
+A user can reorganize an imported document and edit allowlisted fine-grained text. Every durable structural, text or whole-payload replacement uses an attributed command.
 
-New text receives the correct human/imported/unknown Origin. Clearing formatting preserves Origin. Same-document internal paste preserves source Origin while recording the paster; external paste does not import private Origin or falsely claim authorship.
+New text receives the correct human/imported/unknown Origin. Same-document internal paste preserves source Origin while recording the paster; external paste does not import private Origin or falsely claim authorship.
 
 The suite also creates an opaque InlineContent, replaces its bytes with explicit Origin, and proves byte preservation. Whole-payload replacement of either capability class is atomic.
 
@@ -191,7 +187,7 @@ Durable commits happen promptly and can share a semantic group for History prese
 
 ### Scenario C — History, Checkpoints, and restore
 
-After several structural, text, opaque-payload replacement, and formatting changes, the user can list History, inspect an earlier Version read-only, create a Checkpoint, restore an earlier Version, and continue editing.
+After several structural, text, and opaque-payload replacement changes, the user can list History, inspect an earlier Version read-only, create a Checkpoint, restore an earlier Version, and continue editing.
 
 The Checkpoint appears as one attributed Contribution and creates a new content-identical Version. Its resulting VersionToken remains available through History and can be materialized exactly.
 
@@ -221,7 +217,7 @@ If an arbitrary edited Coedit selection is outside the canonical Markdown-repres
 
 A document with realistic allowlisted fine-grained text, opaque content, and History can serialize to an opaque `.coedit` artifact and reopen into a candidate engine.
 
-The round trip preserves current and historical behavior, Media Types, opaque payload bytes, payload Origins, Checkpoint Contributions and Versions, every stable VersionToken, text Range creation Versions and lineage, exact text/formatting/Origin state, Contribution actor and derivation, and successful command-idempotency records.
+The round trip preserves current and historical behavior, Media Types, opaque payload bytes, payload Origins, Checkpoint Contributions and Versions, every stable VersionToken, text Range creation Versions and lineage, exact text/Origin state, Contribution actor and derivation, and successful command-idempotency records.
 
 Malformed or unsupported input does not replace the current engine.
 

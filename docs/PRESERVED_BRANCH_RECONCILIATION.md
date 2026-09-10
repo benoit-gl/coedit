@@ -25,7 +25,7 @@ Use these classifications:
 | ----------------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | One recursive structural tree with stable identities                    | adapted                            | Retained as the recursive `Block` tree; current vocabulary and invariants are in `PRODUCT_DOMAIN_MODEL.md`.                                                                                                                                                                                                                                                                                                                                                                                   |
 | Separate `BlockContent` identity wrapping `InlineContent`               | superseded                         | `InlineContent` now owns stable content identity and tags directly. `PRODUCT_DOMAIN_MODEL.md` is authoritative.                                                                                                                                                                                                                                                                                                                                                                               |
-| InlineContent as universally rich-text content                          | superseded                         | `InlineContent` now owns one Media-Type-labelled payload. The initial capabilities are fine-grained allowlisted fine-grained text editing and generic opaque handling. Every Media Type supports whole-payload replacement; only allowlisted fine-grained text initially has fine-grained editing. `INLINE_CONTENT_PAYLOADS.md` controls.                                                                                                                                                     |
+| InlineContent as universally text content                          | superseded                         | `InlineContent` now owns one Media-Type-labelled payload. The initial capabilities are fine-grained allowlisted fine-grained text editing and generic opaque handling. Every Media Type supports whole-payload replacement; only allowlisted fine-grained text initially has fine-grained editing. `INLINE_CONTENT_PAYLOADS.md` controls.                                                                                                                                                     |
 | Title/body `DocumentNode` ontology                                      | superseded                         | Structural context determines title, heading, body, and list-item presentation. `PRODUCT_DOMAIN_MODEL.md` controls.                                                                                                                                                                                                                                                                                                                                                                           |
 | Structural/content boundaries imply textual layout                      | superseded                         | Block and InlineContent boundaries are structural and insert no character or separator. Application and interchange adapters own presentation. `PRODUCT_DOMAIN_MODEL.md` and `INLINE_CONTENT_PAYLOADS.md` control.                                                                                                                                                                                                                                                                            |
 | Tauri/Rust/SQLite as current runtime/storage                            | deferred                           | They are not MVP requirements. Reconsider only after measured evidence in the final MVP assessment step.                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -65,7 +65,7 @@ The former `TextAnchor` blocker is closed. The state-of-the-art review showed
 that one generic external annotation incorrectly combined concerns with different
 semantics:
 
-- allowlisted fine-grained text formatting is intrinsic carrier-native rich-text metadata;
+- allowlisted fine-grained text formatting is intrinsic carrier-native text metadata;
 - fine-grained allowlisted fine-grained text Origin is protected, non-inheriting content metadata;
 - opaque payload uses payload-level Origin rather than text-like spans; and
 - durable text target holders use the allowlisted fine-grained text Range value and engine service without making Range a universal formatting, provenance, or opaque payload entity.
@@ -113,7 +113,7 @@ The preserved branch can provide implementation or test evidence after current a
 | `src/domain/ids.ts`                                | Stable ID generation patterns after current branded-ID review.                                                                                                     |
 | `src/domain/json.ts`                               | Generic JSON cloning/comparison helpers where still appropriate.                                                                                                   |
 | `src/domain/tags.ts` and tests                     | Tag normalization and case-insensitive identity.                                                                                                                   |
-| `src/editor/sanitizeRichText.ts` and tests         | Hostile rich-text/paste cases; adapt to allowlisted fine-grained text native marks, protected Origin, private fragments, and the DOM/clipboard sanitizer boundary. |
+| `src/editor/sanitizeRichText.ts` and tests         | Hostile text/paste cases; adapt to allowlisted fine-grained text native marks, protected Origin, private fragments, and the DOM/clipboard sanitizer boundary. |
 | `src/editor/yjsEncoding.ts`                        | Binary/base64 utility evidence only.                                                                                                                               |
 | `src/application/serializedTaskQueue.ts` and tests | Serialized local mutation behavior if still useful.                                                                                                                |
 | `LICENSE`                                          | Project license.                                                                                                                                                   |
@@ -140,10 +140,10 @@ Rewrite preserved tests in current vocabulary. Do not introduce obsolete product
 
 Useful historical documents include:
 
-- `docs/PRODUCT_DOMAIN_MODEL.md` for historical product rationale and the superseded range-annotation/rich-text-only direction;
+- `docs/PRODUCT_DOMAIN_MODEL.md` for historical product rationale and the superseded range-annotation/text-only direction;
 - `docs/DOCUMENT_FORMAT.md` for History, restore, `.coedit`, and corruption lessons;
 - `docs/PERSISTENCE_DESIGN.md` for atomicity and storage-boundary lessons;
-- `docs/SECURITY.md` for untrusted file/rich-text risks;
+- `docs/SECURITY.md` for untrusted file/text risks;
 - `docs/TESTING.md` for data-loss and recovery cases;
 - `docs/KNOWN_LIMITATIONS.md` for failure modes;
 - `docs/proposals/BODY_CHECKPOINT_STRATEGY.md` for the implemented semantic text-group strategy;
@@ -158,7 +158,7 @@ Do not copy these preserved assumptions into the clean scaffold unless a current
 
 - `DocumentNode` title/body ontology;
 - separate current `BlockContent` entity;
-- one universal rich-text InlineContent payload;
+- one universal text InlineContent payload;
 - a document-level hard-break content item or implicit textual separators at structural boundaries;
 - Tauri gateways and host-capability abstractions;
 - Rust domain duplication;

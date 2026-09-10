@@ -38,7 +38,7 @@ The engine owns:
 
 - `Block`, `InlineContent`, Media-Type-labelled InlineContent payloads, Media-Type validation, Origin records, and tags;
 - the universal atomic whole-payload replacement contract for every Media Type;
-- allowlisted fine-grained text canonical text state, intrinsic formatting, and protected fine-grained Origin;
+- allowlisted native-string text state and protected fine-grained Origin;
 - opaque payload byte state and payload-level Origin;
 - document and History invariants;
 - typed, attributed, version-checked, atomic command application;
@@ -292,25 +292,26 @@ Historical materialization is detached and read-only. Restore always enters thro
 
 A query can return a detached InlineContent payload value sufficient for an application adapter to inspect the Media Type and render or replace the content without carrier access.
 
-The rich-text editor boundary is specifically for allowlisted fine-grained text. Conceptually:
+The fine-grained text editor boundary is specifically for allowlisted text. Conceptually:
 
 ```ts
 interface CoeditTextEditorContentValue {
   readonly inlineContentId: InlineContentId;
-  readonly mediaType: "allowlisted fine-grained text";
-  readonly content: DetachedCoeditText;
+  readonly mediaType: string;
+  readonly text: string;
+  readonly origins: DetachedTextOriginState;
 }
 ```
 
-`DetachedCoeditText` contains authored text, native formatting semantics, and protected fine-grained Origin information required for correct editing. It has no document-level `HardBreak` variant. Characters such as line feed remain ordinary text data. It is carrier-neutral at the public boundary.
+The value contains the exact supplied Media Type, the current native string, and detached protected Origin information required for correct attributed editing. It contains no engine-owned formatting, parsed Markdown, rendered tree, or document-level `HardBreak` value.
 
-The editor adapter can reconstruct or bind transient ProseMirror/Tiptap/carrier state from this value or a controlled engine session. Mutating detached local state does not mutate engine state. Requesting a text-editor session for an opaque payload fails explicitly or is not offered by the application.
+The application editor can parse or render the source string and can reconstruct or bind transient editor/carrier state from this value or a controlled engine session. Mutating detached local state does not mutate engine state. Requesting a text-editor session for an opaque payload fails explicitly or is not offered by the application.
 
-A durable fine-grained text commit must pass through `execute` and preserve the accepted atomic text-plus-formatting-plus-Origin contract. The client can request ordinary editing intent but cannot assign arbitrary Origin through formatting or raw carrier updates.
+A durable fine-grained text commit must pass through `execute` and preserve the accepted atomic text-plus-Origin contract. The client can request ordinary editing intent but cannot assign arbitrary Origin through formatting or raw carrier updates.
 
 An opaque payload adapter receives detached bytes and payload metadata. It can request universal whole-payload replacement but receives no fine-grained opaque-payload mutation or raw carrier authority.
 
-Do not expose a live engine-owned Y.Doc/Automerge object, a formatting-only side channel, an Origin mutation side channel, or a generic payload capability registry merely to support the collaborative-text and generic opaque capability classes.
+Do not expose a live engine-owned Y.Doc/Automerge object, an Origin mutation side channel, or a generic payload capability registry merely to support the collaborative-text and generic opaque capability classes.
 
 ## 7. Change notification contract
 
@@ -339,14 +340,14 @@ The MVP need not emit the `remote` change source. Implementations can coalesce n
 UX holds transient editor/composition state
   -> a minimal safe editor action is ready for durable commit
   -> UX submits one attributed command and semantic group ID against observed VersionToken
-  -> engine validates text + formatting + Origin atomically
+  -> engine validates text + Origin atomically
   -> repository commits immutable effect/Contribution + CAS head
   -> engine publishes one logical Contribution and Version
   -> engine emits invalidation
   -> UX re-queries
 ```
 
-IME is not split mid-composition, and paste/cut/replacement/formatting/undo/redo are atomic editor actions. A renderer or editor can interpret text characters or structural operations as presentation breaks, but that interpretation does not add a hard-break entity to the document model. Idle/focus/mode boundaries seal semantic groups; they do not create a second durability ledger. A physical recovery checkpoint is not a semantic History Checkpoint.
+IME is not split mid-composition, and paste/cut/replacement/undo/redo are atomic editor actions. A renderer or editor can interpret text characters or structural operations as presentation breaks, but that interpretation does not add a hard-break entity to the document model. Idle/focus/mode boundaries seal semantic groups; they do not create a second durability ledger. A physical recovery checkpoint is not a semantic History Checkpoint.
 
 If a commit fails, canonical state is unchanged and the UX retains recoverable transient work or presents an explicit retry/discard path.
 
@@ -457,8 +458,8 @@ The MVP must prove:
 - concurrent whole-payload replacements choose the same deterministic winner on every replica with the same valid causal input, independent of arrival order and wall-clock time;
 - every losing concurrent replacement remains represented by immutable History and exactly materializable Versions;
 - interactive text edits and Markdown import use the same validation, attribution, atomicity, and History boundary;
-- text and formatting cannot publish in mismatched state;
-- every live fine-grained allowlisted fine-grained text unit has one protected Origin, and ordinary formatting cannot alter it;
+- text and its fine-grained Origin cannot publish in mismatched state;
+- every live fine-grained allowlisted fine-grained text unit has one protected Origin, and ordinary text operations cannot spoof or alter existing Origin;
 - each current opaque payload value has its required payload-level Origin;
 - copy and restore preserve Origin according to the payload contract while attributing their new Contributions to the acting Contributor;
 - no Block or InlineContent boundary manufactures a character or textual separator;

@@ -292,7 +292,7 @@ Do not hash the whole Block payload into placement metadata. A payload hash woul
 
 Exact primary-position collisions are exceptional carrier cases. When insertion requires normalization of an existing collision run, that normalization is replicated as part of the structural Contribution that needs it. It is not a separate product operation or History action. Prefer deterministic normalization and suppression of normalization-only resurrection when they are inexpensive; record residual behavior if those properties would require disproportionate machinery.
 
-Bind the rich-text editor only to an active allowlisted fine-grained text InlineContent. An opaque payload can be projected to an application adapter, but no rich-text editor or text operation is offered for it. Do not expose the logical document, carrier objects, raw updates, Block activity setters, or client-supplied Origin setters through the public API.
+Bind the text editor only to an active allowlisted fine-grained text InlineContent. An opaque payload can be projected to an application adapter, but no text editor or text operation is offered for it. Do not expose the logical document, carrier objects, raw updates, Block activity setters, or client-supplied Origin setters through the public API.
 
 Formatting follows the vocabulary and boundary defaults in `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`. Carrier adapters translate those logical policies to native marks/attributes and must prove exact round trip. Clearing formatting cannot change Origin.
 

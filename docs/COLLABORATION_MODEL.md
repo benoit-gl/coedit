@@ -39,8 +39,7 @@ implementation order.
 - Every InlineContent Media Type is collaborative in the convergence sense:
   replicas with the same complete set of valid Contributions converge on the
   same current payload state.
-- allowlisted fine-grained text additionally supports fine-grained collaborative text,
-  formatting, and Origin operations. Other Media Types initially support only whole-payload
+- allowlisted fine-grained text additionally supports native-string collaborative text and fine-grained Origin operations. Other Media Types initially support only whole-payload
   replacement.
 - Whole-payload replacement is a convergent replicated register. A causally
   later replacement supersedes replacements it observes. Truly concurrent
@@ -342,7 +341,7 @@ Contributions, they must have:
 1. the same immutable causal Contribution graph and metadata;
 2. collaborative-state-equivalent carrier state, including identity, placement,
    Block activity, deletes, Media Types, whole-replacement register state,
-   allowlisted fine-grained text formatting/fine-grained Origin, opaque payload bytes/payload Origin, and
+   allowlisted fine-grained text/Origin state, opaque payload bytes/payload Origin, and
    text Range-position behavior, even if byte encodings differ;
 3. the same deterministic current whole-payload replacement winner for every
    affected InlineContent;
@@ -434,7 +433,7 @@ recovery, hostile input, restore overlap, and exact integration rules.
 Use one logical collaborative document per Coedit document by default. It holds
 the Block registry and Block-local payload namespaces so one transaction can
 publish structure, several Media-Type-labelled payload values, Origins, and Contribution
-effects atomically. A rich-text editor binds only one active allowlisted fine-grained text
+effects atomically. A text editor binds only one active allowlisted fine-grained text
 InlineContent; the recursive Block tree is not a ProseMirror tree.
 
 This is a private carrier boundary, not a public `Y.Doc` or Automerge type.
@@ -597,7 +596,7 @@ The MVP does not implement networking. It does establish the following seams:
 - typed allowlisted fine-grained text and opaque InlineContent payloads;
 - universal whole-payload replacement with deterministic eventual convergence semantics;
 - the accepted flat Block placement and Block activity compatibility contract;
-- intrinsic allowlisted fine-grained text formatting and protected, non-inheriting fine-grained Origin semantics;
+- protected, non-inheriting fine-grained text Origin semantics;
 - opaque-payload Origin;
 - first-class checkpoint Contributions;
 - a carrier-neutral durable allowlisted fine-grained text Range service with no document-wide holder registry or opaque payload sub-content locator;
@@ -696,7 +695,7 @@ The Media Type boundary, replacement-versus-replacement invariants, flat Block c
   [Hypothesis anchoring](https://github.com/hypothesis/client/blob/main/src/annotator/anchoring/html.ts)
   inform later comment attachment and repair design without defining Range
   resolution.
-- [Automerge rich text](https://automerge.org/docs/reference/documents/rich-text/)
+- [Automerge rich text](https://automerge.org/docs/reference/documents/text/)
   and [Loro movable trees](https://www.loro.dev/docs/tutorial/tree) inform the
   carrier and structural qualification gates.
 - [W3C PROV-DM](https://www.w3.org/TR/2013/REC-prov-dm-20130430/)

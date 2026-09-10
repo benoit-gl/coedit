@@ -94,8 +94,7 @@ coarse collaboration.
 ### 3.3 Fine-grained text uses native strings; raw access uses media bytes
 
 For an allowlisted type, the collaborative logical value is a native ECMAScript
-string plus Coedit collaboration metadata such as intrinsic formatting and
-fine-grained Origin. Fine-grained APIs operate directly on native strings and the
+string plus Coedit collaboration metadata such as fine-grained Origin and Range lineage. Fine-grained APIs operate directly on native strings and the
 selected carrier's native text representation. They do not encode and decode the
 media representation for every edit.
 
@@ -131,10 +130,7 @@ InlineContent boundaries add no character. Applications, editors, renderers, and
 interchange adapters decide how those characters and structural boundaries are
 presented.
 
-Intrinsic Coedit formatting and Origin metadata can accompany both initial
-allowlisted text formats. That collaboration metadata is part of `.coedit` state;
-it is not necessarily representable in the raw `text/markdown` or `text/plain`
-byte stream.
+Fine-grained Origin and Range lineage can accompany both initial allowlisted text formats. Formatting, Markdown parsing/rendering, and link interpretation are application concerns. For `text/markdown`, inline formatting is represented by Markdown source syntax when present, not by a parallel engine-owned mark model.
 
 ### 3.6 Whole-payload replacement is universal
 
@@ -316,3 +312,10 @@ schema change merely because they are unfamiliar.
 - [RFC 6657: Update to MIME regarding `charset` Parameter Handling in Textual Media Types](https://www.rfc-editor.org/rfc/rfc6657.html) records `text/plain` charset behavior.
 - [RFC 3676: The Text/Plain Format and DelSp Parameters](https://www.rfc-editor.org/rfc/rfc3676.html) defines `format` and `delsp` for `text/plain`.
 - [IANA Media Types](https://www.iana.org/assignments/media-types/media-types.xhtml) is the authoritative media-type registry.
+
+
+### 3.9 Formatting and media syntax belong to the application
+
+The document engine is agnostic to formatting. It owns structural relationships, payload Media Types, payload content, attribution/History/Range mechanics, serialization, and collaboration. It does not own bold/italic/link/list rendering semantics or a parallel rich-text mark layer.
+
+A Markdown importer can consume recognized structural syntax into the Block tree while preserving unconsumed inline or unknown syntax in the `text/markdown` source string. Editors can translate user actions into structural operations and source-string edits. Renderers can parse the resulting hierarchy and payload syntax. These are application behaviors, not canonical document-engine semantics.

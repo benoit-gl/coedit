@@ -19,7 +19,7 @@ Use the companion documents for authority:
 - [`docs/MVP_ARCHITECTURE.md`](docs/MVP_ARCHITECTURE.md) defines component authority and the public engine boundary.
 - [`docs/CAPACITY_AND_PERFORMANCE_TARGETS.md`](docs/CAPACITY_AND_PERFORMANCE_TARGETS.md) defines cross-cutting capacity, resource, and numeric-ownership rules.
 - [`docs/INLINE_CONTENT_PAYLOADS.md`](docs/INLINE_CONTENT_PAYLOADS.md) defines InlineContent Media Types, universal whole-payload replacement, and payload convergence.
-- [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines attributed fine-grained text behavior, clipboard lineage, Range-holder behavior, and carrier qualification.
+- [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines fine-grained text and attribution behavior, clipboard lineage, Range-holder behavior, and carrier qualification.
 - [`docs/RANGE_MODEL.md`](docs/RANGE_MODEL.md) defines durable multi-span and positional fine-grained text Range behavior, the Range service boundary, and its staged qualification.
 - [`docs/STRUCTURAL_CARRIER_MODEL.md`](docs/STRUCTURAL_CARRIER_MODEL.md) defines Block placement, Block-local carrier state, structural concurrency, and position-order qualification.
 - [`docs/STRUCTURAL_POSITION_ALLOCATOR.md`](docs/STRUCTURAL_POSITION_ALLOCATOR.md) defines the structural position allocator abstraction and candidate qualification.
@@ -112,7 +112,7 @@ For every material design decision found in the preserved branch, classify it as
 
 The reconciliation record must identify the current authority for retained, adapted, and superseded decisions. It must also identify any deferred decision that blocks implementation.
 
-The former `TextAnchor` blocker is resolved. Formatting uses native collaborative marks inside allowlisted fine-grained text payloads; fine-grained text Origin is protected content-native metadata; opaque payload uses payload-level Origin; future comments and internal text links can use the shared durable fine-grained text Range value; ordinary selections are transient. InlineContent itself owns a Media-Type-labelled payload and is not universally synonymous with rich text. The accepted rationale is recorded in `docs/decisions/0001-collaborative-content-provenance-history.md`, `docs/decisions/0009-durable-range-semantics.md`, and `docs/decisions/0010-typed-inline-content-payloads.md`.
+The former `TextAnchor` blocker is resolved. Formatting and media syntax are application concerns; fine-grained text Origin is protected content-native metadata; opaque payload uses payload-level Origin; future comments and internal text links can use the shared durable fine-grained text Range value; ordinary selections are transient. InlineContent itself owns a Media-Type-labelled payload and is not universally synonymous with rich text. The accepted rationale is recorded in `docs/decisions/0001-collaborative-content-provenance-history.md`, `docs/decisions/0009-durable-range-semantics.md`, and `docs/decisions/0010-typed-inline-content-payloads.md`.
 
 **Exit gate:**
 
@@ -177,7 +177,7 @@ The suite covers:
 - universal whole-payload replacement;
 - deterministic convergence of concurrent whole-payload replacements without wall-clock or arrival-order arbitration;
 - exact arbitrary Unicode native-string collaboration for both allowlisted fine-grained Media Types without a document-level hard-break item;
-- intrinsic fine-grained text formatting and protected fine-grained Origin for both allowlisted types;
+- protected fine-grained Origin and native-string editing for both allowlisted types;
 - exact opaque payload bytes and payload-level Origin;
 - flat Block placement, liveness, and allocator behavior;
 - one transaction across structure and several InlineContents of mixed Media Types;
@@ -194,7 +194,7 @@ See [`docs/INLINE_CONTENT_PAYLOADS.md`](docs/INLINE_CONTENT_PAYLOADS.md), [`docs
 
 **Objective:** Establish the production Media-Type-labelled InlineContent payload and structural carrier using the winner recorded by Gate B.
 
-**Outcome:** Headless code can create, validate, project, clone, replace, edit, copy/paste, restore, and serialize carrier state. Each InlineContent has one valid Media Type. The initial compile-time fine-grained allowlist contains `text/markdown` and `text/plain`; all other valid Media Types use opaque byte handling. Every payload supports whole-payload replacement with explicit Origin and deterministic replicated convergence. Allowlisted text additionally supports native-string fine-grained editing, intrinsic formatting, and protected non-inheriting Origin. One logical collaborative document contains the accepted flat Block carrier and Block-local payload namespaces, transacts across structure and several InlineContents, and supports semantic-update-over-delete. The selected carrier suite remains a production regression suite.
+**Outcome:** Headless code can create, validate, project, clone, replace, edit, copy/paste, restore, and serialize carrier state. Each InlineContent has one valid Media Type. The initial compile-time fine-grained allowlist contains `text/markdown` and `text/plain`; all other valid Media Types use opaque byte handling. Every payload supports whole-payload replacement with explicit Origin and deterministic replicated convergence. Allowlisted text additionally supports native-string fine-grained editing, protected non-inheriting fine-grained Origin. One logical collaborative document contains the accepted flat Block carrier and Block-local payload namespaces, transacts across structure and several InlineContents, and supports semantic-update-over-delete. The selected carrier suite remains a production regression suite.
 
 **Exit gate:** Production code uses no rejected-candidate or carrier-specific public API. Functional, payload, structural, concurrency, atomicity, clipboard, restore, allocator, reload, compaction, and growth regressions pass for the winner. No Block or InlineContent boundary implies a textual separator, and no document-level hard-break item exists.
 
@@ -268,9 +268,9 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 
 ### Step 11 — Integrate interactive InlineContent editing
 
-**Objective:** Connect one active rich-text editor to canonical fine-grained text through the engine command boundary with prompt durable Contributions and separate human-readable grouping.
+**Objective:** Connect one active text editor to canonical fine-grained text through the engine command boundary with prompt durable Contributions and separate human-readable grouping.
 
-**Outcome:** Headings, prose, and list items can be edited in place with attributed durable commits. Several immutable Contributions can share one human-visible semantic group without redefining the semantic History Checkpoint concept. The editor/application maps line-break or paragraph intent into explicit text and/or structural operations; it does not depend on a document hard-break item. Generic opaque payloads remain replaceable through the generic payload boundary but have no rich-text editor requirement.
+**Outcome:** Headings, prose, and list items can be edited in place with attributed durable commits. Several immutable Contributions can share one human-visible semantic group without redefining the semantic History Checkpoint concept. The editor/application maps line-break or paragraph intent into explicit text and/or structural operations; it does not depend on a document hard-break item. Generic opaque payloads remain replaceable through the generic payload boundary but have no text editor requirement.
 
 **Exit gate:** Editor ownership transitions do not lose text, formatting, or Origin. IME and atomic edit paths, prompt commit, semantic grouping, failure retry, internal/external clipboard, History restore, and `.coedit` round trips preserve exact committed state. An incompatible opaque payload target is not silently bound to the text editor. No whole-artifact queue threshold blocks ordinary typing.
 
@@ -347,7 +347,7 @@ Do not treat the architecture as executable until Steps 1-8 pass. At that point 
 
 ### Gate E — Interactive rich editing
 
-Do not attach the interactive rich-text editor before Steps 2-10 are usable. The selected carrier, History, text Range service, import, portable format, read-only workspace, and structural editing must exist first. The rich-text editor is an allowlisted fine-grained text adapter, not a universal InlineContent editor.
+Do not attach the interactive text editor before Steps 2-10 are usable. The selected carrier, History, text Range service, import, portable format, read-only workspace, and structural editing must exist first. The text editor is an allowlisted fine-grained text adapter, not a universal InlineContent editor.
 
 ### Gate F — SQL or native packaging
 
@@ -390,7 +390,7 @@ The plan is complete when the browser prototype satisfies the MVP contract and a
 - selected Versions, lenses, and subtrees can export to Markdown with explicit diagnostics when exact structural/payload interchange is not possible;
 - the opaque `.coedit` artifact provides lossless recovery of Media Types, text, opaque payload bytes, Origins, and History within the selected implementation capacity, and capacity failure does not claim semantic invalidity;
 - the incremental IndexedDB repository provides browser reload durability without becoming a second semantic authority;
-- one active rich-text editor preserves canonical allowlisted fine-grained text, intrinsic marks, and protected fine-grained Origin;
+- one active text editor preserves canonical allowlisted source text and protected fine-grained Origin;
 - semantic edit grouping remains separate from prompt durable Contributions and preserves controlled transition, failure, and retry rules;
 - verification covers data loss, hostile input, corruption, conflicts, History, checkpoints, replacement convergence, restore, and interchange round trips;
 - the canonical clean-checkout command sequence succeeds on required Windows and Linux environments, remains macOS-compatible by design, and is the same path used by Linux CI;

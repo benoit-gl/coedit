@@ -378,7 +378,7 @@ turns unsealed private rows into Product History.
 
 Verify:
 
-- the rich-text editor binds only allowlisted fine-grained text and an incompatible payload is rejected or not offered;
+- the text editor binds only allowlisted fine-grained text and an incompatible payload is rejected or not offered;
 - IME composition is not split mid-composition;
 - paste, cut, replacement, formatting, undo, and redo are atomic actions;
 - paragraph and line-break intent is translated explicitly rather than relying on a canonical hard-break content item;
@@ -464,7 +464,7 @@ Verify:
 
 ## 13. UI and accessibility verification
 
-Verify keyboard-only structural creation and movement, predictable focus after operations, single-rich-text-editor ownership for allowlisted fine-grained text, payload-aware rendering, historical read-only behavior, visible failure/retry state, and no direct React mutation of durable document state.
+Verify keyboard-only structural creation and movement, predictable focus after operations, single-text-editor ownership for allowlisted fine-grained text, payload-aware rendering, historical read-only behavior, visible failure/retry state, and no direct React mutation of durable document state.
 
 Use a real browser for IME, focus transfer, clipboard behavior, and other interactions that cannot be qualified reliably in a simulated DOM.
 
@@ -495,7 +495,7 @@ Before real clients connect, qualify:
 - the exact causal Contribution envelope and atomic metadata/effect publication;
 - Principal, Contributor, Origin, Replica, Session, and connection separation;
 - a two-engine fault bus with duplicate, delay, reorder, missing dependency, partition, reconnect, and conflicting-ID cases;
-- convergence of Contribution graph/frontier, hidden carrier state, Block tree, Media Types, deterministic whole-replacement winners, allowlisted fine-grained text formatting/fine-grained Origin, opaque payload bytes/payload Origin, and every Version materialization;
+- convergence of Contribution graph/frontier, hidden carrier state, Block tree, Media Types, deterministic whole-replacement winners, allowlisted fine-grained text/Origin state, opaque payload bytes/payload Origin, and every Version materialization;
 - a causally later whole-payload replacement supersedes observed replacements while concurrent replacements use the qualified deterministic order;
 - losing concurrent replacement Contributions remain available in History;
 - the accepted flat structural carrier and Block liveness semantics when effects travel through the causal Contribution envelope;
