@@ -38,8 +38,11 @@ ADR 0004 is superseded where it defines links as intrinsic engine-owned formatti
 marks, typed internal Block-link state, and link-specific fallback in canonical
 content. Applications can still store or serialize the reusable durable Range
 value defined by ADR 0009 in Markdown links, comments, navigation metadata, or
-other holders. ADR 0009 remains accepted for Range behavior, as refined here to
-allowlisted fine-grained text and application-owned holders.
+other holders. The Range service and selected carrier provide generic text
+position machinery; neither understands a holder as a link. ADR 0009 remains
+accepted for Range behavior, as refined here to allowlisted fine-grained text and
+application-owned holders. ADR 0005 remains accepted for semantic interpretation
+boundaries, with its earlier link and formatting examples refined by this ADR.
 
 ## 2. Context
 
@@ -57,6 +60,9 @@ The intended boundary is simpler:
 - only explicitly qualified formats receive fine-grained text collaboration;
 - fine-grained text is maintained as a native ECMAScript string rather than
   continuously encoded media bytes;
+- the selected carrier defines the native string values that it can preserve
+  losslessly; Coedit does not add a separate Unicode-repair or well-formedness
+  subsystem for carrier edge cases;
 - raw/coarse access to allowlisted text materializes bytes according to the
   preserved Media Type and fails if exact representation is not possible; and
 - Coedit does not sniff content or maintain a dynamic format-capability registry.
@@ -81,12 +87,18 @@ specified by their media type.
 Generic Media Type syntax validity and payload-specific representation validity
 are distinct. A valid unfamiliar Media Type can use opaque handling without Coedit
 certifying its format-specific parameters. When Coedit owns a processor for an
-allowlisted fine-grained type, that processor must also validate prerequisites
-needed for the representation it handles. For example, `text/markdown` requires a
-`charset` parameter for raw byte conversion. A syntactically valid
-`text/markdown` value that omits that required parameter is not reclassified as
-opaque and is not treated as malformed generic Media Type syntax; the applicable
-fine-grained/raw boundary rejects it as an invalid or incomplete representation.
+allowlisted fine-grained type, that processor validates prerequisites only when
+an operation interprets or produces the Media Type's raw/coarse byte
+representation. Reopening canonical collaborative state from `.coedit` is not a
+raw media boundary.
+
+For example, `text/markdown` requires a `charset` parameter for raw byte
+conversion. A syntactically valid `text/markdown` value that omits that required
+parameter is not reclassified as opaque and is not treated as malformed generic
+Media Type syntax; an applicable raw/coarse boundary rejects it as invalid or
+incomplete representation metadata. A raw processor also rejects duplicate
+parameters that it consumes, such as duplicate `charset` parameters, rather than
+letting incidental parser first/last behavior choose the meaning.
 
 ### 3.2 Fine-grained text capability uses a compile-time allowlist
 
@@ -118,28 +130,35 @@ A valid unfamiliar Media Type is therefore valid document content. It does not
 need a decoder, renderer, registry lookup, or schema migration to participate in
 coarse collaboration.
 
-### 3.3 Fine-grained text uses native strings; raw access uses media bytes
+### 3.3 Fine-grained text uses carrier-native strings; raw access uses media bytes
 
-For an allowlisted type, the collaborative logical value is a native ECMAScript
-string plus Coedit collaboration metadata such as fine-grained Origin and Range
-lineage. The document model adds no Unicode-well-formedness requirement. Any
-ECMAScript string code-unit sequence, including unpaired surrogate code units,
-is valid fine-grained document text.
+For an allowlisted type, the collaborative logical value is exposed as a native
+ECMAScript string plus Coedit collaboration metadata such as fine-grained Origin
+and Range lineage. Coedit does not add a general Unicode normalization, repair,
+or well-formedness pass around ordinary editing. The selected carrier defines
+which native string values it can preserve losslessly.
+
+Ill-formed ECMAScript string edge cases, including lone surrogates, are carrier
+qualification evidence rather than a product portability invariant. Coedit does
+not add a second validation layer only to make those values portable. If the
+carrier explicitly rejects an operation, the normal carrier error propagates and
+no partial document change is published.
 
 Fine-grained APIs operate directly on native strings and the selected carrier's
-native text representation. They do not encode, decode, repair, or reject text
-according to media representation rules for every edit.
+native text representation. They do not encode, decode, repair, or reject
+supported text according to media representation rules for every edit.
 
 The raw/coarse boundary remains byte-oriented. On raw input, a type-specific text
 processor validates representation prerequisites and decodes the supplied bytes
 according to the full declared Media Type. On raw output, it encodes the current
 string according to the preserved Media Type.
 
-Raw conversion must fail explicitly if required Media Type parameters are absent,
-an encoding is unsupported, input is invalid, or the current string cannot be
-represented exactly. It must not replace characters, repair the native string,
-silently change a charset, rewrite the stored Media Type, or fall back to opaque
-handling merely to make serialization succeed.
+Raw conversion must fail explicitly if required Media Type parameters are absent
+or invalid, duplicate consumed parameters are present, an encoding is unsupported,
+input is invalid, or the current string cannot be represented exactly. It must
+not replace characters, repair the native string, silently change a charset,
+rewrite the stored Media Type, or fall back to opaque handling merely to make
+serialization succeed.
 
 For opaque types, the document model keeps the exact supplied bytes and raw
 retrieval returns them unchanged.
@@ -158,15 +177,16 @@ model unless a later focused contract says otherwise.
 
 ### 3.5 Fine-grained text has no document-level hard-break item
 
-Line-feed, carriage-return, unpaired surrogates, and other ECMAScript string code
-units are text data. Block and InlineContent boundaries add no character.
-Applications, editors, renderers, and interchange adapters decide how applicable
-characters and structural boundaries are presented.
+Line-feed, carriage-return, and other supported native string content are text
+data. Block and InlineContent boundaries add no character. Applications, editors,
+renderers, and interchange adapters decide how applicable characters and
+structural boundaries are presented.
 
 Fine-grained Origin and Range lineage can accompany both initial allowlisted text
 formats. Formatting, Markdown parsing/rendering, and link interpretation are
-application concerns. For `text/markdown`, inline formatting is represented by
-Markdown source syntax when present, not by a parallel engine-owned mark model.
+application concerns. For `text/markdown`, inline formatting and links are
+represented by Markdown source syntax when present, not by parallel engine-owned
+mark or link models.
 
 ### 3.6 Whole-payload replacement is universal
 
@@ -225,15 +245,20 @@ not need to change merely because Coedit learns a new operation set.
 The document engine is agnostic to formatting. It owns structural relationships,
 payload Media Types, payload content, attribution/History/Range mechanics,
 serialization, and collaboration. It does not own bold, italic, link, list, or
-other rendering semantics and does not keep a parallel rich-text mark layer.
+other rendering semantics and does not keep a parallel rich-text mark or link
+layer.
 
 A Markdown importer can consume recognized structural syntax into the Block tree
 while preserving unconsumed inline or unknown syntax in the `text/markdown`
 source string. Editors can translate user actions into structural operations and
 source-string edits. Renderers can parse the resulting hierarchy and payload
-syntax. Link targets, including whether a URL is local or remote and whether a
-serialized Coedit Range is present, are application interpretation. These are
-application behaviors, not canonical document-engine semantics.
+syntax.
+
+An application can interpret Markdown link syntax and can choose to store or
+serialize a generic Coedit Range as a local target. The Range service tracks text;
+the carrier supplies only the private generic position machinery needed to do so.
+Neither layer recognizes that holder as a link. URL meaning, local/remote policy,
+activation, fallback, repair, and rendering remain application behavior.
 
 ## 4. Consequences
 
@@ -247,7 +272,7 @@ Positive consequences:
 - capability dispatch has one small compile-time source of truth;
 - there is no content sniffing, dynamic plugin registry, or MIME-taxonomy
   inference;
-- ordinary fine-grained edits stay in native ECMAScript string space;
+- ordinary fine-grained edits stay in carrier-native ECMAScript string space;
 - opaque content keeps exact stored bytes;
 - raw/coarse text access has an explicit lossless encoding contract;
 - universal replacement gives every Media Type a deterministic collaborative
@@ -257,6 +282,9 @@ Positive consequences:
 
 Costs and constraints:
 
+- the selected carrier can have a narrower lossless text domain than the complete
+  set of ECMAScript string code-unit sequences; Coedit characterizes that edge
+  behavior rather than adding a separate Unicode-validation subsystem;
 - the preserved Media Type can name an encoding that cannot represent a later
   collaboratively edited string, so raw materialization can fail;
 - Gate B must prove that native-string collaboration and raw/coarse media
@@ -322,9 +350,16 @@ generic model preserves the complete supplied value.
 ### Restrict fine-grained edits to the declared character encoding
 
 Rejected. It would make every text edit perform byte-encoding policy checks and
-leak interchange representation rules into the collaborative hot path. Native
-string collaboration remains valid; raw byte materialization reports an explicit
-failure if the current text cannot be represented.
+leak interchange representation rules into the collaborative hot path. Supported
+native-string collaboration remains valid; raw byte materialization reports an
+explicit failure if the current text cannot be represented.
+
+### Add a document-level Unicode validator for ill-formed ECMAScript strings
+
+Rejected. Lone surrogates are not a product requirement. Adding normalization,
+repair, or validation only to extend the carrier beyond its native lossless text
+domain adds complexity to the editing hot path without a product benefit. Gate B
+characterizes carrier behavior instead.
 
 ### Silently re-encode as UTF-8 when raw output fails
 
@@ -368,12 +403,12 @@ Step 3 must qualify `text/markdown`, `text/plain`, representative opaque Media
 Types including `application/octet-stream`, universal replacement, deterministic
 concurrent replacement convergence, exact Media Type preservation, parameter and
 representation-validity classification, carrier-independent raw/coarse boundary
-behavior through representative test codecs, native ECMAScript string
-preservation including unpaired surrogate code units, and the existing
-fine-grained text suite against both carrier candidates. Gate B records the
-carrier winner, observable replacement winner rule, its private implementation,
-and mixed replacement/edit semantics. It does not select the production raw text
-processor mechanism or supported charset set.
+behavior through representative test codecs, exact ordinary supported native
+string behavior, characterization of ill-formed ECMAScript string edge cases,
+and the existing fine-grained text suite against both carrier candidates. Gate B
+records the carrier winner, observable replacement winner rule, its private
+implementation, and mixed replacement/edit semantics. It does not select the
+production raw text processor mechanism or supported charset set.
 
 Step 4 selects and qualifies the initial raw text processor mechanism and exact
 supported charset set. It retains the Step 3 raw/coarse boundary cases as
@@ -381,9 +416,9 @@ production regressions and must fail explicitly for unsupported encodings or
 native strings that the preserved Media Type cannot represent exactly.
 
 Step 6 remains responsible for the exact effect of whole-payload replacement on
-durable Range lineage. Step 8 freezes exact Media Type values, native ECMAScript
-string state, opaque payload bytes, and required metadata into the portable format
-only after Gates B and C pass.
+durable Range lineage. Step 8 freezes exact Media Type values, supported
+carrier-native string state, opaque payload bytes, and required metadata into the
+portable format only after Gates B and C pass.
 
 Future fine-grained formats require an explicit allowlist and qualification
 update. Valid unfamiliar Media Types already use the opaque contract and need no
