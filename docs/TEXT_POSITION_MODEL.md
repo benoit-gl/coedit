@@ -5,7 +5,7 @@ behavior and Step 6 selects the durable Range representation.
 
 ## 1. Purpose and authority
 
-This document defines how Coedit separates Unicode text, editor positions, and
+This document defines how Coedit separates native ECMAScript text, editor positions, and
 durable collaborative positions inside an allowlisted fine-grained text payload. It supplies
 position primitives to [`RANGE_MODEL.md`](RANGE_MODEL.md), which owns durable
 allowlisted fine-grained text Range behavior, and supplements
@@ -19,13 +19,18 @@ requirements. Generic opaque payloads have no internal text-position contract.
 
 ## 2. Canonical text
 
-An allowlisted fine-grained text payload stores Unicode text. The document model does not
-prescribe UTF-8, UTF-16, or another storage encoding as document semantics.
+An allowlisted fine-grained text payload stores a native ECMAScript string. The
+document model does not add a Unicode-well-formedness requirement and does not
+prescribe UTF-8, UTF-16, or another media encoding as document semantics.
 
-Preserve authored Unicode text exactly. Do not silently apply NFC, NFD, or
-another Unicode normalization form unless a later product rule requires it.
-Line-feed, carriage-return, and other characters are text data at this layer;
-there is no separate canonical hard-break position unit.
+Preserve the native string exactly. Do not silently apply NFC, NFD, or another
+Unicode normalization form unless a later product rule requires it. Line-feed,
+carriage-return, unpaired surrogate code units, and other string content are data
+at this layer; there is no separate canonical hard-break position unit.
+
+Whether the current string can be represented exactly by the payload's declared
+Media Type is a raw/coarse media-boundary concern. Ordinary fine-grained string
+operations do not encode, decode, repair, or reject text on that basis.
 
 A storage layer, carrier, JavaScript runtime, parser, or codec can use its native
 encoding. That encoding remains private to its boundary unless an interchange
@@ -131,8 +136,8 @@ Each carrier/editor candidate must prove:
   replacement, split, merge, move, undo, redo, whole-payload replacement of allowlisted fine-grained text
   feasibility, reload, and supported compaction;
 - no selection drift or endpoint corruption for combining sequences, astral
-  characters, emoji sequences, variation selectors, newline characters, and
-  representative complex scripts;
+  characters, emoji sequences, variation selectors, newline characters,
+  unpaired surrogate code units, and representative complex scripts;
 - correct affinity at insertion boundaries;
 - no requirement for a carrier-neutral numeric offset in the normal editing hot
   path; and
