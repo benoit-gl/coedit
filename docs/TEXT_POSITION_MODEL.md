@@ -19,18 +19,25 @@ requirements. Generic opaque payloads have no internal text-position contract.
 
 ## 2. Canonical text
 
-An allowlisted fine-grained text payload stores a native ECMAScript string. The
-document model does not add a Unicode-well-formedness requirement and does not
-prescribe UTF-8, UTF-16, or another media encoding as document semantics.
+An allowlisted fine-grained text payload exposes a native ECMAScript string at the
+JavaScript boundary. Coedit does not add a general Unicode normalization, repair,
+or well-formedness layer, and it does not prescribe UTF-8, UTF-16, or another
+media encoding as document semantics.
 
-Preserve the native string exactly. Do not silently apply NFC, NFD, or another
-Unicode normalization form unless a later product rule requires it. Line-feed,
-carriage-return, unpaired surrogate code units, and other string content are data
-at this layer; there is no separate canonical hard-break position unit.
+The selected carrier defines the native string values that it can preserve
+losslessly. Preserve supported carrier-native strings exactly and do not silently
+apply NFC, NFD, or another Unicode normalization form unless a later product rule
+requires it. Line-feed, carriage-return, and other supported string content are
+data at this layer; there is no separate canonical hard-break position unit.
 
-Whether the current string can be represented exactly by the payload's declared
-Media Type is a raw/coarse media-boundary concern. Ordinary fine-grained string
-operations do not encode, decode, repair, or reject text on that basis.
+Carrier qualification characterizes ECMAScript string edge cases that the carrier
+cannot represent losslessly. Those cases are not a portable text-position
+invariant. If the carrier explicitly rejects an operation, that error propagates
+through the normal operation path without publishing a partial change.
+
+Whether the current supported string can be represented exactly by the payload's
+declared Media Type is a raw/coarse media-boundary concern. Ordinary fine-grained
+string operations do not encode, decode, repair, or reject text on that basis.
 
 A storage layer, carrier, JavaScript runtime, parser, or codec can use its native
 encoding. That encoding remains private to its boundary unless an interchange
@@ -135,9 +142,11 @@ Each carrier/editor candidate must prove:
 - the Step 3 Range-position feasibility cases through insertion, deletion,
   replacement, split, merge, move, undo, redo, whole-payload replacement of allowlisted fine-grained text
   feasibility, reload, and supported compaction;
-- no selection drift or endpoint corruption for combining sequences, astral
-  characters, emoji sequences, variation selectors, newline characters,
-  unpaired surrogate code units, and representative complex scripts;
+- no selection drift or endpoint corruption for supported combining sequences,
+  astral characters, emoji sequences, variation selectors, newline characters,
+  and representative complex scripts;
+- characterization of position behavior for ill-formed ECMAScript string edge
+  cases such as lone surrogates without requiring exact preservation;
 - correct affinity at insertion boundaries;
 - no requirement for a carrier-neutral numeric offset in the normal editing hot
   path; and
