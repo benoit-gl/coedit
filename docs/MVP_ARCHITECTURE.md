@@ -44,7 +44,7 @@ The engine owns:
 - typed, attributed, version-checked, atomic command application;
 - stable document, content, Contribution, and Version identities;
 - current projections and exact historical materialization;
-- carrier-neutral allowlisted fine-grained text Range creation, span and text resolution, rationalization, parsing, serialization, and reinjection;
+- carrier-neutral allowlisted fine-grained text Range creation, span and text resolution, rationalization, parsing, and serialization;
 - lightweight History listing and semantic changeset summaries;
 - semantic Checkpoint creation;
 - compensating restore;
@@ -83,6 +83,7 @@ Adapters translate between an external concern and the engine:
 - the Markdown importer plans ordinary typed allowlisted fine-grained text and structural operations plus imported Origin claims;
 - the Markdown renderer queries an explicit Version and emits Markdown plus diagnostics;
 - the allowlisted fine-grained text editor translates editor transactions into fine-grained text operations;
+- application holders can serialize, store, parse, and reuse Range values in links, comments, navigation metadata, or other application state without adding holder semantics to the Range service;
 - a future opaque payload or structured-data application adapter can use universal whole-payload replacement without receiving direct carrier authority;
 - file adapters transport opaque `.coedit` artifacts;
 - the browser repository persists private immutable engine records behind its port;
@@ -239,7 +240,7 @@ interface PortableDocumentInput {
 
 The universal whole-payload replacement operation belongs to the ordinary `DocumentOperation` family. It preserves the target `InlineContentId` while atomically replacing the complete payload value: Media Type, Media-Type-specific content, and the required Origin effect. The Media Type can stay the same or change, and capability dispatch after success follows the resulting Media Type. Payload-specific fine-grained operations reject incompatible Media Types explicitly. Exact operation names and request shapes remain implementation details until their implementation step freezes them.
 
-`RANGE_MODEL.md` owns allowlisted fine-grained text Range behavior. The selected `DocumentEngine` supplies document context. Step 6 Gate C finalizes result wrappers, parse diagnostics, resource-guard behavior, and serialization types without exposing carrier-native objects.
+`RANGE_MODEL.md` owns allowlisted fine-grained text Range behavior. The selected `DocumentEngine` supplies document context. Step 6 Gate C finalizes result wrappers, parse diagnostics, resource-guard behavior, and serialization types without exposing carrier-native objects. The engine has no holder-specific reinjection operation: applications place a serialized Range into their own holder and later pass the value back to `parseRange`/resolution as needed.
 
 `PORTABLE_DOCUMENT_FORMAT.md` owns the exact `.coedit` wire contract. The UX treats `bytes` as opaque. No specific MIME type is part of the accepted MVP design yet.
 
@@ -469,7 +470,7 @@ The MVP must prove:
 - the headless Range service accepts only allowlisted fine-grained text, records each Range's creation Version, rejects direct creation when any supplied target is unresolved or non-text, preserves arbitrary source order and multiplicity, resolves surviving spans in creation and lineage order, concatenates exact stored text without inferred separators, and never follows copied content;
 - explicit rationalization merges only consecutive exact adjacency caused by a lineage merge;
 - best-effort parsing omits unresolved or ambiguous members without speculative rebinding, and document-relative serialization round trips each surviving member;
-- Range operations expose no live carrier object, document-wide holder registry, or universal opaque payload locator;
+- Range operations expose no live carrier object, document-wide holder registry, holder-specific fallback/reinjection policy, or universal opaque payload locator;
 - editor-content and payload values are detached and cannot mutate engine state;
 - restore appends instead of rewinding;
 - `.coedit` serialization checks its expected Version;
