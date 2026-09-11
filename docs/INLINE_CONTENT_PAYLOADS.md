@@ -118,12 +118,23 @@ that must decode or validate its bytes. Reject that representation explicitly;
 do not call it malformed Media Type syntax and do not reinterpret it as opaque.
 For `text/plain`, the registered default applies when `charset` is absent.
 
+A valid declared charset can still be outside the charset set implemented by the
+current raw text processor. That is an explicit unsupported-encoding capability
+failure, not malformed Media Type syntax and not a reason to reinterpret the
+payload as opaque. The initial implementation may deliberately support only a
+small UTF-family charset set for both allowlisted text types so Step 4 does not
+need general charset conversion. Gate B records the exact initial set. A
+non-UTF declared charset, or an effective charset outside that selected set,
+then fails explicitly at a boundary that must decode, encode, or validate the
+media representation.
+
 | Condition                                                                                                     | Required behavior                                                                                                   |
 | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Malformed Media Type syntax                                                                                   | Reject atomically as invalid input.                                                                                 |
 | Valid Media Type not in the fine-grained allowlist                                                            | Accept through generic opaque handling, subject to ordinary envelope and resource checks.                           |
 | Known opaque format, such as `image/png`, without a renderer                                                  | Preserve it; lack of rendering capability is not document invalidity.                                               |
 | Valid allowlisted type with missing or invalid representation prerequisites                                   | Reject at the applicable fine-grained/raw boundary; do not reinterpret it as opaque or as malformed generic syntax. |
+| Valid allowlisted type whose effective charset is not implemented by the current text processor               | Fail explicitly as unsupported encoding/capability; do not rewrite the Media Type or fall back to opaque handling.  |
 | Invalid byte representation for a fine-grained type at a raw/coarse decode boundary                           | Fail explicitly; do not reinterpret it as opaque content.                                                           |
 | Fine-grained text that cannot be represented exactly by the declared encoding at a raw/coarse encode boundary | Fail explicitly; do not substitute characters or rewrite the Media Type.                                            |
 | Unsupported carrier or container schema                                                                       | Report incompatibility; this is not an unknown Media Type.                                                          |
@@ -181,6 +192,14 @@ registered default remains US-ASCII under RFC 6657. Other registered parameters,
 such as `format` and `delsp` from RFC 3676, are preserved as supplied. The generic
 collaborative text layer does not interpret flowed-text semantics.
 
+The registered default is part of the media-format semantics even when the first
+processor does not implement that encoding. Consequently, an initial UTF-only
+processor may reject raw/coarse `text/plain` without an explicit supported UTF
+charset because its effective encoding is US-ASCII. This is a temporary
+implementation capability limit, not a claim that the Media Type is malformed or
+that US-ASCII is invalid for `text/plain`. The normal initial authored and import
+paths use explicit UTF-8 Media Types.
+
 Parameter preservation and capability dispatch therefore remain simple:
 
 - capability dispatch uses only normalized `type/subtype`;
@@ -225,8 +244,8 @@ Media-Type-aware text processor:
 - encoding or decoding is not performed for ordinary fine-grained string
   operations;
 - the operation must fail explicitly when required representation parameters are
-  absent, the declared encoding is unsupported, input bytes are invalid for it,
-  or the current string cannot be represented exactly;
+  absent, the effective declared encoding is unsupported, input bytes are invalid
+  for it, or the current string cannot be represented exactly;
 - the processor must not silently replace unrepresentable characters, change the
   declared charset, rewrite the Media Type, or fall back to another encoding or
   to opaque handling;
@@ -234,20 +253,35 @@ Media-Type-aware text processor:
 - media-type representation rules can be implemented by the processor without
   changing the collaborative logical string.
 
+The first production processor may support only the UTF-family charset set
+selected at Gate B for `text/markdown` and `text/plain`. It need not implement
+legacy or arbitrary charset conversion in Step 4. A payload that declares or
+implies another valid charset is rejected explicitly at any boundary that needs
+raw text conversion or validation. The implementation must not silently transcode
+it, relabel it as UTF-8, or reinterpret it as opaque bytes. Later charset support
+can expand this implementation capability without changing the document model or
+stored Media Type contract.
+
 For example, `text/plain` without a `charset` parameter has an effective
-US-ASCII encoding. Fine-grained collaboration can still insert a character that
-US-ASCII cannot represent. The collaborative state remains valid, but a later raw
-materialization under that unchanged Media Type fails explicitly until the
-content or Media Type is changed by an explicit operation.
+US-ASCII encoding. The logical contract permits such a payload, and a future
+processor can support it. If the selected initial processor is UTF-only, however,
+raw creation/open/replacement/materialization that requires US-ASCII conversion
+fails as unsupported encoding. Likewise, once an implementation supports such a
+payload, fine-grained collaboration can insert a character that US-ASCII cannot
+represent; the collaborative state remains valid, but a later raw materialization
+under that unchanged Media Type fails explicitly until the content or Media Type
+is changed by an explicit operation.
 
 The selected carrier can use its own binary encoding for replication and
 persistence. Carrier bytes are not the raw media representation and are not
 labelled `text/markdown` or `text/plain` merely because they contain collaborative
 state for those payloads.
 
-Gate B qualifies the processor boundary and records the initial supported charset
-mechanism. Any finite supported-charset set or resource guard is an implementation
-capability/guard, not permission to mutate a stored Media Type silently.
+Gate B qualifies the processor boundary and records the exact initial supported
+UTF-family charset set and mechanism. Any finite supported-charset set or resource
+guard is an implementation capability/guard, not permission to mutate a stored
+Media Type silently. General non-UTF charset conversion can be deferred until a
+real product path requires it.
 
 ## 7. Payload creation and replacement identity
 
@@ -264,7 +298,10 @@ Step 2 can continue to use its typed opaque empty `InlineContentValue` while
 content internals are intentionally unavailable. Step 4 introduces the final
 Media-Type-labelled payload representation without changing Step 2 structural
 ownership rules. The ordinary initial authored-text path uses Markdown with a
-complete declared encoding, initially `text/markdown; charset=UTF-8`.
+complete declared encoding, initially `text/markdown; charset=UTF-8`. An initial
+plain-text authored path likewise uses an explicit supported UTF charset, normally
+`text/plain; charset=UTF-8`, rather than relying on an unimplemented non-UTF
+default conversion.
 
 ## 8. Universal whole-payload replacement
 
@@ -430,10 +467,18 @@ minimum prove:
   opaque;
 - Markdown `charset` requirements and plain-text default/declared charset behavior
   are handled at the raw processor boundary rather than during fine-grained edits;
+- Gate B records the exact initial supported UTF-family charset set for both
+  allowlisted types, and the initial processor rejects another valid declared or
+  effective charset explicitly rather than implementing implicit conversion;
+- if the selected initial processor is UTF-only, `text/plain` without `charset`
+  is recognized as semantically US-ASCII but rejected at raw boundaries as an
+  unsupported effective encoding rather than being relabelled or treated as
+  malformed;
 - fine-grained APIs exchange native strings without continuous media-byte
   encoding/decoding;
-- raw/coarse decode succeeds for supported valid representations and fails
-  atomically for invalid or unsupported encodings or representation metadata;
+- raw/coarse decode succeeds for supported valid UTF representations and fails
+  atomically for invalid bytes, unsupported encodings, or invalid representation
+  metadata;
 - raw/coarse encode returns an exact representation under the unchanged declared
   Media Type or fails explicitly when the current string is not representable;
 - encoding failure never substitutes characters or silently rewrites `charset` or
@@ -479,8 +524,8 @@ invariant: losing replacement Contributions remain immutable and their Versions
 remain exactly materializable.
 
 **Maturity:** Pending selection for carrier/payload resource guards and the initial
-raw text-encoding mechanism; shared performance workloads remain experimental
-under `MVP_VERIFICATION_PLAN.md`.
+UTF-family raw text-encoding mechanism; shared performance workloads remain
+experimental under `MVP_VERIFICATION_PLAN.md`.
 
 **Owner:** This document for payload/carrier replacement, raw/coarse media
 materialization, and opaque-payload resource guards;
@@ -502,15 +547,15 @@ carrier.
 
 ### 13.1 Implementation status and decision ownership
 
-| Stage               | Status or responsibility                                                                                                                                                                                     |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Completed Steps 1-2 | Browser scaffold and pure structural domain; `InlineContentValue` remains an opaque empty value. No Media Type dispatch or replacement carrier is implemented.                                               |
-| Step 3 / Gate B     | Qualify carriers; select the observable replacement winner rule and its private implementation, mixed replacement/edit semantics, raw text-encoding mechanism, boundary rules, and required resource guards. |
-| Step 4              | Implement the selected payload, compile-time allowlist, raw/coarse processor boundary, and carrier behavior.                                                                                                 |
-| Step 5              | Implement first-class Contributions and permanent exact Version materialization, including losing replacement History.                                                                                       |
-| Step 6 / Gate C     | Select and implement durable text Range lineage and remaining Range behavior.                                                                                                                                |
-| Step 8              | Freeze portable encoding of exact Media Type values, fine-grained text state, collaboration metadata, and opaque bytes.                                                                                      |
-| Pre-network gate    | Qualify causal transport, authorization, and replicated restore overlap before network collaboration ships.                                                                                                  |
+| Stage               | Status or responsibility                                                                                                                                                                                                                      |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Completed Steps 1-2 | Browser scaffold and pure structural domain; `InlineContentValue` remains an opaque empty value. No Media Type dispatch or replacement carrier is implemented.                                                                                |
+| Step 3 / Gate B     | Qualify carriers; select the observable replacement winner rule and its private implementation, mixed replacement/edit semantics, initial supported UTF-family charset set/mechanism, boundary rules, and required resource guards.          |
+| Step 4              | Implement the selected payload, compile-time allowlist, UTF-only initial raw/coarse processor boundary if selected, explicit unsupported-charset failure, and carrier behavior. General non-UTF conversion is not required for first delivery. |
+| Step 5              | Implement first-class Contributions and permanent exact Version materialization, including losing replacement History.                                                                                                                        |
+| Step 6 / Gate C     | Select and implement durable text Range lineage and remaining Range behavior.                                                                                                                                                                 |
+| Step 8              | Freeze portable encoding of exact Media Type values, fine-grained text state, collaboration metadata, and opaque bytes.                                                                                                                       |
+| Pre-network gate    | Qualify causal transport, authorization, and replicated restore overlap before network collaboration ships.                                                                                                                                   |
 
 Accepted design requirements are not claims that these later stages have run.
 
@@ -525,6 +570,8 @@ This contract does not:
 - invent a Coedit-specific payload Media Type;
 - introduce a dynamic payload capability registry;
 - define a separate Media Type conversion operation;
+- require the initial implementation to convert arbitrary legacy or non-UTF text
+  encodings;
 - require the core collaborative layer to parse Markdown, flowed text, or other
   application syntax;
 - promise that every valid fine-grained text value is representable by every
