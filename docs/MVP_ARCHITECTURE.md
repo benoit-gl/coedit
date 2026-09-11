@@ -88,7 +88,7 @@ Adapters translate between an external concern and the engine:
 - a future opaque payload or structured-data application adapter can use universal whole-payload replacement without receiving direct carrier authority;
 - file adapters transport opaque `.coedit` artifacts;
 - the browser repository persists private immutable engine records behind its port;
-- clipboard adapters validate private Coedit text fragments and sanitize ordinary HTML; and
+- clipboard adapters validate private Coedit text fragments; and
 - a future AI adapter queries explicit Versions and submits attributed commands.
 
 Authority, not deployment, defines the boundary.
@@ -497,5 +497,3 @@ The MVP must prove:
 - IndexedDB recovery, competing-tab conflict, quota denial, and explicit backup paths are verified;
 - Markdown imported documents satisfy the export/re-import normalized equivalence property for their allowlisted fine-grained text subset; and
 - a different private History representation can pass the same public contract suite.
-
-The strict MVP deliberately does not prove the complete network protocol, a provenance UI, Comment records or repair UX, authenticated attribution, signed claims, fine-grained non-text collaboration, or AI-provider collaboration. It does prove Media-Type-labelled payload replacement/convergence, the reusable headless text Range service, minimum Origin invariants, and carrier feasibility those capabilities require.
