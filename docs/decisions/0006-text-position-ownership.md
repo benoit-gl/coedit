@@ -27,12 +27,17 @@ no text-position or byte-range contract merely because fine-grained text has one
 
 ## Decision
 
-An allowlisted fine-grained text payload stores a native ECMAScript string. The
-document model adds no Unicode-well-formedness requirement and does not prescribe
-a media encoding as document semantics. Any code-unit sequence accepted by the
-native string boundary, including unpaired surrogate code units, remains valid
-fine-grained document text. Media-Type-specific encode/decode and exact
+An allowlisted fine-grained text payload exposes a native ECMAScript string at the
+JavaScript boundary. Coedit does not add a general Unicode normalization, repair,
+or well-formedness layer. The selected carrier defines the native string values
+that it can preserve losslessly. Media-Type-specific encode/decode and exact
 representability checks occur only at raw/coarse media boundaries.
+
+Ill-formed ECMAScript string edge cases, including lone surrogates, are carrier
+qualification evidence rather than a product text-position invariant. Coedit does
+not add a separate validator only to extend the carrier's native text domain. If
+the carrier explicitly rejects an operation, that failure propagates through the
+normal operation path without partial publication.
 
 Use editor-native positions for transient editing. Durable text references use
 the carrier-neutral Range service. A private Range-tracking implementation can
@@ -48,7 +53,8 @@ Do not independently adjust a valid editor selection to Coedit-computed grapheme
 boundaries. The editor owns transient selection and normal Unicode editing
 behavior.
 
-Preserve the native string without silent Unicode normalization or repair.
+Preserve supported carrier-native strings without silent Unicode normalization or
+repair.
 
 Portable and historical Range recovery uses the creation Version, original Block
 and InlineContent identities, and the carrier-neutral lineage and verification
@@ -70,17 +76,17 @@ behavior, and leaves the durable Range-tracking representation to Gate C.
 
 - UTF-16 can remain a JavaScript or parser boundary detail without becoming
   canonical document semantics.
-- The engine accepts the native ECMAScript string domain without adding a
-  Unicode-validation or repair layer; raw media conversion owns representation
-  failures.
+- The engine does not add a Unicode-validation or repair layer only to broaden
+  the selected carrier's native text domain; raw media conversion separately
+  owns representation failures.
 - Durable application-held text Ranges can use stable carrier positions behind
   the Range service without requiring them as the complete Range-tracking
   representation.
 - Generic opaque payloads do not acquire byte offsets or sub-content Range
   semantics from this decision.
-- Qualification must test complex Unicode selections, ill-formed native strings,
-  and stable-position conversion through editing and reload when a candidate uses
-  that primitive.
+- Qualification must test ordinary complex Unicode selections and characterize
+  ill-formed native-string behavior and stable-position conversion through
+  editing and reload when a candidate uses that primitive.
 - Portable recovery needs carrier-neutral lineage and verification evidence in
   addition to any live carrier positions used by the selected representation.
 
