@@ -57,9 +57,9 @@ The Step 0 gate requires:
 
 The documented baseline closes the former `TextAnchor` blocker by assigning payload-neutral InlineContent ownership, protected fine-grained text Origin, opaque-payload Origin, durable text Range values, Range-holder lifecycles, application-owned formatting/link interpretation, and transient selections to distinct mechanisms. A mechanical scan must find no normative external formatting/provenance Range, engine-owned formatting/link state, universal hard-break content-item requirement, implicit Block/InlineContent text separator, or single-InlineContent durable-target assumption outside an explicitly superseded historical statement.
 
-The Media-Type-labelled-payload decision and Range authority revalidate the Step 0 authority baseline without reopening completed structural semantics in Steps 1 and 2. Gate B selects the collaborative carrier and closes the observable concurrent-replacement winner rule, its private implementation, and mixed replacement/text-edit semantics. Step 4 selects and qualifies the first production raw text processor capability. Gate C selects the text Range representation after Step 6 and before `.coedit` version 1 freezes a portable Range encoding.
+The Media-Type-labelled-payload decision and Range authority revalidate the Step 0 authority baseline without reopening completed structural semantics in Steps 1 and 2. Gate B selects the collaborative carrier, records the required carrier text-domain behavior, and closes the observable concurrent-replacement winner rule, its private implementation, and mixed replacement/text-edit semantics. Step 4 selects and qualifies the first production raw-media processor capability. Gate C selects the text Range representation after Step 6 and before `.coedit` version 1 freezes a portable Range encoding.
 
-The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `INLINE_CONTENT_PAYLOADS.md`, `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, the observable deterministic whole-payload replacement winner rule and the carrier-private mechanism that implements it, mixed replacement/text-edit semantics, evidence that raw/coarse media conversion is independent of carrier selection, the actual qualification hardware/software environment, measurements, scaling behavior, and the selection rationale. It does not select the production charset set or raw text processor mechanism. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
+The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `INLINE_CONTENT_PAYLOADS.md`, `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, the observable deterministic whole-payload replacement winner rule and the carrier-private mechanism that implements it, mixed replacement/text-edit semantics, carrier text-domain evidence, evidence that raw/coarse media conversion is independent of carrier selection, the actual qualification hardware/software environment, measurements, scaling behavior, and the selection rationale. It does not select the production raw-media processor or supported representation profiles. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
 
 ### 4.1 Step 1 tooling and platform evidence
 
@@ -145,22 +145,19 @@ then retain it as a production regression suite for the winner.
 Verify:
 
 - each materialized InlineContent carries a syntactically valid Media Type; allowlisted fine-grained text selects the fine-grained text capability set and valid unfamiliar types select generic opaque handling;
-- malformed generic Media Type syntax, a valid unfamiliar Media Type, and a syntactically valid allowlisted type with invalid or incomplete representation prerequisites are distinct cases;
-- `text/markdown` without its required `charset` is rejected at a raw/coarse boundary that must validate or decode its media representation; it is not reclassified as opaque and is not reported as malformed generic Media Type syntax;
-- duplicate parameters consumed by the raw text processor, including duplicate `charset` parameters, are rejected deterministically at the raw/coarse boundary rather than resolved by incidental parser first/last behavior;
-- Step 3 uses representative test codec fixtures to prove that supported conversion, unsupported-encoding failure, invalid input, and exact-representation failure are independent of carrier selection without selecting a production charset set or processor mechanism;
-- Step 4 records the exact initial supported charset set and production raw text processor mechanism for `text/markdown` and `text/plain`, and the processor accepts valid representations in that set;
-- the public engine can materialize raw/coarse media for an explicit Version and InlineContent without carrier access; opaque payloads return their exact stored bytes and allowlisted text returns the exact bytes produced under the preserved Media Type;
-- a valid declared or effective charset outside the Step 4-selected initial set fails explicitly as unsupported encoding/capability at a boundary that must decode, encode, or validate the media representation; the implementation does not relabel it, transcode it silently, or reinterpret it as opaque;
-- if the Step 4-selected initial processor is UTF-only, `text/plain` without `charset` is recognized as having the registered US-ASCII default but is rejected at raw boundaries as an unsupported effective encoding rather than as malformed Media Type syntax;
+- malformed generic Media Type syntax, a valid unfamiliar Media Type, and an allowlisted Media Type whose raw representation is unsupported by the selected processor are distinct cases;
 - case variants and parameters give consistent type/subtype capability matching without a registry lookup while the complete supplied Media Type survives unchanged;
+- Step 3 uses representative test codec fixtures to prove exact supported conversion, explicit unsupported-profile failure, invalid-input failure, and exact-representation failure independently of carrier selection without selecting the production processor/profile set;
+- Step 4 records the selected production raw-media processor and supported representation profiles and verifies each selected profile according to its focused contract;
+- preserving a Media Type parameter does not by itself claim processor support for the representation profile that parameter defines;
+- a supported raw-media profile produces the exact expected representation, while an unsupported profile fails explicitly without relabelling, silent transcoding, parameter ignoring, content substitution or repair, or opaque fallback;
+- the public engine can materialize raw/coarse media for an explicit Version and InlineContent without carrier access; opaque payloads return their exact stored bytes and supported allowlisted-text profiles return their exact media representation;
 - each materialized InlineContent has one Media Type and ordinary replacement preserves the InlineContent identity;
 - payload-specific operations reject an incompatible Media Type explicitly rather than coercing content;
 - no separate Media Type conversion operation is required; type change occurs only as part of atomic whole-payload replacement;
 - whole-payload replacement is available for every supported Media Type and can keep or change the Media Type;
 - a replacement publishes its complete Media Type, Media-Type-specific content, and required Origin effect atomically;
-- malformed replacement, invalid fine-grained raw representation metadata, unsupported charset, decode failure, or a selected resource-guard failure leaves the base unchanged;
-- raw/coarse materialization fails explicitly for missing, duplicate, or invalid required representation metadata, an unsupported effective charset, or current text that cannot be represented exactly; it substitutes no content, repairs no native string, changes no Media Type, and mutates no document state;
+- malformed replacement, unsupported raw-media profile, decode/encode failure, or a selected resource-guard failure leaves the base unchanged;
 - detached opaque payload bytes and caller-owned replacement buffers cannot mutate engine state after submission;
 - opaque payload bytes round trip exactly and the current opaque payload value has one payload-level Origin;
 - moving an opaque InlineContent preserves bytes and Origin;
@@ -188,13 +185,14 @@ Verify:
 
 - empty and realistic supported native ECMAScript strings, including line-feed, carriage-return, supplementary characters, combining sequences, variation selectors, and representative complex scripts;
 - both candidates characterize isolated high and low surrogate behavior and other ill-formed ECMAScript string edge cases without treating exact preservation of those values as a qualification requirement;
+- Gate B records the carrier text-domain behavior required by the production contract instead of introducing an independent pre-carrier Unicode representation or validation subsystem;
 - `text/markdown` and `text/plain` use the same carrier-neutral fine-grained text operation surface while preserving their distinct full Media Type values;
 - insertion, deletion, and replacement at the start, middle, end, and exact operation boundaries;
 - concurrent insertion, deletion, and replacement under equivalent transaction shapes and delivery faults;
 - supported carrier-native strings remain exact collaborative text without a Unicode normalization or repair pass;
 - an explicit carrier rejection of a native-string edge case propagates through the operation error path and publishes no partial document change;
 - the canonical projection contains no separate hard-break content item or sentinel;
-- line-feed, carriage-return, or another supported native-string value is not rejected merely because a renderer or media encoder cannot present or encode it;
+- line-feed, carriage-return, or another supported native-string value is not rejected merely because a renderer or raw-media processor cannot present or encode it;
 - Markdown delimiters, link syntax, and other application syntax remain ordinary source-string content to the document engine;
 - the engine does not create, preserve, or require a parallel formatting-mark or link-object model for allowlisted text;
 - editor-to-carrier-to-editor projection preserves supported canonical native strings and Origin without making editor formatting state a second document authority;
@@ -326,7 +324,7 @@ Verify at least:
 
 Functional invariants are mandatory and cannot be traded for a faster carrier.
 Select Yjs unless Automerge passes the same suite and materially reduces custom
-protected-metadata, replacement-register, structural, heads, Range-position, or storage machinery enough to outweigh its integration maturity risk. This Gate B decision does not select the Step 4 raw text processor or the Step 6 Range-tracking representation.
+protected-metadata, replacement-register, structural, heads, Range-position, or storage machinery enough to outweigh its integration maturity risk. This Gate B decision does not select the Step 4 raw-media processor or supported representation profiles, and it does not select the Step 6 Range-tracking representation.
 
 ## 7. History verification
 
@@ -461,8 +459,7 @@ Verify:
 - unknown properties fail for version 1;
 - valid unfamiliar Media Types round trip through generic opaque handling with their exact labels, bytes, and Origins, without a registry lookup or renderer;
 - malformed generic Media Type syntax fails separately from carrier/schema incompatibility and portable corruption;
-- reopening canonical collaborative state does not decode or encode allowlisted text according to its Media Type, does not require its charset to be supported by the raw text processor, and does not reject canonical text merely because the declared charset could not represent it;
-- `text/markdown` without required `charset` can reopen as canonical collaborative state when the generic Media Type syntax and carrier state are otherwise valid; a later raw/coarse operation rejects the incomplete representation metadata;
+- reopening canonical collaborative state does not invoke raw-media decoding or encoding, and does not reject canonical text merely because the selected raw-media processor does not support the preserved representation profile;
 - unsupported carrier/schema versions, malformed base64/binary values, missing/mis-hashed chunks, and unreachable references fail with the appropriate invalid-input or incompatibility result;
 - malformed trees and ownership fail;
 - broken graph/frontier links and Contributor/Origin references fail;
