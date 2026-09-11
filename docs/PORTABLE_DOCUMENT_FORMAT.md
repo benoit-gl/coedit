@@ -1,7 +1,7 @@
 # `.coedit` portable document format
 
 **Status:** Accepted logical recovery contract; carrier-specific fields, Range
-lineage/encoding details, native-string container encoding details, and
+lineage/encoding details, supported native-string container encoding details, and
 implementation guards remain pending or experimental until Gates B and C pass
 and Step 8 freezes version 1.
 
@@ -49,14 +49,16 @@ and Step 8 measurements confirm acceptable resource and performance behavior.
 JSON is a candidate portable container, not the internal database layout or a
 permanent promise that all future versions remain monolithic JSON.
 
-The logical engine string domain is broader than Unicode scalar-value text: an
-allowlisted fine-grained payload can contain any native ECMAScript string
-code-unit sequence, including unpaired surrogates. Therefore a version-1
-container must define a reversible representation for every such string. If JSON
-remains the container, Step 8 must select a canonical JSON string escaping or
-binary/chunk representation that preserves those UTF-16 code units exactly. A
-codec must not rely on a UTF-8 conversion that repairs, replaces, or rejects lone
-surrogates. This requirement does not select the physical representation here.
+The portable string domain follows the collaborative text domain selected at
+Gate B. Step 8 must preserve every native string value that can exist in accepted
+carrier state. It does not broaden that domain to every ECMAScript UTF-16 code-unit
+sequence merely because JavaScript can construct such a value. Carrier behavior
+for ill-formed ECMAScript strings, including lone surrogates, is qualification
+evidence rather than a version-1 portability requirement.
+
+If JSON remains the container, Step 8 must select a representation that preserves
+supported carrier-native strings exactly without Unicode normalization or silent
+repair. This requirement does not select the physical representation here.
 
 Do not freeze `formatVersion: 1`, publish a version-1 fixture, or implement the
 Step 8 encoder until Gate B has recorded:
@@ -67,7 +69,7 @@ Step 8 encoder until Gate B has recorded:
 - whole-payload replacement encoding and the observable deterministic concurrent-winner rule plus its private implementation;
 - mixed replacement/text-edit semantics;
 - logical-state and historical-materialization verification;
-- native ECMAScript string and Origin round-trip behavior through carrier state;
+- supported native ECMAScript string and Origin round-trip behavior through carrier state;
 - exact opaque payload byte and payload-Origin round-trip behavior;
 - garbage collection and compaction that preserve every Version and required
   text Range lineage; and
@@ -176,9 +178,9 @@ default to one independent carrier document or opaque payload per InlineContent.
 Carrier state preserves exactly:
 
 - each InlineContent Media Type;
-- allowlisted fine-grained native ECMAScript string code-unit sequences,
-  including unpaired surrogate code units, line-feed, carriage-return, and other
-  native string content;
+- supported allowlisted fine-grained native ECMAScript strings, including
+  line-feed, carriage-return, supplementary characters, combining sequences,
+  variation selectors, and representative complex scripts;
 - protected fine-grained text Origin references;
 - opaque payload bytes and their payload-level Origin reference;
 - stable Block and InlineContent identities and ordering;
@@ -188,13 +190,13 @@ Carrier state preserves exactly:
 - atomic effects spanning structure and several InlineContents of either capability class.
 
 There is no canonical `HardBreak` item, formatting-mark layer, or engine-owned
-link object in the portable logical state. A line-feed, carriage-return, unpaired
-surrogate, or other native string code unit that exists in allowlisted
-fine-grained text is serialized losslessly according to the final portable string
-codec. This is separate from raw media encoding under the payload Media Type.
-Markdown formatting/link syntax remains in the source string unless an
-application has translated it into structural operations. Block and InlineContent
-boundaries do not synthesize separator characters during encoding or decoding.
+link object in the portable logical state. Supported native string content that
+exists in allowlisted fine-grained text is serialized losslessly according to the
+final portable string codec. This is separate from raw media encoding under the
+payload Media Type. Markdown formatting/link syntax remains in the source string
+unless an application has translated it into structural operations. Block and
+InlineContent boundaries do not synthesize separator characters during encoding
+or decoding.
 
 An opaque payload is opaque to the document model. Its bytes can be stored in a carrier
 chunk or another version-1 binary chunk selected by Gate B/Step 8. That physical
@@ -254,9 +256,9 @@ Use these rules:
 - Binary chunks use one exact base64 spelling selected by the final v1 codec;
   alternate or non-canonical spellings are rejected.
 - Portable fields that carry engine-native strings use the Step 8-selected
-  reversible representation. Decoding must recover the exact ECMAScript UTF-16
-  code-unit sequence; it must not perform Unicode normalization or well-formedness
-  repair.
+  representation for the selected carrier domain. Decoding must recover the
+  exact supported native string; it must not perform Unicode normalization or
+  silent repair.
 
 Identity reuse means assigning an existing durable ID to a different entity,
 record, or lifetime. An ordinary reference to the same immutable record, such
@@ -307,9 +309,9 @@ Treat portable input as hostile. Validate a detached copy in this order:
 10. reconstructed Block topology, ownership, ordering, tags, Media-Type values,
     and structural invariants plus implementation capacity;
 11. generic Media Type syntax and capability classification;
-12. reconstructed allowlisted fine-grained native ECMAScript strings and
-    fine-grained Origin coverage, including exact preservation of unpaired
-    surrogate code units and no Unicode normalization/repair;
+12. reconstructed supported allowlisted fine-grained native strings and
+    fine-grained Origin coverage, with exact carrier-state preservation and no
+    Unicode normalization or silent repair;
 13. reconstructed opaque payload bytes and exactly one valid payload-level Origin for each current opaque payload value;
 14. payload-specific invariants, including rejection of incompatible fine-grained operations and no implicit Media Type change outside explicit whole-payload replacement; and
 15. History replay/materialization and required text Range-lineage invariants.
@@ -407,14 +409,15 @@ safely bounded elsewhere.
 
 After promotion, the encoder preflights the selected resource guards that apply
 to the artifact it produces. Return a typed capacity error rather than truncate
-History, Origins, native string code units, opaque payload bytes, or document
-state. A capacity failure does not make the document semantically invalid.
+History, Origins, supported native string content, opaque payload bytes, or
+document state. A capacity failure does not make the document semantically
+invalid.
 
 Before freezing version 1, verify that the selected container can round-trip the
-representative fixtures recorded by the qualification run, including strings with
-unpaired surrogate code units. If monolithic JSON/base64 or the chosen string
-representation is the actual limiting factor, change the container rather than
-promoting that implementation limit into document semantics.
+representative supported-text fixtures recorded by the qualification run. If
+monolithic JSON/base64 or the chosen string representation is the actual limiting
+factor for supported carrier state, change the container rather than promote that
+implementation limit into document semantics.
 
 ## 12. Integrity and chunk identity
 
@@ -426,12 +429,13 @@ This rule applies equally when a chunk stores carrier state or opaque payload by
 The envelope also records a digest over the final version-1 canonical container
 representation with the envelope digest field omitted. If JSON is selected, Step
 8 must define canonical object-key ordering, array ordering, and the exact
-code-unit-preserving string representation before fixture digests are frozen.
+supported-string representation before fixture digests are frozen.
 
 After the prerequisite gates and Step 8 codec selection, check in:
 
 - one minimal canonical version-1 fixture;
-- one realistic Media-Type-labelled-payload/history fixture containing allowlisted fine-grained text, including an unpaired-surrogate case, and representative opaque Media Types;
+- one realistic Media-Type-labelled-payload/history fixture containing supported
+  allowlisted fine-grained text and representative opaque Media Types;
 - their exact canonical bytes and digests; and
 - malformed/mis-hashed variants.
 
@@ -455,8 +459,8 @@ At minimum, verify:
 - realistic imported, edited, copied, opaque-payload-replaced, and restored content round trips;
 - exact current and historical materialization;
 - Media Types survive exactly;
-- allowlisted fine-grained native ECMAScript string code-unit sequences and fine-grained Origin survive exactly, including unpaired surrogate code units;
-- no Unicode-well-formedness repair or normalization occurs during Save/Open;
+- supported allowlisted fine-grained native strings and fine-grained Origin survive exactly;
+- no Unicode normalization or silent repair occurs during Save/Open for supported carrier state;
 - no formatting-mark layer, engine-owned link object, hard-break item, or implicit structural separator appears after round trip;
 - opaque payload bytes and payload-level Origin survive exactly;
 - universal whole-payload replacement and deterministic current-winner behavior survive without losing the History of concurrent replacements;
