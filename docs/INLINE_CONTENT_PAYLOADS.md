@@ -108,15 +108,15 @@ Reopening already-canonical collaborative state from `.coedit` is not a raw-medi
 boundary and does not rerun Media-Type representation validation against the
 stored collaborative value.
 
-| Condition | Required behavior |
-| --- | --- |
-| Malformed Media Type syntax | Reject atomically as invalid input. |
-| Valid Media Type not in the fine-grained allowlist | Accept through generic opaque handling, subject to ordinary envelope and resource checks. |
+| Condition                                                                                | Required behavior                                                                                                |
+| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Malformed Media Type syntax                                                              | Reject atomically as invalid input.                                                                              |
+| Valid Media Type not in the fine-grained allowlist                                       | Accept through generic opaque handling, subject to ordinary envelope and resource checks.                        |
 | Valid allowlisted type whose raw representation is unsupported by the selected processor | Fail explicitly at the raw/coarse boundary; do not relabel, transcode silently, or fall back to opaque handling. |
-| Invalid bytes for a supported raw representation | Fail explicitly without partial publication. |
-| Fine-grained text that the selected raw representation cannot encode exactly | Fail explicitly; do not substitute or repair content. |
-| Unsupported carrier or container schema | Report incompatibility; this is not an unknown Media Type. |
-| Exceeded selected implementation guard | Report capacity/resource failure without partial publication. |
+| Invalid bytes for a supported raw representation                                         | Fail explicitly without partial publication.                                                                     |
+| Fine-grained text that the selected raw representation cannot encode exactly             | Fail explicitly; do not substitute or repair content.                                                            |
+| Unsupported carrier or container schema                                                  | Report incompatibility; this is not an unknown Media Type.                                                       |
+| Exceeded selected implementation guard                                                   | Report capacity/resource failure without partial publication.                                                    |
 
 ## 4. Fine-grained text payloads
 
@@ -249,12 +249,12 @@ Payload-specific fine-grained operations fail explicitly when used with an
 incompatible Media Type. Do not sniff payload contents or reinterpret arbitrary
 bytes as collaborative text.
 
-| Operation class | `text/markdown` | `text/plain` | Other Media Types |
-| --- | --- | --- | --- |
-| Raw/coarse media retrieval and whole-payload replacement | yes | yes | yes |
-| Fine-grained text insertion/deletion/replacement | yes | yes | no |
-| Fine-grained Origin | yes | yes | no |
-| Text positions and durable text Range operations | yes | yes | no |
+| Operation class                                          | `text/markdown` | `text/plain` | Other Media Types |
+| -------------------------------------------------------- | --------------- | ------------ | ----------------- |
+| Raw/coarse media retrieval and whole-payload replacement | yes             | yes          | yes               |
+| Fine-grained text insertion/deletion/replacement         | yes             | yes          | no                |
+| Fine-grained Origin                                      | yes             | yes          | no                |
+| Text positions and durable text Range operations         | yes             | yes          | no                |
 
 This table defines capability, not exact API surface.
 
