@@ -121,7 +121,7 @@ The former `TextAnchor` blocker is resolved. Formatting and media syntax are app
 - no authoritative document silently contradicts a retained preserved decision; and
 - no unresolved implementation-blocking decision remains.
 
-This documentation set establishes and revalidates the Step 0 authority baseline with Media-Type-labelled InlineContent payloads, the durable text Range authority, and the revised Step 3-and-later sequence. Steps 1 and 2 subsequently established the browser scaffold and pure Block domain. Step 3 carrier qualification is next. Gate B selects the carrier, the observable deterministic concurrent-replacement winner rule, and the carrier-private implementation of that rule; Gate C later selects the text Range representation before `.coedit` version 1 is frozen.
+This documentation set establishes and revalidates the Step 0 authority baseline with Media-Type-labelled InlineContent payloads, the durable text Range authority, and the revised Step 3-and-later sequence. Steps 1 and 2 subsequently established the browser scaffold and pure Block domain. Step 3 carrier qualification is next. Gate B selects the carrier, the observable deterministic concurrent-replacement winner rule, the carrier-private implementation of that rule, and the initial raw text charset mechanism; Gate C later selects the text Range representation before `.coedit` version 1 is frozen.
 
 ### Step 1 — Establish the browser-only repository scaffold
 
@@ -169,11 +169,12 @@ See [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md), [`docs/MVP_I
 
 **Objective:** Compare pinned Yjs v13 and Automerge through the same production-shaped carrier-neutral abstractions before production Media-Type-labelled-payload implementation, History, Range, editor, or portable formats depend on one carrier.
 
-Run the same pinned headless and Tiptap/ProseMirror suite against stable Yjs v13 and Automerge. Track Yjs v14 only after stable release; use Loro as a cursor/movable-tree benchmark, not a current candidate. Before comparing candidates, record one run-specific fixture profile and measurement method used for both. Record dependency/license review, adapter complexity, target devices, measurements, the observable deterministic whole-payload replacement winner rule, its carrier-private implementation, and the selection rationale.
+Run the same pinned headless and Tiptap/ProseMirror suite against stable Yjs v13 and Automerge. Track Yjs v14 only after stable release; use Loro as a cursor/movable-tree benchmark, not a current candidate. Before comparing candidates, record one run-specific fixture profile and measurement method used for both. Record dependency/license review, adapter complexity, target devices, measurements, the observable deterministic whole-payload replacement winner rule, its carrier-private implementation, the initial supported UTF-family charset set and processor mechanism, and the selection rationale.
 
 The suite covers:
 
 - both initial allowlisted fine-grained Media Types, `text/markdown` and `text/plain`, plus representative opaque Media Types including a valid unfamiliar type;
+- raw/coarse text conversion for the selected initial UTF-family charset set, with explicit unsupported-encoding failure for another valid declared or effective charset and no silent transcoding, relabelling, or opaque fallback;
 - universal whole-payload replacement;
 - deterministic convergence of concurrent whole-payload replacements without wall-clock or arrival-order arbitration;
 - exact arbitrary Unicode native-string collaboration for both allowlisted fine-grained Media Types without a document-level hard-break item;
@@ -184,9 +185,9 @@ The suite covers:
 - application text-editor integration, reload, compaction, and representative growth; and
 - the fine-grained text Range-feasibility subset in `RANGE_MODEL.md`: direct multi-span creation, greedy and positional boundaries, structural tracking, lazy resolution, whole-payload replacement of fine-grained text feasibility, and practical cost.
 
-**Outcome:** The repository contains comparable fixtures, measurements, dependency/license review, adapter-complexity evidence, rejected-candidate rationale, the qualified observable replacement winner rule and its private implementation, and one recorded carrier selection. Qualification code uses the same abstractions intended for production, but this step does not freeze the final Range API or lineage representation.
+**Outcome:** The repository contains comparable fixtures, measurements, dependency/license review, adapter-complexity evidence, rejected-candidate rationale, the qualified observable replacement winner rule and its private implementation, the recorded initial supported UTF-family charset mechanism, and one recorded carrier selection. Qualification code uses the same abstractions intended for production, but this step does not freeze the final Range API or lineage representation.
 
-**Exit gate:** Gate B passes. The common payload, text, structural, concurrency, clipboard, restore, cursor, Range-feasibility, atomicity, portable, garbage-collection, collision/ordering, and representative-growth suite passes. Carrier and private-text-clipboard hostile-input guards are selected from profiling evidence and tested atomically. Experimental performance candidates are recorded as evidence rather than correctness thresholds unless deliberately promoted. Functional invariants are mandatory. Select Yjs when its protected carrier works incrementally without fragile repair. Select Automerge only if it passes and materially removes custom machinery despite its integration maturity. Record the winner before carrier-dependent format fields or fixtures are frozen.
+**Exit gate:** Gate B passes. The common payload, text, structural, concurrency, clipboard, restore, cursor, Range-feasibility, atomicity, portable, garbage-collection, collision/ordering, and representative-growth suite passes. The raw text processor's initial supported UTF-family charset set is recorded and its unsupported-encoding behavior is verified. Carrier and private-text-clipboard hostile-input guards are selected from profiling evidence and tested atomically. Experimental performance candidates are recorded as evidence rather than correctness thresholds unless deliberately promoted. Functional invariants are mandatory. Select Yjs when its protected carrier works incrementally without fragile repair. Select Automerge only if it passes and materially removes custom machinery despite its integration maturity. Record the winner before carrier-dependent format fields or fixtures are frozen.
 
 See [`docs/INLINE_CONTENT_PAYLOADS.md`](docs/INLINE_CONTENT_PAYLOADS.md), [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), [`docs/TEXT_POSITION_MODEL.md`](docs/TEXT_POSITION_MODEL.md), [`docs/RANGE_MODEL.md`](docs/RANGE_MODEL.md), [`docs/STRUCTURAL_CARRIER_MODEL.md`](docs/STRUCTURAL_CARRIER_MODEL.md), [`docs/STRUCTURAL_POSITION_ALLOCATOR.md`](docs/STRUCTURAL_POSITION_ALLOCATOR.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
@@ -194,9 +195,9 @@ See [`docs/INLINE_CONTENT_PAYLOADS.md`](docs/INLINE_CONTENT_PAYLOADS.md), [`docs
 
 **Objective:** Establish the production Media-Type-labelled InlineContent payload and structural carrier using the winner recorded by Gate B.
 
-**Outcome:** Headless code can create, validate, project, clone, replace, edit, copy/paste, restore, and serialize carrier state. Each InlineContent has one valid Media Type. The initial compile-time fine-grained allowlist contains `text/markdown` and `text/plain`; all other valid Media Types use opaque byte handling. Every payload supports whole-payload replacement with explicit Origin and deterministic replicated convergence. Allowlisted text additionally supports native-string fine-grained editing and protected non-inheriting fine-grained Origin. One logical collaborative document contains the accepted flat Block carrier and Block-local payload namespaces, transacts across structure and several InlineContents, and supports semantic-update-over-delete. The selected carrier suite remains a production regression suite.
+**Outcome:** Headless code can create, validate, project, clone, replace, edit, copy/paste, restore, and serialize carrier state. Each InlineContent has one valid Media Type. The initial compile-time fine-grained allowlist contains `text/markdown` and `text/plain`; all other valid Media Types use opaque byte handling. Every payload supports whole-payload replacement with explicit Origin and deterministic replicated convergence. Allowlisted text additionally supports native-string fine-grained editing and protected non-inheriting fine-grained Origin. The first raw text processor supports the UTF-family charset set selected at Gate B and fails explicitly for other valid declared or effective charsets instead of silently converting or relabelling them. One logical collaborative document contains the accepted flat Block carrier and Block-local payload namespaces, transacts across structure and several InlineContents, and supports semantic-update-over-delete. The selected carrier suite remains a production regression suite.
 
-**Exit gate:** Production code uses no rejected-candidate or carrier-specific public API. Functional, payload, structural, concurrency, atomicity, clipboard, restore, allocator, reload, compaction, and growth regressions pass for the winner. No Block or InlineContent boundary implies a textual separator, and no document-level hard-break item exists.
+**Exit gate:** Production code uses no rejected-candidate or carrier-specific public API. Functional, payload, charset-boundary, structural, concurrency, atomicity, clipboard, restore, allocator, reload, compaction, and growth regressions pass for the winner. No Block or InlineContent boundary implies a textual separator, and no document-level hard-break item exists. General non-UTF charset conversion is not required for initial delivery.
 
 ### Step 5 — Establish first-class in-memory History
 
@@ -216,13 +217,13 @@ Close the remaining result-wrapper, split/merge continuing-identity,
 merged-away-reference, deterministic identity tie-break, complete structural
 lineage, exact structural boundary, positional structural behavior,
 whole-payload replacement of fine-grained text lineage, fragment-encoding, resource-guard, and
-Range-holder wire decisions listed in `RANGE_MODEL.md`. Compare the remaining
+Range wire decisions listed in `RANGE_MODEL.md`. Compare the remaining
 lineage candidates against the accepted behavior and record the selected
-representation.
+representation. Application holder policy remains outside this service.
 
-**Outcome:** Headless code can create one-span, multi-span, and Positional Ranges against allowlisted fine-grained text in the visible Version; resolve surviving spans in creation and lineage order; concatenate exact stored text without inferred separators; rationalize eligible merge-caused adjacency explicitly; serialize a document-relative Range fragment; parse it best-effort in an application-selected document; rebase tracking evidence; and return a portable Range value for an application-owned holder. Generic opaque sub-content is not addressed by this service.
+**Outcome:** Headless code can create one-span, multi-span, and Positional Ranges against allowlisted fine-grained text in the visible Version; resolve surviving spans in creation and lineage order; concatenate exact stored text without inferred separators; rationalize eligible merge-caused adjacency explicitly; serialize a document-relative Range fragment; parse it best-effort in an application-selected document; rebase tracking evidence; and return a portable Range value that an application can place in its own holder. Generic opaque sub-content is not addressed by this service.
 
-**Exit gate:** Gate C passes. The complete Range suite proves atomic direct text creation, rejection of non-text targets, permissive source-member preservation, structural and no-copy lineage, best-effort omission, exact text assembly, explicit rationalization, reload, compaction with every Version preserved, serialization, application-holder handling, no speculative rebinding, and cost that does not scale with the total retained Range count.
+**Exit gate:** Gate C passes. The complete Range suite proves atomic direct text creation, rejection of non-text targets, permissive source-member preservation, structural and no-copy lineage, best-effort omission, exact text assembly, explicit rationalization, reload, compaction with every Version preserved, parse/serialization, application-holder round trip through the public API, no engine reinjection or holder-specific fallback policy, no speculative rebinding, and cost that does not scale with the total retained Range count.
 
 See [`docs/RANGE_MODEL.md`](docs/RANGE_MODEL.md), [`docs/TEXT_POSITION_MODEL.md`](docs/TEXT_POSITION_MODEL.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
@@ -230,9 +231,9 @@ See [`docs/RANGE_MODEL.md`](docs/RANGE_MODEL.md), [`docs/TEXT_POSITION_MODEL.md`
 
 **Objective:** Import realistic CommonMark/GFM through a deterministic parser and operation planner.
 
-**Outcome:** Supported source becomes ordinary structural and `text/markdown` fine-grained operations. Markdown hard breaks normalize through the adapter to the text character defined by `MARKDOWN_INTERCHANGE.md`; soft breaks follow their separate normalization. Unsupported source is preserved or rejected with stable diagnostics. Markdown import does not manufacture opaque payloads.
+**Outcome:** Supported source becomes ordinary structural and `text/markdown; charset=UTF-8` fine-grained operations. Structural syntax consumed into Blocks is not duplicated in payload text. Remaining inline Markdown source, including emphasis/link/code delimiters and soft/hard line-break spelling, is preserved literally unless `MARKDOWN_INTERCHANGE.md` explicitly defines a normalization. Unsupported source is preserved or rejected with stable diagnostics. Markdown import does not manufacture opaque payloads or require general charset conversion.
 
-**Exit gate:** The fixture set produces valid documents or explicit failures. No source node is silently discarded. The imported structure is within the canonical Markdown-representable Coedit subset defined by the interchange specification. Parser and importer profiling selects hostile-input guards, records their evidence, distinguishes source-format from capacity failure at the top-level result, and verifies that failed import publishes no candidate.
+**Exit gate:** The fixture set produces valid documents or explicit failures. No source node is silently discarded. Every imported textual InlineContent uses `text/markdown; charset=UTF-8`. Export/re-import preserves retained inline Markdown source exactly except for explicitly defined normalizations, while deterministic structural spelling may be regenerated. The imported structure is within the canonical Markdown-representable Coedit subset defined by the interchange specification. Parser and importer profiling selects hostile-input guards, records their evidence, distinguishes source-format from capacity failure at the top-level result, and verifies that failed import publishes no candidate.
 
 See [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md).
 
@@ -282,7 +283,7 @@ See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md) and [`d
 
 **Outcome:** The user can select main or summary content, inspect exact historical Versions, compare Versions, and export a selected Version, lens, or subtree to Markdown. The renderer reports stable non-representability when a selected opaque payload or another unsupported payload participates.
 
-**Exit gate:** Lens and historical selection create no durable mutation. Markdown output is deterministic. For the canonical Markdown-representable subset, `Markdown A -> Coedit X -> Markdown B -> Coedit Y` yields equivalent normalized Coedit structure and semantic `text/markdown` content for `X` and `Y`. Export outside that subset reports stable loss or non-representability diagnostics.
+**Exit gate:** Lens and historical selection create no durable mutation. Markdown output is deterministic. For the canonical Markdown-representable subset, `Markdown A -> Coedit X -> Markdown B -> Coedit Y` yields equivalent normalized Coedit structure and the same retained inline `text/markdown` source for `X` and `Y`, except for explicit interchange normalizations. Export outside that subset reports stable loss or non-representability diagnostics.
 
 See [`docs/MARKDOWN_INTERCHANGE.md`](docs/MARKDOWN_INTERCHANGE.md).
 
@@ -322,11 +323,11 @@ Gate A passes when the authority set, ADR rationale, preserved-branch classifica
 
 ### Gate B — Collaborative carrier selection
 
-Gate B follows Step 3. Do not begin production carrier implementation or freeze carrier-dependent History effects, editor integration, or `.coedit` version 1 before the Yjs/Automerge common suite passes and the winner is recorded. The gate includes Media-Type-labelled payloads, whole-payload replacement, deterministic concurrent replacement convergence, attributed allowlisted fine-grained text, opaque payload byte/Origin preservation, structure, allocator behavior, application text-editor integration, atomicity, Range feasibility, one run-specific comparison method, and selected and tested carrier/private-text-clipboard guards. Experimental performance candidates do not become acceptance thresholds merely because the gate measured them. Gate B records the observable deterministic concurrent-replacement winner rule and the carrier-private implementation that realizes it; it does not select the Range-tracking representation.
+Gate B follows Step 3. Do not begin production carrier implementation or freeze carrier-dependent History effects, editor integration, or `.coedit` version 1 before the Yjs/Automerge common suite passes and the winner is recorded. The gate includes Media-Type-labelled payloads, whole-payload replacement, deterministic concurrent replacement convergence, attributed allowlisted fine-grained text, opaque payload byte/Origin preservation, the selected initial UTF-family raw text charset mechanism and explicit unsupported-encoding behavior, structure, allocator behavior, application text-editor integration, atomicity, Range feasibility, one run-specific comparison method, and selected and tested carrier/private-text-clipboard guards. Experimental performance candidates do not become acceptance thresholds merely because the gate measured them. Gate B records the observable deterministic concurrent-replacement winner rule and the carrier-private implementation that realizes it; it does not select the Range-tracking representation.
 
 Gate B also closes the mixed replacement/text-edit semantics in
 `INLINE_CONTENT_PAYLOADS.md` section 10.1 and records its Media Type syntax,
-parameter, representation-validity, and capability-matching rules. The selected behavior and regression
+parameter, representation-validity, capability-matching, and initial charset-support rules. The selected behavior and regression
 evidence must exist before Step 4 production implementation. This does not move
 Range lineage out of Gate C or the network protocol out of the pre-network gate.
 
@@ -337,9 +338,7 @@ split/merge continuing identities, merged-away-reference behavior, the
 deterministic identity rule when no semantic continuation is naturally
 designated, complete one-to-many and many-to-one lineage, remaining positional
 and exact-boundary structural behavior, whole-payload replacement of fine-grained text lineage,
-fragment serialization, application-holder integration, resource-guard behavior,
-and lineage representation. Do not freeze `.coedit` version 1 or the portable
-Range-fragment wire shape before Gate C passes.
+fragment parsing/serialization, resource-guard behavior, and lineage representation. Application holder storage, link activation, comment repair, and fallback policy remain outside the Range service. Do not freeze `.coedit` version 1 or the portable Range-fragment wire shape before Gate C passes.
 
 ### Gate D — Elaboration baseline
 
@@ -377,10 +376,11 @@ The plan is complete when the browser prototype satisfies the MVP contract and a
 
 - the browser UX reads and changes durable state only through the asynchronous `DocumentEngine` boundary;
 - realistic Markdown can be imported with diagnostics;
-- imported Markdown can be exported and re-imported with equivalent normalized Coedit structure and semantic allowlisted fine-grained text;
+- imported Markdown can be exported and re-imported with equivalent normalized Coedit structure and preserved inline Markdown source except for explicitly defined normalizations;
 - the recursive Block model is the only structural ontology;
 - each InlineContent has one supported Media-Type-labelled payload and Block/InlineContent boundaries imply no text separator;
 - allowlisted fine-grained text and representative opaque Media Types are both represented, preserved, and replaceable through the engine;
+- the initial raw text processor supports the Gate B UTF-family charset set and reports unsupported encodings explicitly without silently changing Media Types;
 - universal whole-payload replacement preserves InlineContent identity, atomically replaces Media Type/content/Origin state, and is qualified for deterministic eventual convergence under the Gate B observable winner rule;
 - opaque payload remains opaque and does not require fine-grained collaboration;
 - durable changes are attributed Contributions;
@@ -397,4 +397,4 @@ The plan is complete when the browser prototype satisfies the MVP contract and a
 - current documentation describes the clean-slate application; and
 - no deferred infrastructure or generalized content framework has been introduced without passing its decision gate.
 
-Completion produces an experimental document-engine foundation. It includes Media-Type-labelled payloads, universal whole-content convergence, minimum Origin semantics, a durable allowlisted fine-grained text Range service, permanent exact Version materialization, and incremental browser durability; it does not mean that AI-provider integration, provenance UI/authentication/signing, Comment records or repair UX, fine-grained non-text collaboration, networked collaboration, native packaging, or a final physical History/Range compaction strategy is complete.
+Completion produces an experimental document-engine foundation. It includes Media-Type-labelled payloads, universal whole-content convergence, minimum Origin semantics, a durable allowlisted fine-grained text Range service, permanent exact Version materialization, and incremental browser durability; it does not mean that AI-provider integration, provenance UI/authentication/signing, Comment records or repair UX, fine-grained non-text collaboration, networked collaboration, native packaging, general non-UTF charset conversion, or a final physical History/Range compaction strategy is complete.
