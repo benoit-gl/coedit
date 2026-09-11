@@ -118,16 +118,16 @@ that must decode or validate its bytes. Reject that representation explicitly;
 do not call it malformed Media Type syntax and do not reinterpret it as opaque.
 For `text/plain`, the registered default applies when `charset` is absent.
 
-| Condition                                                                                                     | Required behavior                                                                                                  |
-| ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Malformed Media Type syntax                                                                                   | Reject atomically as invalid input.                                                                                |
-| Valid Media Type not in the fine-grained allowlist                                                            | Accept through generic opaque handling, subject to ordinary envelope and resource checks.                          |
-| Known opaque format, such as `image/png`, without a renderer                                                  | Preserve it; lack of rendering capability is not document invalidity.                                              |
-| Valid allowlisted type with missing or invalid representation prerequisites                                  | Reject at the applicable fine-grained/raw boundary; do not reinterpret it as opaque or as malformed generic syntax. |
-| Invalid byte representation for a fine-grained type at a raw/coarse decode boundary                           | Fail explicitly; do not reinterpret it as opaque content.                                                          |
-| Fine-grained text that cannot be represented exactly by the declared encoding at a raw/coarse encode boundary | Fail explicitly; do not substitute characters or rewrite the Media Type.                                           |
-| Unsupported carrier or container schema                                                                       | Report incompatibility; this is not an unknown Media Type.                                                         |
-| Exceeded selected implementation guard                                                                        | Report capacity/resource failure without partial publication.                                                      |
+| Condition                                                                                                     | Required behavior                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Malformed Media Type syntax                                                                                   | Reject atomically as invalid input.                                                                                 |
+| Valid Media Type not in the fine-grained allowlist                                                            | Accept through generic opaque handling, subject to ordinary envelope and resource checks.                           |
+| Known opaque format, such as `image/png`, without a renderer                                                  | Preserve it; lack of rendering capability is not document invalidity.                                               |
+| Valid allowlisted type with missing or invalid representation prerequisites                                   | Reject at the applicable fine-grained/raw boundary; do not reinterpret it as opaque or as malformed generic syntax. |
+| Invalid byte representation for a fine-grained type at a raw/coarse decode boundary                           | Fail explicitly; do not reinterpret it as opaque content.                                                           |
+| Fine-grained text that cannot be represented exactly by the declared encoding at a raw/coarse encode boundary | Fail explicitly; do not substitute characters or rewrite the Media Type.                                            |
+| Unsupported carrier or container schema                                                                       | Report incompatibility; this is not an unknown Media Type.                                                          |
+| Exceeded selected implementation guard                                                                        | Report capacity/resource failure without partial publication.                                                       |
 
 The generic opaque handler does not decode PNG, JSON, XML, or other labelled
 bytes to certify their format. A consumer that renders, executes, or otherwise
@@ -502,15 +502,15 @@ carrier.
 
 ### 13.1 Implementation status and decision ownership
 
-| Stage               | Status or responsibility                                                                                                                                                                                   |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Completed Steps 1-2 | Browser scaffold and pure structural domain; `InlineContentValue` remains an opaque empty value. No Media Type dispatch or replacement carrier is implemented.                                             |
+| Stage               | Status or responsibility                                                                                                                                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Completed Steps 1-2 | Browser scaffold and pure structural domain; `InlineContentValue` remains an opaque empty value. No Media Type dispatch or replacement carrier is implemented.                                               |
 | Step 3 / Gate B     | Qualify carriers; select the observable replacement winner rule and its private implementation, mixed replacement/edit semantics, raw text-encoding mechanism, boundary rules, and required resource guards. |
-| Step 4              | Implement the selected payload, compile-time allowlist, raw/coarse processor boundary, and carrier behavior.                                                                                               |
-| Step 5              | Implement first-class Contributions and permanent exact Version materialization, including losing replacement History.                                                                                     |
-| Step 6 / Gate C     | Select and implement durable text Range lineage and remaining Range behavior.                                                                                                                              |
-| Step 8              | Freeze portable encoding of exact Media Type values, fine-grained text state, collaboration metadata, and opaque bytes.                                                                                    |
-| Pre-network gate    | Qualify causal transport, authorization, and replicated restore overlap before network collaboration ships.                                                                                                |
+| Step 4              | Implement the selected payload, compile-time allowlist, raw/coarse processor boundary, and carrier behavior.                                                                                                 |
+| Step 5              | Implement first-class Contributions and permanent exact Version materialization, including losing replacement History.                                                                                       |
+| Step 6 / Gate C     | Select and implement durable text Range lineage and remaining Range behavior.                                                                                                                                |
+| Step 8              | Freeze portable encoding of exact Media Type values, fine-grained text state, collaboration metadata, and opaque bytes.                                                                                      |
+| Pre-network gate    | Qualify causal transport, authorization, and replicated restore overlap before network collaboration ships.                                                                                                  |
 
 Accepted design requirements are not claims that these later stages have run.
 
