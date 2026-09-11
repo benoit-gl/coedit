@@ -40,7 +40,8 @@ fine-grained text payload:
 - separate Contribution actor and derivation metadata;
 - validated internal and external text clipboard behavior;
 - durable text Range feasibility; and
-- exact `.coedit` recovery of text, Origin, History, and required lineage.
+- exact `.coedit` recovery of supported carrier-native text, Origin, History, and
+  required lineage.
 
 The same carrier qualification proves the payload-level replacement, raw/coarse
 encoding, and generic opaque behavior in `INLINE_CONTENT_PAYLOADS.md`.
@@ -52,13 +53,20 @@ future engine feature implied by this specification.
 ## 3. Canonical text and application boundary
 
 A fine-grained text payload has one canonical collaborative string value. At the
-JavaScript API boundary that value is a native ECMAScript string, including any
-code-unit sequence that JavaScript strings can contain. The document engine does
-not add a Unicode-well-formedness check. The selected carrier can use its native
-string/text representation internally. Media byte encoding is not performed for
-ordinary fine-grained editing.
+JavaScript API boundary that value is a native ECMAScript string. Coedit does not
+add a general Unicode normalization, repair, or well-formedness layer around
+ordinary fine-grained editing. The selected carrier defines the native string
+values that it can preserve losslessly. Values outside that carrier domain are
+not part of the supported collaborative-text contract.
 
-Whether a native string can be represented exactly by the charset declared or
+Carrier qualification must characterize edge cases where the ECMAScript string
+domain is broader than the carrier's native text representation. Coedit does not
+add a second validation subsystem only to make those edge cases portable. If the
+carrier explicitly rejects an operation, that error propagates through the normal
+operation path and publishes no partial change.
+
+Media byte encoding is not performed for ordinary fine-grained editing. Whether
+a supported native string can be represented exactly by the charset declared or
 implied by its Media Type is checked only when a raw/coarse media boundary is
 used. That representability rule does not constrain ordinary fine-grained edits.
 
@@ -94,9 +102,9 @@ can also leave inline Markdown syntax in the payload for rendering. The engine
 only validates and applies the resulting document operations.
 
 Block and InlineContent boundaries add no character. A payload can contain
-line-feed, carriage-return, delimiter, unpaired surrogate code units, or other
-string content. There is no canonical `HardBreak` item or inferred presentation
-separator in the document model.
+line-feed, carriage-return, delimiters, and other supported string content. There
+is no canonical `HardBreak` item or inferred presentation separator in the
+document model.
 
 `TEXT_POSITION_MODEL.md` owns the public coordinate semantics used for text
 positions. Carrier-specific indexing, including any UTF-16 code-unit behavior,
@@ -257,8 +265,12 @@ candidate.
 Both candidates must run the same fine-grained text suite for both initial
 allowlisted Media Types. At minimum it covers:
 
-- exact native-string preservation, including newline/control-character and
-  ill-formed native-string cases selected by `INLINE_CONTENT_PAYLOADS.md`;
+- exact preservation of ordinary supported native strings, including line feeds,
+  carriage returns, supplementary characters, combining sequences, variation
+  selectors, and representative complex scripts;
+- characterization of ill-formed ECMAScript string edge cases, including lone
+  surrogates, as carrier-selection evidence rather than a mandatory preservation
+  invariant;
 - Origin non-inheritance and protection from ordinary client commands;
 - concurrent insertion, deletion, and replacement at identical and adjacent
   boundaries;
@@ -268,7 +280,8 @@ allowlisted Media Types. At minimum it covers:
 - the Step 3 text Range-feasibility cases in `RANGE_MODEL.md`;
 - one transaction spanning Block structure and several InlineContents;
 - duplicate, delayed, reordered, partitioned, and reconnected updates;
-- exact portable round trip and historical materialization; and
+- exact portable round trip and historical materialization for supported carrier
+  state; and
 - representative growth and load behavior.
 
 The carrier gate also runs the generic Media Type, raw/coarse encoding, opaque
@@ -292,13 +305,15 @@ fixtures as regression tests. In addition, prove:
   and do not disable ordinary clipboard fallback;
 - caller mutation of detached input cannot mutate engine state;
 - a failed command publishes no text, Origin, Contribution, or Version;
-- newline, unpaired surrogate code units, or other native-string content is not
-  rejected merely because an application can present, parse, or encode it specially;
+- supported native-string content is not rejected merely because an application
+  can present, parse, or encode it specially;
+- carrier failure for unsupported native-string edge cases propagates without a
+  partial document change;
 - no Block or InlineContent boundary manufactures a text character;
 - the engine does not parse, normalize, repair, or render Markdown syntax;
 - application formatting state is not required to materialize canonical engine
   state;
-- `.coedit` preserves source strings, Origins, Contributors, Contributions, and
-  derivation exactly; and
+- `.coedit` preserves supported carrier-native source strings, Origins,
+  Contributors, Contributions, and derivation exactly; and
 - ordinary Markdown export can omit private Origin without implying that Markdown
   is the lossless recovery format.
