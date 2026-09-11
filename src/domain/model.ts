@@ -14,7 +14,7 @@ export type ChildrenPresentation = "sections" | "flow" | "bullets" | "numbers";
  * @remarks
  * Step 2 exposes only a valid empty value created by
  * {@link createEmptyInlineContentValue}. Structural code treats this value as
- * opaque. Step 3 qualifies candidate carriers; Step 4 evolves this boundary to
+ * opaque. Step 3 qualifies candidate carriers; Step 4 evolves this boundary into
  * the Media-Type-labelled payload representation.
  */
 export interface InlineContentValue {
