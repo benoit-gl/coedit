@@ -289,9 +289,8 @@ The suite must cover:
   payload-level Origin;
 - atomic whole-payload replacement for text and opaque payloads, including Media
   Type changes and deterministic concurrent replacement convergence;
-- explicit raw/coarse text processor failures for unsupported encodings and
-  representation metadata, including the selected initial UTF-family charset
-  capability;
+- representative raw/coarse media conversion with explicit failure for unsupported
+  representation profiles, without selecting the production processor profile set;
 - internal/external copy and paste, restore, split, merge, IME, undo, and redo
   where those operations apply to allowlisted text;
 - atomic structure-plus-payload and multi-InlineContent operations;
