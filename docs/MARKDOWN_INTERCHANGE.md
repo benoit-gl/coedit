@@ -155,30 +155,32 @@ The document engine does not own an inline Markdown AST or formatting marks. Aft
 
 For example, source equivalent to a list item containing `hello **world**` becomes a list-item Block whose payload contains `hello **world**`. The list marker is represented by structure; the emphasis delimiters remain source text. This avoids encoding the same structural fact twice while keeping inline Markdown available to application renderers.
 
-CommonMark soft/hard line-break spelling, emphasis, strong text, strikethrough, inline code, links, raw inline HTML, and other inline constructs are therefore application/interchange syntax. The importer can normalize source spelling only where this specification explicitly requires a deterministic round trip; otherwise it preserves the source slice. The initial explicit source normalizations are the source-byte UTF-8/BOM/newline rules in section 5 and the structural mappings stated in this document. No separate inline delimiter or line-break canonicalization is implied. A renderer can parse and display that syntax but does not thereby change canonical engine state.
+CommonMark soft/hard line-break spelling, emphasis, strong text, strikethrough, inline code, links, images, raw inline HTML, and other inline constructs are therefore application/interchange syntax. The importer can normalize source spelling only where this specification explicitly requires a deterministic round trip; otherwise it preserves the source slice. The initial explicit source normalizations are the source-byte UTF-8/BOM/newline rules in section 5 and the structural mappings stated in this document. No separate inline delimiter or line-break canonicalization is implied. The document engine does not validate, repair, rewrite, or interpret embedded HTML or other inline syntax; it preserves the source text, including malformed or hostile source. A renderer can parse and display that syntax but does not thereby change canonical engine state.
 
 Markdown link destinations remain ordinary Markdown source. The application decides whether a destination is external, document-local, a serialized Coedit Range reference, or another URI. The document engine does not create an intrinsic link object or classify link targets.
 
 Block and InlineContent boundaries still add no characters. If a Markdown construct requires an actual newline character inside one payload, that character is stored as source text. The application owns the mapping between editor actions, Markdown source spelling, and structural operations.
 
-## 9. Unsupported source preservation
+## 9. Unsupported structural source preservation
 
-Unsupported source must not disappear silently.
+Unsupported structural source must not disappear silently.
 
-When a source node has a usable normalized source slice, preserve that exact slice as plain authored `text/markdown` fine-grained text and produce a warning that identifies the lost presentation. Do not add a durable tag whose only meaning is that the current Markdown importer could not represent the original syntax. For an unsupported block node, preserve the complete source slice in one terminal `text/markdown` fine-grained text InlineContent. For an unsupported inline node, preserve that node's source slice as literal text inside the containing InlineContent. Imported fallback payloads use the same exact `text/markdown; charset=UTF-8` Media Type as other imported text.
+When a block or other structural Markdown node cannot be represented by the canonical Block mappings and has a usable normalized source slice, preserve that complete source slice in one terminal `text/markdown; charset=UTF-8` fine-grained text InlineContent. Produce a warning that identifies the structural presentation that was not represented. Do not add a durable tag whose only meaning is that the current Markdown importer could not represent the original structure.
 
-Initially apply this fallback to:
+This fallback is structural only. Inline Markdown syntax remains source text in its containing payload and does not become unsupported merely because the document engine has no semantic model for it. Images, links, inline HTML, emphasis, code spans, and other inline constructs therefore require no fallback diagnostic solely because of their presentation semantics.
+
+Initially apply structural fallback to:
 
 - fenced or indented code blocks;
 - tables;
 - block quotes;
-- images;
-- raw HTML;
-- thematic breaks;
-- unknown block constructs; and
-- unsupported inline constructs.
+- raw HTML blocks that have no canonical structural mapping;
+- thematic breaks; and
+- unknown block constructs.
 
-If an unsupported source node has no usable source offsets, reject the import with `unsupported-node-without-source`.
+A raw HTML block preserved through this fallback remains its original Markdown/HTML source text. The engine does not validate, repair, or rewrite the embedded HTML.
+
+If an unsupported structural source node has no usable source offsets, reject the import with `unsupported-node-without-source`.
 
 An opaque payload already present in an edited Coedit document is not an unsupported Markdown source node. It is a valid Coedit payload with no current Markdown representation and is handled by export diagnostics in section 11.
 
@@ -255,11 +257,11 @@ The test suite must include at least:
 - mixed introductory body plus subsections;
 - ordered, unordered, and nested lists;
 - empty headings and empty list items;
-- inline Markdown such as alternative emphasis/strong delimiters, strikethrough, inline code, links, and distinct soft/hard line-break spellings preserved exactly in payload source across export/re-import;
+- inline Markdown such as alternative emphasis/strong delimiters, strikethrough, inline code, links, images, raw inline HTML, and distinct soft/hard line-break spellings preserved exactly in payload source across export/re-import without presentation-only fallback diagnostics;
 - proof that Block/InlineContent boundaries add no text character;
 - task markers and non-one ordered-list starts;
-- unsupported block constructs that use literal fallback; and
-- link destinations and unsupported inline constructs preserved as Markdown source.
+- unsupported structural block constructs that use literal fallback; and
+- proof that malformed or hostile embedded HTML source is preserved rather than repaired or rewritten by the document engine.
 
 Also verify that all imported textual InlineContents use `text/markdown; charset=UTF-8`, and that exporting a selected opaque payload produces the stable non-representability behavior and never silently byte-decodes it as text.
 
