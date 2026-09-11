@@ -107,9 +107,11 @@ conform to the labelled format.
 Capability selection occurs after generic syntax validation. If the normalized
 `type/subtype` is allowlisted, Coedit does not fall back to opaque handling merely
 because a required representation parameter is absent or unusable. A
-media-type-aware text processor validates the representation prerequisites that
-Coedit needs at the applicable creation, replacement, raw-input, or portable-
-decoding boundary.
+media-type-aware text processor validates representation prerequisites only when
+an operation interprets or produces the Media Type's raw/coarse byte
+representation. Reopening canonical collaborative state from `.coedit` is not
+such a boundary and does not re-run Media-Type charset validation against the
+stored collaborative string.
 
 For `text/markdown`, RFC 7763 requires a `charset` parameter. Therefore a value
 such as `text/markdown` can be valid generic Media Type syntax and still be an
@@ -128,12 +130,18 @@ processor mechanism. A non-UTF declared charset, or an effective charset outside
 that selected set, then fails explicitly at a boundary that must decode, encode,
 or validate the media representation.
 
+A raw text processor must not let incidental parser behavior choose between
+conflicting occurrences of a parameter that the processor consumes. For the
+initial text formats, duplicate `charset` parameters are rejected as invalid
+representation metadata at a raw/coarse media boundary. The exact supplied Media
+Type string remains preserved; this rule does not alter capability dispatch.
+
 | Condition                                                                                                     | Required behavior                                                                                                   |
 | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | Malformed Media Type syntax                                                                                   | Reject atomically as invalid input.                                                                                 |
 | Valid Media Type not in the fine-grained allowlist                                                            | Accept through generic opaque handling, subject to ordinary envelope and resource checks.                           |
 | Known opaque format, such as `image/png`, without a renderer                                                  | Preserve it; lack of rendering capability is not document invalidity.                                               |
-| Valid allowlisted type with missing or invalid representation prerequisites                                   | Reject at the applicable fine-grained/raw boundary; do not reinterpret it as opaque or as malformed generic syntax. |
+| Valid allowlisted type with missing, duplicate, or invalid consumed representation prerequisites              | Reject at the applicable raw/coarse media boundary; do not reinterpret it as opaque or as malformed generic syntax. |
 | Valid allowlisted type whose effective charset is not implemented by the current text processor               | Fail explicitly as unsupported encoding/capability; do not rewrite the Media Type or fall back to opaque handling.  |
 | Invalid byte representation for a fine-grained type at a raw/coarse decode boundary                           | Fail explicitly; do not reinterpret it as opaque content.                                                           |
 | Fine-grained text that cannot be represented exactly by the declared encoding at a raw/coarse encode boundary | Fail explicitly; do not substitute characters, repair the native string, or rewrite the Media Type.                 |
@@ -156,20 +164,29 @@ A payload whose normalized type/subtype is in the compile-time allowlist uses th
 fine-grained text capability set. The initial formats are `text/markdown` and
 `text/plain`.
 
-The collaborative logical text value is a native ECMAScript string. The document
-model adds no Unicode-well-formedness requirement. Every ECMAScript string
-code-unit sequence, including unpaired surrogate code units, is valid at this
-layer. Fine-grained APIs exchange native strings and operate on the selected
-carrier's native text representation. They do not continuously encode text to
+The collaborative logical text value is a native ECMAScript string at the public
+JavaScript boundary. Coedit does not add a general Unicode normalization, repair,
+or well-formedness pass around ordinary fine-grained editing. The selected
+carrier defines the native string values that it can preserve losslessly. Values
+outside that carrier domain are not part of the supported collaborative-text
+contract. Coedit need not add a second validation layer for such values. An
+explicit carrier failure propagates through the normal operation error path and
+publishes no partial change; other carrier-specific behavior for ill-formed
+ECMAScript string edge cases is characterized during qualification and is not a
+portable document invariant.
+
+Fine-grained APIs exchange native strings and operate on the selected carrier's
+native text representation. They do not continuously encode text to
 media-representation bytes and decode it again, and they do not repair or reject
-a string because a declared media encoding could not represent it.
+a supported string merely because a declared media encoding could not represent
+it.
 
 The text value does not contain a document-model `HardBreak` item or another
-presentation-break primitive. Line-feed, carriage-return, unpaired surrogates,
-and other string content are data. An application or adapter can accept, reject,
-insert, normalize, or interpret applicable characters according to its own
-command or interchange contract without changing document validity merely
-because one renderer presents them specially.
+presentation-break primitive. Line-feed, carriage-return, and other supported
+string content are data. An application or adapter can accept, reject, insert,
+normalize, or interpret applicable characters according to its own command or
+interchange contract without changing document validity merely because one
+renderer presents them specially.
 
 Fine-grained insertion, deletion, replacement, protected fine-grained Origin,
 text positions, and durable Range operations are available for allowlisted text.
@@ -247,10 +264,11 @@ Media-Type-aware text processor:
 - raw/coarse output validates the declared representation and encodes the current
   native string according to the preserved Media Type;
 - encoding or decoding is not performed for ordinary fine-grained string
-  operations;
+  operations or when `.coedit` reopens already-canonical collaborative text;
 - the operation must fail explicitly when required representation parameters are
-  absent, the effective declared encoding is unsupported, input bytes are invalid
-  for it, or the current string cannot be represented exactly;
+  absent or invalid, duplicate consumed parameters such as `charset` are present,
+  the effective declared encoding is unsupported, input bytes are invalid for it,
+  or the current string cannot be represented exactly;
 - the processor must not silently replace unrepresentable content, repair native
   string code units, change the declared charset, rewrite the Media Type, or fall
   back to another encoding or to opaque handling;
@@ -473,27 +491,33 @@ minimum prove:
 - malformed generic Media Type syntax, a valid unfamiliar Media Type, and a valid
   allowlisted type with invalid or incomplete representation prerequisites are
   three distinct cases;
-- `text/markdown` without its required `charset` is rejected at a boundary that
-  must validate or decode its media representation and is not reclassified as
-  opaque;
+- `text/markdown` without its required `charset` is rejected at a raw/coarse
+  boundary that must validate or decode its media representation and is not
+  reclassified as opaque;
+- duplicate `charset` parameters are rejected deterministically at a raw/coarse
+  media boundary rather than resolved by incidental parser first/last behavior;
 - Markdown `charset` requirements and plain-text default/declared charset behavior
   are handled at the raw processor boundary rather than during fine-grained edits;
 - representative test codecs prove supported conversion, explicit unsupported-
   encoding failure, and exact-representation failure without selecting the
   production charset set or processor mechanism;
 - fine-grained APIs exchange native ECMAScript strings without continuous media-
-  byte encoding/decoding or Unicode-well-formedness validation;
-- carrier state preserves arbitrary ECMAScript string code-unit sequences,
-  including unpaired surrogate code units, through editing, replication, reload,
-  and supported compaction;
+  byte encoding/decoding or an independent Unicode normalization/repair pass;
+- ordinary Unicode text, including supplementary characters, combining
+  sequences, variation selectors, and representative complex scripts, survives
+  editing, replication, reload, and supported compaction exactly;
+- each carrier's behavior for ill-formed ECMAScript string sequences such as lone
+  surrogates is characterized as qualification evidence, without requiring exact
+  preservation or promoting those sequences into the portable text contract;
 - raw/coarse decode succeeds for a representative supported encoding and fails
   atomically for invalid bytes, unsupported encodings, or invalid representation
   metadata;
 - raw/coarse encode returns an exact representation under the unchanged declared
   Media Type or fails explicitly when the current string is not representable;
-- encoding failure never substitutes content, repairs a native string, or silently
-  rewrites `charset` or another Media Type parameter;
-- exact preservation of native string content without a special hard-break item;
+- encoding failure never substitutes content, repairs a supported native string,
+  or silently rewrites `charset` or another Media Type parameter;
+- exact preservation of supported native string content without a special
+  hard-break item;
 - representative opaque Media Types preserve their exact Media Type, bytes, and
   payload-level Origin;
 - `application/octet-stream` works as the generic unknown-binary case;
@@ -533,8 +557,9 @@ remain exactly materializable.
 Step 4 selects and qualifies the production raw text processor mechanism and
 exact initial supported charset set. Retain the Step 3 raw/coarse boundary cases,
 then add production tests for every selected charset, at least one valid but
-unsupported charset, invalid input bytes, and native strings that the preserved
-Media Type cannot represent exactly.
+unsupported charset, invalid input bytes, duplicate consumed representation
+parameters, and native strings that the preserved Media Type cannot represent
+exactly.
 
 **Maturity:** Pending selection for carrier/payload resource guards at Gate B and
 for the initial production raw text processor capability at Step 4; shared
@@ -569,7 +594,7 @@ carrier.
 | Step 4              | Implement the selected payload and carrier; select and qualify the initial raw/coarse text processor mechanism and exact supported charset set; retain explicit unsupported-charset and exact-representation failure. General non-UTF conversion is not required for first delivery. |
 | Step 5              | Implement first-class Contributions and permanent exact Version materialization, including losing replacement History.                                                                                                                                                               |
 | Step 6 / Gate C     | Select and implement durable text Range lineage and remaining Range behavior.                                                                                                                                                                                                        |
-| Step 8              | Freeze portable encoding of exact Media Type values, native ECMAScript string state, collaboration metadata, and opaque bytes.                                                                                                                                                       |
+| Step 8              | Freeze portable encoding of exact Media Type values, supported carrier-native string state, collaboration metadata, and opaque bytes.                                                                                                                                                |
 | Pre-network gate    | Qualify causal transport, authorization, and replicated restore overlap before network collaboration ships.                                                                                                                                                                          |
 
 Accepted design requirements are not claims that these later stages have run.
@@ -589,7 +614,9 @@ This contract does not:
   encodings;
 - require the core collaborative layer to parse Markdown, flowed text, or other
   application syntax;
-- promise that every valid native ECMAScript string is representable by every
+- guarantee lossless collaboration or portable recovery for every ECMAScript
+  string code-unit sequence that the selected carrier cannot preserve;
+- promise that every supported native ECMAScript string is representable by every
   preserved declared charset; or
 - require a renderer to treat a Block or InlineContent boundary as textual
   whitespace or a break.
