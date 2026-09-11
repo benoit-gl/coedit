@@ -16,8 +16,9 @@ define sub-payload addressing for opaque content.
 controls InlineContent Media Types and universal whole-payload replacement.
 `MVP_ARCHITECTURE.md` controls the public engine boundary.
 `CAPACITY_AND_PERFORMANCE_TARGETS.md` controls cross-cutting capacity semantics
-and contract maturity. `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns allowlisted fine-grained text
-formatting, Origin, link, and comment behavior outside this Range contract.
+and contract maturity. `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns allowlisted
+fine-grained text Origin, clipboard, and Range-holder lifecycle outside this
+Range contract. Formatting and link interpretation are application concerns.
 `TEXT_POSITION_MODEL.md` owns editor and carrier text-position boundaries.
 `SCAFFOLDING_PLAN.md` owns the implementation order and decision gates.
 
@@ -44,7 +45,7 @@ Use these terms consistently:
 - **Resolved span:** one current contiguous text interval descended from a source
   member.
 - **Creation order:** the exact source-member order supplied by the caller.
-- **Range holder:** a comment, link, navigation record, or another feature that
+- **Range holder:** a comment, application link, navigation record, or another feature that
   stores or embeds a Range value.
 - **Range-tracking lineage:** the private mechanism that lets a Range follow
   allowlisted fine-grained text through edits, movement, split, and merge. Copy does not create
@@ -61,7 +62,7 @@ addressable document.
 
 Each Range records the `VersionToken` against which it was created or rebased.
 Each source member records its original `BlockId`, `InlineContentId`, and text
-boundaries in that Version. The referenced InlineContent must contain a
+boundaries in that Version. The referenced InlineContent must contain an
 allowlisted fine-grained text payload in the creation or rebasing Version. The `VersionToken`
 remains opaque and document-scoped. No globally unique Version identifier is
 required; the complete scope is the document context plus the recorded creation
@@ -241,7 +242,7 @@ Rationalization returns a new Range rebased to the selected Version. It does not
 mutate the supplied Range, and it does not run automatically during edits or
 ordinary resolution.
 
-## 9. Serialization, parsing, and links
+## 9. Serialization, parsing, and application holders
 
 The Range service serializes a self-contained, versioned, document-relative text
 Range description or URI-fragment suffix. The exact fragment grammar, encoding,
@@ -259,13 +260,14 @@ document-uri#range-fragment
 ```
 
 The application owns the enclosing document URI, its scheme, document lookup,
-and fragment extraction. The Range service parses and resolves only the supplied
-Range fragment against the document selected by the application. It performs no
-cross-document reconciliation or identifier matching.
+fragment extraction, holder semantics, and any fallback behavior. The Range
+service parses and resolves only the supplied Range fragment against the document
+selected by the application. It performs no cross-document reconciliation or
+identifier matching.
 
-If an application link is transferred to another document, application policy must
-reject it, remove it, or convert it to an external deep link. The Range service
-does not remap it.
+If an application link or another holder is transferred to another document,
+application policy must reject it, remove it, or convert it to an external deep
+link. The Range service does not remap it.
 
 ## 10. History and storage consequences
 
@@ -295,17 +297,16 @@ Range work is distributed across these steps:
    Version materialization before version-aware Range resolution is frozen.
 4. **Step 6 — durable Range service.** The engine closes the remaining API and
    wire decisions, selects and records the lineage representation, and
-   implements creation, resolution, rationalization, parsing, serialization,
-   and reinjection.
+   implements creation, resolution, rationalization, parsing, and serialization.
 
 Gate B selects Yjs or Automerge. Gate C selects the Range-tracking
 representation. A carrier can win Gate B while the Range service later uses
 carrier-native identity, persistent content lineage, a piece-oriented or
 derivation structure, or a qualified hybrid.
 
-Gate C must pass before `.coedit` version 1 or the application-link Range encoding
-is frozen. It does not block merging this representation-neutral behavioral
-contract.
+Gate C must pass before `.coedit` version 1 freezes the portable Range behavior
+and lineage encoding. It does not block merging this representation-neutral
+behavioral contract.
 
 ## 12. Range-tracking lineage remains unresolved
 
@@ -357,16 +358,17 @@ Step 6 Range acceptance must additionally prove:
 - exact-boundary split without a manufactured zero-length descendant;
 - explicit rationalization limited to merge-caused adjacency;
 - best-effort parsing with unresolved and ambiguous members omitted;
-- document-relative fragment serialization, parsing, and reinjection;
-- application-owned external document URI handling;
+- document-relative fragment serialization and parsing;
+- application-owned external document URI and holder handling;
 - serialization and rationalization that rebase the supplied Range;
-- application-holder fallback without cross-document reconciliation;
 - representative retained-Range scaling; and
 - recorded comparison and selection of the lineage representation.
 
-Step 8 portable-format acceptance must additionally prove that every embedded
-Range value, its creation Version, and the lineage required to resolve it round
-trip through `.coedit` without changing Range behavior.
+Step 8 portable-format acceptance must additionally prove that every retained
+Version and the lineage required to resolve a serialized Range round trip through
+`.coedit` without changing Range behavior. A test can retain the serialized Range
+outside the artifact; the format does not need to invent an engine-owned holder
+for it.
 
 ## 14. Explicitly open Step 6 decisions
 
@@ -387,8 +389,7 @@ The remaining decisions are:
 - how each split and merge command designates the Block and InlineContent whose
   identity is the continuing identity;
 - whether references to a BlockId or InlineContentId consumed by a merge follow
-  structural lineage, remain historical-only, or become unresolved, including
-  the effect on an application link's primary Block fallback;
+  structural lineage, remain historical-only, or become unresolved;
 - the deterministic identity rule when an operation has no naturally designated
   semantic continuation; clocks and incidental replica order cannot decide it;
 - how complete one-to-many split lineage and many-to-one merge lineage remain
@@ -401,10 +402,10 @@ The remaining decisions are:
 - exact allowlisted fine-grained text whole-payload replacement lineage semantics where the
   final representation needs a distinction beyond ordinary replacement;
 - exact fragment grammar, encoding, versioning, escaping, and resource-guard
-  behavior;
+  behavior; and
 - whether source-member count or serialized size needs an explicit finite
-  implementation guard and, if so, its selected value and failure behavior; and
-- the final application-link serialized shape.
+  implementation guard and, if so, its selected value and failure behavior.
 
-Detailed comment repair policy remains a post-MVP comments decision. It does not
-block the headless MVP Range service.
+Holder-specific navigation fallback, link activation, and detailed comment repair
+remain application or post-MVP decisions. They do not block the headless MVP
+Range service.
