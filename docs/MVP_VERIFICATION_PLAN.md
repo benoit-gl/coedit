@@ -148,6 +148,7 @@ Verify:
 - malformed generic Media Type syntax, a valid unfamiliar Media Type, and a syntactically valid allowlisted type with invalid or incomplete representation prerequisites are distinct cases;
 - `text/markdown` without its required `charset` is rejected at a boundary that must validate or decode its media representation; it is not reclassified as opaque and is not reported as malformed generic Media Type syntax;
 - Gate B records the exact initial supported UTF-family charset set for `text/markdown` and `text/plain`, and the raw text processor accepts valid representations in that set;
+- the public engine can materialize raw/coarse media for an explicit Version and InlineContent without carrier access; opaque payloads return their exact stored bytes and allowlisted text returns the exact bytes produced under the preserved Media Type;
 - a valid declared or effective charset outside the selected initial set fails explicitly as unsupported encoding/capability at a boundary that must decode, encode, or validate the media representation; the implementation does not relabel it, transcode it silently, or reinterpret it as opaque;
 - if the selected initial processor is UTF-only, `text/plain` without `charset` is recognized as having the registered US-ASCII default but is rejected at raw boundaries as an unsupported effective encoding rather than as malformed Media Type syntax;
 - case variants and parameters give consistent type/subtype capability matching without a registry lookup while the complete supplied Media Type survives unchanged;
@@ -157,6 +158,7 @@ Verify:
 - whole-payload replacement is available for every supported Media Type and can keep or change the Media Type;
 - a replacement publishes its complete Media Type, Media-Type-specific content, and required Origin effect atomically;
 - malformed replacement, invalid fine-grained representation metadata, unsupported charset, decode failure, or a selected resource-guard failure leaves the base unchanged;
+- raw/coarse materialization fails explicitly for missing required representation metadata, an unsupported effective charset, or current text that cannot be represented exactly; it substitutes no characters, changes no Media Type, and mutates no document state;
 - detached opaque payload bytes and caller-owned replacement buffers cannot mutate engine state after submission;
 - opaque payload bytes round trip exactly and the current opaque payload value has one payload-level Origin;
 - moving an opaque InlineContent preserves bytes and Origin;

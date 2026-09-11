@@ -25,7 +25,7 @@ The MVP must provide these capabilities:
 7. Use Internet Media Types for InlineContent payloads; support allowlisted fine-grained text with fine-grained text operations and generic opaque handling for other supported Media Types.
 8. Replace the complete content of any InlineContent atomically with explicit Origin behavior and deterministic convergence semantics.
 9. Edit canonical allowlisted native-string text with protected fine-grained Origin through the engine command boundary.
-10. Preserve opaque payload bytes with payload-level Origin; no fine-grained opaque payload editing is required.
+10. Preserve opaque payload bytes with payload-level Origin; no fine-grained opaque payload editing is required. Materialize the raw/coarse media representation of any InlineContent at an explicit Version through the public engine boundary: opaque bytes are exact, and allowlisted text encodes under the preserved Media Type or fails explicitly.
 11. Use optional content-selection lenses, including a summary convention.
 12. List and summarize durable Contributions.
 13. Inspect an exact historical Version read-only.
@@ -181,7 +181,7 @@ A user can reorganize an imported document and edit allowlisted fine-grained tex
 
 New text receives the correct human/imported/unknown Origin. Same-document internal paste preserves source Origin while recording the paster; external paste does not import private Origin or falsely claim authorship.
 
-The suite also creates an opaque InlineContent, replaces its bytes with explicit Origin, and proves byte preservation. Whole-payload replacement of either capability class is atomic.
+The suite also creates an opaque InlineContent, replaces its bytes with explicit Origin, and proves byte preservation. It retrieves raw/coarse media through the public engine for both capability classes: opaque retrieval returns the exact stored bytes, and allowlisted text retrieval returns the exact media representation produced under the unchanged declared Media Type. Whole-payload replacement of either capability class is atomic.
 
 Durable commits happen promptly and can share a semantic group for History presentation. A failed or stale commit leaves canonical state unchanged and retains a recoverable UI draft or an explicit retry/discard path.
 

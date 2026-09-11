@@ -40,6 +40,7 @@ The engine owns:
 - the universal atomic whole-payload replacement contract for every Media Type;
 - allowlisted native-string text state and protected fine-grained Origin;
 - opaque payload byte state and payload-level Origin;
+- carrier-neutral raw/coarse media materialization for InlineContents at an explicit Version;
 - document and History invariants;
 - typed, attributed, version-checked, atomic command application;
 - stable document, content, Contribution, and Version identities;
@@ -172,6 +173,9 @@ interface DocumentEngine {
   materialize(
     version: VersionToken,
   ): Promise<Result<Versioned<MaterializedDocument>, QueryError>>;
+  materializeInlineContentMedia(
+    request: MaterializeInlineContentMediaRequest,
+  ): Promise<Result<Versioned<InlineContentMediaValue>, PayloadMediaError>>;
   createRange(request: CreateRangeRequest): Promise<Result<Range, RangeError>>;
   resolveRange(
     request: ResolveRangeRequest,
@@ -219,6 +223,17 @@ interface SerializeRangeRequest {
 interface ParseRangeRequest {
   readonly value: SerializedRange;
   readonly version: VersionToken;
+}
+
+interface MaterializeInlineContentMediaRequest {
+  readonly version: VersionToken;
+  readonly inlineContentId: InlineContentId;
+}
+
+interface InlineContentMediaValue {
+  readonly inlineContentId: InlineContentId;
+  readonly mediaType: string;
+  readonly bytes: Uint8Array;
 }
 
 interface PortableDocument {
@@ -292,6 +307,8 @@ Historical materialization is detached and read-only. Restore always enters thro
 ## 6. Payload and editor-content boundary
 
 A query can return a detached InlineContent payload value sufficient for an application adapter to inspect the Media Type and render or replace the content without carrier access.
+
+The public engine also provides carrier-neutral raw/coarse media materialization for an InlineContent at an explicit Version. The result contains the preserved Media Type and media-representation bytes, not carrier state or the complete `.coedit` collaboration envelope. Opaque payloads return their exact stored bytes. Allowlisted fine-grained text is encoded from its native string according to the preserved Media Type and the processor capability selected at Gate B. Missing required representation metadata, an unsupported effective encoding, or text that cannot be represented exactly returns an explicit payload-media failure. Materialization is read-only and never rewrites the Media Type or document state. Exact public names remain illustrative until implementation freezes them.
 
 The fine-grained text editor boundary is specifically for allowlisted text. Conceptually:
 

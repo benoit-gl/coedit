@@ -97,6 +97,14 @@ text/markdown
 text/plain
 ```
 
+Both initial entries are deliberate. The Markdown product path alone would not
+force the first implementation to separate shared fine-grained text behavior from
+Markdown-specific behavior. Requiring `text/plain` from Gate B makes that
+factorization observable from the start: both Media Types share native-string
+editing, Origin, Range, and raw/coarse processor boundaries while retaining
+different representation rules and parameters. This is a qualification
+requirement, not a rule that all `text/*` types qualify.
+
 Capability dispatch compares the parsed, case-normalized `type/subtype` identity
 to this one compile-time list. Parameters do not participate in the lookup. Raw
 string-prefix matching is not used.
@@ -273,6 +281,15 @@ Deferred rather than adopted. The MIME top-level taxonomy does not guarantee the
 local edit or recovery properties that Coedit wants to qualify. Some textual
 formats also live under `application/*`. The prototype therefore uses an explicit
 allowlist and expands it only with evidence.
+
+### Start with only `text/markdown`
+
+Rejected for the initial implementation. It would cover the current Markdown
+authoring path, but it would also let Gate B pass with Markdown-specialized text
+and raw-media code. Requiring `text/plain` from the first implementation forces
+the shared fine-grained text and raw/coarse processor abstractions to handle more
+than one Media Type before those boundaries harden. The additional qualification
+cost is deliberate.
 
 ### Keep a separate `Text | Opaque` discriminator in addition to Media Type
 

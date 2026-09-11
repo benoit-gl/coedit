@@ -226,9 +226,11 @@ explicit focused contract and qualification evidence.
 
 ## 6. Raw/coarse media representation boundary
 
-Every payload has a whole-payload/coarse representation boundary. The exact
-public TypeScript names remain implementation details until the public API is
-specified.
+Every payload has a whole-payload/coarse representation boundary. This is a
+public engine capability, not only an internal import or codec helper. An
+application can request the raw/coarse media representation of an InlineContent
+against an explicit Version without receiving carrier state. The exact public
+TypeScript names remain implementation details until the public API is specified.
 
 For an opaque payload, the current media representation is the exact stored byte
 sequence. Raw retrieval returns those bytes unchanged.
