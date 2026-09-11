@@ -146,7 +146,8 @@ Verify:
 
 - each materialized InlineContent carries a syntactically valid Media Type; allowlisted fine-grained text selects the fine-grained text capability set and valid unfamiliar types select generic opaque handling;
 - malformed generic Media Type syntax, a valid unfamiliar Media Type, and a syntactically valid allowlisted type with invalid or incomplete representation prerequisites are distinct cases;
-- `text/markdown` without its required `charset` is rejected at a boundary that must validate or decode its media representation; it is not reclassified as opaque and is not reported as malformed generic Media Type syntax;
+- `text/markdown` without its required `charset` is rejected at a raw/coarse boundary that must validate or decode its media representation; it is not reclassified as opaque and is not reported as malformed generic Media Type syntax;
+- duplicate parameters consumed by the raw text processor, including duplicate `charset` parameters, are rejected deterministically at the raw/coarse boundary rather than resolved by incidental parser first/last behavior;
 - Step 3 uses representative test codec fixtures to prove that supported conversion, unsupported-encoding failure, invalid input, and exact-representation failure are independent of carrier selection without selecting a production charset set or processor mechanism;
 - Step 4 records the exact initial supported charset set and production raw text processor mechanism for `text/markdown` and `text/plain`, and the processor accepts valid representations in that set;
 - the public engine can materialize raw/coarse media for an explicit Version and InlineContent without carrier access; opaque payloads return their exact stored bytes and allowlisted text returns the exact bytes produced under the preserved Media Type;
@@ -158,8 +159,8 @@ Verify:
 - no separate Media Type conversion operation is required; type change occurs only as part of atomic whole-payload replacement;
 - whole-payload replacement is available for every supported Media Type and can keep or change the Media Type;
 - a replacement publishes its complete Media Type, Media-Type-specific content, and required Origin effect atomically;
-- malformed replacement, invalid fine-grained representation metadata, unsupported charset, decode failure, or a selected resource-guard failure leaves the base unchanged;
-- raw/coarse materialization fails explicitly for missing required representation metadata, an unsupported effective charset, or current text that cannot be represented exactly; it substitutes no content, repairs no native string, changes no Media Type, and mutates no document state;
+- malformed replacement, invalid fine-grained raw representation metadata, unsupported charset, decode failure, or a selected resource-guard failure leaves the base unchanged;
+- raw/coarse materialization fails explicitly for missing, duplicate, or invalid required representation metadata, an unsupported effective charset, or current text that cannot be represented exactly; it substitutes no content, repairs no native string, changes no Media Type, and mutates no document state;
 - detached opaque payload bytes and caller-owned replacement buffers cannot mutate engine state after submission;
 - opaque payload bytes round trip exactly and the current opaque payload value has one payload-level Origin;
 - moving an opaque InlineContent preserves bytes and Origin;
@@ -185,16 +186,18 @@ supplies the permanent History proof.
 
 Verify:
 
-- empty and realistic native ECMAScript strings, including line-feed, carriage-return, supplementary-code-point surrogate pairs, isolated high and low surrogate code units, combining sequences, variation selectors, and representative complex scripts;
+- empty and realistic supported native ECMAScript strings, including line-feed, carriage-return, supplementary characters, combining sequences, variation selectors, and representative complex scripts;
+- both candidates characterize isolated high and low surrogate behavior and other ill-formed ECMAScript string edge cases without treating exact preservation of those values as a qualification requirement;
 - `text/markdown` and `text/plain` use the same carrier-neutral fine-grained text operation surface while preserving their distinct full Media Type values;
 - insertion, deletion, and replacement at the start, middle, end, and exact operation boundaries;
 - concurrent insertion, deletion, and replacement under equivalent transaction shapes and delivery faults;
-- every native ECMAScript string code-unit sequence accepted by the engine remains valid collaborative text without a Unicode-well-formedness, normalization, or repair pass;
+- supported carrier-native strings remain exact collaborative text without a Unicode normalization or repair pass;
+- an explicit carrier rejection of a native-string edge case propagates through the operation error path and publishes no partial document change;
 - the canonical projection contains no separate hard-break content item or sentinel;
-- line-feed, carriage-return, an unpaired surrogate, or another native-string value is not rejected merely because a renderer or media encoder cannot present or encode it;
+- line-feed, carriage-return, or another supported native-string value is not rejected merely because a renderer or media encoder cannot present or encode it;
 - Markdown delimiters, link syntax, and other application syntax remain ordinary source-string content to the document engine;
 - the engine does not create, preserve, or require a parallel formatting-mark or link-object model for allowlisted text;
-- editor-to-carrier-to-editor projection preserves the canonical native string and Origin without making editor formatting state a second document authority;
+- editor-to-carrier-to-editor projection preserves supported canonical native strings and Origin without making editor formatting state a second document authority;
 - fine-grained text operations never alter Origin except through the explicit trusted insertion/replacement attribution rules; and
 - malformed carrier state or input that exceeds a selected carrier resource guard fails without changing the base.
 
@@ -210,7 +213,7 @@ Verify:
 - every live fine-grained authored text unit has exactly one valid Origin;
 - insertion before, inside, and after another Contributor's text receives only
   the inserting actor's new Origin;
-- newline characters and other native string code units receive Origin exactly
+- newline characters and other supported native string content receive Origin exactly
   like ordinary inserted text;
 - separate Contributions by the same author receive distinct Origin records
   whose `agentId` can still support an author-level projection;
@@ -272,7 +275,7 @@ Verify:
 
 - pairwise and three-way fine-grained text insert/delete/replace at identical and adjacent boundaries under duplicate, delayed, reordered, partitioned, and reconnected updates;
 - pairwise concurrent whole-payload replacement under the same delivery faults, including same-Media-Type and different-Media-Type concurrent replacements;
-- equal logical Media Type and payload state, fine-grained native-string/Origin projection, opaque payload bytes/Origin, deterministic replacement winner, and durable text Range-position behavior rather than merely equal rendered output;
+- equal logical Media Type and payload state, fine-grained supported native-string/Origin projection, opaque payload bytes/Origin, deterministic replacement winner, and durable text Range-position behavior rather than merely equal rendered output;
 - one atomic command spanning Block structure, an allowlisted fine-grained text InlineContent, an opaque InlineContent, Origins, and Contribution metadata publishes all or none;
 - a command that explicitly targets only one InlineContent cannot mutate unrelated InlineContents or Block structure;
 - direct one-span and multi-span Range creation is feasible only against allowlisted fine-grained text through the same carrier-neutral abstraction for each candidate;
@@ -291,7 +294,7 @@ Use paired, same-machine measurements for Yjs and Automerge and record OS, Node/
 
 Separate visible editor feedback from canonical local-model publication. Visible typing feedback is the critical hot path and must not wait for persistence, History materialization, network/replica delivery, or another slow subsystem. Use 50 ms from a normal local edit to canonical local collaborative state and projection back as an experimental calibration point. Missing that point records evidence; it does not alone fail correctness or select a carrier. Step 3 may promote, replace, or retire it after the run-specific method and target environment are recorded. It is not a throughput rate, product guarantee, or universal hardware requirement.
 
-Exercise ordinary typing, delete/backspace, insertion at start/middle/end, selection replacement, application line-feed insertion where supported, Markdown/source-syntax editing, Unicode-aware editor cases, and ill-formed native ECMAScript strings. Use smaller growth points plus the representative text workload defined in section 6.5 and multiple InlineContents. Detect accidental whole-document scans or reconstruction on a normal keystroke; whole-document work on routine typing is disqualifying even when one test runner is fast enough to hide the cost.
+Exercise ordinary typing, delete/backspace, insertion at start/middle/end, selection replacement, application line-feed insertion where supported, Markdown/source-syntax editing, Unicode-aware editor cases, and explicit characterization cases for ill-formed native ECMAScript strings. Use smaller growth points plus the representative text workload defined in section 6.5 and multiple InlineContents. Detect accidental whole-document scans or reconstruction on a normal keystroke; whole-document work on routine typing is disqualifying even when one test runner is fast enough to hide the cost.
 
 Measure whole-payload replacement separately for representative text and opaque payload values. Measure Block create, move, subtree move, delete, and structure-plus-multiple-InlineContent atomic changes separately. Characterize open/reload, carrier serialization, checkpoint-state capture, historical materialization, export, convergence workloads, serialized-state growth, and supported garbage collection/compaction. Repeat critical measurements after reload/compaction. Deliberately slow persistence and replica delivery in browser tests; local typing must remain responsive.
 
@@ -319,7 +322,7 @@ Verify at least:
 - concurrent subtree/run insertion measures non-interleaving behavior;
 - narrow-gap stress records key growth, comparison/sort cost, and serialized carrier growth;
 - duplicate, delayed, reordered, partitioned, and reconnected updates converge to equal projected structure and logically equivalent Media-Type-labelled payload state; and
-- arbitrary native ECMAScript string code-unit sequences in allowlisted payloads survive the same convergence/reload path without repair.
+- supported carrier-native text in allowlisted payloads survives the same convergence/reload path without normalization or silent repair.
 
 Functional invariants are mandatory and cannot be traded for a faster carrier.
 Select Yjs unless Automerge passes the same suite and materially reduces custom
@@ -374,7 +377,7 @@ Verify at least:
 - zero, one, and several resolved spans, including several in one InlineContent;
 - independent enumeration in creation and descendant lineage order, regardless of current tree order;
 - exact native-string concatenation without inferred structural separators, with duplicated output for overlaps and duplicates and no output for missing members;
-- line-feed, unpaired surrogate, or another separator-like/native-string value already stored in text remains in exact resolved output;
+- separator-like characters already stored in supported text, including line-feed and carriage-return, remain in exact resolved output;
 - explicit rationalization that merges only consecutive exact adjacency caused by a lineage-preserving structural merge;
 - no implicit rationalization during editing or ordinary resolution;
 - no silent rebinding by coincidental identity or quote equality;
@@ -433,7 +436,7 @@ Verify `X` and `Y` with the documented Markdown equivalence relation.
 
 The suite must prove the adapter-specific distinction between Markdown syntax and generic text semantics. Recognized structural syntax is consumed into Blocks and can be emitted with deterministic structural spelling. Unconsumed inline Markdown remains canonical source text. In particular, alternative emphasis/strong delimiters, inline-code and link spelling, and distinct CommonMark soft/hard line-break spellings must remain literal payload source and survive export/re-import unchanged unless `MARKDOWN_INTERCHANGE.md` explicitly defines a normalization. No line-break spelling creates a document-level hard-break item or an implicit Block/InlineContent separator.
 
-Every imported textual InlineContent must use the exact initial Media Type `text/markdown; charset=UTF-8`. The import path decodes source as UTF-8 under the focused interchange contract and does not exercise arbitrary charset conversion. Invalid UTF-8 source is an interchange-input failure; this does not add a Unicode-well-formedness requirement to fine-grained document strings produced by other engine operations.
+Every imported textual InlineContent must use the exact initial Media Type `text/markdown; charset=UTF-8`. The import path decodes source as UTF-8 under the focused interchange contract and does not exercise arbitrary charset conversion. Invalid UTF-8 source is an interchange-input failure; this does not add a general Unicode well-formedness validator to ordinary fine-grained editing.
 
 The suite must also verify stable diagnostics for normalization, unsupported-source literal preservation, unsupported nodes, and any selected opaque/non-text export case. Once Step 7 selects importer guards, verify the top-level distinction among malformed source and capacity failure, exercise each selected guard, and prove that failure publishes no candidate. Experimental guard candidates produce characterization evidence only. Markdown link destinations remain source text and are interpreted or activated only by the application.
 
@@ -447,9 +450,9 @@ Verify:
 
 - realistic current and historical state round trips;
 - Media Type is preserved exactly for every InlineContent;
-- allowlisted fine-grained native ECMAScript string code-unit sequences and fine-grained Origin round trip exactly, including unpaired surrogate code units;
-- the portable codec does not reject, normalize, repair, or replace a valid engine string merely because the code-unit sequence is not Unicode-well-formed;
-- the final version-1 container encoding represents every native ECMAScript string losslessly; if JSON remains the container, its selected string/chunk representation must preserve lone surrogate code units reversibly rather than relying on a lossy UTF-8 conversion;
+- supported allowlisted fine-grained native strings and fine-grained Origin round trip exactly;
+- the portable codec performs no Unicode normalization or silent repair of supported carrier-native strings;
+- the final version-1 container encoding represents every supported native string that can exist in accepted carrier state losslessly; carrier behavior for ill-formed ECMAScript string edge cases is not promoted into a broader portable string requirement;
 - opaque payload bytes and payload-level Origin round trip exactly;
 - whole-payload replacement History, including deterministic concurrent-winner evidence where represented, survives round trip without rewriting Contributions;
 - Contributors, Origins, Contributions, derivation, semantic Checkpoints, Version identity, and command idempotency survive;
@@ -457,9 +460,9 @@ Verify:
 - unsupported versions fail;
 - unknown properties fail for version 1;
 - valid unfamiliar Media Types round trip through generic opaque handling with their exact labels, bytes, and Origins, without a registry lookup or renderer;
-- malformed generic Media Type syntax and valid allowlisted Media Types with invalid or incomplete representation prerequisites fail as distinct validation classes;
-- `text/markdown` without required `charset` is rejected when the portable decoder must validate or decode an external media representation and is never silently reclassified as opaque; an already canonical native string in `.coedit` is not revalidated as external media bytes merely because it is reopened;
-- a valid allowlisted Media Type whose declared or effective charset is outside the Step 4-selected processor set fails as an explicit unsupported-encoding/capability case when portable opening must cross a raw media boundary; it is not relabelled, silently transcoded, or reclassified as opaque;
+- malformed generic Media Type syntax fails separately from carrier/schema incompatibility and portable corruption;
+- reopening canonical collaborative state does not decode or encode allowlisted text according to its Media Type, does not require its charset to be supported by the raw text processor, and does not reject canonical text merely because the declared charset could not represent it;
+- `text/markdown` without required `charset` can reopen as canonical collaborative state when the generic Media Type syntax and carrier state are otherwise valid; a later raw/coarse operation rejects the incomplete representation metadata;
 - unsupported carrier/schema versions, malformed base64/binary values, missing/mis-hashed chunks, and unreachable references fail with the appropriate invalid-input or incompatibility result;
 - malformed trees and ownership fail;
 - broken graph/frontier links and Contributor/Origin references fail;
@@ -467,10 +470,13 @@ Verify:
 - every portable resource guard selected and promoted under `PORTABLE_DOCUMENT_FORMAT.md` fails safely when exceeded;
 - a failed open never replaces the active engine;
 - stale serialization returns no artifact;
-- native strings, Origin, copy/restore lineage, actor distinction, and required Range-tracking lineage round trip exactly;
+- supported native strings, Origin, copy/restore lineage, actor distinction, and required Range-tracking lineage round trip exactly;
 - a serialized Range value retained by the test outside the `.coedit` artifact resolves to the same surviving spans and exact concatenated native string before and after Save/Open; the format need not invent an engine-owned holder record for that Range;
 - reconstruction from physical checkpoint plus effects equals direct materialization; and
 - successful format-version-1 encode is always accepted by the format-version-1 decoder.
+
+Raw/coarse Media Type representation failures are tested in section 6.1. They are
+not portable-open validation rules for already-canonical collaborative strings.
 
 ## 12. Browser durability verification
 
@@ -479,7 +485,7 @@ Run the same repository contract against the in-memory and IndexedDB adapters wh
 Verify:
 
 - atomic Contribution/effect/head commit and reopen;
-- browser reload preserves Media Types, opaque payload bytes, native string state, and Origins;
+- browser reload preserves Media Types, opaque payload bytes, supported native string state, and Origins;
 - document isolation;
 - failed-commit reporting;
 - corrupt local record handling;
@@ -513,7 +519,7 @@ Keep the end-to-end suite small and high value. It must prove at least:
 8. inspect and restore History while preserving text and opaque-payload Origin and attributing the restore actor;
 9. create, resolve as spans and exact text, rationalize, serialize, store in a representative application-owned holder, and later parse/resolve multi-span and Positional text Ranges;
 10. export Markdown and re-import it to an equivalent Coedit text document;
-11. save `.coedit` and reopen it with native string and opaque payload state intact;
+11. save `.coedit` and reopen it with supported native string and opaque payload state intact;
 12. persist and reload through the incremental IndexedDB repository; and
 13. recover safely from representative stale, quota, failed-commit, and malformed-open cases.
 
@@ -526,7 +532,7 @@ Before real clients connect, qualify:
 - the exact causal Contribution envelope and atomic metadata/effect publication;
 - Principal, Contributor, Origin, Replica, Session, and connection separation;
 - a two-engine fault bus with duplicate, delay, reorder, missing dependency, partition, reconnect, and conflicting-ID cases;
-- convergence of Contribution graph/frontier, hidden carrier state, Block tree, Media Types, deterministic whole-replacement winners, allowlisted fine-grained native-string/Origin state, opaque payload bytes/payload Origin, and every Version materialization;
+- convergence of Contribution graph/frontier, hidden carrier state, Block tree, Media Types, deterministic whole-replacement winners, supported allowlisted fine-grained native-string/Origin state, opaque payload bytes/payload Origin, and every Version materialization;
 - a causally later whole-payload replacement supersedes observed replacements while concurrent replacements use the qualified deterministic order;
 - losing concurrent replacement Contributions remain available in History;
 - the accepted flat structural carrier and Block liveness semantics when effects travel through the causal Contribution envelope;
