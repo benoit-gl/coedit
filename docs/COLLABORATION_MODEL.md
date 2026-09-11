@@ -39,7 +39,7 @@ implementation order.
 - Every InlineContent Media Type is collaborative in the convergence sense:
   replicas with the same complete set of valid Contributions converge on the
   same current payload state.
-- allowlisted fine-grained text additionally supports native-string collaborative text and fine-grained Origin operations. Other Media Types initially support only whole-payload
+- Allowlisted fine-grained text additionally supports native-string collaborative text and fine-grained Origin operations. Other Media Types initially support only whole-payload
   replacement.
 - Whole-payload replacement is a convergent replicated register. A causally
   later replacement supersedes replacements it observes. Truly concurrent
@@ -139,10 +139,11 @@ different Media Types becomes visible atomically to engine queries. The
 replication ingress buffers incomplete payloads or missing dependencies rather
 than publishing a partial state.
 
-Internal placements, activity markers, replacement-register tie-break state,
+Internal placements, activity markers, replacement-register implementation state,
 tombstones, and causal metadata do not violate the logical domain decision that
 live `Block` and `InlineContent` entities have no carrier fields. They are private
-replication/storage machinery.
+replication/storage machinery. The observable concurrent-replacement winner rule
+is product behavior selected at Gate B even when its representation is private.
 
 Inbox/outbox acknowledgements, connection retries, and buffered dependency
 requests are transport bookkeeping, not a fifth kind of document truth. They may
@@ -280,11 +281,14 @@ authored wall-clock time for display only
 The precise hash, signature, and wire encoding remain open. IDs must be globally
 unique and immutable; content-addressing is attractive but not yet selected.
 
-The deterministic order used to break a concurrent whole-payload replacement tie
-must be derived from immutable replicated effect identity/state qualified at Gate
-B. The exact carrier-private representation remains a Gate B implementation
-selection. It cannot use authored wall-clock time, local row number, packet order,
-or a value that two conforming replicas can compute differently.
+Gate B selects one observable deterministic order/rule for concurrent
+whole-payload replacement. It must derive from immutable replicated effect
+identity/state and produce the same logical winner for the same valid causal
+input in every conforming adapter. Gate B also selects the carrier-private
+representation, effect identity, or metadata used to implement that rule. The
+rule cannot use authored wall-clock time, local row number, packet order, or a
+value that two conforming replicas can compute differently. Carrier-native
+conflict ordering is evidence, not product policy by itself.
 
 A human-authored summary deliberately stored on a Contribution is immutable,
 replicated metadata. A summary derived later by a local heuristic or LLM is a
@@ -382,7 +386,7 @@ The initial capability dispatch recognizes allowlisted fine-grained text as the 
 The document model has no canonical hard-break content item. A line-feed or
 carriage-return can be ordinary allowlisted fine-grained text data. Block and InlineContent
 boundaries remain structural and add no text character. Application adapters
-translate paragraph, line-break, list, section, opaque-payload rendering, or other intent.
+translate paragraph, line-break, list, section, formatting, link, opaque-payload rendering, or other intent.
 
 Every payload supports whole-payload replacement. The operation preserves the InlineContent identity and atomically replaces the complete payload value. The Media Type can stay the same or change; capability dispatch then follows the resulting Media Type.
 
@@ -420,13 +424,14 @@ Deterministic normalization and suppression of normalization-only resurrection
 are preferred when inexpensive, but residual behavior can be accepted and
 recorded because exact collisions should be exceptional.
 
-These accepted carrier semantics constrain Step 3. Gate B must still select the
-carrier-private replacement tie-break and the observable mixed replacement/edit
-behavior deferred in `INLINE_CONTENT_PAYLOADS.md` section 9.1. Those decisions
-precede production carrier implementation; they do not complete the network
-protocol. Before real clients connect, the system must still qualify causal
-Contribution envelopes, transport, dependency buffering, authorization, restart
-recovery, hostile input, restore overlap, and exact integration rules.
+These accepted carrier semantics constrain Step 3. Gate B must still select and
+record the observable concurrent-replacement winner rule and its carrier-private
+implementation, together with the observable mixed replacement/edit behavior
+deferred in `INLINE_CONTENT_PAYLOADS.md` section 10.1. Those decisions precede
+production carrier implementation; they do not complete the network protocol.
+Before real clients connect, the system must still qualify causal Contribution
+envelopes, transport, dependency buffering, authorization, restart recovery,
+hostile input, restore overlap, and exact integration rules.
 
 ### Collaborative-document and annotation boundaries
 
@@ -440,12 +445,13 @@ This is a private carrier boundary, not a public `Y.Doc` or Automerge type.
 Subdocuments or sharding require measured evidence and must preserve atomic
 multi-target behavior and portable recovery.
 
-allowlisted fine-grained text and fine-grained Origin do not use external anchors.
+Allowlisted fine-grained text and fine-grained Origin do not use external anchors.
 Generic opaque payloads have payload-level Origin rather than text-like ranges. The MVP headless Range
 service can use carrier-stable text positions plus qualified lineage and
-carrier-neutral evidence behind its public value contract. Internal text links
-can embed a Range; future comments can hold one externally with comment-specific
-repair state. Generic opaque sub-content addressing is not defined by that service.
+carrier-neutral evidence behind its public value contract. Applications can
+serialize or store a Range in Markdown links, comments, navigation records, or
+other holders. Holder meaning and fallback remain outside the Range service.
+Generic opaque sub-content addressing is not defined by that service.
 
 Copying allowlisted fine-grained text creates new carrier identities and same-document copy
 retains Origins, but shared Origin or derivation creates no Range-tracking
@@ -573,7 +579,7 @@ The future replication protocol will need, at minimum:
 - atomic envelopes for multi-target Contributions;
 - Origin, source, and derivation records plus their authorization rules;
 - deterministic validation/rejection semantics;
-- deterministic whole-payload replacement tie-break effects compatible with Gate B; and
+- whole-payload replacement effects compatible with the Gate B observable winner rule and its private representation; and
 - an explicit relationship between logical Contribution metadata and exact carrier or structural effects.
 
 These fields are private protocol concerns. They must not turn the UX-facing
@@ -614,7 +620,7 @@ Contract tests and types keep all of these private.
 
 ## 14. Staged implementation path
 
-1. Qualify Yjs v13 against Automerge with the Media-Type-labelled-payload, attributed-text, structural, and text Range-feasibility suites; record the winner and deterministic whole-replacement tie-break at Gate B.
+1. Qualify Yjs v13 against Automerge with the Media-Type-labelled-payload, attributed-text, structural, and text Range-feasibility suites; record the winner, the observable deterministic whole-replacement winner rule, and its private implementation at Gate B.
 2. Implement the selected collaborative core and retain the common suite as regression evidence.
 3. Establish local History and permanent exact Version materialization.
 4. Implement the durable allowlisted fine-grained text Range service and record its lineage representation at Gate C.
@@ -669,7 +675,14 @@ pass together.
 - whether any workflow eventually requires a coordinated canonical sequence; and
 - collaboration semantics for future Media Types beyond the universal whole-payload replacement baseline.
 
-The Media Type boundary, replacement-versus-replacement invariants, flat Block carrier, command-to-placement mapping, semantic-update-over-delete preference, and exceptional collision-normalization policy are accepted. `INLINE_CONTENT_PAYLOADS.md` and `STRUCTURAL_CARRIER_MODEL.md` own those rules. Gate B selects their carrier mechanisms and closes the explicitly deferred mixed replacement/edit semantics; it does not reopen the accepted invariants. Gate C owns Range lineage. The pre-network gate owns transport and replicated restore overlap.
+The Media Type boundary, replacement-versus-replacement invariants, flat Block
+carrier, command-to-placement mapping, semantic-update-over-delete preference,
+and exceptional collision-normalization policy are accepted.
+`INLINE_CONTENT_PAYLOADS.md` and `STRUCTURAL_CARRIER_MODEL.md` own those rules.
+Gate B selects the observable replacement winner rule and its carrier-private
+implementation and closes the explicitly deferred mixed replacement/edit
+semantics; it does not reopen the accepted invariants. Gate C owns Range lineage.
+The pre-network gate owns transport and replicated restore overlap.
 
 ## 17. Technical references
 
@@ -698,6 +711,3 @@ The Media Type boundary, replacement-versus-replacement invariants, flat Block c
 - [Automerge rich text](https://automerge.org/docs/reference/documents/text/)
   and [Loro movable trees](https://www.loro.dev/docs/tutorial/tree) inform the
   carrier and structural qualification gates.
-- [W3C PROV-DM](https://www.w3.org/TR/2013/REC-prov-dm-20130430/)
-  supplies the Entity/Activity/Agent and derivation distinctions used by Origin
-  and Contributions.
