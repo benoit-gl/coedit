@@ -177,7 +177,7 @@ The suite covers:
 - raw/coarse text conversion through representative test codec fixtures, including exact conversion for a supported encoding, explicit unsupported-encoding failure for another valid declared or effective charset, and no silent transcoding, relabelling, or opaque fallback;
 - universal whole-payload replacement;
 - deterministic convergence of concurrent whole-payload replacements without wall-clock or arrival-order arbitration;
-- exact native ECMAScript string collaboration for both allowlisted fine-grained Media Types, including unpaired surrogate code units, without a document-level hard-break item;
+- exact collaboration for ordinary supported native ECMAScript strings for both allowlisted fine-grained Media Types, plus characterization of carrier behavior for ill-formed string edge cases such as lone surrogates, without promoting those edge cases to portable document invariants;
 - protected fine-grained Origin and native-string editing for both allowlisted types;
 - exact opaque payload bytes and payload-level Origin;
 - flat Block placement, liveness, and allocator behavior;
@@ -390,7 +390,7 @@ The plan is complete when the browser prototype satisfies the MVP contract and a
 - the headless allowlisted fine-grained text Range service and required lineage pass Gate C;
 - optional InlineContents and content lenses are usable;
 - selected Versions, lenses, and subtrees can export to Markdown with explicit diagnostics when exact structural/payload interchange is not possible;
-- the opaque `.coedit` artifact provides lossless recovery of Media Types, native ECMAScript strings, opaque payload bytes, Origins, History, and required Range lineage within the selected implementation capacity, and capacity failure does not claim semantic invalidity;
+- the opaque `.coedit` artifact provides lossless recovery of Media Types, supported carrier-native ECMAScript strings, opaque payload bytes, Origins, History, and required Range lineage within the selected implementation capacity, and capacity failure does not claim semantic invalidity;
 - the incremental IndexedDB repository provides browser reload durability without becoming a second semantic authority;
 - one active text editor preserves canonical allowlisted source text and protected fine-grained Origin;
 - semantic edit grouping remains separate from prompt durable Contributions and preserves controlled transition, failure, and retry rules;
