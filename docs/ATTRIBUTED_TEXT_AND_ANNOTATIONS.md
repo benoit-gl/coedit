@@ -51,10 +51,16 @@ future engine feature implied by this specification.
 
 ## 3. Canonical text and application boundary
 
-A fine-grained text payload has one canonical collaborative character value. At
-the JavaScript API boundary that value is a native ECMAScript string. The selected
-carrier can use its native string/text representation internally. Media byte
-encoding is not performed for ordinary fine-grained editing.
+A fine-grained text payload has one canonical collaborative string value. At the
+JavaScript API boundary that value is a native ECMAScript string, including any
+code-unit sequence that JavaScript strings can contain. The document engine does
+not add a Unicode-well-formedness check. The selected carrier can use its native
+string/text representation internally. Media byte encoding is not performed for
+ordinary fine-grained editing.
+
+Whether a native string can be represented exactly by the charset declared or
+implied by its Media Type is checked only when a raw/coarse media boundary is
+used. That representability rule does not constrain ordinary fine-grained edits.
 
 The carrier-neutral logical shape is illustrative:
 
@@ -88,9 +94,9 @@ can also leave inline Markdown syntax in the payload for rendering. The engine
 only validates and applies the resulting document operations.
 
 Block and InlineContent boundaries add no character. A payload can contain
-line-feed, carriage-return, delimiter, or other string content. There is no
-canonical `HardBreak` item or inferred presentation separator in the document
-model.
+line-feed, carriage-return, delimiter, unpaired surrogate code units, or other
+string content. There is no canonical `HardBreak` item or inferred presentation
+separator in the document model.
 
 `TEXT_POSITION_MODEL.md` owns the public coordinate semantics used for text
 positions. Carrier-specific indexing, including any UTF-16 code-unit behavior,
@@ -191,8 +197,8 @@ without conflict. A fragment from another document follows the external
 imported/unknown path until the post-MVP cross-document Origin-catalog protocol
 exists.
 
-The application owns any HTML sanitization and link activation policy. The
-document engine does not interpret clipboard markup or URLs.
+Clipboard markup and URL interpretation are application concerns. The document
+engine does not interpret clipboard markup or URLs.
 
 Generic opaque clipboard/drag-drop transport is an application concern until a
 focused opaque-payload interchange contract exists.
@@ -252,7 +258,7 @@ Both candidates must run the same fine-grained text suite for both initial
 allowlisted Media Types. At minimum it covers:
 
 - exact native-string preservation, including newline/control-character and
-  Unicode edge cases selected by `INLINE_CONTENT_PAYLOADS.md`;
+  ill-formed native-string cases selected by `INLINE_CONTENT_PAYLOADS.md`;
 - Origin non-inheritance and protection from ordinary client commands;
 - concurrent insertion, deletion, and replacement at identical and adjacent
   boundaries;
@@ -286,8 +292,8 @@ fixtures as regression tests. In addition, prove:
   and do not disable ordinary clipboard fallback;
 - caller mutation of detached input cannot mutate engine state;
 - a failed command publishes no text, Origin, Contribution, or Version;
-- newline or other text characters are not rejected merely because an application
-  can present or parse them specially;
+- newline, unpaired surrogate code units, or other native-string content is not
+  rejected merely because an application can present, parse, or encode it specially;
 - no Block or InlineContent boundary manufactures a text character;
 - the engine does not parse, normalize, repair, or render Markdown syntax;
 - application formatting state is not required to materialize canonical engine
