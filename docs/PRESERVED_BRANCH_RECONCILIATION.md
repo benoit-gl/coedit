@@ -111,7 +111,6 @@ The preserved branch can provide implementation or test evidence after current a
 - **`src/domain/ids.ts`:** Stable ID generation patterns after current branded-ID review.
 - **`src/domain/json.ts`:** Generic JSON cloning/comparison helpers where still appropriate.
 - **`src/domain/tags.ts` and tests:** Tag normalization and case-insensitive identity.
-- **`src/editor/sanitizeRichText.ts` and tests:** Hostile HTML/text/paste evidence; adapt it to the application rendering/clipboard sanitizer boundary, Markdown/source-text operations, protected Origin, and private fragments. Do not carry the preserved mark model into canonical engine state.
 - **`src/editor/yjsEncoding.ts`:** Binary/base64 utility evidence only.
 - **`src/application/serializedTaskQueue.ts` and tests:** Serialized local mutation behavior if still useful.
 - **`LICENSE`:** Project license.
