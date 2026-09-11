@@ -40,8 +40,7 @@ Use:
 - Vitest;
 - Tiptap/ProseMirror as an application-level text/Markdown editor adapter;
 - pinned stable Yjs v13 as the provisional collaborative carrier;
-- the Markdown parser stack specified in `MARKDOWN_INTERCHANGE.md`;
-- DOMPurify or an equivalently reviewed sanitizer at DOM/clipboard boundaries; and
+- the Markdown parser stack specified in `MARKDOWN_INTERCHANGE.md`; and
 - IndexedDB for the browser-local engine repository.
 
 The Step 1 scaffold pins the supported Node.js range and pnpm version in project metadata,
@@ -133,7 +132,6 @@ src/
     InlineContentEditor.tsx
     editGroupPolicy.ts
     editGroupCoordinator.ts
-    sanitizeRichText.ts
 
   components/
     Welcome.tsx
