@@ -4,7 +4,7 @@
 
 **Decision date:** 2026-09-08
 
-**Amended:** 2026-09-10
+**Amended:** 2026-09-11
 
 **Scope:** InlineContent payload semantics, Media Type preservation and capability
 dispatch, whole-payload replacement, payload convergence, and the boundary
@@ -55,8 +55,8 @@ The intended boundary is simpler:
   representation, including parameters;
 - every payload supports coarse whole-payload replacement;
 - only explicitly qualified formats receive fine-grained text collaboration;
-- fine-grained text is maintained as the carrier's native string state rather
-  than continuously encoded media bytes;
+- fine-grained text is maintained as a native ECMAScript string rather than
+  continuously encoded media bytes;
 - raw/coarse access to allowlisted text materializes bytes according to the
   preserved Media Type and fails if exact representation is not possible; and
 - Coedit does not sniff content or maintain a dynamic format-capability registry.
@@ -122,9 +122,13 @@ coarse collaboration.
 
 For an allowlisted type, the collaborative logical value is a native ECMAScript
 string plus Coedit collaboration metadata such as fine-grained Origin and Range
-lineage. Fine-grained APIs operate directly on native strings and the selected
-carrier's native text representation. They do not encode and decode the media
-representation for every edit.
+lineage. The document model adds no Unicode-well-formedness requirement. Any
+ECMAScript string code-unit sequence, including unpaired surrogate code units,
+is valid fine-grained document text.
+
+Fine-grained APIs operate directly on native strings and the selected carrier's
+native text representation. They do not encode, decode, repair, or reject text
+according to media representation rules for every edit.
 
 The raw/coarse boundary remains byte-oriented. On raw input, a type-specific text
 processor validates representation prerequisites and decodes the supplied bytes
@@ -133,9 +137,9 @@ string according to the preserved Media Type.
 
 Raw conversion must fail explicitly if required Media Type parameters are absent,
 an encoding is unsupported, input is invalid, or the current string cannot be
-represented exactly. It must not replace characters, silently change a charset,
-rewrite the stored Media Type, or fall back to opaque handling merely to make
-serialization succeed.
+represented exactly. It must not replace characters, repair the native string,
+silently change a charset, rewrite the stored Media Type, or fall back to opaque
+handling merely to make serialization succeed.
 
 For opaque types, the document model keeps the exact supplied bytes and raw
 retrieval returns them unchanged.
@@ -154,10 +158,10 @@ model unless a later focused contract says otherwise.
 
 ### 3.5 Fine-grained text has no document-level hard-break item
 
-Line-feed, carriage-return, and other characters are text data. Block and
-InlineContent boundaries add no character. Applications, editors, renderers, and
-interchange adapters decide how those characters and structural boundaries are
-presented.
+Line-feed, carriage-return, unpaired surrogates, and other ECMAScript string code
+units are text data. Block and InlineContent boundaries add no character.
+Applications, editors, renderers, and interchange adapters decide how applicable
+characters and structural boundaries are presented.
 
 Fine-grained Origin and Range lineage can accompany both initial allowlisted text
 formats. Formatting, Markdown parsing/rendering, and link interpretation are
@@ -243,7 +247,7 @@ Positive consequences:
 - capability dispatch has one small compile-time source of truth;
 - there is no content sniffing, dynamic plugin registry, or MIME-taxonomy
   inference;
-- ordinary fine-grained edits stay in native string space;
+- ordinary fine-grained edits stay in native ECMAScript string space;
 - opaque content keeps exact stored bytes;
 - raw/coarse text access has an explicit lossless encoding contract;
 - universal replacement gives every Media Type a deterministic collaborative
@@ -255,11 +259,15 @@ Costs and constraints:
 
 - the preserved Media Type can name an encoding that cannot represent a later
   collaboratively edited string, so raw materialization can fail;
-- Gate B must qualify the initial raw text processor and Unicode edge behavior in
-  addition to carrier behavior;
+- Gate B must prove that native-string collaboration and raw/coarse media
+  conversion are cleanly factored from carrier selection, but it does not select
+  the production codec or charset set;
+- Step 4 must select and qualify the initial raw text processor mechanism and
+  exact supported charset set;
 - `text/markdown` requires `charset` for the Coedit-owned raw processor;
 - `text/plain` without an explicit charset uses its registered default, which can
-  expose the raw-output failure path after non-ASCII edits;
+  expose the raw-output failure path after edits that are not representable by
+  that charset;
 - adding another fine-grained Media Type is an explicit contract and
   qualification change rather than an automatic consequence of its top-level
   `text` type; and
@@ -359,16 +367,23 @@ payload representation.
 Step 3 must qualify `text/markdown`, `text/plain`, representative opaque Media
 Types including `application/octet-stream`, universal replacement, deterministic
 concurrent replacement convergence, exact Media Type preservation, parameter and
-representation validation, raw/coarse encoding failure behavior, and the existing
+representation-validity classification, carrier-independent raw/coarse boundary
+behavior through representative test codecs, native ECMAScript string
+preservation including unpaired surrogate code units, and the existing
 fine-grained text suite against both carrier candidates. Gate B records the
-carrier winner, raw text processor boundary, Unicode edge policy, observable
-replacement winner rule, its private implementation, and mixed replacement/edit
-semantics.
+carrier winner, observable replacement winner rule, its private implementation,
+and mixed replacement/edit semantics. It does not select the production raw text
+processor mechanism or supported charset set.
+
+Step 4 selects and qualifies the initial raw text processor mechanism and exact
+supported charset set. It retains the Step 3 raw/coarse boundary cases as
+production regressions and must fail explicitly for unsupported encodings or
+native strings that the preserved Media Type cannot represent exactly.
 
 Step 6 remains responsible for the exact effect of whole-payload replacement on
-durable Range lineage. Step 8 freezes exact Media Type values, collaborative text
-state, opaque payload bytes, and required metadata into the portable format only
-after Gates B and C pass.
+durable Range lineage. Step 8 freezes exact Media Type values, native ECMAScript
+string state, opaque payload bytes, and required metadata into the portable format
+only after Gates B and C pass.
 
 Future fine-grained formats require an explicit allowlist and qualification
 update. Valid unfamiliar Media Types already use the opaque contract and need no
