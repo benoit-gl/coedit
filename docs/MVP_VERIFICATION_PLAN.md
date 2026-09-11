@@ -59,7 +59,7 @@ The documented baseline closes the former `TextAnchor` blocker by assigning payl
 
 The Media-Type-labelled-payload decision and Range authority revalidate the Step 0 authority baseline without reopening completed structural semantics in Steps 1 and 2. Gate B selects the collaborative carrier and closes the observable concurrent-replacement winner rule plus its private implementation. Gate C selects the text Range representation after Step 6 and before `.coedit` version 1 freezes a portable Range encoding.
 
-The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `INLINE_CONTENT_PAYLOADS.md`, `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, the observable deterministic whole-payload replacement winner rule and the carrier-private mechanism that implements it, the actual qualification hardware/software environment, measurements, scaling behavior, and the selection rationale. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
+The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `INLINE_CONTENT_PAYLOADS.md`, `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, the observable deterministic whole-payload replacement winner rule and the carrier-private mechanism that implements it, the selected initial UTF-family charset set and raw text processor mechanism, the actual qualification hardware/software environment, measurements, scaling behavior, and the selection rationale. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
 
 ### 4.1 Step 1 tooling and platform evidence
 
@@ -147,13 +147,16 @@ Verify:
 - each materialized InlineContent carries a syntactically valid Media Type; allowlisted fine-grained text selects the fine-grained text capability set and valid unfamiliar types select generic opaque handling;
 - malformed generic Media Type syntax, a valid unfamiliar Media Type, and a syntactically valid allowlisted type with invalid or incomplete representation prerequisites are distinct cases;
 - `text/markdown` without its required `charset` is rejected at a boundary that must validate or decode its media representation; it is not reclassified as opaque and is not reported as malformed generic Media Type syntax;
+- Gate B records the exact initial supported UTF-family charset set for `text/markdown` and `text/plain`, and the raw text processor accepts valid representations in that set;
+- a valid declared or effective charset outside the selected initial set fails explicitly as unsupported encoding/capability at a boundary that must decode, encode, or validate the media representation; the implementation does not relabel it, transcode it silently, or reinterpret it as opaque;
+- if the selected initial processor is UTF-only, `text/plain` without `charset` is recognized as having the registered US-ASCII default but is rejected at raw boundaries as an unsupported effective encoding rather than as malformed Media Type syntax;
 - case variants and parameters give consistent type/subtype capability matching without a registry lookup while the complete supplied Media Type survives unchanged;
 - each materialized InlineContent has one Media Type and ordinary replacement preserves the InlineContent identity;
 - payload-specific operations reject an incompatible Media Type explicitly rather than coercing content;
 - no separate Media Type conversion operation is required; type change occurs only as part of atomic whole-payload replacement;
 - whole-payload replacement is available for every supported Media Type and can keep or change the Media Type;
 - a replacement publishes its complete Media Type, Media-Type-specific content, and required Origin effect atomically;
-- malformed replacement, invalid fine-grained representation metadata, decode failure, or a selected resource-guard failure leaves the base unchanged;
+- malformed replacement, invalid fine-grained representation metadata, unsupported charset, decode failure, or a selected resource-guard failure leaves the base unchanged;
 - detached opaque payload bytes and caller-owned replacement buffers cannot mutate engine state after submission;
 - opaque payload bytes round trip exactly and the current opaque payload value has one payload-level Origin;
 - moving an opaque InlineContent preserves bytes and Origin;
@@ -373,7 +376,7 @@ Verify at least:
 - rejection when a resolution target predates or does not descend from the Range's creation Version;
 - document-relative Range-fragment parse/serialize round trip;
 - application-owned external document URI parsing and document selection;
-- reinjection into representative application-owned holders without adding holder-specific fallback or link semantics to the Range service;
+- application-holder round trip in which a serialized Range is stored in a representative link/comment/navigation holder and later passed back through the public parse/resolve API, without an engine reinjection operation, holder-specific fallback, or link/comment semantics;
 - reload and supported compaction; and
 - edit and Block-move cost independent of the total retained Range count.
 
@@ -421,11 +424,13 @@ Markdown A -> Coedit X -> Markdown B -> Coedit Y
 
 Verify `X` and `Y` with the documented Markdown equivalence relation.
 
-The suite must prove the adapter-specific distinction between Markdown syntax and generic text semantics. In particular, a CommonMark hard break maps to the canonical text character(s) selected by the Markdown contract rather than to a document-level hard-break item, while a soft break follows the separately documented normalization. Re-import must preserve the normalized semantic result.
+The suite must prove the adapter-specific distinction between Markdown syntax and generic text semantics. Recognized structural syntax is consumed into Blocks and can be emitted with deterministic structural spelling. Unconsumed inline Markdown remains canonical source text. In particular, alternative emphasis/strong delimiters, inline-code and link spelling, and distinct CommonMark soft/hard line-break spellings must remain literal payload source and survive export/re-import unchanged unless `MARKDOWN_INTERCHANGE.md` explicitly defines a normalization. No line-break spelling creates a document-level hard-break item or an implicit Block/InlineContent separator.
+
+Every imported textual InlineContent must use the exact initial Media Type `text/markdown; charset=UTF-8`. The import path decodes source as UTF-8 under the focused interchange contract and does not exercise arbitrary charset conversion.
 
 The suite must also verify stable diagnostics for normalization, unsupported-source literal preservation, unsupported nodes, and any selected opaque/non-text export case. Once Step 7 selects importer guards, verify the top-level distinction among malformed source and capacity failure, exercise each selected guard, and prove that failure publishes no candidate. Experimental guard candidates produce characterization evidence only. Markdown link destinations remain source text and are interpreted or activated only by the application.
 
-Do not compare source Markdown text for equality. Canonical export spelling is allowed.
+Do not require `Markdown A` and `Markdown B` to be byte-for-byte equal because structural spelling can be regenerated. For inline source retained in a `text/markdown` payload, however, compare the preserved source string exactly except for explicit normalizations defined by `MARKDOWN_INTERCHANGE.md`.
 
 ## 11. Portable-format verification
 
@@ -445,6 +450,7 @@ Verify:
 - valid unfamiliar Media Types round trip through generic opaque handling with their exact labels, bytes, and Origins, without a registry lookup or renderer;
 - malformed generic Media Type syntax and valid allowlisted Media Types with invalid or incomplete representation prerequisites fail as distinct validation classes;
 - `text/markdown` without required `charset` is rejected when the portable decoder must validate or decode that representation and is never silently reclassified as opaque;
+- a valid allowlisted Media Type whose declared or effective charset is outside the selected initial processor set fails as an explicit unsupported-encoding/capability case when portable decoding must materialize text; it is not relabelled, silently transcoded, or reclassified as opaque;
 - unsupported carrier/schema versions, malformed base64/binary values, missing/mis-hashed chunks, and unreachable references fail with the appropriate invalid-input or incompatibility result;
 - malformed trees and ownership fail;
 - broken graph/frontier links and Contributor/Origin references fail;
@@ -496,7 +502,7 @@ Keep the end-to-end suite small and high value. It must prove at least:
 6. verify internal and external text paste lineage;
 7. create a semantic Checkpoint;
 8. inspect and restore History while preserving text and opaque-payload Origin and attributing the restore actor;
-9. create, resolve as spans and exact text, rationalize, serialize, parse, and reinject representative multi-span and Positional text Ranges into application-owned holders;
+9. create, resolve as spans and exact text, rationalize, serialize, store in a representative application-owned holder, and later parse/resolve multi-span and Positional text Ranges;
 10. export Markdown and re-import it to an equivalent Coedit text document;
 11. save `.coedit` and reopen it with text and opaque payloads intact;
 12. persist and reload through the incremental IndexedDB repository; and
