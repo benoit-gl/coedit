@@ -1,0 +1,40 @@
+name: PR 19 formatter helper
+
+on:
+  push:
+    branches:
+      - design/typed-inline-content-payloads
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Bootstrap dependencies
+        run: npm run bootstrap
+
+      - name: Format changed documentation
+        run: >-
+          npm exec -- prettier --write
+          docs/decisions/0001-collaborative-content-provenance-history.md
+          docs/decisions/0006-text-position-ownership.md
+          docs/INLINE_CONTENT_PAYLOADS.md
+
+      - name: Upload formatted files
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr19-prettier
+          path: |
+            docs/decisions/0001-collaborative-content-provenance-history.md
+            docs/decisions/0006-text-position-ownership.md
+            docs/INLINE_CONTENT_PAYLOADS.md
