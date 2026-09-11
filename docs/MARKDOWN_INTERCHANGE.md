@@ -26,7 +26,7 @@ arbitrary Markdown A
 
 For every successfully imported Markdown document, `X` and `Y` must be equivalent after normalization.
 
-The invariant does **not** require `Markdown A` and `Markdown B` to be textually equal. Export may canonicalize whitespace, heading syntax, list markers, emphasis delimiters, hard-break spelling, or other Markdown spelling.
+The invariant does **not** require `Markdown A` and `Markdown B` to be textually equal. Export may canonicalize structural Markdown spelling that the importer has already consumed into Block structure, such as heading markers, list markers, and structural blank-line layout. It may also apply a source normalization that this specification explicitly defines. It must otherwise preserve the canonical inline Markdown source stored in each `text/markdown` payload. In particular, export does not silently rewrite emphasis delimiters, inline-code delimiters, link spelling, or soft/hard line-break spelling merely to choose a preferred Markdown style.
 
 The invariant also does not require every arbitrary Coedit tree or Media Type to be exactly representable in Markdown. A Coedit document can contain structures, opaque payloads, or metadata outside the canonical Markdown-representable subset. Export of those constructs must report stable diagnostics and must not claim exact structural interchange.
 
@@ -38,11 +38,11 @@ For Markdown round-trip verification, two Coedit documents are equivalent when t
 - the same sibling order;
 - the same `childrenPresentation` values;
 - the same number and order of InlineContents per Block;
-- `text/markdown` fine-grained text Media Type for every imported textual InlineContent;
+- the exact imported text Media Type `text/markdown; charset=UTF-8` for every imported textual InlineContent;
 - the same normalized `text/markdown` source strings after recognized structural syntax is consumed; and
-- the same importer normalization semantics where a source construct requires normalization.
+- the same importer normalization semantics where this specification explicitly requires source normalization.
 
-There is no separate hard-break content item in this relation. Markdown line-break spelling remains source syntax unless the application deliberately translates it during editing or structural import. A structural Block or InlineContent boundary contributes no character merely because the boundary exists.
+There is no separate hard-break content item in this relation. Markdown line-break spelling remains source syntax unless this specification explicitly defines a normalization for it or the application deliberately translates it during later editing. A structural Block or InlineContent boundary contributes no character merely because the boundary exists.
 
 Generated IDs, Contributor IDs, Origin IDs, Contribution IDs, VersionTokens, timestamps, carrier internal identities, encoded update-byte order, and source-file metadata are not part of Markdown structural equivalence.
 
@@ -58,7 +58,7 @@ Separate pure planning from engine mutation. The planner receives Markdown bytes
 
 The initial importer creates a new document. It does not merge Markdown into an already open document.
 
-Recognized structural Markdown syntax is translated into Coedit Block structure and is not duplicated inside the payload string. Inline syntax and any syntax not consumed structurally remain literal Markdown source in `text/markdown` payloads. Markdown textual source creates `text/markdown` fine-grained text payloads. The importer does not infer or manufacture opaque payloads from Markdown syntax under this contract.
+Recognized structural Markdown syntax is translated into Coedit Block structure and is not duplicated inside the payload string. Inline syntax and any syntax not consumed structurally remain literal Markdown source in `text/markdown` payloads. Markdown textual source creates fine-grained text payloads with the exact initial Media Type `text/markdown; charset=UTF-8`. The importer does not infer or manufacture opaque payloads from Markdown syntax under this contract.
 
 The UX obtains a free-form human Contributor display name before document-session creation. Import creates an imported or unknown Origin agent/record for source material. The import Contribution is attributed to the human or system Contributor that performed the import; a source file is not impersonated as the operation actor. Available source name/hash and any separately supported author claims are derivation metadata.
 
@@ -67,6 +67,8 @@ The UX obtains a free-form human Contributor display name before document-sessio
 Decode source as UTF-8 with fatal error handling. Permit one optional UTF-8 BOM. Normalize CRLF and CR to LF before parsing.
 
 This source-byte newline normalization is an interchange rule. It does not imply that the generic `text/markdown` fine-grained text payload rejects carriage-return characters supplied through another valid application path.
+
+The importer always labels imported textual payloads `text/markdown; charset=UTF-8`. It therefore does not need arbitrary charset conversion. A later import format or caller that supplies another declared charset uses the generic payload processor contract rather than silently relabelling the bytes as UTF-8.
 
 `sourceName` is display metadata only. Retain a basename, not an absolute local path.
 
@@ -113,7 +115,7 @@ A first H1 becomes root content only when it is the first manuscript AST child a
 
 Each later H1 attaches to the root. Each other heading attaches to the nearest open lower-depth heading. A skipped heading level creates no synthetic heading and produces `heading-level-skipped`.
 
-An empty heading creates one InlineContent with an empty `text/markdown` fine-grained text payload.
+An empty heading creates one InlineContent with an empty `text/markdown; charset=UTF-8` fine-grained text payload.
 
 For a root or section that contains both body material and subsections:
 
@@ -133,15 +135,15 @@ Block boundaries remain structural. The importer does not insert newline charact
 Use these initial mappings:
 
 ```text
-paragraph                 -> terminal Block with one `text/markdown` fine-grained text InlineContent
+paragraph                 -> terminal Block with one `text/markdown; charset=UTF-8` fine-grained text InlineContent
 unordered list            -> transparent grouping Block with bullets children
 ordered list              -> transparent grouping Block with numbers children
-list item first paragraph -> list-item `text/markdown` fine-grained text InlineContent
+list item first paragraph -> list-item `text/markdown; charset=UTF-8` fine-grained text InlineContent
 remaining item material   -> flow children of the list item
 nested list               -> transparent list grouping among those flow children
 ```
 
-A list item with no leading paragraph receives one empty `text/markdown` fine-grained text InlineContent.
+A list item with no leading paragraph receives one empty `text/markdown; charset=UTF-8` fine-grained text InlineContent.
 
 An ordered list whose start is not one is normalized to one and produces `ordered-list-start-normalized` until explicit start-number semantics exist.
 
@@ -153,7 +155,7 @@ The document engine does not own an inline Markdown AST or formatting marks. Aft
 
 For example, source equivalent to a list item containing `hello **world**` becomes a list-item Block whose payload contains `hello **world**`. The list marker is represented by structure; the emphasis delimiters remain source text. This avoids encoding the same structural fact twice while keeping inline Markdown available to application renderers.
 
-CommonMark soft/hard line-break spelling, emphasis, strong text, strikethrough, inline code, links, raw inline HTML, and other inline constructs are therefore application/interchange syntax. The importer can normalize source spelling only where this specification explicitly requires a deterministic round trip; otherwise it preserves the source slice. A renderer can parse and display that syntax but does not thereby change canonical engine state.
+CommonMark soft/hard line-break spelling, emphasis, strong text, strikethrough, inline code, links, raw inline HTML, and other inline constructs are therefore application/interchange syntax. The importer can normalize source spelling only where this specification explicitly requires a deterministic round trip; otherwise it preserves the source slice. The initial explicit source normalizations are the source-byte UTF-8/BOM/newline rules in section 5 and the structural mappings stated in this document. No separate inline delimiter or line-break canonicalization is implied. A renderer can parse and display that syntax but does not thereby change canonical engine state.
 
 Markdown link destinations remain ordinary Markdown source. The application decides whether a destination is external, document-local, a serialized Coedit Range reference, or another URI. The document engine does not create an intrinsic link object or classify link targets.
 
@@ -163,7 +165,7 @@ Block and InlineContent boundaries still add no characters. If a Markdown constr
 
 Unsupported source must not disappear silently.
 
-When a source node has a usable normalized source slice, preserve that exact slice as plain authored `text/markdown` fine-grained text and produce a warning that identifies the lost presentation. Do not add a durable tag whose only meaning is that the current Markdown importer could not represent the original syntax. For an unsupported block node, preserve the complete source slice in one terminal `text/markdown` fine-grained text InlineContent. For an unsupported inline node, preserve that node's source slice as literal text inside the containing InlineContent.
+When a source node has a usable normalized source slice, preserve that exact slice as plain authored `text/markdown` fine-grained text and produce a warning that identifies the lost presentation. Do not add a durable tag whose only meaning is that the current Markdown importer could not represent the original syntax. For an unsupported block node, preserve the complete source slice in one terminal `text/markdown` fine-grained text InlineContent. For an unsupported inline node, preserve that node's source slice as literal text inside the containing InlineContent. Imported fallback payloads use the same exact `text/markdown; charset=UTF-8` Media Type as other imported text.
 
 Initially apply this fallback to:
 
@@ -216,7 +218,7 @@ Export accepts an explicit VersionToken plus optional lens and subtree selection
 
 For a document inside the canonical Markdown-representable subset, export must invert the import construction so that re-import produces an equivalent normalized Coedit document.
 
-Export can choose canonical Markdown spelling. Use deterministic spelling for structural headings/lists and for any inline syntax that the interchange layer deliberately normalizes. Preserve or regenerate payload Markdown source without consulting engine-owned formatting state.
+Export can choose deterministic spelling for structural syntax that it reconstructs, including headings, list markers, and structural blank-line layout. For a `text/markdown` payload, export writes the stored inline Markdown source without style-only canonicalization. It changes that source only when this specification explicitly defines a normalization or when an application edit has already changed canonical payload text. Export never reconstructs inline syntax from engine-owned formatting state because no such state exists.
 
 For a Coedit construct that the importer cannot reconstruct exactly, export must produce a stable diagnostic. The renderer must not claim an exact Markdown round trip for that selection.
 
@@ -253,13 +255,13 @@ The test suite must include at least:
 - mixed introductory body plus subsections;
 - ordered, unordered, and nested lists;
 - empty headings and empty list items;
-- inline Markdown such as emphasis, strong text, strikethrough, inline code, links, and line-break syntax preserved in payload source;
+- inline Markdown such as alternative emphasis/strong delimiters, strikethrough, inline code, links, and distinct soft/hard line-break spellings preserved exactly in payload source across export/re-import;
 - proof that Block/InlineContent boundaries add no text character;
 - task markers and non-one ordered-list starts;
 - unsupported block constructs that use literal fallback; and
 - link destinations and unsupported inline constructs preserved as Markdown source.
 
-Also verify that exporting a selected opaque payload produces the stable non-representability behavior and never silently byte-decodes it as text.
+Also verify that all imported textual InlineContents use `text/markdown; charset=UTF-8`, and that exporting a selected opaque payload produces the stable non-representability behavior and never silently byte-decodes it as text.
 
 When Step 7 selects importer guards, add tests below and around each selected
 guard when practical, prove that capacity failure leaves no active candidate,
