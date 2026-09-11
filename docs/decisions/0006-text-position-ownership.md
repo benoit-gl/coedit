@@ -27,8 +27,12 @@ no text-position or byte-range contract merely because fine-grained text has one
 
 ## Decision
 
-An allowlisted fine-grained text payload stores Unicode text without prescribing
-a storage encoding as document semantics.
+An allowlisted fine-grained text payload stores a native ECMAScript string. The
+document model adds no Unicode-well-formedness requirement and does not prescribe
+a media encoding as document semantics. Any code-unit sequence accepted by the
+native string boundary, including unpaired surrogate code units, remains valid
+fine-grained document text. Media-Type-specific encode/decode and exact
+representability checks occur only at raw/coarse media boundaries.
 
 Use editor-native positions for transient editing. Durable text references use
 the carrier-neutral Range service. A private Range-tracking implementation can
@@ -44,7 +48,7 @@ Do not independently adjust a valid editor selection to Coedit-computed grapheme
 boundaries. The editor owns transient selection and normal Unicode editing
 behavior.
 
-Preserve authored Unicode text without silent normalization.
+Preserve the native string without silent Unicode normalization or repair.
 
 Portable and historical Range recovery uses the creation Version, original Block
 and InlineContent identities, and the carrier-neutral lineage and verification
@@ -66,13 +70,17 @@ behavior, and leaves the durable Range-tracking representation to Gate C.
 
 - UTF-16 can remain a JavaScript or parser boundary detail without becoming
   canonical document semantics.
+- The engine accepts the native ECMAScript string domain without adding a
+  Unicode-validation or repair layer; raw media conversion owns representation
+  failures.
 - Durable application-held text Ranges can use stable carrier positions behind
   the Range service without requiring them as the complete Range-tracking
   representation.
 - Generic opaque payloads do not acquire byte offsets or sub-content Range
   semantics from this decision.
-- Qualification must test complex Unicode selections and stable-position
-  conversion through editing and reload when a candidate uses that primitive.
+- Qualification must test complex Unicode selections, ill-formed native strings,
+  and stable-position conversion through editing and reload when a candidate uses
+  that primitive.
 - Portable recovery needs carrier-neutral lineage and verification evidence in
   addition to any live carrier positions used by the selected representation.
 
