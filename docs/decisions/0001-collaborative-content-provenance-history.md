@@ -1,10 +1,10 @@
 # ADR-0001: Collaborative content, provenance, History, and persistence
 
-**Status:** Accepted
+**Status:** Accepted; refined by ADR 0010
 
 **Decision date:** 2026-08-25
 
-**Amended:** 2026-09-06
+**Amended:** 2026-09-11
 
 **Scope:** Whole-solution direction, including the strict document-engine MVP,
 the carrier-qualification gate, and compatibility requirements for later
@@ -18,8 +18,9 @@ This record preserves why the decision was made. Normative behavior belongs in:
 - [`../MVP_CONTRACT.md`](../MVP_CONTRACT.md) for the MVP proof boundary;
 - [`../MVP_ARCHITECTURE.md`](../MVP_ARCHITECTURE.md) for component authority;
 - [`../CAPACITY_AND_PERFORMANCE_TARGETS.md`](../CAPACITY_AND_PERFORMANCE_TARGETS.md) for capacity classification and numeric ownership;
-- [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for formatting, Origin, clipboard, and Range-holder behavior;
-- [`../RANGE_MODEL.md`](../RANGE_MODEL.md) for durable Range behavior and staged representation selection;
+- [`../INLINE_CONTENT_PAYLOADS.md`](../INLINE_CONTENT_PAYLOADS.md) for Media-Type-labelled InlineContent payloads, generic replacement, and payload capability dispatch;
+- [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for fine-grained text Origin and clipboard behavior;
+- [`../RANGE_MODEL.md`](../RANGE_MODEL.md) for durable text Range behavior and staged representation selection;
 - [`../MVP_IMPLEMENTATION_SPEC.md`](../MVP_IMPLEMENTATION_SPEC.md) for private MVP rules;
 - [`../MARKDOWN_INTERCHANGE.md`](../MARKDOWN_INTERCHANGE.md) for Markdown import/export behavior;
 - [`../PORTABLE_DOCUMENT_FORMAT.md`](../PORTABLE_DOCUMENT_FORMAT.md) for recovery-format requirements;
@@ -32,6 +33,14 @@ If wording here conflicts with the direct authority for a subject, update the
 authority and this record together. Do not use an ADR to bypass the documentation
 authority model.
 
+ADR 0010 refines this record where the original decision assumed engine-owned
+rich-text formatting, links, or hard-break items. InlineContent now owns one
+Media-Type-labelled payload. The engine provides fine-grained native-string text
+only for the explicit allowlist and generic opaque bytes otherwise. Formatting,
+Markdown interpretation, link meaning, and presentation-break syntax belong to
+applications and interchange adapters. The older rich-text examples in the
+history of this ADR are therefore not an independent normative contract.
+
 ## 2. Context
 
 The previous clean-slate direction proposed one generic external
@@ -40,8 +49,8 @@ provenance. That made anchor design a Step 0 implementation blocker. Further
 analysis found that it also assigned one mechanism to concerns with materially
 different behavior:
 
-- formatting is part of editable rich text and often expands at insertion
-  boundaries;
+- application formatting or source syntax can have insertion-boundary behavior
+  but does not require a durable engine-owned annotation model;
 - origin provenance must not be inherited by newly inserted text;
 - comments genuinely refer to text from an external durable object; and
 - selections are transient collaboration state.
@@ -50,29 +59,44 @@ The decision also had to preserve exact History, copy and restore lineage,
 future concurrent editing, local durability, portable recovery, AI attribution,
 and a path to authenticated or signed claims.
 
+ADR 0010 later generalized the content side of this direction: InlineContent is
+not synonymous with rich text. Some Media Types receive fine-grained collaborative
+text; all other valid Media Types can remain opaque while still participating in
+identity, replacement, History, and convergence.
+
 ## 3. Decision
 
-### 3.1 Formatting is intrinsic collaborative metadata
+### 3.1 Formatting and media syntax are application concerns
 
-Formatting is represented by the selected collaborative-content carrier's
-native rich-text marks or equivalent inline attributes. It is not duplicated in
-an external range table and is not stored as visible sentinel characters.
+The document engine does not own a universal formatting-mark vocabulary, link
+object, Markdown AST, or document-level hard-break item. An allowlisted
+fine-grained text payload stores its native source string plus protected Origin
+metadata. Applications and interchange adapters can parse or render formatting,
+links, line-break spelling, and other media syntax from that source.
 
-Every mark kind defines explicit insertion-boundary expansion behavior. The
-initial vocabulary is bold, italic, underline, strikethrough, inline code, and a
-safe link destination. HTML and plain text remain derived projections.
+Recognized structural syntax can be translated into Block structure by an
+interchange adapter when its focused contract says so. Syntax not consumed as
+structure remains payload text. Generic opaque payloads remain exact bytes plus
+payload-level Origin and receive no invented rich-text model.
+
+This refinement avoids duplicating one semantic fact both as source syntax and as
+engine-owned formatting metadata. ADR 0010 records the payload rationale and
+`INLINE_CONTENT_PAYLOADS.md` is the direct authority.
 
 ### 3.2 Provenance is content-native origin metadata
 
-Durable fine-grained provenance is attached to inserted logical content units
-through protected, hidden carrier metadata. A renderer may coalesce adjacent
-equal origins into display runs, but those runs are a query result rather than a
-durable `RangeAnnotation<Provenance>` entity.
+Durable fine-grained provenance is attached to inserted logical content units in
+allowlisted fine-grained text through protected, hidden carrier metadata. A
+renderer may coalesce adjacent equal origins into display runs, but those runs are
+a query result rather than a durable `RangeAnnotation<Provenance>` entity.
 
-Each logical content unit has one origin attribution. An origin can identify a
-human, imported source, automation, or AI/software agent and can refer to source
-or derivation records. Origin metadata never inherits merely because an
+Each logical fine-grained text unit has one origin attribution. An origin can
+identify a human, imported source, automation, or AI/software agent and can refer
+to source or derivation records. Origin metadata never inherits merely because an
 insertion occurs beside existing text.
+
+Opaque payloads use payload-level Origin for their current whole value until a
+future Media-Type-specific contract deliberately defines finer granularity.
 
 The strict MVP must qualify this carrier behavior before the implementation and
 portable format are frozen. A provenance explorer, production provenance UI,
@@ -84,38 +108,46 @@ remain later capabilities.
 Origin answers who or what authored the content. A Contribution answers who
 performed an operation in this document.
 
-Copying or restoring attributed content creates new CRDT identities but retains
-the source origin attribution. The copy or restore Contribution records the
-acting contributor and derivation/source Version. There is no separate
-"restored provenance" category.
+Copying or restoring attributed content creates new carrier identities where the
+selected representation requires them but retains the source origin attribution.
+The copy or restore Contribution records the acting contributor and
+derivation/source Version. There is no separate "restored provenance" category.
 
-New material created by editing an existing passage receives the origin of the
-agent that created the new material. Clearing formatting cannot clear origin.
+New fine-grained text material created by editing an existing passage receives
+the origin of the agent that created the new material. Application formatting or
+source-syntax changes cannot clear or forge protected Origin. Whole opaque-payload
+replacement receives the Origin required by its trusted operation context.
 
 ### 3.4 Clipboard semantics are explicit
 
-An internal Coedit clipboard representation carries semantic content,
-formatting, origin metadata, source-document identity, and derivation references.
-It is private to consenting Coedit-to-Coedit transfer.
+An internal Coedit clipboard representation can carry semantic content, exact
+Media Type, protected Origin metadata, source-document identity, and derivation
+references required by the copied payload. It is private to consenting
+Coedit-to-Coedit transfer. Application-owned formatting or Markdown syntax stays
+in the copied media representation rather than being duplicated as engine-owned
+marks.
 
-Ordinary `text/plain` and sanitized `text/html` clipboard representations do
-not expose private provenance. Pasting external material records the paste
-actor separately and assigns an imported or unknown origin unless trustworthy
-source metadata is available. It must not manufacture an authorship claim for
-the paster.
+Ordinary `text/plain` and sanitized `text/html` clipboard representations do not
+expose private provenance. Pasting external material records the paste actor
+separately and assigns an imported or unknown origin unless trustworthy source
+metadata is available. It must not manufacture an authorship claim for the
+paster.
 
 ### 3.5 Comments use external Range holders; selections do not
 
 A future durable comment or conversation is an external record that holds one
 durable Range plus comment-specific attachment and repair state. The Range can
-refer to one or several semantic spans across Blocks and InlineContents. The
-Range service can use stable carrier positions behind its carrier-neutral value;
-the exact tracking and lineage representation remains a Gate C decision. It
-omits unresolved or ambiguous members and never attaches them to merely similar
-text.
+refer to one or several semantic spans across Blocks and allowlisted fine-grained
+text InlineContents. The Range service can use stable carrier positions behind
+its carrier-neutral value; the exact tracking and lineage representation remains
+a Gate C decision. It omits unresolved or ambiguous members and never attaches
+them to merely similar text.
 
 The complete comment state machine and repair experience remain post-MVP. They
 consume the shared Range service and do not redefine Range kind or resolution.
+Applications own how a serialized Range value is stored or reinjected into a
+comment, Markdown link, navigation record, or other holder; the Range service
+does not own holder-specific fallback semantics.
 
 Selections, focus, cursors, and typing state remain transient awareness data
 unless a future feature deliberately creates a durable named selection.
@@ -125,23 +157,25 @@ unless a future feature deliberately creates a durable named selection.
 The default private representation is one logical collaborative document per
 Coedit document, containing the Block registry and order, all InlineContents,
 and the metadata needed for atomic multi-target operations. Individual editor
-instances bind only the active InlineContent.
+instances bind only the active InlineContent when its Media Type has an editor
+adapter.
 
 This is not a public `Y.Doc` contract. Sharding, subdocuments, or another
-physical layout requires measured evidence and must preserve atomic
-cross-content and structure-plus-text Contributions.
+physical layout requires measured evidence and must preserve atomic cross-content
+and structure-plus-payload Contributions.
 
-The ProseMirror schema remains deliberately flat inside one InlineContent:
-text, hard breaks, and supported inline marks. The recursive Coedit Block tree
-does not become a ProseMirror document tree.
+The recursive Coedit Block tree does not become a ProseMirror document tree.
+ProseMirror/Tiptap remains an application adapter for allowlisted text. Its marks,
+line-break nodes, parsed Markdown, and rendered hierarchy are not canonical
+engine state. Opaque payloads need no ProseMirror representation.
 
 ### 3.7 Product History is separate from CRDT transport
 
 A Contribution is an immutable, attributed semantic activity. A Version is a
-materializable causal frontier. Every Version remains exactly materializable
-for the lifetime of its document. Product History is not reconstructed from
-editor transactions, debounce windows, Yjs updates, transport packets, or
-wall-clock ordering.
+materializable causal frontier. Every Version remains exactly materializable for
+the lifetime of its document. Product History is not reconstructed from editor
+transactions, debounce windows, Yjs updates, transport packets, or wall-clock
+ordering.
 
 Every successful durable command has one immutable Contribution/event identity,
 which references its exact convergence effects and can carry a semantic group
@@ -167,13 +201,15 @@ snapshot as the current replicated state and never deletes History.
 A restore command names the target Version and the causal frontier observed by
 its author. Its semantic inverse removes or compensates only effects known at
 that observed frontier, applies against the current merged state, and preserves
-unseen concurrent insertions. Historically deleted content is reinserted under
-new carrier identities with its origin metadata retained. The restore
-Contribution records the restoring actor and target Version.
+unseen concurrent insertions. Historically deleted fine-grained text is
+reinserted under new carrier identities where required with its origin metadata
+retained; opaque payload restore preserves the source payload Origin according to
+the focused payload contract. The restore Contribution records the restoring
+actor and target Version.
 
-If same-region or structural work cannot be merged without ambiguity, the
-engine exposes a conflict or a separately authorized coordinated "restore for
-everyone" operation. It does not silently discard concurrent work.
+If same-region or structural work cannot be merged without ambiguity, the engine
+exposes a conflict or a separately authorized coordinated "restore for everyone"
+operation. It does not silently discard concurrent work.
 
 ### 3.9 Persistence uses a journal and checkpoints
 
@@ -199,16 +235,16 @@ manifest plus binary chunks without changing product ontology.
 
 ### 3.10 AI uses the ordinary command and provenance boundary
 
-An AI adapter reads an explicit Version and proposes typed engine operations.
-It receives no raw live CRDT or private-storage authority. AI-generated material
-is attributed to a software agent, with provider/model/version, source Version,
-and derivation metadata where available. Human acceptance is a separate
+An AI adapter reads an explicit Version and proposes typed engine operations. It
+receives no raw live CRDT or private-storage authority. AI-generated material is
+attributed to a software agent, with provider/model/version, source Version, and
+derivation metadata where available. Human acceptance is a separate
 Contribution and does not reattribute the generated content to the human.
 
 ### 3.11 Provenance has explicit trust levels
 
-Local provenance is a descriptive assertion, not cryptographic proof. Keep
-three levels distinct:
+Local provenance is a descriptive assertion, not cryptographic proof. Keep three
+levels distinct:
 
 1. descriptive local provenance;
 2. authenticated engine/relay-enforced attribution; and
@@ -223,12 +259,12 @@ IDs so retention, anonymization, and erasure policies can be implemented.
 | Concern                   | Decision                                                                                                                                            |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Browser/application stack | Keep React, strict TypeScript, Vite, and Vitest.                                                                                                    |
-| Rich-text editor          | Keep Tiptap/ProseMirror behind a narrow adapter.                                                                                                    |
+| Text editor adapter       | Keep Tiptap/ProseMirror behind a narrow application adapter.                                                                                        |
 | Collaborative carrier     | Yjs stable v13 is the provisional default; qualify it against Automerge before freezing the carrier or portable encoding.                           |
 | Yjs v14                   | Track its native attribution facilities; do not use release candidates as the production baseline.                                                  |
-| Automerge                 | The only current whole-engine challenger; run the same qualification suite against its rich text, cursors, heads, ProseMirror binding, and storage. |
+| Automerge                 | The only current whole-engine challenger; run the same qualification suite against its text, cursors, heads, editor binding, payload replacement, and storage. |
 | Loro                      | Retain as a movable-tree/cursor benchmark; do not adopt its current ProseMirror binding or combine it with Yjs.                                     |
-| Markdown                  | Keep unified, remark-parse, and remark-gfm. Literalize raw HTML under the current contract.                                                         |
+| Markdown                  | Keep unified, remark-parse, and remark-gfm. Preserve unconsumed inline Markdown as source text under the current contract.                           |
 | Sanitization              | Apply an allowlist sanitizer after any unsafe HTML/HAST transform; use DOMPurify or equivalent at DOM and clipboard boundaries.                     |
 | Browser persistence       | Keep native IndexedDB; a small reviewed wrapper is optional. Defer OPFS and SQLite-WASM until measurement.                                          |
 | Native shell              | Keep browser-first. Reconsider Tauri as a thin adapter only after a demonstrated browser-inadequate need.                                           |
@@ -236,9 +272,10 @@ IDs so retention, anonymization, and erasure policies can be implemented.
 
 ## 4. Carrier-qualification gate
 
-Before the CollaborativeContent implementation and `.coedit` carrier encoding are
-frozen, run the same headless and editor-integrated suite against Yjs v13 and
-Automerge. Track Yjs v14 for a later rerun after stable release.
+Before the Media-Type-labelled InlineContent payload implementation and `.coedit`
+carrier encoding are frozen, run the same headless and editor-integrated suite
+against Yjs v13 and Automerge. Track Yjs v14 for a later rerun after stable
+release.
 
 The representative workload values are experimental candidates owned by
 `MVP_VERIFICATION_PLAN.md`. Before comparing carriers, the qualification run
@@ -247,15 +284,21 @@ not hard limits, semantic maxima, correctness thresholds, or product guarantees.
 
 The suite must cover:
 
-- concurrent insertion, deletion, and formatting at both boundaries;
-- explicit mark expansion policies;
-- origin assignment that never accidentally inherits or permits ordinary
-  formatting commands to erase it;
-- internal/external copy and paste, restore, split, merge, hard break, IME,
-  undo, and redo;
-- atomic structure-plus-text and multi-InlineContent operations;
+- allowlisted `text/markdown` and `text/plain` native-string editing;
+- protected fine-grained Origin that does not accidentally inherit and cannot be
+  erased or forged by ordinary application edits;
+- representative opaque Media Types with exact byte preservation and
+  payload-level Origin;
+- atomic whole-payload replacement for text and opaque payloads, including Media
+  Type changes and deterministic concurrent replacement convergence;
+- explicit raw/coarse text processor failures for unsupported encodings and
+  representation metadata, including the selected initial UTF-family charset
+  capability;
+- internal/external copy and paste, restore, split, merge, IME, undo, and redo
+  where those operations apply to allowlisted text;
+- atomic structure-plus-payload and multi-InlineContent operations;
 - durable Range-position feasibility through editing, deletion, reload, and
-  recovery;
+  recovery for allowlisted text;
 - partition, duplicate, delay, and reorder convergence in two replicas;
 - causal restore preserving unseen concurrent work;
 - compaction/garbage-collection that preserves every Version, Origin, required
@@ -265,24 +308,27 @@ The suite must cover:
 - portable round-trip without exposing carrier types in public APIs.
 
 Select Yjs when its protected metadata carrier is incremental, non-inheriting,
-and passes the suite without fragile ProseMirror repair code. Select Automerge
-only when its native model removes enough custom machinery to outweigh the
-maturity risk of its editor and repository integrations. Loro requires a new
-decision after its integration matures or after a deliberate decision to build
-a custom adapter.
+and passes the suite without fragile editor repair code. Select Automerge only
+when its native model removes enough custom machinery to outweigh the maturity
+risk of its editor and repository integrations. Loro requires a new decision
+after its integration matures or after a deliberate decision to build a custom
+adapter.
 
 This is an implementation qualification gate, not a reopened product-domain
-question. Step 1 scaffolding is complete, and the pure Block domain can proceed before it;
-carrier-dependent implementation and portable-format freeze cannot.
+question. Step 1 scaffolding is complete, and the pure Block domain can proceed
+before it; carrier-dependent implementation and portable-format freeze cannot.
 
 ## 5. Consequences
 
 Positive consequences:
 
-- Formatting no longer depends on an unsolved general-purpose TextAnchor.
+- Formatting and media syntax no longer depend on an unsolved general-purpose
+  TextAnchor or a duplicate engine-owned mark model.
+- InlineContent can hold fine-grained text or exact opaque bytes without changing
+  its structural identity model.
 - Authorship survives copy and restore without confusing origin with actor.
 - Comments receive stronger repair behavior than a single CRDT cursor provides.
-- One collaborative boundary permits atomic structure/text/history operations.
+- One collaborative boundary permits atomic structure/payload/history operations.
 - The public engine remains independent of Yjs, Automerge, storage chunks, and
   synchronization providers.
 - Persistence can grow incrementally instead of cloning the entire archive on
@@ -292,8 +338,9 @@ Positive consequences:
 
 Costs and constraints:
 
-- The origin carrier must be protected from ordinary mark manipulation and from
-  actor spoofing at trusted boundaries.
+- Fine-grained Origin carrier metadata must be protected from ordinary editing
+  and actor spoofing at trusted boundaries.
+- Opaque payloads need explicit whole-payload Origin and replacement semantics.
 - Copy, paste, restore, retention, and anonymization require explicit policies.
 - Causal restore and concurrent Block moves remain substantially harder than
   ordinary CRDT text convergence.
@@ -304,15 +351,17 @@ Costs and constraints:
 
 ### Generic external ranges for formatting and provenance
 
-Rejected. It duplicates rich-text structure, creates difficult boundary and
-atomicity rules, and incorrectly implies that provenance inherits like
-formatting. External Range holders remain appropriate for comments.
+Rejected. It would duplicate application/source formatting structure, create
+difficult boundary and atomicity rules, and incorrectly imply that provenance
+inherits like presentation metadata. External Range holders remain appropriate
+for comments and other application-owned durable references.
 
 ### Literal inline marker characters
 
-Rejected. They contaminate textual semantics, clipboard/export behavior,
-offsets, searching, and accessibility. Hidden carrier attributes provide the
-desired locality without becoming manuscript characters.
+Rejected as engine metadata. They contaminate textual semantics, clipboard/export
+behavior, offsets, searching, and accessibility. Media syntax that is genuinely
+part of a format, such as Markdown delimiters, remains ordinary payload source
+rather than a hidden Coedit sentinel scheme.
 
 ### Derive all provenance from History
 
@@ -328,17 +377,18 @@ association. The operation actor remains independently recorded.
 ### Replace the stack with an adjacent editor or local-first system
 
 Etherpad, CKEditor, BlockNote, BlockSuite, SuperDoc, Fluid, Jazz, Replicache, and
-ElectricSQL were rejected as whole-solution replacements. Each solves a useful adjacent problem,
-but none provides Coedit's combined Block/lens ontology, local engine boundary,
-rich-text lineage, semantic causal History, portable recovery, and later AI
-model. Etherpad remains the most important behavioral reference.
+ElectricSQL were rejected as whole-solution replacements. Each solves a useful
+adjacent problem, but none provides Coedit's combined Block/lens ontology, local
+engine boundary, fine-grained text lineage, generic opaque payload boundary,
+semantic causal History, portable recovery, and later AI model. Etherpad remains
+an important behavioral reference for attribution.
 
 ### Adopt OPFS, SQLite-WASM, PGlite, RxDB, Tauri, or Electron now
 
 Deferred or rejected for the browser MVP. These add deployment, worker,
-multi-tab, or packaging complexity without resolving content semantics.
-Tauri can later wrap the validated browser application; Electron is justified
-only by a demonstrated requirement for a bundled consistent Chromium runtime.
+multi-tab, or packaging complexity without resolving content semantics. Tauri can
+later wrap the validated browser application; Electron is justified only by a
+demonstrated requirement for a bundled consistent Chromium runtime.
 
 ## 7. State-of-the-art evidence
 
@@ -355,7 +405,8 @@ only by a demonstrated requirement for a bundled consistent Chromium runtime.
   is promising but currently belongs to the unstable v14 line.
 - [Automerge rich text](https://automerge.org/docs/reference/documents/rich-text/)
   and [automerge-prosemirror](https://github.com/automerge/automerge-prosemirror)
-  provide the strongest current alternative carrier.
+  provide the strongest current alternative carrier evidence for collaborative
+  text and editor integration.
 - [Loro text](https://www.loro.dev/docs/tutorial/text), [cursors](https://www.loro.dev/docs/tutorial/cursor),
   and [movable tree](https://www.loro.dev/docs/tutorial/tree) inform the
   qualification suite without justifying current adoption.
