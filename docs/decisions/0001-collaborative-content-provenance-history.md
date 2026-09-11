@@ -127,11 +127,10 @@ Coedit-to-Coedit transfer. Application-owned formatting or Markdown syntax stays
 in the copied media representation rather than being duplicated as engine-owned
 marks.
 
-Ordinary `text/plain` and sanitized `text/html` clipboard representations do not
-expose private provenance. Pasting external material records the paste actor
-separately and assigns an imported or unknown origin unless trustworthy source
-metadata is available. It must not manufacture an authorship claim for the
-paster.
+Ordinary `text/plain` and `text/html` clipboard representations do not expose
+private provenance. Pasting external material records the paste actor separately
+and assigns an imported or unknown origin unless trustworthy source metadata is
+available. It must not manufacture an authorship claim for the paster.
 
 ### 3.5 Comments use external Range holders; selections do not
 
@@ -265,7 +264,6 @@ IDs so retention, anonymization, and erasure policies can be implemented.
 | Automerge                 | The only current whole-engine challenger; run the same qualification suite against its text, cursors, heads, editor binding, payload replacement, and storage. |
 | Loro                      | Retain as a movable-tree/cursor benchmark; do not adopt its current ProseMirror binding or combine it with Yjs.                                                |
 | Markdown                  | Keep unified, remark-parse, and remark-gfm. Preserve unconsumed inline Markdown as source text under the current contract.                                     |
-| Sanitization              | Apply an allowlist sanitizer after any unsafe HTML/HAST transform; use DOMPurify or equivalent at DOM and clipboard boundaries.                                |
 | Browser persistence       | Keep native IndexedDB; a small reviewed wrapper is optional. Defer OPFS and SQLite-WASM until measurement.                                                     |
 | Native shell              | Keep browser-first. Reconsider Tauri as a thin adapter only after a demonstrated browser-inadequate need.                                                      |
 | Future synchronization    | Hocuspocus or a managed Yjs provider can transport updates, but Coedit retains its semantic Contribution envelope and validation.                              |
