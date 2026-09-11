@@ -75,8 +75,8 @@ Step 8 encoder until Gate B has recorded:
   text Range lineage; and
 - the measured candidate-container size and load cost.
 
-Step 4 must separately have selected and qualified the first production raw text
-processor mechanism and its exact supported charset set. Those media-byte codec
+Step 4 must separately have selected and qualified the first production raw-media
+processor and its supported representation profiles. Those media-byte processing
 capabilities do not determine how `.coedit` stores the already-canonical native
 string state.
 
@@ -319,19 +319,18 @@ Treat portable input as hostile. Validate a detached copy in this order:
 The portable package stores canonical collaborative state, not an external raw
 media representation of allowlisted text. Therefore reopening `.coedit` does not
 encode or decode that canonical native string according to its payload Media Type
-and does not reject it merely because the current declared charset could not
-represent it. Representation prerequisites and charset support are checked only
-when an operation actually crosses the raw/coarse media boundary. The complete
-Media Type still remains valid durable metadata and generic Media Type syntax is
-validated here.
+and does not reject it merely because the selected raw-media processor does not
+support the preserved representation profile. Representation-profile support is
+checked only when an operation actually crosses the raw/coarse media boundary.
+The complete Media Type still remains valid durable metadata and generic Media
+Type syntax is validated here.
 
 A syntactically valid unfamiliar Media Type is accepted through generic opaque
 handling without format-specific validation. A syntactically valid allowlisted
-Media Type can still fail a later Coedit-owned raw representation operation. For
-example, `text/markdown` without its required `charset` is not reclassified as
-opaque and is not reported as malformed generic Media Type syntax; a raw boundary
-that must decode or encode its media representation rejects it as invalid or
-incomplete representation metadata.
+Media Type can still fail a later Coedit-owned raw representation operation when
+the selected processor does not support its representation profile. It is not
+reclassified as opaque or reported as malformed generic Media Type syntax for
+that reason.
 
 Validate a complete candidate engine before replacing the active engine or
 committing it to the browser repository.
@@ -474,7 +473,7 @@ At minimum, verify:
   topology, ownership, generic Media Type syntax, portable native-string
   representation, and opaque payload bytes fail in their appropriate validation
   class;
-- `text/markdown` without required `charset` remains an allowlisted Media Type and fails only when an operation requires raw representation validation; valid unfamiliar Media Types remain opaque;
+- a valid allowlisted Media Type whose representation profile is unsupported by the selected raw-media processor remains allowlisted and fails only when an operation crosses the raw/coarse media boundary; valid unfamiliar Media Types remain opaque;
 - malformed, truncated, duplicate-key, unknown-property, or unsupported
   container/carrier versions fail;
 - every resource guard selected and promoted under section 11 is exercised safely;
