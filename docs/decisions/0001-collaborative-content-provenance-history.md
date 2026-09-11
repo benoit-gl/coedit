@@ -256,19 +256,19 @@ IDs so retention, anonymization, and erasure policies can be implemented.
 
 ### 3.12 Technology choices
 
-| Concern                   | Decision                                                                                                                                            |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Browser/application stack | Keep React, strict TypeScript, Vite, and Vitest.                                                                                                    |
-| Text editor adapter       | Keep Tiptap/ProseMirror behind a narrow application adapter.                                                                                        |
-| Collaborative carrier     | Yjs stable v13 is the provisional default; qualify it against Automerge before freezing the carrier or portable encoding.                           |
-| Yjs v14                   | Track its native attribution facilities; do not use release candidates as the production baseline.                                                  |
+| Concern                   | Decision                                                                                                                                                       |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Browser/application stack | Keep React, strict TypeScript, Vite, and Vitest.                                                                                                               |
+| Text editor adapter       | Keep Tiptap/ProseMirror behind a narrow application adapter.                                                                                                   |
+| Collaborative carrier     | Yjs stable v13 is the provisional default; qualify it against Automerge before freezing the carrier or portable encoding.                                      |
+| Yjs v14                   | Track its native attribution facilities; do not use release candidates as the production baseline.                                                             |
 | Automerge                 | The only current whole-engine challenger; run the same qualification suite against its text, cursors, heads, editor binding, payload replacement, and storage. |
-| Loro                      | Retain as a movable-tree/cursor benchmark; do not adopt its current ProseMirror binding or combine it with Yjs.                                     |
-| Markdown                  | Keep unified, remark-parse, and remark-gfm. Preserve unconsumed inline Markdown as source text under the current contract.                           |
-| Sanitization              | Apply an allowlist sanitizer after any unsafe HTML/HAST transform; use DOMPurify or equivalent at DOM and clipboard boundaries.                     |
-| Browser persistence       | Keep native IndexedDB; a small reviewed wrapper is optional. Defer OPFS and SQLite-WASM until measurement.                                          |
-| Native shell              | Keep browser-first. Reconsider Tauri as a thin adapter only after a demonstrated browser-inadequate need.                                           |
-| Future synchronization    | Hocuspocus or a managed Yjs provider can transport updates, but Coedit retains its semantic Contribution envelope and validation.                   |
+| Loro                      | Retain as a movable-tree/cursor benchmark; do not adopt its current ProseMirror binding or combine it with Yjs.                                                |
+| Markdown                  | Keep unified, remark-parse, and remark-gfm. Preserve unconsumed inline Markdown as source text under the current contract.                                     |
+| Sanitization              | Apply an allowlist sanitizer after any unsafe HTML/HAST transform; use DOMPurify or equivalent at DOM and clipboard boundaries.                                |
+| Browser persistence       | Keep native IndexedDB; a small reviewed wrapper is optional. Defer OPFS and SQLite-WASM until measurement.                                                     |
+| Native shell              | Keep browser-first. Reconsider Tauri as a thin adapter only after a demonstrated browser-inadequate need.                                                      |
+| Future synchronization    | Hocuspocus or a managed Yjs provider can transport updates, but Coedit retains its semantic Contribution envelope and validation.                              |
 
 ## 4. Carrier-qualification gate
 

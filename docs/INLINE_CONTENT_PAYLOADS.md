@@ -547,15 +547,15 @@ carrier.
 
 ### 13.1 Implementation status and decision ownership
 
-| Stage               | Status or responsibility                                                                                                                                                                                                                      |
-| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Completed Steps 1-2 | Browser scaffold and pure structural domain; `InlineContentValue` remains an opaque empty value. No Media Type dispatch or replacement carrier is implemented.                                                                                |
-| Step 3 / Gate B     | Qualify carriers; select the observable replacement winner rule and its private implementation, mixed replacement/edit semantics, initial supported UTF-family charset set/mechanism, boundary rules, and required resource guards.          |
+| Stage               | Status or responsibility                                                                                                                                                                                                                       |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Completed Steps 1-2 | Browser scaffold and pure structural domain; `InlineContentValue` remains an opaque empty value. No Media Type dispatch or replacement carrier is implemented.                                                                                 |
+| Step 3 / Gate B     | Qualify carriers; select the observable replacement winner rule and its private implementation, mixed replacement/edit semantics, initial supported UTF-family charset set/mechanism, boundary rules, and required resource guards.            |
 | Step 4              | Implement the selected payload, compile-time allowlist, UTF-only initial raw/coarse processor boundary if selected, explicit unsupported-charset failure, and carrier behavior. General non-UTF conversion is not required for first delivery. |
-| Step 5              | Implement first-class Contributions and permanent exact Version materialization, including losing replacement History.                                                                                                                        |
-| Step 6 / Gate C     | Select and implement durable text Range lineage and remaining Range behavior.                                                                                                                                                                 |
-| Step 8              | Freeze portable encoding of exact Media Type values, fine-grained text state, collaboration metadata, and opaque bytes.                                                                                                                       |
-| Pre-network gate    | Qualify causal transport, authorization, and replicated restore overlap before network collaboration ships.                                                                                                                                   |
+| Step 5              | Implement first-class Contributions and permanent exact Version materialization, including losing replacement History.                                                                                                                         |
+| Step 6 / Gate C     | Select and implement durable text Range lineage and remaining Range behavior.                                                                                                                                                                  |
+| Step 8              | Freeze portable encoding of exact Media Type values, fine-grained text state, collaboration metadata, and opaque bytes.                                                                                                                        |
+| Pre-network gate    | Qualify causal transport, authorization, and replicated restore overlap before network collaboration ships.                                                                                                                                    |
 
 Accepted design requirements are not claims that these later stages have run.
 
