@@ -1,17 +1,17 @@
 # ADR 0006: Text position ownership
 
-**Status:** Accepted
+**Status:** Accepted; refined by ADR 0010
 
 **Date:** 2026-09-01
 
-**Amended:** 2026-09-06
+**Amended:** 2026-09-11
 
 ## Context
 
-Collaborative rich text needs fast editor operations and durable references that
-survive concurrent edits. JavaScript and ProseMirror can expose numeric positions
-that follow their own runtime or document models. Yjs and Automerge also provide
-stable relative-position mechanisms.
+Fine-grained collaborative text needs fast editor operations and durable
+references that survive concurrent edits. JavaScript and ProseMirror can expose
+numeric positions that follow their own runtime or document models. Yjs and
+Automerge also provide stable relative-position mechanisms.
 
 Making one numeric unit, such as UTF-16 code units, Unicode scalar values, or
 grapheme indexes, the universal Coedit coordinate would couple document semantics
@@ -21,15 +21,19 @@ Unicode editing behavior is also established platform and editor behavior. Coedi
 must not create a second text-segmentation authority that can disagree with a
 valid editor selection.
 
+ADR 0010 later made InlineContent Media-Type-labelled and restricted this text
+position contract to allowlisted fine-grained text. Generic opaque payloads have
+no text-position or byte-range contract merely because fine-grained text has one.
+
 ## Decision
 
-Canonical CollaborativeContent stores Unicode text without prescribing a storage
-encoding as document semantics.
+An allowlisted fine-grained text payload stores Unicode text without prescribing
+a storage encoding as document semantics.
 
-Use editor-native positions for transient editing. Durable references use the
-carrier-neutral Range service. A private Range-tracking implementation can use
-carrier-native stable relative positions as one primitive, but this ADR does not
-select the Range-tracking representation. Treat any carrier-native stable
+Use editor-native positions for transient editing. Durable text references use
+the carrier-neutral Range service. A private Range-tracking implementation can
+use carrier-native stable relative positions as one primitive, but this ADR does
+not select the Range-tracking representation. Treat any carrier-native stable
 positions as opaque outside the carrier adapter.
 
 Do not define a universal carrier-neutral numeric character coordinate. Numeric
@@ -46,6 +50,9 @@ Portable and historical Range recovery uses the creation Version, original Block
 and InlineContent identities, and the carrier-neutral lineage and verification
 evidence selected at Gate C. It does not assume that a live carrier cursor is a
 universal portable coordinate or bind an unresolved member by text similarity.
+Applications can store or serialize the resulting Range value in comments, URLs,
+Markdown links, navigation records, or other holders. Holder meaning and fallback
+are not text-position semantics.
 
 ## Rationale
 
@@ -59,9 +66,11 @@ behavior, and leaves the durable Range-tracking representation to Gate C.
 
 - UTF-16 can remain a JavaScript or parser boundary detail without becoming
   canonical document semantics.
-- Durable internal-link and future comment Ranges can use stable carrier
-  positions behind the Range service without requiring them as the complete
-  Range-tracking representation.
+- Durable application-held text Ranges can use stable carrier positions behind
+  the Range service without requiring them as the complete Range-tracking
+  representation.
+- Generic opaque payloads do not acquire byte offsets or sub-content Range
+  semantics from this decision.
 - Qualification must test complex Unicode selections and stable-position
   conversion through editing and reload when a candidate uses that primitive.
 - Portable recovery needs carrier-neutral lineage and verification evidence in
@@ -69,8 +78,11 @@ behavior, and leaves the durable Range-tracking representation to Gate C.
 
 ## Authority
 
-[`../TEXT_POSITION_MODEL.md`](../TEXT_POSITION_MODEL.md) owns the detailed
-coordinate and carrier-position boundary contract. [`../RANGE_MODEL.md`](../RANGE_MODEL.md)
-owns durable Range behavior and the Gate C representation decision.
+[`../INLINE_CONTENT_PAYLOADS.md`](../INLINE_CONTENT_PAYLOADS.md) owns the broader
+InlineContent payload boundary. [`../TEXT_POSITION_MODEL.md`](../TEXT_POSITION_MODEL.md)
+owns the detailed allowlisted fine-grained text coordinate and carrier-position
+contract. [`../RANGE_MODEL.md`](../RANGE_MODEL.md) owns durable text Range behavior
+and the Gate C representation decision.
 [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
-owns attributed-text behavior.
+owns fine-grained text attribution behavior. ADR 0010 records the payload-scope
+refinement.
