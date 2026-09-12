@@ -127,19 +127,19 @@ interoperability rules.
 Keep each current number in one direct authority. Other documents state the
 required behavior and refer to that owner without copying the value.
 
-| Concern                                                   | Direct owner                         | Current maturity                              | Selection or promotion gate               |
-| --------------------------------------------------------- | ------------------------------------ | --------------------------------------------- | ----------------------------------------- |
-| Step 2 structural and tag capacity behavior               | `MVP_IMPLEMENTATION_SPEC.md`         | Accepted invariant: no finite semantic cap    | Revisit only from implementation evidence |
-| Contributor scalar behavior                               | `MVP_IMPLEMENTATION_SPEC.md`         | Accepted invariant; boundary guard pending    | Relevant UI, codec, or storage step       |
-| Payload/carrier resource-admission behavior               | `INLINE_CONTENT_PAYLOADS.md`         | Pending selection                             | Step 3 carrier qualification / Gate B     |
-| Private text-clipboard resource guards                    | `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` | Pending selection                             | Step 3 carrier qualification              |
-| Shared carrier performance workloads and targets          | `MVP_VERIFICATION_PLAN.md`           | Experimental targets                          | Step 3 carrier qualification              |
-| Range serialization and resolution resource guards        | `RANGE_MODEL.md`                     | Pending selection                             | Step 6 Range implementation / Gate C      |
-| Markdown hostile-input guards                             | `MARKDOWN_INTERCHANGE.md`            | Experimental candidates; selection pending    | Step 7                                    |
-| `.coedit` hostile-input and codec guards                  | `PORTABLE_DOCUMENT_FORMAT.md`        | Experimental candidates; selection pending    | Step 8 and version-1 freeze               |
-| Browser recovery, quota, and storage thresholds           | `BROWSER_PERSISTENCE.md`             | Pending selection or experimental measurement | Steps 13-14                               |
-| Editor grouping and queue comparison fixtures             | `MVP_IMPLEMENTATION_SPEC.md`         | Experimental targets                          | Step 11                                   |
-| Network replication capacity behavior                     | `COLLABORATION_MODEL.md`             | Pending selection                             | Post-MVP network-collaboration gate       |
+| Concern                                            | Direct owner                         | Current maturity                              | Selection or promotion gate               |
+| -------------------------------------------------- | ------------------------------------ | --------------------------------------------- | ----------------------------------------- |
+| Step 2 structural and tag capacity behavior        | `MVP_IMPLEMENTATION_SPEC.md`         | Accepted invariant: no finite semantic cap    | Revisit only from implementation evidence |
+| Contributor scalar behavior                        | `MVP_IMPLEMENTATION_SPEC.md`         | Accepted invariant; boundary guard pending    | Relevant UI, codec, or storage step       |
+| Payload/carrier resource-admission behavior        | `INLINE_CONTENT_PAYLOADS.md`         | Pending selection                             | Step 3 carrier qualification / Gate B     |
+| Private text-clipboard resource guards             | `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` | Pending selection                             | Step 3 carrier qualification              |
+| Shared carrier performance workloads and targets   | `MVP_VERIFICATION_PLAN.md`           | Experimental targets                          | Step 3 carrier qualification              |
+| Range serialization and resolution resource guards | `RANGE_MODEL.md`                     | Pending selection                             | Step 6 Range implementation / Gate C      |
+| Markdown hostile-input guards                      | `MARKDOWN_INTERCHANGE.md`            | Experimental candidates; selection pending    | Step 7                                    |
+| `.coedit` hostile-input and codec guards           | `PORTABLE_DOCUMENT_FORMAT.md`        | Experimental candidates; selection pending    | Step 8 and version-1 freeze               |
+| Browser recovery, quota, and storage thresholds    | `BROWSER_PERSISTENCE.md`             | Pending selection or experimental measurement | Steps 13-14                               |
+| Editor grouping and queue comparison fixtures      | `MVP_IMPLEMENTATION_SPEC.md`         | Experimental targets                          | Step 11                                   |
+| Network replication capacity behavior              | `COLLABORATION_MODEL.md`             | Pending selection                             | Post-MVP network-collaboration gate       |
 
 ADRs and explicit traceability records can reproduce an earlier value only to
 preserve non-normative history. The record must identify it as a former limit
