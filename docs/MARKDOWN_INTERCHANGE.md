@@ -155,7 +155,18 @@ The document engine does not own an inline Markdown AST or formatting marks. Aft
 
 For example, source equivalent to a list item containing `hello **world**` becomes a list-item Block whose payload contains `hello **world**`. The list marker is represented by structure; the emphasis delimiters remain source text. This avoids encoding the same structural fact twice while keeping inline Markdown available to application renderers.
 
-CommonMark soft/hard line-break spelling, emphasis, strong text, strikethrough, inline code, links, images, raw inline HTML, and other inline constructs are therefore application/interchange syntax. The importer can normalize source spelling only where this specification explicitly requires a deterministic round trip; otherwise it preserves the source slice. The initial explicit source normalizations are the source-byte UTF-8/BOM/newline rules in section 5 and the structural mappings stated in this document. No separate inline delimiter or line-break canonicalization is implied. The document engine does not validate, repair, rewrite, or interpret embedded HTML or other inline syntax; it preserves the source text, including malformed or hostile source. A renderer can parse and display that syntax but does not thereby change canonical engine state.
+Structural source consumption is derived from the parsed Markdown structure, not from generic whitespace trimming. Source characters used only to establish a recognized structural relationship are omitted from the payload. This can remove a structural container prefix at the start of each affected source line, including list continuation indentation. The importer does not otherwise trim, dedent, or normalize the remaining payload whitespace.
+
+For example:
+
+```markdown
+- first line
+  continuation
+```
+
+maps to one list-item paragraph payload containing `first line\ncontinuation`. The list marker and the two continuation-indent spaces are consumed as list-container syntax. The newline and all non-structural payload characters remain source text. A physical source line does not become a separate `flow` child merely because it is indented or continues a Markdown paragraph.
+
+CommonMark soft/hard line-break spelling, emphasis, strong text, strikethrough, inline code, links, images, raw inline HTML, and other inline constructs are therefore application/interchange syntax. The importer can normalize source spelling only where this specification explicitly requires a deterministic round trip; otherwise it preserves the source slice after recognized structural source has been consumed as stated above. The initial explicit source normalizations are the source-byte UTF-8/BOM/newline rules in section 5 and the structural mappings stated in this document. No separate inline delimiter or line-break canonicalization is implied. The document engine does not validate, repair, rewrite, or interpret embedded HTML or other inline syntax; it preserves the source text, including malformed or hostile source. A renderer can parse and display that syntax but does not thereby change canonical engine state.
 
 Markdown link destinations remain ordinary Markdown source. The application decides whether a destination is external, document-local, a serialized Coedit Range reference, or another URI. The document engine does not create an intrinsic link object or classify link targets.
 
@@ -256,6 +267,7 @@ The test suite must include at least:
 - paragraphs before the first heading;
 - mixed introductory body plus subsections;
 - ordered, unordered, and nested lists;
+- multi-line list-item paragraphs that consume structural continuation prefixes without otherwise normalizing payload whitespace;
 - empty headings and empty list items;
 - inline Markdown such as alternative emphasis/strong delimiters, strikethrough, inline code, links, images, raw inline HTML, and distinct soft/hard line-break spellings preserved exactly in payload source across export/re-import without presentation-only fallback diagnostics;
 - proof that Block/InlineContent boundaries add no text character;
