@@ -11,23 +11,24 @@ candidate becomes an enforceable contract.
 
 Numeric implementation choices must not become document semantics only because
 one implementation needs finite resources. `MVP_ARCHITECTURE.md` controls the
-semantic boundary. This document controls the cross-cutting classification,
-maturity, ownership, verification, and promotion rules below.
+semantic boundary. `INLINE_CONTENT_PAYLOADS.md` owns payload/carrier
+resource-admission qualification. This document controls the cross-cutting
+classification, maturity, ownership, verification, and promotion rules below.
 [ADR 0008](decisions/0008-capacity-contract-maturity.md) records why the
 maturity model was adopted and preserves the earlier planning values.
 
 ## 2. Default rule
 
 The Coedit document model has no application-defined finite maximum for
-otherwise valid text size, tag count or length, Block count, InlineContent
-count, Block depth, Contributor display-name length, or retained History
-length.
+otherwise valid allowlisted fine-grained text size, opaque payload size, tag count or length, Block
+count, InlineContent count, Block depth, Contributor display-name length, or
+retained History length.
 
 A document or value remains semantically valid unless a domain invariant says
 otherwise. An implementation can still fail because the runtime, parser,
-codec, storage system, or device cannot safely process the requested work.
-Report that condition as a typed capacity or resource failure. Do not report it
-as semantic invalidity.
+codec, carrier, payload handler, storage system, or device cannot safely process
+the requested work. Report that condition as a typed capacity or resource
+failure. Do not report it as semantic invalidity.
 
 Do not add a finite maximum only to make an implementation simpler. Add a
 finite implementation guard only when there is a concrete resource, safety,
@@ -44,7 +45,7 @@ A semantic invariant defines valid document meaning. It is independent of
 implementation capacity.
 
 Examples include one real root Block, unique live identities, one owner per
-InlineContent, and acyclic live structure.
+InlineContent, one Media Type per InlineContent, and acyclic live structure.
 
 A semantic numeric bound needs an explicit product or interoperability
 rationale. Implementation convenience is not sufficient.
@@ -57,17 +58,26 @@ subsystem cannot safely complete otherwise valid work.
 Use no finite application guard when the implementation can rely on its normal
 runtime limits safely. When a real constraint needs an explicit guard, keep it
 at the implementation boundary and return a capacity/resource failure without
-partial publication.
+partial publication. A payload replacement that exceeds an implementation guard
+must leave the previous payload unchanged.
+
+Resource admission can depend on the current host, runtime, carrier, operation,
+and available implementation evidence. A fixed document-wide payload-size limit
+is not required merely because one environment cannot process the same workload
+as another. Qualification can select an adaptive admission mechanism or record
+that no additional explicit guard is needed when normal runtime behavior already
+provides safe atomic failure.
 
 ### 3.3 Hostile-input resource guard
 
-External parsers, decoders, importers, clipboard readers, and recovery paths
-must bound dangerous CPU, memory, stack, allocation, and graph-processing work
-before they ship.
+External parsers, decoders, importers, clipboard readers, payload readers, and
+recovery paths must bound dangerous CPU, memory, stack, allocation, and
+graph-processing work before they ship.
 
 A hostile-input guard protects one consuming implementation. It does not define
-the largest valid Coedit document. Exact values can change when evidence changes
-unless an explicit interoperability contract deliberately freezes them.
+the largest valid Coedit document, text payload, or opaque payload. Exact values can change
+when evidence changes unless an explicit interoperability contract deliberately
+freezes them.
 
 ### 3.4 Qualification or performance target
 
@@ -96,6 +106,10 @@ An accepted invariant can require a future guard without selecting its numeric
 value. For example, "hostile portable input must be bounded" is accepted while
 the exact decoder bounds remain pending or experimental.
 
+A pending selection can also conclude that no explicit finite guard is required.
+That conclusion must be based on qualification evidence and must identify the
+safe failure seam that the implementation relies on.
+
 A direct authority that states a pending, experimental, or frozen number must
 identify:
 
@@ -117,7 +131,8 @@ required behavior and refer to that owner without copying the value.
 | -------------------------------------------------- | ------------------------------------ | --------------------------------------------- | ----------------------------------------- |
 | Step 2 structural and tag capacity behavior        | `MVP_IMPLEMENTATION_SPEC.md`         | Accepted invariant: no finite semantic cap    | Revisit only from implementation evidence |
 | Contributor scalar behavior                        | `MVP_IMPLEMENTATION_SPEC.md`         | Accepted invariant; boundary guard pending    | Relevant UI, codec, or storage step       |
-| Carrier and private-clipboard resource guards      | `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` | Pending selection                             | Step 3 carrier qualification              |
+| Payload/carrier resource-admission behavior        | `INLINE_CONTENT_PAYLOADS.md`         | Pending selection                             | Step 3 carrier qualification / Gate B     |
+| Private text-clipboard resource guards             | `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` | Pending selection                             | Step 3 carrier qualification              |
 | Shared carrier performance workloads and targets   | `MVP_VERIFICATION_PLAN.md`           | Experimental targets                          | Step 3 carrier qualification              |
 | Range serialization and resolution resource guards | `RANGE_MODEL.md`                     | Pending selection                             | Step 6 Range implementation / Gate C      |
 | Markdown hostile-input guards                      | `MARKDOWN_INTERCHANGE.md`            | Experimental candidates; selection pending    | Step 7                                    |
@@ -142,7 +157,8 @@ For a pending selection:
 - record the threat, resource, or interoperability concern;
 - collect evidence at the owning implementation step; and
 - do not close that step until the selected behavior and verification seam are
-  documented.
+  documented, including an evidence-backed decision that no explicit guard is
+  required when that is the selected result.
 
 For an experimental target:
 

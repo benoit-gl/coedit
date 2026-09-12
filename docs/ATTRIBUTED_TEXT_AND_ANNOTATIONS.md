@@ -1,75 +1,82 @@
-# Attributed collaborative text and annotation specification
+# Fine-grained collaborative text and attribution specification
 
-**Status:** Accepted behavioral contract; carrier implementation is subject to
-the Elaboration qualification gate.
+**Status:** Accepted fine-grained text behavioral contract; carrier implementation is
+subject to the Elaboration qualification gate.
 
 ## 1. Purpose and authority
 
-This document defines the detailed behavior of InlineContent text, intrinsic
-formatting, Origin attribution, link holders, copy/paste/restore lineage, future
-comment holders, and transient selections. `RANGE_MODEL.md` owns the shared
-durable Range value and engine service used by internal links and future comments.
+This document defines behavior shared by InlineContent payloads whose normalized
+Internet Media Type `type/subtype` is in the compile-time fine-grained allowlist.
+The initial entries are `text/markdown` and `text/plain`.
 
-[`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls product meaning.
-[`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) controls the public engine boundary.
-This document controls attributed-text behavior when summaries elsewhere are
-insufficient. [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md) controls the
+It defines native-string editing, fine-grained Origin attribution, copy/paste and
+restore lineage, transient selection, and carrier qualification. It does **not**
+define formatting, rendering, Markdown parsing, list semantics, link semantics,
+or another application presentation model.
+
+[`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) owns Media Type
+preservation, allowlist dispatch, raw/coarse byte materialization, and universal
+whole-payload replacement. [`RANGE_MODEL.md`](RANGE_MODEL.md) owns durable text
+Ranges. [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls product
+meaning. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) controls the public engine
+boundary. [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md) controls the
 evidence required to qualify an implementation.
 
 The accepted rationale and evaluated alternatives are recorded in
-[`decisions/0001-collaborative-content-provenance-history.md`](decisions/0001-collaborative-content-provenance-history.md).
+[`decisions/0001-collaborative-content-provenance-history.md`](decisions/0001-collaborative-content-provenance-history.md), as refined by
+[`decisions/0010-typed-inline-content-payloads.md`](decisions/0010-typed-inline-content-payloads.md).
 
 ## 2. Scope by phase
 
-The strict MVP and its carrier qualification must implement:
+The strict MVP and carrier qualification must implement for every allowlisted
+fine-grained text payload:
 
-- canonical collaborative text and hard breaks;
-- intrinsic formatting marks with explicit boundary behavior;
-- opaque link metadata and document-local Block link targets;
-- protected, non-inheriting origin attribution;
-- human, imported, and unknown origin records;
+- canonical native-string collaborative text without a document-level hard-break
+  item;
+- protected, non-inheriting fine-grained Origin attribution;
+- human, imported, automation/AI-capable, and unknown Origin records as defined
+  by the current product contract;
 - origin-preserving same-document copy and restore;
 - separate Contribution actor and derivation metadata;
-- validated internal and external clipboard behavior; and
-- exact `.coedit` recovery of that state.
+- validated internal and external text clipboard behavior;
+- durable text Range feasibility; and
+- exact `.coedit` recovery of supported carrier-native text, Origin, History, and
+  required lineage.
 
-The Step 3 carrier gate also proves that both carrier candidates can support the
-accepted Range behavior. The Step 6 Range gate finalizes and implements the
-headless Range service and internal-link Range encoding. It does not require a
-comment UI or durable Comment records in the strict MVP.
+The same carrier qualification proves the payload-level replacement, raw/coarse
+encoding, and generic opaque behavior in `INLINE_CONTENT_PAYLOADS.md`.
 
-Post-MVP capabilities include provenance visualization and queries, production
-identity and authorization, cross-document origin-catalog exchange, AI-provider
-integration, comments and conversations, retention/anonymization controls, and
-signed publication claims.
+Formatting, Markdown interpretation, rendering, and editor presentation belong to
+application adapters. Their absence from the document engine is deliberate, not a
+future engine feature implied by this specification.
 
-## 3. Vocabulary and logical shape
+## 3. Canonical text and application boundary
 
-Use these terms consistently:
+A fine-grained text payload has one canonical collaborative string value. At the
+JavaScript API boundary that value is a native ECMAScript string. Coedit does not
+add a general Unicode normalization, repair, or well-formedness layer around
+ordinary fine-grained editing. The selected carrier defines the native string
+values that it can preserve losslessly. Values outside that carrier domain are
+not part of the supported collaborative-text contract.
 
-- **CollaborativeContent:** the carrier-neutral canonical state of text, hard
-  breaks, formatting, and origin attribution owned by one InlineContent.
-- **Formatting mark:** intrinsic rich-text presentation metadata.
-- **Opaque link metadata:** inert formatting metadata that the document model
-  preserves but does not interpret.
-- **Internal Block link:** a document-local link target identified by `BlockId`,
-  with an optional Range refinement.
-- **Origin:** immutable attribution describing the agent or source that first
-  created a logical content unit.
-- **Contribution actor:** the Contributor that performed a durable operation in
-  this document.
-- **Derivation:** a reference explaining that new placement or generated
-  material used earlier or external material.
-- **CommentTarget:** a future external comment-holder value that combines one
-  Range with comment-specific attachment and repair state.
+Carrier qualification must characterize edge cases where the ECMAScript string
+domain is broader than the carrier's native text representation. Coedit does not
+add a second validation subsystem only to make those edge cases portable. If the
+carrier explicitly rejects an operation, that error propagates through the normal
+operation path and publishes no partial change.
+
+Media byte encoding is not performed for ordinary fine-grained editing. Whether
+a supported native string can be represented exactly by the charset declared or
+implied by its Media Type is checked only when a raw/coarse media boundary is
+used. That representability rule does not constrain ordinary fine-grained edits.
 
 The carrier-neutral logical shape is illustrative:
 
 ```text
-CollaborativeContent
-  text and hard-break items
-  formatting marks
-  origin attribution per text/hard-break item
+FineGrainedTextPayload
+  mediaType: exact supplied Internet Media Type
+  text: native string
+  origin attribution over authored text
 
 OriginRecord
   id: OriginId
@@ -78,174 +85,113 @@ OriginRecord
   createdBy: ContributionId
   source?: SourceReference
   derivedFrom?: OriginReference[]
-
-OriginReference
-  documentId?: DocumentId
-  originId?: OriginId
-  sourceName?: string
-  sourceHash?: string
-  externalReference?: string
 ```
 
-`OriginId` is stable, immutable, and document-scoped. Same-document copy and
-restore reuse it. A future cross-document trusted transfer imports an immutable
-local OriginRecord under a new `OriginId` and records the source document and
-source Origin reference. It must not silently alias incompatible contributor or
-origin catalogs.
+An empty fine-grained text payload is valid and needs no placeholder Origin.
 
-An origin record and the Contribution that first uses it publish atomically.
-Preallocated IDs allow the records to refer to one another without relying on
-commit order.
+The document engine is syntax-agnostic. For `text/markdown`, the canonical text is
+Markdown source text. For `text/plain`, it is plain source text. The engine does
+not interpret emphasis, links, list markers, headings, inline code, HTML, or any
+other syntax. It does not decide whether a Markdown link is internal or external.
+Those decisions belong to the application.
 
-An OriginRecord describes one authorship/source event, not one character and
-not a mutable Contributor profile. Items first authored by the same Contribution
-can share one new OriginRecord when their agent, kind, source, and derivation are
-identical; distinct attribution inputs require distinct records. Newly authored
-material in a later Contribution uses a new OriginRecord even when the agent is
-the same. Copy and restore reuse historical records because those activities
-change placement, not authorship.
+An application can parse or render the current source string and can translate
+editing intent into structural and text operations. For example, a Markdown
+editor can turn a newly created list item or paragraph into Block structure. It
+can also leave inline Markdown syntax in the payload for rendering. The engine
+only validates and applies the resulting document operations.
 
-## 4. Canonical content rules
+Block and InlineContent boundaries add no character. A payload can contain
+line-feed, carriage-return, delimiters, and other supported string content. There
+is no canonical `HardBreak` item or inferred presentation separator in the
+document model.
 
-An empty CollaborativeContent value is valid: it contains no live text items or
-hard breaks and therefore needs no partial formatting or Origin placeholder.
-Step 2 represents that state with the typed, opaque `InlineContentValue`. Step 3
-qualifies the candidate carriers against the complete carrier-neutral behavior
-below. Step 4 implements that behavior with the selected carrier.
+`TEXT_POSITION_MODEL.md` owns the public coordinate semantics used for text
+positions. Carrier-specific indexing, including any UTF-16 code-unit behavior,
+remains private until that contract deliberately exposes it.
 
-1. Every live text item and hard break has exactly one valid `OriginId`.
-2. Formatting marks and origin attribution are part of the same canonical
-   collaborative state and commit atomically with visible text.
-3. HTML, plain text, ProseMirror JSON, and rendered provenance runs are derived
-   representations, not parallel authorities.
-4. Ordinary formatting commands can modify formatting marks only. They cannot
-   create, change, or remove origin attribution.
-5. An insertion command assigns origin explicitly at the trusted engine/import
-   boundary. Origin never comes from the neighboring character or active
-   formatting mark set.
-6. Carrier identifiers are private. Public APIs expose detached,
-   carrier-neutral values or controlled editor sessions, never a live
-   engine-owned Yjs or Automerge object.
-7. Copying content creates new carrier item identities. It does not transfer the
-   source InlineContent identity.
-8. Moving a Block or InlineContent preserves its CollaborativeContent and
-   origin records.
+## 4. Fine-grained operations
 
-## 5. Formatting behavior
+The initial fine-grained operation set is character editing plus the metadata
+needed to preserve attribution and durable text references. It includes behavior
+equivalent to:
 
-The initial formatting vocabulary is:
+- insert text;
+- delete text;
+- replace text;
+- copy/paste text under the Origin rules below;
+- create and resolve text positions/Ranges through the focused Range service; and
+- apply whole-payload replacement through the universal coarse boundary.
 
-- bold;
-- italic;
-- underline;
-- strikethrough;
-- inline code; and
-- link.
+The exact public command names and TypeScript shapes remain implementation
+details until their implementation step freezes them.
 
-A link mark carries one carrier-neutral target value. The target is one of:
+Fine-grained operations must fail explicitly when the target payload's normalized
+`type/subtype` is not in the compile-time allowlist. They do not inspect the text
+or bytes to infer a capability.
 
-```text
-OpaqueLinkTarget
-  metadata: opaque value subject to implementation resource guards
+A fine-grained operation changes the source string only as requested. The engine
+does not normalize Markdown syntax, repair malformed markup, balance delimiters,
+reflow plain text, or make the current value parseable by an application parser.
+Temporary or permanent application-level syntax errors are valid document text.
 
-InternalBlockLinkTarget
-  blockId: BlockId
-  range?: Range
-```
+Whole-payload replacement remains available for allowlisted text. Use
+fine-grained operations when merge behavior is desired. Mixed replacement/edit
+concurrency remains a Gate B decision under `INLINE_CONTENT_PAYLOADS.md`.
 
-Opaque link metadata is inert document data. The document model validates only
-its carrier shape and applicable implementation resource guards. It does not
-interpret the metadata as a URL, URI, command, citation, or another application
-concept. The presentation or integration layer decides whether and how to
-interpret or activate it.
+## 5. Origin and activity behavior
 
-An internal Block link is a document-local typed reference. `blockId` is the
-primary target. The optional Range refines navigation to one semantic target and
-resolves only against the current document. It can resolve across several
-InlineContents or Blocks in that document. Embedding the value in an intrinsic
-link mark does not create a Range entity or make comments intrinsic formatting.
-`RANGE_MODEL.md` owns creation, resolution, lineage order, and serialization.
+Origin answers who or what created payload material. Contribution actor answers
+who performed an operation in this document.
 
-Internal link resolution follows these rules:
+Each live authored text unit has exactly one valid `OriginId`. Newly authored text
+receives an Origin explicitly at the trusted engine/import boundary. Origin never
+comes from neighboring text.
 
-1. Resolve `blockId` in the selected document Version.
-2. If the Block does not resolve, keep the link as valid canonical content and
-   report an unresolved target to the presentation layer.
-3. If no range is present, the resolved Block is the complete target.
-4. If a Range is present, resolve it through the engine against the selected
-   Version.
-5. If the Range produces no resolved span or position but the primary Block
-   still resolves, fall back to the primary Block. Do not attach the Range to an
-   unrelated Block or InlineContent.
+An Origin record and the Contribution that first uses it publish atomically.
+`OriginId` is stable, immutable, and document-scoped. An OriginRecord describes
+one authorship/source event, not a mutable Contributor profile.
 
-Deleting a target Block does not rewrite, delete, or invalidate incoming link
-marks. The target reference can remain unresolved in current material and can
-resolve in a historical Version where that Block exists. A Block target creates
-no ownership relationship and does not prevent Block deletion.
+The initial behavior is:
 
-Internal Block targets are document-local. Same-document copy and restore can
-preserve them. When an internal link is transferred to another document, the
-application must reject it, remove it, or convert it to an external deep link.
-The Range service performs no cross-document mapping.
+| Operation                        | Content Origin                                                                     | Contribution actor and derivation                             |
+| -------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Human typing or replacement      | New human Origin for newly inserted material                                       | Acting human                                                  |
+| Markdown or external text import | Imported or unknown Origin with source metadata                                    | Human/system actor that initiated the import                  |
+| Same-document internal paste     | Preserve each source Origin; create new carrier text identities                    | Paster; derive from source content/Version                    |
+| External text/HTML paste         | New imported or unknown Origin                                                     | Paster; record available external source metadata             |
+| Move                             | Preserve payload state and Origin                                                  | Mover                                                         |
+| Entity copy                      | New entity and carrier text identities; preserve Origins                           | Copier; derive from source entity/Version                     |
+| Restore                          | Fresh carrier text identities for reinserted material; preserve historical Origins | Restoring actor; derive from target Version                   |
+| AI generation                    | AI/software-agent Origin                                                           | AI execution Contribution; later human acceptance is separate |
 
-Every mark instance has one logical insertion-boundary policy:
-
-```text
-none   inserted content at neither boundary joins the mark
-start  inserted content at the start boundary joins the mark
-end    inserted content at the end boundary joins the mark
-both   inserted content at either boundary joins the mark
-```
-
-Initial defaults are `both` for bold, italic, underline, and strikethrough, and
-`none` for inline code and links. An explicit editor command can create a mark
-with another supported policy when product behavior requires it. Carrier
-adapters must preserve the logical policy even if their native vocabulary uses
-different names.
-
-Formatting commands must define behavior for empty selections, overlapping
-marks, replacement, hard breaks, excluded marks, and link-target changes.
-Clearing formatting never changes origin.
-
-## 6. Origin and activity behavior
-
-Each operation follows these rules:
-
-| Operation                        | Content origin                                                              | Contribution actor and derivation                                                 |
-| -------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Human typing or replacement      | New human Origin for newly inserted material                                | Acting human                                                                      |
-| Markdown or external file import | Imported or unknown Origin with source metadata                             | Human/system actor that initiated the import; source is not impersonated as actor |
-| Same-document internal paste     | Preserve each source Origin; new carrier items                              | Paster; derive from source content/Version                                        |
-| External plain/HTML paste        | New imported or unknown Origin                                              | Paster; record external-paste activity and available source metadata              |
-| Move                             | Preserve carrier state and Origin                                           | Mover                                                                             |
-| Entity copy                      | New entity and carrier item IDs; preserve Origins                           | Copier; derive from source entity/Version                                         |
-| Restore                          | Fresh carrier item IDs for reinserted material; preserve historical Origins | Restoring actor; derive from target Version                                       |
-| AI generation                    | AI/software-agent Origin                                                    | AI execution Contribution; later human acceptance is separate                     |
-| Formatting-only change           | Preserve Origin                                                             | Formatting actor                                                                  |
-
-There is no `restored` origin kind. Restore is an activity, not an authorship
+There is no `restored` Origin kind. Restore is an activity, not an authorship
 category.
 
-When a user edits another contributor's sentence, only newly inserted logical
-items receive the editor's new Origin. Unchanged surrounding items retain their
-existing Origin.
+When a user edits another contributor's text, only newly inserted logical text
+receives the editor's new Origin. Unchanged surrounding text retains its existing
+Origin.
 
-## 7. Clipboard contract
+Opaque payload Origin is specified separately in `INLINE_CONTENT_PAYLOADS.md`.
 
-The browser adapter can emit three representations:
+## 6. Clipboard contract
 
-1. `text/plain` with visible text only;
-2. sanitized `text/html` with supported visible formatting only; and
-3. a versioned private Coedit fragment containing validated semantic content,
-   formatting, Origins, source document/Version, and derivation references.
+Clipboard handling belongs to the browser/application adapter, not to the core
+text syntax model.
+
+The browser adapter can emit ordinary `text/plain`, application-selected HTML,
+and a versioned private Coedit text fragment containing validated source text,
+Origins, source document/Version, and derivation references. Formatting present in
+HTML or Markdown is application/interchange data; it is not a parallel canonical
+formatting model in the engine.
 
 The initial private clipboard type is `application/x-coedit-fragment+json`; its
 payload carries its own integer `formatVersion`. Failure to write or read that
-custom type does not prevent ordinary text/HTML clipboard behavior.
+custom type does not prevent ordinary clipboard behavior.
 
-The private representation is untrusted input even when it originated in
-Coedit. Validate its version, sizes, IDs, formatting, Origin references, and
-source relationship before use.
+The private representation is untrusted input even when it originated in Coedit.
+Validate its version, sizes, IDs, Origin references, and source relationship
+before use.
 
 **Maturity:** Pending selection.
 
@@ -253,85 +199,43 @@ source relationship before use.
 
 **Promotion gate:** Step 3 carrier and clipboard qualification.
 
-Step 3 must profile the selected carrier and private-fragment representation,
-then record and test any byte, nesting, collection, or decoded-allocation guards
-needed at this boundary. No numeric clipboard maximum is accepted in advance.
-
 The strict MVP preserves Origins from a private fragment only when its source
 `DocumentId` matches the target document and every referenced Origin resolves
-without conflict. Same-document private fragments can also preserve typed
-internal Block link targets. A fragment from another document follows the
-external imported/unknown path until the post-MVP cross-document origin-catalog
-and internal-link mapping protocols are implemented; it must not rebind source
-Block IDs by UUID coincidence.
+without conflict. A fragment from another document follows the external
+imported/unknown path until the post-MVP cross-document Origin-catalog protocol
+exists.
 
-Ordinary HTML/plain representations omit private Origins, comments, History,
-and identity records. An external paste never receives internal-Origin behavior
-merely because its HTML resembles Coedit output.
+Clipboard markup and URL interpretation are application concerns. The document
+engine does not interpret clipboard markup or URLs.
 
-Use DOMPurify or an equivalently reviewed allowlist sanitizer at the clipboard
-DOM boundary. ProseMirror schema filtering is defense in depth, not the sole
-sanitizer. Link metadata remains inert in canonical content; any presentation
-layer that emits an active HTML link or navigation action validates its own
-interpretation before activation.
+Generic opaque clipboard/drag-drop transport is an application concern until a
+focused opaque-payload interchange contract exists.
 
-## 8. Restore and deletion
+## 7. Restore, deletion, Range, and selection
 
 Local single-writer restore produces material equal to the selected historical
-target while appending a new Contribution. Reinserted text receives fresh
-carrier identities and retains the target material's Origins.
+target while appending a new Contribution. Reinserted text receives fresh carrier
+identities and retains the target material's Origins.
 
-In replicated operation, restore additionally names the frontier observed by
-its author and obeys the causal compensation rules in
+In replicated operation, restore additionally names the frontier observed by its
+author and obeys the causal compensation rules in
 [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md). It does not delete unseen
 concurrent material.
 
-Deleted content and Origin records remain reachable when required to materialize
-a Version or resolve Range lineage. Physical compaction can change their storage
-only when every Version, Origin, and required lineage remains exact. Later
-anonymization requires a separate product decision; it cannot silently rewrite
-History.
+Deleted text and Origin records remain reachable when required to materialize a
+Version or resolve text Range lineage. Physical compaction can change their
+storage only when every Version, Origin, and required lineage remains exact.
 
-## 9. Comment targets
+Durable application features can store a Range or serialize it into their own
+metadata or URLs. The engine's Range service does not create an intrinsic link or
+formatting object. A Markdown application can place a serialized local or remote
+reference into Markdown link syntax and later decide how to resolve it.
 
-Comments and conversations are external records. Their target shape is:
+Local text selection, focus, composition state, parsed Markdown state, rendered
+formatting state, and remote cursors/selections are transient adapter or awareness
+state. They do not create Origins, Contributions, Versions, or portable records.
 
-```text
-CommentTarget
-  documentId
-  range: Range
-  state: comment-specific attachment and repair state
-```
-
-The stored comment state records the latest deliberate interpretation of the
-Range resolution. It is not a license to trust stale offsets, restore an omitted
-member by similarity, or silently choose one of several candidates.
-`RANGE_MODEL.md` owns Range omission and the reusable result boundary. The later
-comments feature owns confidence policy, explicit repair, conversation behavior,
-and presentation.
-
-Internal Block-link Range refinement uses the same Range service but not the same
-holder lifecycle. A comment is an external record whose attachment state can
-require explicit repair. An internal link is intrinsic formatting whose
-`BlockId` remains the primary target; an unresolved optional Range uses the
-accepted Block fallback when possible.
-
-Exact confidence thresholds, multi-span comment presentation, and comment repair
-UX are post-MVP decisions. Step 3 proves carrier feasibility. Step 6 implements
-the reusable headless Range service without adding an external formatting or
-provenance anchor model.
-
-## 10. Selection and awareness
-
-Local selection, focus, composition state, and remote cursors/selections use
-transient editor or awareness state. They do not create Origins, Contributions,
-Versions, or portable records.
-
-If a later feature creates a named durable selection, it uses an explicit
-external target type and a new decision. It does not redefine ordinary editor
-selection.
-
-## 11. Trust and identity
+## 8. Trust and identity
 
 Keep these concepts separate:
 
@@ -347,72 +251,69 @@ the trusted engine/relay validates the acting principal, Contributor authority,
 and any requested Origin assignment. It rejects or quarantines forged or
 unverifiable metadata without partial publication.
 
-Signed export is a third layer. A future C2PA or equivalent assertion can sign a
-projection of document, Contribution, Origin, and derivation facts; it does not
-replace the live carrier or make unsigned local claims cryptographically true.
-
 Stable attribution IDs refer to separately managed display/profile data so that
 renaming, anonymization, and lawful erasure do not require rewriting content
 items or causal History.
 
-## 12. Carrier qualification
+## 9. Carrier qualification
 
 Yjs stable v13 is the provisional implementation default. Automerge is the
 required challenger. Yjs v14 is reevaluated after stable release; Loro is a
 benchmark for cursor and movable-tree semantics, not a current implementation
 candidate.
 
-Both candidates must run the same qualification suite before selection. At
-minimum it covers:
+Both candidates must run the same fine-grained text suite for both initial
+allowlisted Media Types. At minimum it covers:
 
-- all formatting boundary policies and overlapping marks;
-- exact preservation of opaque link metadata without document-model
-  interpretation;
-- internal Block links with and without Range refinement, including missing
-  Blocks, omitted Range members, and primary Block fallback;
-- origin non-inheritance and protection from ordinary client commands;
-- concurrent insertion, deletion, replacement, and formatting at identical and
-  adjacent boundaries;
-- split, merge, hard break, IME, cut, paste, undo, and redo;
+- exact preservation of ordinary supported native strings, including line feeds,
+  carriage returns, supplementary characters, combining sequences, variation
+  selectors, and representative complex scripts;
+- characterization of ill-formed ECMAScript string edge cases, including lone
+  surrogates, as carrier-selection evidence rather than a mandatory preservation
+  invariant;
+- Origin non-inheritance and protection from ordinary client commands;
+- concurrent insertion, deletion, and replacement at identical and adjacent
+  boundaries;
+- split, merge, IME, cut, paste, undo, and redo as application/editor operations;
 - same-document copy and restore lineage;
 - external clipboard stripping and imported/unknown Origin assignment;
-- the Step 3 Range-feasibility cases in `RANGE_MODEL.md`, including direct
-  multi-span creation, greedy and positional boundaries, structural tracking,
-  lazy resolution, reload, and compaction;
+- the Step 3 text Range-feasibility cases in `RANGE_MODEL.md`;
 - one transaction spanning Block structure and several InlineContents;
 - duplicate, delayed, reordered, partitioned, and reconnected updates;
-- exact portable round trip and historical materialization; and
+- exact portable round trip and historical materialization for supported carrier
+  state; and
 - representative growth and load behavior.
 
-Functional invariants are mandatory. `MVP_VERIFICATION_PLAN.md` owns the
-experimental shared workload and latency candidates and requires one
-run-specific method to be recorded before candidate comparison. Those candidates
-are measurement inputs, not acceptance contracts. This specification requires
-visible local feedback to stay in the tightest practical loop; routine carrier,
-persistence, History, replica, open, reload, checkpoint, materialization, or
-export work must not redefine the editor hot path.
+The carrier gate also runs the generic Media Type, raw/coarse encoding, opaque
+payload, and whole-payload replacement cases in `INLINE_CONTENT_PAYLOADS.md`.
 
-Select Yjs when the protected Origin carrier passes without fragile full-state
-reconstruction or editor repair. Select Automerge only if its native rich-text,
+Functional invariants are mandatory. `MVP_VERIFICATION_PLAN.md` owns the shared
+performance workloads and evidence rules.
+
+Select Yjs when its protected Origin/text carrier passes without fragile
+full-state reconstruction or editor repair. Select Automerge only if its text,
 cursor, head, and storage behavior materially reduces custom machinery and its
-ProseMirror integration passes the same suite.
+editor integration passes the same suite.
 
-## 13. Required MVP verification
+## 10. Required MVP verification
 
 The production implementation repeats the selected carrier's qualification
 fixtures as regression tests. In addition, prove:
 
 - malformed or oversized carrier input leaves the base unchanged;
-- malformed or over-capacity private clipboard fragments leave the base unchanged and do not disable ordinary HTML/plain fallback;
+- malformed or over-capacity private clipboard fragments leave the base unchanged
+  and do not disable ordinary clipboard fallback;
 - caller mutation of detached input cannot mutate engine state;
-- a failed command publishes no text, mark, Origin, Contribution, or Version;
-- opaque link metadata round trips without document-model interpretation;
-- same-document internal Block links preserve their `BlockId` and optional Range
-  value through copy, restore, carrier round trip, and `.coedit` round trip;
-- `.coedit` preserves intrinsic formatting, Origins, Contributors,
-  Contributions, and derivation exactly;
-- Markdown compares visible semantic marks but intentionally excludes Origin
-  identity from its equivalence relation; and
-- ordinary Markdown export omits Origins without a warning on every export,
-  while an explicitly provenance-preserving export request reports Markdown as
-  non-representative.
+- a failed command publishes no text, Origin, Contribution, or Version;
+- supported native-string content is not rejected merely because an application
+  can present, parse, or encode it specially;
+- carrier failure for unsupported native-string edge cases propagates without a
+  partial document change;
+- no Block or InlineContent boundary manufactures a text character;
+- the engine does not parse, normalize, repair, or render Markdown syntax;
+- application formatting state is not required to materialize canonical engine
+  state;
+- `.coedit` preserves supported carrier-native source strings, Origins,
+  Contributors, Contributions, and derivation exactly; and
+- ordinary Markdown export can omit private Origin without implying that Markdown
+  is the lossless recovery format.

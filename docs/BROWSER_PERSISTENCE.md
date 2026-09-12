@@ -10,7 +10,8 @@ behavior, quota and recovery UX, and the separation between the internal
 IndexedDB repository and the portable `.coedit` artifact.
 
 [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) controls engine and adapter
-authority. [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md) controls
+authority. [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) controls
+Media Types and replacement semantics. [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md) controls
 portable Save/Open. This document controls browser repository behavior.
 [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md) controls qualification
 evidence.
@@ -19,8 +20,9 @@ evidence.
 
 The `DocumentEngine` is the only document authority. It commits through a
 repository port supplied by the browser composition root. The repository stores
-and retrieves opaque engine records; it does not interpret Blocks, formatting,
-Origins, History semantics, or CRDT effects independently.
+and retrieves opaque engine records; it does not interpret Blocks, Media Types
+or bytes, Origins, History semantics, replacement-register state, or
+CRDT effects independently.
 
 The UX can list local document descriptors, display durability status, request
 retry/export, and select a document to open. It cannot rewrite repository rows,
@@ -58,6 +60,11 @@ or vocabulary.
 Effect and checkpoint chunks can be content-addressed. SHA-256 detects
 corruption and supports deduplication; it is not authentication.
 
+The logical records must be sufficient to recover the exact Media Type and
+payload state of every InlineContent, including allowlisted fine-grained text, opaque payload bytes,
+payload-specific Origin, and whole-payload replacement History. The repository
+need not understand those semantics.
+
 ## 4. Commit protocol
 
 For an engine with a durable repository, a successful command is not published
@@ -80,9 +87,9 @@ until its durable commit succeeds.
    receipt, and emit invalidation.
 
 Any failure before transaction commit changes neither durable head nor visible
-engine state. A transaction abort cannot leave a published partial Contribution.
-Implementations must not await unrelated work or perform expensive encoding
-inside the short IndexedDB transaction.
+engine state. A transaction abort cannot leave a published partial Contribution
+or partial payload replacement. Implementations must not await unrelated work or
+perform expensive encoding inside the short IndexedDB transaction.
 
 An engine configured explicitly with an ephemeral in-memory repository can
 publish after its atomic in-memory commit. The UX must label that session as not
@@ -94,17 +101,21 @@ Every accepted engine command produces one immutable Contribution and Version.
 Its repository record is the crash journal; there is no second set of unsealed
 document mutations that later becomes History.
 
-The editor can combine transient ProseMirror transactions before it submits a
-command, subject to controlled-transition and resource rules. Once submitted,
-the command is immutable. Several prompt editor Contributions can share a
-`semanticGroupId`, and History presentation can group them without changing
-their identities or Versions.
+The allowlisted fine-grained text editor can combine transient ProseMirror transactions before it
+submits a command, subject to controlled-transition and resource rules. Once
+submitted, the command is immutable. Several prompt editor Contributions can
+share a `semanticGroupId`, and History presentation can group them without
+changing their identities or Versions.
 
 IME composition is not split mid-composition. Paste, cut, selection
-replacement, formatting, undo, and redo are submitted as atomic editor actions.
+replacement, undo, and redo are submitted as atomic editor actions.
 Idle, focus/owner transfer, change of edit mode, and controlled transitions seal
-the current semantic group. Exact time and character thresholds are
-tunable UX parameters, not durable semantics.
+the current semantic group. Exact time and character thresholds are tunable UX
+parameters, not durable semantics.
+
+A generic whole-payload replacement, including opaque-payload replacement, is already one
+atomic engine command and Contribution. It does not require an editor-specific
+journal or another persistence path.
 
 A failed commit retains the exact detached command/draft needed for retry and
 surfaces degraded durability. Typing is not blocked by queued complete-artifact
@@ -121,14 +132,18 @@ Opening a local document:
 2. validates the referenced physical checkpoint and its hashes;
 3. replays subsequent reachable immutable Contributions/effects in the private
    order required by the selected carrier;
-4. verifies command receipts, contributor/origin references, document
-   invariants, and the resulting Version/frontier; and
+4. verifies command receipts, contributor/origin references, Media-Type-labelled payload
+   reconstruction, document invariants, and the resulting Version/frontier; and
 5. publishes a candidate engine only after complete success.
 
 Malformed, missing, mis-hashed, incompatible, or over-capacity records produce a
 typed recovery error. They do not partially open or replace another active
 engine. Recovery diagnostics offer export of recoverable raw evidence where
 safe; they do not improvise a repaired document silently.
+
+Recovery of causal replacement state must produce the same deterministic current
+whole-payload winner as direct materialization. Packet or record replay order
+cannot become an accidental winner selector.
 
 **Maturity:** Pending selection.
 
@@ -138,16 +153,16 @@ safe; they do not improvise a repaired document silently.
 evidence revisited in Step 14.
 
 Before Step 13 closes, profile checkpoint decoding, effect replay, collection
-cardinality, and reconstructed-state allocation on target browsers. Record any
-selected guards, the capacity error behavior, and why work without an explicit
-guard is safely bounded elsewhere. No numeric recovery maximum is accepted in
-advance.
+cardinality, opaque payload decoding, and reconstructed-state allocation on target
+browsers. Record any selected guards, the capacity error behavior, and why work
+without an explicit guard is safely bounded elsewhere. No numeric recovery
+maximum is accepted in advance.
 
 Prepared maintenance/checkpoint chunks or records left unreachable by a
 superseded head are not current document state. A later bounded garbage collector
 may remove verified unreachable records after accounting for active heads,
-every product Version, required Range lineage, concurrent tabs, and recovery
-checkpoints.
+every product Version, required allowlisted fine-grained text Range lineage, concurrent tabs, and
+recovery checkpoints.
 
 ## 7. Checkpoint and compaction rules
 
@@ -157,7 +172,8 @@ Contribution or Version.
 
 Compaction can replace private replay paths only after a new checkpoint is fully
 written and validated. It cannot make any VersionToken, semantic Checkpoint,
-Origin, required Range lineage, durable Range behavior, or future comment-holder
+Origin, Media Type, opaque payload bytes, losing whole-replacement Version, required
+allowlisted fine-grained text Range lineage, durable Range behavior, or future comment-holder
 behavior unavailable. Every Version remains exactly materializable for the
 lifetime of the retained document.
 
@@ -168,8 +184,8 @@ must not become the public History or portable-format abstraction.
 ## 8. Multi-tab behavior
 
 The compare-and-swap head is the authority for competing writers. Two tabs that
-commit against the same head cannot both advance it under a local single-writer
-policy.
+commit against the same local head cannot both advance it under the MVP local
+single-writer policy.
 
 `BroadcastChannel` can notify other tabs that a local document changed. It is an
 invalidation hint, not a commit log and not an authority. A stale tab reopens or
@@ -178,7 +194,8 @@ explicit conflict. It never overwrites the newer head silently.
 
 When networked CRDT replication is implemented, local repository commits still
 obey the same atomic record/head protocol; the replication adapter, not
-BroadcastChannel ordering, determines causal integration.
+`BroadcastChannel` ordering, determines causal integration and concurrent
+whole-payload replacement winners.
 
 ## 9. Quota, persistence, and backup UX
 
@@ -194,7 +211,7 @@ export/backup while sufficient committed state remains available.
 
 The UX should warn before measured usage approaches a browser-specific safe
 margin. The exact warning threshold is a Step 14 measurement outcome, not a
-portable document limit.
+portable document or opaque-payload-size limit.
 
 ## 10. `.coedit` separation
 
@@ -203,7 +220,7 @@ The `.coedit` artifact is optimized for explicit portable Save/Open, backup, and
 interchange between Coedit installations.
 
 An explicit Save asks the engine to assemble the current Version and complete
-History into `.coedit` bytes under
+History, including Media-Type-labelled payloads and opaque payload bytes, into `.coedit` bytes under
 [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md). Normal autosave
 does not repeatedly assemble or rewrite those bytes.
 
@@ -219,7 +236,8 @@ acceptance budgets here.
 
 For the browser repository, measure those shared workloads plus:
 
-- cold open, warm open, ordinary commit, checkpoint, History materialization, and `.coedit` assembly latency;
+- cold open, warm open, ordinary text commit, whole-payload replacement, checkpoint, History materialization, and `.coedit` assembly latency;
+- representative opaque payload persistence and recovery;
 - peak encoded and decoded memory;
 - write amplification and database growth; and
 - quota behavior in supported browsers and private modes.
@@ -227,15 +245,18 @@ For the browser repository, measure those shared workloads plus:
 Record target devices and a run-specific measurement method before performance
 qualification begins. Step 13 can promote evidence-backed implementation guards;
 Step 14 can promote, replace, or retire performance and warning targets.
-Correctness, atomicity, and no-data-loss requirements are not tradeable for a
-faster candidate. Browser-specific quota or warning thresholds come from
-measured platform behavior and are not portable document limits.
+Correctness, atomicity, exact payload recovery, and no-data-loss requirements are
+not tradeable for a faster candidate. Browser-specific quota or warning
+thresholds come from measured platform behavior and are not portable document
+limits.
 
 ## 12. Required verification
 
 The repository contract suite must cover:
 
 - save, reopen, browser reload, and document isolation;
+- exact recovery of Media Types, allowlisted fine-grained text, opaque payload bytes, and payload Origins;
+- exact recovery of whole-payload replacement Contributions and deterministic current-winner state;
 - exact CommandId retry and conflicting reuse;
 - stale head and competing-tab compare-and-swap behavior;
 - injected failure before each commit-protocol boundary;

@@ -7,8 +7,10 @@ algorithms remain future decisions.
 This document records how collaboration should fit around the document engine
 and what eventual consistency must mean for Coedit. It complements
 [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md), which defines the local engine API,
+[`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md), which defines typed
+InlineContent payloads and whole-payload replacement convergence,
 [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), which
-defines content attribution and Range-holder behavior,
+defines allowlisted fine-grained text attribution and Range-holder behavior,
 [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md), which defines the
 accepted Block carrier and structural merge semantics,
 [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md),
@@ -32,19 +34,29 @@ implementation order.
   reconstructed from carrier updates, editor transactions, debounce boundaries,
   relay batches, wall-clock timestamps, or packet-arrival order.
 - One logical collaborative document normally contains the Block registry and
-  all InlineContents so structure, text, formatting, Origin, and Contribution
+  all InlineContents so structure, Media-Type-labelled payloads, Origins, and Contribution
   effects can publish atomically.
+- Every InlineContent Media Type is collaborative in the convergence sense:
+  replicas with the same complete set of valid Contributions converge on the
+  same current payload state.
+- Allowlisted fine-grained text additionally supports native-string collaborative text and fine-grained Origin operations. Other Media Types initially support only whole-payload
+  replacement.
+- Whole-payload replacement is a convergent replicated register. A causally
+  later replacement supersedes replacements it observes. Truly concurrent
+  replacements select one deterministic current winner without using packet
+  arrival order, wall-clock time, or an unsynchronized local sequence. Losing
+  replacements remain in immutable History.
 - Block structure uses the accepted flat placement carrier in
   `STRUCTURAL_CARRIER_MODEL.md`: one placement per `BlockId`, preorder-plus-depth
   projection, Block-local payload state, and semantic-update-over-delete
   behavior.
-- Content Origin answers who or what created material. Contribution actor
-  answers who performed the operation. Copy and restore preserve Origin while
-  recording the new actor and derivation.
+- Content Origin answers who or what created payload material. Contribution actor
+  answers who performed the operation. Copy and restore preserve Origin according
+  to the payload contract while recording the new actor and derivation.
 - Semantic checkpoints are ordinary Contributions. They must converge and
   replicate like edits and restores.
 - Eventual consistency must cover the causal Contribution graph and internal
-  collaborative state, not merely equal rendered text.
+  collaborative state, not merely equal rendering.
 - A permanent global numeric revision sequence is not part of the public
   contract. Versions are identified by opaque tokens that may represent causal
   frontiers.
@@ -55,9 +67,9 @@ implementation order.
   special case hidden behind the engine API.
 
 This is a known family of distributed-systems solutions, but it is not
-“automatic.” CRDTs and causal change graphs provide the machinery; Coedit must
-still define transport, causal publication, restoration, checkpointing,
-authorization, retention, and failure handling explicitly.
+“automatic.” CRDTs, convergent registers, and causal change graphs provide the
+machinery; Coedit must still define transport, causal publication, restoration,
+checkpointing, authorization, retention, and failure handling explicitly.
 
 ## 2. Topology and ownership
 
@@ -101,18 +113,18 @@ into editor availability. It remains a possible deployment mode, not the
 foundation of the client API.
 
 Frontends exchanging changes directly would leak causal dependencies,
-idempotency, retry, authorization, CRDT state, and conflict handling into UI
+idempotency, retry, authorization, carrier state, and conflict handling into UI
 components. That is explicitly rejected for durable work. Presence rendering
 may be UX-adjacent, but its channel remains separate and ephemeral.
 
 ## 3. Four distinct kinds of state
 
-| Layer             | Purpose                                                                                | Portable/product History?                     |
-| ----------------- | -------------------------------------------------------------------------------------- | --------------------------------------------- |
-| Logical document  | Blocks, InlineContents, tags, CollaborativeContent, Origins, durable comments/overlays | Yes                                           |
-| Product History   | Immutable attributed Contributions and materializable Versions                         | Yes                                           |
-| Replication state | CRDT identities, placements, activity markers, tombstones/delete sets, causal metadata | Only what exact recovery/convergence requires |
-| Presence          | Online state, cursors, selections, typing indicators                                   | No                                            |
+| Layer             | Purpose                                                                                          | Portable/product History?                     |
+| ----------------- | ------------------------------------------------------------------------------------------------ | --------------------------------------------- |
+| Logical document  | Blocks, InlineContents, Media-Type-labelled payloads, tags, Origins, durable comments/overlays   | Yes                                           |
+| Product History   | Immutable attributed Contributions and materializable Versions                                   | Yes                                           |
+| Replication state | CRDT identities, replacement-register state, placements, activity markers, tombstones, causality | Only what exact recovery/convergence requires |
+| Presence          | Online state, cursors, selections, typing indicators                                             | No                                            |
 
 These layers may be stored together internally, but their semantics must remain
 separate.
@@ -122,13 +134,16 @@ meaning, attribution, summaries, and user-visible History. One Contribution may
 require several network frames, and one network frame may batch several
 Contributions. Neither changes the logical Contribution boundary.
 
-A Contribution that touches the Block tree and several InlineContents becomes
-visible atomically to engine queries. The replication ingress buffers incomplete
-payloads or missing dependencies rather than publishing a partial state.
+A Contribution that touches the Block tree and several InlineContents of
+different Media Types becomes visible atomically to engine queries. The
+replication ingress buffers incomplete payloads or missing dependencies rather
+than publishing a partial state.
 
-Internal placements, activity markers, tombstones, and causal metadata do not
-violate the logical domain decision that live `Block` and `InlineContent`
-entities have no carrier fields. They are private replication/storage machinery.
+Internal placements, activity markers, replacement-register implementation state,
+tombstones, and causal metadata do not violate the logical domain decision that
+live `Block` and `InlineContent` entities have no carrier fields. They are private
+replication/storage machinery. The observable concurrent-replacement winner rule
+is product behavior selected at Gate B even when its representation is private.
 
 Inbox/outbox acknowledgements, connection retries, and buffered dependency
 requests are transport bookkeeping, not a fifth kind of document truth. They may
@@ -178,7 +193,7 @@ authenticated remote envelope
 Remote work is not reissued as a new local user command, which would duplicate
 History and attribution. The local-command and remote-integration paths do share
 schema validation, invariants, resource-capacity checks, contribution
-verification, and atomic publication rules.
+verification, Media-Type checks, and atomic publication rules.
 
 Delivery is idempotent. An already integrated Contribution is a no-op; reusing
 its ID with different content is corruption. Missing parents are buffered or
@@ -221,6 +236,12 @@ closure. It becomes the current merged Version as soon as both Contributions are
 integrated; no synthetic merge Contribution or fake History row is required.
 `C` is an ordinary later Contribution that observes that merged frontier.
 
+When `A` and `B` concurrently replace the same complete InlineContent payload,
+the merged Version contains the deterministic register winner while both `A` and
+`B` remain distinct History nodes and each branch Version remains materializable.
+The tie-break is a convergence mechanism. It does not claim that the winning
+Contribution happened later in human time or has greater semantic authority.
+
 Concurrent heads are temporary replication state, not permanent user-facing
 History branches. A Range created on one visible frontier can resolve only on
 that Version or a descendant that contains it. It cannot resolve against a
@@ -260,6 +281,15 @@ authored wall-clock time for display only
 The precise hash, signature, and wire encoding remain open. IDs must be globally
 unique and immutable; content-addressing is attractive but not yet selected.
 
+Gate B selects one observable deterministic order/rule for concurrent
+whole-payload replacement. It must derive from immutable replicated effect
+identity/state and produce the same logical winner for the same valid causal
+input in every conforming adapter. Gate B also selects the carrier-private
+representation, effect identity, or metadata used to implement that rule. The
+rule cannot use authored wall-clock time, local row number, packet order, or a
+value that two conforming replicas can compute differently. Carrier-native
+conflict ordering is evidence, not product policy by itself.
+
 A human-authored summary deliberately stored on a Contribution is immutable,
 replicated metadata. A summary derived later by a local heuristic or LLM is a
 disposable projection unless a separate attributed command deliberately
@@ -279,15 +309,19 @@ Replica A observes: G -> A -> B
 Replica B observes: G -> B -> A
 ```
 
-Both may converge to the same visible document while retaining incompatible
-claims about a supposedly permanent linear History. Packet order, local commit
-row number, and wall-clock timestamp therefore cannot define shared causal
-identity.
+Both must converge to the same logical document and the same concurrent
+whole-payload replacement winner even though they observed different packet
+orders. They can still retain incompatible claims about a supposedly permanent
+linear History if arrival order is mistaken for causality. Packet order, local
+commit row number, and wall-clock timestamp therefore cannot define shared
+causal identity or replacement precedence.
 
 A deterministic topological display order may be derived from causal order plus
 a stable tie-breaker. That order is presentation only:
 
 - it is not version or Contribution identity;
+- it is not automatically the payload replacement tie-break unless the focused
+  carrier contract deliberately proves the same immutable order is suitable;
 - a late concurrent event may appear between rows already displayed;
 - row numbers must not be restore or checkpoint targets; and
 - the same causal graph, not the incidental arrival order, is authoritative.
@@ -301,41 +335,60 @@ tradeoff and is not silently provided by eventual consistency.
 ## 7. Convergence contract
 
 Equal rendered text is necessary but insufficient. Two replicas might render
-identically while differing in CRDT identities, deletion history, relative
-anchors, or product History, causing later edits to diverge.
+identically while differing in CRDT identities, replacement-register state,
+opaque payload bytes, deletion history, relative anchors, or product History, causing later
+operations to diverge.
 
 Once two authorized replicas possess the same complete set of valid
 Contributions, they must have:
 
 1. the same immutable causal Contribution graph and metadata;
 2. collaborative-state-equivalent carrier state, including identity, placement,
-   Block activity, delete, formatting, Origin, and Range-position behavior, even
-   if byte encodings differ;
-3. the same validated Block tree, ordering, tags, and CollaborativeContent
-   projection;
-4. the same materialization for every causal frontier that forms a Version; and
-5. the same durable current frontier: the canonical set of maximal integrated
+   Block activity, deletes, Media Types, whole-replacement register state,
+   allowlisted fine-grained text/Origin state, opaque payload bytes/payload Origin, and
+   text Range-position behavior, even if byte encodings differ;
+3. the same deterministic current whole-payload replacement winner for every
+   affected InlineContent;
+4. the same validated Block tree, ordering, tags, and Media-Type-labelled payload projection;
+5. the same materialization for every causal frontier that forms a Version; and
+6. the same durable current frontier: the canonical set of maximal integrated
    heads.
 
+This is eventual consistency. It does not require fine-grained merging for every
+Media Type. Generic opaque payloads can converge by deterministic whole-payload replacement while
+allowlisted fine-grained text also merges fine-grained collaborative edits.
+
 This implies convergence tests must compare Contribution sets/graphs, causal
-frontiers, CRDT state equivalence, and logical materializations. A screenshot or
-plain-text comparison cannot establish correctness.
+frontiers, carrier state equivalence, replacement winners, and logical
+materializations. A screenshot, plain-text comparison, or comparison of only the
+winning opaque payload bytes cannot establish correctness.
 
 Storage snapshots, update merging, caches, indexes, and compaction may differ
 between replicas. They are physical representations, not part of equality, as
-long as they preserve the same causal graph, every Version, and the lineage
-needed by Range resolution. Physical compaction cannot make a Version impossible
-to identify, materialize, or restore while its document is retained.
+long as they preserve the same causal graph, every Version, current payload
+winner, and the lineage needed by text Range resolution. Physical compaction
+cannot make a Version impossible to identify, materialize, or restore while its
+document is retained.
 
 Semantic checkpoint Contributions are different. They are part of Product
 History and therefore must converge like any other Contribution.
 
-## 8. CollaborativeContent and Block structure use one carrier boundary
+## 8. Typed InlineContent payloads and Block structure use one carrier boundary
 
-Convergent rich-text changes and structural placement have different semantics.
-Step 3 qualifies both candidates inside one logical collaborative document, and
-Step 4 implements the selected carrier.
+Convergent fine-grained text changes, whole-payload replacement, and structural
+placement have different semantics. Step 3 qualifies both carrier candidates
+inside one logical collaborative document, and Step 4 implements the selected
+carrier. `INLINE_CONTENT_PAYLOADS.md` owns payload semantics and
 `STRUCTURAL_CARRIER_MODEL.md` owns the structural contract.
+
+The initial capability dispatch recognizes allowlisted fine-grained text as the fine-grained collaborative-text format. Every other supported Media Type initially uses the generic opaque capability set, which preserves exact bytes and payload-level Origin and provides no fine-grained mutation beyond whole-payload replacement.
+
+The document model has no canonical hard-break content item. A line-feed or
+carriage-return can be ordinary allowlisted fine-grained text data. Block and InlineContent
+boundaries remain structural and add no text character. Application adapters
+translate paragraph, line-break, list, section, formatting, link, opaque-payload rendering, or other intent.
+
+Every payload supports whole-payload replacement. The operation preserves the InlineContent identity and atomically replaces the complete payload value. The Media Type can stay the same or change; capability dispatch then follows the resulting Media Type.
 
 The accepted structural representation uses one Block-local namespace per
 `BlockId` with one atomic `{ position, depth }` placement, a private semantic
@@ -352,8 +405,7 @@ preserving Block identity and relative order.
 The accepted concurrency preference is non-destructive:
 
 - a move concurrent with deletion of the same Block keeps the moved Block alive;
-- a semantic payload update concurrent with deletion of the same Block keeps the
-  updated Block alive;
+- a semantic payload update, including fine-grained text work or whole-payload replacement, concurrent with deletion of the same Block keeps the updated Block alive;
 - payload mutation updates the Block's private activity marker in the same
   logical carrier change; and
 - activity is local to the Block that changed, so editing a descendant does not
@@ -372,53 +424,59 @@ Deterministic normalization and suppression of normalization-only resurrection
 are preferred when inexpensive, but residual behavior can be accepted and
 recorded because exact collisions should be exceptional.
 
-These accepted carrier semantics close the former representation-level questions
-for Step 3. They do not by themselves complete the network protocol. Before real
-clients connect, the system must still qualify causal Contribution envelopes,
-transport, dependency buffering, authorization, restart recovery, hostile input,
-restore overlap, and exact integration rules.
+These accepted carrier semantics constrain Step 3. Gate B must still select and
+record the observable concurrent-replacement winner rule and its carrier-private
+implementation, together with the observable mixed replacement/edit behavior
+deferred in `INLINE_CONTENT_PAYLOADS.md` section 10.1. Those decisions precede
+production carrier implementation; they do not complete the network protocol.
+Before real clients connect, the system must still qualify causal Contribution
+envelopes, transport, dependency buffering, authorization, restart recovery,
+hostile input, restore overlap, and exact integration rules.
 
 ### Collaborative-document and annotation boundaries
 
 Use one logical collaborative document per Coedit document by default. It holds
 the Block registry and Block-local payload namespaces so one transaction can
-publish structure, several text values, Origins, and Contribution effects
-atomically. An editor binds only one active InlineContent; the recursive Block
-tree is not a ProseMirror tree.
+publish structure, several Media-Type-labelled payload values, Origins, and Contribution
+effects atomically. A text editor binds only one active allowlisted fine-grained text
+InlineContent; the recursive Block tree is not a ProseMirror tree.
 
 This is a private carrier boundary, not a public `Y.Doc` or Automerge type.
 Subdocuments or sharding require measured evidence and must preserve atomic
 multi-target behavior and portable recovery.
 
-Formatting and Origin do not use external anchors. The MVP headless Range service
-can use carrier-stable positions plus qualified lineage and carrier-neutral
-evidence behind its public value contract. Internal links can embed a Range;
-future comments can hold one externally with comment-specific repair state.
+Allowlisted fine-grained text and fine-grained Origin do not use external anchors.
+Generic opaque payloads have payload-level Origin rather than text-like ranges. The MVP headless Range
+service can use carrier-stable text positions plus qualified lineage and
+carrier-neutral evidence behind its public value contract. Applications can
+serialize or store a Range in Markdown links, comments, navigation records, or
+other holders. Holder meaning and fallback remain outside the Range service.
+Generic opaque sub-content addressing is not defined by that service.
 
-Copying content creates new carrier identities and same-document copy retains
-Origins, but shared Origin or derivation creates no Range-tracking lineage to the
-copy. Moving an InlineContent while preserving its identity and carrier state
-preserves Range tracking. Split and merge operations can create explicit
-Range-continuation lineage.
+Copying allowlisted fine-grained text creates new carrier identities and same-document copy
+retains Origins, but shared Origin or derivation creates no Range-tracking
+lineage to the copy. Moving an InlineContent while preserving its identity and
+payload state preserves applicable text Range tracking. Split and merge
+operations can create explicit text Range-continuation lineage. Generic opaque copy and
+restore operate at whole-payload granularity under the initial contract.
 
 ## 9. Frontend-facing History behavior
 
 The collaboration model preserves the same public behavior as the local MVP.
 The frontend can:
 
-- list lightweight Contribution summaries without materializing historical
-  documents and separately identify Versions;
+- list lightweight Contribution summaries without materializing historical documents and separately identify Versions;
 - see attribution, semantic kind, affected targets, and concurrency;
 - identify checkpoint Contributions and their exact resulting Versions;
 - query the current frontier as an opaque `VersionToken`;
-- materialize any VersionToken read-only;
+- materialize any VersionToken read-only, including a Version containing a losing concurrent replacement;
 - restore a selected version through a new mutation; and
 - subscribe to invalidation/change hints and re-query.
 
 Raw carrier updates, causal storage rows, placements, activity markers,
-tombstones, inbox/outbox entries, and relay packets never cross this boundary.
-The portable document is also opaque to the UX even when it contains causal and
-CRDT state.
+replacement-register metadata, tombstones, inbox/outbox entries, and relay
+packets never cross this boundary. The portable document is also opaque to the
+UX even when it contains causal and carrier state.
 
 ## 10. Restore, checkpoints, and undo under concurrency
 
@@ -426,25 +484,27 @@ Restore preserves its **product** semantics: it never rewinds or deletes History
 It creates a new attributed compensating Contribution that targets a stable
 `VersionToken` and declares the frontier from which it was authored.
 
-A replicated restore does not install an old carrier snapshot or resurrect old CRDT
-state wholesale. It emits fresh deterministic text/tree effects relative to its
-declared base. The resulting logical material may equal the historical target
-while its hidden CRDT identities, deletes, and anchors differ in a way that is
-correct for the new causal context.
+A replicated restore does not install an old carrier snapshot or resurrect old
+carrier state wholesale. It emits fresh deterministic payload/tree effects
+relative to its declared base. For allowlisted fine-grained text, historically deleted material
+is reinserted under fresh carrier identities while historical Origin is retained.
+For opaque payload, restore can reintroduce the historical whole payload and its payload
+Origin through the same replacement/convergence boundary. The restore
+Contribution records the actor, target, observed frontier, and exact effect.
 
 A restore command names target Version `T` and the author-observed frontier `B`.
 When applied to current merged frontier `H`, it compensates only effects known at
 `B` that differ from `T`; it does not delete material introduced outside `B`.
-Historically deleted material is inserted under fresh carrier identities while
-retaining its historical Origin. The restore Contribution records the actor,
-`T`, `B`, and its exact causal effect.
+Concurrent whole-payload replacement outside `B` is unseen work and must not be
+silently erased merely because the restore author did not observe it. The exact
+same-target overlap representation and UX must pass the pre-network gate.
 
-Same-region or structural overlap that cannot be reconciled under deterministic
-semantics is surfaced as an explicit conflict. A separately authorized and
-coordinated "restore for everyone" can provide a global-reset workflow, but an
-ordinary restore never claims that effect or silently erases disconnected work.
-The exact text/structural overlap representation and UX must pass the pre-network
-gate before collaboration ships.
+Same-region, same-payload, or structural overlap that cannot be reconciled under
+deterministic semantics is surfaced as an explicit conflict. A separately
+authorized and coordinated "restore for everyone" can provide a global-reset
+workflow, but an ordinary restore never claims that effect or silently erases
+disconnected work. The exact text/structural/payload overlap representation and
+UX must pass the pre-network gate before collaboration ships.
 
 A checkpoint targets the exact causal frontier from which it is authored. It is
 itself a new immutable Contribution and produces a new Version with logically
@@ -454,8 +514,9 @@ are independent historical statements, not competing claims for one global
 "accepted" state.
 
 Local editor undo and product History restore are different operations. Undo may
-generate a compensating edit in current collaborative state; it must not delete
-already replicated Contributions or rewrite the causal graph.
+generate a compensating text edit or payload replacement in current collaborative
+state; it must not delete already replicated Contributions or rewrite the causal
+graph.
 
 ## 11. Identity, authorization, and presence
 
@@ -469,7 +530,8 @@ Keep these identities distinct:
 
 A user may have several replicas and sessions. An AI or automation Contributor
 may act under a human principal's authorization. Wall-clock timestamps are
-display metadata, not causality or authorization evidence.
+display metadata, not causality, authorization evidence, or whole-payload
+replacement precedence.
 
 Contributor registration and identity metadata referenced by a Contribution
 must also converge: it is causally replicated document metadata or is backed by
@@ -478,10 +540,10 @@ Contribution whose contributor is not yet known is buffered or rejected; a
 replica never invents a local substitute identity.
 
 The relay and receiving engine validate document access, envelope authenticity,
-schema/capability versions, and selected resource-capacity guards. Offline work
-created before an authorization change may need to be provisional, quarantined,
-or rejected; that policy is open and must be visible rather than silently
-dropping work.
+schema/capability versions, Media Types, and selected resource-capacity guards.
+Offline work created before an authorization change may need to be provisional,
+quarantined, or rejected; that policy is open and must be visible rather than
+silently dropping work.
 
 Replicas must also converge on which envelopes are valid. Schema/capability and
 authorization decisions cannot depend on unsynchronized local clocks or
@@ -495,7 +557,7 @@ Contributions are document state and must survive restart; delivery bookkeeping
 is not product History.
 
 Presence uses a separate lossy channel. Dropped cursor or typing updates never
-create a Contribution, change a version, or affect save/recovery.
+create a Contribution, change a Version, or affect save/recovery.
 
 Provenance trust has three distinct levels: descriptive local Origin claims;
 authenticated engine/relay-enforced attribution; and future signed publication
@@ -508,7 +570,7 @@ retention and anonymization do not require rewriting content or causal identity.
 The future replication protocol will need, at minimum:
 
 - document, replica, Contribution, update, and message identities;
-- schema and capability negotiation;
+- schema and payload-capability negotiation;
 - causal dependencies/frontiers and, where useful, CRDT state vectors;
 - idempotent delivery and content-conflict detection;
 - acknowledgements plus durable outbox/inbox recovery;
@@ -516,9 +578,9 @@ The future replication protocol will need, at minimum:
 - dependency requests, catch-up, and bootstrap-snapshot transfer;
 - atomic envelopes for multi-target Contributions;
 - Origin, source, and derivation records plus their authorization rules;
-- deterministic validation/rejection semantics; and
-- an explicit relationship between logical Contribution metadata and exact CRDT
-  or structural effects.
+- deterministic validation/rejection semantics;
+- whole-payload replacement effects compatible with the Gate B observable winner rule and its private representation; and
+- an explicit relationship between logical Contribution metadata and exact carrier or structural effects.
 
 These fields are private protocol concerns. They must not turn the UX-facing
 `VersionToken` into a structure the frontend interprets.
@@ -537,17 +599,18 @@ The MVP does not implement networking. It does establish the following seams:
 - globally unique document, entity, command, Contribution, and contributor IDs;
 - atomic attributed commands whose Contributions may share a semantic group ID;
 - one logical collaborative document boundary with atomic structure-plus-content effects;
+- typed allowlisted fine-grained text and opaque InlineContent payloads;
+- universal whole-payload replacement with deterministic eventual convergence semantics;
 - the accepted flat Block placement and Block activity compatibility contract;
-- intrinsic formatting and protected, non-inheriting Origin semantics;
+- protected, non-inheriting fine-grained text Origin semantics;
+- opaque-payload Origin;
 - first-class checkpoint Contributions;
-- a carrier-neutral durable Range service with no document-wide holder registry;
-- History listing, summary, permanent exact Version materialization, and
-  compensating restore;
+- a carrier-neutral durable allowlisted fine-grained text Range service with no document-wide holder registry or opaque payload sub-content locator;
+- History listing, summary, permanent exact Version materialization, and compensating restore;
 - change subscriptions followed by re-query;
 - opaque lossless serialization/opening;
 - separate durable and ephemeral state; and
-- no frontend dependency on snapshots, CRDT logs, a single parent, or a global
-  revision order.
+- no frontend dependency on snapshots, CRDT logs, replacement-register internals, a single parent, or a global revision order.
 
 The private MVP implementation may still use one head and one parent per
 private Version record. Complete snapshots are limited to tests and identified
@@ -557,27 +620,18 @@ Contract tests and types keep all of these private.
 
 ## 14. Staged implementation path
 
-1. Qualify Yjs v13 against Automerge with the attributed-content, structural, and
-   Range-feasibility suites; record the winner at Gate B.
-2. Implement the selected collaborative core and retain the common suite as
-   regression evidence.
+1. Qualify Yjs v13 against Automerge with the Media-Type-labelled-payload, attributed-text, structural, and text Range-feasibility suites; record the winner, the observable deterministic whole-replacement winner rule, and its private implementation at Gate B.
+2. Implement the selected collaborative core and retain the common suite as regression evidence.
 3. Establish local History and permanent exact Version materialization.
-4. Implement the durable Range service and record its lineage representation at
-   Gate C.
-5. Complete and validate the remaining local-only MVP behind the engine and
-   repository boundaries.
-6. Replace chunk/checkpoint details behind those same contracts as measurements
-   require.
+4. Implement the durable allowlisted fine-grained text Range service and record its lineage representation at Gate C.
+5. Complete and validate the remaining local-only MVP behind the engine and repository boundaries.
+6. Replace chunk/checkpoint details behind those same contracts as measurements require.
 7. Build an in-process two-engine replication test bus before using a network.
-8. Replicate immutable Contributions, including checkpoint Contributions, Range
-   behavior, and carrier effects under duplication, delay, reordering, partition,
-   and reconnect.
-9. Prove that accepted structural and Range semantics remain correct when effects
-   travel through the causal Contribution envelope.
+8. Replicate immutable Contributions, including checkpoint Contributions, Media-Type-labelled payload replacement, text Range behavior, and carrier effects under duplication, delay, reordering, partition, and reconnect.
+9. Prove that accepted payload, structural, and Range semantics remain correct when effects travel through the causal Contribution envelope.
 10. Add an authenticated relay, durable catch-up, and visible sync status.
 11. Add the independent ephemeral presence channel.
-12. Add or tune checkpoints, deltas, structural sharing, Range evidence, and
-    compaction without changing frontend behavior.
+12. Add or tune checkpoints, deltas, structural sharing, text Range evidence, and compaction without changing frontend behavior.
 
 No network phase begins merely because carrier convergence works. The
 History/convergence, transport, authorization, restore, and structural gates must
@@ -589,28 +643,23 @@ pass together.
 - dependency buffering and catch-up after partition;
 - the same Contribution ID with a conflicting payload;
 - offline edits followed by reconnect;
-- equal Contribution sets produce the same graph, frontiers, collaborative
-  state, and every Version materialization;
-- identical rendering with different hidden CRDT state is detected as
-  insufficient;
-- atomic publication of a Contribution spanning structure and several
-  InlineContents;
-- concurrent insert, delete, formatting, Block move, and Block payload-update
-  operations;
+- equal Contribution sets produce the same graph, frontiers, Media-Type-labelled payload state, deterministic replacement winners, and every Version materialization;
+- identical rendering with different hidden carrier or replacement-register state is detected as insufficient;
+- concurrent whole-payload replacement of the same allowlisted fine-grained text and opaque payload, with a deterministic winner independent of delivery order and clocks;
+- a causally later whole-payload replacement supersedes observed replacements;
+- losing replacement Contributions remain materializable;
+- atomic publication of a Contribution spanning structure and several InlineContents of different Media Types;
+- concurrent text insert, delete, Block move, and Block payload-update operations;
 - semantic Block update versus delete keeps the updated Block alive;
-- collision normalization remains a private carrier effect of its structural
-  Contribution and converges under delayed/reordered delivery;
-- Origin never inherits or spoofs under concurrent insertion, copy, paste,
-  formatting clear, or restore;
-- durable Range creation order, lineage order, omission, exact text resolution,
-  and rationalization converge;
-- future Comment holders preserve comment-specific repair behavior without
-  redefining Range semantics;
-- restore concurrent with unseen work;
+- collision normalization remains a private carrier effect of its structural Contribution and converges under delayed/reordered delivery;
+- fine-grained text Origin never inherits or spoofs under concurrent insertion, copy, paste, or restore;
+- opaque-payload Origin remains exact through replacement, copy, restore, and convergence;
+- durable text Range creation order, lineage order, omission, exact text resolution, and rationalization converge;
+- future Comment holders preserve comment-specific repair behavior without redefining text Range semantics;
+- restore concurrent with unseen text work or whole-payload replacement;
 - concurrent checkpoints remain independently materializable and attributable;
 - unauthorized, revoked, malformed, and oversized remote records;
-- relay bootstrap/compaction preserves every Version, required Range lineage,
-  and semantic checkpoint Contribution; and
+- relay bootstrap/compaction preserves every Version, Origins, required text Range lineage, and semantic checkpoint Contribution; and
 - presence loss or reordering never changes durable state.
 
 ## 16. Explicitly unresolved decisions
@@ -618,18 +667,22 @@ pass together.
 - exact Contribution envelope, content hash, and signature scheme;
 - exact `VersionToken` representation;
 - remote authorization and offline revocation policy;
-- exact same-region and structural conflict representation/UX for causal restore;
-- physical History, Range-evidence, and CRDT tombstone compaction that preserves
-  every Version and required Range lineage;
-- checkpoint labels or other optional checkpoint metadata beyond ordinary
-  Contribution context;
+- exact same-region, same-payload, and structural conflict representation/UX for causal restore;
+- physical History, text Range-evidence, and carrier tombstone compaction that preserves every Version and required Range lineage;
+- checkpoint labels or other optional checkpoint metadata beyond ordinary Contribution context;
 - end-to-end encryption;
 - criteria and migration for any future sharding of the one logical collaborative document;
-- whether any workflow eventually requires a coordinated canonical sequence.
+- whether any workflow eventually requires a coordinated canonical sequence; and
+- collaboration semantics for future Media Types beyond the universal whole-payload replacement baseline.
 
-The flat Block carrier, command-to-placement mapping, semantic-update-over-delete
-preference, and exceptional collision-normalization policy are no longer
-unresolved replication choices. `STRUCTURAL_CARRIER_MODEL.md` owns those rules.
+The Media Type boundary, replacement-versus-replacement invariants, flat Block
+carrier, command-to-placement mapping, semantic-update-over-delete preference,
+and exceptional collision-normalization policy are accepted.
+`INLINE_CONTENT_PAYLOADS.md` and `STRUCTURAL_CARRIER_MODEL.md` own those rules.
+Gate B selects the observable replacement winner rule and its carrier-private
+implementation and closes the explicitly deferred mixed replacement/edit
+semantics; it does not reopen the accepted invariants. Gate C owns Range lineage.
+The pre-network gate owns transport and replicated restore overlap.
 
 ## 17. Technical references
 
@@ -655,9 +708,6 @@ unresolved replication choices. `STRUCTURAL_CARRIER_MODEL.md` owns those rules.
   [Hypothesis anchoring](https://github.com/hypothesis/client/blob/main/src/annotator/anchoring/html.ts)
   inform later comment attachment and repair design without defining Range
   resolution.
-- [Automerge rich text](https://automerge.org/docs/reference/documents/rich-text/)
+- [Automerge rich text](https://automerge.org/docs/reference/documents/text/)
   and [Loro movable trees](https://www.loro.dev/docs/tutorial/tree) inform the
   carrier and structural qualification gates.
-- [W3C PROV-DM](https://www.w3.org/TR/2013/REC-prov-dm-20130430/)
-  supplies the Entity/Activity/Agent and derivation distinctions used by Origin
-  and Contributions.

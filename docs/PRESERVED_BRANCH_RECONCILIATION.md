@@ -21,71 +21,86 @@ Use these classifications:
 
 ## 2. Reconciliation summary
 
-| Preserved decision or evidence                                          | Classification                     | Current treatment and authority                                                                                                                                                                                                                                                                                                       |
-| ----------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| One recursive structural tree with stable identities                    | adapted                            | Retained as the recursive `Block` tree; current vocabulary and invariants are in `PRODUCT_DOMAIN_MODEL.md`.                                                                                                                                                                                                                           |
-| Separate `BlockContent` identity wrapping `InlineContent`               | superseded                         | `InlineContent` now owns stable content identity and tags directly. `PRODUCT_DOMAIN_MODEL.md` is authoritative.                                                                                                                                                                                                                       |
-| Title/body `DocumentNode` ontology                                      | superseded                         | Structural context determines title, heading, body, and list-item presentation. `PRODUCT_DOMAIN_MODEL.md` controls.                                                                                                                                                                                                                   |
-| Tauri/Rust/SQLite as current runtime/storage                            | deferred                           | They are not MVP requirements. Reconsider only after measured evidence in the final MVP assessment step.                                                                                                                                                                                                                              |
-| `.coedit` as the public document extension                              | retained                           | The clean-slate portable artifact uses `.coedit`. `PORTABLE_DOCUMENT_FORMAT.md` controls the new format; preserved SQLite bytes are not compatible.                                                                                                                                                                                   |
-| Append-only permanent History and compensating restore                  | retained                           | Every Version remains exactly materializable for the document lifetime. Physical snapshots are private optimizations. `PRODUCT_DOMAIN_MODEL.md`, `MVP_ARCHITECTURE.md`, and `MVP_IMPLEMENTATION_SPEC.md` control.                                                                                                                     |
-| Historical viewing is a non-mutating query                              | retained                           | Current architecture requires exact detached read-only materialization. `MVP_ARCHITECTURE.md` controls.                                                                                                                                                                                                                               |
-| Semantic text edit groups with prompt durable commands                  | adapted                            | Preserve human-readable grouping and controlled transitions, but use immutable Contributions as the crash journal. Several Contributions can share a semantic group ID for presentation. `MVP_IMPLEMENTATION_SPEC.md`, `BROWSER_PERSISTENCE.md`, and `MVP_VERIFICATION_PLAN.md` control.                                              |
-| 20-grapheme insertion threshold                                         | superseded                         | Retained only as experimental tuning/test evidence. Character/time thresholds are measured UX policy, not durable semantics.                                                                                                                                                                                                          |
-| 30-second idle seal                                                     | superseded                         | Retained only as experimental tuning/test evidence. Idle still seals a semantic group; the constant is not canonical.                                                                                                                                                                                                                 |
-| Two detached pending body checkpoints high-water mark                   | superseded                         | The exact retry/FIFO lesson remains, but normal durability is incremental and must not block typing merely because two complete artifact writes are pending.                                                                                                                                                                          |
-| Atomic IME/paste/cut/format/undo/redo edit boundaries                   | retained                           | Retained in current edit-group behavior and verification.                                                                                                                                                                                                                                                                             |
-| Controlled transition freeze/flush/drain before editor invalidation     | retained                           | Retained. `MVP_ARCHITECTURE.md` owns the UX/engine boundary; implementation and tests are in the MVP implementation and verification specs.                                                                                                                                                                                           |
-| Exact retry of failed queued editor persistence work                    | adapted                            | Retain the exact detached command, effect data, and idempotency identity needed for repository retry; do not retain the old whole-body capture queue as an architectural boundary.                                                                                                                                                    |
-| Formatting and provenance share a generic external range abstraction    | superseded                         | Formatting is intrinsic carrier metadata and Origin provenance is protected content-native metadata. Internal links and future comments can use the shared Range value without making it a formatting/provenance annotation or entity. `PRODUCT_DOMAIN_MODEL.md`, `RANGE_MODEL.md`, and `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` control. |
-| Formatting and provenance have different mutation/inheritance semantics | adapted                            | Preserved as distinct intrinsic semantics: formatting follows explicit boundary policies, while Origin never inherits and cannot be cleared by formatting.                                                                                                                                                                            |
-| Yjs relative positions as a plausible `TextAnchor` implementation       | adapted                            | Retained as one carrier-position primitive for Step 3 Range feasibility. It is not the public Range API or an accepted lineage representation. Formatting and Origin need no external anchor.                                                                                                                                         |
-| Formatting persisted as ProseMirror/Yjs marks                           | adapted                            | Native carrier marks are now the canonical formatting representation. ProseMirror remains an adapter, and the recursive Block tree remains outside it.                                                                                                                                                                                |
-| `collaborativeStateEquivalent` based on Yjs CRDT internals/delete sets  | adapted                            | Carrier-specific equivalence is required in the common conformance suite, but it remains private and includes formatting, Origin, Range-position, and historical behavior rather than defining public domain equality.                                                                                                                |
-| Markdown import through structured parsing rather than regex            | retained                           | `MARKDOWN_INTERCHANGE.md` controls.                                                                                                                                                                                                                                                                                                   |
-| Markdown is not the native recovery format                              | retained                           | `.coedit` is lossless recovery; Markdown is interchange.                                                                                                                                                                                                                                                                              |
-| Current Markdown import grouping for body plus subsections              | adapted                            | Retained as the canonical Markdown-representable Coedit structure. Export must invert it. `MARKDOWN_INTERCHANGE.md` controls.                                                                                                                                                                                                         |
-| Markdown export can be lossy                                            | adapted                            | Arbitrary Coedit structures can still be non-representable, but every successfully imported Markdown document must satisfy the exact normalized Coedit round-trip invariant after export/re-import.                                                                                                                                   |
-| Human Contributor exists at document bootstrap                          | adapted                            | MVP UX asks for a free-form human display name before session creation. No account/profile design is required. `MVP_IMPLEMENTATION_SPEC.md` controls.                                                                                                                                                                                 |
-| Imported Contributor identity                                           | adapted                            | Imported/unknown Origin identifies source material. The import Contribution identifies the human/system actor that performed the import; a source file is not impersonated as actor.                                                                                                                                                  |
-| Post-genesis Contributor registration for AI/automation                 | deferred                           | Not needed for strict MVP. Design with AI/provenance work later.                                                                                                                                                                                                                                                                      |
-| Production provenance, comments, and durable discussions                | adapted/deferred                   | Minimum protected Origin and lineage invariants are MVP foundation. Provenance UI/analytics/authentication/signing, comments, and discussions remain later phases.                                                                                                                                                                    |
-| Full snapshot per revision                                              | adapted for bounded prototype only | Allowed for in-memory/early fixtures. The browser target is immutable effects plus periodic recovery checkpoints and a CAS head.                                                                                                                                                                                                      |
-| Query-first History projection and grouped human-readable History       | retained/adapted                   | Non-mutating queries and semantic edit-group presentation remain; physical rows are never rewritten by grouping.                                                                                                                                                                                                                      |
-| Native shell or SQL adoption because preserved branch used them         | superseded                         | Infrastructure requires measured justification. The preserved implementation is evidence only.                                                                                                                                                                                                                                        |
-| One Y.Doc per InlineContent                                             | superseded                         | The default is one logical collaborative document per Coedit document for atomic structure-plus-content operations. Sharding requires measurement.                                                                                                                                                                                    |
-| Whole `.coedit` artifact as the normal IndexedDB autosave unit          | superseded                         | `.coedit` is explicit portable recovery. Browser durability uses the incremental engine repository in `BROWSER_PERSISTENCE.md`.                                                                                                                                                                                                       |
-| Yjs as an unqualified permanent carrier                                 | adapted                            | Stable Yjs v13 is provisional and must pass the common gate against Automerge before carrier bytes are frozen.                                                                                                                                                                                                                        |
+- **One recursive structural tree with stable identities — adapted.** Retained as the recursive `Block` tree; current vocabulary and invariants are in `PRODUCT_DOMAIN_MODEL.md`.
+- **Separate `BlockContent` identity wrapping `InlineContent` — superseded.** `InlineContent` now owns stable content identity and tags directly. `PRODUCT_DOMAIN_MODEL.md` is authoritative.
+- **InlineContent as universally text content — superseded.** `InlineContent` now owns one Media-Type-labelled payload. The initial capabilities are allowlisted fine-grained text editing and generic opaque handling. Every Media Type supports whole-payload replacement; only allowlisted fine-grained text initially has fine-grained editing. `INLINE_CONTENT_PAYLOADS.md` controls.
+- **Title/body `DocumentNode` ontology — superseded.** Structural context determines title, heading, body, and list-item presentation. `PRODUCT_DOMAIN_MODEL.md` controls.
+- **Structural/content boundaries imply textual layout — superseded.** Block and InlineContent boundaries are structural and insert no character or separator. Application and interchange adapters own presentation. `PRODUCT_DOMAIN_MODEL.md` and `INLINE_CONTENT_PAYLOADS.md` control.
+- **Tauri/Rust/SQLite as current runtime/storage — deferred.** They are not MVP requirements. Reconsider only after measured evidence in the final MVP assessment step.
+- **`.coedit` as the public document extension — retained.** The clean-slate portable artifact uses `.coedit`. `PORTABLE_DOCUMENT_FORMAT.md` controls the new format; preserved SQLite bytes are not compatible.
+- **Append-only permanent History and compensating restore — retained.** Every Version remains exactly materializable for the document lifetime. Physical snapshots are private optimizations. `PRODUCT_DOMAIN_MODEL.md`, `MVP_ARCHITECTURE.md`, and `MVP_IMPLEMENTATION_SPEC.md` control.
+- **Historical viewing is a non-mutating query — retained.** Current architecture requires exact detached read-only materialization. `MVP_ARCHITECTURE.md` controls.
+- **Semantic text edit groups with prompt durable commands — adapted.** Preserve human-readable grouping and controlled transitions, but use immutable Contributions as the crash journal. Several Contributions can share a semantic group ID for presentation. `MVP_IMPLEMENTATION_SPEC.md`, `BROWSER_PERSISTENCE.md`, and `MVP_VERIFICATION_PLAN.md` control.
+- **20-grapheme insertion threshold — superseded.** Retained only as experimental tuning/test evidence. Character/time thresholds are measured UX policy, not durable semantics.
+- **30-second idle seal — superseded.** Retained only as experimental tuning/test evidence. Idle still seals a semantic group; the constant is not canonical.
+- **Two detached pending body checkpoints high-water mark — superseded.** The exact retry/FIFO lesson remains, but normal durability is incremental and must not block typing merely because two complete artifact writes are pending.
+- **Atomic IME/paste/cut/format/undo/redo edit boundaries — retained.** Retain atomic editor-action boundaries. Formatting actions are application/editor intent that compile to source-string or structural operations; they are not engine-owned marks.
+- **Controlled transition freeze/flush/drain before editor invalidation — retained.** `MVP_ARCHITECTURE.md` owns the UX/engine boundary; implementation and tests are in the MVP implementation and verification specs.
+- **Exact retry of failed queued editor persistence work — adapted.** Retain the exact detached command, effect data, and idempotency identity needed for repository retry; do not retain the old whole-body capture queue as an architectural boundary.
+- **Formatting and provenance share a generic external range abstraction — superseded.** Both parts of the old shared mechanism are gone. Formatting and link syntax are application/source-text concerns. Fine-grained Origin is protected content-native metadata. Generic opaque payloads have payload-level Origin. Comments, navigation, and application links can use the shared allowlisted fine-grained text Range value without making it a universal formatting/provenance annotation or entity. `PRODUCT_DOMAIN_MODEL.md`, `INLINE_CONTENT_PAYLOADS.md`, `RANGE_MODEL.md`, and `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` control.
+- **Formatting and provenance have different mutation/inheritance semantics — adapted.** The separation lesson remains, but the mechanisms are now clearer: application formatting changes source text or structure, while fine-grained Origin is protected engine metadata that never inherits from neighboring text. Generic opaque Origin is whole-payload.
+- **Yjs relative positions as a plausible `TextAnchor` implementation — adapted.** Retained as one carrier-position primitive for Step 3 allowlisted fine-grained text Range feasibility. It is not the public Range API or an accepted lineage representation. Application formatting needs no engine anchor; fine-grained Origin is content-native.
+- **Formatting persisted as ProseMirror/Yjs marks — superseded.** Do not carry native carrier marks forward as canonical formatting. Markdown formatting/link syntax remains source text, and other presentation meaning belongs to application adapters. ProseMirror can still be an editor adapter without becoming document authority.
+- **`collaborativeStateEquivalent` based on Yjs CRDT internals/delete sets — adapted.** Carrier-specific equivalence is required in the common conformance suite, but it remains private and now includes Media Types, the qualified deterministic replacement-register state, fine-grained source text/Origin/Range-position behavior, opaque payload bytes/Origin, and historical behavior rather than defining public domain equality.
+- **Markdown import through structured parsing rather than regex — retained.** `MARKDOWN_INTERCHANGE.md` controls.
+- **Markdown is not the native recovery format — retained.** `.coedit` is lossless recovery; Markdown is interchange for the current textual subset.
+- **Current Markdown import grouping for body plus subsections — adapted.** Retained as the canonical Markdown-representable Coedit structure. Export must invert it. Structural boundaries add no text characters. `MARKDOWN_INTERCHANGE.md` controls.
+- **Markdown export can be lossy — adapted.** Arbitrary Coedit structures and Media Types can be non-representable, but every successfully imported Markdown document must satisfy the exact normalized allowlisted fine-grained text round-trip invariant after export/re-import.
+- **Human Contributor exists at document bootstrap — adapted.** MVP UX asks for a free-form human display name before session creation. No account/profile design is required. `MVP_IMPLEMENTATION_SPEC.md` controls.
+- **Imported Contributor identity — adapted.** Imported/unknown Origin identifies source material. The import Contribution identifies the human/system actor that performed the import; a source file is not impersonated as actor.
+- **Post-genesis Contributor registration for AI/automation — deferred.** Not needed for strict MVP. Design with AI/provenance work later.
+- **Production provenance, comments, and durable discussions — adapted/deferred.** Minimum payload-specific Origin and text Range lineage invariants are MVP foundation. Provenance UI/analytics/authentication/signing, comments, and discussions remain later phases.
+- **Full snapshot per revision — adapted for bounded prototype only.** Allowed for in-memory/early fixtures. The browser target is immutable effects plus periodic recovery checkpoints and a CAS head.
+- **Query-first History projection and grouped human-readable History — retained/adapted.** Non-mutating queries and semantic edit-group presentation remain; physical rows are never rewritten by grouping.
+- **Native shell or SQL adoption because preserved branch used them — superseded.** Infrastructure requires measured justification. The preserved implementation is evidence only.
+- **One Y.Doc per InlineContent — superseded.** The default is one logical collaborative document per Coedit document for atomic structure-plus-content operations across mixed Media Types. Sharding requires measurement.
+- **Whole `.coedit` artifact as the normal IndexedDB autosave unit — superseded.** `.coedit` is explicit portable recovery. Browser durability uses the incremental engine repository in `BROWSER_PERSISTENCE.md`.
+- **Yjs as an unqualified permanent carrier — adapted.** Stable Yjs v13 is provisional and must pass the common gate against Automerge before carrier bytes are frozen.
 
-## 3. Closed blocker and current qualification gates
+## 3. Closed blockers and current qualification gates
 
-The former `TextAnchor` blocker is closed. The state-of-the-art review showed
-that one generic external annotation incorrectly combined three different concerns:
+The former `TextAnchor` blocker is closed. The current design separates concerns
+that the earlier generic annotation combined incorrectly:
 
-- formatting is intrinsic carrier-native rich-text metadata;
-- Origin provenance is protected, non-inheriting content metadata; and
-- durable target holders use the Range value and engine service without making
-  Range a formatting or provenance entity.
+- formatting and link meaning are application concerns represented by source text
+  and/or structural operations rather than canonical engine marks;
+- fine-grained allowlisted text Origin is protected, non-inheriting content metadata;
+- opaque payloads use payload-level Origin rather than text-like spans; and
+- durable text target holders use the allowlisted fine-grained text Range value and engine service without making Range a universal formatting, provenance, or opaque-payload entity.
 
 Ordinary selection remains transient. No concrete anchor is therefore required
 before the browser scaffold or pure Block domain begins.
 
+The later Media-Type-labelled-payload correction also closes the accidental assumption that all
+InlineContent is rich text. `INLINE_CONTENT_PAYLOADS.md` defines allowlisted fine-grained text
+and opaque payload, makes whole-payload replacement universal, and requires deterministic
+replicated convergence for concurrent replacements. ADR 0010 preserves that
+rationale. The completed Step 2 structural domain remains valid because it treats
+`InlineContentValue` as opaque.
+
 Step 3 carrier qualification remains behind Gate B. Pinned stable Yjs v13 and
-Automerge must run the same formatting, Origin, copy/paste/restore, structural,
-Range-feasibility, concurrency, atomicity, editor, portable, and growth suite.
-Yjs is the provisional winner on integration maturity; Automerge replaces it
-only if it passes and materially removes custom machinery.
+Automerge must run the same Media-Type-labelled-payload, replacement, native-text,
+Origin, copy/paste/restore, structural, text Range-feasibility, concurrency,
+atomicity, editor, portable, and growth suite. Application/editor formatting and
+link actions are tested as source-string or structural translations, not as a
+canonical carrier mark model. Yjs is the provisional winner on integration
+maturity; Automerge replaces it only if it passes and materially removes custom
+machinery. Gate B records the observable deterministic replacement winner rule
+and the carrier-private representation that implements it.
 
 The selected carrier is implemented in Step 4. Step 5 then establishes permanent
-exact History and Version materialization. Step 6 implements the durable Range
-service and Gate C selects its lineage representation. Do not freeze
-carrier-specific or embedded Range `.coedit` version-1 bytes before both gates
-pass.
+exact History and Version materialization. Step 6 implements the durable
+allowlisted fine-grained text Range service and Gate C selects its lineage
+representation. Do not freeze carrier-specific or portable Range `.coedit`
+version-1 bytes before both gates pass.
 
-These gates and their evidence are owned by `RANGE_MODEL.md`,
-`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `MVP_VERIFICATION_PLAN.md`, and
-`SCAFFOLDING_PLAN.md`. They are bounded implementation decisions and do not
-reopen the completed Steps 1 and 2.
+Gate B also closes mixed replacement/text-edit semantics under the payload
+contract before Step 4; no specific mixed-operation winner is accepted yet.
+
+These gates and their evidence are owned by `INLINE_CONTENT_PAYLOADS.md`,
+`RANGE_MODEL.md`, `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`,
+`MVP_VERIFICATION_PLAN.md`, and `SCAFFOLDING_PLAN.md`. They include the explicitly
+deferred mixed-operation decision and do not reopen the completed Steps 1 and 2.
 
 ## 4. Selective implementation reuse
 
@@ -93,31 +108,26 @@ The preserved branch can provide implementation or test evidence after current a
 
 ### 4.1 Copy or adapt narrowly
 
-| Preserved path                                     | Reuse intent                                                                                                                         |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `src/domain/ids.ts`                                | Stable ID generation patterns after current branded-ID review.                                                                       |
-| `src/domain/json.ts`                               | Generic JSON cloning/comparison helpers where still appropriate.                                                                     |
-| `src/domain/tags.ts` and tests                     | Tag normalization and case-insensitive identity.                                                                                     |
-| `src/editor/sanitizeRichText.ts` and tests         | Hostile rich-text/paste cases; adapt to native marks, protected Origin, private fragments, and the DOM/clipboard sanitizer boundary. |
-| `src/editor/yjsEncoding.ts`                        | Binary/base64 utility evidence only.                                                                                                 |
-| `src/application/serializedTaskQueue.ts` and tests | Serialized local mutation behavior if still useful.                                                                                  |
-| `LICENSE`                                          | Project license.                                                                                                                     |
-| `THIRD_PARTY_NOTICES.md`                           | Starting notice inventory; update for actual dependencies.                                                                           |
+- **`src/domain/ids.ts`:** Stable ID generation patterns after current branded-ID review.
+- **`src/domain/json.ts`:** Generic JSON cloning/comparison helpers where still appropriate.
+- **`src/domain/tags.ts` and tests:** Tag normalization and case-insensitive identity.
+- **`src/editor/yjsEncoding.ts`:** Binary/base64 utility evidence only.
+- **`src/application/serializedTaskQueue.ts` and tests:** Serialized local mutation behavior if still useful.
+- **`LICENSE`:** Project license.
+- **`THIRD_PARTY_NOTICES.md`:** Starting notice inventory; update for actual dependencies.
 
 ### 4.2 Port behavior and tests, not obsolete structure
 
-| Preserved path                                     | Preserve                                                                                                                                                |
-| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/domain/tree.ts` and tests                     | Move, order, cycle, and deletion invariants.                                                                                                            |
-| `src/domain/visibleNodes.ts` and tests             | Deterministic visible-tree projection behavior.                                                                                                         |
-| `src/persistence/memoryGateway.ts` and tests       | Atomic commit, detached History, and compensating restore lessons.                                                                                      |
-| `src/application/workspaceProjection.ts` and tests | Explicit live versus historical state.                                                                                                                  |
-| `src/application/draftTransition.ts` and tests     | Freeze, flush, retry, and controlled-transition behavior.                                                                                               |
-| `src/editor/bodyCheckpointPolicy.ts`               | Evidence for measured edit-group tuning only; do not port the constants as architecture.                                                                |
-| `src/editor/BodyEditBatchCoordinator.ts` and tests | Preserve semantic grouping, FIFO, controlled transition, atomic edit, failure, and retry cases; replace the full-artifact/two-item backpressure policy. |
-| `src/editor/bodyEditTransaction.ts` and tests      | Grapheme-aware input classification and atomic edit boundaries.                                                                                         |
-| `src/application/historyProjection.ts` and tests   | Grouped History presentation without ledger rewriting.                                                                                                  |
-| editor ownership and canvas interaction tests      | Single-editor, focus, and keyboard behavior.                                                                                                            |
+- **`src/domain/tree.ts` and tests:** Move, order, cycle, and deletion invariants.
+- **`src/domain/visibleNodes.ts` and tests:** Deterministic visible-tree projection behavior.
+- **`src/persistence/memoryGateway.ts` and tests:** Atomic commit, detached History, and compensating restore lessons.
+- **`src/application/workspaceProjection.ts` and tests:** Explicit live versus historical state.
+- **`src/application/draftTransition.ts` and tests:** Freeze, flush, retry, and controlled-transition behavior.
+- **`src/editor/bodyCheckpointPolicy.ts`:** Evidence for measured edit-group tuning only; do not port the constants as architecture.
+- **`src/editor/BodyEditBatchCoordinator.ts` and tests:** Preserve semantic grouping, FIFO, controlled transition, atomic edit, failure, and retry cases; replace the full-artifact/two-item backpressure policy.
+- **`src/editor/bodyEditTransaction.ts` and tests:** Grapheme-aware allowlisted fine-grained text input classification and atomic edit boundaries.
+- **`src/application/historyProjection.ts` and tests:** Grouped History presentation without ledger rewriting.
+- **Editor ownership and canvas interaction tests:** Single-allowlisted fine-grained text-editor, focus, and keyboard behavior.
 
 Rewrite preserved tests in current vocabulary. Do not introduce obsolete product types only to make old tests compile.
 
@@ -125,10 +135,10 @@ Rewrite preserved tests in current vocabulary. Do not introduce obsolete product
 
 Useful historical documents include:
 
-- `docs/PRODUCT_DOMAIN_MODEL.md` for historical product rationale and the superseded range-annotation direction;
+- `docs/PRODUCT_DOMAIN_MODEL.md` for historical product rationale and the superseded range-annotation/text-only direction;
 - `docs/DOCUMENT_FORMAT.md` for History, restore, `.coedit`, and corruption lessons;
 - `docs/PERSISTENCE_DESIGN.md` for atomicity and storage-boundary lessons;
-- `docs/SECURITY.md` for untrusted file/rich-text risks;
+- `docs/SECURITY.md` for untrusted file/text risks;
 - `docs/TESTING.md` for data-loss and recovery cases;
 - `docs/KNOWN_LIMITATIONS.md` for failure modes;
 - `docs/proposals/BODY_CHECKPOINT_STRATEGY.md` for the implemented semantic text-group strategy;
@@ -143,6 +153,9 @@ Do not copy these preserved assumptions into the clean scaffold unless a current
 
 - `DocumentNode` title/body ontology;
 - separate current `BlockContent` entity;
+- one universal text InlineContent payload;
+- a document-level hard-break content item or implicit textual separators at structural boundaries;
+- engine-owned formatting marks or typed internal-link state;
 - Tauri gateways and host-capability abstractions;
 - Rust domain duplication;
 - SQLite schema;

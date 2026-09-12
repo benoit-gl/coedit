@@ -1,12 +1,14 @@
 # ADR 0004 — Intrinsic link targets
 
-**Status:** Accepted
+**Status:** Superseded in part by ADR 0010; retained as historical rationale
 
 **Date:** 2026-08-31
 
-**Amended:** 2026-09-03
+**Amended:** 2026-09-10
 
-**Authority:** [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) controls detailed link-holder behavior. [`../RANGE_MODEL.md`](../RANGE_MODEL.md) controls Range behavior. [`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md) controls product ontology.
+**Superseded by:** [`0010-typed-inline-content-payloads.md`](0010-typed-inline-content-payloads.md) supersedes the engine-owned formatting-mark and typed internal-link representation described below. Formatting, Markdown/link syntax, link interpretation, and holder-specific fallback are now application concerns. `RANGE_MODEL.md` still owns the reusable durable text Range value and service.
+
+**Authority:** Current normative behavior is in [`../INLINE_CONTENT_PAYLOADS.md`](../INLINE_CONTENT_PAYLOADS.md), [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), [`../RANGE_MODEL.md`](../RANGE_MODEL.md), and [`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md). The historical Decision and Consequences below must not be used to reintroduce an engine-owned link or formatting model.
 
 ## Context
 
