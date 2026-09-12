@@ -57,9 +57,9 @@ The Step 0 gate requires:
 
 The documented baseline closes the former `TextAnchor` blocker by assigning payload-neutral InlineContent ownership, protected fine-grained text Origin, opaque-payload Origin, durable text Range values, Range-holder lifecycles, application-owned formatting/link interpretation, and transient selections to distinct mechanisms. A mechanical scan must find no normative external formatting/provenance Range, engine-owned formatting/link state, universal hard-break content-item requirement, implicit Block/InlineContent text separator, or single-InlineContent durable-target assumption outside an explicitly superseded historical statement.
 
-The Media-Type-labelled-payload decision and Range authority revalidate the Step 0 authority baseline without reopening completed structural semantics in Steps 1 and 2. Gate B selects the collaborative carrier, records the required carrier text-domain behavior, and closes the observable concurrent-replacement winner rule, its private implementation, and mixed replacement/text-edit semantics. Step 4 selects and qualifies the first production raw-media processor capability. Gate C selects the text Range representation after Step 6 and before `.coedit` version 1 freezes a portable Range encoding.
+The Media-Type-labelled-payload decision and Range authority revalidate the Step 0 authority baseline without reopening completed structural semantics in Steps 1 and 2. Gate B selects the collaborative carrier, records the required carrier text-domain behavior, closes the observable concurrent-replacement winner rule, its private implementation, mixed replacement/text-edit semantics, and payload/carrier resource-admission behavior. Step 4 selects and qualifies the first production raw-media processor capability. Gate C selects the text Range representation after Step 6 and before `.coedit` version 1 freezes a portable Range encoding.
 
-The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `INLINE_CONTENT_PAYLOADS.md`, `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, the observable deterministic whole-payload replacement winner rule and the carrier-private mechanism that implements it, mixed replacement/text-edit semantics, carrier text-domain evidence, evidence that raw/coarse media conversion is independent of carrier selection, the actual qualification hardware/software environment, measurements, scaling behavior, and the selection rationale. It does not select the production raw-media processor or supported representation profiles. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
+The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `INLINE_CONTENT_PAYLOADS.md`, `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, the observable deterministic whole-payload replacement winner rule and the carrier-private mechanism that implements it, mixed replacement/text-edit semantics, carrier text-domain evidence, payload/carrier resource-admission evidence and decision, evidence that raw/coarse media conversion is independent of carrier selection, the actual qualification hardware/software environment, measurements, scaling behavior, and the selection rationale. The resource-admission decision can use an adaptive host/runtime-dependent mechanism or record that no additional explicit finite guard is needed when safe atomic failure is demonstrated. It does not select the production raw-media processor or supported representation profiles. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
 
 ### 4.1 Step 1 tooling and platform evidence
 
@@ -122,7 +122,7 @@ Verify at least:
 - completed Step 2 creates InlineContents only with the typed, opaque, valid empty `InlineContentValue` and never with partially valid attributed text;
 - structural operations never inspect `InlineContentValue` internals;
 - evolving the opaque Step 2 value to Media-Type-labelled payloads in Step 4 does not change structural ownership or ordering semantics;
-- every materialized Step 4 InlineContent has exactly one supported Media Type;
+- every materialized Step 4 InlineContent has exactly one caller-supplied valid Media Type and the engine supplies no default Media Type;
 - Block and InlineContent boundaries imply no stored text character or separator;
 - cycles are rejected;
 - vector order is exact;
@@ -145,6 +145,7 @@ then retain it as a production regression suite for the winner.
 Verify:
 
 - each materialized InlineContent carries a syntactically valid Media Type; allowlisted fine-grained text selects the fine-grained text capability set and valid unfamiliar types select generic opaque handling;
+- creation and whole-payload replacement require an explicit Media Type, the engine does not infer or default it, and `application/octet-stream` is used only when an application deliberately supplies it;
 - malformed generic Media Type syntax, a valid unfamiliar Media Type, and an allowlisted Media Type whose raw representation is unsupported by the selected processor are distinct cases;
 - case variants and parameters give consistent type/subtype capability matching without a registry lookup while the complete supplied Media Type survives unchanged;
 - Step 3 uses representative test codec fixtures to prove exact supported conversion, explicit unsupported-profile failure, invalid-input failure, and exact-representation failure independently of carrier selection without selecting the production processor/profile set;
@@ -157,7 +158,8 @@ Verify:
 - no separate Media Type conversion operation is required; type change occurs only as part of atomic whole-payload replacement;
 - whole-payload replacement is available for every supported Media Type and can keep or change the Media Type;
 - a replacement publishes its complete Media Type, Media-Type-specific content, and required Origin effect atomically;
-- malformed replacement, unsupported raw-media profile, decode/encode failure, or a selected resource-guard failure leaves the base unchanged;
+- malformed replacement, unsupported raw-media profile, decode/encode failure, resource-admission refusal, or a selected resource-guard failure leaves the base unchanged;
+- Step 3 characterizes fine-grained editing, whole-payload replacement, and representative opaque-payload resource behavior and records the admission/failure seam without treating a fixture size as a semantic or fixed implementation maximum;
 - detached opaque payload bytes and caller-owned replacement buffers cannot mutate engine state after submission;
 - opaque payload bytes round trip exactly and the current opaque payload value has one payload-level Origin;
 - moving an opaque InlineContent preserves bytes and Origin;
@@ -432,7 +434,7 @@ Markdown A -> Coedit X -> Markdown B -> Coedit Y
 
 Verify `X` and `Y` with the documented Markdown equivalence relation.
 
-The suite must prove the adapter-specific distinction between Markdown syntax and generic text semantics. Recognized structural syntax is consumed into Blocks and can be emitted with deterministic structural spelling. Unconsumed inline Markdown remains canonical source text. In particular, alternative emphasis/strong delimiters, inline-code and link spelling, and distinct CommonMark soft/hard line-break spellings must remain literal payload source and survive export/re-import unchanged unless `MARKDOWN_INTERCHANGE.md` explicitly defines a normalization. No line-break spelling creates a document-level hard-break item or an implicit Block/InlineContent separator.
+The suite must prove the adapter-specific distinction between Markdown syntax and generic text semantics. Recognized structural syntax is consumed into Blocks and can be emitted with deterministic structural spelling. Structural container prefixes, including required continuation indentation, can be consumed line by line when they exist only to establish the recognized structure; the importer must not otherwise trim or dedent payload whitespace. Multi-line list-item paragraphs remain one textual payload when the parsed Markdown paragraph remains one node. Unconsumed inline Markdown remains canonical source text. In particular, alternative emphasis/strong delimiters, inline-code and link spelling, and distinct CommonMark soft/hard line-break spellings must remain literal payload source and survive export/re-import unchanged unless `MARKDOWN_INTERCHANGE.md` explicitly defines a normalization. No line-break spelling creates a document-level hard-break item or an implicit Block/InlineContent separator.
 
 Every imported textual InlineContent must use the exact initial Media Type `text/markdown; charset=UTF-8`. The import path decodes source as UTF-8 under the focused interchange contract and does not exercise arbitrary charset conversion. Invalid UTF-8 source is an interchange-input failure; this does not add a general Unicode well-formedness validator to ordinary fine-grained editing.
 
