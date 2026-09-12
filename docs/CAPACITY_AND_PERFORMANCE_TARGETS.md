@@ -11,8 +11,8 @@ candidate becomes an enforceable contract.
 
 Numeric implementation choices must not become document semantics only because
 one implementation needs finite resources. `MVP_ARCHITECTURE.md` controls the
-semantic boundary. `INLINE_CONTENT_PAYLOADS.md` owns payload-level carrier and
-replacement guard selection. This document controls the cross-cutting
+semantic boundary. `INLINE_CONTENT_PAYLOADS.md` owns payload/carrier
+resource-admission qualification. This document controls the cross-cutting
 classification, maturity, ownership, verification, and promotion rules below.
 [ADR 0008](decisions/0008-capacity-contract-maturity.md) records why the
 maturity model was adopted and preserves the earlier planning values.
@@ -61,6 +61,13 @@ at the implementation boundary and return a capacity/resource failure without
 partial publication. A payload replacement that exceeds an implementation guard
 must leave the previous payload unchanged.
 
+Resource admission can depend on the current host, runtime, carrier, operation,
+and available implementation evidence. A fixed document-wide payload-size limit
+is not required merely because one environment cannot process the same workload
+as another. Qualification can select an adaptive admission mechanism or record
+that no additional explicit guard is needed when normal runtime behavior already
+provides safe atomic failure.
+
 ### 3.3 Hostile-input resource guard
 
 External parsers, decoders, importers, clipboard readers, payload readers, and
@@ -99,6 +106,10 @@ An accepted invariant can require a future guard without selecting its numeric
 value. For example, "hostile portable input must be bounded" is accepted while
 the exact decoder bounds remain pending or experimental.
 
+A pending selection can also conclude that no explicit finite guard is required.
+That conclusion must be based on qualification evidence and must identify the
+safe failure seam that the implementation relies on.
+
 A direct authority that states a pending, experimental, or frozen number must
 identify:
 
@@ -116,19 +127,19 @@ interoperability rules.
 Keep each current number in one direct authority. Other documents state the
 required behavior and refer to that owner without copying the value.
 
-| Concern                                                        | Direct owner                         | Current maturity                              | Selection or promotion gate               |
-| -------------------------------------------------------------- | ------------------------------------ | --------------------------------------------- | ----------------------------------------- |
-| Step 2 structural and tag capacity behavior                    | `MVP_IMPLEMENTATION_SPEC.md`         | Accepted invariant: no finite semantic cap    | Revisit only from implementation evidence |
-| Contributor scalar behavior                                    | `MVP_IMPLEMENTATION_SPEC.md`         | Accepted invariant; boundary guard pending    | Relevant UI, codec, or storage step       |
-| Payload/carrier replacement and opaque-payload resource guards | `INLINE_CONTENT_PAYLOADS.md`         | Pending selection                             | Step 3 carrier qualification / Gate B     |
-| Private text-clipboard resource guards                         | `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` | Pending selection                             | Step 3 carrier qualification              |
-| Shared carrier performance workloads and targets               | `MVP_VERIFICATION_PLAN.md`           | Experimental targets                          | Step 3 carrier qualification              |
-| Range serialization and resolution resource guards             | `RANGE_MODEL.md`                     | Pending selection                             | Step 6 Range implementation / Gate C      |
-| Markdown hostile-input guards                                  | `MARKDOWN_INTERCHANGE.md`            | Experimental candidates; selection pending    | Step 7                                    |
-| `.coedit` hostile-input and codec guards                       | `PORTABLE_DOCUMENT_FORMAT.md`        | Experimental candidates; selection pending    | Step 8 and version-1 freeze               |
-| Browser recovery, quota, and storage thresholds                | `BROWSER_PERSISTENCE.md`             | Pending selection or experimental measurement | Steps 13-14                               |
-| Editor grouping and queue comparison fixtures                  | `MVP_IMPLEMENTATION_SPEC.md`         | Experimental targets                          | Step 11                                   |
-| Network replication capacity behavior                          | `COLLABORATION_MODEL.md`             | Pending selection                             | Post-MVP network-collaboration gate       |
+| Concern                                                   | Direct owner                         | Current maturity                              | Selection or promotion gate               |
+| --------------------------------------------------------- | ------------------------------------ | --------------------------------------------- | ----------------------------------------- |
+| Step 2 structural and tag capacity behavior               | `MVP_IMPLEMENTATION_SPEC.md`         | Accepted invariant: no finite semantic cap    | Revisit only from implementation evidence |
+| Contributor scalar behavior                               | `MVP_IMPLEMENTATION_SPEC.md`         | Accepted invariant; boundary guard pending    | Relevant UI, codec, or storage step       |
+| Payload/carrier resource-admission behavior               | `INLINE_CONTENT_PAYLOADS.md`         | Pending selection                             | Step 3 carrier qualification / Gate B     |
+| Private text-clipboard resource guards                    | `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` | Pending selection                             | Step 3 carrier qualification              |
+| Shared carrier performance workloads and targets          | `MVP_VERIFICATION_PLAN.md`           | Experimental targets                          | Step 3 carrier qualification              |
+| Range serialization and resolution resource guards        | `RANGE_MODEL.md`                     | Pending selection                             | Step 6 Range implementation / Gate C      |
+| Markdown hostile-input guards                             | `MARKDOWN_INTERCHANGE.md`            | Experimental candidates; selection pending    | Step 7                                    |
+| `.coedit` hostile-input and codec guards                  | `PORTABLE_DOCUMENT_FORMAT.md`        | Experimental candidates; selection pending    | Step 8 and version-1 freeze               |
+| Browser recovery, quota, and storage thresholds           | `BROWSER_PERSISTENCE.md`             | Pending selection or experimental measurement | Steps 13-14                               |
+| Editor grouping and queue comparison fixtures             | `MVP_IMPLEMENTATION_SPEC.md`         | Experimental targets                          | Step 11                                   |
+| Network replication capacity behavior                     | `COLLABORATION_MODEL.md`             | Pending selection                             | Post-MVP network-collaboration gate       |
 
 ADRs and explicit traceability records can reproduce an earlier value only to
 preserve non-normative history. The record must identify it as a former limit
@@ -146,7 +157,8 @@ For a pending selection:
 - record the threat, resource, or interoperability concern;
 - collect evidence at the owning implementation step; and
 - do not close that step until the selected behavior and verification seam are
-  documented.
+  documented, including an evidence-backed decision that no explicit guard is
+  required when that is the selected result.
 
 For an experimental target:
 
