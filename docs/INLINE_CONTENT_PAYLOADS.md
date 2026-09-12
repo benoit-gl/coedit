@@ -49,6 +49,13 @@ discriminator. The complete supplied value, including parameters, is durable
 metadata and is preserved exactly through ordinary storage, reload, copy,
 History, and portable serialization.
 
+Creation of a Media-Type-labelled InlineContent and every whole-payload
+replacement require an explicit valid Media Type from the caller. The document
+engine has no default Media Type and does not infer one from payload bytes or
+application context. An application that has opaque bytes but no more specific
+format information can deliberately supply `application/octet-stream`; that is
+application policy, not an engine fallback.
+
 Capability matching is separate from preservation. The implementation parses a
 valid Media Type and compares its case-normalized `type/subtype` identity against
 one compile-time allowlist. Parameters do not participate in this capability
@@ -205,6 +212,10 @@ Each live InlineContent owns exactly one current payload value consisting of the
 exact Media Type plus Media-Type-specific collaborative state. The payload has no
 independent product identity.
 
+The caller supplies the exact valid Media Type when creating that payload. The
+engine does not choose a default Media Type when the caller lacks format
+information.
+
 Whole-payload replacement preserves the `InlineContentId` but atomically replaces
 the complete payload value. Replacement can keep the existing Media Type or
 provide a different one. Application-level format conversion is an adapter
@@ -331,13 +342,21 @@ minimum prove:
   carrier-specific edge behavior is characterized rather than pre-decided here;
 - representative opaque payloads preserve exact bytes and payload-level Origin;
 - whole-payload replacement works for fine-grained and opaque payloads;
-- concurrent replacement converges deterministically; and
+- concurrent replacement converges deterministically;
+- resource behavior is characterized for fine-grained editing, whole-payload
+  replacement, and representative opaque payloads so that unsafe work can be
+  refused atomically without turning an implementation limit into document
+  semantics; and
 - one transaction can span structure and several InlineContents with mixed
   capability classes.
 
 Gate B closes carrier selection, the observable concurrent-replacement winner
-rule and its private implementation, mixed replacement/edit semantics, and the
-carrier text-domain behavior required by production.
+rule and its private implementation, mixed replacement/edit semantics, the
+carrier text-domain behavior required by production, and the payload/carrier
+resource-admission behavior. The resource-admission decision can use an adaptive
+host/runtime-dependent mechanism or record that no additional explicit guard is
+needed when qualification shows that normal runtime behavior already gives a
+safe atomic failure seam. Gate B does not require a fixed payload-size maximum.
 
 Step 4 selects and qualifies the production raw-media processor and its supported
 representation profiles. Tests belong to the selected capability: supported
