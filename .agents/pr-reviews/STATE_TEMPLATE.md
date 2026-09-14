@@ -14,25 +14,25 @@ This is the durable control record for one iterative review. Keep it concise and
 
 ## Decisions
 
-| ID | Status | Decision or invariant | Rationale | Source/date |
-| --- | --- | --- | --- | --- |
-| D-001 | accepted |  |  |  |
+| ID    | Status   | Decision or invariant | Rationale | Source/date |
+| ----- | -------- | --------------------- | --------- | ----------- |
+| D-001 | accepted |                       |           |             |
 
 Statuses: `pending`, `accepted`, `superseded`.
 
 ## Findings
 
-| ID/fingerprint | Severity | Status | Location | Trigger and consequence | Evidence | Decision/fix | Verification |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| F-001 `<behavior>:<component>:<trigger>` | P2 | proposed |  |  |  |  |  |
+| ID/fingerprint                           | Severity | Status   | Location | Trigger and consequence | Evidence | Decision/fix | Verification |
+| ---------------------------------------- | -------- | -------- | -------- | ----------------------- | -------- | ------------ | ------------ |
+| F-001 `<behavior>:<component>:<trigger>` | P2       | proposed |          |                         |          |              |              |
 
 Finding statuses: `proposed`, `accepted`, `rejected`, `deferred`, `fixed`, `verified`, `reopened`, `stale`.
 
 ## Rounds
 
-| Round | Agent/model/effort | Scope | Result | Checks | Cost/latency if available |
-| --- | --- | --- | --- | --- | --- |
-| 1 |  | broad review |  |  |  |
+| Round | Agent/model/effort | Scope        | Result | Checks | Cost/latency if available |
+| ----- | ------------------ | ------------ | ------ | ------ | ------------------------- |
+| 1     |                    | broad review |        |        |                           |
 
 ## Baseline and integration checks
 
