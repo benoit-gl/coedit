@@ -91,8 +91,9 @@ and the carrier-private representation that implements it.
 The selected carrier is implemented in Step 4. Step 5 then establishes permanent
 exact History and Version materialization. Step 6 implements the durable
 allowlisted fine-grained text Range service and Gate C selects its lineage
-representation. Do not freeze carrier-specific or portable Range `.coedit`
-version-1 bytes before both gates pass.
+representation. Do not freeze carrier-dependent `.coedit` version-1 bytes before
+Gate B and Gate C have closed their prerequisite state and lineage decisions, and
+do not freeze the separate portable Range-fragment encoding before Gate C passes.
 
 Gate B also closes mixed replacement/text-edit semantics under the payload
 contract before Step 4; no specific mixed-operation winner is accepted yet.
