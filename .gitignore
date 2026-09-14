@@ -5,4 +5,3 @@ docs/api/
 .vite/
 *.tsbuildinfo
 .DS_Store
-.agents/pr-reviews/state/
