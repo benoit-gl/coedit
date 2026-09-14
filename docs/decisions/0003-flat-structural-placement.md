@@ -7,9 +7,11 @@
 ## Context
 
 Step 2 represents the document as one recursive Block tree. Step 3 must introduce
-Yjs or Automerge for attributed CollaborativeContent and must also prove that one
-logical collaborative document can publish structure and several InlineContents
-atomically.
+Yjs or Automerge and must also prove that one logical collaborative document can
+publish structure and several InlineContents atomically. Payload qualification
+follows [`../INLINE_CONTENT_PAYLOADS.md`](../INLINE_CONTENT_PAYLOADS.md):
+allowlisted fine-grained text, generic opaque payloads, and universal
+whole-payload replacement.
 
 Both carrier candidates support structured shared data. The Block tree therefore
 does not need to be serialized to text before collaboration. The design problem
@@ -195,3 +197,5 @@ technical contract. [`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md)
 owns logical Block meaning. [`../COLLABORATION_MODEL.md`](../COLLABORATION_MODEL.md)
 owns post-MVP causal History and replication constraints. This ADR preserves the
 context, alternatives, and rationale and does not replace those authorities.
+[`../INLINE_CONTENT_PAYLOADS.md`](../INLINE_CONTENT_PAYLOADS.md), as decided by
+ADR 0010, owns Media-Type-labelled payload scope.
