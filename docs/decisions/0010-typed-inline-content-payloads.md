@@ -157,9 +157,9 @@ into the Block tree.
 
 Preserving source is not a rendering-security policy. An application that turns
 Markdown, embedded HTML, links, or other inert source syntax into active DOM or
-navigation owns sanitization and activation safety. The exact application policy
-and tooling are deferred until rendering work is implemented, where they must be
-characterized and verified before hostile source is activated.
+navigation owns sanitization and activation safety. The exact application
+policy and tooling are deferred until rendering work is implemented, where they
+must be characterized and verified before hostile source is activated.
 
 ### 3.6 Whole-payload replacement is universal
 
