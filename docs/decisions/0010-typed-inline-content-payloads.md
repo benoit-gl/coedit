@@ -4,7 +4,7 @@
 
 **Decision date:** 2026-09-08
 
-**Amended:** 2026-09-11
+**Amended:** 2026-09-14
 
 **Scope:** InlineContent payload semantics, Media Type preservation and capability
 dispatch, whole-payload replacement, payload convergence, and the boundary
@@ -154,6 +154,12 @@ Formatting, Markdown parsing/rendering, links, and embedded HTML interpretation
 are application or interchange concerns. For `text/markdown`, inline syntax
 remains source text unless the application consumes recognized structural syntax
 into the Block tree.
+
+Preserving source is not a rendering-security policy. An application that turns
+Markdown, embedded HTML, links, or other inert source syntax into active DOM or
+navigation owns sanitization and activation safety. The exact application policy
+and tooling are deferred until rendering work is implemented, where they must be
+characterized and verified before hostile source is activated.
 
 ### 3.6 Whole-payload replacement is universal
 
