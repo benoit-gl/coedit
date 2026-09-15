@@ -182,8 +182,6 @@ jobs:
               "- structural creation, movement, ownership/order, tag, and child-presentation changes are attributable through their Contributions and do not create structural Origin records;\n",
           )
 
-          # Tighten current authority descriptions that would otherwise retain the old generic
-          # "attribution" wording after the authority rename.
           for path, old, new in [
               (
                   "SCAFFOLDING_PLAN.md",
@@ -205,8 +203,6 @@ jobs:
               if old in value:
                   write(path, value.replace(old, new))
 
-          # Mechanical filename update across tracked UTF-8 text. Historical ADR decision prose
-          # remains unchanged; only their link targets move with the authority file.
           tracked = subprocess.check_output(["git", "ls-files", "-z"]).split(b"\0")
           for raw in tracked:
               if not raw:
@@ -229,7 +225,8 @@ jobs:
       - name: Format changed Markdown
         shell: bash
         run: |
-          git diff --name-only -z -- '*.md' | xargs -0 -r npx prettier --write --
+          npx prettier --write docs/FINE_GRAINED_TEXT_AND_ORIGIN.md
+          git diff --name-only --diff-filter=ACMRT -z -- '*.md' | xargs -0 -r npx prettier --write --
 
       - name: Check rename and scope guards
         shell: bash
