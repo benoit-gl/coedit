@@ -20,8 +20,9 @@ jobs:
           ref: design/typed-inline-content-payloads
 
       - name: Apply focused documentation fixes
-        shell: python
+        shell: bash
         run: |
+          python3 <<'PY'
           from pathlib import Path
 
           def replace(path: str, old: str, new: str) -> None:
@@ -128,6 +129,7 @@ The same rule applies to capacity.""",
               """A semantic payload mutation includes a fine-grained allowlisted fine-grained text edit and a""",
               """A semantic payload mutation includes an allowlisted fine-grained text edit and a""",
           )
+          PY
 
       - name: Commit focused fixes and remove temporary workflow
         shell: bash
