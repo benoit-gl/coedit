@@ -22,7 +22,7 @@ The MVP must provide these capabilities:
 4. Edit headings, prose, and list items.
 5. Create, move, nest, reorder, and delete Blocks.
 6. Create, select, reorder, tag, and delete InlineContents.
-7. Use Internet Media Types for InlineContent payloads; support allowlisted fine-grained text with fine-grained text operations and generic opaque handling for other supported Media Types.
+7. Use accepted Internet Media Type values for InlineContent payloads; support allowlisted fine-grained text with fine-grained text operations and generic opaque handling for other accepted values. Step 4 selects and qualifies the production Media Type acceptance contract.
 8. Replace the complete content of any InlineContent atomically with explicit Origin behavior and deterministic convergence semantics.
 9. Edit canonical allowlisted native-string text with protected fine-grained Origin through the engine command boundary.
 10. Preserve opaque payload bytes with payload-level Origin; no fine-grained opaque payload editing is required. Materialize the raw/coarse media representation of any InlineContent at an explicit Version through the public engine boundary: opaque bytes are exact, and allowlisted text encodes under the preserved Media Type or fails explicitly.
@@ -148,7 +148,7 @@ The prototype must preserve these domain rules:
 - Block and InlineContent identities are unique in live structure, while History and portable validation reject reuse across retained lifetimes;
 - each InlineContent belongs to exactly one Block;
 - each InlineContent owns one Media-Type-labelled collaborative payload;
-- Allowlisted fine-grained text selects the fine-grained collaborative-text capability set and other supported Media Types initially select the generic opaque capability set;
+- Allowlisted fine-grained text selects the fine-grained collaborative-text capability set and other accepted Media Type values initially select the generic opaque capability set;
 - every payload can be replaced atomically while preserving InlineContent identity and keeping or changing Media Type, with explicit Origin behavior;
 - concurrent whole-payload replacements converge deterministically;
 - allowlisted fine-grained text owns native-string content and protected fine-grained Origin;

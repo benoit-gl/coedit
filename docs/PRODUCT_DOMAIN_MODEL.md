@@ -67,7 +67,7 @@ Human users, imports, automation, and later AI collaborators use the same durabl
 
 ### 2.7 Payload metadata follows its semantics
 
-`InlineContent` is payload-neutral at the document level. Media Types in the fine-grained allowlist use fine-grained text; all other supported Media Types initially use the generic opaque capability set.
+`InlineContent` is payload-neutral at the document level. Media Types in the fine-grained allowlist use fine-grained text; all other accepted Media Type values initially use the generic opaque capability set.
 
 Formatting and media syntax are application concerns. Fine-grained Origin provenance is protected metadata that travels with authored allowlisted text but never inherits from neighboring text. An opaque payload has one payload-level Origin for its current whole value. Comments are external records with repairable text targets. Ordinary selections are transient.
 
@@ -235,7 +235,7 @@ Each InlineContent owns one payload labelled with an Internet Media Type. `INLIN
 
 The Media Type is part of the current payload value, not the InlineContent identity. Whole-payload replacement preserves the InlineContent identity while atomically replacing the Media Type and Media-Type-specific content; the replacement can keep or change the Media Type. Any application-level conversion semantics remain an adapter concern; the document model needs no separate conversion operation.
 
-Every payload supports atomic whole-payload replacement. Media-Type-specific contracts can expose additional fine-grained operations. Allowlisted fine-grained text does; all other supported Media Types initially use the generic opaque capability set.
+Every payload supports atomic whole-payload replacement. Media-Type-specific contracts can expose additional fine-grained operations. Allowlisted fine-grained text does; all other accepted Media Type values initially use the generic opaque capability set.
 
 Concurrent whole-payload replacements converge deterministically. Causally later replacements supersede observed replacements. Concurrent replacements choose one deterministic current winner without using packet arrival order or wall-clock time. Losing replacements remain in immutable History and their Versions remain materializable.
 
@@ -433,7 +433,7 @@ No product-domain question blocks the completed Steps 1 and 2. Step 3 compares Y
 Remaining decisions include:
 
 - mixed whole-payload replacement/text-edit concurrency, selected at Gate B under `INLINE_CONTENT_PAYLOADS.md`;
-- additional fine-grained Media-Type-specific operation contracts; valid unfamiliar Media Types already use generic opaque handling;
+- additional fine-grained Media-Type-specific operation contracts; accepted unfamiliar Media Type values already use generic opaque handling;
 - content-local addressing for future non-text payloads;
 - provenance visualization, retention, anonymization, and signed-claim policy;
 - exact comment repair confidence and conversation target scopes;
@@ -472,7 +472,7 @@ A future design is compatible with this domain direction only if it preserves th
 
 ## 14. Summary
 
-The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and one collaborative payload labelled with an Internet Media Type. allowlisted fine-grained text has native-string collaboration, protected Origin, and text Range capabilities. Every other supported Media Type initially uses the generic opaque capability set with exact bytes and payload-level Origin. Every payload supports atomic whole-payload replacement and deterministic convergence.
+The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and one collaborative payload labelled with an Internet Media Type. allowlisted fine-grained text has native-string collaboration, protected Origin, and text Range capabilities. Every other accepted Media Type value initially uses the generic opaque capability set with exact bytes and payload-level Origin. Every payload supports atomic whole-payload replacement and deterministic convergence.
 
 Block and InlineContent boundaries are structural and imply no textual separator. Application adapters decide how content and structure are presented.
 

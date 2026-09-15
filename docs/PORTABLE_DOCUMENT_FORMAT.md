@@ -308,7 +308,7 @@ Treat portable input as hostile. Validate a detached copy in this order:
 9. carrier checkpoint/effect schema, dependency closure, deterministic whole-replacement register state, and implementation resource guards;
 10. reconstructed Block topology, ownership, ordering, tags, Media-Type values,
     and structural invariants plus implementation capacity;
-11. generic Media Type syntax and capability classification;
+11. Media Type acceptance and capability classification under the selected production contract;
 12. reconstructed supported allowlisted fine-grained native strings and
     fine-grained Origin coverage, with exact carrier-state preservation and no
     Unicode normalization or silent repair;
@@ -325,11 +325,11 @@ checked only when an operation actually crosses the raw/coarse media boundary.
 The complete Media Type still remains valid durable metadata and generic Media
 Type syntax is validated here.
 
-A syntactically valid unfamiliar Media Type is accepted through generic opaque
+An accepted unfamiliar Media Type value is accepted through generic opaque
 handling without format-specific validation. A syntactically valid allowlisted
 Media Type can still fail a later Coedit-owned raw representation operation when
 the selected processor does not support its representation profile. It is not
-reclassified as opaque or reported as malformed generic Media Type syntax for
+reclassified as opaque or reported as rejected by the Media Type acceptance contract for
 that reason.
 
 Validate a complete candidate engine before replacing the active engine or
@@ -470,10 +470,10 @@ At minimum, verify:
 - a serialized Range value retained by the test outside the package resolves to the same surviving spans and exact concatenated native string after Save/Open;
 - missing, duplicate, unreachable, mis-hashed, or conflicting chunks fail;
 - malformed graph/frontiers, Contributor/Origin references, carrier state,
-  topology, ownership, generic Media Type syntax, portable native-string
+  topology, ownership, Media Type acceptance, portable native-string
   representation, and opaque payload bytes fail in their appropriate validation
   class;
-- a valid allowlisted Media Type whose representation profile is unsupported by the selected raw-media processor remains allowlisted and fails only when an operation crosses the raw/coarse media boundary; valid unfamiliar Media Types remain opaque;
+- an accepted allowlisted Media Type value whose representation profile is unsupported by the selected raw-media processor remains allowlisted and fails only when an operation crosses the raw/coarse media boundary; accepted unfamiliar Media Type values remain opaque;
 - malformed, truncated, duplicate-key, unknown-property, or unsupported
   container/carrier versions fail;
 - every resource guard selected and promoted under section 11 is exercised safely;

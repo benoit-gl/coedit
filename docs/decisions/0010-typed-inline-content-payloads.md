@@ -1,6 +1,6 @@
 # ADR-0010: Media-Type-labelled InlineContent payloads and universal replacement
 
-**Status:** Accepted direction; carrier and mixed replacement/edit semantics deferred to Gate B; raw-media processor profiles deferred to Step 4
+**Status:** Accepted direction; carrier and mixed replacement/edit semantics deferred to Gate B; Media Type acceptance and raw-media processor profiles deferred to Step 4
 
 **Decision date:** 2026-09-15
 
@@ -66,19 +66,27 @@ MIME codec framework.
 
 ## 3. Decision
 
-### 3.1 InlineContent preserves one complete Media Type
+### 3.1 InlineContent preserves one complete accepted Media Type value
 
-Each InlineContent owns exactly one payload and one syntactically valid Internet
-Media Type that identifies its media representation. The complete supplied Media
-Type value, including parameters, is durable metadata and is preserved exactly.
+Each InlineContent owns exactly one payload and one accepted Internet Media Type
+value that identifies its media representation. The complete supplied Media Type
+value, including parameters, is durable metadata and is preserved exactly.
 
-The document model parses the value for validation and capability dispatch, but
-does not rewrite it merely because a type is recognized. Type/subtype comparison
-is case-insensitive. Parameters remain part of the preserved value.
+The selected parser must accept the value and produce a usable `type/subtype`
+identity for capability dispatch. The document model does not rewrite the supplied
+value merely because a type is allowlisted. Type/subtype comparison for capability
+dispatch is case-insensitive. Parameters remain part of the preserved value.
 
-Generic Media Type syntax, Coedit collaboration capability, and support for a
-specific raw representation are separate concerns. A valid unfamiliar Media Type
-can use opaque handling without Coedit certifying its format-specific semantics.
+Media Type acceptance, Coedit collaboration capability, and support for a
+specific raw representation are separate concerns. An accepted unfamiliar Media
+Type value can use opaque handling without Coedit certifying its format-specific
+semantics.
+
+This ADR does not define a second Coedit-specific Media Type grammar and does not
+require the production parser to reject every value outside one selected RFC
+grammar. Step 4 selects and qualifies the parser and any additional acceptance
+restrictions. Representative accepted and rejected values become compatibility
+evidence so a parser upgrade cannot silently change the accepted input domain.
 
 ### 3.2 Fine-grained text capability uses a compile-time allowlist
 
@@ -94,7 +102,7 @@ retaining distinct Media Type values. Capability dispatch compares the parsed,
 case-normalized `type/subtype` identity to this one compile-time list. Parameters
 do not participate in the lookup. Raw string-prefix matching is not used.
 
-Every other valid Media Type initially uses generic opaque handling. It does not
+Every other accepted Media Type value initially uses generic opaque handling. It does not
 need a decoder, renderer, registry lookup, or schema migration merely to be
 preserved and replaced.
 
@@ -131,9 +139,11 @@ the raw/coarse operation fails explicitly. It must not silently ignore the
 parameter, rewrite the Media Type, silently transcode, substitute content, or
 fall back to opaque handling.
 
-Step 3 uses representative test codecs only to prove that this boundary is
-independent of carrier selection. Step 4 selects and qualifies the first
-production raw-media processor and its supported representation profiles. The
+Step 3 uses representative Media Type labels and test codecs only to prove
+capability dispatch and raw-media boundary independence from carrier selection.
+It does not select the production Media Type parser or accepted-input domain.
+Step 4 selects and qualifies the production Media Type parser/acceptance contract
+and the first raw-media processor with its supported representation profiles. The
 codec/library, charset set, flowed-text behavior, parameter matrix, and other
 profile-specific transformations are not selected by this ADR.
 
@@ -235,6 +245,15 @@ Costs and open selections:
 Rejected. A private media type would make the label describe Coedit's current
 capability rather than the actual content format.
 
+### Freeze RFC 6838/RFC 9110 syntax as the Coedit acceptance contract now
+
+Rejected for this gate. Standards grammar is useful reference material, but the
+document model does not need to invent or freeze a stricter parser contract
+before the production parsing implementation is selected. A well-established
+parser can deliberately accept a broader practical input domain. Step 4 must
+select and qualify that behavior and record compatibility fixtures instead of
+silently inheriting whatever a dependency happens to accept.
+
 ### Treat every `text/*` Media Type as fine-grained
 
 Deferred rather than adopted. The MIME top-level taxonomy does not guarantee the
@@ -296,8 +315,10 @@ Rejected. Unsynchronized clocks do not provide trustworthy causal ordering.
   text-domain behavior, deterministic concurrent-replacement winner semantics,
   its private implementation, and mixed replacement/edit behavior. Use
   representative raw-media test codecs only to prove boundary independence.
-- **Step 4:** implement the selected payload/carrier and select the first
-  production raw-media processor with its supported representation profiles.
+- **Step 4:** implement the selected payload/carrier; select and qualify the
+  production Media Type parser/acceptance contract with compatibility fixtures;
+  and select the first production raw-media processor with its supported
+  representation profiles.
 - **Step 5:** establish first-class History and permanent materialization of
   losing replacement Versions.
 - **Step 6 / Gate C:** select durable Range representation and lineage behavior,
@@ -305,4 +326,4 @@ Rejected. Unsynchronized clocks do not provide trustworthy causal ordering.
 - **Step 8:** freeze the physical `.coedit` representation after the earlier
   gates are closed.
 
-The detailed raw-media profile matrix is intentionally not part of this ADR.
+The exact Media Type accepted-input domain and detailed raw-media profile matrix are intentionally not part of this ADR.

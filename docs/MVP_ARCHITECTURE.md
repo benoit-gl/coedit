@@ -36,7 +36,7 @@ Tauri, Rust, SQLite, AI providers, provenance visualization, comments, durable d
 
 The engine owns:
 
-- `Block`, `InlineContent`, Media-Type-labelled InlineContent payloads, Media-Type validation, Origin records, and tags;
+- `Block`, `InlineContent`, Media-Type-labelled InlineContent payloads, Media-Type acceptance and capability dispatch, Origin records, and tags;
 - the universal atomic whole-payload replacement contract for every Media Type;
 - allowlisted native-string text state and protected fine-grained Origin;
 - opaque payload byte state and payload-level Origin;

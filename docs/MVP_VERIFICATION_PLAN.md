@@ -144,13 +144,13 @@ then retain it as a production regression suite for the winner.
 
 Verify:
 
-- each materialized InlineContent carries a syntactically valid Media Type; allowlisted fine-grained text selects the fine-grained text capability set and valid unfamiliar types select generic opaque handling;
-- creation and whole-payload replacement require an explicit Media Type, the engine does not infer or default it, and `application/octet-stream` is used only when an application deliberately supplies it;
-- malformed generic Media Type syntax, a valid unfamiliar Media Type, and an allowlisted Media Type whose raw representation is unsupported by the selected processor are distinct cases;
-- generic Media Type syntax covers RFC 6838 restricted names, RFC 9110 token and quoted-string parameter values, case-insensitive duplicate-parameter rejection, complete `name=value` parameters, and preservation of accepted source spelling;
-- case variants and parameters give consistent type/subtype capability matching without a registry lookup while the complete supplied Media Type survives unchanged;
+- each materialized InlineContent carries a Media Type value accepted by the selected production acceptance contract; allowlisted fine-grained text selects the fine-grained text capability set and accepted unfamiliar values select generic opaque handling;
+- creation and whole-payload replacement require an explicit accepted Media Type value, the engine does not infer or default it, and `application/octet-stream` is used only when an application deliberately supplies it;
+- a Media Type value rejected by the selected acceptance contract, an accepted unfamiliar value, and an accepted allowlisted value whose raw representation is unsupported by the selected processor are distinct cases;
+- Step 3 uses representative Media Type labels to exercise parsed type/subtype dispatch without selecting the production accepted-input grammar;
+- case variants and parameters accepted by the selected parser give consistent type/subtype capability matching without a registry lookup while the complete supplied Media Type survives unchanged;
 - Step 3 uses representative test codec fixtures to prove exact supported conversion, explicit unsupported-profile failure, invalid-input failure, and exact-representation failure independently of carrier selection without selecting the production processor/profile set;
-- Step 4 records the selected production raw-media processor and supported representation profiles and verifies each selected profile according to its focused contract;
+- Step 4 records the selected production Media Type parser/acceptance contract with representative accepted/rejected compatibility fixtures, and records the selected raw-media processor and supported representation profiles;
 - preserving a Media Type parameter does not by itself claim processor support for the representation profile that parameter defines;
 - a supported raw-media profile produces the exact expected representation, while an unsupported profile fails explicitly without relabelling, silent transcoding, parameter ignoring, content substitution or repair, or opaque fallback;
 - the public engine can materialize raw/coarse media for an explicit Version and InlineContent without carrier access; opaque payloads return their exact stored bytes and supported allowlisted-text profiles return their exact media representation;
@@ -460,8 +460,8 @@ Verify:
 - corrupt checksum fails;
 - unsupported versions fail;
 - unknown properties fail for version 1;
-- valid unfamiliar Media Types round trip through generic opaque handling with their exact labels, bytes, and Origins, without a registry lookup or renderer;
-- malformed generic Media Type syntax fails separately from carrier/schema incompatibility and portable corruption;
+- accepted unfamiliar Media Type values round trip through generic opaque handling with their exact labels, bytes, and Origins, without a registry lookup or renderer;
+- malformed Media Type acceptance fails separately from carrier/schema incompatibility and portable corruption;
 - reopening canonical collaborative state does not invoke raw-media decoding or encoding, and does not reject canonical text merely because the selected raw-media processor does not support the preserved representation profile;
 - unsupported carrier/schema versions, malformed base64/binary values, missing/mis-hashed chunks, and unreachable references fail with the appropriate invalid-input or incompatibility result;
 - malformed trees and ownership fail;

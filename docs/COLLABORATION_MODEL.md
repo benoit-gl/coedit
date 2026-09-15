@@ -381,7 +381,7 @@ inside one logical collaborative document, and Step 4 implements the selected
 carrier. `INLINE_CONTENT_PAYLOADS.md` owns payload semantics and
 `STRUCTURAL_CARRIER_MODEL.md` owns the structural contract.
 
-The initial capability dispatch recognizes allowlisted fine-grained text as the fine-grained collaborative-text format. Every other supported Media Type initially uses the generic opaque capability set, which preserves exact bytes and payload-level Origin and provides no fine-grained mutation beyond whole-payload replacement.
+The initial capability dispatch recognizes allowlisted fine-grained text as the fine-grained collaborative-text format. Every other accepted Media Type value initially uses the generic opaque capability set, which preserves exact bytes and payload-level Origin and provides no fine-grained mutation beyond whole-payload replacement.
 
 The document model has no canonical hard-break content item. A line-feed or
 carriage-return can be ordinary allowlisted fine-grained text data. Block and InlineContent

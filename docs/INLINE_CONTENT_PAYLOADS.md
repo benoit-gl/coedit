@@ -1,8 +1,8 @@
 # InlineContent payload contract
 
 **Status:** Accepted logical content direction; carrier selection and mixed
-replacement/edit semantics remain Gate B decisions. Production raw-media
-processing remains a Step 4 decision.
+replacement/edit semantics remain Gate B decisions. Production Media Type
+acceptance and raw-media processing remain Step 4 decisions.
 
 ## 1. Purpose and authority
 
@@ -18,9 +18,10 @@ durable references inside fine-grained text. [`MVP_ARCHITECTURE.md`](MVP_ARCHITE
 owns the public engine boundary. [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md)
 owns the later network protocol and causal History model.
 
-This document intentionally does not specify the complete input/output filter
-matrix for every recognized Media Type. Step 4 selects and qualifies the first
-production raw-media processor capability.
+This document intentionally does not select the production Media Type parser,
+its exact acceptance behavior, or the complete input/output filter matrix for
+every accepted Media Type value. Step 4 selects and qualifies the production
+Media Type acceptance contract and the first raw-media processor capability.
 
 ## 2. Separation of concerns
 
@@ -50,29 +51,30 @@ metadata and is preserved exactly through ordinary storage, reload, copy,
 History, and portable serialization.
 
 Creation of a Media-Type-labelled InlineContent and every whole-payload
-replacement require an explicit valid Media Type from the caller. The document
-engine has no default Media Type and does not infer one from payload bytes or
-application context. An application that has opaque bytes but no more specific
-format information can deliberately supply `application/octet-stream`; that is
-application policy, not an engine fallback.
+replacement require an explicit accepted Media Type value from the caller. The
+document engine has no default Media Type and does not infer one from payload
+bytes or application context. An application that has opaque bytes but no more
+specific format information can deliberately supply `application/octet-stream`;
+that is application policy, not an engine fallback.
 
-Capability matching is separate from preservation. The implementation parses a
-valid Media Type and compares its case-normalized `type/subtype` identity against
-one compile-time allowlist. Parameters do not participate in this capability
-lookup. Do not use raw string-prefix matching.
+Capability matching is separate from preservation and acceptance. The selected
+Media Type parser must accept the supplied value and produce a usable
+`type/subtype` identity. The implementation compares the case-normalized
+`type/subtype` identity against one compile-time allowlist. Parameters do not
+participate in this capability lookup. Do not use raw string-prefix matching.
 
-Generic Media Type syntax follows the `media-type` grammar in RFC 9110 sections
-8.3.1 and 5.6.6, with deliberate Coedit restrictions from RFC 6838 sections 4.2
-and 4.3: type, subtype, and parameter names use `restricted-name`; every semicolon
-must introduce a complete `name=value` parameter; and a parameter name cannot
-occur more than once, compared case-insensitively. Parameter values use the RFC
-9110 `token` or `quoted-string` syntax. These rules define generic syntax only.
-Coedit does not require IANA registration or recognize format-specific parameter
-semantics merely to preserve an unfamiliar Media Type.
+This contract does not define a second Coedit-specific Media Type grammar and
+does not require the production parser to reject every value that is outside a
+particular RFC grammar. Step 4 selects and qualifies the production parser and
+any additional acceptance restrictions. That selected acceptance behavior is a
+compatibility-visible implementation contract: record representative accepted
+and rejected values, and do not silently change the accepted input domain during
+a parser upgrade.
 
-The complete supplied spelling remains durable metadata even where protocol-level
-comparison would treat two spellings as equivalent. Parsing for validation and
-capability dispatch therefore does not canonicalize the stored value.
+The complete supplied spelling remains durable metadata even when the selected
+parser treats two spellings as the same Media Type identity. Parsing for
+acceptance and capability dispatch therefore does not canonicalize the stored
+value.
 
 The initial fine-grained allowlist contains exactly:
 
@@ -92,15 +94,16 @@ text/markdown; charset=UTF-8; variant=CommonMark
 
 Values such as `text/markdown-extra` and `text/markdown+json` do not match.
 
-Every other syntactically valid Media Type initially uses generic opaque handling.
+Every other accepted Media Type value initially uses generic opaque handling.
 The document model preserves its exact Media Type, bytes, and payload-level
 Origin. It does not require a decoder, renderer, or IANA registry lookup merely to
 store the payload.
 
-### 3.1 Syntax, capability, and representation support are separate
+### 3.1 Acceptance, capability, and representation support are separate
 
-Malformed Media Type syntax is invalid input. A syntactically valid unfamiliar
-Media Type is valid document content and uses generic opaque handling.
+A Media Type value that the selected acceptance contract rejects is invalid
+input. An accepted unfamiliar Media Type value is valid document content and
+uses generic opaque handling.
 
 An allowlisted type does not fall back to opaque handling merely because a raw
 processor cannot interpret the supplied representation. Fine-grained capability
@@ -119,10 +122,10 @@ rewrite the Media Type, transcode to another representation, substitute content,
 or reinterpret the payload as opaque. Failure publishes no partial document
 change.
 
-Detailed parameter semantics, supported profile combinations, charset support,
-codec/library choice, and profile-specific transformations belong to the Step 4
-processor selection and its focused verification. This contract does not select
-them in advance.
+Detailed Media Type parser/library choice, acceptance behavior, parameter
+semantics, supported profile combinations, charset support, raw-media
+codec/library choice, and profile-specific transformations belong to Step 4 and
+its focused verification. This contract does not select them in advance.
 
 Reopening already-canonical collaborative state from `.coedit` is not a raw-media
 boundary and does not rerun Media-Type representation validation against the
@@ -211,10 +214,12 @@ Step 3 uses representative test codecs only to prove that this boundary is
 independent of carrier selection. Those fixtures are not the production codec
 selection and do not freeze a charset or parameter matrix.
 
-Step 4 selects and qualifies the first production raw-media processor and its
-supported representation profiles. The selected capability may be deliberately
-small. Later processor support can expand without changing document semantics or
-stored Media Type values.
+Step 4 selects and qualifies the production Media Type parser/acceptance contract
+and the first raw-media processor with its supported representation profiles.
+The selected capabilities may be deliberately small. Later raw-media profile
+support can expand without changing document semantics or stored Media Type
+values. Changes to Media Type acceptance require explicit compatibility review
+and evidence.
 
 The selected carrier can use its own binary encoding for replication and
 persistence. Carrier bytes are not the raw media representation.
@@ -346,9 +351,11 @@ contract without turning Range into a universal binary locator.
 Step 3 must qualify both carrier candidates against the same payload contract. At
 minimum prove:
 
-- exact Media Type preservation with parsed type/subtype capability dispatch;
+- exact Media Type preservation with parsed type/subtype capability dispatch,
+  using representative test labels without selecting the production acceptance
+  grammar;
 - `text/markdown` and `text/plain` use the same fine-grained operation surface;
-- valid unfamiliar Media Types use opaque handling;
+- representative unfamiliar Media Type values use opaque handling;
 - representative test codecs prove the raw/coarse boundary is carrier-independent
   and fails explicitly for unsupported representation capability;
 - ordinary Unicode/native-string collaboration works through both candidates and
@@ -371,10 +378,13 @@ host/runtime-dependent mechanism or record that no additional explicit guard is
 needed when qualification shows that normal runtime behavior already gives a
 safe atomic failure seam. Gate B does not require a fixed payload-size maximum.
 
-Step 4 selects and qualifies the production raw-media processor and its supported
-representation profiles. Tests belong to the selected capability: supported
-profiles must work exactly, unsupported profiles must fail explicitly, and the
-processor must not silently alter content or Media Type metadata.
+Step 4 selects and qualifies the production Media Type parser and acceptance
+contract, records representative accepted/rejected compatibility fixtures, and
+selects and qualifies the production raw-media processor and its supported
+representation profiles. Supported profiles must work exactly, unsupported
+profiles must fail explicitly, and the processor must not silently alter content
+or Media Type metadata. A later parser/library upgrade must preserve the recorded
+acceptance contract or make an explicit compatibility decision.
 
 Step 5 implements first-class Contributions and permanent exact Version
 materialization, including losing replacement History. Step 6 / Gate C selects
@@ -395,8 +405,11 @@ This contract does not:
 - invent a Coedit-specific payload Media Type;
 - introduce a dynamic payload capability registry;
 - define a separate Media Type conversion operation;
-- select the production codec/library, charset set, flowed-text behavior,
-  parameter-support matrix, or other raw-media profile details before Step 4;
+- select the production Media Type parser or freeze its exact accepted-input
+  domain before Step 4;
+- select the production raw-media codec/library, charset set, flowed-text
+  behavior, parameter-support matrix, or other raw-media profile details before
+  Step 4;
 - require the core collaborative layer to parse Markdown or other application
   syntax;
 - guarantee behavior for every ECMAScript string edge case before Gate B records

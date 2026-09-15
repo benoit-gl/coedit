@@ -176,7 +176,7 @@ Run the same pinned headless and Tiptap/ProseMirror suite against stable Yjs v13
 
 The suite covers:
 
-- both initial allowlisted fine-grained Media Types, `text/markdown` and `text/plain`, plus representative opaque Media Types including a valid unfamiliar type;
+- both initial allowlisted fine-grained Media Types, `text/markdown` and `text/plain`, plus representative opaque Media Type labels, including unfamiliar labels used to qualify dispatch without freezing the production acceptance grammar;
 - raw/coarse text conversion through representative test codec fixtures, including exact conversion for a supported representative profile, explicit unsupported-profile failure, and no silent transcoding, relabelling, parameter ignoring, or opaque fallback;
 - universal whole-payload replacement;
 - deterministic convergence of concurrent whole-payload replacements without wall-clock or arrival-order arbitration;
@@ -199,7 +199,7 @@ See [`docs/INLINE_CONTENT_PAYLOADS.md`](docs/INLINE_CONTENT_PAYLOADS.md), [`docs
 
 **Objective:** Establish the production Media-Type-labelled InlineContent payload and structural carrier using the winner recorded by Gate B.
 
-**Outcome:** Headless code can create, validate, project, clone, replace, edit, copy/paste, restore, and serialize carrier state. Each InlineContent has one valid Media Type. The initial compile-time fine-grained allowlist contains `text/markdown` and `text/plain`; all other valid Media Types use opaque byte handling. Every payload supports whole-payload replacement with explicit Origin and deterministic replicated convergence. Allowlisted text additionally supports native-string fine-grained editing and protected non-inheriting fine-grained Origin. Step 4 selects and qualifies the first production raw-media processor and its supported representation profiles. Unsupported profiles fail explicitly instead of silently changing content, Media Type metadata, or capability class. One logical collaborative document contains the accepted flat Block carrier and Block-local payload namespaces, transacts across structure and several InlineContents, and supports semantic-update-over-delete. The selected carrier suite remains a production regression suite.
+**Outcome:** Headless code can create, validate, project, clone, replace, edit, copy/paste, restore, and serialize carrier state. Each InlineContent has one accepted Media Type value. The initial compile-time fine-grained allowlist contains `text/markdown` and `text/plain`; all other valid Media Types use opaque byte handling. Every payload supports whole-payload replacement with explicit Origin and deterministic replicated convergence. Allowlisted text additionally supports native-string fine-grained editing and protected non-inheriting fine-grained Origin. Step 4 selects and qualifies the first production raw-media processor and its supported representation profiles. Unsupported profiles fail explicitly instead of silently changing content, Media Type metadata, or capability class. One logical collaborative document contains the accepted flat Block carrier and Block-local payload namespaces, transacts across structure and several InlineContents, and supports semantic-update-over-delete. The selected carrier suite remains a production regression suite.
 
 **Exit gate:** Production code uses no rejected-candidate or carrier-specific public API. The initial raw-media processor and supported representation profiles are recorded. Functional, payload, raw-media-boundary, structural, concurrency, atomicity, clipboard, restore, allocator, reload, compaction, and growth regressions pass for the winner. Tests prove exact behavior for supported profiles and explicit failure for unsupported profiles or exact-representation failures, without silent content repair, relabelling, transcoding, parameter ignoring, or opaque fallback. No Block or InlineContent boundary implies a textual separator, and no document-level hard-break item exists.
 
@@ -330,11 +330,12 @@ Gate A passes when the authority set, ADR rationale, preserved-branch classifica
 Gate B follows Step 3. Do not begin production carrier implementation or freeze carrier-dependent History effects, editor integration, or `.coedit` version 1 before the Yjs/Automerge common suite passes and the winner is recorded. The gate includes Media-Type-labelled payloads, whole-payload replacement, deterministic concurrent replacement convergence, attributed allowlisted fine-grained text, opaque payload byte/Origin preservation, raw/coarse media-boundary factoring, payload/carrier resource-admission qualification, structure, allocator behavior, application text-editor integration, atomicity, Range feasibility, one run-specific comparison method, and selected and tested carrier/private-text-clipboard guards. Experimental performance candidates do not become acceptance thresholds merely because the gate measured them. Gate B records the observable deterministic concurrent-replacement winner rule, the carrier-private implementation that realizes it, mixed whole-payload replacement/text-edit semantics, the selected carrier's required text-domain behavior, and the payload/carrier resource-admission behavior. That resource decision can be adaptive and host/runtime-dependent, and an evidence-backed conclusion that no additional explicit finite guard is required is valid. Gate B does not require a fixed payload-size maximum. It does not select the production raw-media processor or supported representation profiles, and it does not select the Range-tracking representation.
 
 Gate B also closes the mixed replacement/text-edit semantics in
-`INLINE_CONTENT_PAYLOADS.md` section 10.1. Media Type syntax, parameter preservation,
-raw-media boundary separation, and capability matching are already document
-semantics; Step 3 proves those boundaries can be implemented independently of the
-carrier. Step 4 selects the initial raw-media processor capability and retains the
-Step 3 boundary cases as production regressions. This does not move Range lineage
+`INLINE_CONTENT_PAYLOADS.md` section 10.1. Media Type preservation, raw-media boundary separation, and capability matching
+are accepted document semantics; Step 3 proves those boundaries can be implemented
+independently of the carrier without freezing the production accepted-input
+grammar. Step 4 selects and qualifies the Media Type parser/acceptance contract
+and the initial raw-media processor capability, then retains the Step 3 boundary
+cases as production regressions. This does not move Range lineage
 out of Gate C or the network protocol out of the pre-network gate.
 
 ### Gate C — Durable Range freeze
