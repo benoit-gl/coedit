@@ -1,0 +1,140 @@
+name: PR 19 documentation fix
+
+on:
+  push:
+    branches:
+      - design/typed-inline-content-payloads
+    paths:
+      - .github/workflows/pr19-doc-fix.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v7
+        with:
+          ref: design/typed-inline-content-payloads
+
+      - name: Apply focused documentation fixes
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace(path: str, old: str, new: str) -> None:
+              file = Path(path)
+              text = file.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one match, found {count}: {old!r}")
+              file.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          replace(
+              "docs/INLINE_CONTENT_PAYLOADS.md",
+              """Capability matching is separate from preservation. The implementation parses a
+valid Media Type and compares its case-normalized `type/subtype` identity against
+one compile-time allowlist. Parameters do not participate in this capability
+lookup. Do not use raw string-prefix matching.
+
+The initial fine-grained allowlist contains exactly:
+""",
+              """Capability matching is separate from preservation. The implementation parses a
+valid Media Type and compares its case-normalized `type/subtype` identity against
+one compile-time allowlist. Parameters do not participate in this capability
+lookup. Do not use raw string-prefix matching.
+
+Generic Media Type syntax follows the `media-type` grammar in RFC 9110 sections
+8.3.1 and 5.6.6, with deliberate Coedit restrictions from RFC 6838 sections 4.2
+and 4.3: type, subtype, and parameter names use `restricted-name`; every semicolon
+must introduce a complete `name=value` parameter; and a parameter name cannot
+occur more than once, compared case-insensitively. Parameter values use the RFC
+9110 `token` or `quoted-string` syntax. These rules define generic syntax only.
+Coedit does not require IANA registration or recognize format-specific parameter
+semantics merely to preserve an unfamiliar Media Type.
+
+The complete supplied spelling remains durable metadata even where protocol-level
+comparison would treat two spellings as equivalent. Parsing for validation and
+capability dispatch therefore does not canonicalize the stored value.
+
+The initial fine-grained allowlist contains exactly:
+""",
+          )
+
+          replace(
+              "docs/MVP_ARCHITECTURE.md",
+              """A contextual classification that can change with the consumer and has no durable workflow normally remains a diagnostic, projection result, activation decision, or other boundary result. ADR 0005 records the rationale and examples.
+
+The same rule applies to capacity.""",
+              """A contextual classification that can change with the consumer and has no durable workflow normally remains a diagnostic, projection result, activation decision, or other boundary result. ADR 0005 records the rationale and examples.
+
+Preserved payload source is inert document data, not an activation-security policy.
+When an application adapter turns Markdown, embedded HTML, links, or other payload
+content into active DOM, navigation, commands, or another executable effect, that
+application boundary must select an appropriate sanitization and activation policy
+and verify hostile-source behavior before activation. This architecture does not
+preselect a sanitizer, URL policy, or library; the implementation step that adds
+the activating feature owns that choice and its verification evidence.
+
+The same rule applies to capacity.""",
+          )
+
+          replace(
+              "SCAFFOLDING_PLAN.md",
+              """**Exit gate:** Realistic samples render from the engine. Diagnostics and the development inspector agree with visible structure and Media Types.
+""",
+              """**Exit gate:** Realistic samples render from the engine. Diagnostics and the development inspector agree with visible structure and Media Types. Before any renderer or navigation path activates inert Markdown, embedded HTML, links, or other payload-derived content, the application security policy for that activation boundary is selected, documented, and verified against hostile source. Source preservation alone does not authorize activation.
+""",
+          )
+
+          replace(
+              "docs/decisions/0010-typed-inline-content-payloads.md",
+              """**Decision date:** 2026-09-08
+
+**Amended:** 2026-09-14
+""",
+              """**Decision date:** 2026-09-15
+""",
+          )
+
+          replace(
+              "docs/PRODUCT_DOMAIN_MODEL.md",
+              """`InlineContent` is payload-neutral at the document level. The fine-grained Media Type is allowlisted fine-grained text; all other supported Media Types initially use the generic opaque capability set.""",
+              """`InlineContent` is payload-neutral at the document level. Media Types in the fine-grained allowlist use fine-grained text; all other supported Media Types initially use the generic opaque capability set.""",
+          )
+
+          replace(
+              "docs/PRODUCT_DOMAIN_MODEL.md",
+              """Media Type:        allowlisted fine-grained text""",
+              """Media Type:        text/markdown""",
+          )
+
+          replace(
+              "docs/PRODUCT_DOMAIN_MODEL.md",
+              """Every payload supports atomic whole-payload replacement. Media-Type-specific contracts can expose additional fine-grained operations. allowlisted fine-grained text does; all other supported Media Types initially use the generic opaque capability set.""",
+              """Every payload supports atomic whole-payload replacement. Media-Type-specific contracts can expose additional fine-grained operations. Allowlisted fine-grained text does; all other supported Media Types initially use the generic opaque capability set.""",
+          )
+
+          replace(
+              "docs/PRODUCT_DOMAIN_MODEL.md",
+              """6. the fine-grained allowlisted fine-grained text Media Type and generic opaque Media Types;""",
+              """6. the fine-grained text allowlist and generic opaque Media Types;""",
+          )
+
+          replace(
+              "docs/STRUCTURAL_CARRIER_MODEL.md",
+              """A semantic payload mutation includes a fine-grained allowlisted fine-grained text edit and a""",
+              """A semantic payload mutation includes an allowlisted fine-grained text edit and a""",
+          )
+
+      - name: Commit focused fixes and remove temporary workflow
+        shell: bash
+        run: |
+          git rm .github/workflows/pr19-doc-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/INLINE_CONTENT_PAYLOADS.md docs/MVP_ARCHITECTURE.md docs/PRODUCT_DOMAIN_MODEL.md docs/STRUCTURAL_CARRIER_MODEL.md docs/decisions/0010-typed-inline-content-payloads.md SCAFFOLDING_PLAN.md
+          git commit -m "docs: tighten typed payload contracts"
+          git push origin HEAD:design/typed-inline-content-payloads
