@@ -9,13 +9,13 @@ const emptyInlineContentValueBrand: unique symbol = Symbol(
 export type ChildrenPresentation = "sections" | "flow" | "bullets" | "numbers";
 
 /**
- * Canonical CollaborativeContent value carried by InlineContent.
+ * Canonical Step 2 content value carried by InlineContent.
  *
  * @remarks
  * Step 2 exposes only a valid empty value created by
  * {@link createEmptyInlineContentValue}. Structural code treats this value as
- * opaque. Step 3 expands this same domain type behind the carrier-neutral
- * boundary.
+ * opaque. Step 3 qualifies candidate carriers; Step 4 evolves this boundary into
+ * the Media-Type-labelled payload representation.
  */
 export interface InlineContentValue {
   /** Internal nominal marker. It is not a wire-format or public type discriminator. */
@@ -54,7 +54,7 @@ export interface StructuralDocument {
   readonly root: Block;
 }
 
-/** Creates the only valid Step 2 CollaborativeContent value. */
+/** Creates the only valid Step 2 InlineContent content value. */
 export function createEmptyInlineContentValue(): InlineContentValue {
   return Object.freeze({ [emptyInlineContentValueBrand]: true as const });
 }
