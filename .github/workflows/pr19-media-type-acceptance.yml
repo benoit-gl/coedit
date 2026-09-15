@@ -1,0 +1,316 @@
+name: PR 19 Media Type acceptance correction
+
+on:
+  push:
+    branches:
+      - design/typed-inline-content-payloads
+
+permissions:
+  contents: write
+
+jobs:
+  apply-doc-correction:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: design/typed-inline-content-payloads
+          fetch-depth: 0
+
+      - name: Apply focused documentation correction
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          files = [
+              Path("SCAFFOLDING_PLAN.md"),
+              Path("docs/README.md"),
+              Path("docs/INLINE_CONTENT_PAYLOADS.md"),
+              Path("docs/PRODUCT_DOMAIN_MODEL.md"),
+              Path("docs/MVP_CONTRACT.md"),
+              Path("docs/MVP_ARCHITECTURE.md"),
+              Path("docs/MVP_IMPLEMENTATION_SPEC.md"),
+              Path("docs/MVP_VERIFICATION_PLAN.md"),
+              Path("docs/PORTABLE_DOCUMENT_FORMAT.md"),
+              Path("docs/COLLABORATION_MODEL.md"),
+              Path("docs/PRESERVED_BRANCH_RECONCILIATION.md"),
+              Path("docs/decisions/0010-typed-inline-content-payloads.md"),
+          ]
+
+          def replace_once(path: Path, old: str, new: str) -> None:
+              text = path.read_text(encoding="utf-8")
+              count = text.count(old)
+              if count != 1:
+                  raise RuntimeError(f"{path}: expected one match, found {count}: {old[:80]!r}")
+              path.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          def replace_all(path: Path, old: str, new: str) -> None:
+              text = path.read_text(encoding="utf-8")
+              if old in text:
+                  path.write_text(text.replace(old, new), encoding="utf-8")
+
+          # First remove ambiguous generic admission terminology from the affected authorities.
+          generic_replacements = [
+              ("syntactically valid unfamiliar Media Type", "accepted unfamiliar Media Type value"),
+              ("syntactically valid allowlisted Media Type", "accepted allowlisted Media Type value"),
+              ("syntactically valid Media Type", "accepted Media Type value"),
+              ("valid unfamiliar Media Types", "accepted unfamiliar Media Type values"),
+              ("valid unfamiliar Media Type", "accepted unfamiliar Media Type value"),
+              ("valid allowlisted Media Type", "accepted allowlisted Media Type value"),
+              ("all other supported Media Types", "all other accepted Media Type values"),
+              ("other supported Media Types", "other accepted Media Type values"),
+              ("Every other valid Media Type", "Every other accepted Media Type value"),
+              ("Every valid Media Type", "Every accepted Media Type value"),
+              ("every valid Media Type", "every accepted Media Type value"),
+              ("explicit valid Media Type", "explicit accepted Media Type value"),
+              ("one valid Media Type", "one accepted Media Type value"),
+          ]
+          for path in files:
+              for old, new in generic_replacements:
+                  replace_all(path, old, new)
+
+          payload = Path("docs/INLINE_CONTENT_PAYLOADS.md")
+          replace_once(
+              payload,
+              "**Status:** Accepted logical content direction; carrier selection and mixed\nreplacement/edit semantics remain Gate B decisions. Production raw-media\nprocessing remains a Step 4 decision.",
+              "**Status:** Accepted logical content direction; carrier selection and mixed\nreplacement/edit semantics remain Gate B decisions. Production Media Type\nacceptance and raw-media processing remain Step 4 decisions.",
+          )
+          replace_once(
+              payload,
+              "This document intentionally does not specify the complete input/output filter\nmatrix for every recognized Media Type. Step 4 selects and qualifies the first\nproduction raw-media processor capability.",
+              "This document intentionally does not select the production Media Type parser,\nits exact acceptance behavior, or the complete input/output filter matrix for\nevery accepted Media Type value. Step 4 selects and qualifies the production\nMedia Type acceptance contract and the first raw-media processor capability.",
+          )
+          old = """Creation of a Media-Type-labelled InlineContent and every whole-payload
+replacement require an explicit accepted Media Type value from the caller. The document
+engine has no default Media Type and does not infer one from payload bytes or
+application context. An application that has opaque bytes but no more specific
+format information can deliberately supply `application/octet-stream`; that is
+application policy, not an engine fallback.
+
+Capability matching is separate from preservation. The implementation parses a
+accepted Media Type value and compares its case-normalized `type/subtype` identity against
+one compile-time allowlist. Parameters do not participate in this capability
+lookup. Do not use raw string-prefix matching.
+
+Generic Media Type syntax follows the `media-type` grammar in RFC 9110 sections
+8.3.1 and 5.6.6, with deliberate Coedit restrictions from RFC 6838 sections 4.2
+and 4.3: type, subtype, and parameter names use `restricted-name`; every semicolon
+must introduce a complete `name=value` parameter; and a parameter name cannot
+occur more than once, compared case-insensitively. Parameter values use the RFC
+9110 `token` or `quoted-string` syntax. These rules define generic syntax only.
+Coedit does not require IANA registration or recognize format-specific parameter
+semantics merely to preserve an unfamiliar Media Type.
+
+The complete supplied spelling remains durable metadata even where protocol-level
+comparison would treat two spellings as equivalent. Parsing for validation and
+capability dispatch therefore does not canonicalize the stored value."""
+          new = """Creation of a Media-Type-labelled InlineContent and every whole-payload
+replacement require an explicit accepted Media Type value from the caller. The
+document engine has no default Media Type and does not infer one from payload
+bytes or application context. An application that has opaque bytes but no more
+specific format information can deliberately supply `application/octet-stream`;
+that is application policy, not an engine fallback.
+
+Capability matching is separate from preservation and acceptance. The selected
+Media Type parser must accept the supplied value and produce a usable
+`type/subtype` identity. The implementation compares the case-normalized
+`type/subtype` identity against one compile-time allowlist. Parameters do not
+participate in this capability lookup. Do not use raw string-prefix matching.
+
+This contract does not define a second Coedit-specific Media Type grammar and
+does not require the production parser to reject every value that is outside a
+particular RFC grammar. Step 4 selects and qualifies the production parser and
+any additional acceptance restrictions. That selected acceptance behavior is a
+compatibility-visible implementation contract: record representative accepted
+and rejected values, and do not silently change the accepted input domain during
+a parser upgrade.
+
+The complete supplied spelling remains durable metadata even when the selected
+parser treats two spellings as the same Media Type identity. Parsing for
+acceptance and capability dispatch therefore does not canonicalize the stored
+value."""
+          replace_once(payload, old, new)
+          replace_once(
+              payload,
+              "### 3.1 Syntax, capability, and representation support are separate\n\nMalformed Media Type syntax is invalid input. A accepted unfamiliar Media Type value\nis valid document content and uses generic opaque handling.",
+              "### 3.1 Acceptance, capability, and representation support are separate\n\nA Media Type value that the selected acceptance contract rejects is invalid\ninput. An accepted unfamiliar Media Type value is valid document content and\nuses generic opaque handling.",
+          )
+          replace_once(
+              payload,
+              "Detailed parameter semantics, supported profile combinations, charset support,\ncodec/library choice, and profile-specific transformations belong to the Step 4\nprocessor selection and its focused verification. This contract does not select\nthem in advance.",
+              "Detailed Media Type parser/library choice, acceptance behavior, parameter\nsemantics, supported profile combinations, charset support, raw-media\ncodec/library choice, and profile-specific transformations belong to Step 4 and\nits focused verification. This contract does not select them in advance.",
+          )
+          replace_once(payload, "| Malformed Media Type syntax", "| Media Type value rejected by the selected acceptance contract")
+          replace_once(payload, "| Valid Media Type not in the fine-grained allowlist", "| Accepted Media Type value not in the fine-grained allowlist")
+          replace_once(payload, "| Valid allowlisted type whose raw representation is unsupported by the selected processor", "| Accepted allowlisted value whose raw representation is unsupported by the selected processor")
+          replace_once(
+              payload,
+              "Any valid Media Type whose normalized type/subtype is not in the fine-grained\nallowlist initially uses generic opaque-content behavior.",
+              "Any accepted Media Type value whose parsed, normalized type/subtype is not in\nthe fine-grained allowlist initially uses generic opaque-content behavior.",
+          )
+          replace_once(
+              payload,
+              "Step 4 selects and qualifies the first production raw-media processor and its\nsupported representation profiles. The selected capability may be deliberately\nsmall. Later processor support can expand without changing document semantics or\nstored Media Type values.",
+              "Step 4 selects and qualifies the production Media Type parser/acceptance contract\nand the first raw-media processor with its supported representation profiles.\nThe selected capabilities may be deliberately small. Later raw-media profile\nsupport can expand without changing document semantics or stored Media Type\nvalues. Changes to Media Type acceptance require explicit compatibility review\nand evidence.",
+          )
+          replace_once(payload, "The caller supplies the exact valid Media Type when creating that payload.", "The caller supplies the exact accepted Media Type value when creating that payload.")
+          replace_once(
+              payload,
+              "- exact Media Type preservation with parsed type/subtype capability dispatch;\n- `text/markdown` and `text/plain` use the same fine-grained operation surface;\n- accepted unfamiliar Media Type values use opaque handling;",
+              "- exact Media Type preservation with parsed type/subtype capability dispatch,\n  using representative test labels without selecting the production acceptance\n  grammar;\n- `text/markdown` and `text/plain` use the same fine-grained operation surface;\n- representative unfamiliar Media Type values use opaque handling;",
+          )
+          replace_once(
+              payload,
+              "Step 4 selects and qualifies the production raw-media processor and its supported\nrepresentation profiles. Tests belong to the selected capability: supported\nprofiles must work exactly, unsupported profiles must fail explicitly, and the\nprocessor must not silently alter content or Media Type metadata.",
+              "Step 4 selects and qualifies the production Media Type parser and acceptance\ncontract, records representative accepted/rejected compatibility fixtures, and\nselects and qualifies the production raw-media processor and its supported\nrepresentation profiles. Supported profiles must work exactly, unsupported\nprofiles must fail explicitly, and the processor must not silently alter content\nor Media Type metadata. A later parser/library upgrade must preserve the recorded\nacceptance contract or make an explicit compatibility decision.",
+          )
+          replace_once(
+              payload,
+              "- select the production codec/library, charset set, flowed-text behavior,\n  parameter-support matrix, or other raw-media profile details before Step 4;",
+              "- select the production Media Type parser or freeze its exact accepted-input\n  domain before Step 4;\n- select the production raw-media codec/library, charset set, flowed-text\n  behavior, parameter-support matrix, or other raw-media profile details before\n  Step 4;",
+          )
+
+          verification = Path("docs/MVP_VERIFICATION_PLAN.md")
+          pattern = re.compile(
+              r"- each materialized InlineContent carries an accepted Media Type value; allowlisted fine-grained text selects the fine-grained text capability set and accepted unfamiliar Media Type values select generic opaque handling;\n"
+              r"- creation and whole-payload replacement require an explicit Media Type, the engine does not infer or default it, and `application/octet-stream` is used only when an application deliberately supplies it;\n"
+              r"- malformed generic Media Type syntax, a accepted unfamiliar Media Type value, and an allowlisted Media Type whose raw representation is unsupported by the selected processor are distinct cases;\n"
+              r"- generic Media Type syntax covers RFC 6838 restricted names, RFC 9110 token and quoted-string parameter values, case-insensitive duplicate-parameter rejection, complete `name=value` parameters, and preservation of accepted source spelling;\n"
+              r"- case variants and parameters give consistent type/subtype capability matching without a registry lookup while the complete supplied Media Type survives unchanged;"
+          )
+          text = verification.read_text(encoding="utf-8")
+          replacement = """- each materialized InlineContent carries a Media Type value accepted by the selected production acceptance contract; allowlisted fine-grained text selects the fine-grained text capability set and accepted unfamiliar values select generic opaque handling;
+- creation and whole-payload replacement require an explicit accepted Media Type value, the engine does not infer or default it, and `application/octet-stream` is used only when an application deliberately supplies it;
+- a Media Type value rejected by the selected acceptance contract, an accepted unfamiliar value, and an accepted allowlisted value whose raw representation is unsupported by the selected processor are distinct cases;
+- Step 3 uses representative Media Type labels to exercise parsed type/subtype dispatch without selecting the production accepted-input grammar;
+- case variants and parameters accepted by the selected parser give consistent type/subtype capability matching without a registry lookup while the complete supplied Media Type survives unchanged;"""
+          text, n = pattern.subn(replacement, text, count=1)
+          if n != 1:
+              raise RuntimeError(f"{verification}: Media Type verification block did not match")
+          verification.write_text(text, encoding="utf-8")
+          replace_once(
+              verification,
+              "- Step 4 records the selected production raw-media processor and supported representation profiles and verifies each selected profile according to its focused contract;",
+              "- Step 4 records the selected production Media Type parser/acceptance contract with representative accepted/rejected compatibility fixtures, and records the selected raw-media processor and supported representation profiles;",
+          )
+          replace_all(verification, "malformed generic Media Type syntax", "a Media Type value rejected by the selected acceptance contract")
+          replace_all(verification, "generic Media Type syntax", "Media Type acceptance")
+          replace_all(verification, "malformed Media Type syntax", "a Media Type value rejected by the selected acceptance contract")
+
+          portable = Path("docs/PORTABLE_DOCUMENT_FORMAT.md")
+          replace_all(portable, "generic Media Type syntax and capability classification", "Media Type acceptance and capability classification under the selected production contract")
+          replace_all(portable, "generic Media Type syntax", "Media Type acceptance")
+          replace_once(
+              portable,
+              "The complete Media Type still remains valid durable metadata and Media Type acceptance is validated here.",
+              "The complete Media Type remains durable metadata and is checked against the selected production acceptance contract here.",
+          )
+          replace_all(portable, "reported as malformed Media Type acceptance", "reported as rejected by the Media Type acceptance contract")
+
+          scaffold = Path("SCAFFOLDING_PLAN.md")
+          replace_once(scaffold, "representative opaque Media Types including a valid unfamiliar type", "representative opaque Media Type labels, including unfamiliar labels used to qualify dispatch without freezing the production acceptance grammar")
+          replace_once(
+              scaffold,
+              "Media Type syntax, parameter preservation,\nraw-media boundary separation, and capability matching are already document\nsemantics; Step 3 proves those boundaries can be implemented independently of the\ncarrier. Step 4 selects the initial raw-media processor capability and retains the\nStep 3 boundary cases as production regressions.",
+              "Media Type preservation, raw-media boundary separation, and capability matching\nare accepted document semantics; Step 3 proves those boundaries can be implemented\nindependently of the carrier without freezing the production accepted-input\ngrammar. Step 4 selects and qualifies the Media Type parser/acceptance contract\nand the initial raw-media processor capability, then retains the Step 3 boundary\ncases as production regressions.",
+          )
+          replace_all(scaffold, "Step 4 selects and qualifies the first raw-media processor capability.", "Step 4 selects and qualifies the production Media Type parser/acceptance contract and the first raw-media processor capability.")
+
+          implementation = Path("docs/MVP_IMPLEMENTATION_SPEC.md")
+          replace_all(implementation, "`INLINE_CONTENT_PAYLOADS.md` section 3.1 owns syntax and capability matching.", "`INLINE_CONTENT_PAYLOADS.md` section 3.1 owns acceptance and capability matching.")
+          replace_all(implementation, "An unfamiliar type is not invalid syntax", "An accepted unfamiliar value is not rejected merely because it is unfamiliar")
+          replace_all(implementation, "Every Step 4 creation path supplies an accepted Media Type value", "Every Step 4 creation path supplies a Media Type value accepted by the selected production contract")
+          replace_all(implementation, "Step 4 selects and qualifies the first production raw-media processor", "Step 4 selects and qualifies the production Media Type parser/acceptance contract and the first raw-media processor")
+          replace_all(implementation, "Step 4 converts the selected candidate into the production collaborative core, selects the production raw-media processor", "Step 4 converts the selected candidate into the production collaborative core, selects the production Media Type parser/acceptance contract, selects the raw-media processor")
+
+          architecture = Path("docs/MVP_ARCHITECTURE.md")
+          replace_all(architecture, "Media-Type validation", "Media-Type acceptance and capability dispatch")
+
+          readme = Path("docs/README.md")
+          replace_all(readme, "Step 4 selects and qualifies the first\nproduction raw-media processor", "Step 4 selects and qualifies the production\nMedia Type parser/acceptance contract and the first raw-media processor")
+          replace_all(readme, "Step 4 implements the selected collaborative core and selects the production raw-media processor", "Step 4 implements the selected collaborative core, selects the production Media Type parser/acceptance contract, and selects the raw-media processor")
+          replace_all(readme, "Step 3 proves raw/coarse media-boundary independence through test codecs but does not select the production raw-media processor", "Step 3 proves capability-dispatch and raw/coarse media-boundary independence through representative labels and test codecs but does not select the production Media Type parser, accepted-input domain, or raw-media processor")
+
+          adr = Path("docs/decisions/0010-typed-inline-content-payloads.md")
+          replace_all(adr, "raw-media processor profiles deferred to Step 4", "Media Type acceptance and raw-media processor profiles deferred to Step 4")
+          replace_once(
+              adr,
+              "Each InlineContent owns exactly one payload and one accepted Internet\nMedia Type that identifies its media representation. The complete supplied Media\nType value, including parameters, is durable metadata and is preserved exactly.\n\nThe document model parses the value for validation and capability dispatch, but\ndoes not rewrite it merely because a type is recognized. Type/subtype comparison\nis case-insensitive. Parameters remain part of the preserved value.\n\nGeneric Media Type syntax, Coedit collaboration capability, and support for a\nspecific raw representation are separate concerns. A accepted unfamiliar Media Type value\ncan use opaque handling without Coedit certifying its format-specific semantics.",
+              "Each InlineContent owns exactly one payload and one accepted Internet Media Type\nvalue that identifies its media representation. The complete supplied Media Type\nvalue, including parameters, is durable metadata and is preserved exactly.\n\nThe selected parser must accept the value and produce a usable `type/subtype`\nidentity for capability dispatch. The document model does not rewrite the supplied\nvalue merely because a type is allowlisted. Type/subtype comparison for capability\ndispatch is case-insensitive. Parameters remain part of the preserved value.\n\nMedia Type acceptance, Coedit collaboration capability, and support for a\nspecific raw representation are separate concerns. An accepted unfamiliar Media\nType value can use opaque handling without Coedit certifying its format-specific\nsemantics.\n\nThis ADR does not define a second Coedit-specific Media Type grammar and does not\nrequire the production parser to reject every value outside one selected RFC\ngrammar. Step 4 selects and qualifies the parser and any additional acceptance\nrestrictions. Representative accepted and rejected values become compatibility\nevidence so a parser upgrade cannot silently change the accepted input domain.",
+          )
+          replace_once(
+              adr,
+              "Step 3 uses representative test codecs only to prove that this boundary is\nindependent of carrier selection. Step 4 selects and qualifies the first\nproduction raw-media processor and its supported representation profiles.",
+              "Step 3 uses representative Media Type labels and test codecs only to prove\ncapability dispatch and raw-media boundary independence from carrier selection.\nIt does not select the production Media Type parser or accepted-input domain.\nStep 4 selects and qualifies the production Media Type parser/acceptance contract\nand the first raw-media processor with its supported representation profiles.",
+          )
+          insert_after = """### Use a Coedit-specific collaborative-text Media Type
+
+Rejected. A private media type would make the label describe Coedit's current
+capability rather than the actual content format.
+"""
+          replacement = insert_after + """
+### Freeze RFC 6838/RFC 9110 syntax as the Coedit acceptance contract now
+
+Rejected for this gate. Standards grammar is useful reference material, but the
+document model does not need to invent or freeze a stricter parser contract
+before the production parsing implementation is selected. A well-established
+parser can deliberately accept a broader practical input domain. Step 4 must
+select and qualify that behavior and record compatibility fixtures instead of
+silently inheriting whatever a dependency happens to accept.
+"""
+          replace_once(adr, insert_after, replacement)
+          replace_once(
+              adr,
+              "- **Step 4:** implement the selected payload/carrier and select the first\n  production raw-media processor with its supported representation profiles.",
+              "- **Step 4:** implement the selected payload/carrier; select and qualify the\n  production Media Type parser/acceptance contract with compatibility fixtures;\n  and select the first production raw-media processor with its supported\n  representation profiles.",
+          )
+          replace_all(adr, "The detailed raw-media profile matrix is intentionally not part of this ADR.", "The exact Media Type accepted-input domain and detailed raw-media profile matrix are intentionally not part of this ADR.")
+
+          # Secondary summaries: make generic admission terminology explicit.
+          for path in [Path("docs/PRODUCT_DOMAIN_MODEL.md"), Path("docs/MVP_CONTRACT.md"), Path("docs/COLLABORATION_MODEL.md"), Path("docs/PRESERVED_BRANCH_RECONCILIATION.md")]:
+              replace_all(path, "supported Media Types", "accepted Media Type values")
+              replace_all(path, "supported Media Type", "accepted Media Type value")
+              replace_all(path, "valid unfamiliar Media Type", "accepted unfamiliar Media Type value")
+              replace_all(path, "valid unfamiliar Media Types", "accepted unfamiliar Media Type values")
+
+          contract = Path("docs/MVP_CONTRACT.md")
+          replace_once(contract, "Use Internet Media Types for InlineContent payloads; support allowlisted fine-grained text with fine-grained text operations and generic opaque handling for other accepted Media Type values.", "Use accepted Internet Media Type values for InlineContent payloads; support allowlisted fine-grained text with fine-grained text operations and generic opaque handling for other accepted values. Step 4 selects and qualifies the production Media Type acceptance contract.")
+
+          # Portable validation uses the selected acceptance contract, not an independent grammar.
+          replace_all(portable, "accepted unfamiliar Media Type values round trip", "accepted unfamiliar Media Type values round trip")
+          replace_all(portable, "A accepted unfamiliar Media Type value", "An accepted unfamiliar Media Type value")
+          replace_all(portable, "a accepted unfamiliar Media Type value", "an accepted unfamiliar Media Type value")
+
+          # Grammar-specific standards references must no longer be normative in these current authorities.
+          forbidden = [
+              "Generic Media Type syntax follows",
+              "RFC 6838 restricted names",
+              "RFC 9110 token and quoted-string parameter values",
+              "syntactically valid Media Type",
+              "syntactically valid unfamiliar",
+              "generic Media Type syntax",
+              "malformed generic Media Type syntax",
+              "Malformed Media Type syntax",
+          ]
+          for path in files:
+              text = path.read_text(encoding="utf-8")
+              for needle in forbidden:
+                  if needle in text:
+                      raise RuntimeError(f"{path}: stale Media Type syntax wording remains: {needle}")
+
+          # Point 2 is intentionally deferred. Do not rename or rewrite its filename.
+          workflow = Path(".github/workflows/pr19-media-type-acceptance.yml")
+          workflow.unlink()
+
+      - name: Commit correction to PR branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "docs: defer Media Type acceptance grammar to Step 4"
+          git push origin HEAD:design/typed-inline-content-payloads
