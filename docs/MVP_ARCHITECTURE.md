@@ -265,7 +265,7 @@ The universal whole-payload replacement operation belongs to the ordinary `Docum
 
 `RANGE_MODEL.md` owns allowlisted fine-grained text Range behavior. The selected `DocumentEngine` supplies document context. Step 6 Gate C finalizes result wrappers, parse diagnostics, resource-guard behavior, and serialization types without exposing carrier-native objects. The engine has no holder-specific reinjection operation: applications place a serialized Range into their own holder and later pass the value back to `parseRange`/resolution as needed.
 
-`PORTABLE_DOCUMENT_FORMAT.md` owns the exact `.coedit` wire contract. The UX treats `bytes` as opaque. No specific MIME type is part of the accepted MVP design yet.
+`PORTABLE_DOCUMENT_FORMAT.md` owns the exact `.coedit` wire contract. The UX treats `bytes` as opaque. No specific Media Type for the `.coedit` artifact itself is part of the accepted MVP design yet.
 
 ## 4. Version and command contract
 

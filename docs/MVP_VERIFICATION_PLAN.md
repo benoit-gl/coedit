@@ -147,6 +147,7 @@ Verify:
 - each materialized InlineContent carries a syntactically valid Media Type; allowlisted fine-grained text selects the fine-grained text capability set and valid unfamiliar types select generic opaque handling;
 - creation and whole-payload replacement require an explicit Media Type, the engine does not infer or default it, and `application/octet-stream` is used only when an application deliberately supplies it;
 - malformed generic Media Type syntax, a valid unfamiliar Media Type, and an allowlisted Media Type whose raw representation is unsupported by the selected processor are distinct cases;
+- generic Media Type syntax covers RFC 6838 restricted names, RFC 9110 token and quoted-string parameter values, case-insensitive duplicate-parameter rejection, complete `name=value` parameters, and preservation of accepted source spelling;
 - case variants and parameters give consistent type/subtype capability matching without a registry lookup while the complete supplied Media Type survives unchanged;
 - Step 3 uses representative test codec fixtures to prove exact supported conversion, explicit unsupported-profile failure, invalid-input failure, and exact-representation failure independently of carrier selection without selecting the production processor/profile set;
 - Step 4 records the selected production raw-media processor and supported representation profiles and verifies each selected profile according to its focused contract;
@@ -502,7 +503,9 @@ Verify:
 
 Verify keyboard-only structural creation and movement, predictable focus after operations, single-text-editor ownership for allowlisted fine-grained text, payload-aware rendering, historical read-only behavior, visible failure/retry state, and no direct React mutation of durable document state.
 
-Use a real browser for IME, focus transfer, clipboard behavior, and other interactions that cannot be qualified reliably in a simulated DOM.
+When a renderer, navigation path, or another application adapter activates inert Markdown, embedded HTML, links, or other payload-derived content, verify the selected application sanitization and activation policy against representative hostile source. Source-preservation tests do not substitute for activation-boundary security tests, and this plan does not preselect a sanitizer or URL-policy library.
+
+Use a real browser for IME, focus transfer, clipboard behavior, activation-boundary security behavior, and other interactions that cannot be qualified reliably in a simulated DOM.
 
 ## 14. End-to-end MVP suite
 

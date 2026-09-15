@@ -108,7 +108,7 @@ Semantic editor groups and physical recovery checkpoints are not semantic Checkp
 
 ### 4.7 Media-Type-labelled collaborative InlineContent payloads
 
-Each InlineContent owns one collaborative payload labelled with an Internet Media Type. allowlisted fine-grained text selects the fine-grained collaborative-text capability set; every other supported Media Type initially selects the generic opaque capability set. Block and InlineContent boundaries imply no text character or separator.
+Each InlineContent owns one collaborative payload labelled with an Internet Media Type. Allowlisted fine-grained text selects the fine-grained collaborative-text capability set; every other supported Media Type initially selects the generic opaque capability set. Block and InlineContent boundaries imply no text character or separator.
 
 Every InlineContent payload supports atomic whole-payload replacement with Origin information. The operation preserves the InlineContent identity while replacing the complete payload value, and the Media Type can stay the same or change. A causally later replacement supersedes replacements it observes. Concurrent replacements choose one deterministic current winner without using packet arrival order, local wall-clock time, or an unsynchronized local sequence. Losing replacements remain represented by immutable Contributions and exactly materializable Versions.
 
@@ -148,7 +148,7 @@ The prototype must preserve these domain rules:
 - Block and InlineContent identities are unique in live structure, while History and portable validation reject reuse across retained lifetimes;
 - each InlineContent belongs to exactly one Block;
 - each InlineContent owns one Media-Type-labelled collaborative payload;
-- allowlisted fine-grained text selects the fine-grained collaborative-text capability set and other supported Media Types initially select the generic opaque capability set;
+- Allowlisted fine-grained text selects the fine-grained collaborative-text capability set and other supported Media Types initially select the generic opaque capability set;
 - every payload can be replaced atomically while preserving InlineContent identity and keeping or changing Media Type, with explicit Origin behavior;
 - concurrent whole-payload replacements converge deterministically;
 - allowlisted fine-grained text owns native-string content and protected fine-grained Origin;
