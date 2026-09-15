@@ -67,7 +67,7 @@ Human users, imports, automation, and later AI collaborators use the same durabl
 
 ### 2.7 Payload metadata follows its semantics
 
-`InlineContent` is payload-neutral at the document level. The fine-grained Media Type is allowlisted fine-grained text; all other supported Media Types initially use the generic opaque capability set.
+`InlineContent` is payload-neutral at the document level. Media Types in the fine-grained allowlist use fine-grained text; all other supported Media Types initially use the generic opaque capability set.
 
 Formatting and media syntax are application concerns. Fine-grained Origin provenance is protected metadata that travels with authored allowlisted text but never inherits from neighboring text. An opaque payload has one payload-level Origin for its current whole value. Comments are external records with repairable text targets. Ordinary selections are transient.
 
@@ -219,7 +219,7 @@ Block tag:         topic:provenance
 InlineContent tag: view:main
 InlineContent tag: view:summary
 InlineContent tag: user:needs-citation
-Media Type:        allowlisted fine-grained text
+Media Type:        text/markdown
 History kind:      checkpoint
 ```
 
@@ -235,7 +235,7 @@ Each InlineContent owns one payload labelled with an Internet Media Type. `INLIN
 
 The Media Type is part of the current payload value, not the InlineContent identity. Whole-payload replacement preserves the InlineContent identity while atomically replacing the Media Type and Media-Type-specific content; the replacement can keep or change the Media Type. Any application-level conversion semantics remain an adapter concern; the document model needs no separate conversion operation.
 
-Every payload supports atomic whole-payload replacement. Media-Type-specific contracts can expose additional fine-grained operations. allowlisted fine-grained text does; all other supported Media Types initially use the generic opaque capability set.
+Every payload supports atomic whole-payload replacement. Media-Type-specific contracts can expose additional fine-grained operations. Allowlisted fine-grained text does; all other supported Media Types initially use the generic opaque capability set.
 
 Concurrent whole-payload replacements converge deterministically. Causally later replacements supersede observed replacements. Concurrent replacements choose one deterministic current winner without using packet arrival order or wall-clock time. Losing replacements remain in immutable History and their Versions remain materializable.
 
@@ -389,7 +389,7 @@ The current ontology requires:
 3. no persisted `Idea`, `Heading`, `Body`, `Paragraph`, or `Leaf` entity types;
 4. Block-owned tags, child presentation, ordered InlineContents, and ordered child Blocks;
 5. InlineContent-owned identity, tags, and one Media-Type-labelled collaborative payload;
-6. the fine-grained allowlisted fine-grained text Media Type and generic opaque Media Types;
+6. the fine-grained text allowlist and generic opaque Media Types;
 7. universal atomic whole-payload replacement for every Media Type;
 8. deterministic convergence for concurrent whole-payload replacements without arrival-order or wall-clock arbitration;
 9. no separate Media Type conversion operation;

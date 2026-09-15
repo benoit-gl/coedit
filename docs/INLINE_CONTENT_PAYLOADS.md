@@ -61,6 +61,19 @@ valid Media Type and compares its case-normalized `type/subtype` identity agains
 one compile-time allowlist. Parameters do not participate in this capability
 lookup. Do not use raw string-prefix matching.
 
+Generic Media Type syntax follows the `media-type` grammar in RFC 9110 sections
+8.3.1 and 5.6.6, with deliberate Coedit restrictions from RFC 6838 sections 4.2
+and 4.3: type, subtype, and parameter names use `restricted-name`; every semicolon
+must introduce a complete `name=value` parameter; and a parameter name cannot
+occur more than once, compared case-insensitively. Parameter values use the RFC
+9110 `token` or `quoted-string` syntax. These rules define generic syntax only.
+Coedit does not require IANA registration or recognize format-specific parameter
+semantics merely to preserve an unfamiliar Media Type.
+
+The complete supplied spelling remains durable metadata even where protocol-level
+comparison would treat two spellings as equivalent. Parsing for validation and
+capability dispatch therefore does not canonicalize the stored value.
+
 The initial fine-grained allowlist contains exactly:
 
 ```text

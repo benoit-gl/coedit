@@ -2,9 +2,7 @@
 
 **Status:** Accepted direction; carrier and mixed replacement/edit semantics deferred to Gate B; raw-media processor profiles deferred to Step 4
 
-**Decision date:** 2026-09-08
-
-**Amended:** 2026-09-14
+**Decision date:** 2026-09-15
 
 **Scope:** InlineContent payload semantics, Media Type preservation and capability
 dispatch, whole-payload replacement, payload convergence, and the boundary

@@ -257,7 +257,7 @@ See [`docs/PORTABLE_DOCUMENT_FORMAT.md`](docs/PORTABLE_DOCUMENT_FORMAT.md).
 
 **Outcome:** A user can create, import, open, render, navigate, and inspect a document through engine queries only. Rendering is payload-aware and does not infer text separators from structural boundaries.
 
-**Exit gate:** Realistic samples render from the engine. Diagnostics and the development inspector agree with visible structure and Media Types.
+**Exit gate:** Realistic samples render from the engine. Diagnostics and the development inspector agree with visible structure and Media Types. Before any renderer or navigation path activates inert Markdown, embedded HTML, links, or other payload-derived content, the application security policy for that activation boundary is selected, documented, and verified against hostile source. Source preservation alone does not authorize activation.
 
 See [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md).
 

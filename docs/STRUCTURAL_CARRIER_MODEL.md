@@ -209,7 +209,7 @@ as the liveness effect only when it participates directly in the same existence
 conflict as deletion. Otherwise, the adapter must emit a separate carrier-private
 liveness effect in the same logical change.
 
-A semantic payload mutation includes a fine-grained allowlisted fine-grained text edit and a
+A semantic payload mutation includes an allowlisted fine-grained text edit and a
 whole-payload replacement of either capability class. It must update the
 logical Block activity marker and emit the required liveness effect in the same
 logical carrier transaction or change. A nested activity mutation is
