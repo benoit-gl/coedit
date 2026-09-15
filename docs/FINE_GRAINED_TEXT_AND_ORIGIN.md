@@ -1,4 +1,4 @@
-# Fine-grained collaborative text and attribution specification
+# Fine-grained text and Origin specification
 
 **Status:** Accepted fine-grained text behavioral contract; carrier implementation is
 subject to the Elaboration qualification gate.
@@ -9,10 +9,22 @@ This document defines behavior shared by InlineContent payloads whose normalized
 Internet Media Type `type/subtype` is in the compile-time fine-grained allowlist.
 The initial entries are `text/markdown` and `text/plain`.
 
-It defines native-string editing, fine-grained Origin attribution, copy/paste and
-restore lineage, transient selection, and carrier qualification. It does **not**
-define formatting, rendering, Markdown parsing, list semantics, link semantics,
-or another application presentation model.
+It defines native-string editing, fine-grained Origin attribution and projection,
+copy/paste and restore lineage, transient selection, and carrier qualification. It
+does **not** define formatting, rendering, Markdown parsing, list semantics, link
+semantics, or another application presentation model.
+
+Coedit keeps two attribution questions separate. **Origin** answers who or what
+created payload material. **Contribution attribution** answers who performed a
+durable operation in this document. Payload material therefore has Origin
+provenance and participates in attributed Contribution History. Structural state —
+including Block and InlineContent existence, placement, ownership, ordering, tags,
+and child presentation — has Contribution History but no Origin. The trusted
+genesis root is the deliberate pre-Contribution exception.
+
+This document owns the fine-grained-text Origin side of that split. The
+product-wide Contribution and History contracts remain owned by
+`PRODUCT_DOMAIN_MODEL.md`, `MVP_CONTRACT.md`, and `MVP_ARCHITECTURE.md`.
 
 [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) owns Media Type
 preservation, allowlist dispatch, raw/coarse byte materialization, and universal
@@ -139,10 +151,12 @@ Whole-payload replacement remains available for allowlisted text. Use
 fine-grained operations when merge behavior is desired. Mixed replacement/edit
 concurrency remains a Gate B decision under `INLINE_CONTENT_PAYLOADS.md`.
 
-## 5. Origin and activity behavior
+## 5. Origin and Contribution behavior
 
-Origin answers who or what created payload material. Contribution actor answers
-who performed an operation in this document.
+Origin and Contribution attribution are independent. Origin follows the authorship
+or source of payload material. A Contribution records the acting Contributor and
+the exact durable semantic activity performed in this document. Coedit does not
+replace History with a mutable payload or structural `lastModifiedBy` field.
 
 Each live authored text unit has exactly one valid `OriginId`. Newly authored text
 receives an Origin explicitly at the trusted engine/import boundary. Origin never
@@ -151,6 +165,20 @@ comes from neighboring text.
 An Origin record and the Contribution that first uses it publish atomically.
 `OriginId` is stable, immutable, and document-scoped. An OriginRecord describes
 one authorship/source event, not a mutable Contributor profile.
+
+A public fine-grained-text projection must expose detached, carrier-neutral Origin
+state sufficient for a caller to associate every live logical authored text unit
+in the returned string with exactly one `OriginId` and inspect the corresponding
+immutable OriginRecord without private carrier access. The projection can coalesce
+adjacent equal Origins into runs for display, but that coalescing cannot change the
+underlying attribution. The Origin mapping and text must describe the same Version.
+The exact public run shape and coordinate representation remain implementation
+details until the implementation step freezes them.
+
+This Origin projection does not define a per-text Contribution-run or
+`last modifier` projection. The current public Contribution surface remains
+History listing and semantic changeset summaries; a finer modification-attribution
+projection requires its own accepted contract.
 
 The initial behavior is:
 

@@ -331,6 +331,10 @@ interface CoeditTextEditorContentValue {
 
 The value contains the exact supplied Media Type, the current native string, and detached protected Origin information required for correct attributed editing. It contains no engine-owned formatting, parsed Markdown, rendered tree, or document-level `HardBreak` value.
 
+`DetachedTextOriginState` is a carrier-neutral public projection, not an opaque carrier token. For every live logical authored text unit in the returned string, the client must be able to determine its `OriginId` and inspect the corresponding immutable OriginRecord without private carrier access. The implementation can coalesce adjacent equal Origins into runs, provided the mapping remains exact and version-correlated with the returned text. Exact TypeScript shapes and text-coordinate representation remain illustrative until implementation freezes them.
+
+This MVP boundary does not define a per-text Contribution-run or `last modifier` projection. Contribution activity remains available through History listing and semantic changeset summaries. A finer modification-attribution projection requires a separate contract.
+
 The application editor can parse or render the source string and can reconstruct or bind transient editor/carrier state from this value or a controlled engine session. Mutating detached local state does not mutate engine state. Requesting a text-editor session for an opaque payload fails explicitly or is not offered by the application.
 
 A durable fine-grained text commit must pass through `execute` and preserve the accepted atomic text-plus-Origin contract. The client can request ordinary editing intent but cannot assign arbitrary Origin or submit raw carrier updates.

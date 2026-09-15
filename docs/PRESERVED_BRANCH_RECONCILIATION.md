@@ -37,7 +37,7 @@ Use these classifications:
 - **Atomic IME/paste/cut/format/undo/redo edit boundaries — retained.** Retain atomic editor-action boundaries. Formatting actions are application/editor intent that compile to source-string or structural operations; they are not engine-owned marks.
 - **Controlled transition freeze/flush/drain before editor invalidation — retained.** `MVP_ARCHITECTURE.md` owns the UX/engine boundary; implementation and tests are in the MVP implementation and verification specs.
 - **Exact retry of failed queued editor persistence work — adapted.** Retain the exact detached command, effect data, and idempotency identity needed for repository retry; do not retain the old whole-body capture queue as an architectural boundary.
-- **Formatting and provenance share a generic external range abstraction — superseded.** Both parts of the old shared mechanism are gone. Formatting and link syntax are application/source-text concerns. Fine-grained Origin is protected content-native metadata. Generic opaque payloads have payload-level Origin. Comments, navigation, and application links can use the shared allowlisted fine-grained text Range value without making it a universal formatting/provenance annotation or entity. `PRODUCT_DOMAIN_MODEL.md`, `INLINE_CONTENT_PAYLOADS.md`, `RANGE_MODEL.md`, and `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` control.
+- **Formatting and provenance share a generic external range abstraction — superseded.** Both parts of the old shared mechanism are gone. Formatting and link syntax are application/source-text concerns. Fine-grained Origin is protected content-native metadata. Generic opaque payloads have payload-level Origin. Comments, navigation, and application links can use the shared allowlisted fine-grained text Range value without making it a universal formatting/provenance annotation or entity. `PRODUCT_DOMAIN_MODEL.md`, `INLINE_CONTENT_PAYLOADS.md`, `RANGE_MODEL.md`, and `FINE_GRAINED_TEXT_AND_ORIGIN.md` control.
 - **Formatting and provenance have different mutation/inheritance semantics — adapted.** The separation lesson remains, but the mechanisms are now clearer: application formatting changes source text or structure, while fine-grained Origin is protected engine metadata that never inherits from neighboring text. Generic opaque Origin is whole-payload.
 - **Yjs relative positions as a plausible `TextAnchor` implementation — adapted.** Retained as one carrier-position primitive for Step 3 allowlisted fine-grained text Range feasibility. It is not the public Range API or an accepted lineage representation. Application formatting needs no engine anchor; fine-grained Origin is content-native.
 - **Formatting persisted as ProseMirror/Yjs marks — superseded.** Do not carry native carrier marks forward as canonical formatting. Markdown formatting/link syntax remains source text, and other presentation meaning belongs to application adapters. ProseMirror can still be an editor adapter without becoming document authority.
@@ -99,7 +99,7 @@ Gate B also closes mixed replacement/text-edit semantics under the payload
 contract before Step 4; no specific mixed-operation winner is accepted yet.
 
 These gates and their evidence are owned by `INLINE_CONTENT_PAYLOADS.md`,
-`RANGE_MODEL.md`, `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`,
+`RANGE_MODEL.md`, `FINE_GRAINED_TEXT_AND_ORIGIN.md`,
 `MVP_VERIFICATION_PLAN.md`, and `SCAFFOLDING_PLAN.md`. They include the explicitly
 deferred mixed-operation decision and do not reopen the completed Steps 1 and 2.
 

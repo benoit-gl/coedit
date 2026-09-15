@@ -16,7 +16,7 @@ This record preserves why the decision was made. Normative behavior belongs in:
 - [`../INLINE_CONTENT_PAYLOADS.md`](../INLINE_CONTENT_PAYLOADS.md) for Media Type
   preservation, fine-grained capability dispatch, raw/coarse separation,
   universal whole-payload replacement, Origin granularity, and convergence;
-- [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
+- [`../FINE_GRAINED_TEXT_AND_ORIGIN.md`](../FINE_GRAINED_TEXT_AND_ORIGIN.md)
   for fine-grained text and Origin;
 - [`../RANGE_MODEL.md`](../RANGE_MODEL.md) for durable references inside
   fine-grained text;

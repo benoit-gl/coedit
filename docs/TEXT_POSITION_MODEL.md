@@ -9,8 +9,8 @@ This document defines how Coedit separates native ECMAScript text, editor positi
 durable collaborative positions inside an allowlisted fine-grained text payload. It supplies
 position primitives to [`RANGE_MODEL.md`](RANGE_MODEL.md), which owns durable
 allowlisted fine-grained text Range behavior, and supplements
-[`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), which
-owns attributed-text behavior. [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md)
+[`FINE_GRAINED_TEXT_AND_ORIGIN.md`](FINE_GRAINED_TEXT_AND_ORIGIN.md), which
+owns fine-grained text and Origin behavior. [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md)
 owns the broader InlineContent payload boundary.
 
 The document model must not invent one universal numeric character coordinate.

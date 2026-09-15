@@ -13,7 +13,7 @@ The user-facing extension is `.coedit`. A portable artifact retains current Medi
 
 [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls domain meaning.
 [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) controls InlineContent Media Types, universal whole-payload replacement, and convergence semantics.
-[`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
+[`FINE_GRAINED_TEXT_AND_ORIGIN.md`](FINE_GRAINED_TEXT_AND_ORIGIN.md)
 controls allowlisted fine-grained text and fine-grained Origin behavior. [`RANGE_MODEL.md`](RANGE_MODEL.md)
 controls durable allowlisted fine-grained text Range values and required lineage. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
 controls the public serialization boundary. This document controls portable

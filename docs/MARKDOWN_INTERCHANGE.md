@@ -8,7 +8,7 @@ This document defines Markdown import, export, diagnostics, and the Markdown rou
 
 The input dialect is CommonMark plus GitHub Flavored Markdown (GFM). Markdown is an interchange and rendering format. It is not the lossless Coedit recovery format.
 
-`PRODUCT_DOMAIN_MODEL.md` controls domain meaning. `INLINE_CONTENT_PAYLOADS.md` controls InlineContent Media Types and generic payload behavior. `MVP_CONTRACT.md` controls the MVP proof boundary. `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` controls fine-grained text editing and Origin behavior. Formatting and Markdown interpretation belong to this application/interchange layer. `MVP_IMPLEMENTATION_SPEC.md` controls implementation details that are not defined here. `CAPACITY_AND_PERFORMANCE_TARGETS.md` controls cross-cutting capacity semantics and contract maturity. This document owns Markdown hostile-input behavior, Markdown-to-`text/markdown` fine-grained text normalization, experimental guard candidates, and the guards selected during Step 7.
+`PRODUCT_DOMAIN_MODEL.md` controls domain meaning. `INLINE_CONTENT_PAYLOADS.md` controls InlineContent Media Types and generic payload behavior. `MVP_CONTRACT.md` controls the MVP proof boundary. `FINE_GRAINED_TEXT_AND_ORIGIN.md` controls fine-grained text editing and Origin behavior. Formatting and Markdown interpretation belong to this application/interchange layer. `MVP_IMPLEMENTATION_SPEC.md` controls implementation details that are not defined here. `CAPACITY_AND_PERFORMANCE_TARGETS.md` controls cross-cutting capacity semantics and contract maturity. This document owns Markdown hostile-input behavior, Markdown-to-`text/markdown` fine-grained text normalization, experimental guard candidates, and the guards selected during Step 7.
 
 ## 2. Core round-trip invariant
 

@@ -4,7 +4,7 @@
 
 This document defines what the Coedit MVP must prove. The MVP is a **document-engine prototype**, not a complete collaborative writing product.
 
-Detailed implementation rules are in [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md). Domain meaning remains in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Public authority boundaries remain in [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md). Capacity and resource semantics are specified in [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md). InlineContent Media Types and universal replacement are specified in [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md). Fine-grained collaborative text is specified in [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md). Durable text Range behavior is specified in [`RANGE_MODEL.md`](RANGE_MODEL.md). Markdown interchange is specified in [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md). Lossless recovery is specified in [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md). Browser persistence is specified in [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Implementation order remains in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md).
+Detailed implementation rules are in [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md). Domain meaning remains in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Public authority boundaries remain in [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md). Capacity and resource semantics are specified in [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md). InlineContent Media Types and universal replacement are specified in [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md). Fine-grained collaborative text is specified in [`FINE_GRAINED_TEXT_AND_ORIGIN.md`](FINE_GRAINED_TEXT_AND_ORIGIN.md). Durable text Range behavior is specified in [`RANGE_MODEL.md`](RANGE_MODEL.md). Markdown interchange is specified in [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md). Lossless recovery is specified in [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md). Browser persistence is specified in [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Implementation order remains in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md).
 
 ## 1. Purpose
 
@@ -116,9 +116,11 @@ The document model does not interpret opaque payload bytes or prescribe applicat
 
 Allowlisted fine-grained text contains a native source string and protected fine-grained Origin attribution. The engine does not parse or render Markdown, own formatting marks, or interpret links. Application/editor/interchange layers own those semantics. New fine-grained text Origin is assigned by the trusted engine/import boundary and never inherited from neighboring text.
 
-Origin identifies who or what created material. The Contribution identifies who performed the operation in this document. Copy and restore preserve Origin according to the payload contract while recording the copy/restore actor and source/derivation separately.
+Origin identifies who or what created material. The Contribution identifies who performed the operation in this document. Copy and restore preserve Origin according to the payload contract while recording the copy/restore actor and source/derivation separately. Payload material therefore has Origin provenance and Contribution History, while structural state has Contribution History but no Origin. Trusted genesis-root construction is the deliberate pre-Contribution exception.
 
-A live editor can hold transient adapter state, but canonical payload effects become durable only through an engine command. Detailed behavior belongs to `INLINE_CONTENT_PAYLOADS.md` and `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`.
+A public allowlisted fine-grained-text projection must expose carrier-neutral Origin information sufficient to associate every live logical authored text unit with exactly one `OriginId` and inspect the corresponding OriginRecord without private carrier access. Adjacent equal Origins can be coalesced into derived display runs. The MVP does not require an analogous per-text Contribution-run or `last modifier` projection.
+
+A live editor can hold transient adapter state, but canonical payload effects become durable only through an engine command. Detailed behavior belongs to `INLINE_CONTENT_PAYLOADS.md` and `FINE_GRAINED_TEXT_AND_ORIGIN.md`.
 
 ### 4.8 Lossless portable recovery
 
@@ -153,6 +155,8 @@ The prototype must preserve these domain rules:
 - concurrent whole-payload replacements converge deterministically;
 - allowlisted fine-grained text owns native-string content and protected fine-grained Origin;
 - generic opaque payload handling preserves exact bytes and payload-level Origin;
+- payload material has Origin provenance while durable payload and structural mutations are attributed through Contributions;
+- Block and InlineContent structural state has no Origin; trusted genesis-root construction is the deliberate pre-Contribution exception;
 - Block and InlineContent tags have independent ownership;
 - `childrenPresentation` belongs to the parent;
 - contentless non-root Blocks are transparent grouping containers;
@@ -177,7 +181,7 @@ The browser can render and inspect the resulting Block tree through engine queri
 
 ### Scenario B — Edit through the engine
 
-A user can reorganize an imported document and edit allowlisted fine-grained text. Every durable structural, text or whole-payload replacement uses an attributed command.
+A user can reorganize an imported document and edit allowlisted fine-grained text. Every durable structural, text or whole-payload replacement uses an attributed command. The browser can query one fine-grained text projection and derive an Origin-based author display without private carrier access.
 
 New text receives the correct human/imported/unknown Origin. Same-document internal paste preserves source Origin while recording the paster; external paste does not import private Origin or falsely claim authorship.
 

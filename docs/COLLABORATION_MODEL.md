@@ -9,7 +9,7 @@ and what eventual consistency must mean for Coedit. It complements
 [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md), which defines the local engine API,
 [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md), which defines typed
 InlineContent payloads and whole-payload replacement convergence,
-[`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), which
+[`FINE_GRAINED_TEXT_AND_ORIGIN.md`](FINE_GRAINED_TEXT_AND_ORIGIN.md), which
 defines allowlisted fine-grained text attribution and Range-holder behavior,
 [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md), which defines the
 accepted Block carrier and structural merge semantics,

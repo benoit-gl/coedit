@@ -16,7 +16,7 @@ define sub-payload addressing for opaque content.
 controls InlineContent Media Types and universal whole-payload replacement.
 `MVP_ARCHITECTURE.md` controls the public engine boundary.
 `CAPACITY_AND_PERFORMANCE_TARGETS.md` controls cross-cutting capacity semantics
-and contract maturity. `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` owns allowlisted
+and contract maturity. `FINE_GRAINED_TEXT_AND_ORIGIN.md` owns allowlisted
 fine-grained text Origin, clipboard, and Range-holder lifecycle outside this
 Range contract. Formatting and link interpretation are application concerns.
 `TEXT_POSITION_MODEL.md` owns editor and carrier text-position boundaries.

@@ -15,7 +15,7 @@ Use these focused authorities first:
 - [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) for public engine behavior and component authority;
 - [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) for cross-cutting capacity and resource semantics;
 - [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) for Media Types, universal whole-payload replacement, and payload convergence;
-- [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for fine-grained text, Origin, clipboard, and Range-holder behavior;
+- [`FINE_GRAINED_TEXT_AND_ORIGIN.md`](FINE_GRAINED_TEXT_AND_ORIGIN.md) for fine-grained text, Origin, clipboard, and Range-holder behavior;
 - [`RANGE_MODEL.md`](RANGE_MODEL.md) for durable allowlisted fine-grained text Range behavior, the Range service, and staged representation selection;
 - [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md) for flat Block placement, Block-local carrier state, structural concurrency, and position-order qualification;
 - [`CODING_STYLE.md`](CODING_STYLE.md) for source structure, TSDoc, linting, formatting, dependency checks, package commands, and platform portability;
@@ -61,7 +61,7 @@ The repository CI runs `npm run bootstrap`, `npm run check`, `npm run build`,
 and `npm run check` again after the build on Linux for pull requests and pushes
 to `main`. These commands cannot contain logic that works only in CI.
 
-Step 3 qualifies pinned Yjs v13 against pinned Automerge using the common suites in `INLINE_CONTENT_PAYLOADS.md`, `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. Track Yjs v14 only after a stable release. Use Loro as a cursor/movable-tree benchmark, not a current production dependency. Gate B records the winner. Step 4 then implements the selected collaborative core. Do not expose either candidate through a public API or freeze carrier-specific `.coedit` bytes before Gate B.
+Step 3 qualifies pinned Yjs v13 against pinned Automerge using the common suites in `INLINE_CONTENT_PAYLOADS.md`, `FINE_GRAINED_TEXT_AND_ORIGIN.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. Track Yjs v14 only after a stable release. Use Loro as a cursor/movable-tree benchmark, not a current production dependency. Gate B records the winner. Step 4 then implements the selected collaborative core. Do not expose either candidate through a public API or freeze carrier-specific `.coedit` bytes before Gate B.
 
 ProseMirror/Tiptap is an application adapter. Its schema, Markdown parsing, formatting model, and rendered hierarchy are not canonical engine state. It translates user intent into Block operations and native-string text operations. The recursive Coedit Block tree remains outside ProseMirror.
 

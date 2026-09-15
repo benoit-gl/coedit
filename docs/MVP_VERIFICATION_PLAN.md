@@ -59,7 +59,7 @@ The documented baseline closes the former `TextAnchor` blocker by assigning payl
 
 The Media-Type-labelled-payload decision and Range authority revalidate the Step 0 authority baseline without reopening completed structural semantics in Steps 1 and 2. Gate B selects the collaborative carrier, records the required carrier text-domain behavior, closes the observable concurrent-replacement winner rule, its private implementation, mixed replacement/text-edit semantics, and payload/carrier resource-admission behavior. Step 4 selects and qualifies the production Media Type parser/acceptance contract and the first raw-media processor capability. Gate C selects the text Range representation after Step 6 and before `.coedit` version 1 freezes a portable Range encoding.
 
-The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `INLINE_CONTENT_PAYLOADS.md`, `ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, the observable deterministic whole-payload replacement winner rule and the carrier-private mechanism that implements it, mixed replacement/text-edit semantics, carrier text-domain evidence, payload/carrier resource-admission evidence and decision, evidence that raw/coarse media conversion is independent of carrier selection, the actual qualification hardware/software environment, measurements, scaling behavior, and the selection rationale. The resource-admission decision can use an adaptive host/runtime-dependent mechanism or record that no additional explicit finite guard is needed when safe atomic failure is demonstrated. It does not select the production Media Type parser, accepted-input domain, raw-media processor, or supported representation profiles. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
+The carrier qualification compares pinned Yjs v13 and Automerge under the same fixtures from `INLINE_CONTENT_PAYLOADS.md`, `FINE_GRAINED_TEXT_AND_ORIGIN.md`, `RANGE_MODEL.md`, and `STRUCTURAL_CARRIER_MODEL.md`. It records exact dependency versions, license review, adapter complexity, the observable deterministic whole-payload replacement winner rule and the carrier-private mechanism that implements it, mixed replacement/text-edit semantics, carrier text-domain evidence, payload/carrier resource-admission evidence and decision, evidence that raw/coarse media conversion is independent of carrier selection, the actual qualification hardware/software environment, measurements, scaling behavior, and the selection rationale. The resource-admission decision can use an adaptive host/runtime-dependent mechanism or record that no additional explicit finite guard is needed when safe atomic failure is demonstrated. It does not select the production Media Type parser, accepted-input domain, raw-media processor, or supported representation profiles. Yjs v14 is rerun only after stable release; Loro remains a benchmark unless a later decision changes the candidate set.
 
 ### 4.1 Step 1 tooling and platform evidence
 
@@ -222,8 +222,13 @@ Verify:
   or rewrite Origin;
 - imported, unknown, automation, and AI fixtures can be represented even when
   their product UI is deferred;
-- derived display runs can coalesce equal Origin without becoming durable range
-  entities; and
+- a public fine-grained-text projection returns text and detached carrier-neutral
+  Origin state for the same Version;
+- every live logical authored text unit in that projection maps to exactly one
+  `OriginId`, and every referenced immutable OriginRecord can be inspected without
+  private carrier access;
+- derived display runs can coalesce adjacent equal Origin without changing the
+  exact underlying attribution or becoming durable range entities; and
 - detached values cannot mutate engine state.
 
 ### 6.4 Complete editor paths and lineage
@@ -336,6 +341,7 @@ Verify at least:
 - genesis contains the initial root and no Contribution;
 - the first successful user mutation creates the first Contribution and resulting Version;
 - later successful durable commands each create exactly one logical Contribution and resulting Version;
+- structural creation, movement, ownership/order, tag, and child-presentation changes are attributable through their Contributions and do not create structural Origin records;
 - assigning any durable ID from a retained lifetime to a different entity, record, or lifetime is rejected even when the original entity is no longer live;
 - a failed command publishes neither;
 - same-base concurrent local commands produce one success and one conflict under the expected-Version boundary;

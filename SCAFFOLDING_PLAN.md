@@ -19,7 +19,7 @@ Use the companion documents for authority:
 - [`docs/MVP_ARCHITECTURE.md`](docs/MVP_ARCHITECTURE.md) defines component authority and the public engine boundary.
 - [`docs/CAPACITY_AND_PERFORMANCE_TARGETS.md`](docs/CAPACITY_AND_PERFORMANCE_TARGETS.md) defines cross-cutting capacity, resource, and numeric-ownership rules.
 - [`docs/INLINE_CONTENT_PAYLOADS.md`](docs/INLINE_CONTENT_PAYLOADS.md) defines InlineContent Media Types, universal whole-payload replacement, and payload convergence.
-- [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines fine-grained text and attribution behavior, clipboard lineage, Range-holder behavior, and carrier qualification.
+- [`docs/FINE_GRAINED_TEXT_AND_ORIGIN.md`](docs/FINE_GRAINED_TEXT_AND_ORIGIN.md) defines fine-grained text and Origin behavior, clipboard lineage, Range-holder behavior, and carrier qualification.
 - [`docs/RANGE_MODEL.md`](docs/RANGE_MODEL.md) defines durable multi-span and positional fine-grained text Range behavior, the Range service boundary, and its staged qualification.
 - [`docs/STRUCTURAL_CARRIER_MODEL.md`](docs/STRUCTURAL_CARRIER_MODEL.md) defines Block placement, Block-local carrier state, structural concurrency, and position-order qualification.
 - [`docs/STRUCTURAL_POSITION_ALLOCATOR.md`](docs/STRUCTURAL_POSITION_ALLOCATOR.md) defines the structural position allocator abstraction and candidate qualification.
@@ -89,7 +89,7 @@ The baseline must contain:
 - `docs/MVP_ARCHITECTURE.md`;
 - `docs/CAPACITY_AND_PERFORMANCE_TARGETS.md`;
 - `docs/INLINE_CONTENT_PAYLOADS.md`;
-- `docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`;
+- `docs/FINE_GRAINED_TEXT_AND_ORIGIN.md`;
 - `docs/TEXT_POSITION_MODEL.md`;
 - `docs/RANGE_MODEL.md`;
 - `docs/STRUCTURAL_CARRIER_MODEL.md`;
@@ -193,7 +193,7 @@ The suite covers:
 
 **Exit gate:** Gate B passes. The common payload, text, structural, concurrency, clipboard, restore, cursor, Range-feasibility, atomicity, portable, garbage-collection, collision/ordering, and representative-growth suite passes. The raw/coarse media boundary proves exact conversion and explicit unsupported-profile behavior through representative fixtures without making a production processor/profile choice. Carrier and private-text-clipboard hostile-input guards are selected from profiling evidence and tested atomically. Payload/carrier resource admission is recorded from qualification evidence; it can use an adaptive host/runtime-dependent mechanism or conclude that no additional explicit finite guard is needed when normal runtime behavior already provides a safe atomic failure seam. Gate B does not require a fixed payload-size maximum. Experimental performance candidates are recorded as evidence rather than correctness thresholds unless deliberately promoted. Functional invariants are mandatory. Select Yjs when its protected carrier works incrementally without fragile repair. Select Automerge only if it passes and materially removes custom machinery despite its integration maturity. Record the winner before carrier-dependent format fields or fixtures are frozen.
 
-See [`docs/INLINE_CONTENT_PAYLOADS.md`](docs/INLINE_CONTENT_PAYLOADS.md), [`docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](docs/ATTRIBUTED_TEXT_AND_ANNOTATIONS.md), [`docs/TEXT_POSITION_MODEL.md`](docs/TEXT_POSITION_MODEL.md), [`docs/RANGE_MODEL.md`](docs/RANGE_MODEL.md), [`docs/STRUCTURAL_CARRIER_MODEL.md`](docs/STRUCTURAL_CARRIER_MODEL.md), [`docs/STRUCTURAL_POSITION_ALLOCATOR.md`](docs/STRUCTURAL_POSITION_ALLOCATOR.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
+See [`docs/INLINE_CONTENT_PAYLOADS.md`](docs/INLINE_CONTENT_PAYLOADS.md), [`docs/FINE_GRAINED_TEXT_AND_ORIGIN.md`](docs/FINE_GRAINED_TEXT_AND_ORIGIN.md), [`docs/TEXT_POSITION_MODEL.md`](docs/TEXT_POSITION_MODEL.md), [`docs/RANGE_MODEL.md`](docs/RANGE_MODEL.md), [`docs/STRUCTURAL_CARRIER_MODEL.md`](docs/STRUCTURAL_CARRIER_MODEL.md), [`docs/STRUCTURAL_POSITION_ALLOCATOR.md`](docs/STRUCTURAL_POSITION_ALLOCATOR.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 
 ### Step 4 — Implement the selected collaborative core
 

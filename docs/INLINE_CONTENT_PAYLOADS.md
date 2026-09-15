@@ -12,7 +12,7 @@ the separation between collaborative state and raw media representation, and the
 convergence requirements for whole-payload replacement.
 
 [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls product ontology.
-[`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) owns
+[`FINE_GRAINED_TEXT_AND_ORIGIN.md`](FINE_GRAINED_TEXT_AND_ORIGIN.md) owns
 fine-grained text and Origin behavior. [`RANGE_MODEL.md`](RANGE_MODEL.md) owns
 durable references inside fine-grained text. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
 owns the public engine boundary. [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md)
@@ -329,7 +329,7 @@ Origin answers who or what created payload material. Contribution actor answers
 who performed an operation in this document.
 
 Allowlisted text has the fine-grained Origin behavior defined by
-`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`.
+`FINE_GRAINED_TEXT_AND_ORIGIN.md`.
 
 Every Media Type under generic opaque handling has one Origin associated with the
 current whole-payload creation or replacement. Moving an InlineContent preserves

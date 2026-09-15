@@ -12,7 +12,7 @@ Use these documents for those concerns:
 - [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) defines component authority and the public engine boundary.
 - [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) defines cross-cutting capacity and resource semantics.
 - [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) defines InlineContent Media Types, universal whole-payload replacement, and payload convergence.
-- [`ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) defines detailed fine-grained text, Origin, clipboard, and Range-holder behavior.
+- [`FINE_GRAINED_TEXT_AND_ORIGIN.md`](FINE_GRAINED_TEXT_AND_ORIGIN.md) defines detailed fine-grained text, Origin, clipboard, and Range-holder behavior.
 - [`RANGE_MODEL.md`](RANGE_MODEL.md) defines durable multi-span and positional Range behavior inside allowlisted fine-grained text payloads.
 - [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md) defines private MVP implementation contracts that are not owned by focused specifications.
 - [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md) defines Markdown interchange semantics.
@@ -72,6 +72,8 @@ Human users, imports, automation, and later AI collaborators use the same durabl
 Formatting and media syntax are application concerns. Fine-grained Origin provenance is protected metadata that travels with authored allowlisted text but never inherits from neighboring text. An opaque payload has one payload-level Origin for its current whole value. Comments are external records with repairable text targets. Ordinary selections are transient.
 
 Origin and Range lineage share atomic versioning with text where required. Comments, navigation, application links, and later durable reference holders can store or serialize the shared Range value for allowlisted fine-grained text without making Range a universal payload or provenance entity.
+
+Coedit has two independent attribution axes. Origin describes who or what created payload material; Contribution attribution describes who performed each durable semantic mutation. Payload material participates in both models. Structural state — Block and InlineContent existence, placement, ownership, ordering, tags, and child presentation — is attributable through Contributions but has no Origin. Trusted genesis construction is the deliberate exception: it creates the initial root before the first Contribution.
 
 ### 2.8 Presentation is a projection
 
@@ -251,7 +253,7 @@ The carrier is private behind the document engine. Yjs stable v13 is the provisi
 
 ### 4.6 Origin follows payload semantics
 
-Origin identifies the human, imported source, automation, AI/software agent, or unknown source that created logical payload material. It is distinct from the Contributor who later copies, moves, pastes, replaces, or restores that material.
+Origin identifies the human, imported source, automation, AI/software agent, or unknown source that created logical payload material. It is distinct from the Contributor who later copies, moves, pastes, replaces, or restores that material. Origin is a payload-material concept, not a property of Block or InlineContent structure.
 
 In allowlisted fine-grained text, newly inserted material receives explicit fine-grained Origin and never inherits Origin from adjacent text. A query or renderer can coalesce adjacent equal origins into display spans, but those spans are not durable `RangeAnnotation<Provenance>` entities.
 
