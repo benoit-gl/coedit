@@ -131,15 +131,15 @@ Reopening already-canonical collaborative state from `.coedit` is not a raw-medi
 boundary and does not rerun Media-Type representation validation against the
 stored collaborative value.
 
-| Condition                                                                                | Required behavior                                                                                                |
-| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Malformed Media Type syntax                                                              | Reject atomically as invalid input.                                                                              |
-| Valid Media Type not in the fine-grained allowlist                                       | Accept through generic opaque handling, subject to ordinary envelope and resource checks.                        |
-| Valid allowlisted type whose raw representation is unsupported by the selected processor | Fail explicitly at the raw/coarse boundary; do not relabel, transcode silently, or fall back to opaque handling. |
-| Invalid bytes for a supported raw representation                                         | Fail explicitly without partial publication.                                                                     |
-| Fine-grained text that the selected raw representation cannot encode exactly             | Fail explicitly; do not substitute or repair content.                                                            |
-| Unsupported carrier or container schema                                                  | Report incompatibility; this is not an unknown Media Type.                                                       |
-| Exceeded selected implementation guard                                                   | Report capacity/resource failure without partial publication.                                                    |
+| Condition                                                                                    | Required behavior                                                                                                |
+| -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Media Type value rejected by the selected acceptance contract                                | Reject atomically as invalid input.                                                                              |
+| Accepted Media Type value not in the fine-grained allowlist                                  | Accept through generic opaque handling, subject to ordinary envelope and resource checks.                        |
+| Accepted allowlisted value whose raw representation is unsupported by the selected processor | Fail explicitly at the raw/coarse boundary; do not relabel, transcode silently, or fall back to opaque handling. |
+| Invalid bytes for a supported raw representation                                             | Fail explicitly without partial publication.                                                                     |
+| Fine-grained text that the selected raw representation cannot encode exactly                 | Fail explicitly; do not substitute or repair content.                                                            |
+| Unsupported carrier or container schema                                                      | Report incompatibility; this is not an unknown Media Type.                                                       |
+| Exceeded selected implementation guard                                                       | Report capacity/resource failure without partial publication.                                                    |
 
 ## 4. Fine-grained text payloads
 
@@ -178,8 +178,8 @@ The portable `.coedit` representation preserves that document state separately.
 
 ## 5. Generic opaque payloads
 
-Any valid Media Type whose normalized type/subtype is not in the fine-grained
-allowlist initially uses generic opaque-content behavior. The document model
+Any accepted Media Type value whose parsed, normalized type/subtype is not in
+the fine-grained allowlist initially uses generic opaque-content behavior. The document model
 preserves the exact supplied Media Type, exact payload bytes, and payload-level
 Origin but does not parse or interpret the bytes.
 
@@ -230,7 +230,7 @@ Each live InlineContent owns exactly one current payload value consisting of the
 exact Media Type plus Media-Type-specific collaborative state. The payload has no
 independent product identity.
 
-The caller supplies the exact valid Media Type when creating that payload. The
+The caller supplies the exact accepted Media Type value when creating that payload. The
 engine does not choose a default Media Type when the caller lacks format
 information.
 

@@ -75,8 +75,9 @@ Step 8 encoder until Gate B has recorded:
   text Range lineage; and
 - the measured candidate-container size and load cost.
 
-Step 4 must separately have selected and qualified the first production raw-media
-processor and its supported representation profiles. Those media-byte processing
+Step 4 must separately have selected and qualified the production Media Type
+parser/acceptance contract and the first raw-media processor with its supported
+representation profiles. Those media-byte processing
 capabilities do not determine how `.coedit` stores the already-canonical native
 string state.
 
@@ -322,15 +323,15 @@ encode or decode that canonical native string according to its payload Media Typ
 and does not reject it merely because the selected raw-media processor does not
 support the preserved representation profile. Representation-profile support is
 checked only when an operation actually crosses the raw/coarse media boundary.
-The complete Media Type still remains valid durable metadata and generic Media
-Type syntax is validated here.
+The complete supplied Media Type remains durable metadata and is checked against
+the selected production acceptance contract here.
 
-An accepted unfamiliar Media Type value is accepted through generic opaque
-handling without format-specific validation. A syntactically valid allowlisted
-Media Type can still fail a later Coedit-owned raw representation operation when
-the selected processor does not support its representation profile. It is not
-reclassified as opaque or reported as rejected by the Media Type acceptance contract for
-that reason.
+An accepted unfamiliar Media Type value uses generic opaque handling without
+format-specific validation. An accepted allowlisted Media Type value can still
+fail a later Coedit-owned raw representation operation when the selected
+processor does not support its representation profile. It is not reclassified as
+opaque or reported as rejected by the Media Type acceptance contract for that
+reason.
 
 Validate a complete candidate engine before replacing the active engine or
 committing it to the browser repository.

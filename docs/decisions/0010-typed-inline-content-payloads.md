@@ -43,19 +43,22 @@ by this ADR.
 
 The clean-slate documentation initially treated every InlineContent as rich text.
 PR 19 generalized this into Media-Type-labelled payloads. Early review also began
-to specify charset handling and other raw-media rules. That exposed a more useful
+to specify generic Media Type grammar, charset handling, and other raw-media
+rules. That exposed a more useful
 architectural distinction: the document engine should preserve format identity
 and collaborative state without becoming the owner of every media-format input
 and output rule.
 
 The intended boundary is:
 
-- each InlineContent keeps the actual Internet Media Type supplied for its media
-  representation, including parameters;
+- each InlineContent keeps the accepted Internet Media Type value supplied for
+  its media representation, including parameters;
 - every payload supports coarse whole-payload replacement;
 - only explicitly qualified formats receive fine-grained text collaboration;
 - fine-grained text is maintained as a native ECMAScript string rather than
   continuously encoded media bytes;
+- production Media Type acceptance is selected as a parser contract rather than
+  frozen here from one standards grammar;
 - raw/coarse byte interpretation happens at a separate Media-Type-aware processor
   boundary; and
 - processor support is an implementation capability, not a reason to rewrite a
@@ -219,18 +222,20 @@ not need to change merely because Coedit learns a new operation set.
 Positive consequences:
 
 - the document ontology no longer equates all InlineContent with rich text;
-- actual Internet Media Types preserve format identity and supplied parameters;
+- accepted Internet Media Type values preserve format identity and supplied parameters;
 - capability dispatch has one small compile-time source of truth;
 - ordinary fine-grained edits stay in native string space;
 - opaque content keeps exact stored bytes;
 - raw-media interpretation has a separate capability boundary;
-- universal replacement gives every Media Type a collaborative baseline; and
+- universal replacement gives every accepted Media Type value a collaborative baseline; and
 - Range work remains focused on fine-grained text.
 
 Costs and open selections:
 
 - carrier text-domain edge behavior must be characterized at Gate B rather than
   assumed in this ADR;
+- Step 4 must select and qualify a production Media Type parser/acceptance
+  contract and preserve its compatibility-visible accepted-input behavior;
 - a preserved Media Type can name a representation the selected processor does
   not support, so raw/coarse operations can fail;
 - Step 4 must select and qualify production raw-media processor profiles; and
@@ -277,7 +282,7 @@ adding durable state.
 Rejected. Type/subtype matching is case-insensitive, parameters can be present,
 and prefix matching would accept unrelated names.
 
-### Normalize or discard recognized Media Type parameters
+### Normalize or discard allowlisted Media Type parameters
 
 Rejected. Type-specific persistence exceptions would grow with every recognized
 format. Preserve the supplied value and let the raw processor decide whether it
@@ -314,7 +319,9 @@ Rejected. Unsynchronized clocks do not provide trustworthy causal ordering.
 - **Step 3 / Gate B:** qualify and select the carrier; record required carrier
   text-domain behavior, deterministic concurrent-replacement winner semantics,
   its private implementation, and mixed replacement/edit behavior. Use
-  representative raw-media test codecs only to prove boundary independence.
+  representative Media Type labels and raw-media test codecs only to prove
+  capability dispatch and boundary independence; do not freeze the production
+  accepted-input grammar here.
 - **Step 4:** implement the selected payload/carrier; select and qualify the
   production Media Type parser/acceptance contract with compatibility fixtures;
   and select the first production raw-media processor with its supported
