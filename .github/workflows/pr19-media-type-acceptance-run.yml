@@ -1,0 +1,36 @@
+name: PR 19 Media Type acceptance update
+
+on:
+  push:
+    branches:
+      - design/typed-inline-content-payloads
+    paths:
+      - .github/workflows/pr19-media-type-acceptance-run.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: design/typed-inline-content-payloads
+          fetch-depth: 0
+
+      - name: Apply documentation patch
+        run: python3 .github/pr19_media_type_acceptance_fix.py
+
+      - name: Commit documentation patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/pr19_media_type_acceptance_fix.py
+          git rm .github/workflows/pr19-media-type-acceptance-run.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add SCAFFOLDING_PLAN.md docs
+          git diff --cached --check
+          git commit -m "docs: defer Media Type acceptance grammar to Step 4"
+          git push origin HEAD:design/typed-inline-content-payloads
