@@ -54,7 +54,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git rm .github/pr19_media_type_acceptance_fix.py
+          git rm -f .github/pr19_media_type_acceptance_fix.py
           git rm .github/workflows/pr19-media-type-acceptance-run.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
