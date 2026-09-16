@@ -72,5 +72,5 @@ behavior, and leaves the durable Range-tracking representation to Gate C.
 [`../TEXT_POSITION_MODEL.md`](../TEXT_POSITION_MODEL.md) owns the detailed
 coordinate and carrier-position boundary contract. [`../RANGE_MODEL.md`](../RANGE_MODEL.md)
 owns durable Range behavior and the Gate C representation decision.
-[`../FINE_GRAINED_TEXT_AND_ORIGIN.md`](../FINE_GRAINED_TEXT_AND_ORIGIN.md)
+`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` ([ADR 0010](0010-typed-inline-content-payloads.md): superseded and split; see [`../INLINE_CONTENT_PAYLOADS.md`](../INLINE_CONTENT_PAYLOADS.md) and [`../FINE_GRAINED_TEXT_AND_ORIGIN.md`](../FINE_GRAINED_TEXT_AND_ORIGIN.md) for the current design)
 owns attributed-text behavior.
