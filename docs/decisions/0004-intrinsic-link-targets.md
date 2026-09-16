@@ -6,7 +6,7 @@
 
 **Amended:** 2026-09-03
 
-**Authority:** [`../FINE_GRAINED_TEXT_AND_ORIGIN.md`](../FINE_GRAINED_TEXT_AND_ORIGIN.md) controls detailed link-holder behavior. [`../RANGE_MODEL.md`](../RANGE_MODEL.md) controls Range behavior. [`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md) controls product ontology.
+**Authority:** `../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` ([ADR 0010](0010-typed-inline-content-payloads.md): superseded and split; see [`../INLINE_CONTENT_PAYLOADS.md`](../INLINE_CONTENT_PAYLOADS.md) and [`../FINE_GRAINED_TEXT_AND_ORIGIN.md`](../FINE_GRAINED_TEXT_AND_ORIGIN.md) for the current design) controls detailed link-holder behavior. [`../RANGE_MODEL.md`](../RANGE_MODEL.md) controls Range behavior. [`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md) controls product ontology.
 
 ## Context
 
