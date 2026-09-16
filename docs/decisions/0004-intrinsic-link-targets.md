@@ -1,12 +1,16 @@
 # ADR 0004 — Intrinsic link targets
 
-**Status:** Accepted
+**Status:** Superseded in part
+
+**Superseded by:** [ADR 0010](0010-typed-inline-content-payloads.md)
+
+**Superseded scope:** ADR 0010 replaces the engine-owned intrinsic-link formatting model, typed internal Block-link state, and link-specific canonical fallback behavior. The reusable Range decision remains governed by ADR 0009.
 
 **Date:** 2026-08-31
 
 **Amended:** 2026-09-03
 
-**Authority:** `../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md` ([ADR 0010](0010-typed-inline-content-payloads.md): superseded and split; see [`../INLINE_CONTENT_PAYLOADS.md`](../INLINE_CONTENT_PAYLOADS.md) and [`../FINE_GRAINED_TEXT_AND_ORIGIN.md`](../FINE_GRAINED_TEXT_AND_ORIGIN.md) for the current design) controls detailed link-holder behavior. [`../RANGE_MODEL.md`](../RANGE_MODEL.md) controls Range behavior. [`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md) controls product ontology.
+**Authority:** [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) controls detailed link-holder behavior. [`../RANGE_MODEL.md`](../RANGE_MODEL.md) controls Range behavior. [`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md) controls product ontology.
 
 ## Context
 
