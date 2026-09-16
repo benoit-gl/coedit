@@ -213,7 +213,7 @@ Markdown A -> Coedit X -> Markdown B -> Coedit Y
 
 `X` and `Y` must be equivalent under the normalized structural and allowlisted fine-grained text semantic equivalence rules in `MARKDOWN_INTERCHANGE.md`.
 
-`Markdown A` and `Markdown B` do not need textual equality. Canonical export spelling is allowed.
+`Markdown A` and `Markdown B` need not be textually identical because structural spelling can be regenerated. Retained inline Markdown source is preserved except for the explicit interchange normalizations defined by `MARKDOWN_INTERCHANGE.md`.
 
 If an arbitrary edited Coedit selection is outside the canonical Markdown-representable subset, including an unsupported opaque payload, export reports stable loss or non-representability diagnostics. The UI does not claim exact Markdown interchange for that selection.
 
