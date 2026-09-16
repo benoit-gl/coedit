@@ -85,6 +85,15 @@ lint or verification suppression, or toolchain-version change in the
 pull-request description and state the reason. Do not add a separate process for
 such a change unless an authoritative specification requires it.
 
+## Architecture decision records
+
+Follow the ADR lifecycle policy in
+[`docs/decisions/README.md`](docs/decisions/README.md) when an architecture
+decision changes. Preserve accepted ADR decision text as history. Use ADR status
+and relationship metadata to record supersession instead of rewriting the old
+decision. A later ADR that only refines or extends an accepted ADR does not by
+itself require an edit to the older record.
+
 ## Pull-request workflow and hygiene
 
 Use one pull request for one logical merge unit. Keep unrelated cleanup and
