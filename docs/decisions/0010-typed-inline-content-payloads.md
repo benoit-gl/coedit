@@ -30,6 +30,10 @@ persistence, and carrier qualification. This ADR supersedes its engine-owned
 rich-text formatting assumptions and the parts that treated rich text and hard
 breaks as the universal shape of InlineContent content.
 
+ADR 0006 remains accepted for editor-owned transient positions and carrier-neutral
+position boundaries. This ADR narrows those text-position semantics to allowlisted
+fine-grained text; opaque payloads have no sub-payload text-position contract.
+
 ADR 0004 is superseded where it defines links as intrinsic engine-owned formatting
 marks, typed internal Block-link state, and link-specific fallback in canonical
 content. Applications can still use the generic durable Range value defined by
