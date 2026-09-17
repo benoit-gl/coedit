@@ -72,9 +72,13 @@ values that it can preserve losslessly. Values outside that carrier domain are
 not part of the supported collaborative-text contract.
 
 Carrier qualification must characterize edge cases where the ECMAScript string
-domain is broader than the carrier's native text representation. Coedit does not
-add a second validation subsystem only to make those edge cases portable. If the
-carrier explicitly rejects an operation, that error propagates through the normal
+domain is broader than the carrier's native text representation, including
+whether a candidate preserves the submitted value exactly, rejects the operation,
+or accepts it with a transformed result. Gate B decides which observed behavior
+is acceptable for production; this contract does not impose exact-preservation or
+exact-or-fail semantics before carrier selection. Coedit does not add a second
+validation subsystem only to make those edge cases portable. If the carrier
+explicitly rejects an operation, that error propagates through the normal
 operation path and publishes no partial change.
 
 Media byte encoding is not performed for ordinary fine-grained editing. Whether
@@ -297,8 +301,11 @@ allowlisted Media Types. At minimum it covers:
   carriage returns, supplementary characters, combining sequences, variation
   selectors, and representative complex scripts;
 - characterization of ill-formed ECMAScript string edge cases, including lone
-  surrogates, as carrier-selection evidence rather than a mandatory preservation
-  invariant;
+  surrogates, recording whether each candidate preserves the submitted value,
+  rejects the operation, or accepts it with a transformed result. These outcomes
+  are carrier-selection evidence; Gate B decides which behavior is acceptable
+  for production rather than requiring exact preservation or exact-or-fail
+  semantics in advance;
 - Origin non-inheritance and protection from ordinary client commands;
 - concurrent insertion, deletion, and replacement at identical and adjacent
   boundaries;
