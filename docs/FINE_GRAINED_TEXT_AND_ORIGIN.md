@@ -71,15 +71,14 @@ ordinary fine-grained editing. The selected carrier defines the native string
 values that it can preserve losslessly. Values outside that carrier domain are
 not part of the supported collaborative-text contract.
 
-Carrier qualification must characterize edge cases where the ECMAScript string
-domain is broader than the carrier's native text representation, including
-whether a candidate preserves the submitted value exactly, rejects the operation,
-or accepts it with a transformed result. Gate B decides which observed behavior
-is acceptable for production; this contract does not impose exact-preservation or
-exact-or-fail semantics before carrier selection. Coedit does not add a second
-validation subsystem only to make those edge cases portable. If the carrier
-explicitly rejects an operation, that error propagates through the normal
-operation path and publishes no partial change.
+Every successful fine-grained operation must preserve the submitted ECMAScript
+string exactly. Carrier qualification must characterize edge cases where the
+ECMAScript string domain is broader than a candidate's native text representation,
+including lone surrogates. For each submitted value, the candidate either
+preserves the value exactly or rejects the operation atomically. Accepting the
+operation and materializing a transformed string is a qualification failure for
+that input. Coedit does not add Unicode normalization, repair, or a second string
+representation to broaden the carrier domain.
 
 Media byte encoding is not performed for ordinary fine-grained editing. Whether
 a supported native string can be represented exactly by the charset declared or
@@ -146,11 +145,12 @@ Fine-grained operations must fail explicitly when the target payload's normalize
 `type/subtype` is not in the compile-time allowlist. They do not inspect the text
 or bytes to infer a capability.
 
-Subject to the selected carrier text-domain behavior described above, a
-fine-grained operation changes the source string only as requested. The engine
-does not normalize Markdown syntax, repair malformed markup, balance delimiters,
-reflow plain text, or make the current value parseable by an application parser.
-Temporary or permanent application-level syntax errors are valid document text.
+A successful fine-grained operation changes the source string exactly as
+requested. The engine does not normalize Unicode or Markdown syntax, repair
+malformed markup, balance delimiters, reflow plain text, or make the current value
+parseable by an application parser. If the carrier cannot preserve the requested
+ECMAScript string exactly, the operation fails atomically. Temporary or permanent
+application-level syntax errors are valid document text.
 
 Whole-payload replacement remains available for allowlisted text. Use
 fine-grained operations when merge behavior is desired. Mixed replacement/edit
@@ -301,12 +301,9 @@ allowlisted Media Types. At minimum it covers:
 - exact preservation of ordinary supported native strings, including line feeds,
   carriage returns, supplementary characters, combining sequences, variation
   selectors, and representative complex scripts;
-- characterization of ill-formed ECMAScript string edge cases, including lone
-  surrogates, recording whether each candidate preserves the submitted value,
-  rejects the operation, or accepts it with a transformed result. These outcomes
-  are carrier-selection evidence; Gate B decides which behavior is acceptable
-  for production rather than requiring exact preservation or exact-or-fail
-  semantics in advance;
+- ill-formed ECMAScript string edge cases, including lone surrogates, proving
+  exact preservation on success or atomic rejection when unsupported; transformed
+  successful results are not conforming behavior;
 - Origin non-inheritance and protection from ordinary client commands;
 - concurrent insertion, deletion, and replacement at identical and adjacent
   boundaries;
@@ -343,8 +340,8 @@ fixtures as regression tests. In addition, prove:
 - a failed command publishes no text, Origin, Contribution, or Version;
 - supported native-string content is not rejected merely because an application
   can present, parse, or encode it specially;
-- carrier failure for unsupported native-string edge cases propagates without a
-  partial document change;
+- unsupported native-string edge cases fail atomically, and no successful text
+  operation can materialize a string different from the submitted value;
 - no Block or InlineContent boundary manufactures a text character;
 - the engine does not parse, normalize, repair, or render Markdown syntax;
 - application formatting state is not required to materialize canonical engine

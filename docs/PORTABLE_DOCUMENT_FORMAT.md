@@ -323,8 +323,8 @@ encode or decode that canonical native string according to its payload Media Typ
 and does not reject it merely because the selected raw-media processor does not
 support the preserved representation profile. Representation-profile support is
 checked only when an operation actually crosses the raw/coarse media boundary.
-The complete supplied Media Type remains durable metadata and is checked against
-the selected production acceptance contract here.
+The complete supplied Media Type remains durable metadata and is validated against
+the fixed Media Type syntax contract here.
 
 An accepted unfamiliar Media Type value uses generic opaque handling without
 format-specific validation. An accepted allowlisted Media Type value can still

@@ -1,6 +1,6 @@
 # ADR-0010: Media-Type-labelled InlineContent payloads and universal replacement
 
-**Status:** Accepted direction; carrier and mixed replacement/edit semantics deferred to Gate B; Media Type acceptance and raw-media processor profiles deferred to Step 4
+**Status:** Accepted direction; carrier and mixed replacement/edit semantics deferred to Gate B; parser implementation and raw-media processor profiles deferred to Step 4
 
 **Decision date:** 2026-09-15
 
@@ -64,8 +64,8 @@ The intended boundary is:
 - only explicitly qualified formats receive fine-grained text collaboration;
 - fine-grained text is maintained as a native ECMAScript string rather than
   continuously encoded media bytes;
-- production Media Type acceptance is selected as a parser contract rather than
-  frozen here from one standards grammar;
+- Media Type validity follows fixed Internet-standard syntax while the concrete
+  parser implementation remains an implementation choice;
 - raw/coarse byte interpretation happens at a separate Media-Type-aware processor
   boundary; and
 - processor support is an implementation capability, not a reason to rewrite a
@@ -82,21 +82,21 @@ Each InlineContent owns exactly one payload and one accepted Internet Media Type
 value that identifies its media representation. The complete supplied Media Type
 value, including parameters, is durable metadata and is preserved exactly.
 
-The selected parser must accept the value and produce a usable `type/subtype`
-identity for capability dispatch. The document model does not rewrite the supplied
-value merely because a type is allowlisted. Type/subtype comparison for capability
-dispatch is case-insensitive. Parameters remain part of the preserved value.
+A valid value uses the RFC 9110 section 8.3.1 media-type form. Type and
+subtype names use the RFC 6838 section 4.2 `restricted-name` grammar. Parameter
+names use the RFC 6838 section 4.3 `restricted-name` grammar; parameter values use
+RFC 9110 token or quoted-string syntax. Every semicolon introduces a parameter,
+duplicate parameter names are invalid under ASCII case-insensitive comparison,
+and the complete supplied string must satisfy the grammar. No IANA registration
+lookup is required for generic opaque storage.
 
-Media Type acceptance, Coedit collaboration capability, and support for a
-specific raw representation are separate concerns. An accepted unfamiliar Media
-Type value can use opaque handling without Coedit certifying its format-specific
-semantics.
-
-This ADR does not define a second Coedit-specific Media Type grammar and does not
-require the production parser to reject every value outside one selected RFC
-grammar. Step 4 selects and qualifies the parser and any additional acceptance
-restrictions. Representative accepted and rejected values become compatibility
-evidence so a parser upgrade cannot silently change the accepted input domain.
+The document model preserves the supplied spelling exactly. Type/subtype
+comparison for capability dispatch is ASCII case-insensitive; parameters remain
+part of the preserved value but do not affect allowlist matching. Media Type
+validity, Coedit collaboration capability, and support for a specific raw
+representation are separate concerns. Step 4 selects a parser implementation and
+conformance fixtures, but cannot broaden or narrow the accepted syntax by library
+choice.
 
 ### 3.2 Fine-grained text capability uses a compile-time allowlist
 
@@ -123,11 +123,14 @@ ECMAScript string plus Coedit collaboration metadata such as fine-grained Origin
 and Range lineage. Coedit does not add a general Unicode normalization, repair,
 or well-formedness subsystem around ordinary editing.
 
-The exact lossless native-string domain is not frozen before carrier selection.
-Step 3 qualifies candidate behavior, including ordinary Unicode text and
-ill-formed ECMAScript string edge cases. Gate B records the supported carrier
-behavior required by production. This ADR does not choose a second string
-representation or validation layer in advance.
+Every successful fine-grained text operation preserves the submitted ECMAScript
+string exactly. Step 3 qualifies candidate behavior, including ordinary Unicode
+text and ill-formed ECMAScript string edge cases. A candidate can reject a value
+it cannot preserve, but accepting an operation and materializing a transformed
+string is non-conforming. Gate B therefore records the selected carrier's exact
+preservation domain rather than choosing a normalization or repair policy. This
+ADR does not require a second string representation or general Unicode validation
+layer.
 
 Fine-grained APIs operate directly on native strings and the selected carrier's
 native text representation. Media byte encoding and decoding do not occur on
@@ -151,8 +154,8 @@ fall back to opaque handling.
 
 Step 3 uses representative Media Type labels and test codecs only to prove
 capability dispatch and raw-media boundary independence from carrier selection.
-It does not select the production Media Type parser or accepted-input domain.
-Step 4 selects and qualifies the production Media Type parser/acceptance contract
+It does not select the production Media Type parser implementation.
+Step 4 selects and qualifies the production Media Type parser implementation
 and the first raw-media processor with its supported representation profiles. The
 codec/library, charset set, flowed-text behavior, parameter matrix, and other
 profile-specific transformations are not selected by this ADR.
@@ -239,10 +242,10 @@ Positive consequences:
 
 Costs and open selections:
 
-- carrier text-domain edge behavior must be characterized at Gate B rather than
-  assumed in this ADR;
-- Step 4 must select and qualify a production Media Type parser/acceptance
-  contract and preserve its compatibility-visible accepted-input behavior;
+- carrier support for exact-or-fail ECMAScript string operations must be
+  characterized at Gate B;
+- Step 4 must select and qualify a production Media Type parser implementation
+  against the fixed syntax contract;
 - a preserved Media Type can name a representation the selected processor does
   not support, so raw/coarse operations can fail;
 - Step 4 must select and qualify production raw-media processor profiles; and
@@ -257,14 +260,12 @@ Costs and open selections:
 Rejected. A private media type would make the label describe Coedit's current
 capability rather than the actual content format.
 
-### Freeze RFC 6838/RFC 9110 syntax as the Coedit acceptance contract now
+### Let the selected parser define a broader practical input domain
 
-Rejected for this gate. Standards grammar is useful reference material, but the
-document model does not need to invent or freeze a stricter parser contract
-before the production parsing implementation is selected. A well-established
-parser can deliberately accept a broader practical input domain. Step 4 must
-select and qualify that behavior and record compatibility fixtures instead of
-silently inheriting whatever a dependency happens to accept.
+Rejected. Parser-library permissiveness is not a durable document contract. Coedit
+uses the RFC 9110/RFC 6838 syntax rules above so two conforming implementations
+make the same validity and capability decision for the same Media Type string.
+Step 4 can select any parser implementation that conforms to those rules.
 
 ### Treat every `text/*` Media Type as fine-grained
 
@@ -323,14 +324,14 @@ Rejected. Unsynchronized clocks do not provide trustworthy causal ordering.
 
 ## 6. Gate ownership
 
-- **Step 3 / Gate B:** qualify and select the carrier; record required carrier
-  text-domain behavior, deterministic concurrent-replacement winner semantics,
+- **Step 3 / Gate B:** qualify and select the carrier; record carrier exact-preservation
+  behavior, deterministic concurrent-replacement winner semantics,
   its private implementation, and mixed replacement/edit behavior. Use
   representative Media Type labels and raw-media test codecs only to prove
-  capability dispatch and boundary independence; do not freeze the production
-  accepted-input grammar here.
+  capability dispatch and boundary independence; verify the fixed Media Type
+  syntax contract.
 - **Step 4:** implement the selected payload/carrier; select and qualify the
-  production Media Type parser/acceptance contract with compatibility fixtures;
+  production Media Type parser implementation with compatibility fixtures;
   and select the first production raw-media processor with its supported
   representation profiles.
 - **Step 5:** establish first-class History and permanent materialization of
@@ -340,4 +341,4 @@ Rejected. Unsynchronized clocks do not provide trustworthy causal ordering.
 - **Step 8:** freeze the physical `.coedit` representation after the earlier
   gates are closed.
 
-The exact Media Type accepted-input domain and detailed raw-media profile matrix are intentionally not part of this ADR.
+The exact Media Type syntax-conformance behavior and detailed raw-media profile matrix are intentionally not part of this ADR.

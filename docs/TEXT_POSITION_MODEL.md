@@ -30,10 +30,11 @@ apply NFC, NFD, or another Unicode normalization form unless a later product rul
 requires it. Line-feed, carriage-return, and other supported string content are
 data at this layer; there is no separate canonical hard-break position unit.
 
-Carrier qualification characterizes ECMAScript string edge cases that the carrier
-cannot represent losslessly. Those cases are not a portable text-position
-invariant. If the carrier explicitly rejects an operation, that error propagates
-through the normal operation path without publishing a partial change.
+Carrier qualification characterizes ECMAScript string edge cases that a candidate
+cannot represent losslessly. A successful operation must preserve the submitted
+string exactly; unsupported values are rejected atomically. Those rejected values
+are outside the selected carrier's supported collaborative-text domain and are not
+a portable text-position invariant.
 
 Whether the current supported string can be represented exactly by the payload's
 declared Media Type is a raw/coarse media-boundary concern. Ordinary fine-grained
@@ -145,8 +146,9 @@ Each carrier/editor candidate must prove:
 - no selection drift or endpoint corruption for supported combining sequences,
   astral characters, emoji sequences, variation selectors, newline characters,
   and representative complex scripts;
-- characterization of position behavior for ill-formed ECMAScript string edge
-  cases such as lone surrogates without requiring exact preservation;
+- position behavior for ill-formed ECMAScript string edge cases such as lone
+  surrogates when preserved exactly, plus atomic rejection when a candidate cannot
+  preserve the submitted string;
 - correct affinity at insertion boundaries;
 - no requirement for a carrier-neutral numeric offset in the normal editing hot
   path; and
