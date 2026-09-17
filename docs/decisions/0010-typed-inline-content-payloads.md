@@ -34,10 +34,13 @@ ADR 0004 is superseded where it defines links as intrinsic engine-owned formatti
 marks, typed internal Block-link state, and link-specific fallback in canonical
 content. Applications can still use the generic durable Range value defined by
 ADR 0009 in links, comments, navigation metadata, or other holders. ADR 0009
-remains accepted for Range behavior, as refined here to allowlisted fine-grained
-text and application-owned holders. ADR 0005 remains accepted for semantic
-interpretation boundaries, with its earlier link and formatting examples refined
-by this ADR.
+remains accepted for generic Range behavior and staged representation work, but
+this ADR supersedes the parts that assign internal-link-specific resolution and
+fallback semantics and internal-link encoding work to the Range service. The
+Range service is narrowed to allowlisted fine-grained text, while holder storage,
+activation, and fallback policy belong to applications. ADR 0005 remains accepted
+for semantic interpretation boundaries, with its earlier link and formatting
+examples refined by this ADR.
 
 ## 2. Context
 

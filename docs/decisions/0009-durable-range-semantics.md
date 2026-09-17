@@ -1,6 +1,10 @@
 # ADR 0009: Durable Range semantics and staged implementation
 
-**Status:** Accepted behavior; Step 6 representation decision unresolved
+**Status:** Superseded in part; Step 6 representation decision unresolved
+
+**Superseded by:** [ADR 0010](0010-typed-inline-content-payloads.md)
+
+**Superseded scope:** ADR 0010 replaces the internal-link-specific holder semantics, including current-document internal-link resolution and fallback responsibility, and the Step 6 requirement to define an internal-link Range encoding. The generic document-relative Range semantics, permanent Version basis, and staged Range representation decision remain accepted.
 
 **Date:** 2026-09-02
 
