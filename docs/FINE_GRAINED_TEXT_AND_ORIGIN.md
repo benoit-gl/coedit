@@ -146,7 +146,8 @@ Fine-grained operations must fail explicitly when the target payload's normalize
 `type/subtype` is not in the compile-time allowlist. They do not inspect the text
 or bytes to infer a capability.
 
-A fine-grained operation changes the source string only as requested. The engine
+Subject to the selected carrier text-domain behavior described above, a
+fine-grained operation changes the source string only as requested. The engine
 does not normalize Markdown syntax, repair malformed markup, balance delimiters,
 reflow plain text, or make the current value parseable by an application parser.
 Temporary or permanent application-level syntax errors are valid document text.
