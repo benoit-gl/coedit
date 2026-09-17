@@ -341,4 +341,4 @@ Rejected. Unsynchronized clocks do not provide trustworthy causal ordering.
 - **Step 8:** freeze the physical `.coedit` representation after the earlier
   gates are closed.
 
-The exact Media Type syntax-conformance behavior and detailed raw-media profile matrix are intentionally not part of this ADR.
+The Media Type syntax contract is part of this ADR. The concrete parser implementation and detailed raw-media profile matrix remain Step 4 decisions.
