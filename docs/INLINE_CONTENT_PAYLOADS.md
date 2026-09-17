@@ -185,8 +185,12 @@ Origin but does not parse or interpret the bytes.
 
 The generic opaque handler has no fine-grained mutation operations. A future
 implementation can add a Media Type to the compile-time fine-grained allowlist
-without relabelling existing documents. Such an extension requires an explicit
-focused contract and qualification evidence.
+without relabelling existing documents, but that capability change must not
+silently reinterpret payloads or History already stored under generic opaque
+handling. The focused extension contract must define compatibility and any
+required migration or materialization behavior for existing current and
+historical payload state, preserve exact materialization of every retained
+Version, and qualify that behavior before the allowlist changes.
 
 ## 6. Raw/coarse media representation boundary
 
