@@ -66,10 +66,17 @@ participate in this capability lookup. Do not use raw string-prefix matching.
 This contract does not define a second Coedit-specific Media Type grammar and
 does not require the production parser to reject every value that is outside a
 particular RFC grammar. Step 4 selects and qualifies the production parser and
-any additional acceptance restrictions. That selected acceptance behavior is a
-compatibility-visible implementation contract: record representative accepted
-and rejected values, and do not silently change the accepted input domain during
-a parser upgrade.
+any additional acceptance restrictions. The selected acceptance and parsed
+`type/subtype` classification behavior is a compatibility-visible implementation
+contract: record representative accepted and rejected values together with the
+parsed identity used for capability dispatch, and do not silently change either
+the accepted-input domain or capability classification during a parser upgrade.
+Replacing or materially changing the production parser requires explicit
+compatibility review against existing portable-format versions and the recorded
+fixtures. This contract does not require an automated migration path in advance;
+compatibility or any conversion/re-import policy is selected when such a change
+is introduced. Step 8 owns the physical portable-format version marker and
+compatibility policy used to interpret stored state.
 
 The complete supplied spelling remains durable metadata even when the selected
 parser treats two spellings as the same Media Type identity. Parsing for
@@ -199,6 +206,16 @@ public engine capability, not only an internal import or codec helper. An
 application can request the raw/coarse media representation of an InlineContent
 against an explicit Version without receiving carrier state.
 
+The same public boundary accepts raw/coarse whole-payload replacement for every
+payload type. The caller supplies the replacement Media Type and raw media bytes,
+and can change the Media Type in the same operation. For an opaque replacement,
+the supplied bytes become the exact new opaque payload after ordinary validation.
+For an allowlisted replacement, the Media-Type-aware processor converts the raw
+bytes into the selected carrier's canonical collaborative representation before
+publication. Any acceptance, representation-profile, decoding, capacity, or
+other processing failure aborts the replacement atomically and leaves the
+previous complete payload unchanged.
+
 For an opaque payload, raw retrieval returns the exact stored byte sequence.
 
 For an allowlisted text payload, raw/coarse input and output cross a byte boundary
@@ -222,8 +239,8 @@ Step 4 selects and qualifies the production Media Type parser/acceptance contrac
 and the first raw-media processor with its supported representation profiles.
 The selected capabilities may be deliberately small. Later raw-media profile
 support can expand without changing document semantics or stored Media Type
-values. Changes to Media Type acceptance require explicit compatibility review
-and evidence.
+values. Changes to Media Type acceptance or parsed identity require explicit
+compatibility review and evidence.
 
 The selected carrier can use its own binary encoding for replication and
 persistence. Carrier bytes are not the raw media representation.
@@ -261,9 +278,11 @@ The exact public command name and TypeScript shape remain implementation details
 Required behavior is:
 
 1. replacement targets one existing InlineContent and preserves its identity;
-2. replacement supplies the complete new payload and exact Media Type;
-3. any raw-media interpretation needed by that operation occurs through the
-   applicable processor boundary before publication;
+2. replacement supplies the complete new raw/coarse media bytes and exact Media
+   Type, which can differ from the current Media Type;
+3. the engine accepts and classifies the replacement Media Type, then preserves
+   opaque bytes exactly or processes allowlisted bytes into the carrier's
+   canonical collaborative representation before publication;
 4. capability dispatch after success follows the normalized type/subtype of the
    new Media Type;
 5. the operation supplies or derives the Origin information required by the new
@@ -383,18 +402,21 @@ needed when qualification shows that normal runtime behavior already gives a
 safe atomic failure seam. Gate B does not require a fixed payload-size maximum.
 
 Step 4 selects and qualifies the production Media Type parser and acceptance
-contract, records representative accepted/rejected compatibility fixtures, and
-selects and qualifies the production raw-media processor and its supported
-representation profiles. Supported profiles must work exactly, unsupported
-profiles must fail explicitly, and the processor must not silently alter content
-or Media Type metadata. A later parser/library upgrade must preserve the recorded
-acceptance contract or make an explicit compatibility decision.
+contract, records representative accepted/rejected compatibility fixtures with
+the parsed type/subtype identity used for capability dispatch, and selects and
+qualifies the production raw-media processor and its supported representation
+profiles. Supported profiles must work exactly, unsupported profiles must fail
+explicitly, and the processor must not silently alter content or Media Type
+metadata. A later parser/library upgrade must preserve the recorded acceptance
+and classification contract or make an explicit compatibility decision against
+existing portable-format versions.
 
 Step 5 implements first-class Contributions and permanent exact Version
 materialization, including losing replacement History. Step 6 / Gate C selects
 and implements durable text Range lineage. Step 8 freezes portable encoding of
 exact Media Type values, supported carrier-native collaborative text state,
-collaboration metadata, and opaque bytes.
+collaboration metadata, opaque bytes, and the physical format/version marker used
+for compatibility decisions.
 
 Accepted design requirements are not claims that these later stages have run.
 
