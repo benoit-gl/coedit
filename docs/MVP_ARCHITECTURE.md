@@ -37,7 +37,7 @@ Tauri, Rust, SQLite, AI providers, provenance visualization, comments, durable d
 The engine owns:
 
 - `Block`, `InlineContent`, Media-Type-labelled InlineContent payloads, Media-Type acceptance and capability dispatch, Origin records, and tags;
-- the universal atomic whole-payload replacement contract for every Media Type;
+- the universal atomic whole-payload replacement contract for every Media Type, including its raw/coarse media input boundary;
 - allowlisted native-string text state and protected fine-grained Origin;
 - opaque payload byte state and payload-level Origin;
 - carrier-neutral raw/coarse media materialization for InlineContents at an explicit Version;
@@ -261,7 +261,7 @@ interface PortableDocumentInput {
 }
 ```
 
-The universal whole-payload replacement operation belongs to the ordinary `DocumentOperation` family. It preserves the target `InlineContentId` while atomically replacing the complete payload value: Media Type, Media-Type-specific content, and the required Origin effect. The Media Type can stay the same or change, and capability dispatch after success follows the resulting Media Type. Payload-specific fine-grained operations reject incompatible Media Types explicitly. Exact operation names and request shapes remain implementation details until their implementation step freezes them.
+The universal whole-payload replacement operation belongs to the ordinary `DocumentOperation` family. Its coarse input is the complete replacement Media Type plus raw media bytes. It preserves the target `InlineContentId` while atomically replacing the complete payload value: Media Type, Media-Type-specific content, and the required Origin effect. The Media Type can stay the same or change. For opaque content, the bytes become the exact new payload after ordinary validation. For an allowlisted type, the Step 4 Media-Type-aware processor converts the raw bytes into the carrier's canonical collaborative representation before publication. Any acceptance, representation-profile, decoding, capacity, or other processing failure leaves the previous complete payload unchanged. Capability dispatch after success follows the resulting Media Type. Payload-specific fine-grained operations reject incompatible Media Types explicitly. Exact operation names and request shapes remain implementation details until their implementation step freezes them.
 
 `RANGE_MODEL.md` owns allowlisted fine-grained text Range behavior. The selected `DocumentEngine` supplies document context. Step 6 Gate C finalizes result wrappers, parse diagnostics, resource-guard behavior, and serialization types without exposing carrier-native objects. The engine has no holder-specific reinjection operation: applications place a serialized Range into their own holder and later pass the value back to `parseRange`/resolution as needed.
 
@@ -316,7 +316,7 @@ Historical materialization is detached and read-only. Restore always enters thro
 
 A query can return a detached InlineContent payload value sufficient for an application adapter to inspect the Media Type and render or replace the content without carrier access.
 
-The public engine also provides carrier-neutral raw/coarse media materialization for an InlineContent at an explicit Version. The result contains the preserved Media Type and media-representation bytes, not carrier state or the complete `.coedit` collaboration envelope. Opaque payloads return their exact stored bytes. Allowlisted fine-grained text is encoded from its native string according to the preserved Media Type and the processor capability selected in Step 4. Missing required representation metadata, an unsupported effective encoding, or text that cannot be represented exactly returns an explicit payload-media failure. Materialization is read-only and never rewrites the Media Type or document state. Exact public names remain illustrative until implementation freezes them.
+The public engine provides symmetric carrier-neutral raw/coarse media boundaries for replacement input and materialization output. Raw/coarse replacement supplies the complete replacement Media Type and raw media bytes and is available for every payload type; it can change both at once. Opaque bytes are stored exactly after validation. Allowlisted bytes are processed by the Step 4 Media-Type-aware processor into canonical collaborative state before atomic publication, and any processing failure preserves the previous payload. Raw/coarse materialization for an InlineContent at an explicit Version returns the preserved Media Type and media-representation bytes, not carrier state or the complete `.coedit` collaboration envelope. Opaque payloads return their exact stored bytes. Allowlisted fine-grained text is encoded from its native string according to the preserved Media Type and the processor capability selected in Step 4. Missing required representation metadata, an unsupported effective encoding, or text that cannot be represented exactly returns an explicit payload-media failure. Materialization is read-only and never rewrites the Media Type or document state. Exact public names remain illustrative until implementation freezes them.
 
 The fine-grained text editor boundary is specifically for allowlisted text. Conceptually:
 
@@ -385,15 +385,17 @@ If a commit fails, canonical state is unchanged and the UX retains recoverable t
 
 ```text
 payload-aware client intent
-  -> validated replacement for the target Media Type + Origin context
+  -> replacement Media Type + raw media bytes + Origin context
   -> one attributed command against observed VersionToken
-  -> engine replaces the complete payload value atomically
+  -> engine validates the Media Type and raw representation
+  -> engine stores opaque bytes exactly or processes allowlisted bytes into canonical carrier state
+  -> engine atomically publishes Media Type + content + Origin effect
   -> repository commits immutable effect/Contribution + CAS head
   -> engine publishes one logical Contribution and Version
   -> engine emits invalidation
 ```
 
-This workflow is available for every Media Type under the payload contract. It preserves InlineContent identity and can keep or change the Media Type atomically with the content and Origin effect. Fine-grained opaque-payload mutation is not an MVP operation. Mixed replacement/text-edit concurrency remains a Gate B decision under `INLINE_CONTENT_PAYLOADS.md`.
+This workflow is available for every Media Type under the payload contract. It preserves InlineContent identity and can keep or change the Media Type atomically with the content and Origin effect. If validation or raw-media processing fails, canonical state is unchanged. Fine-grained opaque-payload mutation is not an MVP operation. Mixed replacement/text-edit concurrency remains a Gate B decision under `INLINE_CONTENT_PAYLOADS.md`.
 
 ### Semantic Checkpoint
 
@@ -484,7 +486,7 @@ The MVP must prove:
 
 - core commands, queries, History, and serialization require no React, file API, or IndexedDB;
 - allowlisted fine-grained text and representative opaque Media Types are explicit Media Types and no payload-specific operation silently coerces between them;
-- whole-payload replacement succeeds for both the collaborative-text and generic opaque capability classes, preserves InlineContent identity, can keep or change Media Type, assigns the required Origin, and fails atomically;
+- whole-payload replacement accepts raw media bytes for every payload type, succeeds for both the collaborative-text and generic opaque capability classes, preserves InlineContent identity, can keep or change Media Type, assigns the required Origin, processes allowlisted input before publication, and fails atomically;
 - concurrent whole-payload replacements choose the same deterministic winner on every replica with the same valid causal input, independent of arrival order and wall-clock time;
 - every losing concurrent replacement remains represented by immutable History and exactly materializable Versions;
 - interactive text edits and Markdown import use the same validation, attribution, atomicity, and History boundary;
