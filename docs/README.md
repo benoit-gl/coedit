@@ -56,7 +56,8 @@ Only Steps 1 and 2 have implemented behavior. The payload requirements below are
 accepted design direction, not an implemented carrier or public API. Gate B owns
 carrier selection, deterministic concurrent whole-payload replacement, and the
 mixed replacement/text-edit policy. Step 4 selects and qualifies the production
-Media Type parser/acceptance contract and the first raw-media processor and its supported representation profiles. Range
+Media Type parser implementation and fixtures conforming to the fixed acceptance
+contract, along with the first raw-media processor and its supported representation profiles. Range
 lineage remains a Gate C decision. The stage-by-stage ownership is in
 [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md#13-qualification-and-staged-decisions).
 

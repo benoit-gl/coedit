@@ -76,8 +76,8 @@ Step 8 encoder until Gate B has recorded:
 - the measured candidate-container size and load cost.
 
 Step 4 must separately have selected and qualified the production Media Type
-parser/acceptance contract and the first raw-media processor with its supported
-representation profiles. Those media-byte processing
+parser implementation and fixtures conforming to the fixed acceptance contract,
+along with the first raw-media processor and its supported representation profiles. Those media-byte processing
 capabilities do not determine how `.coedit` stores the already-canonical native
 string state.
 
@@ -309,7 +309,7 @@ Treat portable input as hostile. Validate a detached copy in this order:
 9. carrier checkpoint/effect schema, dependency closure, deterministic whole-replacement register state, and implementation resource guards;
 10. reconstructed Block topology, ownership, ordering, tags, Media-Type values,
     and structural invariants plus implementation capacity;
-11. Media Type acceptance and capability classification under the selected production contract;
+11. Media Type acceptance and capability classification under the fixed syntax and acceptance contract;
 12. reconstructed supported allowlisted fine-grained native strings and
     fine-grained Origin coverage, with exact carrier-state preservation and no
     Unicode normalization or silent repair;

@@ -332,9 +332,10 @@ Gate B follows Step 3. Do not begin production carrier implementation or freeze 
 Gate B also closes the mixed replacement/text-edit semantics in
 `INLINE_CONTENT_PAYLOADS.md` section 10.1. Media Type preservation, raw-media boundary separation, and capability matching
 are accepted document semantics; Step 3 proves those boundaries can be implemented
-independently of the carrier without freezing the production accepted-input
-grammar. Step 4 selects and qualifies the Media Type parser/acceptance contract
-and the initial raw-media processor capability, then retains the Step 3 boundary
+independently of the carrier while conforming to the fixed accepted-input syntax
+contract. Step 4 selects and qualifies the Media Type parser implementation and
+fixtures conforming to that contract, along with the initial raw-media processor
+capability, then retains the Step 3 boundary
 cases as production regressions. This does not move Range lineage
 out of Gate C or the network protocol out of the pre-network gate.
 

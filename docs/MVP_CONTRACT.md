@@ -22,7 +22,7 @@ The MVP must provide these capabilities:
 4. Edit headings, prose, and list items.
 5. Create, move, nest, reorder, and delete Blocks.
 6. Create, select, reorder, tag, and delete InlineContents.
-7. Use accepted Internet Media Type values for InlineContent payloads; support allowlisted fine-grained text with fine-grained text operations and generic opaque handling for other accepted values. Step 4 selects and qualifies the fixed Media Type syntax contract.
+7. Use accepted Internet Media Type values for InlineContent payloads; support allowlisted fine-grained text with fine-grained text operations and generic opaque handling for other accepted values. Step 4 selects and qualifies a parser implementation and fixtures conforming to the fixed Media Type syntax contract.
 8. Replace the complete content of any InlineContent atomically with explicit Origin behavior and deterministic convergence semantics.
 9. Edit canonical allowlisted native-string text with protected fine-grained Origin through the engine command boundary.
 10. Preserve opaque payload bytes with payload-level Origin; no fine-grained opaque payload editing is required. Materialize the raw/coarse media representation of any InlineContent at an explicit Version through the public engine boundary: opaque bytes are exact, and allowlisted text encodes under the preserved Media Type or fails explicitly.

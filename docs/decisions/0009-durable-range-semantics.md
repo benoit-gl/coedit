@@ -134,7 +134,7 @@ qualification contract. [`../TEXT_POSITION_MODEL.md`](../TEXT_POSITION_MODEL.md)
 owns editor and carrier position boundaries.
 [`../CAPACITY_AND_PERFORMANCE_TARGETS.md`](../CAPACITY_AND_PERFORMANCE_TARGETS.md)
 owns cross-cutting capacity semantics and contract maturity.
-[`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
-owns formatting, Origin, link, and comment-holder behavior outside the Range
+[`../FINE_GRAINED_TEXT_AND_ORIGIN.md`](../FINE_GRAINED_TEXT_AND_ORIGIN.md)
+owns fine-grained Origin and text Range-holder lifecycle outside the Range
 contract. [`../../SCAFFOLDING_PLAN.md`](../../SCAFFOLDING_PLAN.md) owns step and
 gate order.

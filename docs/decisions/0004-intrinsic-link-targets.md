@@ -10,7 +10,7 @@
 
 **Amended:** 2026-09-03
 
-**Authority:** [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) controls detailed link-holder behavior. [`../RANGE_MODEL.md`](../RANGE_MODEL.md) controls Range behavior. [`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md) controls product ontology.
+**Authority:** [`../FINE_GRAINED_TEXT_AND_ORIGIN.md`](../FINE_GRAINED_TEXT_AND_ORIGIN.md) controls fine-grained Origin and Range-holder behavior. [`../RANGE_MODEL.md`](../RANGE_MODEL.md) controls Range behavior. [`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md) controls product ontology.
 
 ## Context
 

@@ -421,9 +421,10 @@ host/runtime-dependent mechanism or record that no additional explicit guard is
 needed when qualification shows that normal runtime behavior already gives a
 safe atomic failure seam. Gate B does not require a fixed payload-size maximum.
 
-Step 4 selects and qualifies the production Media Type parser and acceptance
-contract, records representative accepted/rejected compatibility fixtures with
-the parsed type/subtype identity used for capability dispatch, and selects and
+Step 4 selects and qualifies a production Media Type parser implementation and
+records representative fixtures that conform to the fixed acceptance and
+classification contract, including the parsed type/subtype identity used for
+capability dispatch. It also selects and
 qualifies the production raw-media processor and its supported representation
 profiles. Supported profiles must work exactly, unsupported profiles must fail
 explicitly, and the processor must not silently alter content or Media Type
@@ -451,8 +452,7 @@ This contract does not:
 - invent a Coedit-specific payload Media Type;
 - introduce a dynamic payload capability registry;
 - define a separate Media Type conversion operation;
-- select the production Media Type parser or freeze its exact accepted-input
-  domain before Step 4;
+- select the production Media Type parser before Step 4;
 - select the production raw-media codec/library, charset set, flowed-text
   behavior, parameter-support matrix, or other raw-media profile details before
   Step 4;
