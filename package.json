@@ -18,6 +18,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
     "lint:deps": "depcruise src --config dependency-cruiser.config.mjs",
+    "adr:check": "node scripts/check-adr-integrity.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "docs:check": "typedoc --options typedoc.json",

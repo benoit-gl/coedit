@@ -1,0 +1,6 @@
+# Architecture-decision governance and its enforcement.
+/docs/decisions/ @benoit-gl
+/scripts/check-adr-integrity.mjs @benoit-gl
+/scripts/check-adr-integrity.test.mjs @benoit-gl
+/.github/workflows/adr-integrity.yml @benoit-gl
+/.github/CODEOWNERS @benoit-gl

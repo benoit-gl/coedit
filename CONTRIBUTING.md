@@ -94,6 +94,19 @@ and relationship metadata to record supersession instead of rewriting the old
 decision. A later ADR that only refines or extends an accepted ADR does not by
 itself require an edit to the older record.
 
+The `adr-integrity` pull-request check enforces that policy. For every ADR already
+present on the target branch, all content beginning with its first level-two
+heading (`##`) is immutable. The check also rejects deletion of an existing ADR,
+invalid supersession metadata, broken links in mutable ADR headers, and divergence
+between ADR lifecycle classes in the metadata and decision index. Historical
+links in immutable ADR bodies are deliberately not checked.
+
+Run the same comparison locally after committing with:
+
+```text
+npm run adr:check -- --base-ref origin/main
+```
+
 ## Pull-request workflow and hygiene
 
 Use one pull request for one logical merge unit. Keep unrelated cleanup and
