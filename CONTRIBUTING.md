@@ -126,6 +126,18 @@ Update the title or description during review whenever the final change makes
 the existing text inaccurate or incomplete. Put transient review notes in the
 pull-request conversation instead.
 
+Treat the pull-request description as a durable change record. Describe the
+resulting behavior and rationale, and identify any repository configuration or
+manual setup that will still be required after merge. Do not add sections for
+verification, testing, test plans, checks, CI status, command output, or review
+progress. Required GitHub checks are the authoritative verification record. If
+an exceptional manual observation is useful during review, put it in the
+pull-request conversation instead of the final squash message.
+
+The `pr-description` pull-request check enforces the prohibited section names.
+The pull-request template supplies the durable sections expected by this
+repository; delete the optional post-merge section when no setup remains.
+
 Branch history can be rewritten before merge. Coordinate before you force-update
 a branch that another contributor is actively using or building on.
 
