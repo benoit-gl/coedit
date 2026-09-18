@@ -1,6 +1,10 @@
 # ADR 0009: Durable Range semantics and staged implementation
 
-**Status:** Accepted behavior; Step 6 representation decision unresolved
+**Status:** Superseded in part; Step 6 representation decision unresolved
+
+**Superseded by:** [ADR 0010](0010-typed-inline-content-payloads.md)
+
+**Superseded scope:** ADR 0010 replaces the internal-link-specific holder semantics, including current-document internal-link resolution and fallback responsibility, and the Step 6 requirement to define an internal-link Range encoding. The generic document-relative Range semantics, permanent Version basis, and staged Range representation decision remain accepted.
 
 **Date:** 2026-09-02
 
@@ -130,7 +134,7 @@ qualification contract. [`../TEXT_POSITION_MODEL.md`](../TEXT_POSITION_MODEL.md)
 owns editor and carrier position boundaries.
 [`../CAPACITY_AND_PERFORMANCE_TARGETS.md`](../CAPACITY_AND_PERFORMANCE_TARGETS.md)
 owns cross-cutting capacity semantics and contract maturity.
-[`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
-owns formatting, Origin, link, and comment-holder behavior outside the Range
+[`../FINE_GRAINED_TEXT_AND_ORIGIN.md`](../FINE_GRAINED_TEXT_AND_ORIGIN.md)
+owns fine-grained Origin and text Range-holder lifecycle outside the Range
 contract. [`../../SCAFFOLDING_PLAN.md`](../../SCAFFOLDING_PLAN.md) owns step and
 gate order.

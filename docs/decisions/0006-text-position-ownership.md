@@ -1,6 +1,10 @@
 # ADR 0006: Text position ownership
 
-**Status:** Accepted
+**Status:** Superseded in part
+
+**Superseded by:** [ADR 0010](0010-typed-inline-content-payloads.md)
+
+**Superseded scope:** ADR 0010 replaces the assumption that canonical CollaborativeContent is universally text. The position-ownership decision, editor-native transient positions, no universal numeric coordinate, no silent normalization, and carrier-neutral Range recovery remain accepted for allowlisted fine-grained text payloads.
 
 **Date:** 2026-09-01
 
@@ -72,5 +76,5 @@ behavior, and leaves the durable Range-tracking representation to Gate C.
 [`../TEXT_POSITION_MODEL.md`](../TEXT_POSITION_MODEL.md) owns the detailed
 coordinate and carrier-position boundary contract. [`../RANGE_MODEL.md`](../RANGE_MODEL.md)
 owns durable Range behavior and the Gate C representation decision.
-[`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md)
-owns attributed-text behavior.
+[`../FINE_GRAINED_TEXT_AND_ORIGIN.md`](../FINE_GRAINED_TEXT_AND_ORIGIN.md)
+owns fine-grained text and Origin behavior.

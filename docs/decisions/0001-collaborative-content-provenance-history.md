@@ -1,6 +1,10 @@
 # ADR-0001: Collaborative content, provenance, History, and persistence
 
-**Status:** Accepted
+**Status:** Superseded in part
+
+**Superseded by:** [ADR 0010](0010-typed-inline-content-payloads.md)
+
+**Superseded scope:** ADR 0010 replaces the engine-owned rich-text formatting assumptions, the parts that treat rich text and hard breaks as the universal InlineContent shape, and the preselected DOM/clipboard sanitization mechanism and tooling. Sanitization and activation remain application-boundary concerns whose concrete policy and tooling are selected when that activation path is implemented. Fine-grained Origin, causal History, persistence, and carrier qualification remain accepted.
 
 **Decision date:** 2026-08-25
 
@@ -18,7 +22,7 @@ This record preserves why the decision was made. Normative behavior belongs in:
 - [`../MVP_CONTRACT.md`](../MVP_CONTRACT.md) for the MVP proof boundary;
 - [`../MVP_ARCHITECTURE.md`](../MVP_ARCHITECTURE.md) for component authority;
 - [`../CAPACITY_AND_PERFORMANCE_TARGETS.md`](../CAPACITY_AND_PERFORMANCE_TARGETS.md) for capacity classification and numeric ownership;
-- [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for formatting, Origin, clipboard, and Range-holder behavior;
+- [`../FINE_GRAINED_TEXT_AND_ORIGIN.md`](../FINE_GRAINED_TEXT_AND_ORIGIN.md) for fine-grained Origin, clipboard, and Range-holder behavior;
 - [`../RANGE_MODEL.md`](../RANGE_MODEL.md) for durable Range behavior and staged representation selection;
 - [`../MVP_IMPLEMENTATION_SPEC.md`](../MVP_IMPLEMENTATION_SPEC.md) for private MVP rules;
 - [`../MARKDOWN_INTERCHANGE.md`](../MARKDOWN_INTERCHANGE.md) for Markdown import/export behavior;
