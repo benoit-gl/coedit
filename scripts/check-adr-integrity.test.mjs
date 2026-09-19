@@ -106,6 +106,41 @@ describe("ADR integrity", () => {
     );
   });
 
+  it("requires supersession metadata to link to a replacement ADR", () => {
+    const files = snapshot(
+      adr("Accepted", "Historical decision."),
+      adr(
+        "Superseded",
+        "Historical decision.",
+        "\n**Superseded by:** Replaced elsewhere\n",
+      ),
+      "Superseded",
+    );
+
+    expect(checkAdrIntegritySnapshot(files)).toContainEqual(
+      expect.objectContaining({
+        message: expect.stringContaining("existing replacement ADR"),
+      }),
+    );
+  });
+
+  it("rejects supersession metadata on an accepted ADR", () => {
+    const files = snapshot(
+      adr("Accepted", "Historical decision."),
+      adr(
+        "Accepted",
+        "Historical decision.",
+        "\n**Superseded by:** [Decision index](README.md)\n",
+      ),
+    );
+
+    expect(checkAdrIntegritySnapshot(files)).toContainEqual(
+      expect.objectContaining({
+        message: expect.stringContaining("Only a superseded ADR"),
+      }),
+    );
+  });
+
   it("allows the index to elaborate on the same lifecycle class", () => {
     const baseAdr = adr("Accepted", "Historical decision.");
     const headAdr = adr(
@@ -141,6 +176,109 @@ describe("ADR integrity", () => {
     expect(checkAdrIntegritySnapshot(files)).toContainEqual(
       expect.objectContaining({
         message: expect.stringContaining("links to missing path"),
+      }),
+    );
+  });
+
+  it("rejects a supersession link that does not target an ADR", () => {
+    const baseAdr = adr("Accepted", "Historical decision.");
+    const headAdr = adr(
+      "Superseded",
+      "Historical decision.",
+      "\n**Superseded by:** [Decision index](README.md)\n",
+    );
+    const files = snapshot(baseAdr, headAdr, "Superseded");
+
+    expect(checkAdrIntegritySnapshot(files)).toContainEqual(
+      expect.objectContaining({
+        message: expect.stringContaining("existing replacement ADR"),
+      }),
+    );
+  });
+
+  it("rejects an external link in supersession metadata", () => {
+    const replacementPath = "docs/decisions/0002-replacement.md";
+    const baseAdr = adr("Accepted", "Historical decision.");
+    const headAdr = adr(
+      "Superseded",
+      "Historical decision.",
+      "\n**Superseded by:** [ADR 0002](0002-replacement.md) and [external](https://example.com)\n",
+    );
+    const files = snapshot(baseAdr, headAdr, "Superseded");
+    files.headPaths.add(replacementPath);
+
+    expect(checkAdrIntegritySnapshot(files)).toContainEqual(
+      expect.objectContaining({
+        message: expect.stringContaining("other existing replacement ADRs"),
+      }),
+    );
+  });
+
+  it("rejects a self-referential supersession link", () => {
+    const baseAdr = adr("Accepted", "Historical decision.");
+    const headAdr = adr(
+      "Superseded",
+      "Historical decision.",
+      "\n**Superseded by:** [This ADR](0001-example.md)\n",
+    );
+    const files = snapshot(baseAdr, headAdr, "Superseded");
+
+    expect(checkAdrIntegritySnapshot(files)).toContainEqual(
+      expect.objectContaining({
+        message: expect.stringContaining("other existing replacement ADRs"),
+      }),
+    );
+  });
+
+  it("rejects a cyclic supersession path", () => {
+    const secondAdrPath = "docs/decisions/0002-example.md";
+    const firstBase = adr("Accepted", "First historical decision.");
+    const secondBase = `# ADR 0002: Example
+
+**Status:** Accepted
+## Context
+
+Second historical decision.
+`;
+    const firstHead = adr(
+      "Superseded",
+      "First historical decision.",
+      "\n**Superseded by:** [ADR 0002](0002-example.md)\n",
+    );
+    const secondHead = `# ADR 0002: Example
+
+**Status:** Superseded
+
+**Superseded by:** [ADR 0001](0001-example.md)
+## Context
+
+Second historical decision.
+`;
+    const cycleIndex = `# Architecture decision records
+
+## Index
+
+| ADR | Status | Subject |
+| --- | --- | --- |
+| [\`0001-example.md\`](0001-example.md) | Superseded | First example |
+| [\`0002-example.md\`](0002-example.md) | Superseded | Second example |
+`;
+    const files = {
+      baseFiles: new Map([
+        [adrPath, firstBase],
+        [secondAdrPath, secondBase],
+      ]),
+      headFiles: new Map([
+        [adrPath, firstHead],
+        [secondAdrPath, secondHead],
+        [indexPath, cycleIndex],
+      ]),
+      headPaths: new Set([adrPath, secondAdrPath, indexPath]),
+    };
+
+    expect(checkAdrIntegritySnapshot(files)).toContainEqual(
+      expect.objectContaining({
+        message: expect.stringContaining("without a cycle"),
       }),
     );
   });
