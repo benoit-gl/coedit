@@ -1,3 +1,6 @@
+# Route governance changes to the maintainer for review. Branch protection does
+# not require Code Owner approval while the repository has only one code owner.
+
 # Architecture-decision governance and its enforcement.
 /docs/decisions/ @benoit-gl
 /scripts/check-adr-integrity.mjs @benoit-gl

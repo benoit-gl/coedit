@@ -1,7 +1,9 @@
 name: ADR integrity
 
 on:
-  pull_request:
+  pull_request_target:
+    branches:
+      - main
     types:
       - opened
       - edited
@@ -10,6 +12,7 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
@@ -17,18 +20,139 @@ concurrency:
 
 jobs:
   adr-integrity:
-    name: adr-integrity
+    name: adr-integrity-enforcer
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Check out pull-request head
-        uses: actions/checkout@v7
+      - name: Invalidate the event head's previous result
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          printf '%s\n' "${HEAD_SHA}" | grep -Eq '^[0-9a-f]{40}$'
+          gh api --method POST \
+            "repos/${GITHUB_REPOSITORY}/statuses/${HEAD_SHA}" \
+            --raw-field state=pending \
+            --raw-field context=adr-integrity \
+            --raw-field description="ADR integrity is running" \
+            --raw-field target_url="${RUN_URL}"
+
+      - name: Snapshot current pull-request metadata
+        id: snapshot
+        env:
+          EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          case "${PR_NUMBER}" in
+            "" | *[!0-9]*)
+              echo "Pull-request number is not numeric." >&2
+              exit 2
+              ;;
+          esac
+
+          snapshot_path="${RUNNER_TEMP}/adr-integrity-snapshot.json"
+          gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" > "${snapshot_path}"
+
+          head_sha="$(jq -r '.head.sha' "${snapshot_path}")"
+          base_sha="$(jq -r '.base.sha' "${snapshot_path}")"
+          base_ref="$(jq -r '.base.ref' "${snapshot_path}")"
+          base_repository="$(jq -r '.base.repo.full_name' "${snapshot_path}")"
+          state="$(jq -r '.state' "${snapshot_path}")"
+          printf '%s\n' "${head_sha}" | grep -Eq '^[0-9a-f]{40}$'
+          printf '%s\n' "${base_sha}" | grep -Eq '^[0-9a-f]{40}$'
+          test "${state}" = "open"
+          test "${head_sha}" = "${EVENT_HEAD_SHA}"
+          test "${base_ref}" = "main"
+          test "${base_repository}" = "${GITHUB_REPOSITORY}"
+
+          echo "base_sha=${base_sha}" >> "${GITHUB_OUTPUT}"
+          echo "head_sha=${head_sha}" >> "${GITHUB_OUTPUT}"
+
+      - name: Check out trusted base
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+          ref: ${{ steps.snapshot.outputs.base_sha }}
+
+      - name: Fetch pull-request head as data
+        env:
+          EXPECTED_HEAD_SHA: ${{ steps.snapshot.outputs.head_sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          case "${PR_NUMBER}" in
+            "" | *[!0-9]*)
+              echo "Pull-request number is not numeric." >&2
+              exit 2
+              ;;
+          esac
+          candidate_ref="refs/remotes/pull/${PR_NUMBER}/head"
+          git fetch --no-tags --depth=1 origin \
+            "+refs/pull/${PR_NUMBER}/head:${candidate_ref}"
+          actual_head_sha="$(git rev-parse --verify "${candidate_ref}^{commit}")"
+          if [ "${actual_head_sha}" != "${EXPECTED_HEAD_SHA}" ]; then
+            echo "Fetched pull-request head does not match the event payload." >&2
+            exit 2
+          fi
 
       - name: Verify ADR lifecycle invariants
+        id: verify
+        continue-on-error: true
         run: >-
           node scripts/check-adr-integrity.mjs
-          --base-ref "${{ github.event.pull_request.base.sha }}"
-          --head-ref "${{ github.event.pull_request.head.sha }}"
+          --base-ref "${{ steps.snapshot.outputs.base_sha }}"
+          --head-ref "${{ steps.snapshot.outputs.head_sha }}"
+
+      - name: Report ADR integrity result
+        if: always()
+        env:
+          CHECK_OUTCOME: ${{ steps.verify.outcome }}
+          EVENT_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SNAPSHOT_OUTCOME: ${{ steps.snapshot.outcome }}
+        run: |
+          snapshot_path="${RUNNER_TEMP}/adr-integrity-snapshot.json"
+          current_path="${RUNNER_TEMP}/adr-integrity-current.json"
+          head_sha="${EVENT_HEAD_SHA}"
+
+          if [ "${SNAPSHOT_OUTCOME}" = "success" ] && [ -f "${snapshot_path}" ]; then
+            head_sha="$(jq -r '.head.sha' "${snapshot_path}")"
+          fi
+          printf '%s\n' "${head_sha}" | grep -Eq '^[0-9a-f]{40}$'
+
+          if [ "${SNAPSHOT_OUTCOME}" != "success" ] || [ ! -f "${snapshot_path}" ] || \
+            ! gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" > "${current_path}"; then
+            state="failure"
+            description="Pull-request metadata could not be verified"
+          elif ! diff -q \
+            <(jq -cS '{base: {ref: .base.ref, repo: .base.repo.full_name, sha: .base.sha}, head: .head.sha, state}' "${snapshot_path}") \
+            <(jq -cS '{base: {ref: .base.ref, repo: .base.repo.full_name, sha: .base.sha}, head: .head.sha, state}' "${current_path}") \
+            > /dev/null; then
+            current_head_sha="$(jq -r '.head.sha' "${current_path}")"
+            printf '%s\n' "${current_head_sha}" | grep -Eq '^[0-9a-f]{40}$'
+            gh api --method POST \
+              "repos/${GITHUB_REPOSITORY}/statuses/${current_head_sha}" \
+              --raw-field state=pending \
+              --raw-field context=adr-integrity \
+              --raw-field description="Pull request changed; re-run required" \
+              --raw-field target_url="${RUN_URL}"
+            echo "Pull-request metadata changed while ADR integrity was running." >&2
+            exit 1
+          elif [ "${CHECK_OUTCOME}" = "success" ]; then
+            state="success"
+            description="ADR integrity passed"
+          else
+            state="failure"
+            description="ADR integrity failed"
+          fi
+          gh api --method POST \
+            "repos/${GITHUB_REPOSITORY}/statuses/${head_sha}" \
+            --raw-field state="${state}" \
+            --raw-field context=adr-integrity \
+            --raw-field description="${description}" \
+            --raw-field target_url="${RUN_URL}"
+          test "${state}" = "success"
