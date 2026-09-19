@@ -22,16 +22,62 @@ function splitHistoricalBody(path, text) {
 
 function metadataValue(header, name) {
   const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const match = new RegExp(`^\\*\\*${escapedName}:\\*\\*\\s*(.+)$`, "m").exec(
-    header,
-  );
-  return match?.[1]?.trim();
+  const matches = [
+    ...header.matchAll(
+      new RegExp(`^\\*\\*${escapedName}:\\*\\*\\s*(.+)$`, "gm"),
+    ),
+  ];
+  if (matches.length > 1) {
+    throw new Error(
+      `ADR header metadata **${name}:** must appear at most once.`,
+    );
+  }
+  const value = matches[0]?.[1]?.trim();
+  return value === "" ? undefined : value;
 }
 
-function markdownLinkTargets(text) {
-  return [...text.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)]
+function normalizedReferenceLabel(label) {
+  return label.trim().replace(/\s+/gu, " ").toLocaleLowerCase("en-US");
+}
+
+function referenceDefinitions(text) {
+  const definitions = new Map();
+  const pattern =
+    /^ {0,3}\[([^\]]+)\]:[ \t]*(?:<([^>\n]+)>|([^\s]+))(?:[ \t]+.*)?$/gmu;
+  for (const match of text.matchAll(pattern)) {
+    const label = match[1];
+    const target = match[2] ?? match[3];
+    if (label !== undefined && target !== undefined) {
+      definitions.set(normalizedReferenceLabel(label), target);
+    }
+  }
+  return definitions;
+}
+
+function markdownLinkTargets(text, referenceText = text) {
+  const targets = [...text.matchAll(/\[[^\]]+\]\(([^)]+)\)/gu)]
     .map((match) => match[1]?.split("#", 1)[0]?.trim())
     .filter((target) => target !== undefined && target.length > 0);
+  const definitions = referenceDefinitions(referenceText);
+  const referencePattern = /\[([^\]]+)\](?:\[([^\]]*)\])?/gu;
+  for (const match of text.matchAll(referencePattern)) {
+    const matchedText = match[0];
+    const end = (match.index ?? 0) + matchedText.length;
+    if (text[end] === "(" || text[end] === ":") {
+      continue;
+    }
+    const textLabel = match[1] ?? "";
+    const explicitLabel = match[2];
+    const label =
+      explicitLabel === undefined || explicitLabel === ""
+        ? textLabel
+        : explicitLabel;
+    const target = definitions.get(normalizedReferenceLabel(label));
+    if (target !== undefined) {
+      targets.push(target.split("#", 1)[0]?.trim());
+    }
+  }
+  return targets.filter((target) => target !== undefined && target.length > 0);
 }
 
 function relativeMarkdownLinks(text) {
@@ -40,8 +86,8 @@ function relativeMarkdownLinks(text) {
   );
 }
 
-function supersedingAdrLinks(path, supersededBy, headPaths) {
-  const targets = markdownLinkTargets(supersededBy);
+function supersedingAdrLinks(path, supersededBy, headPaths, header) {
+  const targets = markdownLinkTargets(supersededBy, header);
   const links = targets.map((target) => resolveRepositoryLink(path, target));
   if (
     links.length === 0 ||
@@ -61,6 +107,7 @@ function resolveRepositoryLink(sourcePath, target) {
 
 function parseDecisionIndex(text) {
   const entries = new Map();
+  const duplicateFileNames = new Set();
   const rowPattern =
     /^\|\s*\[`([^`]+\.md)`\]\(([^)]+)\)\s*\|\s*([^|]+?)\s*\|/gm;
 
@@ -73,24 +120,61 @@ function parseDecisionIndex(text) {
       target !== undefined &&
       status !== undefined
     ) {
-      entries.set(fileName, { target, status });
+      if (entries.has(fileName)) {
+        duplicateFileNames.add(fileName);
+      } else {
+        entries.set(fileName, { target, status });
+      }
     }
   }
 
-  return entries;
+  return { duplicateFileNames, entries };
 }
 
 function lifecycleClass(status) {
-  if (/\bsuperseded in part\b/i.test(status)) {
+  const normalized = status.trim();
+  if (/^superseded in part\b/iu.test(normalized)) {
     return "superseded-in-part";
   }
-  if (/\bsuperseded\b/i.test(status)) {
+  if (/^superseded\b/iu.test(normalized)) {
     return "superseded";
   }
-  if (/\baccepted\b/i.test(status)) {
+  if (/^accepted\b/iu.test(normalized)) {
     return "accepted";
   }
   return undefined;
+}
+
+function hasSupersessionCycle(
+  path,
+  replacementLinks,
+  lifecyclesByPath,
+  active = new Set(),
+  complete = new Set(),
+) {
+  if (lifecyclesByPath.get(path) === "accepted" || complete.has(path)) {
+    return false;
+  }
+  if (active.has(path)) {
+    return true;
+  }
+  active.add(path);
+  for (const replacement of replacementLinks.get(path) ?? []) {
+    if (
+      hasSupersessionCycle(
+        replacement,
+        replacementLinks,
+        lifecyclesByPath,
+        active,
+        complete,
+      )
+    ) {
+      return true;
+    }
+  }
+  active.delete(path);
+  complete.add(path);
+  return false;
 }
 
 function firstDifferentLine(left, right) {
@@ -165,7 +249,7 @@ export function checkAdrIntegritySnapshot({ baseFiles, headFiles, headPaths }) {
       statuses.set(posix.basename(path), { lifecycle, status });
       lifecyclesByPath.set(path, lifecycle);
 
-      const isSuperseded = /\bsuperseded\b/i.test(status);
+      const isSuperseded = lifecycle !== "accepted";
       const supersededBy = metadataValue(header, "Superseded by");
       if (!isSuperseded && supersededBy !== undefined) {
         failures.push({
@@ -179,7 +263,12 @@ export function checkAdrIntegritySnapshot({ baseFiles, headFiles, headPaths }) {
           message: "A superseded ADR must define **Superseded by:** metadata.",
         });
       } else if (isSuperseded) {
-        const links = supersedingAdrLinks(path, supersededBy, headPaths);
+        const links = supersedingAdrLinks(
+          path,
+          supersededBy,
+          headPaths,
+          header,
+        );
         if (links === undefined) {
           failures.push({
             path,
@@ -190,7 +279,7 @@ export function checkAdrIntegritySnapshot({ baseFiles, headFiles, headPaths }) {
           replacementLinks.set(path, links);
         }
       }
-      if (/\bsuperseded in part\b/i.test(status)) {
+      if (lifecycle === "superseded-in-part") {
         const supersededScope = metadataValue(header, "Superseded scope");
         if (supersededScope === undefined) {
           failures.push({
@@ -216,29 +305,10 @@ export function checkAdrIntegritySnapshot({ baseFiles, headFiles, headPaths }) {
   }
 
   for (const [path, links] of replacementLinks) {
-    const pending = [...links];
-    const visited = new Set([path]);
-    let hasInvalidPath = false;
-    while (pending.length > 0) {
-      const replacement = pending.pop();
-      if (
-        replacement === undefined ||
-        lifecyclesByPath.get(replacement) === "accepted"
-      ) {
-        continue;
-      }
-      if (visited.has(replacement)) {
-        hasInvalidPath = true;
-        break;
-      }
-      visited.add(replacement);
-      const nextLinks = replacementLinks.get(replacement);
-      if (nextLinks === undefined) {
-        continue;
-      }
-      pending.push(...nextLinks);
-    }
-    if (hasInvalidPath) {
+    if (
+      links.length > 0 &&
+      hasSupersessionCycle(path, replacementLinks, lifecyclesByPath)
+    ) {
       failures.push({
         path,
         message:
@@ -256,7 +326,14 @@ export function checkAdrIntegritySnapshot({ baseFiles, headFiles, headPaths }) {
     return failures;
   }
 
-  const indexEntries = parseDecisionIndex(indexText);
+  const { duplicateFileNames, entries: indexEntries } =
+    parseDecisionIndex(indexText);
+  for (const fileName of duplicateFileNames) {
+    failures.push({
+      path: decisionIndexPath,
+      message: `${fileName} appears more than once in the ADR index.`,
+    });
+  }
   for (const [fileName, metadata] of statuses) {
     const entry = indexEntries.get(fileName);
     if (entry === undefined) {
@@ -282,7 +359,13 @@ export function checkAdrIntegritySnapshot({ baseFiles, headFiles, headPaths }) {
       decisionIndexPath,
       entry.target,
     );
-    if (!headPaths.has(resolvedTarget)) {
+    const expectedTarget = `${decisionsDirectory}/${fileName}`;
+    if (resolvedTarget !== expectedTarget) {
+      failures.push({
+        path: decisionIndexPath,
+        message: `Index entry for ${fileName} must link to ${expectedTarget}.`,
+      });
+    } else if (!headPaths.has(resolvedTarget)) {
       failures.push({
         path: decisionIndexPath,
         message: `Index entry for ${fileName} links to missing path ${resolvedTarget}.`,

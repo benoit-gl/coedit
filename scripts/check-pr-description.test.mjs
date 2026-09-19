@@ -51,6 +51,19 @@ Require the new status check on the protected branch.
     ]);
   });
 
+  it("rejects prohibited headings split by invisible format characters", () => {
+    expect(
+      findProhibitedPrDescriptionSections(
+        "## Ver\u200bification\n\nTransient details.",
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        line: 1,
+        prohibitedSection: "verification",
+      }),
+    ]);
+  });
+
   it("rejects raw HTML and character references in headings", () => {
     expect(
       findProhibitedPrDescriptionSections(
@@ -131,5 +144,47 @@ The change makes verification policy explicit.
 `;
 
     expect(findProhibitedPrDescriptionSections(body)).toEqual([]);
+  });
+
+  it("does not let an invalid backtick fence hide a prohibited heading", () => {
+    expect(
+      findProhibitedPrDescriptionSections("```bad```\n## Testing\n"),
+    ).toEqual([
+      expect.objectContaining({
+        line: 2,
+        prohibitedSection: "testing",
+      }),
+    ]);
+  });
+
+  it("requires a fence closer to contain only its marker", () => {
+    const body = `\`\`\`markdown
+## Testing
+\`\`\` trailing text
+## Verification
+\`\`\`
+`;
+
+    expect(findProhibitedPrDescriptionSections(body)).toEqual([]);
+  });
+
+  it("does not treat block content followed by a thematic break as Setext", () => {
+    for (const body of [
+      "> Testing\n---\n",
+      "- Testing\n---\n",
+      "<!--\nTesting\n-->\n---\n",
+    ]) {
+      expect(findProhibitedPrDescriptionSections(body)).toEqual([]);
+    }
+  });
+
+  it("finds prohibited headings nested in Markdown containers", () => {
+    for (const body of ["> Testing\n> ---\n", "- ## Verification\n"]) {
+      expect(findProhibitedPrDescriptionSections(body)).toEqual([
+        expect.objectContaining({
+          prohibitedSection: expect.stringMatching(/testing|verification/u),
+        }),
+      ]);
+    }
   });
 });

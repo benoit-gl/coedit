@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { fromMarkdown } from "mdast-util-from-markdown";
+
 const prohibitedSections = [
   { name: "verification", pattern: /\bverification\b/u },
   { name: "testing", pattern: /\btesting\b/u },
@@ -21,64 +23,72 @@ function normalizedHeading(text) {
     .replace(/<!--[\s\S]*?-->/gu, "")
     .replace(/<[^>]+>/gu, "")
     .replace(/[`*_~]/gu, "")
+    .replace(/\p{Cf}/gu, "")
     .toLocaleLowerCase("en-US")
     .replace(/[^\p{L}\p{N}]+/gu, " ")
     .trim();
 }
 
+function nodeText(node) {
+  if (node.type === "image") {
+    return node.alt ?? "";
+  }
+  if (typeof node.value === "string") {
+    return node.value;
+  }
+  return (node.children ?? []).map((child) => nodeText(child)).join("");
+}
+
+function nodeContainsHtml(node) {
+  return (
+    node.type === "html" ||
+    (node.children ?? []).some((child) => nodeContainsHtml(child))
+  );
+}
+
 function markdownHeadings(markdown) {
-  const lines = markdown.split(/\r?\n/u);
   const headings = [];
-  let fence;
 
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index] ?? "";
-    const fenceMatch = /^ {0,3}(`{3,}|~{3,})/u.exec(line);
-    if (fenceMatch !== null) {
-      const marker = fenceMatch[1] ?? "";
-      if (fence === undefined) {
-        fence = { character: marker[0], length: marker.length };
-      } else if (
-        marker[0] === fence.character &&
-        marker.length >= fence.length
-      ) {
-        fence = undefined;
-      }
-      continue;
+  function visit(node) {
+    if (node.type === "heading") {
+      const start = node.position?.start;
+      const end = node.position?.end;
+      headings.push({
+        line: start?.line ?? 1,
+        source:
+          start?.offset === undefined || end?.offset === undefined
+            ? nodeText(node)
+            : markdown.slice(start.offset, end.offset),
+        text: nodeText(node),
+        rawHtmlHeading: nodeContainsHtml(node),
+      });
+      return;
     }
-    if (fence !== undefined) {
-      continue;
+    if (node.type === "html" && /^ {0,3}<h[1-6](?:\s|>|$)/iu.test(node.value)) {
+      headings.push({
+        line: node.position?.start.line ?? 1,
+        source: node.value,
+        text: node.value,
+        rawHtmlHeading: true,
+      });
+      return;
     }
-
-    const htmlHeadingMatch = /^ {0,3}<h[1-6](?:\s|>|$)/iu.exec(line);
-    if (htmlHeadingMatch !== null) {
-      headings.push({ line: index + 1, text: line, rawHtmlHeading: true });
-      continue;
-    }
-
-    const atxMatch = /^ {0,3}#{1,6}(?:[ \t]+|$)(.*)$/u.exec(line);
-    if (atxMatch !== null) {
-      const text = (atxMatch[1] ?? "").replace(/[ \t]+#+[ \t]*$/u, "");
-      headings.push({ line: index + 1, text });
-      continue;
-    }
-
-    if (
-      index > 0 &&
-      /^ {0,3}(?:=+|-+)[ \t]*$/u.test(line) &&
-      (lines[index - 1] ?? "").trim().length > 0
-    ) {
-      headings.push({ line: index, text: lines[index - 1] ?? "" });
+    for (const child of node.children ?? []) {
+      visit(child);
     }
   }
 
+  visit(fromMarkdown(markdown));
   return headings;
 }
 
 export function findProhibitedPrDescriptionSections(markdown) {
   const failures = [];
   for (const heading of markdownHeadings(markdown)) {
-    if (heading.rawHtmlHeading || rawHtmlPattern.test(heading.text)) {
+    if (
+      heading.rawHtmlHeading ||
+      rawHtmlPattern.test(heading.source ?? heading.text)
+    ) {
       failures.push({
         line: heading.line,
         heading: heading.text.trim(),
@@ -86,7 +96,7 @@ export function findProhibitedPrDescriptionSections(markdown) {
       });
       continue;
     }
-    if (characterReferencePattern.test(heading.text)) {
+    if (characterReferencePattern.test(heading.source ?? heading.text)) {
       failures.push({
         line: heading.line,
         heading: heading.text.trim(),

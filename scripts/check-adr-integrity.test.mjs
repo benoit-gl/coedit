@@ -141,6 +141,81 @@ describe("ADR integrity", () => {
     );
   });
 
+  it("rejects duplicate singleton metadata", () => {
+    const files = snapshot(
+      adr("Accepted", "Historical decision."),
+      adr("Accepted", "Historical decision.", "\n**Status:** Superseded\n"),
+    );
+
+    expect(checkAdrIntegritySnapshot(files)).toContainEqual({
+      path: adrPath,
+      message: "ADR header metadata **Status:** must appear at most once.",
+    });
+  });
+
+  it("rejects duplicate ADR index rows", () => {
+    const files = snapshot(
+      adr("Accepted", "Historical decision."),
+      adr("Accepted", "Historical decision."),
+    );
+    files.headFiles.set(
+      indexPath,
+      `${index("Accepted")}| [\`0001-example.md\`](0001-example.md) | Superseded | Duplicate |\n`,
+    );
+
+    expect(checkAdrIntegritySnapshot(files)).toContainEqual({
+      path: indexPath,
+      message: "0001-example.md appears more than once in the ADR index.",
+    });
+  });
+
+  it("rejects an index row that links to a different existing file", () => {
+    const files = snapshot(
+      adr("Accepted", "Historical decision."),
+      adr("Accepted", "Historical decision."),
+    );
+    files.headFiles.set(
+      indexPath,
+      index("Accepted").replace("(0001-example.md)", "(README.md)"),
+    );
+
+    expect(checkAdrIntegritySnapshot(files)).toContainEqual({
+      path: indexPath,
+      message:
+        "Index entry for 0001-example.md must link to docs/decisions/0001-example.md.",
+    });
+  });
+
+  it("rejects an empty partial-supersession scope", () => {
+    const baseAdr = adr("Accepted", "Historical decision.");
+    const headAdr = adr(
+      "Superseded in part",
+      "Historical decision.",
+      "\n**Superseded by:** [ADR 0002](0002-replacement.md)\n\n**Superseded scope:**    \n",
+    );
+    const files = snapshot(baseAdr, headAdr, "Superseded in part");
+    files.headPaths.add("docs/decisions/0002-replacement.md");
+
+    expect(checkAdrIntegritySnapshot(files)).toContainEqual({
+      path: adrPath,
+      message:
+        "A partly superseded ADR must define **Superseded scope:** metadata.",
+    });
+  });
+
+  it("rejects a negated lifecycle status", () => {
+    const files = snapshot(
+      adr("Accepted", "Historical decision."),
+      adr("Not accepted", "Historical decision."),
+      "Not accepted",
+    );
+
+    expect(checkAdrIntegritySnapshot(files)).toContainEqual({
+      path: adrPath,
+      message: 'Unrecognized ADR lifecycle status "Not accepted".',
+    });
+  });
+
   it("allows the index to elaborate on the same lifecycle class", () => {
     const baseAdr = adr("Accepted", "Historical decision.");
     const headAdr = adr(
@@ -178,6 +253,22 @@ describe("ADR integrity", () => {
         message: expect.stringContaining("links to missing path"),
       }),
     );
+  });
+
+  it("rejects broken reference-style links in mutable ADR headers", () => {
+    const baseAdr = adr("Accepted", "Historical decision.");
+    const headAdr = adr(
+      "Accepted",
+      "Historical decision.",
+      "\n**Related:** See [missing][target]\n\n[target]: missing.md\n",
+    );
+    const files = snapshot(baseAdr, headAdr);
+
+    expect(checkAdrIntegritySnapshot(files)).toContainEqual({
+      path: adrPath,
+      message:
+        "Mutable ADR header links to missing path docs/decisions/missing.md.",
+    });
   });
 
   it("rejects a supersession link that does not target an ADR", () => {
@@ -281,5 +372,69 @@ Second historical decision.
         message: expect.stringContaining("without a cycle"),
       }),
     );
+  });
+
+  it("allows convergent supersession paths without treating them as cycles", () => {
+    const fileNames = [
+      "0001-a.md",
+      "0002-b.md",
+      "0003-c.md",
+      "0004-d.md",
+      "0005-e.md",
+    ];
+    const paths = fileNames.map((fileName) => `docs/decisions/${fileName}`);
+    const graphAdr = (number, status, replacements = []) => {
+      const links = replacements
+        .map((fileName) => `[ADR ${fileName.slice(0, 4)}](${fileName})`)
+        .join(" and ");
+      const supersession =
+        links.length === 0 ? "" : `\n**Superseded by:** ${links}\n`;
+      return `# ADR ${number}: Graph node
+
+**Status:** ${status}
+${supersession}
+## Context
+
+Historical decision ${number}.
+`;
+    };
+    const statuses = [
+      ["Superseded", ["0002-b.md", "0003-c.md"]],
+      ["Superseded", ["0004-d.md"]],
+      ["Superseded", ["0004-d.md"]],
+      ["Superseded", ["0005-e.md"]],
+      ["Accepted", []],
+    ];
+    const baseFiles = new Map(
+      paths.map((path, index) => [path, graphAdr(index + 1, "Accepted")]),
+    );
+    const headFiles = new Map(
+      paths.map((path, index) => [
+        path,
+        graphAdr(index + 1, statuses[index][0], statuses[index][1]),
+      ]),
+    );
+    const graphIndex = `# Architecture decision records
+
+## Index
+
+| ADR | Status | Subject |
+| --- | --- | --- |
+${fileNames
+  .map(
+    (fileName, index) =>
+      `| [\`${fileName}\`](${fileName}) | ${statuses[index][0]} | Node |`,
+  )
+  .join("\n")}
+`;
+    headFiles.set(indexPath, graphIndex);
+
+    expect(
+      checkAdrIntegritySnapshot({
+        baseFiles,
+        headFiles,
+        headPaths: new Set([...paths, indexPath]),
+      }),
+    ).toEqual([]);
   });
 });

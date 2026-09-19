@@ -38,6 +38,7 @@
     "eslint-plugin-jsx-a11y": "6.10.2",
     "eslint-plugin-react-hooks": "7.1.1",
     "eslint-plugin-tsdoc": "0.5.2",
+    "mdast-util-from-markdown": "2.0.3",
     "prettier": "3.9.6",
     "typedoc": "0.28.20",
     "typescript": "5.9.3",
