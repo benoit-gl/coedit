@@ -134,6 +134,9 @@ progress. Required GitHub checks are the authoritative verification record. If
 an exceptional manual observation is useful during review, put it in the
 pull-request conversation instead of the final squash message.
 
+Use Markdown headings in pull-request descriptions. Do not use raw HTML or HTML
+character references in headings.
+
 The `pr-description` pull-request check enforces the prohibited section names.
 The pull-request template supplies the durable sections expected by this
 repository; delete the optional post-merge section when no setup remains.
