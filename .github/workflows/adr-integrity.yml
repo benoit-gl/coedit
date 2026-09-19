@@ -2,6 +2,11 @@ name: ADR integrity
 
 on:
   pull_request:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
 
 permissions:
   contents: read
@@ -24,6 +29,6 @@ jobs:
 
       - name: Verify ADR lifecycle invariants
         run: >-
-          npm run adr:check --
+          node scripts/check-adr-integrity.mjs
           --base-ref "${{ github.event.pull_request.base.sha }}"
           --head-ref "${{ github.event.pull_request.head.sha }}"
