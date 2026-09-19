@@ -12,11 +12,14 @@ const prohibitedSections = [
   { name: "command output", pattern: /\bcommand\s+outputs?\b/u },
   { name: "review progress", pattern: /\breview\s+progress\b/u },
 ];
+const rawHtmlPattern = /<!--|<[!?][^>]*>|<\/?[a-z][a-z\d-]*(?:\s[^>]*)?\/?>/iu;
+const characterReferencePattern = /&(?:#\d+|#x[\da-f]+|[a-z][a-z\d]+);/iu;
 
 function normalizedHeading(text) {
   return text
     .replace(/\[([^\]]+)\]\([^)]+\)/gu, "$1")
-    .replace(/<[^>]+>/gu, " ")
+    .replace(/<!--[\s\S]*?-->/gu, "")
+    .replace(/<[^>]+>/gu, "")
     .replace(/[`*_~]/gu, "")
     .toLocaleLowerCase("en-US")
     .replace(/[^\p{L}\p{N}]+/gu, " ")
@@ -47,6 +50,12 @@ function markdownHeadings(markdown) {
       continue;
     }
 
+    const htmlHeadingMatch = /^ {0,3}<h[1-6](?:\s|>|$)/iu.exec(line);
+    if (htmlHeadingMatch !== null) {
+      headings.push({ line: index + 1, text: line, rawHtmlHeading: true });
+      continue;
+    }
+
     const atxMatch = /^ {0,3}#{1,6}(?:[ \t]+|$)(.*)$/u.exec(line);
     if (atxMatch !== null) {
       const text = (atxMatch[1] ?? "").replace(/[ \t]+#+[ \t]*$/u, "");
@@ -69,6 +78,22 @@ function markdownHeadings(markdown) {
 export function findProhibitedPrDescriptionSections(markdown) {
   const failures = [];
   for (const heading of markdownHeadings(markdown)) {
+    if (heading.rawHtmlHeading || rawHtmlPattern.test(heading.text)) {
+      failures.push({
+        line: heading.line,
+        heading: heading.text.trim(),
+        prohibitedSection: "raw HTML",
+      });
+      continue;
+    }
+    if (characterReferencePattern.test(heading.text)) {
+      failures.push({
+        line: heading.line,
+        heading: heading.text.trim(),
+        prohibitedSection: "HTML character reference",
+      });
+      continue;
+    }
     const normalized = normalizedHeading(heading.text);
     const rule = prohibitedSections.find(({ pattern }) =>
       pattern.test(normalized),
