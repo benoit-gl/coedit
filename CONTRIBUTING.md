@@ -143,35 +143,18 @@ repository; delete the optional post-merge section when no setup remains.
 
 The `adr-integrity` and `pr-description` workflows execute the workflow and
 checker versions from the protected `main` branch. They treat candidate commits
-and pull-request metadata as untrusted data and publish policy results for the
-candidate commit. A pull request can propose changes to a policy workflow or
-checker, but those changes cannot govern that same pull request; they become
-active only after merge.
+and pull-request metadata as untrusted data. A pull request can propose changes
+to a policy workflow or checker, but those changes cannot govern that same pull
+request; they become active only after merge.
 
 GitHub does not version description edits with the pull request's head commit,
 so `pr-description` is a best-effort blocking check rather than an atomic
-security boundary. It serializes runs, fetches the current description, and
-checks again for edits before reporting success, but a final edit can still
-race the result. Before merging, inspect the current description and re-run the
-latest Pull-request description workflow after its final edit. From that
-workflow run in GitHub Actions, use **Re-run jobs**, then **Re-run all jobs**.
-Only merge while the current description is valid and `pr-description` is
-successful for the current head.
+security boundary. A maintainer must inspect the current description and re-run
+the check after its final edit before merge.
 
-The `main` ruleset must require the custom commit-status contexts
-`adr-integrity` and `pr-description` from the GitHub Actions source, not the
-native `adr-integrity-enforcer` and `pr-description-enforcer` job names. It must
-also require the branch to be current with `main`, because a later base-branch
-commit does not itself trigger these workflows. Observe both custom contexts on
-a probe pull request after the workflows first reach `main`, then make them
-required. Keep Code Owner review optional while the repository has only one
-code owner, and do not allow a ruleset bypass. The custom contexts share the
-GitHub Actions identity. Before enabling them as required, audit repository
-collaborators and Actions token settings and confirm that only trusted
-maintainers can create same-repository branches with write-capable workflows.
-Accept changes from everyone else through fork pull requests. Repeat that audit
-whenever collaborator access or Actions settings change. Do not enable a merge
-queue until these policies support and validate merge-group commits.
+The required GitHub repository settings, trust assumptions, and maintainer merge
+procedure are defined in
+[`docs/REPOSITORY_CONFIGURATION.md`](docs/REPOSITORY_CONFIGURATION.md).
 
 Branch history can be rewritten before merge. Coordinate before you force-update
 a branch that another contributor is actively using or building on.

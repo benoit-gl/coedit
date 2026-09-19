@@ -1,6 +1,6 @@
 # Coedit documentation
 
-These documents describe the clean-slate application on `main`. Each document has one primary authority. This split keeps product meaning, MVP scope, architecture, focused technical contracts, verification, work order, and future replication separate.
+These documents describe the clean-slate application on `main`. Each document has one primary authority. This split keeps product meaning, MVP scope, architecture, focused technical contracts, verification, repository administration, work order, and future replication separate.
 
 ## Current authoritative documents
 
@@ -21,6 +21,7 @@ These documents describe the clean-slate application on `main`. Each document ha
 | [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md)                 | Lossless `.coedit` logical recovery contract, gated version-1 container, and hostile-input validation                    |
 | [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md)                           | Incremental IndexedDB repository, recovery, multi-tab, quota, and backup behavior                                        |
 | [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md)                       | MVP test strategy, risk coverage, and qualification evidence                                                             |
+| [`REPOSITORY_CONFIGURATION.md`](REPOSITORY_CONFIGURATION.md)                 | GitHub repository settings, branch protection, Actions policy, trust boundaries, and merge controls                      |
 | [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md)                           | Post-MVP replication, convergence, and causal History direction                                                          |
 | [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md)                           | RUP-inspired work order, phase gates, and completion criteria                                                            |
 
@@ -43,6 +44,7 @@ Use the document with direct authority for the subject.
 - `STRUCTURAL_CARRIER_MODEL.md` owns Block placement and structural carrier qualification; `STRUCTURAL_POSITION_ALLOCATOR.md` owns the production allocator abstraction and allocator-algorithm qualification; `BROWSER_PERSISTENCE.md` owns browser repository behavior.
 - `CODING_STYLE.md` owns source-level documentation, linting, formatting, architectural dependency checks, package commands, and developer-platform portability.
 - `MVP_IMPLEMENTATION_SPEC.md` does not expand `MVP_CONTRACT.md`.
+- `REPOSITORY_CONFIGURATION.md` owns required GitHub repository settings and administrator procedures; `CONTRIBUTING.md` owns contributor-facing submission rules.
 - `SCAFFOLDING_PLAN.md` owns order and gates, not detailed technical behavior.
 - Local MVP shortcuts do not override `COLLABORATION_MODEL.md`.
 
