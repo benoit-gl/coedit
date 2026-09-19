@@ -51,6 +51,62 @@ Require the new status check on the protected branch.
     ]);
   });
 
+  it("rejects raw HTML and character references in headings", () => {
+    expect(
+      findProhibitedPrDescriptionSections(
+        "## Ver<!-- policy -->ification\n\nTransient details.",
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        line: 1,
+        prohibitedSection: "raw HTML",
+      }),
+    ]);
+    expect(
+      findProhibitedPrDescriptionSections(
+        "<h2>Verification</h2>\n\nTransient details.",
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        line: 1,
+        prohibitedSection: "raw HTML",
+      }),
+    ]);
+    expect(
+      findProhibitedPrDescriptionSections(
+        '<h2\nclass="section">Verification</h2>\n\nTransient details.',
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        line: 1,
+        prohibitedSection: "raw HTML",
+      }),
+    ]);
+    expect(
+      findProhibitedPrDescriptionSections(
+        "## Ver&#105;fication\n\nTransient details.",
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        line: 1,
+        prohibitedSection: "HTML character reference",
+      }),
+    ]);
+    for (const heading of [
+      "## <!DOCTYPE html> Summary",
+      "## <?processing instruction?> Summary",
+      "## <![CDATA[Summary]]>",
+      "## Summary <br/>",
+    ]) {
+      expect(findProhibitedPrDescriptionSections(heading)).toEqual([
+        expect.objectContaining({
+          line: 1,
+          prohibitedSection: "raw HTML",
+        }),
+      ]);
+    }
+  });
+
   it("rejects a prohibited setext heading", () => {
     expect(
       findProhibitedPrDescriptionSections(
