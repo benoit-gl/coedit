@@ -94,6 +94,19 @@ and relationship metadata to record supersession instead of rewriting the old
 decision. A later ADR that only refines or extends an accepted ADR does not by
 itself require an edit to the older record.
 
+The `adr-integrity` pull-request check enforces that policy. For every ADR already
+present on the target branch, all content beginning with its first level-two
+heading (`##`) is immutable. The check also rejects deletion of an existing ADR,
+invalid supersession metadata, broken links in mutable ADR headers, and divergence
+between ADR lifecycle classes in the metadata and decision index. Historical
+links in immutable ADR bodies are deliberately not checked.
+
+Run the same comparison locally after committing with:
+
+```text
+npm run adr:check -- --base-ref origin/main
+```
+
 ## Pull-request workflow and hygiene
 
 Use one pull request for one logical merge unit. Keep unrelated cleanup and
@@ -112,6 +125,53 @@ state the resulting change, not temporary branch or review-process status.
 Update the title or description during review whenever the final change makes
 the existing text inaccurate or incomplete. Put transient review notes in the
 pull-request conversation instead.
+
+Treat the pull-request description as a durable change record. Describe the
+resulting behavior and rationale, and identify any repository configuration or
+manual setup that will still be required after merge. Do not add sections for
+verification, testing, test plans, checks, CI status, command output, or review
+progress. Required GitHub checks are the authoritative verification record. If
+an exceptional manual observation is useful during review, put it in the
+pull-request conversation instead of the final squash message.
+
+Use Markdown headings in pull-request descriptions. Do not use raw HTML or HTML
+character references in headings.
+
+The `pr-description` pull-request check enforces the prohibited section names.
+The pull-request template supplies the durable sections expected by this
+repository; delete the optional post-merge section when no setup remains.
+
+The `adr-integrity` and `pr-description` workflows execute the workflow and
+checker versions from the protected `main` branch. They treat candidate commits
+and pull-request metadata as untrusted data and publish policy results for the
+candidate commit. A pull request can propose changes to a policy workflow or
+checker, but those changes cannot govern that same pull request; they become
+active only after merge.
+
+GitHub does not version description edits with the pull request's head commit,
+so `pr-description` is a best-effort blocking check rather than an atomic
+security boundary. It serializes runs, fetches the current description, and
+checks again for edits before reporting success, but a final edit can still
+race the result. Before merging, inspect the current description and re-run the
+latest Pull-request description workflow after its final edit. From that
+workflow run in GitHub Actions, use **Re-run jobs**, then **Re-run all jobs**.
+Only merge while the current description is valid and `pr-description` is
+successful for the current head.
+
+The `main` ruleset must require the custom commit-status contexts
+`adr-integrity` and `pr-description` from the GitHub Actions source, not the
+native `adr-integrity-enforcer` and `pr-description-enforcer` job names. It must
+also require the branch to be current with `main`, because a later base-branch
+commit does not itself trigger these workflows. Observe both custom contexts on
+a probe pull request after the workflows first reach `main`, then make them
+required. Keep Code Owner review optional while the repository has only one
+code owner, and do not allow a ruleset bypass. The custom contexts share the
+GitHub Actions identity. Before enabling them as required, audit repository
+collaborators and Actions token settings and confirm that only trusted
+maintainers can create same-repository branches with write-capable workflows.
+Accept changes from everyone else through fork pull requests. Repeat that audit
+whenever collaborator access or Actions settings change. Do not enable a merge
+queue until these policies support and validate merge-group commits.
 
 Branch history can be rewritten before merge. Coordinate before you force-update
 a branch that another contributor is actively using or building on.

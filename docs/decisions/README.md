@@ -38,16 +38,26 @@ not justify rewriting the accepted decision only to keep old links current. A
 supersession notice must provide the current path forward when the old decision
 is no longer authoritative.
 
+## Automated enforcement
+
+For every ADR already present on the target branch, all content beginning with
+the first level-two heading (`##`) is immutable. Maintenance changes belong in
+the header before that heading. The `adr-integrity` pull-request check rejects
+historical-body edits, deletion of existing ADRs, invalid supersession metadata,
+broken links in mutable ADR headers, and disagreement between ADR lifecycle
+classes in the metadata and this index. It deliberately ignores links in
+immutable historical bodies.
+
 ## Index
 
-| ADR                                                                                                                | Status                                              | Subject                                                                                                   |
-| ------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| [`0001-collaborative-content-provenance-history.md`](0001-collaborative-content-provenance-history.md)             | Accepted                                            | Intrinsic rich-text metadata, provenance, comments, causal History, persistence, and technology direction |
-| [`0002-global-durable-identity-and-empty-genesis-root.md`](0002-global-durable-identity-and-empty-genesis-root.md) | Accepted                                            | Global durable UUID namespace and completely empty engine-level genesis root                              |
-| [`0003-flat-structural-placement.md`](0003-flat-structural-placement.md)                                           | Accepted                                            | Flat Block placement, recoverable structural convergence, and position-allocation qualification           |
-| [`0004-intrinsic-link-targets.md`](0004-intrinsic-link-targets.md)                                                 | Accepted                                            | Opaque link metadata, document-local Block targets, and optional Range refinement                         |
-| [`0005-semantic-interpretation-boundaries.md`](0005-semantic-interpretation-boundaries.md)                         | Accepted                                            | Durable semantic boundaries, contextual judgments, and implementation-capacity limits                     |
-| [`0006-text-position-ownership.md`](0006-text-position-ownership.md)                                               | Accepted                                            | Editor-native transient positions, carrier-position boundaries, and Unicode coordinate ownership          |
-| [`0007-structural-position-allocator-abstraction.md`](0007-structural-position-allocator-abstraction.md)           | Accepted                                            | Production allocator abstraction, collision tolerance, and reusable qualification                         |
-| [`0008-capacity-contract-maturity.md`](0008-capacity-contract-maturity.md)                                         | Accepted                                            | Capacity maturity, ownership, experimental evidence, and promotion gates                                  |
-| [`0009-durable-range-semantics.md`](0009-durable-range-semantics.md)                                               | Accepted behavior; Step 6 representation unresolved | Document-relative multi-span Range semantics, permanent Version basis, and staged qualification           |
+| ADR                                                                                                                | Status                                                       | Subject                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| [`0001-collaborative-content-provenance-history.md`](0001-collaborative-content-provenance-history.md)             | Accepted                                                     | Intrinsic rich-text metadata, provenance, comments, causal History, persistence, and technology direction |
+| [`0002-global-durable-identity-and-empty-genesis-root.md`](0002-global-durable-identity-and-empty-genesis-root.md) | Accepted                                                     | Global durable UUID namespace and completely empty engine-level genesis root                              |
+| [`0003-flat-structural-placement.md`](0003-flat-structural-placement.md)                                           | Accepted                                                     | Flat Block placement, recoverable structural convergence, and position-allocation qualification           |
+| [`0004-intrinsic-link-targets.md`](0004-intrinsic-link-targets.md)                                                 | Accepted                                                     | Opaque link metadata, document-local Block targets, and optional Range refinement                         |
+| [`0005-semantic-interpretation-boundaries.md`](0005-semantic-interpretation-boundaries.md)                         | Accepted                                                     | Durable semantic boundaries, contextual judgments, and implementation-capacity limits                     |
+| [`0006-text-position-ownership.md`](0006-text-position-ownership.md)                                               | Accepted                                                     | Editor-native transient positions, carrier-position boundaries, and Unicode coordinate ownership          |
+| [`0007-structural-position-allocator-abstraction.md`](0007-structural-position-allocator-abstraction.md)           | Accepted                                                     | Production allocator abstraction, collision tolerance, and reusable qualification                         |
+| [`0008-capacity-contract-maturity.md`](0008-capacity-contract-maturity.md)                                         | Accepted                                                     | Capacity maturity, ownership, experimental evidence, and promotion gates                                  |
+| [`0009-durable-range-semantics.md`](0009-durable-range-semantics.md)                                               | Accepted behavior; Step 6 representation decision unresolved | Document-relative multi-span Range semantics, permanent Version basis, and staged qualification           |
