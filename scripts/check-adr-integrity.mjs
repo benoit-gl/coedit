@@ -28,15 +28,31 @@ function metadataValue(header, name) {
   return match?.[1]?.trim();
 }
 
-function relativeMarkdownLinks(text) {
+function markdownLinkTargets(text) {
   return [...text.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)]
     .map((match) => match[1]?.split("#", 1)[0]?.trim())
-    .filter(
-      (target) =>
-        target !== undefined &&
-        target.length > 0 &&
-        !/^[a-z][a-z\d+.-]*:/i.test(target),
-    );
+    .filter((target) => target !== undefined && target.length > 0);
+}
+
+function relativeMarkdownLinks(text) {
+  return markdownLinkTargets(text).filter(
+    (target) => !/^[a-z][a-z\d+.-]*:/i.test(target),
+  );
+}
+
+function supersedingAdrLinks(path, supersededBy, headPaths) {
+  const targets = markdownLinkTargets(supersededBy);
+  const links = targets.map((target) => resolveRepositoryLink(path, target));
+  if (
+    links.length === 0 ||
+    links.some(
+      (link) =>
+        link === path || !adrPathPattern.test(link) || !headPaths.has(link),
+    )
+  ) {
+    return undefined;
+  }
+  return links;
 }
 
 function resolveRepositoryLink(sourcePath, target) {
@@ -124,6 +140,8 @@ export function checkAdrIntegritySnapshot({ baseFiles, headFiles, headPaths }) {
   }
 
   const statuses = new Map();
+  const lifecyclesByPath = new Map();
+  const replacementLinks = new Map();
   for (const path of headAdrPaths) {
     const text = headFiles.get(path);
     try {
@@ -145,14 +163,32 @@ export function checkAdrIntegritySnapshot({ baseFiles, headFiles, headPaths }) {
         continue;
       }
       statuses.set(posix.basename(path), { lifecycle, status });
+      lifecyclesByPath.set(path, lifecycle);
 
       const isSuperseded = /\bsuperseded\b/i.test(status);
       const supersededBy = metadataValue(header, "Superseded by");
-      if (isSuperseded && supersededBy === undefined) {
+      if (!isSuperseded && supersededBy !== undefined) {
+        failures.push({
+          path,
+          message:
+            "Only a superseded ADR can define **Superseded by:** metadata.",
+        });
+      } else if (isSuperseded && supersededBy === undefined) {
         failures.push({
           path,
           message: "A superseded ADR must define **Superseded by:** metadata.",
         });
+      } else if (isSuperseded) {
+        const links = supersedingAdrLinks(path, supersededBy, headPaths);
+        if (links === undefined) {
+          failures.push({
+            path,
+            message:
+              "A superseded ADR must link only to other existing replacement ADRs in **Superseded by:** metadata.",
+          });
+        } else {
+          replacementLinks.set(path, links);
+        }
       }
       if (/\bsuperseded in part\b/i.test(status)) {
         const supersededScope = metadataValue(header, "Superseded scope");
@@ -176,6 +212,38 @@ export function checkAdrIntegritySnapshot({ baseFiles, headFiles, headPaths }) {
       }
     } catch (error) {
       failures.push({ path, message: error.message });
+    }
+  }
+
+  for (const [path, links] of replacementLinks) {
+    const pending = [...links];
+    const visited = new Set([path]);
+    let hasInvalidPath = false;
+    while (pending.length > 0) {
+      const replacement = pending.pop();
+      if (
+        replacement === undefined ||
+        lifecyclesByPath.get(replacement) === "accepted"
+      ) {
+        continue;
+      }
+      if (visited.has(replacement)) {
+        hasInvalidPath = true;
+        break;
+      }
+      visited.add(replacement);
+      const nextLinks = replacementLinks.get(replacement);
+      if (nextLinks === undefined) {
+        continue;
+      }
+      pending.push(...nextLinks);
+    }
+    if (hasInvalidPath) {
+      failures.push({
+        path,
+        message:
+          "Supersession links must lead to an accepted ADR without a cycle.",
+      });
     }
   }
 
