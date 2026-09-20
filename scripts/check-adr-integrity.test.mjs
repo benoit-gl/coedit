@@ -23,7 +23,7 @@ function index(status) {
 
 | ADR | Status | Subject |
 | --- | --- | --- |
-| [`0001-example.md`](0001-example.md) | ${status} | Example |
+| [\`0001-example.md\`](0001-example.md) | ${status} | Example |
 `;
 }
 
@@ -160,7 +160,7 @@ describe("ADR integrity", () => {
     );
     files.headFiles.set(
       indexPath,
-      `${index("Accepted")}| [`0001-example.md`](0001-example.md) | Superseded | Duplicate |\n`,
+      `${index("Accepted")}| [\`0001-example.md\`](0001-example.md) | Superseded | Duplicate |\n`,
     );
 
     expect(checkAdrIntegritySnapshot(files)).toContainEqual({
@@ -206,10 +206,7 @@ describe("ADR integrity", () => {
 
   it.each([
     ["an HTML comment", "<!--\n**Status:** Accepted\n-->"],
-    [
-      "a fenced code block",
-      "```markdown\n**Status:** Accepted\n```",
-    ],
+    ["a fenced code block", "```markdown\n**Status:** Accepted\n```"],
   ])(
     "does not treat metadata inside %s as ADR metadata",
     (_label, hiddenStatus) => {
@@ -423,8 +420,8 @@ Second historical decision.
 
 | ADR | Status | Subject |
 | --- | --- | --- |
-| [`0001-example.md`](0001-example.md) | Superseded | First example |
-| [`0002-example.md`](0002-example.md) | Superseded | Second example |
+| [\`0001-example.md\`](0001-example.md) | Superseded | First example |
+| [\`0002-example.md\`](0002-example.md) | Superseded | Second example |
 `;
     const files = {
       baseFiles: new Map([
@@ -495,7 +492,7 @@ Historical decision ${number}.
 ${fileNames
   .map(
     (fileName, index) =>
-      `| [`${fileName}`](${fileName}) | ${statuses[index][0]} | Node |`,
+      `| [\`${fileName}\`](${fileName}) | ${statuses[index][0]} | Node |`,
   )
   .join("\n")}
 `;
