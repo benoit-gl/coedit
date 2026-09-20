@@ -10,6 +10,8 @@
 
 # Pull-request description policy and its enforcement.
 /CONTRIBUTING.md @benoit-gl
+/docs/REPOSITORY_CONFIGURATION.md @benoit-gl
+/docs/REPOSITORY_CONFIGURATION.json @benoit-gl
 /.github/pull_request_template.md @benoit-gl
 /.github/workflows/pr-description.yml @benoit-gl
 /scripts/check-pr-description.mjs @benoit-gl

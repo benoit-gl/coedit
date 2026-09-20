@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "repository": {
+    "default_branch": "main",
+    "merge": {
+      "allow_auto_merge": false,
+      "allow_merge_commit": false,
+      "allow_rebase_merge": false,
+      "allow_squash_merge": true,
+      "squash_merge_commit_message": "PR_BODY",
+      "squash_merge_commit_title": "PR_TITLE"
+    }
+  },
+  "main_ruleset": {
+    "bypass_actors": [],
+    "conditions": {
+      "ref_name": {
+        "exclude": [],
+        "include": ["~DEFAULT_BRANCH"]
+      }
+    },
+    "enforcement": "active",
+    "rules": {
+      "deletion": true,
+      "non_fast_forward": true,
+      "pull_request": {
+        "allowed_merge_methods": ["squash"],
+        "dismiss_stale_reviews_on_push": false,
+        "require_code_owner_review": false,
+        "require_extra_approval_for_unattributed_changes": true,
+        "require_last_push_approval": false,
+        "required_approving_review_count": 0,
+        "required_review_thread_resolution": false
+      },
+      "required_status_checks": {
+        "do_not_enforce_on_create": false,
+        "strict_required_status_checks_policy": true,
+        "checks": [
+          {"context": "verify", "source": "github-actions"},
+          {"context": "adr-integrity", "source": "github-actions"},
+          {"context": "pr-description", "source": "github-actions"}
+        ]
+      }
+    },
+    "target": "branch"
+  },
+  "actions": {
+    "pull_request_target": {
+      "organization_and_enterprise_policies_must_permit": true,
+      "policy": "selected-workflows",
+      "workflows": [
+        ".github/workflows/adr-integrity.yml",
+        ".github/workflows/pr-description.yml"
+      ]
+    }
+  }
+}

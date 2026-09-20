@@ -6,7 +6,8 @@
 
 This document defines the required GitHub configuration and trust assumptions for
 the Coedit repository. It describes the steady state that repository
-administrators must preserve.
+administrators must preserve. The normalized machine-readable form is
+[`REPOSITORY_CONFIGURATION.json`](REPOSITORY_CONFIGURATION.json).
 
 [`../CONTRIBUTING.md`](../CONTRIBUTING.md) owns contributor-facing submission
 rules. Workflow files own their executable behavior. This document owns the
@@ -20,8 +21,10 @@ do not treat the temporary mismatch as an accepted steady state.
 ## Merge and protected-branch policy
 
 The repository must allow squash merges only. Merge commits and rebase merges
-must remain disabled. The pull-request title and description therefore become
-the durable squash commit title and message.
+must remain disabled. Auto-merge must remain disabled so the maintainer procedure
+below controls the final description inspection and merge. Configure squash
+commits to use the pull-request title as the commit title and the pull-request
+description as the commit message.
 
 The default branch is `main`. Changes to `main` must arrive through a pull
 request. The active `main` ruleset must prevent branch deletion and
@@ -98,20 +101,49 @@ description edits atomically to the head commit. The workflow detects ordinary
 edits and races, but it is a best-effort blocking gate rather than a security
 boundary.
 
+## Configuration capture and audit
+
+[`REPOSITORY_CONFIGURATION.json`](REPOSITORY_CONFIGURATION.json) records the
+normalized steady-state settings that this repository intentionally depends on.
+It is not a raw GitHub API dump. Omit repository IDs, ruleset IDs, integration
+IDs, timestamps, URLs, and other observational fields that do not express an
+intentional policy. The `source: "github-actions"` values identify the GitHub
+Actions source without persisting GitHub's numeric integration ID.
+
+To audit the live repository, capture the current repository and ruleset data
+with GitHub CLI or equivalent authenticated API calls. For example:
+
+```text
+gh api repos/benoit-gl/coedit
+gh api repos/benoit-gl/coedit/rulesets
+gh api repos/benoit-gl/coedit/rulesets/<main-ruleset-id>
+```
+
+Locate the active ruleset named `main`, compare the policy-bearing fields with
+the normalized JSON, and separately confirm the effective GitHub Actions event
+policy at every applicable repository, organization, and enterprise level. Raw
+API captures are audit evidence; do not commit them as repository authority.
+
+There is currently no automated configuration-drift checker. Administrators must
+perform this comparison manually after relevant configuration changes. The
+presence of the normalized JSON does not imply that live GitHub settings are
+checked automatically.
+
 ## Configuration changes and drift
 
 When a pull request changes a policy workflow, CODEOWNERS behavior, merge policy,
-or another setting owned by this document, update this document in the same
-change.
+the normalized configuration, or another setting owned by this document, update
+this document and `REPOSITORY_CONFIGURATION.json` in the same change.
 
 After a new policy workflow first reaches `main`, or after a material
 repository-configuration change, use a probe pull request to confirm that the
 expected status contexts and event policies operate on the current head before
 making a new context required.
 
-Periodically compare the live GitHub configuration with this contract. Repeat
-the check when collaborator access, Actions permissions or policies, required
-checks, merge settings, or the `main` ruleset changes. If a required setting
-cannot be changed atomically with a repository commit, record the post-merge
-transition in that pull request and remove any obsolete transition text from
-later pull requests once the live configuration matches this contract.
+Periodically compare the live GitHub configuration with this contract and the
+normalized JSON. Repeat the check when collaborator access, Actions permissions
+or policies, required checks, merge settings, or the `main` ruleset changes.
+If a required setting cannot be changed atomically with a repository commit,
+record the post-merge transition in that pull request and remove any obsolete
+transition text from later pull requests once the live configuration matches
+this contract.
