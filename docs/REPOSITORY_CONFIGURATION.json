@@ -16,9 +16,7 @@
     "conditions": {
       "ref_name": {
         "exclude": [],
-        "include": [
-          "~DEFAULT_BRANCH"
-        ]
+        "include": ["~DEFAULT_BRANCH"]
       }
     },
     "enforcement": "active",
@@ -26,9 +24,7 @@
       "deletion": true,
       "non_fast_forward": true,
       "pull_request": {
-        "allowed_merge_methods": [
-          "squash"
-        ],
+        "allowed_merge_methods": ["squash"],
         "dismiss_stale_reviews_on_push": false,
         "require_code_owner_review": false,
         "require_extra_approval_for_unattributed_changes": true,
