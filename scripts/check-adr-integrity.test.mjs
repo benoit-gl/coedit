@@ -203,7 +203,6 @@ describe("ADR integrity", () => {
     });
   });
 
-
   it.each([
     ["an HTML comment", "<!--\n**Status:** Accepted\n-->"],
     ["a fenced code block", "```markdown\n**Status:** Accepted\n```"],
