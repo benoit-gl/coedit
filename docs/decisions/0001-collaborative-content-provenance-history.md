@@ -34,6 +34,8 @@ authority model.
 
 ## 2. Context
 
+Temporary negative-test edit: this accepted ADR body must remain immutable.
+
 The previous clean-slate direction proposed one generic external
 `RangeAnnotation<T>` and an unresolved `TextAnchor` for formatting and future
 provenance. That made anchor design a Step 0 implementation blocker. Further
