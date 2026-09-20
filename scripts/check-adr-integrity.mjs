@@ -2,82 +2,118 @@ import { execFileSync } from "node:child_process";
 import { posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { fromMarkdown } from "mdast-util-from-markdown";
+
 const decisionsDirectory = "docs/decisions";
 const decisionIndexPath = `${decisionsDirectory}/README.md`;
 const adrPathPattern = /^docs\/decisions\/\d{4}-[^/]+\.md$/;
 
+function sourceForNode(text, node) {
+  const start = node.position?.start.offset;
+  const end = node.position?.end.offset;
+  if (start === undefined || end === undefined) {
+    throw new Error("Markdown parser did not provide source positions.");
+  }
+  return text.slice(start, end);
+}
+
+function nodeText(node) {
+  if (node.type === "image") {
+    return node.alt ?? "";
+  }
+  if (typeof node.value === "string") {
+    return node.value;
+  }
+  return (node.children ?? []).map((child) => nodeText(child)).join("");
+}
+
 function splitHistoricalBody(path, text) {
-  const match = /^##(?:\s|$)/m.exec(text);
-  if (match === null || match.index === undefined) {
+  const tree = fromMarkdown(text);
+  const heading = tree.children.find(
+    (node) => node.type === "heading" && node.depth === 2,
+  );
+  const offset = heading?.position?.start.offset;
+  if (offset === undefined) {
     throw new Error(
-      `${path} has no level-two heading delimiting its immutable body.`,
+      \`\${path} has no level-two heading delimiting its immutable body.\`,
     );
   }
 
   return {
-    header: text.slice(0, match.index),
-    body: text.slice(match.index),
+    header: text.slice(0, offset),
+    body: text.slice(offset),
   };
 }
 
 function metadataValue(header, name) {
-  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const matches = [
-    ...header.matchAll(
-      new RegExp(`^\\*\\*${escapedName}:\\*\\*\\s*(.+)$`, "gm"),
-    ),
-  ];
+  const escapedName = name.replace(/[.*+?^\${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(
+    \`^\\*\\*\${escapedName}:\\*\\*\\s*(.+)$\`,
+    "gm",
+  );
+  const matches = [];
+
+  for (const node of fromMarkdown(header).children) {
+    if (node.type !== "paragraph") {
+      continue;
+    }
+    for (const match of sourceForNode(header, node).matchAll(pattern)) {
+      matches.push(match[1]?.trim());
+    }
+  }
+
   if (matches.length > 1) {
     throw new Error(
-      `ADR header metadata **${name}:** must appear at most once.`,
+      \`ADR header metadata **\${name}:** must appear at most once.\`,
     );
   }
-  const value = matches[0]?.[1]?.trim();
+  const value = matches[0];
   return value === "" ? undefined : value;
 }
 
-function normalizedReferenceLabel(label) {
-  return label.trim().replace(/\s+/gu, " ").toLocaleLowerCase("en-US");
-}
-
-function referenceDefinitions(text) {
-  const definitions = new Map();
-  const pattern =
-    /^ {0,3}\[([^\]]+)\]:[ \t]*(?:<([^>\n]+)>|([^\s]+))(?:[ \t]+.*)?$/gmu;
-  for (const match of text.matchAll(pattern)) {
-    const label = match[1];
-    const target = match[2] ?? match[3];
-    if (label !== undefined && target !== undefined) {
-      definitions.set(normalizedReferenceLabel(label), target);
-    }
-  }
-  return definitions;
+function definitionSources(text) {
+  return fromMarkdown(text).children
+    .filter((node) => node.type === "definition")
+    .map((node) => sourceForNode(text, node));
 }
 
 function markdownLinkTargets(text, referenceText = text) {
-  const targets = [...text.matchAll(/\[[^\]]+\]\(([^)]+)\)/gu)]
-    .map((match) => match[1]?.split("#", 1)[0]?.trim())
-    .filter((target) => target !== undefined && target.length > 0);
-  const definitions = referenceDefinitions(referenceText);
-  const referencePattern = /\[([^\]]+)\](?:\[([^\]]*)\])?/gu;
-  for (const match of text.matchAll(referencePattern)) {
-    const matchedText = match[0];
-    const end = (match.index ?? 0) + matchedText.length;
-    if (text[end] === "(" || text[end] === ":") {
-      continue;
+  const references =
+    referenceText === text ? [] : definitionSources(referenceText);
+  const markdown =
+    references.length === 0 ? text : \`\${text}\\n\\n\${references.join("\\n")}\`;
+  const tree = fromMarkdown(markdown);
+  const definitions = new Map();
+  const targets = [];
+
+  function collectDefinitions(node) {
+    if (node.type === "definition") {
+      definitions.set(node.identifier, node.url);
     }
-    const textLabel = match[1] ?? "";
-    const explicitLabel = match[2];
-    const label =
-      explicitLabel === undefined || explicitLabel === ""
-        ? textLabel
-        : explicitLabel;
-    const target = definitions.get(normalizedReferenceLabel(label));
-    if (target !== undefined) {
-      targets.push(target.split("#", 1)[0]?.trim());
+    for (const child of node.children ?? []) {
+      collectDefinitions(child);
     }
   }
-  return targets.filter((target) => target !== undefined && target.length > 0);
+
+  function collectTargets(node) {
+    if (node.type === "link") {
+      targets.push(node.url);
+    } else if (node.type === "linkReference") {
+      const target = definitions.get(node.identifier);
+      if (target !== undefined) {
+        targets.push(target);
+      }
+    }
+    for (const child of node.children ?? []) {
+      collectTargets(child);
+    }
+  }
+
+  collectDefinitions(tree);
+  collectTargets(tree);
+  return targets
+    .map((target) => target.split("#", 1)[0]?.trim())
+    .filter((target) => target !== undefined && target.length > 0);
 }
 
 function relativeMarkdownLinks(text) {
@@ -109,21 +145,38 @@ function parseDecisionIndex(text) {
   const entries = new Map();
   const duplicateFileNames = new Set();
   const rowPattern =
-    /^\|\s*\[`([^`]+\.md)`\]\(([^)]+)\)\s*\|\s*([^|]+?)\s*\|/gm;
+    /^\|\s*\\[\`([^\`]+\.md)\`\\]\(([^)]+)\)\s*\|\s*([^|]+?)\s*\|/gm;
+  const tree = fromMarkdown(text);
+  let inIndex = false;
 
-  for (const match of text.matchAll(rowPattern)) {
-    const fileName = match[1];
-    const target = match[2];
-    const status = match[3]?.trim();
-    if (
-      fileName !== undefined &&
-      target !== undefined &&
-      status !== undefined
-    ) {
-      if (entries.has(fileName)) {
-        duplicateFileNames.add(fileName);
-      } else {
-        entries.set(fileName, { target, status });
+  for (const node of tree.children) {
+    if (node.type === "heading") {
+      if (node.depth === 2 && nodeText(node).trim() === "Index") {
+        inIndex = true;
+        continue;
+      }
+      if (inIndex && node.depth <= 2) {
+        break;
+      }
+    }
+    if (!inIndex || node.type !== "paragraph") {
+      continue;
+    }
+
+    for (const match of sourceForNode(text, node).matchAll(rowPattern)) {
+      const fileName = match[1];
+      const target = match[2];
+      const status = match[3]?.trim();
+      if (
+        fileName !== undefined &&
+        target !== undefined &&
+        status !== undefined
+      ) {
+        if (entries.has(fileName)) {
+          duplicateFileNames.add(fileName);
+        } else {
+          entries.set(fileName, { target, status });
+        }
       }
     }
   }

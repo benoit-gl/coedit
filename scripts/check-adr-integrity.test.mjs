@@ -203,6 +203,78 @@ describe("ADR integrity", () => {
     });
   });
 
+
+  it.each([
+    ["an HTML comment", "<!--\n**Status:** Accepted\n-->"],
+    [
+      "a fenced code block",
+      "\`\`\`markdown\n**Status:** Accepted\n\`\`\`",
+    ],
+  ])(
+    "does not treat metadata inside %s as ADR metadata",
+    (_label, hiddenStatus) => {
+      const baseAdr = adr("Accepted", "Historical decision.");
+      const headAdr = \`# ADR 0001: Example
+
+\${hiddenStatus}
+
+## Context
+
+Historical decision.
+\`;
+      const files = snapshot(baseAdr, headAdr);
+
+      expect(checkAdrIntegritySnapshot(files)).toContainEqual({
+        path: adrPath,
+        message: "ADR header must define **Status:** metadata.",
+      });
+    },
+  );
+
+  it.each([
+    [
+      "an HTML comment",
+      "<!--\n| [\`0001-example.md\`](0001-example.md) | Accepted | Example |\n-->",
+    ],
+    [
+      "a fenced code block",
+      "\`\`\`markdown\n| [\`0001-example.md\`](0001-example.md) | Accepted | Example |\n\`\`\`",
+    ],
+  ])(
+    "does not treat an ADR index row inside %s as an index entry",
+    (_label, hiddenRow) => {
+      const baseAdr = adr("Accepted", "Historical decision.");
+      const headAdr = adr("Accepted", "Historical decision.");
+      const files = snapshot(baseAdr, headAdr);
+      files.headFiles.set(
+        indexPath,
+        \`# Architecture decision records
+
+## Index
+
+\${hiddenRow}
+\`,
+      );
+
+      expect(checkAdrIntegritySnapshot(files)).toContainEqual({
+        path: indexPath,
+        message: "0001-example.md is missing from the ADR index.",
+      });
+    },
+  );
+
+  it("ignores links that occur only inside non-Markdown header content", () => {
+    const baseAdr = adr("Accepted", "Historical decision.");
+    const headAdr = adr(
+      "Accepted",
+      "Historical decision.",
+      "\n<!-- [missing](missing.md) -->\n\n\`[also missing](also-missing.md)\`\n",
+    );
+    const files = snapshot(baseAdr, headAdr);
+
+    expect(checkAdrIntegritySnapshot(files)).toEqual([]);
+  });
+
   it("rejects a negated lifecycle status", () => {
     const files = snapshot(
       adr("Accepted", "Historical decision."),
