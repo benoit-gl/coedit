@@ -30,6 +30,11 @@ jobs:
       - name: Bootstrap dependencies
         run: npm run bootstrap
 
+      - name: Format governance files for diagnostics
+        run: |
+          npx prettier --write docs/REPOSITORY_CONFIGURATION.json scripts/check-adr-integrity.mjs scripts/check-adr-integrity.test.mjs
+          git diff -- docs/REPOSITORY_CONFIGURATION.json scripts/check-adr-integrity.mjs scripts/check-adr-integrity.test.mjs
+
       - name: Check source
         run: npm run check
 
