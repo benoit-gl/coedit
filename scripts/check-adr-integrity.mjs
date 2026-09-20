@@ -47,7 +47,8 @@ function splitHistoricalBody(path, text) {
 
 function metadataValue(header, name) {
   const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const pattern = new RegExp(`^\\*\\*${escapedName}:\\*\\*\\s*(.+)import { execFileSync } from "node:child_process";
+  const pattern = new RegExp(
+    `^\\*\\*${escapedName}:\\*\\*\\s*(.+)import { execFileSync } from "node:child_process";
 import { posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -96,7 +97,9 @@ function splitHistoricalBody(path, text) {
 
 function metadataValue(header, name) {
   const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-, "gm");
+,
+    "gm",
+  );
   const matches = [];
 
   for (const node of fromMarkdown(header).children) {
@@ -190,7 +193,8 @@ function resolveRepositoryLink(sourcePath, target) {
 function parseDecisionIndex(text) {
   const entries = new Map();
   const duplicateFileNames = new Set();
-  const rowPattern = /^\|\s*\[`([^`]+\.md)`\]\(([^)]+)\)\s*\|\s*([^|]+?)\s*\|/gm;
+  const rowPattern =
+    /^\|\s*\[`([^`]+\.md)`\]\(([^)]+)\)\s*\|\s*([^|]+?)\s*\|/gm;
   const tree = fromMarkdown(text);
   let inIndex = false;
 
