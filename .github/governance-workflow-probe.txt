@@ -1,0 +1,2 @@
+Temporary file used to verify repository governance workflows after PR #21.
+This branch and pull request must not be merged.
