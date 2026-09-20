@@ -23,7 +23,7 @@ function index(status) {
 
 | ADR | Status | Subject |
 | --- | --- | --- |
-| [\`0001-example.md\`](0001-example.md) | ${status} | Example |
+| [`0001-example.md`](0001-example.md) | ${status} | Example |
 `;
 }
 
@@ -160,7 +160,7 @@ describe("ADR integrity", () => {
     );
     files.headFiles.set(
       indexPath,
-      `${index("Accepted")}| [\`0001-example.md\`](0001-example.md) | Superseded | Duplicate |\n`,
+      `${index("Accepted")}| [`0001-example.md`](0001-example.md) | Superseded | Duplicate |\n`,
     );
 
     expect(checkAdrIntegritySnapshot(files)).toContainEqual({
@@ -208,20 +208,20 @@ describe("ADR integrity", () => {
     ["an HTML comment", "<!--\n**Status:** Accepted\n-->"],
     [
       "a fenced code block",
-      "\`\`\`markdown\n**Status:** Accepted\n\`\`\`",
+      "```markdown\n**Status:** Accepted\n```",
     ],
   ])(
     "does not treat metadata inside %s as ADR metadata",
     (_label, hiddenStatus) => {
       const baseAdr = adr("Accepted", "Historical decision.");
-      const headAdr = \`# ADR 0001: Example
+      const headAdr = `# ADR 0001: Example
 
-\${hiddenStatus}
+${hiddenStatus}
 
 ## Context
 
 Historical decision.
-\`;
+`;
       const files = snapshot(baseAdr, headAdr);
 
       expect(checkAdrIntegritySnapshot(files)).toContainEqual({
@@ -234,11 +234,11 @@ Historical decision.
   it.each([
     [
       "an HTML comment",
-      "<!--\n| [\`0001-example.md\`](0001-example.md) | Accepted | Example |\n-->",
+      "<!--\n| [`0001-example.md`](0001-example.md) | Accepted | Example |\n-->",
     ],
     [
       "a fenced code block",
-      "\`\`\`markdown\n| [\`0001-example.md\`](0001-example.md) | Accepted | Example |\n\`\`\`",
+      "```markdown\n| [`0001-example.md`](0001-example.md) | Accepted | Example |\n```",
     ],
   ])(
     "does not treat an ADR index row inside %s as an index entry",
@@ -248,12 +248,12 @@ Historical decision.
       const files = snapshot(baseAdr, headAdr);
       files.headFiles.set(
         indexPath,
-        \`# Architecture decision records
+        `# Architecture decision records
 
 ## Index
 
-\${hiddenRow}
-\`,
+${hiddenRow}
+`,
       );
 
       expect(checkAdrIntegritySnapshot(files)).toContainEqual({
@@ -268,7 +268,7 @@ Historical decision.
     const headAdr = adr(
       "Accepted",
       "Historical decision.",
-      "\n<!-- [missing](missing.md) -->\n\n\`[also missing](also-missing.md)\`\n",
+      "\n<!-- [missing](missing.md) -->\n\n`[also missing](also-missing.md)`\n",
     );
     const files = snapshot(baseAdr, headAdr);
 
@@ -423,8 +423,8 @@ Second historical decision.
 
 | ADR | Status | Subject |
 | --- | --- | --- |
-| [\`0001-example.md\`](0001-example.md) | Superseded | First example |
-| [\`0002-example.md\`](0002-example.md) | Superseded | Second example |
+| [`0001-example.md`](0001-example.md) | Superseded | First example |
+| [`0002-example.md`](0002-example.md) | Superseded | Second example |
 `;
     const files = {
       baseFiles: new Map([
@@ -495,7 +495,7 @@ Historical decision ${number}.
 ${fileNames
   .map(
     (fileName, index) =>
-      `| [\`${fileName}\`](${fileName}) | ${statuses[index][0]} | Node |`,
+      `| [`${fileName}`](${fileName}) | ${statuses[index][0]} | Node |`,
   )
   .join("\n")}
 `;
