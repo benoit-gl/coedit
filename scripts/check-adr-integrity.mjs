@@ -35,7 +35,7 @@ function splitHistoricalBody(path, text) {
   const offset = heading?.position?.start.offset;
   if (offset === undefined) {
     throw new Error(
-      \`\${path} has no level-two heading delimiting its immutable body.\`,
+      `${path} has no level-two heading delimiting its immutable body.`,
     );
   }
 
@@ -46,9 +46,9 @@ function splitHistoricalBody(path, text) {
 }
 
 function metadataValue(header, name) {
-  const escapedName = name.replace(/[.*+?^\${}()|[\]\\]/g, "\\$&");
+  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const pattern = new RegExp(
-    \`^\\*\\*\${escapedName}:\\*\\*\\s*(.+)$\`,
+    `^\\*\\*${escapedName}:\\*\\*\\s*(.+)$`,
     "gm",
   );
   const matches = [];
@@ -64,7 +64,7 @@ function metadataValue(header, name) {
 
   if (matches.length > 1) {
     throw new Error(
-      \`ADR header metadata **\${name}:** must appear at most once.\`,
+      `ADR header metadata **${name}:** must appear at most once.`,
     );
   }
   const value = matches[0];
@@ -81,7 +81,7 @@ function markdownLinkTargets(text, referenceText = text) {
   const references =
     referenceText === text ? [] : definitionSources(referenceText);
   const markdown =
-    references.length === 0 ? text : \`\${text}\\n\\n\${references.join("\\n")}\`;
+    references.length === 0 ? text : `${text}\\n\\n${references.join("\\n")}`;
   const tree = fromMarkdown(markdown);
   const definitions = new Map();
   const targets = [];
@@ -145,7 +145,7 @@ function parseDecisionIndex(text) {
   const entries = new Map();
   const duplicateFileNames = new Set();
   const rowPattern =
-    /^\|\s*\\[\`([^\`]+\.md)\`\\]\(([^)]+)\)\s*\|\s*([^|]+?)\s*\|/gm;
+    /^\|\s*\\[`([^`]+\.md)`\\]\(([^)]+)\)\s*\|\s*([^|]+?)\s*\|/gm;
   const tree = fromMarkdown(text);
   let inIndex = false;
 
