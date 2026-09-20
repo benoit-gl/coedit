@@ -47,10 +47,56 @@ function splitHistoricalBody(path, text) {
 
 function metadataValue(header, name) {
   const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const pattern = new RegExp(
-    `^\\*\\*${escapedName}:\\*\\*\\s*(.+)$`,
-    "gm",
+  const pattern = new RegExp(`^\\*\\*${escapedName}:\\*\\*\\s*(.+)import { execFileSync } from "node:child_process";
+import { posix, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { fromMarkdown } from "mdast-util-from-markdown";
+
+const decisionsDirectory = "docs/decisions";
+const decisionIndexPath = `${decisionsDirectory}/README.md`;
+const adrPathPattern = /^docs\/decisions\/\d{4}-[^/]+\.md$/;
+
+function sourceForNode(text, node) {
+  const start = node.position?.start.offset;
+  const end = node.position?.end.offset;
+  if (start === undefined || end === undefined) {
+    throw new Error("Markdown parser did not provide source positions.");
+  }
+  return text.slice(start, end);
+}
+
+function nodeText(node) {
+  if (node.type === "image") {
+    return node.alt ?? "";
+  }
+  if (typeof node.value === "string") {
+    return node.value;
+  }
+  return (node.children ?? []).map((child) => nodeText(child)).join("");
+}
+
+function splitHistoricalBody(path, text) {
+  const tree = fromMarkdown(text);
+  const heading = tree.children.find(
+    (node) => node.type === "heading" && node.depth === 2,
   );
+  const offset = heading?.position?.start.offset;
+  if (offset === undefined) {
+    throw new Error(
+      `${path} has no level-two heading delimiting its immutable body.`,
+    );
+  }
+
+  return {
+    header: text.slice(0, offset),
+    body: text.slice(offset),
+  };
+}
+
+function metadataValue(header, name) {
+  const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+, "gm");
   const matches = [];
 
   for (const node of fromMarkdown(header).children) {
@@ -144,8 +190,7 @@ function resolveRepositoryLink(sourcePath, target) {
 function parseDecisionIndex(text) {
   const entries = new Map();
   const duplicateFileNames = new Set();
-  const rowPattern =
-    /^\|\s*\[`([^`]+\.md)`\]\(([^)]+)\)\s*\|\s*([^|]+?)\s*\|/gm;
+  const rowPattern = /^\|\s*\[`([^`]+\.md)`\]\(([^)]+)\)\s*\|\s*([^|]+?)\s*\|/gm;
   const tree = fromMarkdown(text);
   let inIndex = false;
 
