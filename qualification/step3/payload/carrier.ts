@@ -99,7 +99,9 @@ export interface PayloadCarrierFactory {
 }
 
 /** Returns whether a Media Type selects the initial fine-grained text capability. */
-export function isQualificationFineGrainedMediaType(mediaType: string): boolean {
+export function isQualificationFineGrainedMediaType(
+  mediaType: string,
+): boolean {
   const base = mediaType.split(";", 1)[0]?.trim().toLowerCase();
   return base === "text/plain" || base === "text/markdown";
 }
