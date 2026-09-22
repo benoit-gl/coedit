@@ -3,11 +3,7 @@ export type PayloadCarrierCandidate = "yjs" | "automerge";
 
 /** Origin categories used by carrier qualification fixtures. */
 export type QualificationOriginKind =
-  | "human"
-  | "imported"
-  | "automation"
-  | "ai"
-  | "unknown";
+  "human" | "imported" | "automation" | "ai" | "unknown";
 
 /** Detached Origin metadata used only by Step 3 qualification. */
 export interface QualificationOrigin {
@@ -89,10 +85,7 @@ export interface PayloadCarrierFactory {
   readonly candidate: PayloadCarrierCandidate;
 
   /** Creates an empty allowlisted text payload with exact Media Type spelling. */
-  createText(
-    mediaType: string,
-    origin: QualificationOrigin,
-  ): PayloadCarrier;
+  createText(mediaType: string, origin: QualificationOrigin): PayloadCarrier;
 
   /** Reloads complete candidate state. */
   load(encoded: Uint8Array): PayloadCarrier;
@@ -114,7 +107,11 @@ export function assertTextOffset(offset: number, text: string): void {
 }
 
 /** Validates an ordered UTF-16 range against one native ECMAScript string. */
-export function assertTextRange(start: number, end: number, text: string): void {
+export function assertTextRange(
+  start: number,
+  end: number,
+  text: string,
+): void {
   assertTextOffset(start, text);
   assertTextOffset(end, text);
   if (start > end) {
