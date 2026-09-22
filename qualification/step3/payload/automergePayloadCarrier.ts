@@ -33,7 +33,6 @@ interface AutomergePayloadState extends Record<string, unknown> {
   payload: TextPayloadState | OpaquePayloadState;
 }
 
-
 /** Automerge v3 payload adapter used only by Step 3 qualification. */
 export class AutomergePayloadCarrier implements PayloadCarrier {
   public readonly candidate = "automerge" as const;
