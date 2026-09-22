@@ -183,18 +183,23 @@ Deliver Step 3 as five reviewable merge units with one fork-and-join boundary:
    representative raw/coarse test codecs, and candidate replacement behavior.
 2. **Structural carrier and allocator qualification.** Independently qualify flat
    structural placement and the structural-position allocator candidates through
-   the accepted allocator abstraction. This work does not depend on the payload
-   qualification implementation.
+   the accepted allocator abstraction. Cover collision and normalization behavior,
+   structural convergence, ordering, and structural/allocator growth. This work
+   does not depend on the payload qualification implementation.
 3. **Integrated collaborative-document and application qualification.** After the
    first two merge units are on `main`, compose them into one logical document
-   and qualify atomic mixed-payload transactions, convergence/reload, History and
-   Range feasibility surrogates, Tiptap/ProseMirror transaction translation, IME,
-   cut/paste, undo/redo, and the private clipboard boundary.
+   and qualify the remaining integrated common-suite requirements: atomic
+   mixed-payload transactions, convergence/reload, restore, History and Range
+   feasibility surrogates, cursor behavior, candidate serialization/portable-open
+   behavior, supported garbage collection/compaction, Tiptap/ProseMirror
+   transaction translation, IME, cut/paste, undo/redo, and the private clipboard
+   boundary.
 4. **Comparative evidence.** Add the reproducible qualification runner and
    commit the shared fixture profile, measurements, resource characterization,
-   environment capture, and other selection evidence in the repository. Also
-   persist machine-readable raw results as Actions artifacts. This merge unit can
-   identify candidate guard and admission alternatives but does not select them.
+   environment capture, representative-growth results, and other selection
+   evidence in the repository. Also persist machine-readable raw results as
+   Actions artifacts. This merge unit can identify candidate guard and admission
+   alternatives but does not select them.
 5. **Gate B decision.** In a deliberately small decision change, record the
    selected carrier and allocator, observable concurrent-replacement winner rule,
    mixed replacement/edit semantics, selected carrier string domain,
