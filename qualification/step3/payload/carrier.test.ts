@@ -38,10 +38,7 @@ describe("qualification Media Type dispatch", () => {
 for (const factory of factories) {
   describe(`${factory.candidate} payload qualification`, () => {
     it("preserves exact Media Type spelling and native text", () => {
-      const carrier = factory.createText(
-        'Text/Plain; charset="UTF-8"',
-        human,
-      );
+      const carrier = factory.createText('Text/Plain; charset="UTF-8"', human);
       carrier.insertText(0, "A\r\n😀é", human);
 
       expect(carrier.snapshot()).toEqual({
@@ -110,7 +107,11 @@ for (const factory of factories) {
 
     it("returns from opaque handling only through an explicit allowlisted replacement", () => {
       const carrier = factory.createText("text/plain", human);
-      carrier.replaceOpaque("application/octet-stream", Uint8Array.of(1), imported);
+      carrier.replaceOpaque(
+        "application/octet-stream",
+        Uint8Array.of(1),
+        imported,
+      );
       carrier.replaceText("text/markdown; charset=UTF-8", "# title", human);
 
       expect(carrier.snapshot()).toEqual({
@@ -139,11 +140,13 @@ for (const factory of factories) {
 
     it("rejects fine-grained mutation of opaque payloads", () => {
       const carrier = factory.createText("text/plain", human);
-      carrier.replaceOpaque("application/octet-stream", Uint8Array.of(7), imported);
-
-      expect(() => carrier.insertText(0, "x", human)).toThrow(
-        /text payload/u,
+      carrier.replaceOpaque(
+        "application/octet-stream",
+        Uint8Array.of(7),
+        imported,
       );
+
+      expect(() => carrier.insertText(0, "x", human)).toThrow(/text payload/u);
       expect(() => carrier.deleteText(0, 0)).toThrow(/text payload/u);
     });
   });
