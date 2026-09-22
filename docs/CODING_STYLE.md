@@ -52,6 +52,13 @@ Dependency direction is part of correctness:
   adapters rather than storage or carrier internals;
 - production modules do not import tests, fixtures, generated documentation, or
   development-only utilities;
+- Step 3 qualification-only candidate implementations live under
+  `qualification/step3` unless a component is already an accepted production
+  abstraction; production modules do not import qualification-only candidate
+  implementations;
+- candidate-neutral qualification helpers remain qualification-private unless an
+  authoritative production contract accepts them; sharing a helper across
+  candidates does not by itself justify a domain or public-engine API;
 - cross-subsystem access uses an explicit supported entry point rather than a
   deep import into another subsystem; and
 - runtime dependency cycles are prohibited.
