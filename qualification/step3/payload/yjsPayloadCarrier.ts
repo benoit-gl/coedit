@@ -61,6 +61,7 @@ export class YjsPayloadCarrier implements PayloadCarrier {
     }
 
     const spans: QualificationTextSpan[] = [];
+    let projectedText = "";
     const delta = this.text.toDelta() as readonly {
       readonly insert?: unknown;
       readonly attributes?: Readonly<Record<string, unknown>>;
@@ -71,6 +72,7 @@ export class YjsPayloadCarrier implements PayloadCarrier {
           "Yjs qualification text must contain only strings.",
         );
       }
+      projectedText += operation.insert;
       const origin = parseOrigin(operation.attributes?.[ORIGIN_ATTRIBUTE]);
       const previous = spans.at(-1);
       if (previous !== undefined && previous.origin.id === origin.id) {
@@ -82,7 +84,7 @@ export class YjsPayloadCarrier implements PayloadCarrier {
         spans.push({ text: operation.insert, origin });
       }
     }
-    return { kind, mediaType, text: this.text.toString(), spans };
+    return { kind, mediaType, text: projectedText, spans };
   }
 
   /** {@inheritDoc PayloadCarrier.insertText} */
