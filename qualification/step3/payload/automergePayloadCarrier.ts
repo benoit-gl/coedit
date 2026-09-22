@@ -33,12 +33,6 @@ interface AutomergePayloadState extends Record<string, unknown> {
   payload: TextPayloadState | OpaquePayloadState;
 }
 
-type AutomergePayloadDraft =
-  Automerge.ChangeFn<AutomergePayloadState> extends (
-    value: infer Draft,
-  ) => unknown
-    ? Draft
-    : never;
 
 /** Automerge v3 payload adapter used only by Step 3 qualification. */
 export class AutomergePayloadCarrier implements PayloadCarrier {
