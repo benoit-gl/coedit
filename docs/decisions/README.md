@@ -38,6 +38,16 @@ not justify rewriting the accepted decision only to keep old links current. A
 supersession notice must provide the current path forward when the old decision
 is no longer authoritative.
 
+## Automated enforcement
+
+For every ADR already present on the target branch, all content beginning with
+the first level-two heading (`##`) is immutable. Maintenance changes belong in
+the header before that heading. The `adr-integrity` pull-request check rejects
+historical-body edits, deletion of existing ADRs, invalid supersession metadata,
+broken links in mutable ADR headers, and disagreement between ADR lifecycle
+classes in the metadata and this index. It deliberately ignores links in
+immutable historical bodies.
+
 ## Index
 
 | ADR                                                                                                                | Status                                                  | Subject                                                                                                                    |

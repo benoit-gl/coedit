@@ -22,7 +22,7 @@ This record preserves why the decision was made. Normative behavior belongs in:
 - [`../MVP_CONTRACT.md`](../MVP_CONTRACT.md) for the MVP proof boundary;
 - [`../MVP_ARCHITECTURE.md`](../MVP_ARCHITECTURE.md) for component authority;
 - [`../CAPACITY_AND_PERFORMANCE_TARGETS.md`](../CAPACITY_AND_PERFORMANCE_TARGETS.md) for capacity classification and numeric ownership;
-- [`../FINE_GRAINED_TEXT_AND_ORIGIN.md`](../FINE_GRAINED_TEXT_AND_ORIGIN.md) for fine-grained Origin, clipboard, and Range-holder behavior;
+- [`../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md`](../ATTRIBUTED_TEXT_AND_ANNOTATIONS.md) for formatting, Origin, clipboard, and Range-holder behavior;
 - [`../RANGE_MODEL.md`](../RANGE_MODEL.md) for durable Range behavior and staged representation selection;
 - [`../MVP_IMPLEMENTATION_SPEC.md`](../MVP_IMPLEMENTATION_SPEC.md) for private MVP rules;
 - [`../MARKDOWN_INTERCHANGE.md`](../MARKDOWN_INTERCHANGE.md) for Markdown import/export behavior;

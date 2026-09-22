@@ -298,10 +298,13 @@ helper, cache, matrix, service, or platform job only when a concrete verificatio
 need justifies it.
 
 Linux CI is the ordinary pull-request gate. It does not reduce the Windows
-compatibility requirement. Changes to bootstrap behavior, package scripts,
-build tooling, path handling, or other platform-sensitive developer tooling must
-also be qualified on native Windows. Other changes do not require a Windows CI
-job merely because Windows is a supported developer platform.
+compatibility requirement. Changes to bootstrap behavior, package scripts that
+introduce or change platform-sensitive behavior, build tooling, path handling,
+or other platform-sensitive developer tooling must also be qualified on native
+Windows. A package-script alias that invokes a Node-based script does not by
+itself require separate Windows qualification when the underlying behavior is
+platform-neutral. Other changes do not require a Windows CI job merely because
+Windows is a supported developer platform.
 
 Before Step 1 exits, retain successful clean-checkout evidence from:
 
