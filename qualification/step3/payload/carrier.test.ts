@@ -124,15 +124,22 @@ for (const factory of factories) {
       const before = carrier.snapshot();
 
       const loneSurrogate = String.fromCharCode(0xd800);
+      let operationFailed = false;
       try {
         carrier.insertText(0, loneSurrogate, human);
-        const after = carrier.snapshot();
-        expect(after.kind).toBe("text");
-        if (after.kind === "text") {
-          expect(after.text).toBe(loneSurrogate);
-        }
       } catch {
+        operationFailed = true;
+      }
+
+      if (operationFailed) {
         expect(carrier.snapshot()).toEqual(before);
+        return;
+      }
+
+      const after = carrier.snapshot();
+      expect(after.kind).toBe("text");
+      if (after.kind === "text") {
+        expect(after.text).toBe(loneSurrogate);
       }
     });
 
