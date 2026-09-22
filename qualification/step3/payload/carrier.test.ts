@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type {
-  PayloadCarrierFactory,
-  QualificationOrigin,
-} from "./carrier.js";
+import type { PayloadCarrierFactory, QualificationOrigin } from "./carrier.js";
 import { isQualificationFineGrainedMediaType } from "./carrier.js";
 import { automergePayloadCarrierFactory } from "./automergePayloadCarrier.js";
 import { yjsPayloadCarrierFactory } from "./yjsPayloadCarrier.js";
