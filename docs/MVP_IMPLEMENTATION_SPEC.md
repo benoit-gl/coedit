@@ -298,11 +298,10 @@ The trusted engine boundary assigns Origin for human text insertion, import, ext
 Step 3 runs the same carrier-neutral payload, headless text, structural, and ProseMirror-integrated suites against Yjs v13 and Automerge. Functional invariants are mandatory. Range work in this step proves only the allowlisted fine-grained text feasibility subset in `RANGE_MODEL.md`; it does not select the Range-tracking representation. Select Yjs when its Media-Type-labelled payload, attributed text/Origin, and structural carrier passes without fragile full-state repair. Select Automerge only if its richer native model materially reduces custom code and its editor/storage integrations pass the same suites. Record the selected versions, dependency/license review, replacement tie-break mechanism, fixtures, measurements, and rejected-candidate rationale.
 
 During Step 3, candidate implementations can coexist on `main` as qualification
-code. Put candidate-specific Yjs, Automerge, and allocator machinery under
-`qualification/step3` unless an interface or algorithm is already accepted as a
-production abstraction. Candidate-neutral qualification contracts must not become
-public engine or domain APIs merely because both candidates use them. Production
-modules must not import qualification-only candidate implementations.
+code. `CODING_STYLE.md` owns the qualification source placement and production
+dependency boundary. Shared qualification contracts remain private unless an
+authoritative production contract accepts them; candidate reuse alone does not
+promote them into the domain or public engine API.
 
 Step 4 converts the selected candidate into the production collaborative core, selects the production Media Type parser implementation, selects the raw-media processor and supported representation profiles, and retains the common suite as regression evidence. Remove rejected candidate implementation code after Gate B unless a continuing benchmark or future requalification purpose is explicitly documented. Do not retain rejected-candidate types in public or domain APIs. Do not finalize the carrier codec, portable bytes, History effect encoding, editor transaction bridge, or compaction behavior before Gate B passes.
 
