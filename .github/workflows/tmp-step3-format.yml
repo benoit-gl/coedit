@@ -1,0 +1,26 @@
+name: Temporary qualification formatting
+
+on:
+  push:
+    branches:
+      - impl/step3-payload-carrier-qualification
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm run bootstrap
+      - run: npm exec -- prettier --write qualification/step3/payload/*.ts tsconfig.json
+      - name: Print formatted sources
+        run: |
+          for file in qualification/step3/payload/carrier.ts qualification/step3/payload/yjsPayloadCarrier.ts qualification/step3/payload/automergePayloadCarrier.ts qualification/step3/payload/carrier.test.ts tsconfig.json; do
+            echo "===== $file ====="
+            cat "$file"
+          done
