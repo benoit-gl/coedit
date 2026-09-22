@@ -81,7 +81,9 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
     let offset = 0;
     for (const mark of originMarks) {
       if (mark.start !== offset || typeof mark.value !== "string") {
-        throw new TypeError("Automerge qualification Origin projection has a gap.");
+        throw new TypeError(
+          "Automerge qualification Origin projection has a gap.",
+        );
       }
       const text = payload.text.slice(mark.start, mark.end);
       if (text.length > 0) {
@@ -148,7 +150,9 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
     origin: QualificationOrigin,
   ): void {
     if (!isQualificationFineGrainedMediaType(mediaType)) {
-      throw new TypeError("Qualification text replacement requires an allowlisted Media Type.");
+      throw new TypeError(
+        "Qualification text replacement requires an allowlisted Media Type.",
+      );
     }
     this.document = Automerge.change(this.document, (draft) => {
       draft.payload = { kind: "text", mediaType, text: "" };
@@ -172,7 +176,9 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
     origin: QualificationOrigin,
   ): void {
     if (isQualificationFineGrainedMediaType(mediaType)) {
-      throw new TypeError("Allowlisted Media Types must use the text qualification path.");
+      throw new TypeError(
+        "Allowlisted Media Types must use the text qualification path.",
+      );
     }
     this.document = Automerge.change(this.document, (draft) => {
       draft.payload = {
