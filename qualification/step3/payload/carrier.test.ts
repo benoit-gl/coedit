@@ -123,12 +123,13 @@ for (const factory of factories) {
       const carrier = factory.createText("text/plain", human);
       const before = carrier.snapshot();
 
+      const loneSurrogate = String.fromCharCode(0xd800);
       try {
-        carrier.insertText(0, "\ud800", human);
+        carrier.insertText(0, loneSurrogate, human);
         const after = carrier.snapshot();
         expect(after.kind).toBe("text");
         if (after.kind === "text") {
-          expect(after.text).toBe("\ud800");
+          expect(after.text).toBe(loneSurrogate);
         }
       } catch {
         expect(carrier.snapshot()).toEqual(before);
