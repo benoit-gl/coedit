@@ -240,7 +240,11 @@ function assertAutomergeExactText(text: string): void {
     const codeUnit = text.charCodeAt(index);
     if (codeUnit >= 0xd800 && codeUnit <= 0xdbff) {
       const next = text.charCodeAt(index + 1);
-      if (next < 0xdc00 || next > 0xdfff) {
+      if (
+        index + 1 >= text.length ||
+        next < 0xdc00 ||
+        next > 0xdfff
+      ) {
         throw new TypeError(
           "Automerge cannot preserve this ECMAScript string exactly.",
         );
