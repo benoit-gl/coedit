@@ -1,6 +1,10 @@
 # ADR 0005 — Semantic interpretation boundaries
 
-**Status:** Accepted
+**Status:** Superseded in part
+
+**Superseded by:** [ADR 0010](0010-typed-inline-content-payloads.md)
+
+**Superseded scope:** ADR 0010 replaces the engine-owned intrinsic link-mark and formatting examples. The semantic-interpretation-boundary decision, Markdown diagnostics, trust/identity separation, capacity classification, and carrier semantic-activity rule remain accepted.
 
 **Date:** 2026-08-31
 

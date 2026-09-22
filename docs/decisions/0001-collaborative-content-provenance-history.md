@@ -1,6 +1,10 @@
 # ADR-0001: Collaborative content, provenance, History, and persistence
 
-**Status:** Accepted
+**Status:** Superseded in part
+
+**Superseded by:** [ADR 0010](0010-typed-inline-content-payloads.md)
+
+**Superseded scope:** ADR 0010 replaces the engine-owned rich-text formatting assumptions, the parts that treat rich text and hard breaks as the universal InlineContent shape, and the preselected DOM/clipboard sanitization mechanism and tooling. Sanitization and activation remain application-boundary concerns whose concrete policy and tooling are selected when that activation path is implemented. Fine-grained Origin, causal History, persistence, and carrier qualification remain accepted.
 
 **Decision date:** 2026-08-25
 

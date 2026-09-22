@@ -1,6 +1,10 @@
 # ADR 0006: Text position ownership
 
-**Status:** Accepted
+**Status:** Superseded in part
+
+**Superseded by:** [ADR 0010](0010-typed-inline-content-payloads.md)
+
+**Superseded scope:** ADR 0010 replaces the assumption that canonical CollaborativeContent is universally text. The position-ownership decision, editor-native transient positions, no universal numeric coordinate, no silent normalization, and carrier-neutral Range recovery remain accepted for allowlisted fine-grained text payloads.
 
 **Date:** 2026-09-01
 
