@@ -39,7 +39,10 @@ export class YjsPayloadCarrier implements PayloadCarrier {
   public snapshot(): QualificationPayloadSnapshot {
     const kind = this.meta.get("kind");
     const mediaType = this.meta.get("mediaType");
-    if ((kind !== "text" && kind !== "opaque") || typeof mediaType !== "string") {
+    if (
+      (kind !== "text" && kind !== "opaque") ||
+      typeof mediaType !== "string"
+    ) {
       throw new TypeError("Yjs qualification payload metadata is incomplete.");
     }
 
@@ -120,7 +123,9 @@ export class YjsPayloadCarrier implements PayloadCarrier {
     origin: QualificationOrigin,
   ): void {
     if (!isQualificationFineGrainedMediaType(mediaType)) {
-      throw new TypeError("Qualification text replacement requires an allowlisted Media Type.");
+      throw new TypeError(
+        "Qualification text replacement requires an allowlisted Media Type.",
+      );
     }
     this.document.transact(() => {
       if (this.text.length > 0) {
@@ -145,7 +150,9 @@ export class YjsPayloadCarrier implements PayloadCarrier {
     origin: QualificationOrigin,
   ): void {
     if (isQualificationFineGrainedMediaType(mediaType)) {
-      throw new TypeError("Allowlisted Media Types must use the text qualification path.");
+      throw new TypeError(
+        "Allowlisted Media Types must use the text qualification path.",
+      );
     }
     this.document.transact(() => {
       if (this.text.length > 0) {
@@ -184,7 +191,9 @@ export const yjsPayloadCarrierFactory: PayloadCarrierFactory = {
 
 function parseOrigin(value: unknown): QualificationOrigin {
   if (typeof value !== "string") {
-    throw new TypeError("Qualification text or opaque payload is missing Origin.");
+    throw new TypeError(
+      "Qualification text or opaque payload is missing Origin.",
+    );
   }
   const parsed: unknown = JSON.parse(value);
   if (
