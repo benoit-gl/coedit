@@ -40,8 +40,7 @@ The accepted rationale and evaluated alternatives are recorded in
 
 ## 2. Scope by phase
 
-The strict MVP and carrier qualification must implement for every allowlisted
-fine-grained text payload:
+The strict MVP must implement for every allowlisted fine-grained text payload:
 
 - canonical native-string collaborative text without a document-level hard-break
   item;
@@ -54,6 +53,12 @@ fine-grained text payload:
 - durable text Range feasibility; and
 - exact `.coedit` recovery of supported carrier-native text, Origin, History, and
   required lineage.
+
+Step 3 carrier qualification proves the carrier-facing primitives needed by these
+requirements. For first-class History, durable Range, restore, and portable-format
+behavior that does not yet exist in Step 3, use qualification surrogates instead
+of implementing those later subsystems early. Step 3 does not implement
+first-class History or the `.coedit` format.
 
 The same carrier qualification proves the payload-level replacement, raw/coarse
 encoding, and generic opaque behavior in `INLINE_CONTENT_PAYLOADS.md`.
@@ -313,8 +318,9 @@ allowlisted Media Types. At minimum it covers:
 - the Step 3 text Range-feasibility cases in `RANGE_MODEL.md`;
 - one transaction spanning Block structure and several InlineContents;
 - duplicate, delayed, reordered, partitioned, and reconnected updates;
-- exact portable round trip and historical materialization for supported carrier
-  state; and
+- candidate serialization/reload round trip plus qualification surrogates for
+  later portable-format and historical-materialization behavior, without
+  implementing `.coedit` or first-class History in Step 3; and
 - representative growth and load behavior.
 
 The carrier gate also runs the generic Media Type, raw/coarse encoding, opaque
