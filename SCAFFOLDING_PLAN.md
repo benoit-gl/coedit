@@ -190,10 +190,11 @@ Deliver Step 3 as five reviewable merge units with one fork-and-join boundary:
    and qualify atomic mixed-payload transactions, convergence/reload, History and
    Range feasibility surrogates, Tiptap/ProseMirror transaction translation, IME,
    cut/paste, undo/redo, and the private clipboard boundary.
-4. **Comparative evidence.** Add the reproducible qualification runner, shared
-   fixture profile, measurements, resource characterization, environment capture,
-   and persisted machine-readable Actions artifacts. This merge unit can identify
-   candidate guard and admission alternatives but does not select them.
+4. **Comparative evidence.** Add the reproducible qualification runner and
+   commit the shared fixture profile, measurements, resource characterization,
+   environment capture, and other selection evidence in the repository. Also
+   persist machine-readable raw results as Actions artifacts. This merge unit can
+   identify candidate guard and admission alternatives but does not select them.
 5. **Gate B decision.** In a deliberately small decision change, record the
    selected carrier and allocator, observable concurrent-replacement winner rule,
    mixed replacement/edit semantics, selected carrier string domain,
