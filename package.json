@@ -22,11 +22,14 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "docs:check": "typedoc --options typedoc.json",
-    "check": "npm run format:check && npm run typecheck && npm run lint && npm run lint:deps && npm run docs:check && npm run test"
+    "check": "npm run format:check && npm run typecheck && npm run lint && npm run lint:deps && npm run docs:check && npm run test",
+    "test:step3:payload": "vitest run qualification/step3/payload"
   },
   "dependencies": {
+    "@automerge/automerge": "3.4.1",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "yjs": "13.6.32"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
