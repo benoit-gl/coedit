@@ -67,7 +67,9 @@ export class YjsPayloadCarrier implements PayloadCarrier {
     }[];
     for (const operation of delta) {
       if (typeof operation.insert !== "string") {
-        throw new TypeError("Yjs qualification text must contain only strings.");
+        throw new TypeError(
+          "Yjs qualification text must contain only strings.",
+        );
       }
       const origin = parseOrigin(operation.attributes?.[ORIGIN_ATTRIBUTE]);
       const previous = spans.at(-1);
@@ -91,7 +93,9 @@ export class YjsPayloadCarrier implements PayloadCarrier {
   ): void {
     const snapshot = this.snapshot();
     if (snapshot.kind !== "text") {
-      throw new TypeError("Fine-grained text operations require a text payload.");
+      throw new TypeError(
+        "Fine-grained text operations require a text payload.",
+      );
     }
     assertTextOffset(offset, snapshot.text);
     if (inserted.length === 0) {
@@ -108,7 +112,9 @@ export class YjsPayloadCarrier implements PayloadCarrier {
   public deleteText(start: number, end: number): void {
     const snapshot = this.snapshot();
     if (snapshot.kind !== "text") {
-      throw new TypeError("Fine-grained text operations require a text payload.");
+      throw new TypeError(
+        "Fine-grained text operations require a text payload.",
+      );
     }
     assertTextRange(start, end, snapshot.text);
     if (start !== end) {
