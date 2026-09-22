@@ -174,6 +174,45 @@ See [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md), [`docs/MVP_I
 
 Run the same pinned headless and Tiptap/ProseMirror suite against stable Yjs v13 and Automerge. Track Yjs v14 only after stable release; use Loro as a cursor/movable-tree benchmark, not a current candidate. Before comparing candidates, record one run-specific fixture profile and measurement method used for both. Record dependency/license review, adapter complexity, target devices, measurements, the observable deterministic whole-payload replacement winner rule, its carrier-private implementation, mixed replacement/text-edit semantics, payload/carrier resource-admission behavior, and the selection rationale. Exercise the raw/coarse media boundary with representative test codec fixtures, but do not select the production processor or supported representation profiles in this step.
 
+Deliver Step 3 as five reviewable merge units with one fork-and-join boundary:
+
+1. **Payload/carrier qualification.** Add the carrier-neutral Media-Type-labelled
+   payload qualification boundary and run it against Yjs and Automerge. Cover
+   allowlisted native-string text, protected Origin, opaque bytes and Origin,
+   whole-payload replacement, Media Type preservation and classification,
+   representative raw/coarse test codecs, and candidate replacement behavior.
+2. **Structural carrier and allocator qualification.** Independently qualify flat
+   structural placement and the structural-position allocator candidates through
+   the accepted allocator abstraction. This work does not depend on the payload
+   qualification implementation.
+3. **Integrated collaborative-document and application qualification.** After the
+   first two merge units are on `main`, compose them into one logical document
+   and qualify atomic mixed-payload transactions, convergence/reload, History and
+   Range feasibility surrogates, Tiptap/ProseMirror transaction translation, IME,
+   cut/paste, undo/redo, and the private clipboard boundary.
+4. **Comparative evidence.** Add the reproducible qualification runner, shared
+   fixture profile, measurements, resource characterization, environment capture,
+   and persisted machine-readable Actions artifacts. This merge unit can identify
+   candidate guard and admission alternatives but does not select them.
+5. **Gate B decision.** In a deliberately small decision change, record the
+   selected carrier and allocator, observable concurrent-replacement winner rule,
+   mixed replacement/edit semantics, selected carrier string domain,
+   payload/carrier resource-admission behavior, private-clipboard guards, rejected
+   candidates, and rationale.
+
+The first two merge units are semantically independent and normally target
+`main`; whichever merges second is brought current with `main` without taking
+an implementation dependency on the first. The third unit is the explicit join.
+Do not create a deep stack merely to keep candidate files adjacent.
+
+Qualification-only candidate implementations can live side-by-side on `main`
+while Gate B is open. Keep them under `qualification/step3` unless a component
+is already an accepted production abstraction. Production code must not import a
+candidate implementation. After Gate B, retain the common fixtures, persisted
+evidence, and selected regressions. Step 4 promotes the winner into the
+production collaborative core and removes rejected candidate implementation code
+unless a continuing benchmark purpose is explicitly documented.
+
 The suite covers:
 
 - both initial allowlisted fine-grained Media Types, `text/markdown` and `text/plain`, plus representative opaque Media Type labels, including unfamiliar syntactically valid labels used to qualify dispatch against the fixed Media Type syntax contract;
