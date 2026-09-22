@@ -110,7 +110,9 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
   ): void {
     const snapshot = this.snapshot();
     if (snapshot.kind !== "text") {
-      throw new TypeError("Fine-grained text operations require a text payload.");
+      throw new TypeError(
+        "Fine-grained text operations require a text payload.",
+      );
     }
     assertTextOffset(offset, snapshot.text);
     if (text.length === 0) {
@@ -132,7 +134,9 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
   public deleteText(start: number, end: number): void {
     const snapshot = this.snapshot();
     if (snapshot.kind !== "text") {
-      throw new TypeError("Fine-grained text operations require a text payload.");
+      throw new TypeError(
+        "Fine-grained text operations require a text payload.",
+      );
     }
     assertTextRange(start, end, snapshot.text);
     if (start === end) {
