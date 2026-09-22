@@ -108,6 +108,7 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
       );
     }
     assertTextOffset(offset, snapshot.text);
+    assertAutomergeExactText(text);
     if (text.length === 0) {
       return;
     }
@@ -151,6 +152,7 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
         "Qualification text replacement requires an allowlisted Media Type.",
       );
     }
+    assertAutomergeExactText(text);
     this.document = Automerge.change(this.document, (draft) => {
       draft.payload = { kind: "text", mediaType, text: "" };
       if (text.length > 0) {
@@ -231,4 +233,25 @@ function parseOrigin(value: string): QualificationOrigin {
     throw new TypeError("Qualification Origin is invalid.");
   }
   return { id: parsed.id, kind: parsed.kind };
+}
+
+function assertAutomergeExactText(text: string): void {
+  for (let index = 0; index < text.length; index += 1) {
+    const codeUnit = text.charCodeAt(index);
+    if (codeUnit >= 0xd800 && codeUnit <= 0xdbff) {
+      const next = text.charCodeAt(index + 1);
+      if (next < 0xdc00 || next > 0xdfff) {
+        throw new TypeError(
+          "Automerge cannot preserve this ECMAScript string exactly.",
+        );
+      }
+      index += 1;
+      continue;
+    }
+    if (codeUnit >= 0xdc00 && codeUnit <= 0xdfff) {
+      throw new TypeError(
+        "Automerge cannot preserve this ECMAScript string exactly.",
+      );
+    }
+  }
 }
