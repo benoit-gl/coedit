@@ -52,17 +52,20 @@ Dependency direction is part of correctness:
   adapters rather than storage or carrier internals;
 - production modules do not import tests, fixtures, generated documentation, or
   development-only utilities;
-- Step 3 qualification-only candidate implementations live under
-  `qualification/step3` unless a component is already an accepted production
-  abstraction; production modules do not import qualification-only candidate
-  implementations;
+- accepted production abstractions and contracts remain in ordinary production
+  source; Step 3 qualification-only concrete candidate implementations live under
+  `qualification/step3`. Implementing an accepted abstraction does not by itself
+  promote an unselected candidate into production source;
+- production modules do not import `qualification/step3`. Dependency-cruiser
+  must scan both roots and enforce this production-to-qualification prohibition;
 - candidate-neutral qualification helpers remain qualification-private unless an
   authoritative production contract accepts them; sharing a helper across
   candidates does not by itself justify a domain or public-engine API;
 - when Step 3 first introduces `qualification/step3`, update the canonical
-  TypeScript and dependency-cruiser inputs in the same change so the new source
-  root participates in `npm run check`; qualification-only code is not exempt
-  from ordinary source verification;
+  TypeScript, dependency-cruiser, and TypeDoc inputs in the same change so the new
+  source root participates in `npm run check`; qualification-only code is not
+  exempt from ordinary source verification, and exported qualification symbols
+  must satisfy the applicable TSDoc and documentation validation rules;
 - cross-subsystem access uses an explicit supported entry point rather than a
   deep import into another subsystem; and
 - runtime dependency cycles are prohibited.
