@@ -25,6 +25,12 @@ export default {
       from: { path: "^src/domain(?:/|$)" },
       to: { path: "^src/(?!domain(?:/|$))" },
     },
+    {
+      name: "no-production-to-qualification",
+      severity: "error",
+      from: { path: "^src(?:/|$)" },
+      to: { path: "^qualification/step3(?:/|$)" },
+    },
   ],
   options: {
     doNotFollow: { path: "node_modules" },

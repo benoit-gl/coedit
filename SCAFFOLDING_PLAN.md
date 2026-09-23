@@ -176,24 +176,38 @@ Run the same pinned headless and Tiptap/ProseMirror suite against stable Yjs v13
 
 Deliver Step 3 as five reviewable merge units with one fork-and-join boundary:
 
-1. **Payload/carrier qualification.** Add the carrier-neutral Media-Type-labelled
-   payload qualification boundary and run it against Yjs and Automerge. Cover
-   allowlisted native-string text, protected Origin, opaque bytes and Origin,
-   whole-payload replacement, Media Type preservation and classification,
-   representative raw/coarse test codecs, and candidate replacement behavior.
-2. **Structural carrier and allocator qualification.** Independently qualify flat
-   structural placement and the structural-position allocator candidates through
-   the accepted allocator abstraction. This work does not depend on the payload
-   qualification implementation.
-3. **Integrated collaborative-document and application qualification.** After the
-   first two merge units are on `main`, compose them into one logical document
-   and qualify atomic mixed-payload transactions, convergence/reload, History and
-   Range feasibility surrogates, Tiptap/ProseMirror transaction translation, IME,
-   cut/paste, undo/redo, and the private clipboard boundary.
-4. **Comparative evidence.** Add the reproducible qualification runner, shared
-   fixture profile, measurements, resource characterization, environment capture,
-   and persisted machine-readable Actions artifacts. This merge unit can identify
-   candidate guard and admission alternatives but does not select them.
+1. **Payload/carrier qualification implementation.** Add the carrier-neutral
+   Media-Type-labelled payload qualification boundary and its common semantic
+   suite for Yjs and Automerge. Cover allowlisted native-string text, protected
+   Origin, opaque bytes and Origin, whole-payload replacement, Media Type
+   preservation and classification, representative raw/coarse test codecs, and
+   candidate replacement behavior.
+2. **Structural carrier and allocator qualification implementation.**
+   Independently add flat structural placement and the structural-position
+   allocator candidates behind the accepted allocator abstraction, together with
+   their common semantic suite. Cover collision and normalization behavior,
+   structural convergence, ordering, and structural/allocator growth. This work
+   does not depend on the payload qualification implementation.
+3. **Integrated collaborative-document and application qualification
+   implementation.** After the first two merge units are on `main`, compose them
+   into one logical document and complete the remaining integrated common-suite
+   coverage: atomic mixed-payload transactions, convergence/reload, restore,
+   History and Range feasibility surrogates, cursor behavior, carrier
+   serialization/reopen and portable-format qualification surrogates, supported
+   garbage collection/compaction, Tiptap/ProseMirror transaction translation,
+   IME, cut/paste, undo/redo, and the private clipboard boundary. These portable
+   checks do not implement the `.coedit` codec or freeze portable bytes.
+4. **Comparative qualification evidence.** Add the reproducible qualification
+   runner that orchestrates the landed common suites. Before the comparative run,
+   record the shared run-specific fixture profile and measurement method. Run all
+   carrier and allocator candidates under that profile, then commit summarized
+   measurements, resource characterization, environment capture,
+   representative-growth results, and other selection evidence in the
+   repository. Also upload machine-readable raw results as Actions artifacts for
+   review and debugging. The committed fixture profile, method, and summarized
+   evidence are the durable qualification record; Actions artifacts are
+   supplementary. This merge unit can identify candidate guard and admission
+   alternatives but does not select them.
 5. **Gate B decision.** In a deliberately small decision change, record the
    selected carrier and allocator, observable concurrent-replacement winner rule,
    mixed replacement/edit semantics, selected carrier string domain,
@@ -203,12 +217,16 @@ Deliver Step 3 as five reviewable merge units with one fork-and-join boundary:
 The first two merge units are semantically independent and normally target
 `main`; whichever merges second is brought current with `main` without taking
 an implementation dependency on the first. The third unit is the explicit join.
-Do not create a deep stack merely to keep candidate files adjacent.
+Those first three units build and exercise the mandatory semantic suites, but
+their development runs are not the final comparative evidence. The fourth unit
+runs the complete comparison against those implementations after they land on
+`main`, under one recorded profile and method. Do not create a deep stack merely
+to keep candidate files adjacent.
 
 Qualification-only candidate implementations can live side-by-side on `main`
-while Gate B is open. Keep them under `qualification/step3` unless a component
-is already an accepted production abstraction. Production code must not import a
-candidate implementation. After Gate B, retain the common fixtures, persisted
+while Gate B is open. `CODING_STYLE.md` owns their source placement,
+qualification-helper privacy, production dependency boundary, and source
+verification coverage. After Gate B, retain the common fixtures, persisted
 evidence, and selected regressions. Step 4 promotes the winner into the
 production collaborative core and removes rejected candidate implementation code
 unless a continuing benchmark purpose is explicitly documented.
@@ -230,7 +248,7 @@ The suite covers:
 
 **Outcome:** The repository contains comparable fixtures, measurements, dependency/license review, adapter-complexity evidence, rejected-candidate rationale, the qualified observable replacement winner rule and its private implementation, mixed replacement/text-edit semantics, the payload/carrier resource-admission decision, evidence that raw/coarse media conversion is independent of the carrier, and one recorded carrier selection. Qualification code uses the same abstractions intended for production, but this step does not freeze the final Range API, lineage representation, production Media Type parser implementation, raw-media processor, or supported representation profiles.
 
-**Exit gate:** Gate B passes. The common payload, text, structural, concurrency, clipboard, restore, cursor, Range-feasibility, atomicity, portable, garbage-collection, collision/ordering, and representative-growth suite passes. The raw/coarse media boundary proves exact conversion and explicit unsupported-profile behavior through representative fixtures without making a production processor/profile choice. Carrier and private-text-clipboard hostile-input guards are selected from profiling evidence and tested atomically. Payload/carrier resource admission is recorded from qualification evidence; it can use an adaptive host/runtime-dependent mechanism or conclude that no additional explicit finite guard is needed when normal runtime behavior already provides a safe atomic failure seam. Gate B does not require a fixed payload-size maximum. Experimental performance candidates are recorded as evidence rather than correctness thresholds unless deliberately promoted. Functional invariants are mandatory. Select Yjs when its protected carrier works incrementally without fragile repair. Select Automerge only if it passes and materially removes custom machinery despite its integration maturity. Record the winner before carrier-dependent format fields or fixtures are frozen.
+**Exit gate:** Gate B passes. The common payload, text, structural, concurrency, clipboard, restore, cursor, Range-feasibility, atomicity, portable-format-surrogate, garbage-collection, collision/ordering, and representative-growth suite passes. The raw/coarse media boundary proves exact conversion and explicit unsupported-profile behavior through representative fixtures without making a production processor/profile choice. Carrier and private-text-clipboard hostile-input guards are selected from profiling evidence and tested atomically. Payload/carrier resource admission is recorded from qualification evidence; it can use an adaptive host/runtime-dependent mechanism or conclude that no additional explicit finite guard is needed when normal runtime behavior already provides a safe atomic failure seam. Gate B does not require a fixed payload-size maximum. Experimental performance candidates are recorded as evidence rather than correctness thresholds unless deliberately promoted. Functional invariants are mandatory. Select Yjs when its protected carrier works incrementally without fragile repair. Select Automerge only if it passes and materially removes custom machinery despite its integration maturity. Record the winner before carrier-dependent format fields or fixtures are frozen.
 
 See [`docs/INLINE_CONTENT_PAYLOADS.md`](docs/INLINE_CONTENT_PAYLOADS.md), [`docs/FINE_GRAINED_TEXT_AND_ORIGIN.md`](docs/FINE_GRAINED_TEXT_AND_ORIGIN.md), [`docs/TEXT_POSITION_MODEL.md`](docs/TEXT_POSITION_MODEL.md), [`docs/RANGE_MODEL.md`](docs/RANGE_MODEL.md), [`docs/STRUCTURAL_CARRIER_MODEL.md`](docs/STRUCTURAL_CARRIER_MODEL.md), [`docs/STRUCTURAL_POSITION_ALLOCATOR.md`](docs/STRUCTURAL_POSITION_ALLOCATOR.md), and [`docs/MVP_VERIFICATION_PLAN.md`](docs/MVP_VERIFICATION_PLAN.md).
 

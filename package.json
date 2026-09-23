@@ -17,7 +17,7 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings 0",
-    "lint:deps": "depcruise src --config dependency-cruiser.config.mjs",
+    "lint:deps": "depcruise src qualification --config dependency-cruiser.config.mjs",
     "adr:check": "node scripts/check-adr-integrity.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -26,13 +26,12 @@
     "test:step3:payload": "vitest run qualification/step3/payload"
   },
   "dependencies": {
-    "@automerge/automerge": "3.4.1",
     "react": "19.2.8",
-    "react-dom": "19.2.8",
-    "yjs": "13.6.32"
+    "react-dom": "19.2.8"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
+    "@automerge/automerge": "3.4.1",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "dependency-cruiser": "18.2.0",
@@ -47,6 +46,7 @@
     "typescript": "5.9.3",
     "typescript-eslint": "8.67.0",
     "vite": "7.3.6",
-    "vitest": "4.0.18"
+    "vitest": "4.0.18",
+    "yjs": "13.6.32"
   }
 }

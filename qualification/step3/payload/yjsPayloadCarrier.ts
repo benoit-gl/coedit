@@ -13,8 +13,8 @@ import {
   isQualificationFineGrainedMediaType,
 } from "./carrier.js";
 
-const META = "payload-meta";
-const TEXT = "payload-text";
+const ROOT = "payload-root";
+const CURRENT_PAYLOAD = "current";
 const ORIGIN_ATTRIBUTE = "coedit:origin";
 
 /** Yjs v13 payload adapter used only by Step 3 qualification. */
@@ -22,23 +22,22 @@ export class YjsPayloadCarrier implements PayloadCarrier {
   public readonly candidate = "yjs" as const;
 
   private readonly document: Y.Doc;
-  private readonly meta: Y.Map<unknown>;
-  private readonly text: Y.Text;
+  private readonly root: Y.Map<unknown>;
 
   /** Creates an adapter from fresh or encoded candidate state. */
   public constructor(encoded?: Uint8Array) {
     this.document = new Y.Doc();
-    this.meta = this.document.getMap(META);
-    this.text = this.document.getText(TEXT);
+    this.root = this.document.getMap(ROOT);
     if (encoded !== undefined) {
       Y.applyUpdate(this.document, encoded);
     }
   }
 
-  /** {@inheritDoc PayloadCarrier.snapshot} */
+  /** Projects the current detached payload value. */
   public snapshot(): QualificationPayloadSnapshot {
-    const kind = this.meta.get("kind");
-    const mediaType = this.meta.get("mediaType");
+    const payload = this.currentPayload();
+    const kind = payload.get("kind");
+    const mediaType = payload.get("mediaType");
     if (
       (kind !== "text" && kind !== "opaque") ||
       typeof mediaType !== "string"
@@ -47,8 +46,8 @@ export class YjsPayloadCarrier implements PayloadCarrier {
     }
 
     if (kind === "opaque") {
-      const stored = this.meta.get("bytes");
-      const origin = parseOrigin(this.meta.get("origin"));
+      const stored = payload.get("bytes");
+      const origin = parseOrigin(payload.get("origin"));
       if (!(stored instanceof Uint8Array)) {
         throw new TypeError("Yjs opaque payload bytes are invalid.");
       }
@@ -62,7 +61,8 @@ export class YjsPayloadCarrier implements PayloadCarrier {
 
     const spans: QualificationTextSpan[] = [];
     let projectedText = "";
-    const delta = this.text.toDelta() as readonly {
+    const text = this.currentText(payload);
+    const delta = text.toDelta() as readonly {
       readonly insert?: unknown;
       readonly attributes?: Readonly<Record<string, unknown>>;
     }[];
@@ -87,7 +87,7 @@ export class YjsPayloadCarrier implements PayloadCarrier {
     return { kind, mediaType, text: projectedText, spans };
   }
 
-  /** {@inheritDoc PayloadCarrier.insertText} */
+  /** Inserts protected-origin text into the current text payload. */
   public insertText(
     offset: number,
     inserted: string,
@@ -104,13 +104,13 @@ export class YjsPayloadCarrier implements PayloadCarrier {
       return;
     }
     this.document.transact(() => {
-      this.text.insert(offset, inserted, {
+      this.currentText().insert(offset, inserted, {
         [ORIGIN_ATTRIBUTE]: JSON.stringify(origin),
       });
     });
   }
 
-  /** {@inheritDoc PayloadCarrier.deleteText} */
+  /** Deletes one UTF-16 range from the current text payload. */
   public deleteText(start: number, end: number): void {
     const snapshot = this.snapshot();
     if (snapshot.kind !== "text") {
@@ -120,11 +120,11 @@ export class YjsPayloadCarrier implements PayloadCarrier {
     }
     assertTextRange(start, end, snapshot.text);
     if (start !== end) {
-      this.text.delete(start, end - start);
+      this.currentText().delete(start, end - start);
     }
   }
 
-  /** {@inheritDoc PayloadCarrier.replaceText} */
+  /** Atomically installs a fresh shared text payload. */
   public replaceText(
     mediaType: string,
     text: string,
@@ -136,22 +136,21 @@ export class YjsPayloadCarrier implements PayloadCarrier {
       );
     }
     this.document.transact(() => {
-      if (this.text.length > 0) {
-        this.text.delete(0, this.text.length);
-      }
-      this.meta.set("kind", "text");
-      this.meta.set("mediaType", mediaType);
-      this.meta.delete("bytes");
-      this.meta.delete("origin");
+      const payload = new Y.Map<unknown>();
+      const payloadText = new Y.Text();
+      payload.set("kind", "text");
+      payload.set("mediaType", mediaType);
       if (text.length > 0) {
-        this.text.insert(0, text, {
+        payloadText.insert(0, text, {
           [ORIGIN_ATTRIBUTE]: JSON.stringify(origin),
         });
       }
+      payload.set("text", payloadText);
+      this.root.set(CURRENT_PAYLOAD, payload);
     });
   }
 
-  /** {@inheritDoc PayloadCarrier.replaceOpaque} */
+  /** Atomically installs a fresh shared opaque payload. */
   public replaceOpaque(
     mediaType: string,
     bytes: Uint8Array,
@@ -163,24 +162,39 @@ export class YjsPayloadCarrier implements PayloadCarrier {
       );
     }
     this.document.transact(() => {
-      if (this.text.length > 0) {
-        this.text.delete(0, this.text.length);
-      }
-      this.meta.set("kind", "opaque");
-      this.meta.set("mediaType", mediaType);
-      this.meta.set("bytes", bytes.slice());
-      this.meta.set("origin", JSON.stringify(origin));
+      const payload = new Y.Map<unknown>();
+      payload.set("kind", "opaque");
+      payload.set("mediaType", mediaType);
+      payload.set("bytes", bytes.slice());
+      payload.set("origin", JSON.stringify(origin));
+      this.root.set(CURRENT_PAYLOAD, payload);
     });
   }
 
-  /** {@inheritDoc PayloadCarrier.encode} */
+  /** Encodes this replica for reload or collaboration. */
   public encode(): Uint8Array {
     return Y.encodeStateAsUpdate(this.document);
   }
 
-  /** {@inheritDoc PayloadCarrier.mergeEncoded} */
+  /** Applies encoded state from another replica. */
   public mergeEncoded(encoded: Uint8Array): void {
     Y.applyUpdate(this.document, encoded);
+  }
+
+  private currentPayload(): Y.Map<unknown> {
+    const payload = this.root.get(CURRENT_PAYLOAD);
+    if (!(payload instanceof Y.Map)) {
+      throw new TypeError("Yjs qualification payload is incomplete.");
+    }
+    return payload;
+  }
+
+  private currentText(payload = this.currentPayload()): Y.Text {
+    const text = payload.get("text");
+    if (!(text instanceof Y.Text)) {
+      throw new TypeError("Yjs qualification text payload is incomplete.");
+    }
+    return text;
   }
 }
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://typedoc.org/schema.json",
-  "entryPoints": ["src"],
+  "entryPoints": ["src", "qualification/step3"],
   "entryPointStrategy": "expand",
   "exclude": ["**/*.test.ts", "**/*.test.tsx"],
   "emit": "none",

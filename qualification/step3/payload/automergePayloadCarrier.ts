@@ -53,7 +53,7 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
         : Automerge.load<AutomergePayloadState>(encoded);
   }
 
-  /** {@inheritDoc PayloadCarrier.snapshot} */
+  /** Projects the current detached payload value. */
   public snapshot(): QualificationPayloadSnapshot {
     const payload = this.document.payload;
     if (payload.kind === "opaque") {
@@ -95,7 +95,7 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
     };
   }
 
-  /** {@inheritDoc PayloadCarrier.insertText} */
+  /** Inserts protected-origin text into the current text payload. */
   public insertText(
     offset: number,
     text: string,
@@ -124,7 +124,7 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
     });
   }
 
-  /** {@inheritDoc PayloadCarrier.deleteText} */
+  /** Deletes one UTF-16 range from the current text payload. */
   public deleteText(start: number, end: number): void {
     const snapshot = this.snapshot();
     if (snapshot.kind !== "text") {
@@ -141,7 +141,7 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
     });
   }
 
-  /** {@inheritDoc PayloadCarrier.replaceText} */
+  /** Atomically replaces the complete payload with text. */
   public replaceText(
     mediaType: string,
     text: string,
@@ -168,7 +168,7 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
     });
   }
 
-  /** {@inheritDoc PayloadCarrier.replaceOpaque} */
+  /** Atomically replaces the complete payload with opaque bytes. */
   public replaceOpaque(
     mediaType: string,
     bytes: Uint8Array,
@@ -189,12 +189,12 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
     });
   }
 
-  /** {@inheritDoc PayloadCarrier.encode} */
+  /** Encodes this replica for reload or collaboration. */
   public encode(): Uint8Array {
     return Automerge.save(this.document);
   }
 
-  /** {@inheritDoc PayloadCarrier.mergeEncoded} */
+  /** Merges encoded state from another replica. */
   public mergeEncoded(encoded: Uint8Array): void {
     this.document = Automerge.merge(
       this.document,
