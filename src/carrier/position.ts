@@ -1,5 +1,3 @@
-const BASE = 65_536;
-
 /** Three-way ordering result used by structural position comparators. */
 export type StructuralPositionOrder = -1 | 0 | 1;
 

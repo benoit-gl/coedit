@@ -1,4 +1,6 @@
 import { isCanonicalUuidV4 } from "../../../src/domain/ids.js";
+const BASE = 65_536;
+
 import type {
   StructuralPositionAllocationRequest,
   StructuralPositionAllocationResult,
