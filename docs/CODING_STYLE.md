@@ -59,6 +59,10 @@ Dependency direction is part of correctness:
 - candidate-neutral qualification helpers remain qualification-private unless an
   authoritative production contract accepts them; sharing a helper across
   candidates does not by itself justify a domain or public-engine API;
+- when Step 3 first introduces `qualification/step3`, update the canonical
+  TypeScript and dependency-cruiser inputs in the same change so the new source
+  root participates in `npm run check`; qualification-only code is not exempt
+  from ordinary source verification;
 - cross-subsystem access uses an explicit supported entry point rather than a
   deep import into another subsystem; and
 - runtime dependency cycles are prohibited.
