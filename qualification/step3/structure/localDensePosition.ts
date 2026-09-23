@@ -1,12 +1,12 @@
 import { isCanonicalUuidV4 } from "../../../src/domain/ids.js";
-const BASE = 65_536;
-
 import type {
   StructuralPositionAllocationRequest,
   StructuralPositionAllocationResult,
   StructuralPositionAllocator,
   StructuralPositionOrder,
 } from "../../../src/carrier/position.js";
+
+const BASE = 65_536;
 
 /** Private position representation for the local dense-order qualification candidate. */
 export interface LocalDensePosition {
