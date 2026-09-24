@@ -1,4 +1,7 @@
-import { generateNKeysBetween } from "fractional-indexing";
+import {
+  generateKeyBetween,
+  generateNKeysBetween,
+} from "fractional-indexing";
 
 import { isCanonicalUuidV4 } from "../../../src/domain/ids.js";
 import type {
@@ -136,11 +139,28 @@ export function isValidFractionalIndexPosition(
   position: FractionalIndexPosition,
 ): boolean {
   return (
-    position.key.length > 0 &&
+    isValidFractionalIndexKey(position.key) &&
     isCanonicalUuidV4(position.run) &&
     Number.isSafeInteger(position.member) &&
     position.member >= 1
   );
+}
+
+function isValidFractionalIndexKey(key: string): boolean {
+  if (key.length === 0) {
+    return false;
+  }
+  try {
+    generateKeyBetween(key, null);
+    return true;
+  } catch {
+    try {
+      generateKeyBetween(null, key);
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }
 
 function isFractionalIndexPositionRecord(

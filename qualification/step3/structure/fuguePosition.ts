@@ -7,6 +7,8 @@ import type {
 } from "../../../src/carrier/position.js";
 import type { QualificationPositionAllocator } from "./carrier.js";
 
+const UINT64_MASK = (1n << 64n) - 1n;
+
 /** Opaque Fugue structural position used by Step 3 qualification. */
 export type FugueStructuralPosition = FuguePosition;
 
@@ -104,29 +106,52 @@ export const fuguePositionAllocator: QualificationPositionAllocator<
   },
 };
 
+/*
+ * Preserve all UUID bits in deterministic qualification state. Reducing the run
+ * identity to a 32-bit seed would create artificial aliases that Fugue's normal
+ * random source does not impose.
+ */
 function deterministicRandomBytes(
   seed: string,
 ): (length: number) => Uint8Array {
-  let state = seedHash(seed);
+  let [state0, state1] = uuidSeedWords(seed);
   return (length) => {
     const result = new Uint8Array(length);
-    for (let index = 0; index < result.length; index += 1) {
-      state ^= state << 13;
-      state ^= state >>> 17;
-      state ^= state << 5;
-      result[index] = state & 0xff;
+    let offset = 0;
+    while (offset < result.length) {
+      let left = state0;
+      const right = state1;
+      state0 = right;
+      left ^= (left << 23n) & UINT64_MASK;
+      left ^= left >> 17n;
+      left ^= right;
+      left ^= right >> 26n;
+      state1 = left & UINT64_MASK;
+
+      let word = (state1 + right) & UINT64_MASK;
+      for (let index = 0; index < 8 && offset < result.length; index += 1) {
+        result[offset] = Number(word & 0xffn);
+        word >>= 8n;
+        offset += 1;
+      }
     }
     return result;
   };
 }
 
-function seedHash(seed: string): number {
-  let hash = 2_166_136_261;
-  for (let index = 0; index < seed.length; index += 1) {
-    hash ^= seed.charCodeAt(index);
-    hash = Math.imul(hash, 16_777_619) >>> 0;
+function uuidSeedWords(seed: string): readonly [bigint, bigint] {
+  const hex = seed.replaceAll("-", "");
+  let first = 0n;
+  let second = 0n;
+  for (let index = 0; index < 16; index += 1) {
+    const byte = BigInt(Number.parseInt(hex.slice(index * 2, index * 2 + 2), 16));
+    if (index < 8) {
+      first = (first << 8n) | byte;
+    } else {
+      second = (second << 8n) | byte;
+    }
   }
-  return hash === 0 ? 0x9e3779b9 : hash;
+  return [first, second];
 }
 
 function compareRawStrings(

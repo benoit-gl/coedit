@@ -101,7 +101,7 @@ export function projectStructuralSnapshot<Position>(
         left.placement.position,
         right.placement.position,
       );
-      return order === 0 ? left.blockId.localeCompare(right.blockId) : order;
+      return order === 0 ? compareRawStrings(left.blockId, right.blockId) : order;
     });
 
   const projected: ProjectedStructuralBlock[] = [
@@ -127,6 +127,10 @@ export function projectStructuralSnapshot<Position>(
     stack.push({ blockId: entry.blockId, depth: entry.placement.depth });
   }
   return projected;
+}
+
+function compareRawStrings(left: string, right: string): number {
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {

@@ -53,11 +53,16 @@ for (const candidate of candidates) {
       const middle = allocate(candidate, undefined, undefined, 1, runA);
       expect(middle.ok).toBe(true);
       if (!middle.ok) return;
+      expect(middle.value).toHaveLength(1);
 
       const before = allocate(candidate, undefined, middle.value[0], 2, runB);
       const after = allocate(candidate, middle.value[0], undefined, 2, runC);
       expect(before.ok && after.ok).toBe(true);
       if (!before.ok || !after.ok) return;
+      expect(before.value).toHaveLength(2);
+      expect(after.value).toHaveLength(2);
+      expectOrdered(candidate.allocator, before.value);
+      expectOrdered(candidate.allocator, after.value);
 
       expect(
         candidate.allocator.compare(before.value.at(-1), middle.value[0]),
@@ -75,7 +80,14 @@ for (const candidate of candidates) {
       );
       expect(between.ok).toBe(true);
       if (!between.ok) return;
+      expect(between.value).toHaveLength(3);
       expectOrdered(candidate.allocator, between.value);
+      expect(
+        candidate.allocator.compare(before.value.at(-1), between.value[0]),
+      ).toBeLessThan(0);
+      expect(
+        candidate.allocator.compare(between.value.at(-1), middle.value[0]),
+      ).toBeLessThan(0);
     });
 
     it("round trips candidate-private positions through the production codec", () => {
@@ -178,6 +190,32 @@ for (const candidate of candidates) {
     });
   });
 }
+
+describe("fractional-indexing position codec", () => {
+  it("rejects malformed candidate keys during decode", () => {
+    expect(() =>
+      fractionalIndexPositionAllocator.decode(
+        JSON.stringify({ key: "!", run: runA, member: 1 }),
+      ),
+    ).toThrow(/invalid/u);
+  });
+});
+
+describe("Fugue qualification entropy", () => {
+  it("keeps distinct UUID run identities distinct after deterministic seeding", () => {
+    const first = fuguePositionAllocator.allocateRun({
+      count: 1,
+      context: { runNonce: "af142b9e-123d-4d56-adf4-feab65a1bf16" },
+    });
+    const second = fuguePositionAllocator.allocateRun({
+      count: 1,
+      context: { runNonce: "ba4a8f39-4f76-4859-a452-b6a5a537d759" },
+    });
+    expect(first.ok && second.ok).toBe(true);
+    if (!first.ok || !second.ok) return;
+    expect(first.value).not.toEqual(second.value);
+  });
+});
 
 function countTransitions(values: readonly string[]): number {
   let transitions = 0;

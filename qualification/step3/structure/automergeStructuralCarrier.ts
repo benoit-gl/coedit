@@ -133,7 +133,9 @@ export class AutomergeStructuralCarrier<
         live: Object.values(entry.liveness).some((value) => value === true),
       });
     }
-    entries.sort((left, right) => left.blockId.localeCompare(right.blockId));
+    entries.sort((left, right) =>
+      left.blockId < right.blockId ? -1 : left.blockId > right.blockId ? 1 : 0,
+    );
     return {
       rootId: parseBlockId(this.document.rootId),
       entries: structuredClone(entries),

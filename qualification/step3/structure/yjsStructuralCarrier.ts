@@ -110,7 +110,9 @@ export class YjsStructuralCarrier<
         live,
       });
     }
-    entries.sort((left, right) => left.blockId.localeCompare(right.blockId));
+    entries.sort((left, right) =>
+      left.blockId < right.blockId ? -1 : left.blockId > right.blockId ? 1 : 0,
+    );
     return {
       rootId: parseBlockId(this.metadata.get(ROOT_ID_NAME)!),
       entries: structuredClone(entries),

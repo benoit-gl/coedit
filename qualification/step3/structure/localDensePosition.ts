@@ -46,9 +46,9 @@ export const localDensePositionAllocator: QualificationPositionAllocator<
     if (pathOrder !== 0) {
       return order(pathOrder);
     }
-    const runOrder = left.run.localeCompare(right.run);
+    const runOrder = compareRawStrings(left.run, right.run);
     if (runOrder !== 0) {
-      return order(runOrder);
+      return runOrder;
     }
     return order(left.member - right.member);
   },
@@ -252,6 +252,13 @@ function compareDigits(
     }
   }
   return left.length - right.length;
+}
+
+function compareRawStrings(
+  left: string,
+  right: string,
+): StructuralPositionOrder {
+  return left < right ? -1 : left > right ? 1 : 0;
 }
 
 function hashNonce(nonce: string, salt: number): number {
