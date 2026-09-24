@@ -298,9 +298,7 @@ function currentPlacement(
   return placement;
 }
 
-function allocationContexts(
-  firstRun: number,
-): {
+function allocationContexts(firstRun: number): {
   readonly normalization: LocalDenseAllocationContext;
   readonly operation: LocalDenseAllocationContext;
 } {

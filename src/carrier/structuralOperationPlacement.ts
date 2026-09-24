@@ -347,10 +347,7 @@ function isValidAllocation<Position, AllocationContext>(
     if (upper !== undefined && allocator.compare(position, upper) >= 0) {
       return false;
     }
-    if (
-      index > 0 &&
-      allocator.compare(positions[index - 1]!, position) >= 0
-    ) {
+    if (index > 0 && allocator.compare(positions[index - 1]!, position) >= 0) {
       return false;
     }
   }
@@ -360,9 +357,6 @@ function isValidAllocation<Position, AllocationContext>(
 function failure(
   kind: StructuralOperationPlacementError["kind"],
   message: string,
-): Extract<
-  StructuralOperationPlacementResult<never>,
-  { readonly ok: false }
-> {
+): Extract<StructuralOperationPlacementResult<never>, { readonly ok: false }> {
   return { ok: false, error: { kind, message } };
 }
