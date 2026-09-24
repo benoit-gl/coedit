@@ -115,8 +115,8 @@ for (const candidate of candidates) {
       for (let index = 0; index < left.value.length; index += 1) {
         if (
           candidate.allocator.comparePrimary(
-            left.value[index]!,
-            right.value[index]!,
+            left.value[index],
+            right.value[index],
           ) === 0
         ) {
           primaryCollisions += 1;
