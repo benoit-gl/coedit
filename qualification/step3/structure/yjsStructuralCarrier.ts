@@ -127,7 +127,7 @@ export class YjsStructuralCarrier<
     );
   }
 
-  /** Merges one complete or incremental encoded Yjs state from the same root. */
+  /** Merges one complete encoded Yjs state from the same root. */
   public mergeEncoded(encoded: Uint8Array): void {
     const currentRoot = parseBlockId(this.metadata.get(ROOT_ID_NAME)!);
     const decoded = decodeYjsStructuralState(encoded);
@@ -282,8 +282,8 @@ export function createYjsStructuralCarrierFactory<Position>(
 }
 
 /*
- * Keep root identity outside the Yjs update so even an incremental update can be
- * rejected before it reaches the local document.
+ * Keep root identity outside the Yjs update so encoded state can be rejected
+ * before it reaches the local document.
  */
 function encodeYjsStructuralState(
   rootId: BlockId,

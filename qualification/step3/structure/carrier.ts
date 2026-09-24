@@ -94,7 +94,7 @@ export interface StructuralCarrier<Position> {
   /** Encodes all replicated structural state. */
   encode(): Uint8Array;
 
-  /** Merges complete or incremental encoded state from another replica. */
+  /** Merges complete encoded state from another replica. */
   mergeEncoded(encoded: Uint8Array): void;
 }
 
