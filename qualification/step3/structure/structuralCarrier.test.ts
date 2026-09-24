@@ -157,19 +157,37 @@ for (const factory of structuralCarrierFactories) {
       );
     });
 
-    it("converges concurrent moves of one Block to one deterministic placement", () => {
+    it("converges concurrent moves to one complete submitted placement", () => {
       const base = createTree(factory);
       const left = factory.load(base.encode());
       const right = factory.load(base.encode());
+      const leftPlacement = position(4, 1);
+      const rightPlacement = position(6, 2);
 
       left.applyChange({
-        placements: [placement(blockA, 4, 1, "a-left-move")],
+        placements: [
+          {
+            blockId: blockA,
+            placement: leftPlacement,
+            liveToken: "a-left-move",
+          },
+        ],
       });
       right.applyChange({
-        placements: [placement(blockA, 6, 2, "a-right-move")],
+        placements: [
+          {
+            blockId: blockA,
+            placement: rightPlacement,
+            liveToken: "a-right-move",
+          },
+        ],
       });
       converge(left, right);
 
+      const convergedPlacement = left
+        .snapshot()
+        .entries.find((entry) => entry.blockId === blockA)?.placement;
+      expect([leftPlacement, rightPlacement]).toContainEqual(convergedPlacement);
       expect(left.snapshot()).toEqual(right.snapshot());
     });
 

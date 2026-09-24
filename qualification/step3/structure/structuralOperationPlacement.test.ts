@@ -187,6 +187,101 @@ for (const factory of factories) {
       if (result.ok) return;
       expect(result.error.kind).toBe("SnapshotMismatch");
     });
+
+    it("surfaces semantic-run allocator failure", () => {
+      const state = createState(factory);
+      const allocator = {
+        ...localDensePositionAllocator,
+        allocateRun: () =>
+          ({
+            ok: false,
+            error: {
+              kind: "InjectedFailure",
+              message: "injected allocation failure",
+            },
+          }) as const,
+      };
+
+      const result = planStructuralOperationPlacements(
+        state.document,
+        projectionSnapshot(state.carrier.snapshot()),
+        createBlock(blockA, rootId, 0),
+        allocator,
+        allocationContexts(1),
+      );
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error).toMatchObject({
+        kind: "AllocationFailed",
+        allocationError: { kind: "InjectedFailure" },
+      });
+    });
+
+    it("rejects malformed successful semantic-run allocation", () => {
+      const state = createState(factory);
+      const allocator = {
+        ...localDensePositionAllocator,
+        allocateRun: () =>
+          ({
+            ok: true,
+            value: [] as readonly LocalDensePosition[],
+          }) as const,
+      };
+
+      const result = planStructuralOperationPlacements(
+        state.document,
+        projectionSnapshot(state.carrier.snapshot()),
+        createBlock(blockA, rootId, 0),
+        allocator,
+        allocationContexts(1),
+      );
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error.kind).toBe("InvalidAllocation");
+    });
+
+    it("surfaces collision-normalization allocator failure", () => {
+      const state = createState(factory);
+      execute(state, createBlock(blockA, rootId, 0));
+      execute(state, createBlock(blockB, rootId, 1));
+      execute(state, createBlock(blockC, rootId, 2));
+
+      const collidedPlacement = currentPlacement(state.carrier, blockB);
+      state.carrier.applyChange({
+        normalizations: [{ blockId: blockC, placement: collidedPlacement }],
+      });
+      const allocator = {
+        ...localDensePositionAllocator,
+        allocateRun: () =>
+          ({
+            ok: false,
+            error: {
+              kind: "InjectedFailure",
+              message: "injected normalization failure",
+            },
+          }) as const,
+      };
+
+      const result = planStructuralOperationPlacements(
+        state.document,
+        projectionSnapshot(state.carrier.snapshot()),
+        createBlock(blockD, rootId, 2),
+        allocator,
+        allocationContexts(99),
+      );
+
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.error).toMatchObject({
+        kind: "NormalizationFailed",
+        normalizationError: {
+          kind: "AllocationFailed",
+          allocationError: { kind: "InjectedFailure" },
+        },
+      });
+    });
   });
 }
 
