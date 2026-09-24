@@ -118,10 +118,9 @@ function deterministicRandomBytes(
   let [state0, state1, state2, state3] = uuidSeedWords(seed);
 
   const nextWord = (): number => {
-    const result = Math.imul(
-      rotateLeft(Math.imul(state1, 5) >>> 0, 7),
-      9,
-    ) >>> 0;
+    const multiplied = Math.imul(state1, 5) >>> 0;
+    const rotated = rotateLeft(multiplied, 7);
+    const result = Math.imul(rotated, 9) >>> 0;
     const shifted = (state1 << 9) >>> 0;
 
     state2 = (state2 ^ state0) >>> 0;
@@ -157,9 +156,12 @@ function uuidSeedWords(
   seed: string,
 ): readonly [number, number, number, number] {
   const hex = seed.replaceAll("-", "");
-  return [0, 1, 2, 3].map((index) =>
-    Number.parseInt(hex.slice(index * 8, index * 8 + 8), 16),
-  ) as [number, number, number, number];
+  return [
+    Number.parseInt(hex.slice(0, 8), 16),
+    Number.parseInt(hex.slice(8, 16), 16),
+    Number.parseInt(hex.slice(16, 24), 16),
+    Number.parseInt(hex.slice(24, 32), 16),
+  ];
 }
 
 function rotateLeft(value: number, shift: number): number {
