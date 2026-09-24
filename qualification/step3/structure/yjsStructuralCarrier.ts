@@ -72,9 +72,7 @@ export class YjsStructuralCarrier<
       for (const blockId of change.deletes ?? []) {
         this.retireObservedTokens(blockId);
       }
-      for (const [index, update] of (
-        change.normalizations ?? []
-      ).entries()) {
+      for (const [index, update] of (change.normalizations ?? []).entries()) {
         const entry = this.requireEntry(update.blockId);
         entry.set(PLACEMENT_KEY, prepared.normalizations[index]!);
       }
