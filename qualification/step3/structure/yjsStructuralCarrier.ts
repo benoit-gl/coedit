@@ -48,7 +48,9 @@ export class YjsStructuralCarrier<
     if (encoded !== undefined) {
       const decoded = decodeYjsStructuralState(encoded);
       if (rootId !== undefined && decoded.rootId !== rootId) {
-        throw new TypeError("Structural replicas must share one root identity.");
+        throw new TypeError(
+          "Structural replicas must share one root identity.",
+        );
       }
       Y.applyUpdate(this.document, decoded.update);
       if (this.metadata.get(ROOT_ID_NAME) !== decoded.rootId) {
@@ -136,7 +138,9 @@ export class YjsStructuralCarrier<
     const staged = new Y.Doc();
     Y.applyUpdate(staged, Y.encodeStateAsUpdate(this.document));
     Y.applyUpdate(staged, decoded.update);
-    if (staged.getMap<string>(ROOT_ID_NAME).get(ROOT_ID_NAME) !== currentRoot) {
+    if (
+      staged.getMap<string>(ROOT_ID_NAME).get(ROOT_ID_NAME) !== currentRoot
+    ) {
       throw new TypeError("Structural carrier root identity is invalid.");
     }
 

@@ -112,7 +112,10 @@ describe("planPositionCollisionNormalization", () => {
       1,
       { runNonce: normalizeRun },
     );
-    expect(result).toMatchObject({ ok: false, error: { kind: "InvalidIndex" } });
+    expect(result).toMatchObject({
+      ok: false,
+      error: { kind: "InvalidIndex" },
+    });
   });
 
   it("rejects unsorted normalization input", () => {
@@ -125,7 +128,10 @@ describe("planPositionCollisionNormalization", () => {
       1,
       { runNonce: normalizeRun },
     );
-    expect(result).toMatchObject({ ok: false, error: { kind: "InvalidOrder" } });
+    expect(result).toMatchObject({
+      ok: false,
+      error: { kind: "InvalidOrder" },
+    });
   });
 
   it("surfaces allocator failure without changing the requested collision run", () => {

@@ -12,8 +12,10 @@ import {
 } from "../../../src/carrier/structuralCarrier.js";
 
 /** Qualification-only allocator surface with an evidence label. */
-export interface QualificationPositionAllocator<Position, AllocationContext>
-  extends StructuralPositionAllocator<Position, AllocationContext> {
+export interface QualificationPositionAllocator<
+  Position,
+  AllocationContext,
+> extends StructuralPositionAllocator<Position, AllocationContext> {
   /** Candidate name used in qualification evidence. */
   readonly candidate: string;
 }

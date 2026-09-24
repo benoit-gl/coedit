@@ -94,8 +94,7 @@ export function projectStructuralSnapshot<Position>(
         entry,
       ): entry is StructuralProjectionEntry<Position> & {
         readonly placement: StructuralPlacement<Position>;
-      } =>
-        entry.blockId !== snapshot.rootId && entry.placement !== undefined,
+      } => entry.blockId !== snapshot.rootId && entry.placement !== undefined,
     )
     .sort((left, right) => {
       const order = ordering.compare(
