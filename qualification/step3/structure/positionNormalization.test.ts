@@ -150,6 +150,55 @@ describe("planPositionCollisionNormalization", () => {
     });
   });
 
+  it("rejects malformed successful allocator output", () => {
+    const lower = { digits: [100, 100], run: runA, member: 1 } as const;
+    const collided = { digits: [100, 100], run: runB, member: 1 } as const;
+    const upper = { digits: [200, 100], run: runC, member: 1 } as const;
+
+    for (const value of [
+      [] as readonly LocalDensePosition[],
+      [upper] as readonly LocalDensePosition[],
+    ]) {
+      const allocator = {
+        ...localDensePositionAllocator,
+        allocateRun: () => ({ ok: true, value }) as const,
+      };
+      const result = planPositionCollisionNormalization(
+        allocator,
+        [lower, collided, upper],
+        1,
+        { runNonce: normalizeRun },
+      );
+      expect(result).toMatchObject({
+        ok: false,
+        error: { kind: "InvalidAllocation" },
+      });
+    }
+
+    const valid = allocate(lower, upper, 2, normalizeRun);
+    expect(valid.ok).toBe(true);
+    if (!valid.ok) return;
+    const unorderedAllocator = {
+      ...localDensePositionAllocator,
+      allocateRun: () =>
+        ({
+          ok: true,
+          value: [valid.value[1]!, valid.value[0]!],
+        }) as const,
+    };
+    const third = { ...collided, run: runC };
+    const unordered = planPositionCollisionNormalization(
+      unorderedAllocator,
+      [lower, collided, third, upper],
+      1,
+      { runNonce: normalizeRun },
+    );
+    expect(unordered).toMatchObject({
+      ok: false,
+      error: { kind: "InvalidAllocation" },
+    });
+  });
+
   it("surfaces allocator failure without changing the requested collision run", () => {
     const lower = { digits: [100, 100], run: runA, member: 1 } as const;
     const collided = { digits: [100, 100], run: runB, member: 1 } as const;

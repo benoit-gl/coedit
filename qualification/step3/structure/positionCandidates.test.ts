@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { planPositionCollisionNormalization } from "../../../src/carrier/positionNormalization.js";
+import { parseBlockId } from "../../../src/domain/index.js";
+import { createAutomergeStructuralCarrierFactory } from "./automergeStructuralCarrier.js";
 import {
   fractionalIndexPositionAllocator,
   type FractionalIndexAllocationContext,
@@ -12,11 +15,22 @@ import {
   localDensePositionAllocator,
   type LocalDenseAllocationContext,
 } from "./localDensePosition.js";
-import type { QualificationPositionAllocator } from "./carrier.js";
+import {
+  projectStructuralSnapshot,
+  type QualificationPositionAllocator,
+} from "./carrier.js";
+import { createYjsStructuralCarrierFactory } from "./yjsStructuralCarrier.js";
 
 const runA = "61000000-0000-4000-8000-000000000001";
 const runB = "61000000-0000-4000-8000-000000000002";
 const runC = "61000000-0000-4000-8000-000000000003";
+const rootId = parseBlockId("61000000-0000-4000-8000-000000000010");
+const anchorLeftId = parseBlockId("61000000-0000-4000-8000-000000000011");
+const anchorRightId = parseBlockId("61000000-0000-4000-8000-000000000012");
+const leftOneId = parseBlockId("61000000-0000-4000-8000-000000000013");
+const leftTwoId = parseBlockId("61000000-0000-4000-8000-000000000014");
+const rightOneId = parseBlockId("61000000-0000-4000-8000-000000000015");
+const rightTwoId = parseBlockId("61000000-0000-4000-8000-000000000016");
 
 interface Candidate<Position, Context> {
   readonly allocator: QualificationPositionAllocator<Position, Context>;
@@ -188,6 +202,148 @@ for (const candidate of candidates) {
         encoded.add(value);
       }
     });
+
+    it("normalizes an exact primary collision and supports continued insertion", () => {
+      const outer = allocate(candidate, undefined, undefined, 2, runA);
+      expect(outer.ok).toBe(true);
+      if (!outer.ok) return;
+      const lower = outer.value[0];
+      const collided = candidate.allocator.decode(
+        candidate.allocator.encode(lower),
+      );
+      const upper = outer.value[1];
+
+      const normalization = planPositionCollisionNormalization(
+        candidate.allocator,
+        [lower, collided, upper],
+        1,
+        candidate.context(runB),
+      );
+      expect(normalization.ok).toBe(true);
+      if (!normalization.ok) return;
+
+      const insertion = candidate.allocator.allocateRun({
+        lower: normalization.value.insertionLower,
+        upper: normalization.value.insertionUpper,
+        count: 1,
+        context: candidate.context(runC),
+      });
+      expect(insertion.ok).toBe(true);
+      if (!insertion.ok) return;
+      expect(
+        candidate.allocator.compare(
+          normalization.value.insertionLower,
+          insertion.value[0],
+        ),
+      ).toBeLessThan(0);
+      expect(
+        candidate.allocator.compare(
+          insertion.value[0],
+          normalization.value.insertionUpper,
+        ),
+      ).toBeLessThan(0);
+    });
+
+    for (const factory of [
+      createYjsStructuralCarrierFactory(candidate.allocator),
+      createAutomergeStructuralCarrierFactory(candidate.allocator),
+    ]) {
+      it(`converges ${factory.candidate} carrier state after partitioned same-destination allocation`, () => {
+        const anchors = allocate(candidate, undefined, undefined, 2, runA);
+        expect(anchors.ok).toBe(true);
+        if (!anchors.ok) return;
+        const leftRun = allocate(
+          candidate,
+          anchors.value[0],
+          anchors.value[1],
+          2,
+          runB,
+        );
+        const rightRun = allocate(
+          candidate,
+          anchors.value[0],
+          anchors.value[1],
+          2,
+          runC,
+        );
+        expect(leftRun.ok && rightRun.ok).toBe(true);
+        if (!leftRun.ok || !rightRun.ok) return;
+
+        const base = factory.create(rootId);
+        base.applyChange({
+          placements: [
+            {
+              blockId: anchorLeftId,
+              placement: { position: anchors.value[0], depth: 1 },
+              liveToken: "anchor-left",
+            },
+            {
+              blockId: anchorRightId,
+              placement: { position: anchors.value[1], depth: 1 },
+              liveToken: "anchor-right",
+            },
+          ],
+        });
+        const baseState = base.encode();
+        const left = factory.load(baseState);
+        const right = factory.load(baseState);
+        left.applyChange({
+          placements: [
+            {
+              blockId: leftOneId,
+              placement: { position: leftRun.value[0], depth: 1 },
+              liveToken: "left-one",
+            },
+            {
+              blockId: leftTwoId,
+              placement: { position: leftRun.value[1], depth: 1 },
+              liveToken: "left-two",
+            },
+          ],
+        });
+        right.applyChange({
+          placements: [
+            {
+              blockId: rightOneId,
+              placement: { position: rightRun.value[0], depth: 1 },
+              liveToken: "right-one",
+            },
+            {
+              blockId: rightTwoId,
+              placement: { position: rightRun.value[1], depth: 1 },
+              liveToken: "right-two",
+            },
+          ],
+        });
+
+        const leftState = left.encode();
+        const rightState = right.encode();
+        const forward = factory.load(baseState);
+        forward.mergeEncoded(leftState);
+        forward.mergeEncoded(rightState);
+        forward.mergeEncoded(leftState);
+        const reverse = factory.load(baseState);
+        reverse.mergeEncoded(rightState);
+        reverse.mergeEncoded(leftState);
+        reverse.mergeEncoded(rightState);
+
+        expect(forward.snapshot()).toEqual(reverse.snapshot());
+        expect(factory.load(forward.encode()).snapshot()).toEqual(
+          forward.snapshot(),
+        );
+        expect(
+          projectStructuralSnapshot(
+            forward.snapshot(),
+            candidate.allocator,
+          ).map((entry) => entry.blockId),
+        ).toEqual(
+          projectStructuralSnapshot(
+            reverse.snapshot(),
+            candidate.allocator,
+          ).map((entry) => entry.blockId),
+        );
+      });
+    }
   });
 }
 

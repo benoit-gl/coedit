@@ -25,7 +25,7 @@ export interface PositionNormalizationPlan<Position> {
 export interface PositionNormalizationError {
   /** Stable machine-readable failure kind. */
   readonly kind:
-    "InvalidOrder" | "InvalidIndex" | "NoCollision" | "AllocationFailed";
+    "InvalidOrder" | "InvalidIndex" | "NoCollision" | "AllocationFailed" | "InvalidAllocation";
   /** Human-readable failure detail. */
   readonly message: string;
   /** Underlying allocator error when allocation failed. */
@@ -119,6 +119,20 @@ export function planPositionCollisionNormalization<Position, AllocationContext>(
       },
     };
   }
+  if (
+    !isValidAllocation(
+      allocator,
+      allocation.value,
+      lower,
+      upper,
+      movedCount,
+    )
+  ) {
+    return failure(
+      "InvalidAllocation",
+      "Structural position allocator returned an invalid ordered open-interval normalization run.",
+    );
+  }
 
   const updates = allocation.value.map((position, offset) => ({
     index: insertionIndex + offset,
@@ -132,6 +146,31 @@ export function planPositionCollisionNormalization<Position, AllocationContext>(
       insertionUpper: allocation.value[0]!,
     },
   };
+}
+
+function isValidAllocation<Position, AllocationContext>(
+  allocator: StructuralPositionAllocator<Position, AllocationContext>,
+  positions: readonly Position[],
+  lower: Position,
+  upper: Position | undefined,
+  expectedCount: number,
+): boolean {
+  if (positions.length !== expectedCount) {
+    return false;
+  }
+  for (let index = 0; index < positions.length; index += 1) {
+    const position = positions[index]!;
+    if (allocator.compare(lower, position) >= 0) {
+      return false;
+    }
+    if (upper !== undefined && allocator.compare(position, upper) >= 0) {
+      return false;
+    }
+    if (index > 0 && allocator.compare(positions[index - 1]!, position) >= 0) {
+      return false;
+    }
+  }
+  return true;
 }
 
 function failure(

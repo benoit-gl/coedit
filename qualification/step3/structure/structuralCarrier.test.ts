@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { parseBlockId } from "../../../src/domain/ids.js";
-import type { BlockId } from "../../../src/domain/ids.js";
+import { parseBlockId } from "../../../src/domain/index.js";
+import type { BlockId } from "../../../src/domain/index.js";
 import { createAutomergeStructuralCarrierFactory } from "./automergeStructuralCarrier.js";
 import type { LocalDensePosition } from "./localDensePosition.js";
 import { localDensePositionAllocator } from "./localDensePosition.js";
@@ -49,6 +49,21 @@ for (const factory of structuralCarrierFactories) {
         { blockId: blockC, parentId: rootId, depth: 1 },
       ]);
       expect(() => carrier.applyChange({ deletes: [rootId] })).toThrow(/root/u);
+    });
+
+    it("rejects a live non-root Block without a placement instead of hiding it", () => {
+      expect(() =>
+        projectStructuralSnapshot(
+          {
+            rootId,
+            entries: [
+              { blockId: rootId, payload: {}, live: true },
+              { blockId: blockA, payload: {}, live: true },
+            ],
+          },
+          localDensePositionAllocator,
+        ),
+      ).toThrow(/requires a placement/u);
     });
 
     it("rejects depth zero for every non-root placement", () => {

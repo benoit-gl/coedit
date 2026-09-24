@@ -1,6 +1,6 @@
 import { Fugue, isFuguePosition, type FuguePosition } from "fugue";
 
-import { isCanonicalUuidV4 } from "../../../src/domain/ids.js";
+import { isCanonicalUuidV4 } from "../../../src/domain/index.js";
 import type {
   StructuralPositionAllocationResult,
   StructuralPositionOrder,

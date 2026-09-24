@@ -1,4 +1,4 @@
-import type { BlockId } from "../../../src/domain/ids.js";
+import type { BlockId } from "../../../src/domain/index.js";
 import type {
   StructuralPositionAllocator,
   StructuralPositionOrdering,
@@ -125,12 +125,7 @@ export function projectStructuralSnapshot<Position>(
     {
       rootId: snapshot.rootId,
       entries: snapshot.entries
-        .filter(
-          (entry) =>
-            entry.live &&
-            (entry.blockId === snapshot.rootId ||
-              entry.placement !== undefined),
-        )
+        .filter((entry) => entry.live)
         .map((entry) => ({
           blockId: entry.blockId,
           ...(entry.placement === undefined

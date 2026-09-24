@@ -1,4 +1,4 @@
-import type { BlockId } from "../domain/ids.js";
+import type { BlockId } from "../domain/index.js";
 import type {
   StructuralPositionCodec,
   StructuralPositionOrdering,
@@ -86,6 +86,15 @@ export function projectStructuralSnapshot<Position>(
   );
   if (root === undefined) {
     throw new TypeError("Structural projection requires the root entry.");
+  }
+  const unplaced = snapshot.entries.find(
+    (entry) =>
+      entry.blockId !== snapshot.rootId && entry.placement === undefined,
+  );
+  if (unplaced !== undefined) {
+    throw new TypeError(
+      "Every live non-root structural entry requires a placement.",
+    );
   }
 
   const live = snapshot.entries

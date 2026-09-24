@@ -1,8 +1,8 @@
 import * as Automerge from "@automerge/automerge";
 
-import type { BlockId } from "../../../src/domain/ids.js";
+import type { BlockId } from "../../../src/domain/index.js";
 import type { StructuralPositionCodec } from "../../../src/carrier/position.js";
-import { parseBlockId } from "../../../src/domain/ids.js";
+import { parseBlockId } from "../../../src/domain/index.js";
 import type {
   StructuralCarrier,
   StructuralCarrierChange,

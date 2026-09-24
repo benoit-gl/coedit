@@ -1,4 +1,4 @@
-import { isCanonicalUuidV4 } from "../../../src/domain/ids.js";
+import { isCanonicalUuidV4 } from "../../../src/domain/index.js";
 import type {
   StructuralPositionAllocationRequest,
   StructuralPositionAllocationResult,
