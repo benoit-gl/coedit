@@ -104,4 +104,55 @@ describe("planPositionCollisionNormalization", () => {
     );
     expect(result).toMatchObject({ ok: false, error: { kind: "NoCollision" } });
   });
+
+  it("rejects an out-of-range insertion boundary", () => {
+    const result = planPositionCollisionNormalization(
+      localDensePositionAllocator,
+      [{ digits: [100, 100], run: runA, member: 1 }],
+      1,
+      { runNonce: normalizeRun },
+    );
+    expect(result).toMatchObject({ ok: false, error: { kind: "InvalidIndex" } });
+  });
+
+  it("rejects unsorted normalization input", () => {
+    const result = planPositionCollisionNormalization(
+      localDensePositionAllocator,
+      [
+        { digits: [200, 100], run: runB, member: 1 },
+        { digits: [100, 100], run: runA, member: 1 },
+      ],
+      1,
+      { runNonce: normalizeRun },
+    );
+    expect(result).toMatchObject({ ok: false, error: { kind: "InvalidOrder" } });
+  });
+
+  it("surfaces allocator failure without changing the requested collision run", () => {
+    const lower = { digits: [100, 100], run: runA, member: 1 } as const;
+    const collided = { digits: [100, 100], run: runB, member: 1 } as const;
+    const upper = { digits: [200, 100], run: runC, member: 1 } as const;
+    const allocator = {
+      ...localDensePositionAllocator,
+      allocateRun: () =>
+        ({
+          ok: false,
+          error: { kind: "InjectedFailure", message: "injected failure" },
+        }) as const,
+    };
+
+    const result = planPositionCollisionNormalization(
+      allocator,
+      [lower, collided, upper],
+      1,
+      { runNonce: normalizeRun },
+    );
+    expect(result).toMatchObject({
+      ok: false,
+      error: {
+        kind: "AllocationFailed",
+        allocationError: { kind: "InjectedFailure" },
+      },
+    });
+  });
 });

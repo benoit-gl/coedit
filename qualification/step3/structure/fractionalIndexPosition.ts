@@ -3,9 +3,9 @@ import { generateNKeysBetween } from "fractional-indexing";
 import { isCanonicalUuidV4 } from "../../../src/domain/ids.js";
 import type {
   StructuralPositionAllocationResult,
-  StructuralPositionAllocator,
   StructuralPositionOrder,
 } from "../../../src/carrier/position.js";
+import type { QualificationPositionAllocator } from "./carrier.js";
 
 /** Opaque structural position produced by fractional-indexing v4. */
 export interface FractionalIndexPosition {
@@ -32,7 +32,7 @@ export type FractionalIndexPositionErrorKind =
   | "CandidateFailure";
 
 /** Established fractional-indexing candidate behind the production allocator boundary. */
-export const fractionalIndexPositionAllocator: StructuralPositionAllocator<
+export const fractionalIndexPositionAllocator: QualificationPositionAllocator<
   FractionalIndexPosition,
   FractionalIndexAllocationContext
 > = {

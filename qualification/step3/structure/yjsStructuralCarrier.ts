@@ -9,7 +9,7 @@ import type {
   StructuralCarrierEntrySnapshot,
   StructuralCarrierFactory,
   StructuralCarrierSnapshot,
-} from "../../../src/carrier/structuralCarrier.js";
+} from "./carrier.js";
 import {
   decodeStructuralPlacement,
   encodeStructuralPlacement,
@@ -21,6 +21,8 @@ const PLACEMENT_KEY = "placement";
 const PAYLOAD_KEY = "payload";
 const LIVENESS_KEY = "liveness";
 const ROOT_TOKEN = "__root__";
+const ROOT_ID_BYTE_LENGTH = 36;
+const ENVELOPE_SEPARATOR = 0;
 
 /** Yjs v13 candidate for the accepted flat structural carrier contract. */
 export class YjsStructuralCarrier<
@@ -44,7 +46,14 @@ export class YjsStructuralCarrier<
     this.metadata = this.document.getMap<string>(ROOT_ID_NAME);
     this.blocks = this.document.getMap<Y.Map<unknown>>(BLOCKS_NAME);
     if (encoded !== undefined) {
-      Y.applyUpdate(this.document, encoded);
+      const decoded = decodeYjsStructuralState(encoded);
+      if (rootId !== undefined && decoded.rootId !== rootId) {
+        throw new TypeError("Structural replicas must share one root identity.");
+      }
+      Y.applyUpdate(this.document, decoded.update);
+      if (this.metadata.get(ROOT_ID_NAME) !== decoded.rootId) {
+        throw new TypeError("Structural carrier root identity is invalid.");
+      }
     }
     if (rootId !== undefined) {
       this.initializeRoot(rootId);
@@ -56,25 +65,20 @@ export class YjsStructuralCarrier<
 
   /** Applies one all-or-none structural carrier transaction. */
   public applyChange(change: StructuralCarrierChange<Position>): void {
+    const prepared = this.prepareChange(change);
     this.document.transact(() => {
       for (const blockId of change.deletes ?? []) {
         this.retireObservedTokens(blockId);
       }
-      for (const update of change.normalizations ?? []) {
-        this.assertNonRoot(update.blockId);
+      for (const [index, update] of (
+        change.normalizations ?? []
+      ).entries()) {
         const entry = this.requireEntry(update.blockId);
-        entry.set(
-          PLACEMENT_KEY,
-          encodeStructuralPlacement(update.placement, this.positionCodec),
-        );
+        entry.set(PLACEMENT_KEY, prepared.normalizations[index]!);
       }
-      for (const update of change.placements ?? []) {
-        this.assertNonRoot(update.blockId);
+      for (const [index, update] of (change.placements ?? []).entries()) {
         const entry = this.requireOrCreateEntry(update.blockId);
-        entry.set(
-          PLACEMENT_KEY,
-          encodeStructuralPlacement(update.placement, this.positionCodec),
-        );
+        entry.set(PLACEMENT_KEY, prepared.placements[index]!);
         this.liveness(entry).set(update.liveToken, true);
       }
       for (const update of change.payloads ?? []) {
@@ -113,14 +117,84 @@ export class YjsStructuralCarrier<
     };
   }
 
-  /** Encodes complete Yjs structural state. */
+  /** Encodes complete Yjs structural state with its immutable root identity. */
   public encode(): Uint8Array {
-    return Y.encodeStateAsUpdate(this.document);
+    return encodeYjsStructuralState(
+      parseBlockId(this.metadata.get(ROOT_ID_NAME)!),
+      Y.encodeStateAsUpdate(this.document),
+    );
   }
 
-  /** Merges one complete or incremental Yjs update. */
+  /** Merges one complete or incremental encoded Yjs state from the same root. */
   public mergeEncoded(encoded: Uint8Array): void {
-    Y.applyUpdate(this.document, encoded);
+    const currentRoot = parseBlockId(this.metadata.get(ROOT_ID_NAME)!);
+    const decoded = decodeYjsStructuralState(encoded);
+    if (decoded.rootId !== currentRoot) {
+      throw new TypeError("Structural replicas must share one root identity.");
+    }
+
+    const staged = new Y.Doc();
+    Y.applyUpdate(staged, Y.encodeStateAsUpdate(this.document));
+    Y.applyUpdate(staged, decoded.update);
+    if (staged.getMap<string>(ROOT_ID_NAME).get(ROOT_ID_NAME) !== currentRoot) {
+      throw new TypeError("Structural carrier root identity is invalid.");
+    }
+
+    Y.applyUpdate(this.document, decoded.update);
+  }
+
+  /**
+   * Validates one complete change before the non-rollback Yjs transaction begins.
+   *
+   * @remarks
+   * Every expected validation and position-codec failure is resolved before
+   * mutation so a later operation cannot expose a partially applied change.
+   */
+  private prepareChange(change: StructuralCarrierChange<Position>): {
+    readonly normalizations: readonly string[];
+    readonly placements: readonly string[];
+  } {
+    for (const blockId of change.deletes ?? []) {
+      this.assertNonRoot(blockId);
+      this.liveness(this.requireEntry(blockId));
+    }
+
+    const normalizations = (change.normalizations ?? []).map((update) => {
+      this.assertNonRoot(update.blockId);
+      this.requireEntry(update.blockId);
+      return encodeStructuralPlacement(update.placement, this.positionCodec);
+    });
+
+    const created = new Set<BlockId>();
+    const placements = (change.placements ?? []).map((update) => {
+      this.assertNonRoot(update.blockId);
+      const existing = this.blocks.get(update.blockId);
+      if (existing !== undefined) {
+        this.liveness(existing);
+      }
+      const encodedPlacement = encodeStructuralPlacement(
+        update.placement,
+        this.positionCodec,
+      );
+      created.add(update.blockId);
+      return encodedPlacement;
+    });
+
+    for (const update of change.payloads ?? []) {
+      const existing = this.blocks.get(update.blockId);
+      if (existing === undefined) {
+        if (!created.has(update.blockId)) {
+          throw new TypeError(
+            "Structural update requires an existing Block namespace.",
+          );
+        }
+        continue;
+      }
+      this.payload(existing);
+      this.liveness(existing);
+    }
+
+    return { normalizations, placements };
   }
 
   private initializeRoot(rootId: BlockId): void {
@@ -202,5 +276,42 @@ export function createYjsStructuralCarrierFactory<Position>(
     create: (rootId) => new YjsStructuralCarrier(positionCodec, rootId),
     load: (encoded) =>
       new YjsStructuralCarrier(positionCodec, undefined, encoded),
+  };
+}
+
+/*
+ * Keep root identity outside the Yjs update so even an incremental update can be
+ * rejected before it reaches the local document.
+ */
+function encodeYjsStructuralState(
+  rootId: BlockId,
+  update: Uint8Array,
+): Uint8Array {
+  const encoded = new Uint8Array(ROOT_ID_BYTE_LENGTH + 1 + update.length);
+  for (let index = 0; index < ROOT_ID_BYTE_LENGTH; index += 1) {
+    encoded[index] = rootId.charCodeAt(index);
+  }
+  encoded[ROOT_ID_BYTE_LENGTH] = ENVELOPE_SEPARATOR;
+  encoded.set(update, ROOT_ID_BYTE_LENGTH + 1);
+  return encoded;
+}
+
+function decodeYjsStructuralState(encoded: Uint8Array): {
+  readonly rootId: BlockId;
+  readonly update: Uint8Array;
+} {
+  if (
+    encoded.length < ROOT_ID_BYTE_LENGTH + 1 ||
+    encoded[ROOT_ID_BYTE_LENGTH] !== ENVELOPE_SEPARATOR
+  ) {
+    throw new TypeError("Yjs structural state envelope is invalid.");
+  }
+  let rawRootId = "";
+  for (let index = 0; index < ROOT_ID_BYTE_LENGTH; index += 1) {
+    rawRootId += String.fromCharCode(encoded[index]!);
+  }
+  return {
+    rootId: parseBlockId(rawRootId),
+    update: encoded.subarray(ROOT_ID_BYTE_LENGTH + 1),
   };
 }

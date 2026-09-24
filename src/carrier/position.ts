@@ -62,9 +62,6 @@ export interface StructuralPositionAllocator<Position, AllocationContext>
   extends
     StructuralPositionCodec<Position>,
     StructuralPositionOrdering<Position> {
-  /** Candidate name used in qualification evidence. */
-  readonly candidate: string;
-
   /** Allocates one fresh ordered run strictly inside the requested open interval. */
   allocateRun(
     request: StructuralPositionAllocationRequest<Position, AllocationContext>,

@@ -3,9 +3,9 @@ import { Fugue, isFuguePosition, type FuguePosition } from "fugue";
 import { isCanonicalUuidV4 } from "../../../src/domain/ids.js";
 import type {
   StructuralPositionAllocationResult,
-  StructuralPositionAllocator,
   StructuralPositionOrder,
 } from "../../../src/carrier/position.js";
+import type { QualificationPositionAllocator } from "./carrier.js";
 
 /** Opaque Fugue structural position used by Step 3 qualification. */
 export type FugueStructuralPosition = FuguePosition;
@@ -25,7 +25,7 @@ export type FuguePositionErrorKind =
   | "CandidateFailure";
 
 /** Established Fugue candidate behind the production allocator boundary. */
-export const fuguePositionAllocator: StructuralPositionAllocator<
+export const fuguePositionAllocator: QualificationPositionAllocator<
   FugueStructuralPosition,
   FugueAllocationContext
 > = {

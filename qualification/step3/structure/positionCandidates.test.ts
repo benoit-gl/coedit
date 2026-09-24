@@ -8,15 +8,21 @@ import {
   fuguePositionAllocator,
   type FugueAllocationContext,
 } from "./fuguePosition.js";
-import type { StructuralPositionAllocator } from "../../../src/carrier/position.js";
+import {
+  localDensePositionAllocator,
+  type LocalDenseAllocationContext,
+} from "./localDensePosition.js";
+import type { QualificationPositionAllocator } from "./carrier.js";
 
 const runA = "61000000-0000-4000-8000-000000000001";
 const runB = "61000000-0000-4000-8000-000000000002";
 const runC = "61000000-0000-4000-8000-000000000003";
 
 interface Candidate<Position, Context> {
-  readonly allocator: StructuralPositionAllocator<Position, Context>;
+  readonly allocator: QualificationPositionAllocator<Position, Context>;
   readonly context: (runNonce: string) => Context;
+  readonly sameDestinationPrimaryCollisions: number;
+  readonly sameDestinationTransitions: number;
 }
 
 const candidates: readonly Candidate<unknown, unknown>[] = [
@@ -24,10 +30,20 @@ const candidates: readonly Candidate<unknown, unknown>[] = [
     allocator: fractionalIndexPositionAllocator,
     context: (runNonce) =>
       ({ runNonce }) satisfies FractionalIndexAllocationContext,
+    sameDestinationPrimaryCollisions: 4,
+    sameDestinationTransitions: 7,
   },
   {
     allocator: fuguePositionAllocator,
     context: (runNonce) => ({ runNonce }) satisfies FugueAllocationContext,
+    sameDestinationPrimaryCollisions: 0,
+    sameDestinationTransitions: 1,
+  },
+  {
+    allocator: localDensePositionAllocator,
+    context: (runNonce) => ({ runNonce }) satisfies LocalDenseAllocationContext,
+    sameDestinationPrimaryCollisions: 0,
+    sameDestinationTransitions: 1,
   },
 ];
 
@@ -89,6 +105,44 @@ for (const candidate of candidates) {
       expect(secondOrder).toEqual(firstOrder);
     });
 
+    it("records concurrent same-destination collision and interleaving behavior", () => {
+      const left = allocate(candidate, undefined, undefined, 4, runA);
+      const right = allocate(candidate, undefined, undefined, 4, runB);
+      expect(left.ok && right.ok).toBe(true);
+      if (!left.ok || !right.ok) return;
+
+      let primaryCollisions = 0;
+      for (let index = 0; index < left.value.length; index += 1) {
+        if (
+          candidate.allocator.comparePrimary(
+            left.value[index]!,
+            right.value[index]!,
+          ) === 0
+        ) {
+          primaryCollisions += 1;
+        }
+      }
+      expect(primaryCollisions).toBe(
+        candidate.sameDestinationPrimaryCollisions,
+      );
+
+      const labels = [
+        ...left.value.map((position) => ({
+          position,
+          label: "left" as const,
+        })),
+        ...right.value.map((position) => ({
+          position,
+          label: "right" as const,
+        })),
+      ]
+        .sort((a, b) => candidate.allocator.compare(a.position, b.position))
+        .map(({ label }) => label);
+      expect(countTransitions(labels)).toBe(
+        candidate.sameDestinationTransitions,
+      );
+    });
+
     it("survives repeated narrow-gap allocation without a semantic maximum", () => {
       const outer = allocate(candidate, undefined, undefined, 2, runA);
       expect(outer.ok).toBe(true);
@@ -107,7 +161,32 @@ for (const candidate of candidates) {
       }
       expect(candidate.allocator.compare(lower, upper)).toBeLessThan(0);
     });
+
+    it("allocates fresh positions for repeated moves to the same destination", () => {
+      const encoded = new Set<string>();
+      for (let index = 0; index < 32; index += 1) {
+        const nonce = `63000000-0000-4000-8000-${index
+          .toString(16)
+          .padStart(12, "0")}`;
+        const next = allocate(candidate, undefined, undefined, 1, nonce);
+        expect(next.ok).toBe(true);
+        if (!next.ok) return;
+        const value = candidate.allocator.encode(next.value[0]);
+        expect(encoded.has(value)).toBe(false);
+        encoded.add(value);
+      }
+    });
   });
+}
+
+function countTransitions(values: readonly string[]): number {
+  let transitions = 0;
+  for (let index = 1; index < values.length; index += 1) {
+    if (values[index - 1] !== values[index]) {
+      transitions += 1;
+    }
+  }
+  return transitions;
 }
 
 function allocate<Position, Context>(
@@ -126,7 +205,7 @@ function allocate<Position, Context>(
 }
 
 function expectOrdered<Position, Context>(
-  allocator: StructuralPositionAllocator<Position, Context>,
+  allocator: QualificationPositionAllocator<Position, Context>,
   positions: readonly Position[],
 ): void {
   for (let index = 1; index < positions.length; index += 1) {

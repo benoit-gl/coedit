@@ -9,7 +9,7 @@ import type {
   StructuralCarrierEntrySnapshot,
   StructuralCarrierFactory,
   StructuralCarrierSnapshot,
-} from "../../../src/carrier/structuralCarrier.js";
+} from "./carrier.js";
 import {
   decodeStructuralPlacement,
   encodeStructuralPlacement,

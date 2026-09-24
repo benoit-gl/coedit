@@ -2,9 +2,9 @@ import { isCanonicalUuidV4 } from "../../../src/domain/ids.js";
 import type {
   StructuralPositionAllocationRequest,
   StructuralPositionAllocationResult,
-  StructuralPositionAllocator,
   StructuralPositionOrder,
 } from "../../../src/carrier/position.js";
+import type { QualificationPositionAllocator } from "./carrier.js";
 
 const BASE = 65_536;
 
@@ -33,7 +33,7 @@ export type LocalDensePositionErrorKind =
   | "CapacityExceeded";
 
 /** Local dense-order candidate used for Step 3 qualification, not selected for production. */
-export const localDensePositionAllocator: StructuralPositionAllocator<
+export const localDensePositionAllocator: QualificationPositionAllocator<
   LocalDensePosition,
   LocalDenseAllocationContext
 > = {

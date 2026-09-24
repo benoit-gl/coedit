@@ -5,14 +5,13 @@ import type { BlockId } from "../../../src/domain/ids.js";
 import { createAutomergeStructuralCarrierFactory } from "./automergeStructuralCarrier.js";
 import type { LocalDensePosition } from "./localDensePosition.js";
 import { localDensePositionAllocator } from "./localDensePosition.js";
-import type {
-  StructuralCarrierFactory,
-  StructuralPlacement,
-} from "../../../src/carrier/structuralCarrier.js";
-import { projectStructuralSnapshot } from "../../../src/carrier/structuralCarrier.js";
+import type { StructuralPlacement } from "../../../src/carrier/structuralCarrier.js";
+import type { StructuralCarrierFactory } from "./carrier.js";
+import { projectStructuralSnapshot } from "./carrier.js";
 import { createYjsStructuralCarrierFactory } from "./yjsStructuralCarrier.js";
 
 const rootId = parseBlockId("50000000-0000-4000-8000-000000000001");
+const otherRootId = parseBlockId("50000000-0000-4000-8000-000000000099");
 const blockA = parseBlockId("50000000-0000-4000-8000-000000000002");
 const blockB = parseBlockId("50000000-0000-4000-8000-000000000003");
 const blockC = parseBlockId("50000000-0000-4000-8000-000000000004");
@@ -52,6 +51,16 @@ for (const factory of structuralCarrierFactories) {
       expect(() => carrier.applyChange({ deletes: [rootId] })).toThrow(/root/u);
     });
 
+    it("rejects depth zero for every non-root placement", () => {
+      const carrier = factory.create(rootId);
+      expect(() =>
+        carrier.applyChange({
+          placements: [placement(blockA, 1, 0, "a-invalid-depth")],
+        }),
+      ).toThrow(/positive integer/u);
+      expect(carrier.snapshot().entries).toHaveLength(1);
+    });
+
     it("moves an ordered subtree run atomically with one depth delta", () => {
       const carrier = createTree(factory);
       carrier.applyChange({
@@ -74,6 +83,63 @@ for (const factory of structuralCarrierFactories) {
       expect(
         projected.find((entry) => entry.blockId === blockB)?.parentId,
       ).toBe(blockA);
+    });
+
+    it("rejects a late invalid operation without partial publication", () => {
+      const carrier = factory.create(rootId);
+      carrier.applyChange({
+        placements: [placement(blockA, 1, 1, "a-create")],
+      });
+      const before = carrier.snapshot();
+
+      expect(() =>
+        carrier.applyChange({
+          deletes: [blockA],
+          payloads: [
+            {
+              blockId: blockB,
+              key: "tag",
+              value: "invalid",
+              liveToken: "b-invalid-update",
+            },
+          ],
+        }),
+      ).toThrow(/existing Block namespace/u);
+
+      expect(carrier.snapshot()).toEqual(before);
+    });
+
+    it("survives repeated subtree moves with fresh placements", () => {
+      const carrier = createTree(factory);
+      carrier.applyChange({
+        placements: [placement(blockC, 1_000, 1, "c-anchor")],
+      });
+
+      for (let index = 0; index < 32; index += 1) {
+        const beforeC = index % 2 === 0;
+        const start = beforeC ? 10 + index * 2 : 2_000 + index * 2;
+        carrier.applyChange({
+          placements: [
+            placement(blockA, start, 1, `a-move-${index}`),
+            placement(blockB, start + 1, 2, `b-move-${index}`),
+          ],
+        });
+
+        expect(
+          projectStructuralSnapshot(
+            carrier.snapshot(),
+            localDensePositionAllocator,
+          ).map((entry) => entry.blockId),
+        ).toEqual(
+          beforeC
+            ? [rootId, blockA, blockB, blockC]
+            : [rootId, blockC, blockA, blockB],
+        );
+      }
+
+      expect(factory.load(carrier.encode()).snapshot()).toEqual(
+        carrier.snapshot(),
+      );
     });
 
     it("converges concurrent moves of one Block to one deterministic placement", () => {
@@ -227,6 +293,23 @@ for (const factory of structuralCarrierFactories) {
           localDensePositionAllocator,
         ).map((entry) => entry.blockId),
       ).toEqual([rootId, blockA, blockB]);
+    });
+
+    it("rejects encoded state from a different structural root atomically", () => {
+      const local = factory.create(rootId);
+      local.applyChange({
+        placements: [placement(blockA, 1, 1, "local-a-create")],
+      });
+      const foreign = factory.create(otherRootId);
+      foreign.applyChange({
+        placements: [placement(blockB, 1, 1, "foreign-b-create")],
+      });
+      const before = local.snapshot();
+
+      expect(() => local.mergeEncoded(foreign.encode())).toThrow(
+        /share one root identity/u,
+      );
+      expect(local.snapshot()).toEqual(before);
     });
 
     it("survives complete reload and duplicate replicated delivery", () => {
