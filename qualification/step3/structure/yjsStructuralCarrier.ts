@@ -138,9 +138,7 @@ export class YjsStructuralCarrier<
     const staged = new Y.Doc();
     Y.applyUpdate(staged, Y.encodeStateAsUpdate(this.document));
     Y.applyUpdate(staged, decoded.update);
-    if (
-      staged.getMap<string>(ROOT_ID_NAME).get(ROOT_ID_NAME) !== currentRoot
-    ) {
+    if (staged.getMap<string>(ROOT_ID_NAME).get(ROOT_ID_NAME) !== currentRoot) {
       throw new TypeError("Structural carrier root identity is invalid.");
     }
 

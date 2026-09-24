@@ -7,9 +7,7 @@ import type {
   ProjectedStructuralBlock,
   StructuralPlacement,
 } from "../../../src/carrier/structuralCarrier.js";
-import {
-  projectStructuralSnapshot as projectCarrierStructuralSnapshot,
-} from "../../../src/carrier/structuralCarrier.js";
+import { projectStructuralSnapshot as projectCarrierStructuralSnapshot } from "../../../src/carrier/structuralCarrier.js";
 
 /** Qualification-only allocator surface with an evidence label. */
 export interface QualificationPositionAllocator<
