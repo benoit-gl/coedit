@@ -7,7 +7,7 @@ import type {
 } from "../../../src/carrier/position.js";
 import type { QualificationPositionAllocator } from "./carrier.js";
 
-const UINT64_MASK = (1n << 64n) - 1n;
+const FUGUE_RANDOM_WARMUP_ROUNDS = 16;
 
 /** Opaque Fugue structural position used by Step 3 qualification. */
 export type FugueStructuralPosition = FuguePosition;
@@ -109,29 +109,43 @@ export const fuguePositionAllocator: QualificationPositionAllocator<
 /*
  * Preserve all UUID bits in deterministic qualification state. Reducing the run
  * identity to a 32-bit seed would create artificial aliases that Fugue's normal
- * random source does not impose.
+ * random source does not impose. Warm up xoshiro128** so adjacent UUID values
+ * do not expose correlated seed words in Fugue's first random draw.
  */
 function deterministicRandomBytes(
   seed: string,
 ): (length: number) => Uint8Array {
-  let [state0, state1] = uuidSeedWords(seed);
+  let [state0, state1, state2, state3] = uuidSeedWords(seed);
+
+  const nextWord = (): number => {
+    const result = Math.imul(
+      rotateLeft(Math.imul(state1, 5) >>> 0, 7),
+      9,
+    ) >>> 0;
+    const shifted = (state1 << 9) >>> 0;
+
+    state2 = (state2 ^ state0) >>> 0;
+    state3 = (state3 ^ state1) >>> 0;
+    state1 = (state1 ^ state2) >>> 0;
+    state0 = (state0 ^ state3) >>> 0;
+    state2 = (state2 ^ shifted) >>> 0;
+    state3 = rotateLeft(state3, 11);
+
+    return result;
+  };
+
+  for (let index = 0; index < FUGUE_RANDOM_WARMUP_ROUNDS; index += 1) {
+    nextWord();
+  }
+
   return (length) => {
     const result = new Uint8Array(length);
     let offset = 0;
     while (offset < result.length) {
-      let left = state0;
-      const right = state1;
-      state0 = right;
-      left ^= (left << 23n) & UINT64_MASK;
-      left ^= left >> 17n;
-      left ^= right;
-      left ^= right >> 26n;
-      state1 = left & UINT64_MASK;
-
-      let word = (state1 + right) & UINT64_MASK;
-      for (let index = 0; index < 8 && offset < result.length; index += 1) {
-        result[offset] = Number(word & 0xffn);
-        word >>= 8n;
+      let word = nextWord();
+      for (let index = 0; index < 4 && offset < result.length; index += 1) {
+        result[offset] = word & 0xff;
+        word >>>= 8;
         offset += 1;
       }
     }
@@ -139,21 +153,17 @@ function deterministicRandomBytes(
   };
 }
 
-function uuidSeedWords(seed: string): readonly [bigint, bigint] {
+function uuidSeedWords(
+  seed: string,
+): readonly [number, number, number, number] {
   const hex = seed.replaceAll("-", "");
-  let first = 0n;
-  let second = 0n;
-  for (let index = 0; index < 16; index += 1) {
-    const byte = BigInt(
-      Number.parseInt(hex.slice(index * 2, index * 2 + 2), 16),
-    );
-    if (index < 8) {
-      first = (first << 8n) | byte;
-    } else {
-      second = (second << 8n) | byte;
-    }
-  }
-  return [first, second];
+  return [0, 1, 2, 3].map((index) =>
+    Number.parseInt(hex.slice(index * 8, index * 8 + 8), 16),
+  ) as [number, number, number, number];
+}
+
+function rotateLeft(value: number, shift: number): number {
+  return ((value << shift) | (value >>> (32 - shift))) >>> 0;
 }
 
 function compareRawStrings(
