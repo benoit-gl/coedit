@@ -143,7 +143,9 @@ export function planStructuralOperationPlacements<Position, AllocationContext>(
   }
 
   const target = flattenDocument(applied.value);
-  const runStart = target.findIndex((entry) => entry.blockId === operation.blockId);
+  const runStart = target.findIndex(
+    (entry) => entry.blockId === operation.blockId,
+  );
   if (runStart <= 0) {
     return failure(
       "SnapshotMismatch",

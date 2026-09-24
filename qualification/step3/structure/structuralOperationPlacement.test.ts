@@ -129,7 +129,9 @@ for (const factory of factories) {
 
       const plan = execute(state, createBlock(blockD, rootId, 2));
 
-      expect(plan.normalizations.map((entry) => entry.blockId)).toEqual([blockC]);
+      expect(plan.normalizations.map((entry) => entry.blockId)).toEqual([
+        blockC,
+      ]);
       expect(plan.placements.map((entry) => entry.blockId)).toEqual([blockD]);
       expectProjected(state, [
         [rootId, 0],
