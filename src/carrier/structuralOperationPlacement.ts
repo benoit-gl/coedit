@@ -215,6 +215,12 @@ export function planStructuralOperationPlacements<Position, AllocationContext>(
       }
       orderedPositions.push(position);
     }
+    if (successor === undefined) {
+      return failure(
+        "SnapshotMismatch",
+        "A collided destination boundary requires a successor Block.",
+      );
+    }
     const insertionIndex = stationary.findIndex(
       (entry) => entry.blockId === successor.blockId,
     );
