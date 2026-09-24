@@ -10,9 +10,7 @@ import type {
   StructuralPositionAllocationError,
   StructuralPositionAllocator,
 } from "./position.js";
-import {
-  planPositionCollisionNormalization,
-} from "./positionNormalization.js";
+import { planPositionCollisionNormalization } from "./positionNormalization.js";
 import type { PositionNormalizationError } from "./positionNormalization.js";
 import type {
   ProjectedStructuralBlock,
@@ -101,10 +99,7 @@ export type StructuralOperationPlacementResult<Position> =
  * placement updates must publish atomically. Candidate-private position data
  * stays behind the allocator abstraction.
  */
-export function planStructuralOperationPlacements<
-  Position,
-  AllocationContext,
->(
+export function planStructuralOperationPlacements<Position, AllocationContext>(
   document: StructuralDocument,
   snapshot: StructuralProjectionSnapshot<Position>,
   operation: Extract<
@@ -148,9 +143,7 @@ export function planStructuralOperationPlacements<
   }
 
   const target = flattenDocument(applied.value);
-  const runStart = target.findIndex(
-    (entry) => entry.blockId === operation.blockId,
-  );
+  const runStart = target.findIndex((entry) => entry.blockId === operation.blockId);
   if (runStart <= 0) {
     return failure(
       "SnapshotMismatch",
@@ -268,13 +261,7 @@ export function planStructuralOperationPlacements<
     };
   }
   if (
-    !isValidAllocation(
-      allocator,
-      allocation.value,
-      lower,
-      upper,
-      run.length,
-    )
+    !isValidAllocation(allocator, allocation.value, lower, upper, run.length)
   ) {
     return failure(
       "InvalidAllocation",

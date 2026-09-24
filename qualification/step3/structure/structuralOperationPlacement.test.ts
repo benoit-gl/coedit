@@ -30,9 +30,7 @@ import type {
 import { localDensePositionAllocator } from "./localDensePosition.js";
 import { createYjsStructuralCarrierFactory } from "./yjsStructuralCarrier.js";
 
-const documentId = parseDocumentId(
-  "70000000-0000-4000-8000-000000000001",
-);
+const documentId = parseDocumentId("70000000-0000-4000-8000-000000000001");
 const rootId = parseBlockId("70000000-0000-4000-8000-000000000002");
 const blockA = parseBlockId("70000000-0000-4000-8000-000000000003");
 const blockB = parseBlockId("70000000-0000-4000-8000-000000000004");
@@ -131,9 +129,7 @@ for (const factory of factories) {
 
       const plan = execute(state, createBlock(blockD, rootId, 2));
 
-      expect(plan.normalizations.map((entry) => entry.blockId)).toEqual([
-        blockC,
-      ]);
+      expect(plan.normalizations.map((entry) => entry.blockId)).toEqual([blockC]);
       expect(plan.placements.map((entry) => entry.blockId)).toEqual([blockD]);
       expectProjected(state, [
         [rootId, 0],
@@ -313,9 +309,7 @@ function allocationContexts(
 }
 
 function runNonce(value: number): string {
-  return (
-    "80000000-0000-4000-8000-" + value.toString().padStart(12, "0")
-  );
+  return "80000000-0000-4000-8000-" + value.toString().padStart(12, "0");
 }
 
 function manualPlacement(
