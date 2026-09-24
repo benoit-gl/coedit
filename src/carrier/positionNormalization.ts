@@ -124,13 +124,7 @@ export function planPositionCollisionNormalization<Position, AllocationContext>(
     };
   }
   if (
-    !isValidAllocation(
-      allocator,
-      allocation.value,
-      lower,
-      upper,
-      movedCount,
-    )
+    !isValidAllocation(allocator, allocation.value, lower, upper, movedCount)
   ) {
     return failure(
       "InvalidAllocation",
