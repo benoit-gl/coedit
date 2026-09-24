@@ -25,7 +25,11 @@ export interface PositionNormalizationPlan<Position> {
 export interface PositionNormalizationError {
   /** Stable machine-readable failure kind. */
   readonly kind:
-    "InvalidOrder" | "InvalidIndex" | "NoCollision" | "AllocationFailed" | "InvalidAllocation";
+    | "InvalidOrder"
+    | "InvalidIndex"
+    | "NoCollision"
+    | "AllocationFailed"
+    | "InvalidAllocation";
   /** Human-readable failure detail. */
   readonly message: string;
   /** Underlying allocator error when allocation failed. */
