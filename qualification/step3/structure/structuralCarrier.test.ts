@@ -187,7 +187,9 @@ for (const factory of structuralCarrierFactories) {
       const convergedPlacement = left
         .snapshot()
         .entries.find((entry) => entry.blockId === blockA)?.placement;
-      expect([leftPlacement, rightPlacement]).toContainEqual(convergedPlacement);
+      expect([leftPlacement, rightPlacement]).toContainEqual(
+        convergedPlacement,
+      );
       expect(left.snapshot()).toEqual(right.snapshot());
     });
 
