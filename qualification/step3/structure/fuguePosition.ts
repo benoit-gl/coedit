@@ -144,7 +144,9 @@ function uuidSeedWords(seed: string): readonly [bigint, bigint] {
   let first = 0n;
   let second = 0n;
   for (let index = 0; index < 16; index += 1) {
-    const byte = BigInt(Number.parseInt(hex.slice(index * 2, index * 2 + 2), 16));
+    const byte = BigInt(
+      Number.parseInt(hex.slice(index * 2, index * 2 + 2), 16),
+    );
     if (index < 8) {
       first = (first << 8n) | byte;
     } else {

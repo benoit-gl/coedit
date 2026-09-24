@@ -101,7 +101,9 @@ export function projectStructuralSnapshot<Position>(
         left.placement.position,
         right.placement.position,
       );
-      return order === 0 ? compareRawStrings(left.blockId, right.blockId) : order;
+      return order === 0
+        ? compareRawStrings(left.blockId, right.blockId)
+        : order;
     });
 
   const projected: ProjectedStructuralBlock[] = [

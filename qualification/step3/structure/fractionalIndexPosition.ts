@@ -1,7 +1,4 @@
-import {
-  generateKeyBetween,
-  generateNKeysBetween,
-} from "fractional-indexing";
+import { generateKeyBetween, generateNKeysBetween } from "fractional-indexing";
 
 import { isCanonicalUuidV4 } from "../../../src/domain/ids.js";
 import type {
