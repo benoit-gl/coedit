@@ -24,6 +24,4 @@ export type {
 } from "./structuralCarrier.js";
 
 /** Step 2 command-to-placement planning used by structural qualification. */
-export {
-  planStructuralOperationPlacements,
-} from "./structuralOperationPlacement.js";
+export { planStructuralOperationPlacements } from "./structuralOperationPlacement.js";
