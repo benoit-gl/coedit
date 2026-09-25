@@ -30,6 +30,12 @@ jobs:
       - name: Bootstrap dependencies
         run: npm run bootstrap
 
+      - name: Show structural placement formatting diff
+        run: |
+          npm exec -- prettier --write src/carrier/structuralOperationPlacement.ts
+          git diff -- src/carrier/structuralOperationPlacement.ts
+          exit 1
+
       - name: Check source
         run: npm run check
 
