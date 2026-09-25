@@ -36,6 +36,7 @@ interface Candidate<Position, Context> {
   readonly allocator: QualificationPositionAllocator<Position, Context>;
   readonly context: (runNonce: string) => Context;
   readonly expectedConcurrentRunTransitions: number;
+  readonly expectedSubtreeParentMismatches: number;
 }
 
 const candidates: readonly Candidate<unknown, unknown>[] = [
@@ -44,16 +45,19 @@ const candidates: readonly Candidate<unknown, unknown>[] = [
     context: (runNonce) =>
       ({ runNonce }) satisfies FractionalIndexAllocationContext,
     expectedConcurrentRunTransitions: 7,
+    expectedSubtreeParentMismatches: 1,
   },
   {
     allocator: fuguePositionAllocator,
     context: (runNonce) => ({ runNonce }) satisfies FugueAllocationContext,
     expectedConcurrentRunTransitions: 1,
+    expectedSubtreeParentMismatches: 0,
   },
   {
     allocator: localDensePositionAllocator,
     context: (runNonce) => ({ runNonce }) satisfies LocalDenseAllocationContext,
     expectedConcurrentRunTransitions: 1,
+    expectedSubtreeParentMismatches: 0,
   },
 ];
 
@@ -229,7 +233,7 @@ for (const candidate of candidates) {
       createYjsStructuralCarrierFactory(candidate.allocator),
       createAutomergeStructuralCarrierFactory(candidate.allocator),
     ]) {
-      it(`converges ${factory.candidate} carrier state after partitioned same-destination allocation`, () => {
+      it(`converges ${factory.candidate} carrier state and characterizes nested same-destination runs`, () => {
         const anchors = allocate(candidate, undefined, undefined, 2, runA);
         expect(anchors.ok).toBe(true);
         if (!anchors.ok) return;
@@ -277,7 +281,7 @@ for (const candidate of candidates) {
             },
             {
               blockId: leftTwoId,
-              placement: { position: leftRun.value[1], depth: 1 },
+              placement: { position: leftRun.value[1], depth: 2 },
               liveToken: "left-two",
             },
           ],
@@ -291,7 +295,7 @@ for (const candidate of candidates) {
             },
             {
               blockId: rightTwoId,
-              placement: { position: rightRun.value[1], depth: 1 },
+              placement: { position: rightRun.value[1], depth: 2 },
               liveToken: "right-two",
             },
           ],
@@ -312,16 +316,28 @@ for (const candidate of candidates) {
         expect(factory.load(forward.encode()).snapshot()).toEqual(
           forward.snapshot(),
         );
-        expect(
-          projectStructuralSnapshot(
-            forward.snapshot(),
-            candidate.allocator,
-          ).map((entry) => entry.blockId),
-        ).toEqual(
+        const projected = projectStructuralSnapshot(
+          forward.snapshot(),
+          candidate.allocator,
+        );
+        expect(projected.map((entry) => entry.blockId)).toEqual(
           projectStructuralSnapshot(
             reverse.snapshot(),
             candidate.allocator,
           ).map((entry) => entry.blockId),
+        );
+
+        const subtreeParents = [
+          { childId: leftTwoId, expectedParentId: leftOneId },
+          { childId: rightTwoId, expectedParentId: rightOneId },
+        ];
+        const parentMismatches = subtreeParents.filter(
+          ({ childId, expectedParentId }) =>
+            projected.find((entry) => entry.blockId === childId)?.parentId !==
+            expectedParentId,
+        );
+        expect(parentMismatches).toHaveLength(
+          candidate.expectedSubtreeParentMismatches,
         );
       });
     }

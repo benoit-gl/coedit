@@ -20,8 +20,9 @@ Use these documents with this contract:
 - [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) owns InlineContent Media Types, whole-payload replacement, and payload convergence;
 - [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md) owns private MVP implementation rules;
 - [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md) owns executable evidence;
-- [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md) owns post-MVP causal History and replication constraints; and
-- [`decisions/0003-flat-structural-placement.md`](decisions/0003-flat-structural-placement.md) preserves the rationale and rejected alternatives.
+- [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md) owns post-MVP causal History and replication constraints;
+- [`decisions/0003-flat-structural-placement.md`](decisions/0003-flat-structural-placement.md) preserves the flat-placement rationale and rejected alternatives; and
+- [`decisions/0011-minimal-indicated-structural-depth.md`](decisions/0011-minimal-indicated-structural-depth.md) records the minimum-change indicated-depth policy.
 
 ## 2. Context
 
