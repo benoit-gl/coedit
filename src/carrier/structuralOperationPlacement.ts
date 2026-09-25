@@ -496,8 +496,7 @@ function depthsProjectTarget<Position>(
       return false;
     }
     const depth =
-      planned.get(entry.blockId) ??
-      currentPlacements.get(entry.blockId)?.depth;
+      planned.get(entry.blockId) ?? currentPlacements.get(entry.blockId)?.depth;
     if (depth === undefined) {
       return false;
     }
