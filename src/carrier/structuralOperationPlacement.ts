@@ -31,7 +31,7 @@ export interface StructuralOperationPlacementUpdate<Position> {
 export interface StructuralOperationNormalizationUpdate<Position> {
   /** Existing Block whose projected meaning must remain unchanged. */
   readonly blockId: BlockId;
-  /** Fresh complete placement that preserves the Block's logical depth. */
+  /** Fresh complete placement that preserves the Block's indicated depth. */
   readonly placement: StructuralPlacement<Position>;
 }
 
@@ -94,8 +94,8 @@ export type StructuralOperationPlacementResult<Position> =
  * projection matches the logical document, then applies the operation through
  * the reducer. The resulting preorder identifies the destination open interval.
  * Effective document depth is used only to identify logical subtree runs.
- * Existing indicated placement depths are preserved unless a minimal change is
- * required to realize the requested parentage after the run is spliced.
+ * The created or moved semantic run receives the minimum valid indicated depths
+ * after the run is spliced. Stationary indicated depths remain unchanged.
  *
  * When that boundary is a primary-position collision, the planner first plans
  * the minimum later-run normalization. The returned normalization and semantic
@@ -435,15 +435,7 @@ function planRunDepths<Position>(
   }
 
   const planned = new Map<BlockId, number>();
-  const currentRootDepth = currentPlacements.get(root.blockId)?.depth;
-  const rootDepth =
-    currentRootDepth === undefined
-      ? minimumRootDepth
-      : Math.min(
-          maximumRootDepth,
-          Math.max(minimumRootDepth, currentRootDepth),
-        );
-  planned.set(root.blockId, rootDepth);
+  planned.set(root.blockId, minimumRootDepth);
 
   for (let index = runStart + 1; index < runEnd; index += 1) {
     const entry = target[index];
@@ -451,11 +443,10 @@ function planRunDepths<Position>(
       return undefined;
     }
     const plannedParentDepth = planned.get(entry.parentId);
-    const currentDepth = currentPlacements.get(entry.blockId)?.depth;
-    if (plannedParentDepth === undefined || currentDepth === undefined) {
+    if (plannedParentDepth === undefined) {
       return undefined;
     }
-    const depth = Math.max(currentDepth, plannedParentDepth + 1);
+    const depth = plannedParentDepth + 1;
     if (!Number.isSafeInteger(depth)) {
       return undefined;
     }

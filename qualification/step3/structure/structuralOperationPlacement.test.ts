@@ -72,7 +72,7 @@ for (const factory of factories) {
       ]);
     });
 
-    it("moves one subtree with only required indicated-depth changes", () => {
+    it("moves one subtree with minimum valid indicated depths", () => {
       const state = createState(factory);
       execute(state, createBlock(blockA, rootId, 0));
       execute(state, createBlock(blockB, blockA, 0));
@@ -110,36 +110,54 @@ for (const factory of factories) {
       ]);
     });
 
-    it("preserves indicated descendant depth when moved parentage already permits it", () => {
+    it("minimizes moved-run depths without rewriting stationary depths", () => {
       const state = createState(factory);
       execute(state, createBlock(blockA, rootId, 0));
       execute(state, createBlock(blockB, rootId, 1));
       execute(state, createBlock(blockC, blockB, 0));
+      execute(state, createBlock(blockD, rootId, 2));
 
+      const blockAPlacement = currentPlacement(state.carrier, blockA);
+      const blockBPlacement = currentPlacement(state.carrier, blockB);
       const blockCPlacement = currentPlacement(state.carrier, blockC);
       state.carrier.applyChange({
         normalizations: [
           {
+            blockId: blockA,
+            placement: {
+              position: blockAPlacement.position,
+              depth: 5,
+            },
+          },
+          {
+            blockId: blockB,
+            placement: {
+              position: blockBPlacement.position,
+              depth: 5,
+            },
+          },
+          {
             blockId: blockC,
             placement: {
               position: blockCPlacement.position,
-              depth: 3,
+              depth: 9,
             },
           },
         ],
       });
       expectProjected(state, [
         [rootId, 0],
-        [blockA, 1],
-        [blockB, 1],
-        [blockC, 3],
+        [blockA, 5],
+        [blockB, 5],
+        [blockC, 9],
+        [blockD, 1],
       ]);
 
       const plan = execute(state, {
         kind: "MoveBlock",
         blockId: blockB,
-        parentId: blockA,
-        index: 0,
+        parentId: rootId,
+        index: 2,
       });
 
       expect(plan.placements.map((entry) => entry.blockId)).toEqual([
@@ -147,13 +165,15 @@ for (const factory of factories) {
         blockC,
       ]);
       expect(plan.placements.map((entry) => entry.placement.depth)).toEqual([
-        2, 3,
+        1, 2,
       ]);
+      expect(currentPlacement(state.carrier, blockA).depth).toBe(5);
       expectProjected(state, [
         [rootId, 0],
-        [blockA, 1],
-        [blockB, 2],
-        [blockC, 3],
+        [blockA, 5],
+        [blockD, 1],
+        [blockB, 1],
+        [blockC, 2],
       ]);
     });
 

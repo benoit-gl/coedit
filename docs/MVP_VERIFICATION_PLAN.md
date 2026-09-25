@@ -313,7 +313,7 @@ replace that authority.
 Verify at least:
 
 - `CreateBlock` and `MoveBlock` map to projected preorder at first, middle, and last child positions;
-- a moved subtree receives only the indicated-depth changes required for the target projection, receives fresh ordered positions, and preserves identity and internal order;
+- a created or moved semantic run receives the minimum valid indicated depths for the target projection without rewriting stationary indicated depths, receives fresh ordered positions, and preserves identity and internal order;
 - concurrent moves to different destinations converge;
 - move versus delete keeps the moved Block alive after full peer convergence;
 - payload update versus delete keeps the updated Block alive after full peer convergence for both fine-grained text edits and whole-payload replacement;

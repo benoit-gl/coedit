@@ -166,18 +166,23 @@ For a destination parent `P`:
    the end of the document order.
 5. Allocate the moved or created Block run inside that destination interval.
 
-A structural command preserves indicated placement depths wherever the requested
-target projection permits. A moved subtree keeps each existing indicated depth
-unless that value must change to preserve the requested parentage after the
-splice. When a change is required, use the nearest valid indicated depth and
-change only the affected part of the moved run. Do not rewrite descendants only
-to make indicated depth equal effective logical depth. A new Block uses the
-smallest indicated depth that preserves both its requested parentage and the
-parentage of the surrounding stationary Blocks.
+A structural command assigns the minimum valid indicated depths to the semantic
+run that it creates or moves. Compute the assignment after the run is spliced
+into target projected preorder, and preserve the target parentage of both the
+semantic run and stationary Blocks.
 
-Depth rationalization is separate document-model behavior. If such an operation
-is introduced, it must be explicit. Only that explicit behavior may
-intentionally rewrite indicated depths to their effective logical depths.
+For the created or moved run root, use the smallest indicated depth that makes
+the requested destination parent the nearest preceding shallower Block while
+preserving stationary parentage. For each descendant in a moved run, use its
+planned parent's indicated depth plus one. Do not preserve a larger historical
+depth only because projection would accept it.
+
+This rule does not globally rationalize carrier state. Stationary Blocks keep
+their indicated depths, including when position-collision normalization rewrites
+a stationary placement. Concurrent merge can leave valid non-minimum indicated
+depths; projection accepts them without automatic repair. If global depth
+rationalization is introduced later, it must be explicit document-model
+behavior.
 
 A subtree move preserves Block identities and projected relative order. Allocate
 fresh ordered destination positions for the moved run. Do not carry old position

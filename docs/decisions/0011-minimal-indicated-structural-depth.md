@@ -1,4 +1,4 @@
-# ADR 0011: Preserve indicated structural depth when possible
+# ADR 0011: Use minimum indicated depth for created and moved runs
 
 **Status:** Accepted
 
@@ -14,32 +14,40 @@ ADR 0003 selected flat structural placement with one replicated `position` and
 `depth` per live non-root Block. It also required structural moves to rewrite
 the moved root to `parent.depth + 1` and preserve descendant depth differences.
 
-Step 3 qualification showed that the projection does not require indicated depth
-to equal logical tree depth. Parentage depends only on the nearest preceding Block
-with a smaller indicated depth. A command can therefore preserve existing
-indicated depth values while producing the same requested logical tree.
+Step 3 qualification showed that projection does not require indicated depth to
+equal logical tree depth. Parentage depends only on the nearest preceding Block
+with a smaller indicated depth. This tolerance is useful after concurrent
+replication. A merged state can contain non-minimum indicated depths and still
+project to one valid, visible tree.
 
-Rewriting depth when projection does not require it makes an ordinary move
-perform implicit depth rationalization that is not part of the user command. A
-move still allocates fresh positions and replaces each moved Block's complete
-placement.
+A `MoveBlock` already allocates fresh positions and replaces the complete
+placement of every Block in the moved run. Preserving larger historical depths
+therefore does not avoid placement writes or placement-level conflicts. It can
+also make represented depth grow as a function of edit history.
 
 ## Decision
 
 Treat replicated structural depth as indicated placement depth. Effective logical
 depth is derived from projected parentage and can differ from indicated depth.
+Projection accepts non-minimum indicated depths when they otherwise satisfy the
+structural carrier contract.
 
-For `CreateBlock` and `MoveBlock`, change only the indicated depths required to
-produce the requested Step 2 tree after the run is spliced into projected
-preorder.
+For `CreateBlock` and `MoveBlock`, assign the minimum valid indicated depths
+to the semantic run after it is spliced into target projected preorder.
 
-- Preserve each existing indicated depth when the target projection permits it.
-- When a moved Block must change depth, use the nearest valid indicated depth.
-- For a new Block, use the smallest indicated depth that preserves its requested
-  parentage and the parentage of stationary Blocks.
-- Do not rewrite descendants only to make indicated depth equal effective logical
-  depth.
-- Keep depth rationalization separate. If it is added later, make it an explicit
+- For the created or moved run root, use the smallest indicated depth that makes
+  the requested destination parent the nearest preceding shallower Block and
+  preserves the projected parentage of stationary Blocks.
+- For each descendant in the moved run, use its planned parent's indicated depth
+  plus one.
+- Do not preserve a larger historical indicated depth only because projection
+  would accept it.
+- Do not rewrite indicated depths of stationary Blocks. Position-collision
+  normalization preserves the stationary Block's indicated depth.
+- Do not normalize the whole carrier after a merge. A converged non-minimum
+  indicated depth is valid carrier state unless a later semantic operation
+  rewrites that Block's run.
+- If global depth rationalization is added later, define it as separate explicit
   document-model behavior.
 
 A move still allocates fresh ordered destination positions, preserves Block
@@ -50,23 +58,25 @@ All other decisions in ADR 0003 remain accepted.
 
 ## Rationale
 
-This rule keeps ordinary structural moves separate from depth rationalization.
-Preserving an indicated depth does not avoid a placement write or change
-placement-level conflict behavior because a move still replaces the complete
-placement with a fresh position.
+Tolerant indicated depth lets concurrent carrier state resolve to a valid visible
+tree without requiring repair writes. Minimum-depth semantic writes serve a
+different purpose: they keep new local structural work compact and independent
+of unnecessary historical depth.
 
-The rule keeps indicated depth as carrier state instead of silently treating it
-as a canonical tree-depth encoding. Explicit projection validation ensures that
-preserving a non-canonical depth cannot change the requested logical parentage.
+A move already rewrites every complete placement in its semantic run. Assigning
+minimum valid depth to those placements does not add placement writes or enlarge
+the placement-level conflict footprint. Keeping stationary depths unchanged
+avoids unrelated replicated churn.
 
 ## Consequences
 
-- Structural planning needs the current indicated depths of moved and stationary
-  Blocks.
-- Tests must cover non-sequential indicated depths and moves that preserve,
-  increase, or otherwise minimally adjust them.
-- A structural move does not rationalize unrelated depth values.
-- A future rationalization command must be explicit and separately specified.
+- Structural planning needs the indicated depths of stationary Blocks around the
+  destination interval.
+- Created and moved runs do not retain larger historical depth values.
+- Concurrently merged or otherwise stationary non-minimum depths remain valid and
+  are not repaired automatically.
+- Tests must cover tolerant projection, minimum-depth semantic writes, and
+  preservation of stationary indicated depths.
 - The flat placement, liveness, collision, and allocator decisions from ADR 0003
   remain unchanged.
 
