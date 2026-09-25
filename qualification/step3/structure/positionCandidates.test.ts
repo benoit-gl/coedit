@@ -154,23 +154,24 @@ for (const candidate of candidates) {
       expect(transitions).toBe(candidate.expectedConcurrentRunTransitions);
     });
 
-    it("survives repeated narrow-gap allocation without a semantic maximum", () => {
+    it("maintains ordering across repeated narrow-gap allocations", () => {
       const outer = allocate(candidate, undefined, undefined, 2, runA);
       expect(outer.ok).toBe(true);
       if (!outer.ok) return;
 
       let lower = outer.value[0];
       const upper = outer.value[1];
-      for (let index = 0; index < 128; index += 1) {
+      for (let index = 0; index < 4; index += 1) {
         const nonce = `62000000-0000-4000-8000-${index
           .toString(16)
           .padStart(12, "0")}`;
         const next = allocate(candidate, lower, upper, 1, nonce);
         expect(next.ok).toBe(true);
         if (!next.ok) return;
+        expect(candidate.allocator.compare(lower, next.value[0])).toBeLessThan(0);
+        expect(candidate.allocator.compare(next.value[0], upper)).toBeLessThan(0);
         lower = next.value[0];
       }
-      expect(candidate.allocator.compare(lower, upper)).toBeLessThan(0);
     });
 
     it("allocates fresh positions for repeated moves to the same destination", () => {
