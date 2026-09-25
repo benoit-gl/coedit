@@ -283,7 +283,7 @@ Under replicated qualification, whole-payload replacement follows the register i
 
 Use one logical collaborative document per Coedit document so one engine transaction can span Block structure, several InlineContents of either capability class, Origin records, and Contribution metadata. Within that document, each `BlockId` owns one private carrier namespace for placement, a semantic activity marker, and Block-local payload. Do not create one independently committed Yjs or Automerge document per Block.
 
-`STRUCTURAL_CARRIER_MODEL.md` owns the exact structural contract. In summary, placement is one atomic `{ position, depth }` value; structural commands map through projected preorder; a subtree move allocates fresh ordered positions and applies one depth delta; and normal allocation should avoid exact position collisions.
+`STRUCTURAL_CARRIER_MODEL.md` owns the exact structural contract. In summary, placement is one atomic `{ position, depth }` value; structural commands map through projected preorder; created and moved semantic runs receive the minimum valid indicated depths without rewriting stationary indicated depths; and normal allocation should avoid exact position collisions.
 
 A semantic payload mutation, including whole-payload replacement, updates a carrier-private Block activity marker in the same logical carrier transaction or change. A semantic Block update that is concurrent with deletion of that same Block wins over deletion. The marker is not a product field, payload hash, public counter, or timestamp. Editing a descendant does not refresh each ancestor. The selected adapter can encode this rule differently for Yjs and Automerge.
 
