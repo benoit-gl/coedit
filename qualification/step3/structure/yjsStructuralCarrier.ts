@@ -25,7 +25,7 @@ const ROOT_ID_BYTE_LENGTH = 36;
 const ENVELOPE_SEPARATOR = 0;
 
 /** Yjs v13 candidate for the accepted flat structural carrier contract. */
-export class YjsStructuralCarrier<
+class YjsStructuralCarrier<
   Position,
 > implements StructuralCarrier<Position> {
   public readonly candidate = "yjs" as const;

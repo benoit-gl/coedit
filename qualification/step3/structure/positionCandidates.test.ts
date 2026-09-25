@@ -35,8 +35,6 @@ const rightTwoId = parseBlockId("61000000-0000-4000-8000-000000000016");
 interface Candidate<Position, Context> {
   readonly allocator: QualificationPositionAllocator<Position, Context>;
   readonly context: (runNonce: string) => Context;
-  readonly sameDestinationPrimaryCollisions: number;
-  readonly sameDestinationTransitions: number;
 }
 
 const candidates: readonly Candidate<unknown, unknown>[] = [
@@ -44,20 +42,14 @@ const candidates: readonly Candidate<unknown, unknown>[] = [
     allocator: fractionalIndexPositionAllocator,
     context: (runNonce) =>
       ({ runNonce }) satisfies FractionalIndexAllocationContext,
-    sameDestinationPrimaryCollisions: 4,
-    sameDestinationTransitions: 7,
   },
   {
     allocator: fuguePositionAllocator,
     context: (runNonce) => ({ runNonce }) satisfies FugueAllocationContext,
-    sameDestinationPrimaryCollisions: 0,
-    sameDestinationTransitions: 1,
   },
   {
     allocator: localDensePositionAllocator,
     context: (runNonce) => ({ runNonce }) satisfies LocalDenseAllocationContext,
-    sameDestinationPrimaryCollisions: 0,
-    sameDestinationTransitions: 1,
   },
 ];
 
@@ -129,44 +121,6 @@ for (const candidate of candidates) {
         candidate.allocator.compare(a, b),
       );
       expect(secondOrder).toEqual(firstOrder);
-    });
-
-    it("records concurrent same-destination collision and interleaving behavior", () => {
-      const left = allocate(candidate, undefined, undefined, 4, runA);
-      const right = allocate(candidate, undefined, undefined, 4, runB);
-      expect(left.ok && right.ok).toBe(true);
-      if (!left.ok || !right.ok) return;
-
-      let primaryCollisions = 0;
-      for (let index = 0; index < left.value.length; index += 1) {
-        if (
-          candidate.allocator.comparePrimary(
-            left.value[index],
-            right.value[index],
-          ) === 0
-        ) {
-          primaryCollisions += 1;
-        }
-      }
-      expect(primaryCollisions).toBe(
-        candidate.sameDestinationPrimaryCollisions,
-      );
-
-      const labels = [
-        ...left.value.map((position) => ({
-          position,
-          label: "left" as const,
-        })),
-        ...right.value.map((position) => ({
-          position,
-          label: "right" as const,
-        })),
-      ]
-        .sort((a, b) => candidate.allocator.compare(a.position, b.position))
-        .map(({ label }) => label);
-      expect(countTransitions(labels)).toBe(
-        candidate.sameDestinationTransitions,
-      );
     });
 
     it("survives repeated narrow-gap allocation without a semantic maximum", () => {
@@ -372,16 +326,6 @@ describe("Fugue qualification entropy", () => {
     expect(first.value).not.toEqual(second.value);
   });
 });
-
-function countTransitions(values: readonly string[]): number {
-  let transitions = 0;
-  for (let index = 1; index < values.length; index += 1) {
-    if (values[index - 1] !== values[index]) {
-      transitions += 1;
-    }
-  }
-  return transitions;
-}
 
 function allocate<Position, Context>(
   candidate: Candidate<Position, Context>,

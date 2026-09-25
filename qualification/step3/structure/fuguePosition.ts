@@ -19,7 +19,7 @@ export interface FugueAllocationContext {
 }
 
 /** Stable failures returned by the Fugue qualification adapter. */
-export type FuguePositionErrorKind =
+type FuguePositionErrorKind =
   | "InvalidPosition"
   | "InvalidBounds"
   | "InvalidNonce"

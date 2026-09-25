@@ -8,7 +8,7 @@ import type {
 export interface StructuralPlacement<Position> {
   /** Opaque allocator-private preorder position. */
   readonly position: Position;
-  /** Positive flat preorder depth for one non-root Block. */
+  /** Indicated flat preorder depth for one non-root Block. */
   readonly depth: number;
 }
 
@@ -34,7 +34,7 @@ export interface ProjectedStructuralBlock {
   readonly blockId: BlockId;
   /** Projected parent identity. Root has no parent. */
   readonly parentId?: BlockId;
-  /** Effective flat depth from carrier placement. */
+  /** Indicated placement depth used to derive projected parentage. */
   readonly depth: number;
 }
 
@@ -81,20 +81,42 @@ export function projectStructuralSnapshot<Position>(
   snapshot: StructuralProjectionSnapshot<Position>,
   ordering: StructuralPositionOrdering<Position>,
 ): readonly ProjectedStructuralBlock[] {
-  const root = snapshot.entries.find(
-    (entry) => entry.blockId === snapshot.rootId,
-  );
-  if (root === undefined) {
-    throw new TypeError("Structural projection requires the root entry.");
+  const seen = new Set<BlockId>();
+  let hasRoot = false;
+  for (const entry of snapshot.entries) {
+    if (seen.has(entry.blockId)) {
+      throw new TypeError(
+        "Every live structural BlockId must appear exactly once.",
+      );
+    }
+    seen.add(entry.blockId);
+
+    if (entry.blockId === snapshot.rootId) {
+      hasRoot = true;
+      if (entry.placement !== undefined) {
+        throw new TypeError(
+          "The structural root cannot have a mutable placement.",
+        );
+      }
+      continue;
+    }
+
+    if (entry.placement === undefined) {
+      throw new TypeError(
+        "Every live non-root structural entry requires a placement.",
+      );
+    }
+    if (
+      !Number.isSafeInteger(entry.placement.depth) ||
+      entry.placement.depth < 1
+    ) {
+      throw new TypeError(
+        "Non-root structural placement depth must be a positive integer.",
+      );
+    }
   }
-  const unplaced = snapshot.entries.find(
-    (entry) =>
-      entry.blockId !== snapshot.rootId && entry.placement === undefined,
-  );
-  if (unplaced !== undefined) {
-    throw new TypeError(
-      "Every live non-root structural entry requires a placement.",
-    );
+  if (!hasRoot) {
+    throw new TypeError("Structural projection requires the root entry.");
   }
 
   const live = snapshot.entries

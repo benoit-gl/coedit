@@ -72,7 +72,7 @@ for (const factory of factories) {
       ]);
     });
 
-    it("moves one subtree as a fresh ordered run with one depth delta", () => {
+    it("moves one subtree with only required indicated-depth changes", () => {
       const state = createState(factory);
       execute(state, createBlock(blockA, rootId, 0));
       execute(state, createBlock(blockB, blockA, 0));
@@ -107,6 +107,100 @@ for (const factory of factories) {
         [blockA, 2],
         [blockB, 3],
         [blockC, 4],
+      ]);
+    });
+
+    it("preserves indicated descendant depth when moved parentage already permits it", () => {
+      const state = createState(factory);
+      execute(state, createBlock(blockA, rootId, 0));
+      execute(state, createBlock(blockB, rootId, 1));
+      execute(state, createBlock(blockC, blockB, 0));
+
+      const blockCPlacement = currentPlacement(state.carrier, blockC);
+      state.carrier.applyChange({
+        normalizations: [
+          {
+            blockId: blockC,
+            placement: {
+              position: blockCPlacement.position,
+              depth: 3,
+            },
+          },
+        ],
+      });
+      expectProjected(state, [
+        [rootId, 0],
+        [blockA, 1],
+        [blockB, 1],
+        [blockC, 3],
+      ]);
+
+      const plan = execute(state, {
+        kind: "MoveBlock",
+        blockId: blockB,
+        parentId: blockA,
+        index: 0,
+      });
+
+      expect(plan.placements.map((entry) => entry.blockId)).toEqual([
+        blockB,
+        blockC,
+      ]);
+      expect(plan.placements.map((entry) => entry.placement.depth)).toEqual([
+        2, 3,
+      ]);
+      expectProjected(state, [
+        [rootId, 0],
+        [blockA, 1],
+        [blockB, 2],
+        [blockC, 3],
+      ]);
+    });
+
+    it("preserves stationary indicated depths while opening a collided boundary", () => {
+      const state = createState(factory);
+      execute(state, createBlock(blockA, rootId, 0));
+      execute(state, createBlock(blockB, blockA, 0));
+      execute(state, createBlock(blockC, blockA, 1));
+
+      const blockBPlacement = currentPlacement(state.carrier, blockB);
+      state.carrier.applyChange({
+        normalizations: [
+          {
+            blockId: blockB,
+            placement: {
+              position: blockBPlacement.position,
+              depth: 3,
+            },
+          },
+          {
+            blockId: blockC,
+            placement: {
+              position: blockBPlacement.position,
+              depth: 3,
+            },
+          },
+        ],
+      });
+      expectProjected(state, [
+        [rootId, 0],
+        [blockA, 1],
+        [blockB, 3],
+        [blockC, 3],
+      ]);
+
+      const plan = execute(state, createBlock(blockD, blockA, 1));
+
+      expect(plan.normalizations).toHaveLength(1);
+      expect(plan.normalizations[0]?.blockId).toBe(blockC);
+      expect(plan.normalizations[0]?.placement.depth).toBe(3);
+      expect(plan.placements[0]?.placement.depth).toBe(3);
+      expectProjected(state, [
+        [rootId, 0],
+        [blockA, 1],
+        [blockB, 3],
+        [blockD, 3],
+        [blockC, 3],
       ]);
     });
 

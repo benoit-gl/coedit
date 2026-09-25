@@ -92,7 +92,9 @@ Placement = {
 ```
 
 `position` is a carrier-private sortable order key. `depth` is a positive integer
-for every non-root Block.
+for every non-root Block. `depth` is the indicated placement depth replicated by
+the carrier. Effective logical depth is derived from projected parentage and can
+differ from the indicated depth.
 
 The root has these special rules:
 
@@ -152,7 +154,8 @@ flat placement by using preorder tree order.
 
 For a destination parent `P`:
 
-1. The destination Block root has depth `P.depth + 1`.
+1. The destination Block root uses an indicated depth that makes `P` the nearest
+   preceding shallower Block after the run is spliced into projected preorder.
 2. If the destination child index is `0`, the destination run starts immediately
    after `P` in projected preorder.
 3. Otherwise, the destination run starts after the complete subtree of the
@@ -162,11 +165,22 @@ For a destination parent `P`:
    the end of the document order.
 5. Allocate the moved or created Block run inside that destination interval.
 
-A subtree move applies one depth delta to the moved subtree so its root has the
-required destination depth. It preserves descendant depth differences, Block
-identities, and projected relative order. Allocate fresh ordered destination
-positions for the moved run. Do not carry old position prefixes into the new
-run.
+A structural command preserves indicated placement depths wherever the requested
+target projection permits. A moved subtree keeps each existing indicated depth
+unless that value must change to preserve the requested parentage after the
+splice. When a change is required, use the nearest valid indicated depth and
+change only the affected part of the moved run. Do not rewrite descendants only
+to make indicated depth equal effective logical depth. A new Block uses the
+smallest indicated depth that preserves both its requested parentage and the
+parentage of the surrounding stationary Blocks.
+
+Depth rationalization is separate document-model behavior. If such an operation
+is introduced, it must be explicit. Only that explicit behavior may
+intentionally rewrite indicated depths to their effective logical depths.
+
+A subtree move preserves Block identities and projected relative order. Allocate
+fresh ordered destination positions for the moved run. Do not carry old position
+prefixes into the new run.
 
 A Block creation is a run of one Block. A subtree move can contain many Blocks.
 The published command is all-or-none at the engine boundary.
@@ -359,7 +373,7 @@ candidates. At minimum verify:
 - deterministic projection from `position` and `depth`;
 - non-sequential depth behavior;
 - preorder command-to-placement mapping at the first, middle, and last child positions;
-- subtree move with the correct depth delta, identity preservation, and internal order preservation;
+- subtree move with the minimum required indicated-depth changes, identity preservation, and internal order preservation;
 - concurrent move of one Block to different destinations;
 - concurrent move versus delete, with move winning after full peer convergence;
 - concurrent fine-grained text update versus delete, with the payload update keeping that Block alive after full peer convergence;

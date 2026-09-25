@@ -395,6 +395,58 @@ for (const factory of structuralCarrierFactories) {
   });
 }
 
+describe("structural projection validation", () => {
+  it("rejects duplicate identities, mutable root placement, and invalid direct depth", () => {
+    expect(() =>
+      projectStructuralSnapshot(
+        {
+          rootId,
+          entries: [
+            { blockId: rootId, payload: {}, live: true },
+            { blockId: rootId, payload: {}, live: true },
+          ],
+        },
+        localDensePositionAllocator,
+      ),
+    ).toThrow(/exactly once/u);
+
+    expect(() =>
+      projectStructuralSnapshot(
+        {
+          rootId,
+          entries: [
+            {
+              blockId: rootId,
+              placement: position(1, 1),
+              payload: {},
+              live: true,
+            },
+          ],
+        },
+        localDensePositionAllocator,
+      ),
+    ).toThrow(/root cannot have a mutable placement/u);
+
+    expect(() =>
+      projectStructuralSnapshot(
+        {
+          rootId,
+          entries: [
+            { blockId: rootId, payload: {}, live: true },
+            {
+              blockId: blockA,
+              placement: position(2, 0),
+              payload: {},
+              live: true,
+            },
+          ],
+        },
+        localDensePositionAllocator,
+      ),
+    ).toThrow(/positive integer/u);
+  });
+});
+
 function createTree(factory: StructuralCarrierFactory<LocalDensePosition>) {
   const carrier = factory.create(rootId);
   carrier.applyChange({

@@ -25,7 +25,7 @@ export interface LocalDenseAllocationContext {
 }
 
 /** Stable local dense-order candidate failure kinds. */
-export type LocalDensePositionErrorKind =
+type LocalDensePositionErrorKind =
   | "InvalidPosition"
   | "InvalidBounds"
   | "InvalidNonce"

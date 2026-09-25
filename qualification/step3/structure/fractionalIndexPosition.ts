@@ -24,7 +24,7 @@ export interface FractionalIndexAllocationContext {
 }
 
 /** Stable failures returned by the fractional-indexing qualification adapter. */
-export type FractionalIndexPositionErrorKind =
+type FractionalIndexPositionErrorKind =
   | "InvalidPosition"
   | "InvalidBounds"
   | "InvalidNonce"
@@ -132,7 +132,7 @@ export const fractionalIndexPositionAllocator: QualificationPositionAllocator<
 };
 
 /** Validates one fractional-indexing qualification position. */
-export function isValidFractionalIndexPosition(
+function isValidFractionalIndexPosition(
   position: FractionalIndexPosition,
 ): boolean {
   return (

@@ -93,6 +93,9 @@ export type StructuralOperationPlacementResult<Position> =
  * no-effect semantics. The planner first verifies that the current carrier
  * projection matches the logical document, then applies the operation through
  * the reducer. The resulting preorder identifies the destination open interval.
+ * Effective document depth is used only to identify logical subtree runs.
+ * Existing indicated placement depths are preserved unless a minimal change is
+ * required to realize the requested parentage after the run is spliced.
  *
  * When that boundary is a primary-position collision, the planner first plans
  * the minimum later-run normalization. The returned normalization and semantic
@@ -109,19 +112,17 @@ export function planStructuralOperationPlacements<Position, AllocationContext>(
   allocator: StructuralPositionAllocator<Position, AllocationContext>,
   contexts: StructuralOperationAllocationContexts<AllocationContext>,
 ): StructuralOperationPlacementResult<Position> {
-  if (
-    snapshot.entries.some(
-      (entry) =>
-        entry.blockId !== snapshot.rootId && entry.placement === undefined,
-    )
-  ) {
+  let projected: readonly ProjectedStructuralBlock[];
+  try {
+    projected = projectStructuralSnapshot(snapshot, allocator);
+  } catch (cause: unknown) {
     return failure(
       "SnapshotMismatch",
-      "Every live non-root structural entry must have a current placement.",
+      cause instanceof Error
+        ? `Structural carrier snapshot is invalid: ${cause.message}`
+        : "Structural carrier snapshot is invalid.",
     );
   }
-
-  const projected = projectStructuralSnapshot(snapshot, allocator);
   const currentLogical = flattenDocument(document);
   if (!sameProjectedStructure(currentLogical, projected)) {
     return failure(
@@ -153,23 +154,33 @@ export function planStructuralOperationPlacements<Position, AllocationContext>(
     );
   }
 
-  const runDepth = target[runStart]!.depth;
+  const runDepth = target[runStart]!.effectiveDepth;
   let runEnd = runStart + 1;
-  while (runEnd < target.length && target[runEnd]!.depth > runDepth) {
+  while (runEnd < target.length && target[runEnd]!.effectiveDepth > runDepth) {
     runEnd += 1;
   }
   const run = target.slice(runStart, runEnd);
   const runBlockIds = new Set(run.map((entry) => entry.blockId));
 
-  const positions = new Map<BlockId, Position>();
+  const currentPlacements = new Map<BlockId, StructuralPlacement<Position>>();
   for (const entry of snapshot.entries) {
-    if (
-      entry.blockId !== snapshot.rootId &&
-      entry.placement !== undefined &&
-      !runBlockIds.has(entry.blockId)
-    ) {
-      positions.set(entry.blockId, entry.placement.position);
+    if (entry.blockId !== snapshot.rootId && entry.placement !== undefined) {
+      currentPlacements.set(entry.blockId, entry.placement);
     }
+  }
+
+  const plannedDepths = planRunDepths(
+    target,
+    runStart,
+    runEnd,
+    snapshot.rootId,
+    currentPlacements,
+  );
+  if (plannedDepths === undefined) {
+    return failure(
+      "SnapshotMismatch",
+      "The requested logical structure cannot be represented by minimal valid indicated-depth changes.",
+    );
   }
 
   const predecessor = target[runStart - 1]!;
@@ -177,7 +188,7 @@ export function planStructuralOperationPlacements<Position, AllocationContext>(
   let lower =
     predecessor.blockId === snapshot.rootId
       ? undefined
-      : positions.get(predecessor.blockId);
+      : currentPlacements.get(predecessor.blockId)?.position;
   if (predecessor.blockId !== snapshot.rootId && lower === undefined) {
     return failure(
       "SnapshotMismatch",
@@ -186,7 +197,9 @@ export function planStructuralOperationPlacements<Position, AllocationContext>(
   }
 
   let upper =
-    successor === undefined ? undefined : positions.get(successor.blockId);
+    successor === undefined
+      ? undefined
+      : currentPlacements.get(successor.blockId)?.position;
   if (successor !== undefined && upper === undefined) {
     return failure(
       "SnapshotMismatch",
@@ -206,7 +219,7 @@ export function planStructuralOperationPlacements<Position, AllocationContext>(
     );
     const orderedPositions: Position[] = [];
     for (const entry of stationary) {
-      const position = positions.get(entry.blockId);
+      const position = currentPlacements.get(entry.blockId)?.position;
       if (position === undefined) {
         return failure(
           "SnapshotMismatch",
@@ -243,9 +256,18 @@ export function planStructuralOperationPlacements<Position, AllocationContext>(
 
     normalizations = normalization.value.updates.map((update) => {
       const entry = stationary[update.index]!;
+      const currentPlacement = currentPlacements.get(entry.blockId);
+      if (currentPlacement === undefined) {
+        throw new TypeError(
+          "A normalized structural Block has no current placement.",
+        );
+      }
       return {
         blockId: entry.blockId,
-        placement: { position: update.position, depth: entry.depth },
+        placement: {
+          position: update.position,
+          depth: currentPlacement.depth,
+        },
       };
     });
     lower = normalization.value.insertionLower;
@@ -285,7 +307,7 @@ export function planStructuralOperationPlacements<Position, AllocationContext>(
         blockId: entry.blockId,
         placement: {
           position: allocation.value[index]!,
-          depth: entry.depth,
+          depth: plannedDepths[index]!,
         },
       })),
     },
@@ -294,19 +316,26 @@ export function planStructuralOperationPlacements<Position, AllocationContext>(
 
 interface FlatStructuralBlock {
   readonly blockId: BlockId;
-  readonly depth: number;
+  readonly parentId?: BlockId;
+  readonly effectiveDepth: number;
 }
 
 function flattenDocument(
   document: StructuralDocument,
 ): readonly FlatStructuralBlock[] {
   const result: FlatStructuralBlock[] = [];
-  const stack: Array<{ readonly block: Block; readonly depth: number }> = [
-    { block: document.root, depth: 0 },
-  ];
+  const stack: Array<{
+    readonly block: Block;
+    readonly parentId?: BlockId;
+    readonly effectiveDepth: number;
+  }> = [{ block: document.root, effectiveDepth: 0 }];
   while (stack.length > 0) {
     const current = stack.pop()!;
-    result.push({ blockId: current.block.id, depth: current.depth });
+    result.push({
+      blockId: current.block.id,
+      ...(current.parentId === undefined ? {} : { parentId: current.parentId }),
+      effectiveDepth: current.effectiveDepth,
+    });
     for (
       let index = current.block.children.length - 1;
       index >= 0;
@@ -314,7 +343,11 @@ function flattenDocument(
     ) {
       const child = current.block.children[index];
       if (child !== undefined) {
-        stack.push({ block: child, depth: current.depth + 1 });
+        stack.push({
+          block: child,
+          parentId: current.block.id,
+          effectiveDepth: current.effectiveDepth + 1,
+        });
       }
     }
   }
@@ -330,9 +363,158 @@ function sameProjectedStructure(
     logical.every(
       (entry, index) =>
         entry.blockId === projected[index]?.blockId &&
-        entry.depth === projected[index]?.depth,
+        entry.parentId === projected[index]?.parentId,
     )
   );
+}
+
+function planRunDepths<Position>(
+  target: readonly FlatStructuralBlock[],
+  runStart: number,
+  runEnd: number,
+  rootId: BlockId,
+  currentPlacements: ReadonlyMap<BlockId, StructuralPlacement<Position>>,
+): readonly number[] | undefined {
+  const root = target[runStart];
+  if (
+    root === undefined ||
+    root.blockId === rootId ||
+    root.parentId === undefined
+  ) {
+    return undefined;
+  }
+
+  const parentIndex = target.findIndex(
+    (entry) => entry.blockId === root.parentId,
+  );
+  const parentDepth = indicatedDepth(
+    root.parentId,
+    rootId,
+    currentPlacements,
+  );
+  if (
+    parentIndex < 0 ||
+    parentIndex >= runStart ||
+    parentDepth === undefined ||
+    parentDepth >= Number.MAX_SAFE_INTEGER
+  ) {
+    return undefined;
+  }
+
+  let minimumRootDepth = parentDepth + 1;
+  const successor = target[runEnd];
+  if (successor !== undefined) {
+    const successorDepth = indicatedDepth(
+      successor.blockId,
+      rootId,
+      currentPlacements,
+    );
+    if (successorDepth === undefined) {
+      return undefined;
+    }
+    minimumRootDepth = Math.max(minimumRootDepth, successorDepth);
+  }
+
+  let maximumRootDepth = Number.MAX_SAFE_INTEGER;
+  for (let index = parentIndex + 1; index < runStart; index += 1) {
+    const preceding = target[index];
+    if (preceding === undefined) {
+      return undefined;
+    }
+    const precedingDepth = indicatedDepth(
+      preceding.blockId,
+      rootId,
+      currentPlacements,
+    );
+    if (precedingDepth === undefined) {
+      return undefined;
+    }
+    maximumRootDepth = Math.min(maximumRootDepth, precedingDepth);
+  }
+  if (
+    !Number.isSafeInteger(minimumRootDepth) ||
+    minimumRootDepth > maximumRootDepth
+  ) {
+    return undefined;
+  }
+
+  const planned = new Map<BlockId, number>();
+  const currentRootDepth = currentPlacements.get(root.blockId)?.depth;
+  const rootDepth =
+    currentRootDepth === undefined
+      ? minimumRootDepth
+      : Math.min(
+          maximumRootDepth,
+          Math.max(minimumRootDepth, currentRootDepth),
+        );
+  planned.set(root.blockId, rootDepth);
+
+  for (let index = runStart + 1; index < runEnd; index += 1) {
+    const entry = target[index];
+    if (entry?.parentId === undefined) {
+      return undefined;
+    }
+    const plannedParentDepth = planned.get(entry.parentId);
+    const currentDepth = currentPlacements.get(entry.blockId)?.depth;
+    if (plannedParentDepth === undefined || currentDepth === undefined) {
+      return undefined;
+    }
+    const depth = Math.max(currentDepth, plannedParentDepth + 1);
+    if (!Number.isSafeInteger(depth)) {
+      return undefined;
+    }
+    planned.set(entry.blockId, depth);
+  }
+
+  if (!depthsProjectTarget(target, rootId, currentPlacements, planned)) {
+    return undefined;
+  }
+  return target
+    .slice(runStart, runEnd)
+    .map((entry) => planned.get(entry.blockId)!);
+}
+
+function indicatedDepth<Position>(
+  blockId: BlockId,
+  rootId: BlockId,
+  currentPlacements: ReadonlyMap<BlockId, StructuralPlacement<Position>>,
+): number | undefined {
+  return blockId === rootId ? 0 : currentPlacements.get(blockId)?.depth;
+}
+
+function depthsProjectTarget<Position>(
+  target: readonly FlatStructuralBlock[],
+  rootId: BlockId,
+  currentPlacements: ReadonlyMap<BlockId, StructuralPlacement<Position>>,
+  planned: ReadonlyMap<BlockId, number>,
+): boolean {
+  if (target[0]?.blockId !== rootId || target[0].parentId !== undefined) {
+    return false;
+  }
+  const stack: Array<{ readonly blockId: BlockId; readonly depth: number }> = [
+    { blockId: rootId, depth: 0 },
+  ];
+  for (let index = 1; index < target.length; index += 1) {
+    const entry = target[index];
+    if (entry === undefined) {
+      return false;
+    }
+    const depth =
+      planned.get(entry.blockId) ??
+      currentPlacements.get(entry.blockId)?.depth;
+    if (depth === undefined) {
+      return false;
+    }
+    while ((stack.at(-1)?.depth ?? 0) >= depth && stack.length > 1) {
+      stack.pop();
+    }
+    const parent = stack.at(-1);
+    if (parent?.blockId !== entry.parentId) {
+      return false;
+    }
+    stack.push({ blockId: entry.blockId, depth });
+  }
+  return true;
 }
 
 function isValidAllocation<Position, AllocationContext>(

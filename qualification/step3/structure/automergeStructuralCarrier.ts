@@ -29,7 +29,7 @@ interface AutomergeStructuralState extends Record<string, unknown> {
 }
 
 /** Automerge v3 candidate for the accepted flat structural carrier contract. */
-export class AutomergeStructuralCarrier<
+class AutomergeStructuralCarrier<
   Position,
 > implements StructuralCarrier<Position> {
   public readonly candidate = "automerge" as const;
