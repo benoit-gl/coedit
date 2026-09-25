@@ -152,21 +152,22 @@ for (const candidate of candidates) {
       );
       for (let first = 0; first < ordered.length; first += 1) {
         for (let last = first + 1; last < ordered.length; last += 1) {
-          if (
-            candidate.allocator.comparePrimary(
-              ordered[first],
-              ordered[last],
-            ) !== 0
-          ) {
+          const firstPosition = ordered[first]!;
+          const lastPosition = ordered[last]!;
+          const primary = candidate.allocator.comparePrimary(
+            firstPosition,
+            lastPosition,
+          );
+          if (primary !== 0) {
             continue;
           }
           for (let middle = first + 1; middle < last; middle += 1) {
-            expect(
-              candidate.allocator.comparePrimary(
-                ordered[first],
-                ordered[middle],
-              ),
-            ).toBe(0);
+            const middlePosition = ordered[middle]!;
+            const middlePrimary = candidate.allocator.comparePrimary(
+              firstPosition,
+              middlePosition,
+            );
+            expect(middlePrimary).toBe(0);
           }
         }
       }
