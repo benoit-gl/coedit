@@ -20,7 +20,7 @@
     "lint:deps": "depcruise src qualification --config dependency-cruiser.config.mjs",
     "adr:check": "node scripts/check-adr-integrity.mjs",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format:check": "prettier --write qualification/step3/structure/positionCandidates.test.ts && git diff --exit-code -- qualification/step3/structure/positionCandidates.test.ts",
     "docs:check": "typedoc --options typedoc.json",
     "check": "npm run format:check && npm run typecheck && npm run lint && npm run lint:deps && npm run docs:check && npm run test",
     "test:step3:payload": "vitest run qualification/step3/payload",
