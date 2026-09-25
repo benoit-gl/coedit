@@ -2,7 +2,9 @@
 
 This directory contains qualification-only concrete implementations for the second Step 3 merge unit. Production source owns only the accepted carrier-neutral structural and position-allocation abstractions under `src/carrier`. Production modules do not import these candidate adapters.
 
-The structural carrier suite runs the same flat-placement, command-to-placement, Block-local payload, liveness, convergence, collision, normalization, reload, and repeated-move cases against Yjs 13.6.32 and Automerge 3.4.1.
+The structural carrier suite runs the same flat-placement, command-to-placement, Block-local payload, liveness, convergence, collision, normalization, reload, and repeated-move cases against Yjs 13.6.32 and Automerge 3.4.1. Semantic Block updates use document-unique, never-reused carrier-private liveness tokens so independent updates cannot alias the same replicated liveness key.
+
+When two replicas independently normalize the same collided insertion boundary, each insertion depends on its local normalization. The common suite requires convergence, keeps both insertions visible, and verifies the insertion associated with the winning normalization remains before the normalized Block. It records the other insertion's relative order as residual concurrent-normalization behavior instead of imposing automatic repair.
 
 The allocator suite compares fractional-indexing 4.0.0, Fugue 3.0.0, and a local dense-order comparison candidate through the accepted `StructuralPositionAllocator` abstraction. It covers open-interval allocation, ordered runs, deterministic concurrent ordering, explicit run-interleaving and nested-run projection characterization, codec round trips, collision normalization, repeated moves with fresh positions, and repeated narrow-gap ordering invariants. The local candidate is a comparison baseline; its presence is not a selection. Representative growth and exhaustion measurements belong to the later comparative-evidence merge unit and are not correctness thresholds.
 

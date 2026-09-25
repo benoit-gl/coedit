@@ -18,13 +18,13 @@ export interface QualificationPositionAllocator<
   readonly candidate: string;
 }
 
-/** One semantic placement update with a fresh liveness token. */
+/** One semantic placement update with a unique liveness token. */
 export interface StructuralPlacementUpdate<Position> {
   /** Existing or newly created Block. */
   readonly blockId: BlockId;
   /** Complete replacement placement. */
   readonly placement: StructuralPlacement<Position>;
-  /** Fresh token proving semantic activity for this Block. */
+  /** Document-unique, never-reused token proving this semantic update. */
   readonly liveToken: string;
 }
 
@@ -36,7 +36,7 @@ export interface StructuralNormalizationUpdate<Position> {
   readonly placement: StructuralPlacement<Position>;
 }
 
-/** One qualification payload update with a fresh Block-liveness token. */
+/** One qualification payload update with a unique Block-liveness token. */
 export interface StructuralPayloadUpdate {
   /** Existing Block whose payload changes. */
   readonly blockId: BlockId;
@@ -44,11 +44,20 @@ export interface StructuralPayloadUpdate {
   readonly key: string;
   /** Opaque qualification payload value. */
   readonly value: string;
-  /** Fresh token proving semantic activity for this Block. */
+  /** Document-unique, never-reused token proving this semantic update. */
   readonly liveToken: string;
 }
 
-/** One atomic logical carrier change used only by structural qualification. */
+/**
+ * One atomic logical carrier change used only by structural qualification.
+ *
+ * @remarks
+ * Every `liveToken` identifies one semantic Block update. Callers must allocate
+ * each token uniquely within the document and never reuse it. The qualification
+ * adapters store tokens as independent replicated liveness keys; reuse would
+ * collapse independent update/delete effects onto one key and invalidate the
+ * update-over-delete proof.
+ */
 export interface StructuralCarrierChange<Position> {
   /** Semantic placement mutations published by this carrier change. */
   readonly placements?: readonly StructuralPlacementUpdate<Position>[];

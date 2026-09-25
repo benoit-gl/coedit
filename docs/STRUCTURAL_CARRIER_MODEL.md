@@ -248,8 +248,11 @@ alive independently of its ancestors.
 The carrier adapter must prove the exact effect that implements update-over-delete
 semantics. Do not rely on an undocumented last-writer rule, on writing the same
 payload value again, or on a nested mutation that can vanish with its enclosing
-entry. Yjs and Automerge can use different private encodings if they preserve the
-same logical result.
+entry. If an adapter represents liveness with per-update replicated keys, distinct
+semantic updates must never alias the same key. Key allocation remains
+carrier-private, but uniqueness is part of the update-over-delete proof. Yjs and
+Automerge can use different private encodings if they preserve the same logical
+result.
 
 The deterministic whole-payload replacement register defined by
 `INLINE_CONTENT_PAYLOADS.md` is separate from Block existence. The replacement

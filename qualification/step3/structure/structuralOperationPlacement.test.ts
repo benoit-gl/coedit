@@ -256,6 +256,124 @@ for (const factory of factories) {
       ]);
     });
 
+    it("converges independent normalization and insertion at one collided boundary", () => {
+      const state = createState(factory);
+      execute(state, createBlock(blockA, rootId, 0));
+      execute(state, createBlock(blockB, rootId, 1));
+
+      const collidedPlacement = currentPlacement(state.carrier, blockA);
+      state.carrier.applyChange({
+        normalizations: [
+          {
+            blockId: blockB,
+            placement: {
+              position: collidedPlacement.position,
+              depth: currentPlacement(state.carrier, blockB).depth,
+            },
+          },
+        ],
+      });
+      expectProjected(state, [
+        [rootId, 0],
+        [blockA, 1],
+        [blockB, 1],
+      ]);
+
+      const baseEncoded = state.carrier.encode();
+      const left = factory.load(baseEncoded);
+      const right = factory.load(baseEncoded);
+      const leftPlan = planStructuralOperationPlacements(
+        state.document,
+        projectionSnapshot(left.snapshot()),
+        createBlock(blockC, rootId, 1),
+        localDensePositionAllocator,
+        allocationContexts(100),
+      );
+      const rightPlan = planStructuralOperationPlacements(
+        state.document,
+        projectionSnapshot(right.snapshot()),
+        createBlock(blockD, rootId, 1),
+        localDensePositionAllocator,
+        allocationContexts(200),
+      );
+      expect(leftPlan.ok && rightPlan.ok).toBe(true);
+      if (!leftPlan.ok || !rightPlan.ok) {
+        return;
+      }
+      expect(
+        leftPlan.value.normalizations.map((entry) => entry.blockId),
+      ).toEqual([blockB]);
+      expect(
+        rightPlan.value.normalizations.map((entry) => entry.blockId),
+      ).toEqual([blockB]);
+
+      const leftBlockB = leftPlan.value.normalizations[0]!.placement.position;
+      const rightBlockB = rightPlan.value.normalizations[0]!.placement.position;
+      expect(
+        localDensePositionAllocator.compare(leftBlockB, rightBlockB),
+      ).not.toBe(0);
+
+      left.applyChange({
+        normalizations: leftPlan.value.normalizations,
+        placements: leftPlan.value.placements.map((entry, index) => ({
+          ...entry,
+          liveToken: "left-concurrent-normalization-" + index,
+        })),
+      });
+      right.applyChange({
+        normalizations: rightPlan.value.normalizations,
+        placements: rightPlan.value.placements.map((entry, index) => ({
+          ...entry,
+          liveToken: "right-concurrent-normalization-" + index,
+        })),
+      });
+
+      const leftEncoded = left.encode();
+      const rightEncoded = right.encode();
+      const forward = factory.load(baseEncoded);
+      forward.mergeEncoded(leftEncoded);
+      forward.mergeEncoded(rightEncoded);
+      forward.mergeEncoded(leftEncoded);
+      const reverse = factory.load(baseEncoded);
+      reverse.mergeEncoded(rightEncoded);
+      reverse.mergeEncoded(leftEncoded);
+      reverse.mergeEncoded(rightEncoded);
+
+      expect(forward.snapshot()).toEqual(reverse.snapshot());
+      expect(factory.load(forward.encode()).snapshot()).toEqual(
+        forward.snapshot(),
+      );
+
+      const projected = projectStructuralSnapshot(
+        forward.snapshot(),
+        localDensePositionAllocator,
+      );
+      expect(projected).toHaveLength(5);
+      expect(projected[0]?.blockId).toBe(rootId);
+      expect(projected[1]?.blockId).toBe(blockA);
+      expect(new Set(projected.map((entry) => entry.blockId))).toEqual(
+        new Set([rootId, blockA, blockB, blockC, blockD]),
+      );
+
+      const finalBlockB = currentPlacement(forward, blockB).position;
+      const winningInsertion =
+        localDensePositionAllocator.compare(finalBlockB, leftBlockB) === 0
+          ? blockC
+          : localDensePositionAllocator.compare(finalBlockB, rightBlockB) === 0
+            ? blockD
+            : undefined;
+      expect(winningInsertion).toBeDefined();
+      if (winningInsertion === undefined) {
+        return;
+      }
+      expect(
+        localDensePositionAllocator.compare(
+          currentPlacement(forward, winningInsertion).position,
+          finalBlockB,
+        ),
+      ).toBeLessThan(0);
+    });
+
     it("keeps Step 2 operation rejection authoritative", () => {
       const state = createState(factory);
       const result = planStructuralOperationPlacements(
