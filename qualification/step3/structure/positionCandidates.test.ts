@@ -210,12 +210,12 @@ for (const candidate of candidates) {
         const next = allocate(candidate, lower, upper, 1, nonce);
         expect(next.ok).toBe(true);
         if (!next.ok) return;
-        expect(
-          candidate.allocator.compare(lower, next.value[0]),
-        ).toBeLessThan(0);
-        expect(
-          candidate.allocator.compare(next.value[0], upper),
-        ).toBeLessThan(0);
+        expect(candidate.allocator.compare(lower, next.value[0])).toBeLessThan(
+          0,
+        );
+        expect(candidate.allocator.compare(next.value[0], upper)).toBeLessThan(
+          0,
+        );
         lower = next.value[0];
       }
     });
