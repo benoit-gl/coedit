@@ -387,11 +387,7 @@ function planRunDepths<Position>(
   const parentIndex = target.findIndex(
     (entry) => entry.blockId === root.parentId,
   );
-  const parentDepth = indicatedDepth(
-    root.parentId,
-    rootId,
-    currentPlacements,
-  );
+  const parentDepth = indicatedDepth(root.parentId, rootId, currentPlacements);
   if (
     parentIndex < 0 ||
     parentIndex >= runStart ||
