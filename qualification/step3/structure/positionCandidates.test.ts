@@ -155,10 +155,14 @@ for (const candidate of candidates) {
 
       expect(transitions).toBe(candidate.expectedConcurrentRunTransitions);
       expect(
-        ordered.filter(({ run }) => run === "left").map(({ member }) => member),
+        ordered
+          .filter(({ run }) => run === "left")
+          .map(({ member }) => member),
       ).toEqual([0, 1, 2, 3]);
       expect(
-        ordered.filter(({ run }) => run === "right").map(({ member }) => member),
+        ordered
+          .filter(({ run }) => run === "right")
+          .map(({ member }) => member),
       ).toEqual([0, 1, 2, 3]);
     });
 
