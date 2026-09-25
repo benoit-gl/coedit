@@ -397,10 +397,10 @@ global position plus depth. There is no authoritative replicated parent pointer.
 This projection makes every surviving Block visible exactly once and prevents a
 structural cycle in the projected tree.
 
-Structural commands map to preorder placement. A new or moved Block root receives
-`parent.depth + 1`; insertion follows the complete previous sibling subtree. A
-subtree move allocates a fresh ordered run and applies one depth delta while
-preserving Block identity and relative order.
+Structural commands map to preorder placement. A created or moved semantic run
+receives the minimum valid indicated depths after it is spliced into target
+preorder. Stationary indicated depths remain unchanged. A subtree move allocates
+a fresh ordered run while preserving Block identity and relative order.
 
 The accepted concurrency preference is non-destructive:
 
