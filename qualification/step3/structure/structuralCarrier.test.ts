@@ -5,7 +5,7 @@ import type { BlockId } from "../../../src/domain/index.js";
 import { createAutomergeStructuralCarrierFactory } from "./automergeStructuralCarrier.js";
 import type { LocalDensePosition } from "./localDensePosition.js";
 import { localDensePositionAllocator } from "./localDensePosition.js";
-import type { StructuralPlacement } from "../../../src/carrier/structuralCarrier.js";
+import type { StructuralPlacement } from "../../../src/carrier/index.js";
 import type { StructuralCarrierFactory } from "./carrier.js";
 import { projectStructuralSnapshot } from "./carrier.js";
 import { createYjsStructuralCarrierFactory } from "./yjsStructuralCarrier.js";

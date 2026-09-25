@@ -11,11 +11,11 @@ import type {
   StructuralDocument,
   StructuralOperation,
 } from "../../../src/domain/index.js";
-import { planStructuralOperationPlacements } from "../../../src/carrier/structuralOperationPlacement.js";
+import { planStructuralOperationPlacements } from "../../../src/carrier/index.js";
 import type {
   StructuralPlacement,
   StructuralProjectionSnapshot,
-} from "../../../src/carrier/structuralCarrier.js";
+} from "../../../src/carrier/index.js";
 import { createAutomergeStructuralCarrierFactory } from "./automergeStructuralCarrier.js";
 import type {
   StructuralCarrier,

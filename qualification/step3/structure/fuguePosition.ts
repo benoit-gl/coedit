@@ -4,7 +4,7 @@ import { isCanonicalUuidV4 } from "../../../src/domain/index.js";
 import type {
   StructuralPositionAllocationResult,
   StructuralPositionOrder,
-} from "../../../src/carrier/position.js";
+} from "../../../src/carrier/index.js";
 import type { QualificationPositionAllocator } from "./carrier.js";
 
 const FUGUE_RANDOM_WARMUP_ROUNDS = 16;

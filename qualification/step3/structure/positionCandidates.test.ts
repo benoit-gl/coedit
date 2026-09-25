@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { planPositionCollisionNormalization } from "../../../src/carrier/positionNormalization.js";
+import { planPositionCollisionNormalization } from "../../../src/carrier/index.js";
 import { parseBlockId } from "../../../src/domain/index.js";
 import { createAutomergeStructuralCarrierFactory } from "./automergeStructuralCarrier.js";
 import {

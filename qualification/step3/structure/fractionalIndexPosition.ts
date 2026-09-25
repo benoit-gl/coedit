@@ -4,7 +4,7 @@ import { isCanonicalUuidV4 } from "../../../src/domain/index.js";
 import type {
   StructuralPositionAllocationResult,
   StructuralPositionOrder,
-} from "../../../src/carrier/position.js";
+} from "../../../src/carrier/index.js";
 import type { QualificationPositionAllocator } from "./carrier.js";
 
 /** Opaque structural position produced by fractional-indexing v4. */

@@ -2,12 +2,12 @@ import type { BlockId } from "../../../src/domain/index.js";
 import type {
   StructuralPositionAllocator,
   StructuralPositionOrdering,
-} from "../../../src/carrier/position.js";
+} from "../../../src/carrier/index.js";
 import type {
   ProjectedStructuralBlock,
   StructuralPlacement,
-} from "../../../src/carrier/structuralCarrier.js";
-import { projectStructuralSnapshot as projectCarrierStructuralSnapshot } from "../../../src/carrier/structuralCarrier.js";
+} from "../../../src/carrier/index.js";
+import { projectStructuralSnapshot as projectCarrierStructuralSnapshot } from "../../../src/carrier/index.js";
 
 /** Qualification-only allocator surface with an evidence label. */
 export interface QualificationPositionAllocator<

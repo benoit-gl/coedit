@@ -1,7 +1,7 @@
 import * as Automerge from "@automerge/automerge";
 
 import type { BlockId } from "../../../src/domain/index.js";
-import type { StructuralPositionCodec } from "../../../src/carrier/position.js";
+import type { StructuralPositionCodec } from "../../../src/carrier/index.js";
 import { parseBlockId } from "../../../src/domain/index.js";
 import type {
   StructuralCarrier,
@@ -13,7 +13,7 @@ import type {
 import {
   decodeStructuralPlacement,
   encodeStructuralPlacement,
-} from "../../../src/carrier/structuralCarrier.js";
+} from "../../../src/carrier/index.js";
 
 const ROOT_TOKEN = "__root__";
 

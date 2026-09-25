@@ -3,7 +3,7 @@ import type {
   StructuralPositionAllocationRequest,
   StructuralPositionAllocationResult,
   StructuralPositionOrder,
-} from "../../../src/carrier/position.js";
+} from "../../../src/carrier/index.js";
 import type { QualificationPositionAllocator } from "./carrier.js";
 
 const BASE = 65_536;

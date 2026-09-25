@@ -16,12 +16,13 @@ the moved root to `parent.depth + 1` and preserve descendant depth differences.
 
 Step 3 qualification showed that the projection does not require indicated depth
 to equal logical tree depth. Parentage depends only on the nearest preceding Block
-with a smaller indicated depth. A command can therefore preserve more existing
-carrier state while producing the same requested logical tree.
+with a smaller indicated depth. A command can therefore preserve existing
+indicated depth values while producing the same requested logical tree.
 
-Rewriting depth when projection does not require it creates extra replicated
-changes. It also makes an ordinary move perform implicit depth rationalization
-that is not part of the user command.
+Rewriting depth when projection does not require it makes an ordinary move
+perform implicit depth rationalization that is not part of the user command. A
+move still allocates fresh positions and replaces each moved Block's complete
+placement.
 
 ## Decision
 
@@ -49,13 +50,14 @@ All other decisions in ADR 0003 remain accepted.
 
 ## Rationale
 
-This rule makes the carrier change match the semantic change. It avoids replicated
-depth writes that do not affect the requested tree and reduces unnecessary
-conflict surface during concurrent work.
+This rule keeps ordinary structural moves separate from depth rationalization.
+Preserving an indicated depth does not avoid a placement write or change
+placement-level conflict behavior because a move still replaces the complete
+placement with a fresh position.
 
-The rule also keeps indicated depth as carrier state instead of silently treating
-it as a canonical tree-depth encoding. Explicit projection validation prevents a
-smaller carrier delta from changing the requested logical parentage.
+The rule keeps indicated depth as carrier state instead of silently treating it
+as a canonical tree-depth encoding. Explicit projection validation ensures that
+preserving a non-canonical depth cannot change the requested logical parentage.
 
 ## Consequences
 

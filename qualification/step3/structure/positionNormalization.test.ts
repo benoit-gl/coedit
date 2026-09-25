@@ -4,7 +4,7 @@ import type { FractionalIndexPosition } from "./fractionalIndexPosition.js";
 import { fractionalIndexPositionAllocator } from "./fractionalIndexPosition.js";
 import type { LocalDensePosition } from "./localDensePosition.js";
 import { localDensePositionAllocator } from "./localDensePosition.js";
-import { planPositionCollisionNormalization } from "../../../src/carrier/positionNormalization.js";
+import { planPositionCollisionNormalization } from "../../../src/carrier/index.js";
 
 const runA = "60000000-0000-4000-8000-000000000001";
 const runB = "60000000-0000-4000-8000-000000000002";
