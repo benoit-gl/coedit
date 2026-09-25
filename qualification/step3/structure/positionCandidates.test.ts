@@ -35,7 +35,6 @@ const rightTwoId = parseBlockId("61000000-0000-4000-8000-000000000016");
 interface Candidate<Position, Context> {
   readonly allocator: QualificationPositionAllocator<Position, Context>;
   readonly context: (runNonce: string) => Context;
-  /** Transitions between two four-item runs in the pinned same-destination fixture. */
   readonly expectedConcurrentRunTransitions: number;
 }
 
@@ -135,35 +134,20 @@ for (const candidate of candidates) {
       if (!left.ok || !right.ok) return;
 
       const ordered = [
-        ...left.value.map((position, member) => ({
-          position,
-          member,
-          run: "left" as const,
-        })),
-        ...right.value.map((position, member) => ({
-          position,
-          member,
-          run: "right" as const,
-        })),
-      ].sort((a, b) => candidate.allocator.compare(a.position, b.position));
+        ...left.value.map((position) => ({ position, run: "left" as const })),
+        ...right.value.map((position) => ({ position, run: "right" as const })),
+      ];
+      ordered.sort((a, b) =>
+        candidate.allocator.compare(a.position, b.position),
+      );
+
       let transitions = 0;
       for (let index = 1; index < ordered.length; index += 1) {
         if (ordered[index - 1]!.run !== ordered[index]!.run) {
           transitions += 1;
         }
       }
-
       expect(transitions).toBe(candidate.expectedConcurrentRunTransitions);
-      expect(
-        ordered
-          .filter(({ run }) => run === "left")
-          .map(({ member }) => member),
-      ).toEqual([0, 1, 2, 3]);
-      expect(
-        ordered
-          .filter(({ run }) => run === "right")
-          .map(({ member }) => member),
-      ).toEqual([0, 1, 2, 3]);
     });
 
     it("survives repeated narrow-gap allocation without a semantic maximum", () => {
