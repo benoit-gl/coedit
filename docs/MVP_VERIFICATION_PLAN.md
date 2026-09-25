@@ -326,7 +326,7 @@ Verify at least:
 - insertion inside two-way and multi-way collision runs preserves the previous projected order and replicates required normalization;
 - any residual normalization-versus-delete behavior is recorded;
 - concurrent subtree/run insertion measures non-interleaving behavior;
-- narrow-gap stress records key growth, comparison/sort cost, and serialized carrier growth;
+- narrow-gap stress verifies ordering under repeated allocation; representative key growth, comparison/sort cost, serialized carrier growth, and exhaustion measurements are recorded by the later comparative-evidence merge unit;
 - duplicate, delayed, reordered, partitioned, and reconnected updates converge to equal projected structure and logically equivalent Media-Type-labelled payload state; and
 - supported carrier-native text in allowlisted payloads survives the same convergence/reload path without normalization or silent repair.
 
