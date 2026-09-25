@@ -10,7 +10,16 @@ export interface StructuralPositionCodec<Position> {
   decode(encoded: string): Position;
 }
 
-/** Engine-facing ordering operations for opaque structural positions. */
+/**
+ * Engine-facing ordering operations for opaque structural positions.
+ *
+ * @remarks
+ * `compare` must refine `comparePrimary`. When primary positions differ, both
+ * comparators return the same ordering direction. Positions that compare equal
+ * by `comparePrimary` can use allocator-private tie-breaking in `compare`, but
+ * one primary-position equivalence class must remain contiguous in complete
+ * comparator order. Collision normalization relies on this property.
+ */
 export interface StructuralPositionOrdering<Position> {
   /** Compares logical ordering locations before allocator-specific tie-breaking. */
   comparePrimary(left: Position, right: Position): StructuralPositionOrder;

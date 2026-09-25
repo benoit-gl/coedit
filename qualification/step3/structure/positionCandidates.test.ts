@@ -36,7 +36,7 @@ interface Candidate<Position, Context> {
   readonly allocator: QualificationPositionAllocator<Position, Context>;
   readonly context: (runNonce: string) => Context;
   readonly expectedConcurrentRunTransitions: number;
-  readonly expectedSubtreeParentMismatches: number;
+  readonly nestedRunParentage: "preserved" | "violated";
 }
 
 const candidates: readonly Candidate<unknown, unknown>[] = [
@@ -45,19 +45,19 @@ const candidates: readonly Candidate<unknown, unknown>[] = [
     context: (runNonce) =>
       ({ runNonce }) satisfies FractionalIndexAllocationContext,
     expectedConcurrentRunTransitions: 7,
-    expectedSubtreeParentMismatches: 1,
+    nestedRunParentage: "violated",
   },
   {
     allocator: fuguePositionAllocator,
     context: (runNonce) => ({ runNonce }) satisfies FugueAllocationContext,
     expectedConcurrentRunTransitions: 1,
-    expectedSubtreeParentMismatches: 0,
+    nestedRunParentage: "preserved",
   },
   {
     allocator: localDensePositionAllocator,
     context: (runNonce) => ({ runNonce }) satisfies LocalDenseAllocationContext,
     expectedConcurrentRunTransitions: 1,
-    expectedSubtreeParentMismatches: 0,
+    nestedRunParentage: "preserved",
   },
 ];
 
@@ -129,6 +129,47 @@ for (const candidate of candidates) {
         candidate.allocator.compare(a, b),
       );
       expect(secondOrder).toEqual(firstOrder);
+    });
+
+    it("refines primary order with complete comparator order", () => {
+      const left = allocate(candidate, undefined, undefined, 4, runA);
+      const right = allocate(candidate, undefined, undefined, 4, runB);
+      expect(left.ok && right.ok).toBe(true);
+      if (!left.ok || !right.ok) return;
+
+      const positions = [...left.value, ...right.value];
+      for (const first of positions) {
+        for (const second of positions) {
+          const primary = candidate.allocator.comparePrimary(first, second);
+          if (primary !== 0) {
+            expect(candidate.allocator.compare(first, second)).toBe(primary);
+          }
+        }
+      }
+
+      const ordered = [...positions].sort((a, b) =>
+        candidate.allocator.compare(a, b),
+      );
+      for (let first = 0; first < ordered.length; first += 1) {
+        for (let last = first + 1; last < ordered.length; last += 1) {
+          if (
+            candidate.allocator.comparePrimary(
+              ordered[first],
+              ordered[last],
+            ) !== 0
+          ) {
+            continue;
+          }
+          for (let middle = first + 1; middle < last; middle += 1) {
+            expect(
+              candidate.allocator.comparePrimary(
+                ordered[first],
+                ordered[middle],
+              ),
+            ).toBe(0);
+          }
+        }
+      }
     });
 
     it("characterizes concurrent same-destination run interleaving", () => {
@@ -238,7 +279,7 @@ for (const candidate of candidates) {
       createYjsStructuralCarrierFactory(candidate.allocator),
       createAutomergeStructuralCarrierFactory(candidate.allocator),
     ]) {
-      it(`converges ${factory.candidate} carrier state and characterizes nested same-destination runs`, () => {
+      it(`records ${factory.candidate} nested-run parentage`, () => {
         const anchors = allocate(candidate, undefined, undefined, 2, runA);
         expect(anchors.ok).toBe(true);
         if (!anchors.ok) return;
@@ -341,9 +382,12 @@ for (const candidate of candidates) {
             projected.find((entry) => entry.blockId === childId)?.parentId !==
             expectedParentId,
         );
-        expect(parentMismatches).toHaveLength(
-          candidate.expectedSubtreeParentMismatches,
-        );
+        if (candidate.nestedRunParentage === "preserved") {
+          expect(parentMismatches).toHaveLength(0);
+        } else {
+          expect(candidate.allocator.candidate).toBe("fractional-indexing-v4");
+          expect(parentMismatches).toHaveLength(1);
+        }
       });
     }
   });

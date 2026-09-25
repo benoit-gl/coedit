@@ -186,8 +186,11 @@ Deliver Step 3 as five reviewable merge units with one fork-and-join boundary:
    Independently add flat structural placement and the structural-position
    allocator candidates behind the accepted allocator abstraction, together with
    their common semantic suite. Cover collision and normalization behavior,
-   structural convergence, ordering, and structural/allocator growth. This work
-   does not depend on the payload qualification implementation.
+   structural convergence, ordering, and the semantic stress workloads used by
+   later growth comparison. Representative structural/allocator growth,
+   exhaustion, and cost measurements are deferred to the comparative-evidence
+   merge unit. This work does not depend on the payload qualification
+   implementation.
 3. **Integrated collaborative-document and application qualification
    implementation.** After the first two merge units are on `main`, compose them
    into one logical document and complete the remaining integrated common-suite

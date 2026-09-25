@@ -55,6 +55,12 @@ location for collision handling. Distinct positions can compare equal at this
 level.
 
 `compare` provides the allocator's deterministic order for encoded positions.
+It must refine `comparePrimary`: when two primary positions differ, `compare`
+must return the same ordering direction. Positions that compare equal at the
+primary level can use allocator-private secondary ordering, but each primary
+equivalence class must remain contiguous in complete comparator order. Collision
+normalization relies on this property.
+
 The structural projection can apply stable `BlockId` as the final tie-break when
 required. The combined projection order must be total and deterministic.
 
@@ -112,6 +118,8 @@ production allocator abstraction. At minimum verify:
 - allocation strictly between adjacent positions;
 - ordered allocation of runs of one and many positions;
 - deterministic comparison and projection;
+- complete ordering refines primary ordering and keeps each primary-collision
+  equivalence class contiguous;
 - concurrent allocation at the same logical destination;
 - run non-interleaving, or measured residual interleaving;
 - repeated narrow-gap insertion;
