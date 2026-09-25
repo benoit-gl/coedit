@@ -158,10 +158,17 @@ function isValidAllocation<Position, AllocationContext>(
   }
   for (let index = 0; index < positions.length; index += 1) {
     const position = positions[index]!;
-    if (allocator.compare(lower, position) >= 0) {
+    if (
+      allocator.comparePrimary(lower, position) >= 0 ||
+      allocator.compare(lower, position) >= 0
+    ) {
       return false;
     }
-    if (upper !== undefined && allocator.compare(position, upper) >= 0) {
+    if (
+      upper !== undefined &&
+      (allocator.comparePrimary(position, upper) >= 0 ||
+        allocator.compare(position, upper) >= 0)
+    ) {
       return false;
     }
     if (index > 0 && allocator.compare(positions[index - 1]!, position) >= 0) {

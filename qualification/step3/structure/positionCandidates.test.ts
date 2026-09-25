@@ -35,6 +35,8 @@ const rightTwoId = parseBlockId("61000000-0000-4000-8000-000000000016");
 interface Candidate<Position, Context> {
   readonly allocator: QualificationPositionAllocator<Position, Context>;
   readonly context: (runNonce: string) => Context;
+  /** Transitions between two four-item runs in the pinned same-destination fixture. */
+  readonly expectedConcurrentRunTransitions: number;
 }
 
 const candidates: readonly Candidate<unknown, unknown>[] = [
@@ -42,14 +44,17 @@ const candidates: readonly Candidate<unknown, unknown>[] = [
     allocator: fractionalIndexPositionAllocator,
     context: (runNonce) =>
       ({ runNonce }) satisfies FractionalIndexAllocationContext,
+    expectedConcurrentRunTransitions: 7,
   },
   {
     allocator: fuguePositionAllocator,
     context: (runNonce) => ({ runNonce }) satisfies FugueAllocationContext,
+    expectedConcurrentRunTransitions: 1,
   },
   {
     allocator: localDensePositionAllocator,
     context: (runNonce) => ({ runNonce }) satisfies LocalDenseAllocationContext,
+    expectedConcurrentRunTransitions: 1,
   },
 ];
 
@@ -121,6 +126,40 @@ for (const candidate of candidates) {
         candidate.allocator.compare(a, b),
       );
       expect(secondOrder).toEqual(firstOrder);
+    });
+
+    it("characterizes concurrent same-destination run interleaving", () => {
+      const left = allocate(candidate, undefined, undefined, 4, runA);
+      const right = allocate(candidate, undefined, undefined, 4, runB);
+      expect(left.ok && right.ok).toBe(true);
+      if (!left.ok || !right.ok) return;
+
+      const ordered = [
+        ...left.value.map((position, member) => ({
+          position,
+          member,
+          run: "left" as const,
+        })),
+        ...right.value.map((position, member) => ({
+          position,
+          member,
+          run: "right" as const,
+        })),
+      ].sort((a, b) => candidate.allocator.compare(a.position, b.position));
+      let transitions = 0;
+      for (let index = 1; index < ordered.length; index += 1) {
+        if (ordered[index - 1]!.run !== ordered[index]!.run) {
+          transitions += 1;
+        }
+      }
+
+      expect(transitions).toBe(candidate.expectedConcurrentRunTransitions);
+      expect(
+        ordered.filter(({ run }) => run === "left").map(({ member }) => member),
+      ).toEqual([0, 1, 2, 3]);
+      expect(
+        ordered.filter(({ run }) => run === "right").map(({ member }) => member),
+      ).toEqual([0, 1, 2, 3]);
     });
 
     it("survives repeated narrow-gap allocation without a semantic maximum", () => {

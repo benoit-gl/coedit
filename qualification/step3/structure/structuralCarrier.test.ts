@@ -76,7 +76,7 @@ for (const factory of structuralCarrierFactories) {
       expect(carrier.snapshot().entries).toHaveLength(1);
     });
 
-    it("moves an ordered subtree run atomically with one depth delta", () => {
+    it("moves an ordered subtree run atomically while preserving parentage", () => {
       const carrier = createTree(factory);
       carrier.applyChange({
         placements: [

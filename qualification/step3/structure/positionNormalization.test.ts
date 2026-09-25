@@ -175,6 +175,25 @@ describe("planPositionCollisionNormalization", () => {
       });
     }
 
+    const samePrimaryAllocator = {
+      ...localDensePositionAllocator,
+      allocateRun: () =>
+        ({
+          ok: true,
+          value: [{ ...lower, run: runC }],
+        }) as const,
+    };
+    const samePrimary = planPositionCollisionNormalization(
+      samePrimaryAllocator,
+      [lower, collided, upper],
+      1,
+      { runNonce: normalizeRun },
+    );
+    expect(samePrimary).toMatchObject({
+      ok: false,
+      error: { kind: "InvalidAllocation" },
+    });
+
     const valid = allocate(lower, upper, 2, normalizeRun);
     expect(valid.ok).toBe(true);
     if (!valid.ok) return;
