@@ -114,6 +114,14 @@ refactoring out of the change. Documentation and implementation that define one
 contract can remain in the same pull request. Use a separate design pull request
 when a design decision must be reviewed or accepted independently.
 
+A merge unit's scope can change as implementation and review reveal more
+information. Keep the unit as small as practical while preserving a coherent
+repository state and its required objective and evidence. Defer newly discovered
+work when it is not required for the unit. If the planned scope proves too large
+or too coupled, reduce it when the remaining change can stand on its own. Record
+deferred work in the document that owns its future work order or technical
+requirement.
+
 Open a draft pull request when the work becomes useful to share, preserve, or
 review. Draft work can be incomplete and can contain temporary commits. Before
 you mark it ready for review, make its final scope coherent and remove temporary
