@@ -1,7 +1,7 @@
-# Step 3 integrated collaborative-document qualification
+# Step 3 integrated collaborative-document foundation
 
-This directory contains the third Step 3 merge unit. It joins the landed payload and structural qualification work through one native Yjs or Automerge document per candidate. The focused payload and structural adapters remain unchanged.
+This directory contains the third Step 3 merge unit. It establishes one qualification-only integrated adapter per candidate, backed by one native Yjs or Automerge document. The focused payload and structural adapters remain unchanged.
 
-The common integrated suite covers one all-or-none change across structural placement, allowlisted fine-grained text, and opaque payloads; convergence and reload; checkpoint/History and Range feasibility surrogates; cursor behavior; carrier serialization/reopen; candidate-supported serialization compaction; representative ProseMirror/Tiptap-style transaction translation; IME-shaped composition; cut/paste; undo/redo; and a hostile-input private clipboard boundary.
+The common foundation suite covers one all-or-none change across structural placement, allowlisted fine-grained text, and opaque payloads; sequential fine-grained payload operations within one transaction; convergence of independent structural and payload changes; and candidate serialization reload/reopen.
 
-These tests are qualification evidence. They do not select a carrier or allocator, define the Gate B whole-payload replacement winner or mixed replacement/edit policy, select private-clipboard resource guards, implement History or Range, add an editor dependency, or freeze portable `.coedit` bytes. Comparative measurements and resource characterization remain in the next Step 3 merge unit.
+This merge unit establishes only the shared native-document seam. It does not yet claim the complete Block-local payload/liveness join, semantic update-over-delete, History or Range feasibility, carrier cursor behavior, Tiptap/ProseMirror integration, IME, cut/paste, undo/redo, private clipboard behavior, portable-format surrogates, or garbage-collection/compaction qualification. The next Step 3 merge unit owns that semantic and application qualification before comparative evidence and Gate B.
