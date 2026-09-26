@@ -23,7 +23,8 @@
     "format:check": "prettier --check .",
     "docs:check": "typedoc --options typedoc.json",
     "check": "npm run format:check && npm run typecheck && npm run lint && npm run lint:deps && npm run docs:check && npm run test",
-    "test:step3:payload": "vitest run qualification/step3/payload"
+    "test:step3:payload": "vitest run qualification/step3/payload",
+    "test:step3:structure": "vitest run qualification/step3/structure"
   },
   "dependencies": {
     "react": "19.2.8",
@@ -47,6 +48,8 @@
     "typescript-eslint": "8.67.0",
     "vite": "7.3.6",
     "vitest": "4.0.18",
-    "yjs": "13.6.32"
+    "yjs": "13.6.32",
+    "fractional-indexing": "4.0.0",
+    "fugue": "3.0.0"
   }
 }

@@ -20,8 +20,9 @@ Use these documents with this contract:
 - [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) owns InlineContent Media Types, whole-payload replacement, and payload convergence;
 - [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md) owns private MVP implementation rules;
 - [`MVP_VERIFICATION_PLAN.md`](MVP_VERIFICATION_PLAN.md) owns executable evidence;
-- [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md) owns post-MVP causal History and replication constraints; and
-- [`decisions/0003-flat-structural-placement.md`](decisions/0003-flat-structural-placement.md) preserves the rationale and rejected alternatives.
+- [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md) owns post-MVP causal History and replication constraints;
+- [`decisions/0003-flat-structural-placement.md`](decisions/0003-flat-structural-placement.md) preserves the flat-placement rationale and rejected alternatives; and
+- [`decisions/0011-minimal-indicated-structural-depth.md`](decisions/0011-minimal-indicated-structural-depth.md) records the minimum-change indicated-depth policy.
 
 ## 2. Context
 
@@ -92,7 +93,9 @@ Placement = {
 ```
 
 `position` is a carrier-private sortable order key. `depth` is a positive integer
-for every non-root Block.
+for every non-root Block. `depth` is the indicated placement depth replicated by
+the carrier. Effective logical depth is derived from projected parentage and can
+differ from the indicated depth.
 
 The root has these special rules:
 
@@ -152,7 +155,8 @@ flat placement by using preorder tree order.
 
 For a destination parent `P`:
 
-1. The destination Block root has depth `P.depth + 1`.
+1. The destination Block root uses an indicated depth that makes `P` the nearest
+   preceding shallower Block after the run is spliced into projected preorder.
 2. If the destination child index is `0`, the destination run starts immediately
    after `P` in projected preorder.
 3. Otherwise, the destination run starts after the complete subtree of the
@@ -162,11 +166,27 @@ For a destination parent `P`:
    the end of the document order.
 5. Allocate the moved or created Block run inside that destination interval.
 
-A subtree move applies one depth delta to the moved subtree so its root has the
-required destination depth. It preserves descendant depth differences, Block
-identities, and projected relative order. Allocate fresh ordered destination
-positions for the moved run. Do not carry old position prefixes into the new
-run.
+A structural command assigns the minimum valid indicated depths to the semantic
+run that it creates or moves. Compute the assignment after the run is spliced
+into target projected preorder, and preserve the target parentage of both the
+semantic run and stationary Blocks.
+
+For the created or moved run root, use the smallest indicated depth that makes
+the requested destination parent the nearest preceding shallower Block while
+preserving stationary parentage. For each descendant in a moved run, use its
+planned parent's indicated depth plus one. Do not preserve a larger historical
+depth only because projection would accept it.
+
+This rule does not globally rationalize carrier state. Stationary Blocks keep
+their indicated depths, including when position-collision normalization rewrites
+a stationary placement. Concurrent merge can leave valid non-minimum indicated
+depths; projection accepts them without automatic repair. If global depth
+rationalization is introduced later, it must be explicit document-model
+behavior.
+
+A subtree move preserves Block identities and projected relative order. Allocate
+fresh ordered destination positions for the moved run. Do not carry old position
+prefixes into the new run.
 
 A Block creation is a run of one Block. A subtree move can contain many Blocks.
 The published command is all-or-none at the engine boundary.
@@ -228,8 +248,11 @@ alive independently of its ancestors.
 The carrier adapter must prove the exact effect that implements update-over-delete
 semantics. Do not rely on an undocumented last-writer rule, on writing the same
 payload value again, or on a nested mutation that can vanish with its enclosing
-entry. Yjs and Automerge can use different private encodings if they preserve the
-same logical result.
+entry. If an adapter represents liveness with per-update replicated keys, distinct
+semantic updates must never alias the same key. Key allocation remains
+carrier-private, but uniqueness is part of the update-over-delete proof. Yjs and
+Automerge can use different private encodings if they preserve the same logical
+result.
 
 The deterministic whole-payload replacement register defined by
 `INLINE_CONTENT_PAYLOADS.md` is separate from Block existence. The replacement
@@ -359,7 +382,7 @@ candidates. At minimum verify:
 - deterministic projection from `position` and `depth`;
 - non-sequential depth behavior;
 - preorder command-to-placement mapping at the first, middle, and last child positions;
-- subtree move with the correct depth delta, identity preservation, and internal order preservation;
+- subtree move with the minimum required indicated-depth changes, identity preservation, and internal order preservation;
 - concurrent move of one Block to different destinations;
 - concurrent move versus delete, with move winning after full peer convergence;
 - concurrent fine-grained text update versus delete, with the payload update keeping that Block alive after full peer convergence;

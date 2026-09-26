@@ -1,8 +1,14 @@
 # ADR 0003: Flat structural placement in the collaborative carrier
 
-**Status:** Accepted
+**Status:** Superseded in part
+
+**Superseded by:** [ADR 0011](0011-minimal-indicated-structural-depth.md)
+
+**Superseded scope:** ADR 0011 replaces only the command-to-placement rule that forced a moved root to `parent.depth + 1` and preserved all descendant depth differences. The flat placement model, projection rule, liveness semantics, and allocator qualification remain accepted.
 
 **Date:** 2026-08-31
+
+**Amended:** 2026-09-25
 
 ## Context
 

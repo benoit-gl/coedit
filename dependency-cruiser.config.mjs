@@ -26,6 +26,12 @@ export default {
       to: { path: "^src/(?!domain(?:/|$))" },
     },
     {
+      name: "carrier-through-supported-entry-point",
+      severity: "error",
+      from: { pathNot: "^src/carrier(?:/|$)" },
+      to: { path: "^src/carrier/(?!index\\.ts$)" },
+    },
+    {
       name: "no-production-to-qualification",
       severity: "error",
       from: { path: "^src(?:/|$)" },

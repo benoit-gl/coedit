@@ -313,7 +313,7 @@ replace that authority.
 Verify at least:
 
 - `CreateBlock` and `MoveBlock` map to projected preorder at first, middle, and last child positions;
-- a moved subtree receives the correct depth delta, fresh ordered positions, and preserves identity and internal order;
+- a created or moved semantic run receives the minimum valid indicated depths for the target projection without rewriting stationary indicated depths, receives fresh ordered positions, and preserves identity and internal order;
 - concurrent moves to different destinations converge;
 - move versus delete keeps the moved Block alive after full peer convergence;
 - payload update versus delete keeps the updated Block alive after full peer convergence for both fine-grained text edits and whole-payload replacement;
@@ -326,7 +326,7 @@ Verify at least:
 - insertion inside two-way and multi-way collision runs preserves the previous projected order and replicates required normalization;
 - any residual normalization-versus-delete behavior is recorded;
 - concurrent subtree/run insertion measures non-interleaving behavior;
-- narrow-gap stress records key growth, comparison/sort cost, and serialized carrier growth;
+- narrow-gap stress verifies ordering under repeated allocation; representative key growth, comparison/sort cost, serialized carrier growth, and exhaustion measurements are recorded by the later comparative-evidence merge unit;
 - duplicate, delayed, reordered, partitioned, and reconnected updates converge to equal projected structure and logically equivalent Media-Type-labelled payload state; and
 - supported carrier-native text in allowlisted payloads survives the same convergence/reload path without normalization or silent repair.
 
