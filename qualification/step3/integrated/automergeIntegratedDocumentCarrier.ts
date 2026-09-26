@@ -28,7 +28,6 @@ import type {
   IntegratedDocumentCarrierFactory,
   IntegratedDocumentChange,
   IntegratedDocumentSnapshot,
-  IntegratedPayloadChange,
 } from "./carrier.js";
 
 const ORIGIN_MARK = "__coedit_origin";
