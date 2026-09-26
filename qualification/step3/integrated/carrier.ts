@@ -4,17 +4,43 @@ import type {
   StructuralPositionCodec,
   StructuralPositionOrdering,
 } from "../../../src/carrier/index.js";
-import type { QualificationOrigin, QualificationPayloadSnapshot } from "../payload/carrier.js";
+import type {
+  QualificationOrigin,
+  QualificationPayloadSnapshot,
+} from "../payload/carrier.js";
 
 /** Candidate names used by integrated Step 3 qualification. */
 export type IntegratedCarrierCandidate = "yjs" | "automerge";
 
 /** One payload mutation inside an integrated document transaction. */
 export type IntegratedPayloadChange =
-  | { readonly kind: "replace-text"; readonly inlineContentId: InlineContentId; readonly mediaType: string; readonly text: string; readonly origin: QualificationOrigin }
-  | { readonly kind: "replace-opaque"; readonly inlineContentId: InlineContentId; readonly mediaType: string; readonly bytes: Uint8Array; readonly origin: QualificationOrigin }
-  | { readonly kind: "insert-text"; readonly inlineContentId: InlineContentId; readonly offset: number; readonly text: string; readonly origin: QualificationOrigin }
-  | { readonly kind: "delete-text"; readonly inlineContentId: InlineContentId; readonly start: number; readonly end: number };
+  | {
+      readonly kind: "replace-text";
+      readonly inlineContentId: InlineContentId;
+      readonly mediaType: string;
+      readonly text: string;
+      readonly origin: QualificationOrigin;
+    }
+  | {
+      readonly kind: "replace-opaque";
+      readonly inlineContentId: InlineContentId;
+      readonly mediaType: string;
+      readonly bytes: Uint8Array;
+      readonly origin: QualificationOrigin;
+    }
+  | {
+      readonly kind: "insert-text";
+      readonly inlineContentId: InlineContentId;
+      readonly offset: number;
+      readonly text: string;
+      readonly origin: QualificationOrigin;
+    }
+  | {
+      readonly kind: "delete-text";
+      readonly inlineContentId: InlineContentId;
+      readonly start: number;
+      readonly end: number;
+    };
 
 /** One structural mutation inside an integrated document transaction. */
 export interface IntegratedPlacementChange<Position> {
