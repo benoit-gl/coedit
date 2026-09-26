@@ -78,7 +78,10 @@ class YjsIntegratedDocumentCarrier<
         throw new TypeError("The integrated root cannot have a placement.");
       return {
         blockId: update.blockId,
-        encoded: encodeStructuralPlacement(update.placement, this.positionCodec),
+        encoded: encodeStructuralPlacement(
+          update.placement,
+          this.positionCodec,
+        ),
       };
     });
     validatePayloadChanges(change.payloads ?? [], this.snapshot().payloads);
