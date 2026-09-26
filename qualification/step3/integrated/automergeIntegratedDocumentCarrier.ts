@@ -41,7 +41,28 @@ class AutomergeIntegratedDocumentCarrier<Position> implements IntegratedDocument
         if (update.blockId === draft.rootId) throw new TypeError("The integrated root cannot have a placement.");
         draft.blocks[update.blockId] = encodeStructuralPlacement(update.placement, this.positionCodec);
       }
-      for (const update of change.payloads ?? []) applyPayloadChange(draft, update);
+      for (const update of change.payloads ?? []) {
+        if (update.kind === "replace-text") {
+          draft.payloads[update.inlineContentId] = { kind: "text", mediaType: update.mediaType, text: "" };
+          if (update.text.length > 0) {
+            Automerge.splice(draft, ["payloads", update.inlineContentId, "text"], 0, 0, update.text);
+            Automerge.mark(draft, ["payloads", update.inlineContentId, "text"], { start: 0, end: update.text.length, expand: "none" }, ORIGIN_MARK, JSON.stringify(update.origin));
+          }
+        } else if (update.kind === "replace-opaque") {
+          draft.payloads[update.inlineContentId] = { kind: "opaque", mediaType: update.mediaType, bytes: [...update.bytes], origin: JSON.stringify(update.origin) };
+        } else {
+          const payload = draft.payloads[update.inlineContentId];
+          if (payload?.kind !== "text") throw new TypeError("Fine-grained operations require an existing text payload.");
+          if (update.kind === "insert-text") {
+            if (update.text.length > 0) {
+              Automerge.splice(draft, ["payloads", update.inlineContentId, "text"], update.offset, 0, update.text);
+              Automerge.mark(draft, ["payloads", update.inlineContentId, "text"], { start: update.offset, end: update.offset + update.text.length, expand: "none" }, ORIGIN_MARK, JSON.stringify(update.origin));
+            }
+          } else if (update.start !== update.end) {
+            Automerge.splice(draft, ["payloads", update.inlineContentId, "text"], update.start, update.end-update.start);
+          }
+        }
+      }
     });
   }
 
@@ -72,29 +93,6 @@ export function createAutomergeIntegratedDocumentCarrierFactory<Position>(
     create: (rootId) => new AutomergeIntegratedDocumentCarrier(positionCodec, rootId),
     load: (encoded) => new AutomergeIntegratedDocumentCarrier(positionCodec, undefined, encoded),
   };
-}
-
-function applyPayloadChange(draft: Automerge.ChangeFn<State> extends (value: infer Draft)=>unknown ? Draft : never, update: IntegratedPayloadChange): void {
-  if (update.kind === "replace-text") {
-    draft.payloads[update.inlineContentId] = { kind: "text", mediaType: update.mediaType, text: "" };
-    if (update.text.length > 0) {
-      Automerge.splice(draft, ["payloads", update.inlineContentId, "text"], 0, 0, update.text);
-      Automerge.mark(draft, ["payloads", update.inlineContentId, "text"], { start: 0, end: update.text.length, expand: "none" }, ORIGIN_MARK, JSON.stringify(update.origin));
-    }
-    return;
-  }
-  if (update.kind === "replace-opaque") {
-    draft.payloads[update.inlineContentId] = { kind: "opaque", mediaType: update.mediaType, bytes: [...update.bytes], origin: JSON.stringify(update.origin) };
-    return;
-  }
-  const payload = draft.payloads[update.inlineContentId];
-  if (payload?.kind !== "text") throw new TypeError("Fine-grained operations require an existing text payload.");
-  if (update.kind === "insert-text") {
-    if (update.text.length > 0) {
-      Automerge.splice(draft, ["payloads", update.inlineContentId, "text"], update.offset, 0, update.text);
-      Automerge.mark(draft, ["payloads", update.inlineContentId, "text"], { start: update.offset, end: update.offset + update.text.length, expand: "none" }, ORIGIN_MARK, JSON.stringify(update.origin));
-    }
-  } else if (update.start !== update.end) Automerge.splice(draft, ["payloads", update.inlineContentId, "text"], update.start, update.end-update.start, "");
 }
 
 function validateChange<Position>(change: IntegratedDocumentChange<Position>, snapshot: IntegratedDocumentSnapshot<Position>): void {

@@ -2,7 +2,7 @@ import * as Y from "yjs";
 
 import type { BlockId, InlineContentId } from "../../../src/domain/index.js";
 import { parseBlockId, parseInlineContentId } from "../../../src/domain/index.js";
-import type { StructuralPositionCodec, StructuralPositionOrdering } from "../../../src/carrier/index.js";
+import type { StructuralPlacement, StructuralPositionCodec, StructuralPositionOrdering } from "../../../src/carrier/index.js";
 import { decodeStructuralPlacement, encodeStructuralPlacement } from "../../../src/carrier/index.js";
 import {
   assertTextOffset,
@@ -67,7 +67,7 @@ class YjsIntegratedDocumentCarrier<Position> implements IntegratedDocumentCarrie
   }
 
   public snapshot(): IntegratedDocumentSnapshot<Position> {
-    const placements = new Map<BlockId, ReturnType<typeof decodeStructuralPlacement<Position>>>();
+    const placements = new Map<BlockId, StructuralPlacement<Position>>();
     for (const [rawId, encoded] of this.blocks()) {
       const blockId = parseBlockId(rawId);
       placements.set(blockId, decodeStructuralPlacement(encoded, this.positionCodec));
