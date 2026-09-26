@@ -238,9 +238,24 @@ function validateChange<Position>(
         throw new TypeError(
           "Fine-grained operations require an existing text payload.",
         );
-      if (update.kind === "insert-text")
+      if (update.kind === "insert-text") {
         assertTextOffset(update.offset, payload.text);
-      else assertTextRange(update.start, update.end, payload.text);
+        working.set(update.inlineContentId, {
+          ...payload,
+          text:
+            payload.text.slice(0, update.offset) +
+            update.text +
+            payload.text.slice(update.offset),
+        });
+      } else {
+        assertTextRange(update.start, update.end, payload.text);
+        working.set(update.inlineContentId, {
+          ...payload,
+          text:
+            payload.text.slice(0, update.start) +
+            payload.text.slice(update.end),
+        });
+      }
     }
   }
 }
