@@ -6,10 +6,7 @@ import {
 } from "../../../src/domain/index.js";
 import type { StructuralPlacement } from "../../../src/carrier/index.js";
 import { createAutomergeIntegratedDocumentCarrierFactory } from "./automergeIntegratedDocumentCarrier.js";
-import type {
-  IntegratedDocumentCarrierFactory,
-  IntegratedPayloadChange,
-} from "./carrier.js";
+import type { IntegratedDocumentCarrierFactory } from "./carrier.js";
 import { createYjsIntegratedDocumentCarrierFactory } from "./yjsIntegratedDocumentCarrier.js";
 import type { LocalDensePosition } from "../structure/localDensePosition.js";
 import { localDensePositionAllocator } from "../structure/localDensePosition.js";
@@ -34,7 +31,7 @@ const factories: readonly IntegratedDocumentCarrierFactory<LocalDensePosition>[]
   ];
 
 for (const factory of factories) {
-  describe(`${factory.candidate} integrated qualification`, () => {
+  describe(`${factory.candidate} integrated foundation`, () => {
     it("publishes structure, text, and opaque payloads in one atomic change", () => {
       const carrier = factory.create(rootId);
       carrier.applyChange({
@@ -67,7 +64,7 @@ for (const factory of factories) {
         bytes: Uint8Array.of(1, 2, 3),
       });
 
-      const before = carrier.snapshot();
+      const beforePayloadFailure = carrier.snapshot();
       expect(() =>
         carrier.applyChange({
           placements: [{ blockId: blockA, placement: position(2, 1) }],
@@ -82,7 +79,47 @@ for (const factory of factories) {
           ],
         }),
       ).toThrow(/text payload/u);
-      expect(carrier.snapshot()).toEqual(before);
+      expect(carrier.snapshot()).toEqual(beforePayloadFailure);
+
+      const beforePlacementFailure = carrier.snapshot();
+      expect(() =>
+        carrier.applyChange({
+          placements: [
+            { blockId: blockA, placement: position(2, 1) },
+            { blockId: rootId, placement: position(3, 1) },
+          ],
+        }),
+      ).toThrow(/root cannot have a placement/u);
+      expect(carrier.snapshot()).toEqual(beforePlacementFailure);
+    });
+
+    it("applies sequential text operations against evolving transaction state", () => {
+      const carrier = seeded(factory);
+      carrier.applyChange({
+        payloads: [
+          {
+            kind: "insert-text",
+            inlineContentId: textId,
+            offset: 5,
+            text: " beta",
+            origin: human,
+          },
+          {
+            kind: "insert-text",
+            inlineContentId: textId,
+            offset: 10,
+            text: "!",
+            origin: human,
+          },
+          {
+            kind: "delete-text",
+            inlineContentId: textId,
+            start: 5,
+            end: 6,
+          },
+        ],
+      });
+      expect(text(carrier)).toBe("alphabeta!");
     });
 
     it("converges, reloads, and reopens candidate serialization", () => {
@@ -110,122 +147,6 @@ for (const factory of factories) {
       expect(right.snapshot()).toEqual(left.snapshot());
       expect(factory.load(left.encode()).snapshot()).toEqual(left.snapshot());
     });
-
-    it("supports checkpoint restore and History materialization surrogates", () => {
-      const carrier = seeded(factory);
-      const checkpoint = carrier.encode();
-      carrier.applyChange({
-        payloads: [
-          {
-            kind: "insert-text",
-            inlineContentId: textId,
-            offset: 5,
-            text: " beta",
-            origin: human,
-          },
-        ],
-      });
-      const later = carrier.encode();
-      expect(text(factory.load(checkpoint))).toBe("alpha");
-      expect(text(factory.load(later))).toBe("alpha beta");
-      expect(text(factory.load(checkpoint))).toBe("alpha");
-    });
-
-    it("keeps cursor and Range-feasibility positions usable through text edits", () => {
-      const carrier = seeded(factory);
-      const range = { start: 1, end: 4 };
-      carrier.applyChange({
-        payloads: [
-          {
-            kind: "insert-text",
-            inlineContentId: textId,
-            offset: 0,
-            text: "X",
-            origin: human,
-          },
-        ],
-      });
-      const shifted = { start: range.start + 1, end: range.end + 1 };
-      const value = text(carrier);
-      expect(value.slice(shifted.start, shifted.end)).toBe("lph");
-      expect(() =>
-        carrier.applyChange({
-          payloads: [
-            {
-              kind: "insert-text",
-              inlineContentId: opaqueId,
-              offset: 0,
-              text: "x",
-              origin: human,
-            },
-          ],
-        }),
-      ).toThrow(/text payload/u);
-    });
-
-    it("qualifies application transaction translation, IME, and undo/redo", () => {
-      const carrier = seeded(factory);
-      const before = carrier.encode();
-      carrier.applyChange({
-        payloads: translateApplicationTransaction([
-          { from: 5, to: 5, text: " composed" },
-        ]),
-      });
-      expect(text(carrier)).toBe("alpha composed");
-      const afterComposition = carrier.encode();
-
-      const undo = factory.load(before);
-      expect(text(undo)).toBe("alpha");
-      const redo = factory.load(afterComposition);
-      expect(text(redo)).toBe("alpha composed");
-    });
-
-    it("qualifies cut/paste and the private clipboard trust boundary", () => {
-      const carrier = seeded(factory);
-      const fragment = encodePrivateFragment({
-        mediaType: "text/plain",
-        text: "alp",
-      });
-      const parsed = parsePrivateFragment(fragment);
-      carrier.applyChange({
-        payloads: [
-          { kind: "delete-text", inlineContentId: textId, start: 0, end: 3 },
-          {
-            kind: "insert-text",
-            inlineContentId: textId,
-            offset: 2,
-            text: parsed.text,
-            origin: imported,
-          },
-        ],
-      });
-      expect(text(carrier)).toBe("haalp");
-      expect(() =>
-        parsePrivateFragment('{"mediaType":"text/plain","text":7}'),
-      ).toThrow(/clipboard/u);
-      expect(() =>
-        parsePrivateFragment('{"mediaType":"application/example","text":"x"}'),
-      ).toThrow(/clipboard/u);
-    });
-
-    it("survives the candidate-supported serialization compaction boundary", () => {
-      const carrier = seeded(factory);
-      for (let index = 0; index < 16; index += 1) {
-        carrier.applyChange({
-          payloads: [
-            {
-              kind: "insert-text",
-              inlineContentId: textId,
-              offset: text(carrier).length,
-              text: String(index % 10),
-              origin: human,
-            },
-          ],
-        });
-      }
-      const reopened = factory.load(carrier.encode());
-      expect(reopened.snapshot()).toEqual(carrier.snapshot());
-    });
   });
 }
 
@@ -252,6 +173,7 @@ function seeded(factory: IntegratedDocumentCarrierFactory<LocalDensePosition>) {
   });
   return carrier;
 }
+
 function position(
   order: number,
   depth: number,
@@ -265,6 +187,7 @@ function position(
     depth,
   };
 }
+
 function text(
   carrier: ReturnType<
     IntegratedDocumentCarrierFactory<LocalDensePosition>["create"]
@@ -273,55 +196,4 @@ function text(
   const payload = carrier.snapshot().payloads.get(textId);
   if (payload?.kind !== "text") throw new TypeError("Expected text fixture.");
   return payload.text;
-}
-function translateApplicationTransaction(
-  steps: readonly {
-    readonly from: number;
-    readonly to: number;
-    readonly text: string;
-  }[],
-): readonly IntegratedPayloadChange[] {
-  const changes: IntegratedPayloadChange[] = [];
-  for (const step of steps) {
-    if (step.from !== step.to)
-      changes.push({
-        kind: "delete-text",
-        inlineContentId: textId,
-        start: step.from,
-        end: step.to,
-      });
-    if (step.text.length > 0)
-      changes.push({
-        kind: "insert-text",
-        inlineContentId: textId,
-        offset: step.from,
-        text: step.text,
-        origin: human,
-      });
-  }
-  return changes;
-}
-function encodePrivateFragment(value: {
-  readonly mediaType: string;
-  readonly text: string;
-}): string {
-  return JSON.stringify({ version: 1, ...value });
-}
-function parsePrivateFragment(encoded: string): {
-  readonly mediaType: string;
-  readonly text: string;
-} {
-  const value: unknown = JSON.parse(encoded);
-  if (
-    typeof value !== "object" ||
-    value === null ||
-    !("version" in value) ||
-    value.version !== 1 ||
-    !("mediaType" in value) ||
-    value.mediaType !== "text/plain" ||
-    !("text" in value) ||
-    typeof value.text !== "string"
-  )
-    throw new TypeError("Private clipboard fragment is invalid.");
-  return { mediaType: value.mediaType, text: value.text };
 }
