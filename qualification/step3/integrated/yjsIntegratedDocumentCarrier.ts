@@ -72,17 +72,19 @@ class YjsIntegratedDocumentCarrier<
   }
 
   public applyChange(change: IntegratedDocumentChange<Position>): void {
+    const rootId = this.requireRootId();
+    const placements = (change.placements ?? []).map((update) => {
+      if (update.blockId === rootId)
+        throw new TypeError("The integrated root cannot have a placement.");
+      return {
+        blockId: update.blockId,
+        encoded: encodeStructuralPlacement(update.placement, this.positionCodec),
+      };
+    });
     validatePayloadChanges(change.payloads ?? [], this.snapshot().payloads);
     this.document.transact(() => {
-      for (const update of change.placements ?? []) {
-        if (update.blockId === this.requireRootId()) {
-          throw new TypeError("The integrated root cannot have a placement.");
-        }
-        this.blocks().set(
-          update.blockId,
-          encodeStructuralPlacement(update.placement, this.positionCodec),
-        );
-      }
+      for (const update of placements)
+        this.blocks().set(update.blockId, update.encoded);
       for (const update of change.payloads ?? [])
         this.applyPayloadChange(update);
     });
