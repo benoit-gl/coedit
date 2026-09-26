@@ -1,6 +1,6 @@
 # Coedit document-engine MVP scaffolding plan
 
-**Status:** Accepted implementation plan; Steps 0-2 are complete and Step 3 carrier qualification is next.
+**Status:** Accepted implementation plan; Steps 0-2 and the first two Step 3 qualification merge units are complete; integrated Step 3 qualification is next.
 
 **Target branch:** `main`
 
