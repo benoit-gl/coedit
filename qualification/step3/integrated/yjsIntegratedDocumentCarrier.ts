@@ -55,8 +55,9 @@ class YjsIntegratedDocumentCarrier<
   ) {
     if (encoded !== undefined) {
       const decoded = decodeEnvelope(encoded);
-      this.root.set(ROOT_ID, decoded.rootId);
       Y.applyUpdate(this.document, decoded.update);
+      if (this.requireRootId() !== decoded.rootId)
+        throw new TypeError("Integrated carrier root identity is invalid.");
     } else if (rootId !== undefined) {
       this.root.set(ROOT_ID, rootId);
       this.root.set(BLOCKS, new Y.Map<string>());
@@ -118,8 +119,21 @@ class YjsIntegratedDocumentCarrier<
 
   public mergeEncoded(encoded: Uint8Array): void {
     const decoded = decodeEnvelope(encoded);
-    if (decoded.rootId !== this.requireRootId())
+    const currentRoot = this.requireRootId();
+    if (decoded.rootId !== currentRoot)
       throw new TypeError("Integrated replicas must share one root identity.");
+
+    const remote = new Y.Doc();
+    Y.applyUpdate(remote, decoded.update);
+    if (remote.getMap<unknown>(ROOT).get(ROOT_ID) !== currentRoot)
+      throw new TypeError("Integrated carrier root identity is invalid.");
+
+    const staged = new Y.Doc();
+    Y.applyUpdate(staged, Y.encodeStateAsUpdate(this.document));
+    Y.applyUpdate(staged, decoded.update);
+    if (staged.getMap<unknown>(ROOT).get(ROOT_ID) !== currentRoot)
+      throw new TypeError("Integrated carrier root identity is invalid.");
+
     Y.applyUpdate(this.document, decoded.update);
   }
 

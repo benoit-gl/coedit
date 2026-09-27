@@ -13,6 +13,7 @@ import { localDensePositionAllocator } from "../structure/localDensePosition.js"
 
 const rootId = parseBlockId("70000000-0000-4000-8000-000000000001");
 const blockA = parseBlockId("70000000-0000-4000-8000-000000000002");
+const otherRootId = parseBlockId("70000000-0000-4000-8000-000000000005");
 const textId = parseInlineContentId("70000000-0000-4000-8000-000000000003");
 const opaqueId = parseInlineContentId("70000000-0000-4000-8000-000000000004");
 const human = { id: "human-a", kind: "human" as const };
@@ -150,6 +151,30 @@ for (const factory of factories) {
   });
 }
 
+describe("yjs integrated root identity", () => {
+  const factory = createYjsIntegratedDocumentCarrierFactory(
+    localDensePositionAllocator,
+    localDensePositionAllocator,
+  );
+
+  it("rejects encoded state whose envelope disagrees with native state", () => {
+    const encoded = factory.create(otherRootId).encode();
+    overwriteEnvelopeRoot(encoded, rootId);
+    expect(() => factory.load(encoded)).toThrow(/root identity is invalid/u);
+  });
+
+  it("rejects a mismatched native root before mutating a live replica", () => {
+    const carrier = seeded(factory);
+    const before = carrier.snapshot();
+    const encoded = factory.create(otherRootId).encode();
+    overwriteEnvelopeRoot(encoded, rootId);
+    expect(() => carrier.mergeEncoded(encoded)).toThrow(
+      /root identity is invalid/u,
+    );
+    expect(carrier.snapshot()).toEqual(before);
+  });
+});
+
 function seeded(factory: IntegratedDocumentCarrierFactory<LocalDensePosition>) {
   const carrier = factory.create(rootId);
   carrier.applyChange({
@@ -196,4 +221,9 @@ function text(
   const payload = carrier.snapshot().payloads.get(textId);
   if (payload?.kind !== "text") throw new TypeError("Expected text fixture.");
   return payload.text;
+}
+
+function overwriteEnvelopeRoot(encoded: Uint8Array, replacement: string): void {
+  for (let index = 0; index < replacement.length; index += 1)
+    encoded[index] = replacement.charCodeAt(index);
 }
