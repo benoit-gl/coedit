@@ -6,7 +6,10 @@ import {
 } from "../../../src/domain/index.js";
 import type { StructuralPlacement } from "../../../src/carrier/index.js";
 import { createAutomergeIntegratedDocumentCarrierFactory } from "./automergeIntegratedDocumentCarrier.js";
-import type { IntegratedDocumentCarrierFactory } from "./carrier.js";
+import type {
+  IntegratedDocumentCarrierFactory,
+  IntegratedPayloadChange,
+} from "./carrier.js";
 import { createYjsIntegratedDocumentCarrierFactory } from "./yjsIntegratedDocumentCarrier.js";
 import type { LocalDensePosition } from "../structure/localDensePosition.js";
 import { localDensePositionAllocator } from "../structure/localDensePosition.js";
@@ -121,6 +124,54 @@ for (const factory of factories) {
         ],
       });
       expect(text(carrier)).toBe("alphabeta!");
+    });
+
+    it("preserves edge-case text exactly or rejects the whole mixed change atomically", () => {
+      const loneSurrogate = String.fromCharCode(0xd800);
+      const cases: readonly IntegratedPayloadChange[] = [
+        {
+          kind: "replace-text",
+          inlineContentId: textId,
+          mediaType: "text/plain",
+          text: loneSurrogate,
+          origin: human,
+        },
+        {
+          kind: "insert-text",
+          inlineContentId: textId,
+          offset: 5,
+          text: loneSurrogate,
+          origin: human,
+        },
+      ];
+
+      for (const payload of cases) {
+        const carrier = seeded(factory);
+        const before = carrier.snapshot();
+        let failed = false;
+        try {
+          carrier.applyChange({
+            placements: [{ blockId: blockA, placement: position(2, 1) }],
+            payloads: [payload],
+          });
+        } catch {
+          failed = true;
+        }
+
+        if (failed) {
+          expect(carrier.snapshot()).toEqual(before);
+          continue;
+        }
+
+        expect(carrier.snapshot().placements.get(blockA)).toEqual(
+          position(2, 1),
+        );
+        expect(text(carrier)).toBe(
+          payload.kind === "replace-text"
+            ? loneSurrogate
+            : `alpha${loneSurrogate}`,
+        );
+      }
     });
 
     it("converges, reloads, and reopens candidate serialization", () => {

@@ -214,6 +214,7 @@ function validateChange<Position>(
         throw new TypeError(
           "Text replacement requires an allowlisted Media Type.",
         );
+      assertAutomergeExactText(update.text);
       working.set(update.inlineContentId, {
         kind: "text",
         mediaType: update.mediaType,
@@ -240,6 +241,7 @@ function validateChange<Position>(
         );
       if (update.kind === "insert-text") {
         assertTextOffset(update.offset, payload.text);
+        assertAutomergeExactText(update.text);
         working.set(update.inlineContentId, {
           ...payload,
           text:
@@ -304,4 +306,25 @@ function parseOrigin(value: string): QualificationOrigin {
   )
     throw new TypeError("Integrated payload Origin is invalid.");
   return parsed as QualificationOrigin;
+}
+
+function assertAutomergeExactText(text: string): void {
+  for (let index = 0; index < text.length; index += 1) {
+    const codeUnit = text.charCodeAt(index);
+    if (codeUnit >= 0xd800 && codeUnit <= 0xdbff) {
+      const next = text.charCodeAt(index + 1);
+      if (index + 1 >= text.length || next < 0xdc00 || next > 0xdfff) {
+        throw new TypeError(
+          "Automerge cannot preserve this ECMAScript string exactly.",
+        );
+      }
+      index += 1;
+      continue;
+    }
+    if (codeUnit >= 0xdc00 && codeUnit <= 0xdfff) {
+      throw new TypeError(
+        "Automerge cannot preserve this ECMAScript string exactly.",
+      );
+    }
+  }
 }
