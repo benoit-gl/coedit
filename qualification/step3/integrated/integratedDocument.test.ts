@@ -1,3 +1,4 @@
+import * as Automerge from "@automerge/automerge";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -126,6 +127,32 @@ for (const factory of factories) {
       expect(text(carrier)).toBe("alphabeta!");
     });
 
+    it("preserves complete Origin projection through fine-grained edits", () => {
+      const carrier = seeded(factory);
+      carrier.applyChange({
+        payloads: [
+          {
+            kind: "insert-text",
+            inlineContentId: textId,
+            offset: 2,
+            text: "X",
+            origin: imported,
+          },
+        ],
+      });
+
+      expect(carrier.snapshot().payloads.get(textId)).toEqual({
+        kind: "text",
+        mediaType: "text/plain",
+        text: "alXpha",
+        spans: [
+          { text: "al", origin: human },
+          { text: "X", origin: imported },
+          { text: "pha", origin: human },
+        ],
+      });
+    });
+
     it("preserves edge-case text exactly or rejects the whole mixed change atomically", () => {
       const loneSurrogate = String.fromCharCode(0xd800);
       const cases: readonly IntegratedPayloadChange[] = [
@@ -201,6 +228,31 @@ for (const factory of factories) {
     });
   });
 }
+
+describe("automerge integrated Origin validation", () => {
+  const factory = createAutomergeIntegratedDocumentCarrierFactory(
+    localDensePositionAllocator,
+    localDensePositionAllocator,
+  );
+
+  it("rejects text that lacks complete Origin attribution", () => {
+    const encoded = Automerge.save(
+      Automerge.from({
+        rootId,
+        blocks: {},
+        payloads: {
+          [textId]: {
+            kind: "text" as const,
+            mediaType: "text/plain",
+            text: "unattributed",
+          },
+        },
+      }),
+    );
+
+    expect(() => factory.load(encoded).snapshot()).toThrow(/missing Origin/u);
+  });
+});
 
 describe("yjs integrated root identity", () => {
   const factory = createYjsIntegratedDocumentCarrierFactory(

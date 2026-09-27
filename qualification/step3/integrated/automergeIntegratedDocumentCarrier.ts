@@ -22,6 +22,7 @@ import {
 import type {
   QualificationOrigin,
   QualificationPayloadSnapshot,
+  QualificationTextSpan,
 } from "../payload/carrier.js";
 import type {
   IntegratedDocumentCarrier,
@@ -278,13 +279,19 @@ function projectPayload(
     .filter(
       (mark) => mark.name === ORIGIN_MARK && typeof mark.value === "string",
     )
-    .sort((a, b) => a.start - b.start);
-  const spans = marks
-    .map((mark) => ({
-      text: payload.text.slice(mark.start, mark.end),
-      origin: parseOrigin(String(mark.value)),
-    }))
-    .filter((span) => span.text.length > 0);
+    .sort((a, b) => a.start - b.start || a.end - b.end);
+  const spans: QualificationTextSpan[] = [];
+  let offset = 0;
+  for (const mark of marks) {
+    if (mark.start !== offset || typeof mark.value !== "string")
+      throw new TypeError("Integrated text Origin projection has a gap.");
+    const text = payload.text.slice(mark.start, mark.end);
+    if (text.length > 0)
+      spans.push({ text, origin: parseOrigin(mark.value) });
+    offset = mark.end;
+  }
+  if (offset !== payload.text.length)
+    throw new TypeError("Integrated text is missing Origin.");
   return {
     kind: "text",
     mediaType: payload.mediaType,
