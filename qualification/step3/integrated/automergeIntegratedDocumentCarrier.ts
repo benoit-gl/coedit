@@ -275,23 +275,26 @@ function projectPayload(
       bytes: Uint8Array.from(payload.bytes),
       origin: parseOrigin(payload.origin),
     };
-  const marks = Automerge.marks(document, ["payloads", rawId, "text"])
+  const spans: QualificationTextSpan[] = [];
+  const originMarks = Automerge.marks(document, ["payloads", rawId, "text"])
     .filter(
       (mark) => mark.name === ORIGIN_MARK && typeof mark.value === "string",
     )
-    .sort((a, b) => a.start - b.start || a.end - b.end);
-  const spans: QualificationTextSpan[] = [];
+    .sort((left, right) => left.start - right.start || left.end - right.end);
   let offset = 0;
-  for (const mark of marks) {
-    if (mark.start !== offset || typeof mark.value !== "string")
+  for (const mark of originMarks) {
+    if (mark.start !== offset || typeof mark.value !== "string") {
       throw new TypeError("Integrated text Origin projection has a gap.");
+    }
     const text = payload.text.slice(mark.start, mark.end);
-    if (text.length > 0)
+    if (text.length > 0) {
       spans.push({ text, origin: parseOrigin(mark.value) });
+    }
     offset = mark.end;
   }
-  if (offset !== payload.text.length)
+  if (offset !== payload.text.length) {
     throw new TypeError("Integrated text is missing Origin.");
+  }
   return {
     kind: "text",
     mediaType: payload.mediaType,
