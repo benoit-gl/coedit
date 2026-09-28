@@ -227,6 +227,14 @@ for (const factory of factories) {
       expect(factory.load(left.encode()).snapshot()).toEqual(left.snapshot());
     });
 
+    it("rejects the same root from a different replica lineage", () => {
+      const carrier = seeded(factory);
+      const before = carrier.snapshot();
+      const encoded = factory.create(rootId).encode();
+      expect(() => carrier.mergeEncoded(encoded)).toThrow(/replica lineage/u);
+      expect(carrier.snapshot()).toEqual(before);
+    });
+
     it("rejects a foreign root before mutating a live replica", () => {
       const carrier = seeded(factory);
       const before = carrier.snapshot();
@@ -247,6 +255,7 @@ describe("automerge integrated Origin validation", () => {
     const encoded = Automerge.save(
       Automerge.from({
         rootId,
+        lineageId: "origin-validation-fixture",
         blocks: {},
         payloads: {
           [textId]: {

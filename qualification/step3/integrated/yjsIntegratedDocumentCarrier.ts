@@ -34,6 +34,7 @@ import type {
 
 const ROOT = "integrated";
 const ROOT_ID = "rootId";
+const LINEAGE_ID = "lineageId";
 const BLOCKS = "blocks";
 const PAYLOADS = "payloads";
 const ORIGIN = "coedit:origin";
@@ -60,6 +61,7 @@ class YjsIntegratedDocumentCarrier<
         throw new TypeError("Integrated carrier root identity is invalid.");
     } else if (rootId !== undefined) {
       this.root.set(ROOT_ID, rootId);
+      this.root.set(LINEAGE_ID, crypto.randomUUID());
       this.root.set(BLOCKS, new Y.Map<string>());
       this.root.set(PAYLOADS, new Y.Map<Y.Map<unknown>>());
     } else {
@@ -68,6 +70,7 @@ class YjsIntegratedDocumentCarrier<
       );
     }
     this.requireRootId();
+    this.requireLineageId();
     this.blocks();
     this.payloads();
   }
@@ -89,11 +92,15 @@ class YjsIntegratedDocumentCarrier<
       change.payloads ?? [],
       this.snapshot().payloads,
     );
-    this.document.transact(() => {
-      for (const update of placements)
-        this.blocks().set(update.blockId, update.encoded);
-      for (const update of payloads) this.applyPayloadChange(update);
-    });
+    const staged = new Y.Doc();
+    Y.applyUpdate(staged, Y.encodeStateAsUpdate(this.document));
+    applyPreparedChange(staged, placements, payloads);
+
+    const update = Y.encodeStateAsUpdate(
+      staged,
+      Y.encodeStateVector(this.document),
+    );
+    Y.applyUpdate(this.document, update);
   }
 
   public snapshot(): IntegratedDocumentSnapshot<Position> {
@@ -127,8 +134,11 @@ class YjsIntegratedDocumentCarrier<
 
     const remote = new Y.Doc();
     Y.applyUpdate(remote, decoded.update);
-    if (remote.getMap<unknown>(ROOT).get(ROOT_ID) !== currentRoot)
+    const remoteRoot = remote.getMap<unknown>(ROOT);
+    if (remoteRoot.get(ROOT_ID) !== currentRoot)
       throw new TypeError("Integrated carrier root identity is invalid.");
+    if (remoteRoot.get(LINEAGE_ID) !== this.requireLineageId())
+      throw new TypeError("Integrated replicas must share one replica lineage.");
 
     const staged = new Y.Doc();
     Y.applyUpdate(staged, Y.encodeStateAsUpdate(this.document));
@@ -139,47 +149,17 @@ class YjsIntegratedDocumentCarrier<
     Y.applyUpdate(this.document, decoded.update);
   }
 
-  private applyPayloadChange(update: PreparedPayloadChange): void {
-    if (update.kind === "replace-text") {
-      const payload = new Y.Map<unknown>();
-      payload.set("kind", "text");
-      payload.set("mediaType", update.mediaType);
-      const text = new Y.Text();
-      if (update.text.length > 0)
-        text.insert(0, update.text, {
-          [ORIGIN]: update.origin,
-        });
-      payload.set("text", text);
-      this.payloads().set(update.inlineContentId, payload);
-      return;
-    }
-    if (update.kind === "replace-opaque") {
-      const payload = new Y.Map<unknown>();
-      payload.set("kind", "opaque");
-      payload.set("mediaType", update.mediaType);
-      payload.set("bytes", update.bytes.slice());
-      payload.set("origin", update.origin);
-      this.payloads().set(update.inlineContentId, payload);
-      return;
-    }
-    const payload = this.requirePayload(update.inlineContentId);
-    const text = payload.get("text");
-    if (!(text instanceof Y.Text))
-      throw new TypeError("Fine-grained operations require a text payload.");
-    if (update.kind === "insert-text") {
-      if (update.text.length > 0)
-        text.insert(update.offset, update.text, {
-          [ORIGIN]: update.origin,
-        });
-    } else if (update.start !== update.end)
-      text.delete(update.start, update.end - update.start);
-  }
-
   private requireRootId(): BlockId {
     const value = this.root.get(ROOT_ID);
     if (typeof value !== "string")
       throw new TypeError("Integrated root identity is missing.");
     return parseBlockId(value);
+  }
+  private requireLineageId(): string {
+    const value = this.root.get(LINEAGE_ID);
+    if (typeof value !== "string" || value.length === 0)
+      throw new TypeError("Integrated replica lineage is missing.");
+    return value;
   }
   private blocks(): Y.Map<string> {
     const value = this.root.get(BLOCKS);
@@ -193,12 +173,60 @@ class YjsIntegratedDocumentCarrier<
       throw new TypeError("Integrated payload namespace is missing.");
     return value as Y.Map<Y.Map<unknown>>;
   }
-  private requirePayload(id: InlineContentId): Y.Map<unknown> {
-    const value = this.payloads().get(id);
-    if (value === undefined)
-      throw new TypeError("Payload update requires an existing InlineContent.");
-    return value;
-  }
+}
+
+function applyPreparedChange(
+  document: Y.Doc,
+  placements: readonly {
+    readonly blockId: BlockId;
+    readonly encoded: string;
+  }[],
+  payloads: readonly PreparedPayloadChange[],
+): void {
+  const root = document.getMap<unknown>(ROOT);
+  const blocks = root.get(BLOCKS);
+  const payloadMap = root.get(PAYLOADS);
+  if (!(blocks instanceof Y.Map) || !(payloadMap instanceof Y.Map))
+    throw new TypeError("Integrated staged document is invalid.");
+
+  document.transact(() => {
+    for (const update of placements)
+      (blocks as Y.Map<string>).set(update.blockId, update.encoded);
+    for (const update of payloads) {
+      if (update.kind === "replace-text") {
+        const payload = new Y.Map<unknown>();
+        payload.set("kind", "text");
+        payload.set("mediaType", update.mediaType);
+        const text = new Y.Text();
+        if (update.text.length > 0)
+          text.insert(0, update.text, { [ORIGIN]: update.origin });
+        payload.set("text", text);
+        (payloadMap as Y.Map<Y.Map<unknown>>).set(update.inlineContentId, payload);
+        continue;
+      }
+      if (update.kind === "replace-opaque") {
+        const payload = new Y.Map<unknown>();
+        payload.set("kind", "opaque");
+        payload.set("mediaType", update.mediaType);
+        payload.set("bytes", update.bytes.slice());
+        payload.set("origin", update.origin);
+        (payloadMap as Y.Map<Y.Map<unknown>>).set(update.inlineContentId, payload);
+        continue;
+      }
+      const payload = (payloadMap as Y.Map<Y.Map<unknown>>).get(
+        update.inlineContentId,
+      );
+      const text = payload?.get("text");
+      if (!(text instanceof Y.Text))
+        throw new TypeError("Fine-grained operations require a text payload.");
+      if (update.kind === "insert-text") {
+        if (update.text.length > 0)
+          text.insert(update.offset, update.text, { [ORIGIN]: update.origin });
+      } else if (update.start !== update.end) {
+        text.delete(update.start, update.end - update.start);
+      }
+    }
+  });
 }
 
 /** Creates the Yjs integrated qualification factory. */

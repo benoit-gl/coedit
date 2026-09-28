@@ -46,6 +46,7 @@ interface OpaqueState extends Record<string, unknown> {
 }
 interface State extends Record<string, unknown> {
   rootId: string;
+  lineageId: string;
   blocks: Record<string, string>;
   payloads: Record<string, TextState | OpaqueState>;
 }
@@ -66,6 +67,7 @@ class AutomergeIntegratedDocumentCarrier<
     else if (rootId !== undefined)
       this.document = Automerge.from<State>({
         rootId,
+        lineageId: crypto.randomUUID(),
         blocks: {},
         payloads: {},
       });
@@ -74,6 +76,7 @@ class AutomergeIntegratedDocumentCarrier<
         "Integrated carrier creation requires a root identity.",
       );
     parseBlockId(this.document.rootId);
+    requireLineageId(this.document.lineageId);
   }
 
   public applyChange(change: IntegratedDocumentChange<Position>): void {
@@ -181,6 +184,11 @@ class AutomergeIntegratedDocumentCarrier<
     const remote = Automerge.load<State>(encoded);
     if (remote.rootId !== this.document.rootId)
       throw new TypeError("Integrated replicas must share one root identity.");
+    if (
+      requireLineageId(remote.lineageId) !==
+      requireLineageId(this.document.lineageId)
+    )
+      throw new TypeError("Integrated replicas must share one replica lineage.");
     this.document = Automerge.merge(this.document, remote);
   }
 }
@@ -337,4 +345,10 @@ function assertAutomergeExactText(text: string): void {
       );
     }
   }
+}
+
+function requireLineageId(value: unknown): string {
+  if (typeof value !== "string" || value.length === 0)
+    throw new TypeError("Integrated replica lineage is missing.");
+  return value;
 }
