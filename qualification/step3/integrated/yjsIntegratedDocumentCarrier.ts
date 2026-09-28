@@ -138,7 +138,9 @@ class YjsIntegratedDocumentCarrier<
     if (remoteRoot.get(ROOT_ID) !== currentRoot)
       throw new TypeError("Integrated carrier root identity is invalid.");
     if (remoteRoot.get(LINEAGE_ID) !== this.requireLineageId())
-      throw new TypeError("Integrated replicas must share one replica lineage.");
+      throw new TypeError(
+        "Integrated replicas must share one replica lineage.",
+      );
 
     const staged = new Y.Doc();
     Y.applyUpdate(staged, Y.encodeStateAsUpdate(this.document));
@@ -213,7 +215,10 @@ function applyPreparedChange(
         payload.set("mediaType", update.mediaType);
         payload.set("bytes", update.bytes.slice());
         payload.set("origin", update.origin);
-        (payloadMap as Y.Map<Y.Map<unknown>>).set(update.inlineContentId, payload);
+        (payloadMap as Y.Map<Y.Map<unknown>>).set(
+          update.inlineContentId,
+          payload,
+        );
         continue;
       }
       const payload = (payloadMap as Y.Map<Y.Map<unknown>>).get(

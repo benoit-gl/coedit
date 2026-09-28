@@ -187,7 +187,9 @@ class AutomergeIntegratedDocumentCarrier<
     const currentLineage = requireLineageId(this.document.lineageId);
     const remoteLineage = requireLineageId(remote.lineageId);
     if (remoteLineage !== currentLineage)
-      throw new TypeError("Integrated replicas must share one replica lineage.");
+      throw new TypeError(
+        "Integrated replicas must share one replica lineage.",
+      );
     this.document = Automerge.merge(this.document, remote);
   }
 }
