@@ -85,12 +85,14 @@ class YjsIntegratedDocumentCarrier<
         ),
       };
     });
-    validatePayloadChanges(change.payloads ?? [], this.snapshot().payloads);
+    const payloads = preparePayloadChanges(
+      change.payloads ?? [],
+      this.snapshot().payloads,
+    );
     this.document.transact(() => {
       for (const update of placements)
         this.blocks().set(update.blockId, update.encoded);
-      for (const update of change.payloads ?? [])
-        this.applyPayloadChange(update);
+      for (const update of payloads) this.applyPayloadChange(update);
     });
   }
 
@@ -137,7 +139,7 @@ class YjsIntegratedDocumentCarrier<
     Y.applyUpdate(this.document, decoded.update);
   }
 
-  private applyPayloadChange(update: IntegratedPayloadChange): void {
+  private applyPayloadChange(update: PreparedPayloadChange): void {
     if (update.kind === "replace-text") {
       const payload = new Y.Map<unknown>();
       payload.set("kind", "text");
@@ -145,7 +147,7 @@ class YjsIntegratedDocumentCarrier<
       const text = new Y.Text();
       if (update.text.length > 0)
         text.insert(0, update.text, {
-          [ORIGIN]: JSON.stringify(update.origin),
+          [ORIGIN]: update.origin,
         });
       payload.set("text", text);
       this.payloads().set(update.inlineContentId, payload);
@@ -156,7 +158,7 @@ class YjsIntegratedDocumentCarrier<
       payload.set("kind", "opaque");
       payload.set("mediaType", update.mediaType);
       payload.set("bytes", update.bytes.slice());
-      payload.set("origin", JSON.stringify(update.origin));
+      payload.set("origin", update.origin);
       this.payloads().set(update.inlineContentId, payload);
       return;
     }
@@ -167,7 +169,7 @@ class YjsIntegratedDocumentCarrier<
     if (update.kind === "insert-text") {
       if (update.text.length > 0)
         text.insert(update.offset, update.text, {
-          [ORIGIN]: JSON.stringify(update.origin),
+          [ORIGIN]: update.origin,
         });
     } else if (update.start !== update.end)
       text.delete(update.start, update.end - update.start);
@@ -214,17 +216,34 @@ export function createYjsIntegratedDocumentCarrierFactory<Position>(
   };
 }
 
-function validatePayloadChanges(
+type PreparedPayloadChange =
+  | (Omit<
+      Extract<IntegratedPayloadChange, { readonly kind: "replace-text" }>,
+      "origin"
+    > & { readonly origin: string })
+  | (Omit<
+      Extract<IntegratedPayloadChange, { readonly kind: "replace-opaque" }>,
+      "origin"
+    > & { readonly origin: string })
+  | (Omit<
+      Extract<IntegratedPayloadChange, { readonly kind: "insert-text" }>,
+      "origin"
+    > & { readonly origin: string })
+  | Extract<IntegratedPayloadChange, { readonly kind: "delete-text" }>;
+
+function preparePayloadChanges(
   changes: readonly IntegratedPayloadChange[],
   current: ReadonlyMap<InlineContentId, QualificationPayloadSnapshot>,
-): void {
+): readonly PreparedPayloadChange[] {
   const working = new Map(current);
+  const prepared: PreparedPayloadChange[] = [];
   for (const change of changes) {
     if (change.kind === "replace-text") {
       if (!isQualificationFineGrainedMediaType(change.mediaType))
         throw new TypeError(
           "Text replacement requires an allowlisted Media Type.",
         );
+      const origin = encodeOrigin(change.origin);
       working.set(change.inlineContentId, {
         kind: "text",
         mediaType: change.mediaType,
@@ -234,15 +253,18 @@ function validatePayloadChanges(
             ? []
             : [{ text: change.text, origin: change.origin }],
       });
+      prepared.push({ ...change, origin });
     } else if (change.kind === "replace-opaque") {
       if (isQualificationFineGrainedMediaType(change.mediaType))
         throw new TypeError("Allowlisted Media Types require text payloads.");
+      const origin = encodeOrigin(change.origin);
       working.set(change.inlineContentId, {
         kind: "opaque",
         mediaType: change.mediaType,
         bytes: change.bytes.slice(),
         origin: change.origin,
       });
+      prepared.push({ ...change, origin });
     } else {
       const payload = working.get(change.inlineContentId);
       if (payload?.kind !== "text")
@@ -255,15 +277,30 @@ function validatePayloadChanges(
           payload.text.slice(0, change.offset) +
           change.text +
           payload.text.slice(change.offset);
+        const origin = encodeOrigin(change.origin);
         working.set(change.inlineContentId, { ...payload, text });
+        prepared.push({ ...change, origin });
       } else {
         assertTextRange(change.start, change.end, payload.text);
         const text =
           payload.text.slice(0, change.start) + payload.text.slice(change.end);
         working.set(change.inlineContentId, { ...payload, text });
+        prepared.push(change);
       }
     }
   }
+  return prepared;
+}
+
+function encodeOrigin(origin: QualificationOrigin): string {
+  const id = origin.id;
+  const kind = origin.kind;
+  if (
+    typeof id !== "string" ||
+    !["human", "imported", "automation", "ai", "unknown"].includes(kind)
+  )
+    throw new TypeError("Integrated payload Origin is invalid.");
+  return JSON.stringify({ id, kind });
 }
 
 function projectPayload(payload: Y.Map<unknown>): QualificationPayloadSnapshot {

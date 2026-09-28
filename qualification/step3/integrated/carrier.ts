@@ -109,7 +109,13 @@ export interface IntegratedDocumentCarrier<Position> {
   snapshot(): IntegratedDocumentSnapshot<Position>;
   /** Encodes complete candidate state for reload or merge qualification. */
   encode(): Uint8Array;
-  /** Merges complete encoded state from another replica. */
+  /**
+   * Merges complete encoded state from another replica.
+   *
+   * @remarks
+   * Both replicas must descend from the same encoded native genesis. Matching
+   * root identity alone does not establish candidate merge compatibility.
+   */
   mergeEncoded(encoded: Uint8Array): void;
 }
 
@@ -117,9 +123,9 @@ export interface IntegratedDocumentCarrier<Position> {
 export interface IntegratedDocumentCarrierFactory<Position> {
   /** Candidate implementation name. */
   readonly candidate: IntegratedCarrierCandidate;
-  /** Creates a fresh integrated document. */
+  /** Creates a fresh integrated document and native replica lineage. */
   create(rootId: BlockId): IntegratedDocumentCarrier<Position>;
-  /** Reloads complete candidate state. */
+  /** Reloads candidate state; branch replicas by loading the same encoded state. */
   load(encoded: Uint8Array): IntegratedDocumentCarrier<Position>;
   /** Structural position codec used by this integrated fixture. */
   readonly positionCodec: StructuralPositionCodec<Position>;

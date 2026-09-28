@@ -201,7 +201,7 @@ for (const factory of factories) {
       }
     });
 
-    it("converges, reloads, and reopens candidate serialization", () => {
+    it("converges replicas from one encoded genesis and reloads serialization", () => {
       const base = seeded(factory);
       const left = factory.load(base.encode());
       const right = factory.load(base.encode());
@@ -225,6 +225,14 @@ for (const factory of factories) {
       right.mergeEncoded(leftState);
       expect(right.snapshot()).toEqual(left.snapshot());
       expect(factory.load(left.encode()).snapshot()).toEqual(left.snapshot());
+    });
+
+    it("rejects a foreign root before mutating a live replica", () => {
+      const carrier = seeded(factory);
+      const before = carrier.snapshot();
+      const encoded = factory.create(otherRootId).encode();
+      expect(() => carrier.mergeEncoded(encoded)).toThrow(/root identity/u);
+      expect(carrier.snapshot()).toEqual(before);
     });
   });
 }
@@ -251,6 +259,40 @@ describe("automerge integrated Origin validation", () => {
     );
 
     expect(() => factory.load(encoded).snapshot()).toThrow(/missing Origin/u);
+  });
+});
+
+describe("yjs integrated transaction preflight", () => {
+  const factory = createYjsIntegratedDocumentCarrierFactory(
+    localDensePositionAllocator,
+    localDensePositionAllocator,
+  );
+
+  it("rejects Origin preparation failure before mutating structure", () => {
+    const carrier = seeded(factory);
+    const before = carrier.snapshot();
+    const throwingOrigin = {
+      get id(): string {
+        throw new TypeError("Origin access failed.");
+      },
+      kind: "human" as const,
+    };
+
+    expect(() =>
+      carrier.applyChange({
+        placements: [{ blockId: blockA, placement: position(2, 1) }],
+        payloads: [
+          {
+            kind: "replace-opaque",
+            inlineContentId: opaqueId,
+            mediaType: "application/example",
+            bytes: Uint8Array.of(1, 2, 3),
+            origin: throwingOrigin,
+          },
+        ],
+      }),
+    ).toThrow(/Origin access failed/u);
+    expect(carrier.snapshot()).toEqual(before);
   });
 });
 
