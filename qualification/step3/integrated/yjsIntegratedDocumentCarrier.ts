@@ -279,6 +279,7 @@ function preparePayloadChanges(
         throw new TypeError(
           "Text replacement requires an allowlisted Media Type.",
         );
+      assertYjsExactText(change.text);
       const origin = encodeOrigin(change.origin);
       working.set(change.inlineContentId, {
         kind: "text",
@@ -309,6 +310,7 @@ function preparePayloadChanges(
         );
       if (change.kind === "insert-text") {
         assertTextOffset(change.offset, payload.text);
+        assertYjsExactText(change.text);
         const text =
           payload.text.slice(0, change.offset) +
           change.text +
@@ -326,6 +328,21 @@ function preparePayloadChanges(
     }
   }
   return prepared;
+}
+
+function assertYjsExactText(text: string): void {
+  for (let index = 0; index < text.length; index += 1) {
+    const codeUnit = text.charCodeAt(index);
+    if (codeUnit >= 0xd800 && codeUnit <= 0xdbff) {
+      const next = text.charCodeAt(index + 1);
+      if (index + 1 >= text.length || next < 0xdc00 || next > 0xdfff)
+        throw new TypeError("Yjs cannot preserve this ECMAScript string exactly.");
+      index += 1;
+      continue;
+    }
+    if (codeUnit >= 0xdc00 && codeUnit <= 0xdfff)
+      throw new TypeError("Yjs cannot preserve this ECMAScript string exactly.");
+  }
 }
 
 function encodeOrigin(origin: QualificationOrigin): string {
