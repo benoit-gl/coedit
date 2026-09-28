@@ -336,12 +336,17 @@ function assertYjsExactText(text: string): void {
     if (codeUnit >= 0xd800 && codeUnit <= 0xdbff) {
       const next = text.charCodeAt(index + 1);
       if (index + 1 >= text.length || next < 0xdc00 || next > 0xdfff)
-        throw new TypeError("Yjs cannot preserve this ECMAScript string exactly.");
+        throw new TypeError(
+          "Yjs cannot preserve this ECMAScript string exactly.",
+        );
       index += 1;
       continue;
     }
-    if (codeUnit >= 0xdc00 && codeUnit <= 0xdfff)
-      throw new TypeError("Yjs cannot preserve this ECMAScript string exactly.");
+    if (codeUnit >= 0xdc00 && codeUnit <= 0xdfff) {
+      throw new TypeError(
+        "Yjs cannot preserve this ECMAScript string exactly.",
+      );
+    }
   }
 }
 
