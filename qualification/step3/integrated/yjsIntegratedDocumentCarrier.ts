@@ -201,7 +201,10 @@ function applyPreparedChange(
         if (update.text.length > 0)
           text.insert(0, update.text, { [ORIGIN]: update.origin });
         payload.set("text", text);
-        (payloadMap as Y.Map<Y.Map<unknown>>).set(update.inlineContentId, payload);
+        (payloadMap as Y.Map<Y.Map<unknown>>).set(
+          update.inlineContentId,
+          payload,
+        );
         continue;
       }
       if (update.kind === "replace-opaque") {
