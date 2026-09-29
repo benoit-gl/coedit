@@ -1,6 +1,6 @@
 # Step 3 integrated collaborative-document foundation
 
-This directory contains the third Step 3 merge unit. It establishes one qualification-only integrated adapter per candidate, backed by one native Yjs or Automerge document. The focused payload and structural adapters remain unchanged.
+This directory contains the third Step 3 merge unit. It establishes one qualification-only integrated adapter per candidate, backed by one native Yjs or Automerge document. The focused structural adapters remain unchanged. This unit also tightens the focused payload adapters' UTF-16 splice validation and Yjs exact-string validation so the focused and integrated qualification surfaces enforce the same exact-or-atomic-reject text domain.
 
 The common foundation suite covers one all-or-none change across structural placement, allowlisted fine-grained text, and opaque payloads; sequential fine-grained payload operations within one transaction; convergence of independent structural and payload changes; and candidate serialization reload/reopen.
 

@@ -1,4 +1,5 @@
 import * as Automerge from "@automerge/automerge";
+import * as Y from "yjs";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -324,6 +325,42 @@ describe("yjs integrated transaction preflight", () => {
     localDensePositionAllocator,
     localDensePositionAllocator,
   );
+
+  it("authors repeated local changes with one native client identity", () => {
+    const carrier = factory.create(rootId);
+    carrier.applyChange({
+      placements: [{ blockId: blockA, placement: position(1, 1) }],
+    });
+    carrier.applyChange({
+      payloads: [
+        {
+          kind: "replace-text",
+          inlineContentId: textId,
+          mediaType: "text/plain",
+          text: "alpha",
+          origin: human,
+        },
+      ],
+    });
+    carrier.applyChange({
+      payloads: [
+        {
+          kind: "insert-text",
+          inlineContentId: textId,
+          offset: 5,
+          text: "!",
+          origin: imported,
+        },
+      ],
+    });
+
+    const encoded = carrier.encode();
+    const nativeUpdate = encoded.subarray(rootId.length + 1);
+    const stateVector = Y.decodeStateVector(
+      Y.encodeStateVectorFromUpdate(nativeUpdate),
+    );
+    expect(stateVector.size).toBe(1);
+  });
 
   it("rejects Origin preparation failure before mutating structure", () => {
     const carrier = seeded(factory);

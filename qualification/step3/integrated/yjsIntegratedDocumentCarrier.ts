@@ -93,15 +93,7 @@ class YjsIntegratedDocumentCarrier<
       change.payloads ?? [],
       this.snapshot().payloads,
     );
-    const staged = new Y.Doc();
-    Y.applyUpdate(staged, Y.encodeStateAsUpdate(this.document));
-    applyPreparedChange(staged, placements, payloads);
-
-    const update = Y.encodeStateAsUpdate(
-      staged,
-      Y.encodeStateVector(this.document),
-    );
-    Y.applyUpdate(this.document, update);
+    applyPreparedChange(this.document, placements, payloads);
   }
 
   public snapshot(): IntegratedDocumentSnapshot<Position> {
@@ -190,7 +182,7 @@ function applyPreparedChange(
   const blocks = root.get(BLOCKS);
   const payloadMap = root.get(PAYLOADS);
   if (!(blocks instanceof Y.Map) || !(payloadMap instanceof Y.Map))
-    throw new TypeError("Integrated staged document is invalid.");
+    throw new TypeError("Integrated document is invalid.");
 
   document.transact(() => {
     for (const update of placements)
