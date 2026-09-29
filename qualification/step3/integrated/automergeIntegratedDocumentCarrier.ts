@@ -110,7 +110,7 @@ class AutomergeIntegratedDocumentCarrier<
               ["payloads", update.inlineContentId, "text"],
               { start: 0, end: update.text.length, expand: "none" },
               ORIGIN_MARK,
-              JSON.stringify(update.origin),
+              encodeOrigin(update.origin),
             );
           }
         } else if (update.kind === "replace-opaque") {
@@ -118,7 +118,7 @@ class AutomergeIntegratedDocumentCarrier<
             kind: "opaque",
             mediaType: update.mediaType,
             bytes: [...update.bytes],
-            origin: JSON.stringify(update.origin),
+            origin: encodeOrigin(update.origin),
           };
         } else {
           const payload = draft.payloads[update.inlineContentId];
@@ -144,7 +144,7 @@ class AutomergeIntegratedDocumentCarrier<
                   expand: "none",
                 },
                 ORIGIN_MARK,
-                JSON.stringify(update.origin),
+                encodeOrigin(update.origin),
               );
             }
           } else if (update.start !== update.end) {
@@ -225,7 +225,6 @@ function validateChange<Position>(
           "Text replacement requires an allowlisted Media Type.",
         );
       assertAutomergeExactText(update.text);
-      assertOrigin(update.origin);
       working.set(update.inlineContentId, {
         kind: "text",
         mediaType: update.mediaType,
@@ -238,7 +237,6 @@ function validateChange<Position>(
     } else if (update.kind === "replace-opaque") {
       if (isQualificationFineGrainedMediaType(update.mediaType))
         throw new TypeError("Allowlisted Media Types require text payloads.");
-      assertOrigin(update.origin);
       working.set(update.inlineContentId, {
         kind: "opaque",
         mediaType: update.mediaType,
@@ -254,7 +252,6 @@ function validateChange<Position>(
       if (update.kind === "insert-text") {
         assertTextOffset(update.offset, payload.text);
         assertAutomergeExactText(update.text);
-        assertOrigin(update.origin);
         const text =
           payload.text.slice(0, update.offset) +
           update.text +
@@ -341,6 +338,13 @@ function assertOrigin(origin: QualificationOrigin): void {
     !["human", "imported", "automation", "ai", "unknown"].includes(kind)
   )
     throw new TypeError("Integrated payload Origin is invalid.");
+}
+
+function encodeOrigin(origin: QualificationOrigin): string {
+  const id = origin.id;
+  const kind = origin.kind;
+  assertOrigin({ id, kind });
+  return JSON.stringify({ id, kind });
 }
 
 function assertAutomergeExactText(text: string): void {

@@ -138,6 +138,14 @@ export function assertQualificationOrigin(origin: QualificationOrigin): void {
   }
 }
 
+/** Validates and serializes one Origin without caller-controlled JSON hooks. */
+export function encodeQualificationOrigin(origin: QualificationOrigin): string {
+  const id = origin.id;
+  const kind = origin.kind;
+  assertQualificationOrigin({ id, kind });
+  return JSON.stringify({ id, kind });
+}
+
 function parseQualificationMediaType(
   mediaType: string,
 ): ParsedQualificationMediaType {

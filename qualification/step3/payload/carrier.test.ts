@@ -98,11 +98,19 @@ for (const factory of factories) {
       });
     });
 
-    it("preserves an exact surrogate-crossing result", () => {
+    it("preserves an exact surrogate-crossing result or rejects atomically", () => {
       const carrier = factory.createText("text/plain", human);
       carrier.insertText(0, "😀😀", human);
+      const before = carrier.snapshot();
+      const encodedBefore = carrier.encode();
 
-      carrier.deleteText(1, 3);
+      try {
+        carrier.deleteText(1, 3);
+      } catch {
+        expect(carrier.snapshot()).toEqual(before);
+        expect(carrier.encode()).toEqual(encodedBefore);
+        return;
+      }
 
       expect(carrier.snapshot()).toEqual({
         kind: "text",
@@ -147,6 +155,29 @@ for (const factory of factories) {
           { text: "a", origin: sameIdHuman },
           { text: "b", origin: sameIdAi },
         ],
+      });
+    });
+
+    it("serializes validated Origin fields instead of caller serialization hooks", () => {
+      const origin = {
+        id: "canonical-origin",
+        kind: "automation" as const,
+        toJSON: () => ({ id: "rewritten", kind: "ai" }),
+      };
+      const carrier = factory.createText("text/plain", human);
+      carrier.replaceText("text/plain", "replacement", origin);
+      carrier.insertText(11, "!", origin);
+
+      expect(carrier.snapshot()).toMatchObject({
+        kind: "text",
+        text: "replacement!",
+        spans: [{ origin: { id: "canonical-origin", kind: "automation" } }],
+      });
+
+      carrier.replaceOpaque("application/example", Uint8Array.of(1), origin);
+      expect(carrier.snapshot()).toMatchObject({
+        kind: "opaque",
+        origin: { id: "canonical-origin", kind: "automation" },
       });
     });
 

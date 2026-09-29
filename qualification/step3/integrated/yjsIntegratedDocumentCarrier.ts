@@ -205,7 +205,7 @@ function applyPreparedChange(
         const payload = new Y.Map<unknown>();
         payload.set("kind", "opaque");
         payload.set("mediaType", update.mediaType);
-        payload.set("bytes", update.bytes.slice());
+        payload.set("bytes", update.bytes);
         payload.set("origin", update.origin);
         (payloadMap as Y.Map<Y.Map<unknown>>).set(
           update.inlineContentId,
@@ -220,11 +220,8 @@ function applyPreparedChange(
       if (!(text instanceof Y.Text))
         throw new TypeError("Fine-grained operations require a text payload.");
       if (update.kind === "insert-text") {
-        if ("rewriteSpans" in update) rewriteYjsText(text, update.rewriteSpans);
-        else if (update.text.length > 0)
+        if (update.text.length > 0)
           text.insert(update.offset, update.text, { [ORIGIN]: update.origin });
-      } else if ("rewriteSpans" in update) {
-        rewriteYjsText(text, update.rewriteSpans);
       } else if (update.start !== update.end) {
         text.delete(update.start, update.end - update.start);
       }
@@ -259,13 +256,8 @@ type PreparedPayloadChange =
   | (Omit<
       Extract<IntegratedPayloadChange, { readonly kind: "insert-text" }>,
       "origin"
-    > & {
-      readonly origin: string;
-      readonly rewriteSpans?: readonly QualificationTextSpan[];
-    })
-  | (Extract<IntegratedPayloadChange, { readonly kind: "delete-text" }> & {
-      readonly rewriteSpans?: readonly QualificationTextSpan[];
-    });
+    > & { readonly origin: string })
+  | Extract<IntegratedPayloadChange, { readonly kind: "delete-text" }>;
 
 function preparePayloadChanges(
   changes: readonly IntegratedPayloadChange[],
@@ -295,13 +287,14 @@ function preparePayloadChanges(
       if (isQualificationFineGrainedMediaType(change.mediaType))
         throw new TypeError("Allowlisted Media Types require text payloads.");
       const origin = encodeOrigin(change.origin);
+      const bytes = new Uint8Array(change.bytes);
       working.set(change.inlineContentId, {
         kind: "opaque",
         mediaType: change.mediaType,
-        bytes: change.bytes.slice(),
+        bytes,
         origin: change.origin,
       });
-      prepared.push({ ...change, origin });
+      prepared.push({ ...change, bytes, origin });
     } else {
       const payload = working.get(change.inlineContentId);
       if (payload?.kind !== "text")
@@ -315,38 +308,31 @@ function preparePayloadChanges(
           payload.text.slice(0, change.offset) +
           change.text +
           payload.text.slice(change.offset);
-        const rewrite = requiresYjsTextRewrite(
-          payload.text,
-          text,
-          (preflight) => preflight.insert(change.offset, change.text),
-        );
+        if (
+          requiresYjsTextRewrite(payload.text, text, (preflight) =>
+            preflight.insert(change.offset, change.text),
+          )
+        )
+          throw new TypeError(
+            "Yjs cannot preserve this ECMAScript string exactly.",
+          );
         const origin = encodeOrigin(change.origin);
-        const spans = spliceTextSpans(
-          payload.spans,
-          change.offset,
-          change.offset,
-          change.text,
-          change.origin,
-        );
-        working.set(change.inlineContentId, { ...payload, text, spans });
-        prepared.push(
-          rewrite
-            ? { ...change, origin, rewriteSpans: spans }
-            : { ...change, origin },
-        );
+        working.set(change.inlineContentId, { ...payload, text });
+        prepared.push({ ...change, origin });
       } else {
         assertTextRange(change.start, change.end, payload.text);
         const text =
           payload.text.slice(0, change.start) + payload.text.slice(change.end);
-        const rewrite = requiresYjsTextRewrite(
-          payload.text,
-          text,
-          (preflight) =>
+        if (
+          requiresYjsTextRewrite(payload.text, text, (preflight) =>
             preflight.delete(change.start, change.end - change.start),
-        );
-        const spans = spliceTextSpans(payload.spans, change.start, change.end);
-        working.set(change.inlineContentId, { ...payload, text, spans });
-        prepared.push(rewrite ? { ...change, rewriteSpans: spans } : change);
+          )
+        )
+          throw new TypeError(
+            "Yjs cannot preserve this ECMAScript string exactly.",
+          );
+        working.set(change.inlineContentId, { ...payload, text });
+        prepared.push(change);
       }
     }
   }
@@ -391,55 +377,6 @@ function requiresYjsTextRewrite(
     })
     .join("");
   return projected !== expected;
-}
-
-function rewriteYjsText(
-  text: Y.Text,
-  spans: readonly QualificationTextSpan[],
-): void {
-  text.delete(0, text.length);
-  for (const span of spans)
-    text.insert(text.length, span.text, {
-      [ORIGIN]: encodeOrigin(span.origin),
-    });
-}
-
-function spliceTextSpans(
-  spans: readonly QualificationTextSpan[],
-  start: number,
-  end: number,
-  inserted = "",
-  origin?: QualificationOrigin,
-): QualificationTextSpan[] {
-  const units = spans.flatMap((span) =>
-    Array.from({ length: span.text.length }, (_, index) => ({
-      text: span.text.charAt(index),
-      origin: span.origin,
-    })),
-  );
-  const insertedUnits: { text: string; origin: QualificationOrigin }[] = [];
-  if (inserted.length > 0) {
-    if (origin === undefined)
-      throw new TypeError("Inserted Origin is missing.");
-    for (let index = 0; index < inserted.length; index += 1)
-      insertedUnits.push({ text: inserted.charAt(index), origin });
-  }
-  units.splice(start, end - start, ...insertedUnits);
-  const result: QualificationTextSpan[] = [];
-  for (const unit of units) {
-    const previous = result.at(-1);
-    if (
-      previous !== undefined &&
-      previous.origin.id === unit.origin.id &&
-      previous.origin.kind === unit.origin.kind
-    )
-      result[result.length - 1] = {
-        text: previous.text + unit.text,
-        origin: previous.origin,
-      };
-    else result.push(unit);
-  }
-  return result;
 }
 
 function encodeOrigin(origin: QualificationOrigin): string {

@@ -177,7 +177,7 @@ for (const factory of factories) {
       }
     });
 
-    it("preserves an exact surrogate-crossing result", () => {
+    it("preserves an exact surrogate-crossing result or rejects the mixed change atomically", () => {
       const carrier = seeded(factory);
       carrier.applyChange({
         payloads: [
@@ -190,16 +190,26 @@ for (const factory of factories) {
           },
         ],
       });
-      carrier.applyChange({
-        payloads: [
-          {
-            kind: "delete-text",
-            inlineContentId: textId,
-            start: 1,
-            end: 3,
-          },
-        ],
-      });
+      const before = carrier.snapshot();
+      const encodedBefore = carrier.encode();
+
+      try {
+        carrier.applyChange({
+          placements: [{ blockId: blockB, placement: position(2, 1) }],
+          payloads: [
+            {
+              kind: "delete-text",
+              inlineContentId: textId,
+              start: 1,
+              end: 3,
+            },
+          ],
+        });
+      } catch {
+        expect(carrier.snapshot()).toEqual(before);
+        expect(carrier.encode()).toEqual(encodedBefore);
+        return;
+      }
 
       expect(text(carrier)).toBe("😀");
     });
@@ -411,6 +421,81 @@ describe("automerge integrated Origin validation", () => {
     }
   });
 
+  it("serializes validated Origin fields instead of caller serialization hooks", () => {
+    const carrier = seeded(factory);
+    const origin = {
+      id: "canonical-origin",
+      kind: "automation" as const,
+      toJSON: () => ({ id: "rewritten", kind: "ai" }),
+    };
+
+    carrier.applyChange({
+      payloads: [
+        {
+          kind: "replace-text",
+          inlineContentId: textId,
+          mediaType: "text/plain",
+          text: "replacement",
+          origin,
+        },
+        {
+          kind: "insert-text",
+          inlineContentId: textId,
+          offset: 11,
+          text: "!",
+          origin,
+        },
+        {
+          kind: "replace-opaque",
+          inlineContentId: opaqueId,
+          mediaType: "application/example",
+          bytes: Uint8Array.of(1),
+          origin,
+        },
+      ],
+    });
+
+    const textPayload = carrier.snapshot().payloads.get(textId);
+    expect(textPayload).toMatchObject({
+      kind: "text",
+      text: "replacement!",
+      spans: [{ origin: { id: "canonical-origin", kind: "automation" } }],
+    });
+    expect(carrier.snapshot().payloads.get(opaqueId)).toMatchObject({
+      kind: "opaque",
+      origin: { id: "canonical-origin", kind: "automation" },
+    });
+  });
+
+  it("captures stateful Origin fields once before serialization", () => {
+    const carrier = seeded(factory);
+    let kindReads = 0;
+    const origin = {
+      id: "canonical-origin",
+      get kind(): "automation" {
+        kindReads += 1;
+        return kindReads === 1 ? "automation" : ("invalid" as never);
+      },
+    };
+
+    carrier.applyChange({
+      payloads: [
+        {
+          kind: "replace-text",
+          inlineContentId: textId,
+          mediaType: "text/plain",
+          text: "replacement",
+          origin,
+        },
+      ],
+    });
+
+    expect(carrier.snapshot().payloads.get(textId)).toMatchObject({
+      kind: "text",
+      spans: [{ origin: { id: "canonical-origin", kind: "automation" } }],
+    });
+  });
+
   it("rolls back draft mutations when a later placement encoding fails", () => {
     const throwingFactory = createAutomergeIntegratedDocumentCarrierFactory(
       {
@@ -530,6 +615,82 @@ describe("yjs integrated transaction preflight", () => {
       }),
     ).toThrow(/Origin access failed/u);
     expect(carrier.snapshot()).toEqual(before);
+  });
+
+  it("rejects a mixed-Origin surrogate-crossing splice before mutation", () => {
+    const carrier = seeded(factory);
+    carrier.applyChange({
+      payloads: [
+        {
+          kind: "replace-text",
+          inlineContentId: textId,
+          mediaType: "text/plain",
+          text: "😀",
+          origin: human,
+        },
+        {
+          kind: "insert-text",
+          inlineContentId: textId,
+          offset: 2,
+          text: "😀",
+          origin: imported,
+        },
+      ],
+    });
+    const before = carrier.snapshot();
+    const encodedBefore = carrier.encode();
+
+    expect(() =>
+      carrier.applyChange({
+        placements: [{ blockId: blockB, placement: position(2, 1) }],
+        payloads: [
+          {
+            kind: "delete-text",
+            inlineContentId: textId,
+            start: 1,
+            end: 3,
+          },
+        ],
+      }),
+    ).toThrow(/cannot preserve/u);
+    expect(carrier.snapshot()).toEqual(before);
+    expect(carrier.encode()).toEqual(encodedBefore);
+  });
+
+  it("detaches opaque input before the live transaction", () => {
+    class SliceThrowsOnSecondCall extends Uint8Array {
+      private calls = 0;
+
+      public override slice(
+        start?: number,
+        end?: number,
+      ): Uint8Array<ArrayBuffer> {
+        this.calls += 1;
+        if (this.calls === 2) throw new TypeError("Second slice failed.");
+        return super.slice(start, end);
+      }
+    }
+
+    const carrier = seeded(factory);
+    const bytes = new SliceThrowsOnSecondCall([1, 2, 3]);
+    carrier.applyChange({
+      placements: [{ blockId: blockB, placement: position(2, 1) }],
+      payloads: [
+        {
+          kind: "replace-opaque",
+          inlineContentId: opaqueId,
+          mediaType: "application/example",
+          bytes,
+          origin: imported,
+        },
+      ],
+    });
+
+    expect(carrier.snapshot().placements.get(blockB)).toEqual(position(2, 1));
+    expect(carrier.snapshot().payloads.get(opaqueId)).toMatchObject({
+      kind: "opaque",
+      bytes: Uint8Array.of(1, 2, 3),
+    });
   });
 });
 

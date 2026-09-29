@@ -8,9 +8,9 @@ import type {
   QualificationTextSpan,
 } from "./carrier.js";
 import {
-  assertQualificationOrigin,
   assertTextOffset,
   assertTextRange,
+  encodeQualificationOrigin,
   isQualificationFineGrainedMediaType,
 } from "./carrier.js";
 
@@ -106,26 +106,24 @@ export class YjsPayloadCarrier implements PayloadCarrier {
     }
     assertTextOffset(offset, snapshot.text);
     assertYjsExactText(inserted);
-    assertQualificationOrigin(origin);
+    const encodedOrigin = encodeQualificationOrigin(origin);
     if (inserted.length === 0) {
       return;
     }
-    const rewrite = requiresYjsTextRewrite(
-      snapshot.text,
-      snapshot.text.slice(0, offset) + inserted + snapshot.text.slice(offset),
-      (text) => text.insert(offset, inserted),
-    );
+    if (
+      requiresYjsTextRewrite(
+        snapshot.text,
+        snapshot.text.slice(0, offset) + inserted + snapshot.text.slice(offset),
+        (text) => text.insert(offset, inserted),
+      )
+    )
+      throw new TypeError(
+        "Yjs cannot preserve this ECMAScript string exactly.",
+      );
     this.document.transact(() => {
-      const text = this.currentText();
-      if (rewrite)
-        rewriteYjsText(
-          text,
-          spliceTextSpans(snapshot.spans, offset, offset, inserted, origin),
-        );
-      else
-        text.insert(offset, inserted, {
-          [ORIGIN_ATTRIBUTE]: JSON.stringify(origin),
-        });
+      this.currentText().insert(offset, inserted, {
+        [ORIGIN_ATTRIBUTE]: encodedOrigin,
+      });
     });
   }
 
@@ -139,15 +137,17 @@ export class YjsPayloadCarrier implements PayloadCarrier {
     }
     assertTextRange(start, end, snapshot.text);
     if (start !== end) {
-      const rewrite = requiresYjsTextRewrite(
-        snapshot.text,
-        snapshot.text.slice(0, start) + snapshot.text.slice(end),
-        (text) => text.delete(start, end - start),
-      );
-      const text = this.currentText();
-      if (rewrite)
-        rewriteYjsText(text, spliceTextSpans(snapshot.spans, start, end));
-      else text.delete(start, end - start);
+      if (
+        requiresYjsTextRewrite(
+          snapshot.text,
+          snapshot.text.slice(0, start) + snapshot.text.slice(end),
+          (text) => text.delete(start, end - start),
+        )
+      )
+        throw new TypeError(
+          "Yjs cannot preserve this ECMAScript string exactly.",
+        );
+      this.currentText().delete(start, end - start);
     }
   }
 
@@ -163,7 +163,7 @@ export class YjsPayloadCarrier implements PayloadCarrier {
       );
     }
     assertYjsExactText(text);
-    assertQualificationOrigin(origin);
+    const encodedOrigin = encodeQualificationOrigin(origin);
     this.document.transact(() => {
       const payload = new Y.Map<unknown>();
       const payloadText = new Y.Text();
@@ -171,7 +171,7 @@ export class YjsPayloadCarrier implements PayloadCarrier {
       payload.set("mediaType", mediaType);
       if (text.length > 0) {
         payloadText.insert(0, text, {
-          [ORIGIN_ATTRIBUTE]: JSON.stringify(origin),
+          [ORIGIN_ATTRIBUTE]: encodedOrigin,
         });
       }
       payload.set("text", payloadText);
@@ -190,13 +190,13 @@ export class YjsPayloadCarrier implements PayloadCarrier {
         "Allowlisted Media Types must use the text qualification path.",
       );
     }
-    assertQualificationOrigin(origin);
+    const encodedOrigin = encodeQualificationOrigin(origin);
     this.document.transact(() => {
       const payload = new Y.Map<unknown>();
       payload.set("kind", "opaque");
       payload.set("mediaType", mediaType);
       payload.set("bytes", bytes.slice());
-      payload.set("origin", JSON.stringify(origin));
+      payload.set("origin", encodedOrigin);
       this.root.set(CURRENT_PAYLOAD, payload);
     });
   }
@@ -280,55 +280,6 @@ function requiresYjsTextRewrite(
     })
     .join("");
   return projected !== expected;
-}
-
-function rewriteYjsText(
-  text: Y.Text,
-  spans: readonly QualificationTextSpan[],
-): void {
-  text.delete(0, text.length);
-  for (const span of spans)
-    text.insert(text.length, span.text, {
-      [ORIGIN_ATTRIBUTE]: JSON.stringify(span.origin),
-    });
-}
-
-function spliceTextSpans(
-  spans: readonly QualificationTextSpan[],
-  start: number,
-  end: number,
-  inserted = "",
-  origin?: QualificationOrigin,
-): QualificationTextSpan[] {
-  const units = spans.flatMap((span) =>
-    Array.from({ length: span.text.length }, (_, index) => ({
-      text: span.text.charAt(index),
-      origin: span.origin,
-    })),
-  );
-  const insertedUnits: { text: string; origin: QualificationOrigin }[] = [];
-  if (inserted.length > 0) {
-    if (origin === undefined)
-      throw new TypeError("Inserted Origin is missing.");
-    for (let index = 0; index < inserted.length; index += 1)
-      insertedUnits.push({ text: inserted.charAt(index), origin });
-  }
-  units.splice(start, end - start, ...insertedUnits);
-  const result: QualificationTextSpan[] = [];
-  for (const unit of units) {
-    const previous = result.at(-1);
-    if (
-      previous !== undefined &&
-      previous.origin.id === unit.origin.id &&
-      previous.origin.kind === unit.origin.kind
-    )
-      result[result.length - 1] = {
-        text: previous.text + unit.text,
-        origin: previous.origin,
-      };
-    else result.push(unit);
-  }
-  return result;
 }
 
 function parseOrigin(value: unknown): QualificationOrigin {

@@ -8,9 +8,9 @@ import type {
   QualificationTextSpan,
 } from "./carrier.js";
 import {
-  assertQualificationOrigin,
   assertTextOffset,
   assertTextRange,
+  encodeQualificationOrigin,
   isQualificationFineGrainedMediaType,
 } from "./carrier.js";
 
@@ -110,7 +110,7 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
     }
     assertTextOffset(offset, snapshot.text);
     assertAutomergeExactText(text);
-    assertQualificationOrigin(origin);
+    const encodedOrigin = encodeQualificationOrigin(origin);
     if (text.length === 0) {
       return;
     }
@@ -124,7 +124,7 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
         [...TEXT_PATH],
         { start: offset, end: offset + text.length, expand: "none" },
         ORIGIN_MARK,
-        JSON.stringify(origin),
+        encodedOrigin,
       );
     });
   }
@@ -161,7 +161,7 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
       );
     }
     assertAutomergeExactText(text);
-    assertQualificationOrigin(origin);
+    const encodedOrigin = encodeQualificationOrigin(origin);
     this.document = Automerge.change(this.document, (draft) => {
       draft.payload = { kind: "text", mediaType, text: "" };
       if (text.length > 0) {
@@ -171,7 +171,7 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
           [...TEXT_PATH],
           { start: 0, end: text.length, expand: "none" },
           ORIGIN_MARK,
-          JSON.stringify(origin),
+          encodedOrigin,
         );
       }
     });
@@ -188,13 +188,13 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
         "Allowlisted Media Types must use the text qualification path.",
       );
     }
-    assertQualificationOrigin(origin);
+    const encodedOrigin = encodeQualificationOrigin(origin);
     this.document = Automerge.change(this.document, (draft) => {
       draft.payload = {
         kind: "opaque",
         mediaType,
         bytes: [...bytes],
-        origin: JSON.stringify(origin),
+        origin: encodedOrigin,
       };
     });
   }
