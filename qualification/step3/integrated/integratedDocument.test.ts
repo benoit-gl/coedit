@@ -500,7 +500,12 @@ describe("automerge integrated Origin validation", () => {
     const throwingFactory = createAutomergeIntegratedDocumentCarrierFactory(
       {
         encode(value: LocalDensePosition): string {
-          if (value.digits[0] === 2)
+          if (
+            localDensePositionAllocator.compare(
+              value,
+              position(2, 1).position,
+            ) === 0
+          )
             throw new TypeError("Position encode failed.");
           return localDensePositionAllocator.encode(value);
         },
@@ -742,18 +747,32 @@ function seeded(factory: IntegratedDocumentCarrierFactory<LocalDensePosition>) {
   return carrier;
 }
 
+const fixturePositions = allocateFixturePositions();
+
+function allocateFixturePositions(): readonly LocalDensePosition[] {
+  const result = localDensePositionAllocator.allocateRun({
+    count: 4,
+    context: {
+      runNonce: "70000000-0000-4000-8000-000000000099",
+    },
+  });
+  if (!result.ok) {
+    throw new TypeError(
+      `Integrated fixture position allocation failed: ${result.error.message}`,
+    );
+  }
+  return result.value;
+}
+
 function position(
   order: number,
   depth: number,
 ): StructuralPlacement<LocalDensePosition> {
-  return {
-    position: {
-      digits: [order],
-      run: "70000000-0000-4000-8000-000000000099",
-      member: 1,
-    },
-    depth,
-  };
+  const allocated = fixturePositions[order - 1];
+  if (allocated === undefined) {
+    throw new RangeError("Integrated fixture position index is invalid.");
+  }
+  return { position: allocated, depth };
 }
 
 function text(
