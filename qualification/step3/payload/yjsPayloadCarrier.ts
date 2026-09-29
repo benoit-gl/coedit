@@ -10,6 +10,7 @@ import type {
 import {
   assertTextOffset,
   assertTextRange,
+  assertTextSpliceRange,
   isQualificationFineGrainedMediaType,
 } from "./carrier.js";
 
@@ -100,9 +101,11 @@ export class YjsPayloadCarrier implements PayloadCarrier {
       );
     }
     assertTextOffset(offset, snapshot.text);
+    assertYjsExactText(inserted);
     if (inserted.length === 0) {
       return;
     }
+    assertTextSpliceRange(offset, offset, snapshot.text);
     this.document.transact(() => {
       this.currentText().insert(offset, inserted, {
         [ORIGIN_ATTRIBUTE]: JSON.stringify(origin),
@@ -120,6 +123,7 @@ export class YjsPayloadCarrier implements PayloadCarrier {
     }
     assertTextRange(start, end, snapshot.text);
     if (start !== end) {
+      assertTextSpliceRange(start, end, snapshot.text);
       this.currentText().delete(start, end - start);
     }
   }
@@ -135,6 +139,7 @@ export class YjsPayloadCarrier implements PayloadCarrier {
         "Qualification text replacement requires an allowlisted Media Type.",
       );
     }
+    assertYjsExactText(text);
     this.document.transact(() => {
       const payload = new Y.Map<unknown>();
       const payloadText = new Y.Text();
@@ -210,6 +215,27 @@ export const yjsPayloadCarrierFactory: PayloadCarrierFactory = {
     return new YjsPayloadCarrier(encoded);
   },
 };
+
+function assertYjsExactText(text: string): void {
+  for (let index = 0; index < text.length; index += 1) {
+    const codeUnit = text.charCodeAt(index);
+    if (codeUnit >= 0xd800 && codeUnit <= 0xdbff) {
+      const next = text.charCodeAt(index + 1);
+      if (index + 1 >= text.length || next < 0xdc00 || next > 0xdfff) {
+        throw new TypeError(
+          "Yjs cannot preserve this ECMAScript string exactly.",
+        );
+      }
+      index += 1;
+      continue;
+    }
+    if (codeUnit >= 0xdc00 && codeUnit <= 0xdfff) {
+      throw new TypeError(
+        "Yjs cannot preserve this ECMAScript string exactly.",
+      );
+    }
+  }
+}
 
 function parseOrigin(value: unknown): QualificationOrigin {
   if (typeof value !== "string") {
