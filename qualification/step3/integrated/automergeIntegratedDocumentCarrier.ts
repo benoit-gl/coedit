@@ -17,6 +17,7 @@ import {
 import {
   assertTextOffset,
   assertTextRange,
+  assertTextSpliceRange,
   isQualificationFineGrainedMediaType,
 } from "../payload/carrier.js";
 import type {
@@ -252,6 +253,8 @@ function validateChange<Position>(
       if (update.kind === "insert-text") {
         assertTextOffset(update.offset, payload.text);
         assertAutomergeExactText(update.text);
+        if (update.text.length > 0)
+          assertTextSpliceRange(update.offset, update.offset, payload.text);
         working.set(update.inlineContentId, {
           ...payload,
           text:
@@ -261,6 +264,8 @@ function validateChange<Position>(
         });
       } else {
         assertTextRange(update.start, update.end, payload.text);
+        if (update.start !== update.end)
+          assertTextSpliceRange(update.start, update.end, payload.text);
         working.set(update.inlineContentId, {
           ...payload,
           text:
