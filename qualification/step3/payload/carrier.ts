@@ -128,6 +128,40 @@ export function assertTextRange(
   }
 }
 
+/**
+ * Validates an ordered UTF-16 splice range without splitting a surrogate pair.
+ *
+ * @remarks
+ * The current text is already inside the candidate's exact-preservation domain.
+ * Rejecting splice boundaries between a high and low surrogate keeps insertion
+ * and deletion from creating unsupported lone surrogates.
+ */
+export function assertTextSpliceRange(
+  start: number,
+  end: number,
+  text: string,
+): void {
+  assertTextRange(start, end, text);
+  assertTextSpliceBoundary(start, text);
+  assertTextSpliceBoundary(end, text);
+}
+
+function assertTextSpliceBoundary(offset: number, text: string): void {
+  if (offset === 0 || offset === text.length) {
+    return;
+  }
+  const before = text.charCodeAt(offset - 1);
+  const after = text.charCodeAt(offset);
+  if (
+    before >= 0xd800 &&
+    before <= 0xdbff &&
+    after >= 0xdc00 &&
+    after <= 0xdfff
+  ) {
+    throw new RangeError("Text edit boundary must not split a surrogate pair.");
+  }
+}
+
 function parseQualificationMediaType(
   mediaType: string,
 ): ParsedQualificationMediaType {
