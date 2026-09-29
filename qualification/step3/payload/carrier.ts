@@ -128,6 +128,24 @@ export function assertTextRange(
   }
 }
 
+/** Validates protected Origin metadata before it enters a native carrier. */
+export function assertQualificationOrigin(origin: QualificationOrigin): void {
+  if (
+    typeof origin.id !== "string" ||
+    !["human", "imported", "automation", "ai", "unknown"].includes(origin.kind)
+  ) {
+    throw new TypeError("Qualification Origin is invalid.");
+  }
+}
+
+/** Validates and serializes one Origin without caller-controlled JSON hooks. */
+export function encodeQualificationOrigin(origin: QualificationOrigin): string {
+  const id = origin.id;
+  const kind = origin.kind;
+  assertQualificationOrigin({ id, kind });
+  return JSON.stringify({ id, kind });
+}
+
 function parseQualificationMediaType(
   mediaType: string,
 ): ParsedQualificationMediaType {

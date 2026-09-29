@@ -24,7 +24,8 @@
     "docs:check": "typedoc --options typedoc.json",
     "check": "npm run format:check && npm run typecheck && npm run lint && npm run lint:deps && npm run docs:check && npm run test",
     "test:step3:payload": "vitest run qualification/step3/payload",
-    "test:step3:structure": "vitest run qualification/step3/structure"
+    "test:step3:structure": "vitest run qualification/step3/structure",
+    "test:step3:integrated": "vitest run qualification/step3/integrated"
   },
   "dependencies": {
     "react": "19.2.8",

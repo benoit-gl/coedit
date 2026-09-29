@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import type { PayloadCarrierFactory, QualificationOrigin } from "./carrier.js";
-import { isQualificationFineGrainedMediaType } from "./carrier.js";
+import {
+  assertTextRange,
+  isQualificationFineGrainedMediaType,
+} from "./carrier.js";
 import { automergePayloadCarrierFactory } from "./automergePayloadCarrier.js";
 import {
   readQualificationRawMedia,
@@ -49,6 +52,16 @@ describe("qualification Media Type dispatch", () => {
   });
 });
 
+describe("qualification UTF-16 splice validation", () => {
+  it("validates UTF-16 ranges without imposing Unicode splice boundaries", () => {
+    expect(() => assertTextRange(0, 0, "😀")).not.toThrow();
+    expect(() => assertTextRange(2, 2, "😀")).not.toThrow();
+    expect(() => assertTextRange(0, 2, "😀")).not.toThrow();
+    expect(() => assertTextRange(1, 1, "😀")).not.toThrow();
+    expect(() => assertTextRange(0, 1, "😀")).not.toThrow();
+  });
+});
+
 for (const factory of factories) {
   describe(`${factory.candidate} payload qualification`, () => {
     it("preserves exact Media Type spelling and native text", () => {
@@ -60,6 +73,50 @@ for (const factory of factories) {
         mediaType: 'Text/Plain; charset="UTF-8"',
         text: "A\r\n😀é",
         spans: [{ text: "A\r\n😀é", origin: human }],
+      });
+    });
+
+    it("rejects lossily represented splice results atomically", () => {
+      const carrier = factory.createText("text/plain", human);
+      carrier.insertText(0, "😀", human);
+      const before = carrier.snapshot();
+
+      expect(() => carrier.insertText(1, "X", imported)).toThrow(
+        /cannot preserve/u,
+      );
+      expect(carrier.snapshot()).toEqual(before);
+
+      expect(() => carrier.deleteText(0, 1)).toThrow(/cannot preserve/u);
+      expect(carrier.snapshot()).toEqual(before);
+
+      carrier.deleteText(0, 2);
+      expect(carrier.snapshot()).toEqual({
+        kind: "text",
+        mediaType: "text/plain",
+        text: "",
+        spans: [],
+      });
+    });
+
+    it("preserves an exact surrogate-crossing result or rejects atomically", () => {
+      const carrier = factory.createText("text/plain", human);
+      carrier.insertText(0, "😀😀", human);
+      const before = carrier.snapshot();
+      const encodedBefore = carrier.encode();
+
+      try {
+        carrier.deleteText(1, 3);
+      } catch {
+        expect(carrier.snapshot()).toEqual(before);
+        expect(carrier.encode()).toEqual(encodedBefore);
+        return;
+      }
+
+      expect(carrier.snapshot()).toEqual({
+        kind: "text",
+        mediaType: "text/plain",
+        text: "😀",
+        spans: [{ text: "😀", origin: human }],
       });
     });
 
@@ -77,6 +134,50 @@ for (const factory of factories) {
           { text: "b", origin: imported },
           { text: "c", origin: human },
         ],
+      });
+    });
+
+    it("keeps distinct Origins with the same ID through reload and merge", () => {
+      const sameIdHuman: QualificationOrigin = { id: "shared", kind: "human" };
+      const sameIdAi: QualificationOrigin = { id: "shared", kind: "ai" };
+      const carrier = factory.createText("text/plain", sameIdHuman);
+      carrier.insertText(0, "a", sameIdHuman);
+      const reopened = factory.load(carrier.encode());
+      reopened.insertText(1, "b", sameIdAi);
+
+      carrier.mergeEncoded(reopened.encode());
+
+      expect(carrier.snapshot()).toEqual({
+        kind: "text",
+        mediaType: "text/plain",
+        text: "ab",
+        spans: [
+          { text: "a", origin: sameIdHuman },
+          { text: "b", origin: sameIdAi },
+        ],
+      });
+    });
+
+    it("serializes validated Origin fields instead of caller serialization hooks", () => {
+      const origin = {
+        id: "canonical-origin",
+        kind: "automation" as const,
+        toJSON: () => ({ id: "rewritten", kind: "ai" }),
+      };
+      const carrier = factory.createText("text/plain", human);
+      carrier.replaceText("text/plain", "replacement", origin);
+      carrier.insertText(11, "!", origin);
+
+      expect(carrier.snapshot()).toMatchObject({
+        kind: "text",
+        text: "replacement!",
+        spans: [{ origin: { id: "canonical-origin", kind: "automation" } }],
+      });
+
+      carrier.replaceOpaque("application/example", Uint8Array.of(1), origin);
+      expect(carrier.snapshot()).toMatchObject({
+        kind: "opaque",
+        origin: { id: "canonical-origin", kind: "automation" },
       });
     });
 
@@ -167,6 +268,45 @@ for (const factory of factories) {
         ).toThrow();
         expect(opaqueCarrier.snapshot()).toEqual(opaqueBefore);
       }
+    });
+
+    it("rejects malformed Origins atomically before any payload mutation", () => {
+      const invalidOrigin = { id: "invalid", kind: "invalid" } as never;
+      const textCarrier = factory.createText("text/plain", human);
+      textCarrier.insertText(0, "before", human);
+      const opaqueCarrier = factory.createText("text/plain", human);
+      opaqueCarrier.replaceOpaque(
+        "application/octet-stream",
+        Uint8Array.of(4),
+        imported,
+      );
+      const textBefore = textCarrier.snapshot();
+      const opaqueBefore = opaqueCarrier.snapshot();
+
+      expect(() => textCarrier.insertText(0, "after", invalidOrigin)).toThrow(
+        /Origin is invalid/u,
+      );
+      expect(textCarrier.snapshot()).toEqual(textBefore);
+      expect(() => textCarrier.insertText(0, "", invalidOrigin)).toThrow(
+        /Origin is invalid/u,
+      );
+      expect(textCarrier.snapshot()).toEqual(textBefore);
+      expect(() =>
+        textCarrier.replaceText("text/markdown", "after", invalidOrigin),
+      ).toThrow(/Origin is invalid/u);
+      expect(textCarrier.snapshot()).toEqual(textBefore);
+      expect(() =>
+        textCarrier.replaceText("text/markdown", "", invalidOrigin),
+      ).toThrow(/Origin is invalid/u);
+      expect(textCarrier.snapshot()).toEqual(textBefore);
+      expect(() =>
+        opaqueCarrier.replaceOpaque(
+          "application/example",
+          Uint8Array.of(9),
+          invalidOrigin,
+        ),
+      ).toThrow(/Origin is invalid/u);
+      expect(opaqueCarrier.snapshot()).toEqual(opaqueBefore);
     });
 
     it("uses the carrier-neutral representative raw media boundary", () => {

@@ -26,8 +26,10 @@ repeated delivery plus reload. It establishes candidate-native convergence
 evidence without selecting the Gate B observable winner rule or mixed
 replacement/text-edit semantics.
 
-Later Step 3 merge units add the structural fork, integrated document/editor
-qualification, comparative measurements and resource evidence, and the Gate B
-decision. The validation/dispatch helper and representative codec here are
+The structural/allocator and integrated collaborative-document foundation merge
+units now build on this payload qualification. The next Step 3 merge unit adds
+integrated semantic and application qualification; comparative measurements and
+resource evidence and the Gate B decision follow. The validation/dispatch helper
+and representative codec here are
 qualification scaffolding only. They do not select the Step 4 production Media
 Type parser or raw-media processor.

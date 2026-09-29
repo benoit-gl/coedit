@@ -10,6 +10,7 @@ import type {
 import {
   assertTextOffset,
   assertTextRange,
+  encodeQualificationOrigin,
   isQualificationFineGrainedMediaType,
 } from "./carrier.js";
 
@@ -109,9 +110,13 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
     }
     assertTextOffset(offset, snapshot.text);
     assertAutomergeExactText(text);
+    const encodedOrigin = encodeQualificationOrigin(origin);
     if (text.length === 0) {
       return;
     }
+    assertAutomergeExactText(
+      snapshot.text.slice(0, offset) + text + snapshot.text.slice(offset),
+    );
     this.document = Automerge.change(this.document, (draft) => {
       Automerge.splice(draft, [...TEXT_PATH], offset, 0, text);
       Automerge.mark(
@@ -119,7 +124,7 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
         [...TEXT_PATH],
         { start: offset, end: offset + text.length, expand: "none" },
         ORIGIN_MARK,
-        JSON.stringify(origin),
+        encodedOrigin,
       );
     });
   }
@@ -136,6 +141,9 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
     if (start === end) {
       return;
     }
+    assertAutomergeExactText(
+      snapshot.text.slice(0, start) + snapshot.text.slice(end),
+    );
     this.document = Automerge.change(this.document, (draft) => {
       Automerge.splice(draft, [...TEXT_PATH], start, end - start);
     });
@@ -153,6 +161,7 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
       );
     }
     assertAutomergeExactText(text);
+    const encodedOrigin = encodeQualificationOrigin(origin);
     this.document = Automerge.change(this.document, (draft) => {
       draft.payload = { kind: "text", mediaType, text: "" };
       if (text.length > 0) {
@@ -162,7 +171,7 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
           [...TEXT_PATH],
           { start: 0, end: text.length, expand: "none" },
           ORIGIN_MARK,
-          JSON.stringify(origin),
+          encodedOrigin,
         );
       }
     });
@@ -179,12 +188,13 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
         "Allowlisted Media Types must use the text qualification path.",
       );
     }
+    const encodedOrigin = encodeQualificationOrigin(origin);
     this.document = Automerge.change(this.document, (draft) => {
       draft.payload = {
         kind: "opaque",
         mediaType,
         bytes: [...bytes],
-        origin: JSON.stringify(origin),
+        origin: encodedOrigin,
       };
     });
   }

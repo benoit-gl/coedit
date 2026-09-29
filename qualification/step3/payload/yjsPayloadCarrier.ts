@@ -10,6 +10,7 @@ import type {
 import {
   assertTextOffset,
   assertTextRange,
+  encodeQualificationOrigin,
   isQualificationFineGrainedMediaType,
 } from "./carrier.js";
 
@@ -75,7 +76,11 @@ export class YjsPayloadCarrier implements PayloadCarrier {
       projectedText += operation.insert;
       const origin = parseOrigin(operation.attributes?.[ORIGIN_ATTRIBUTE]);
       const previous = spans.at(-1);
-      if (previous !== undefined && previous.origin.id === origin.id) {
+      if (
+        previous !== undefined &&
+        previous.origin.id === origin.id &&
+        previous.origin.kind === origin.kind
+      ) {
         spans[spans.length - 1] = {
           text: previous.text + operation.insert,
           origin: previous.origin,
@@ -100,12 +105,24 @@ export class YjsPayloadCarrier implements PayloadCarrier {
       );
     }
     assertTextOffset(offset, snapshot.text);
+    assertYjsExactText(inserted);
+    const encodedOrigin = encodeQualificationOrigin(origin);
     if (inserted.length === 0) {
       return;
     }
+    if (
+      requiresYjsTextRewrite(
+        snapshot.text,
+        snapshot.text.slice(0, offset) + inserted + snapshot.text.slice(offset),
+        (text) => text.insert(offset, inserted),
+      )
+    )
+      throw new TypeError(
+        "Yjs cannot preserve this ECMAScript string exactly.",
+      );
     this.document.transact(() => {
       this.currentText().insert(offset, inserted, {
-        [ORIGIN_ATTRIBUTE]: JSON.stringify(origin),
+        [ORIGIN_ATTRIBUTE]: encodedOrigin,
       });
     });
   }
@@ -120,6 +137,16 @@ export class YjsPayloadCarrier implements PayloadCarrier {
     }
     assertTextRange(start, end, snapshot.text);
     if (start !== end) {
+      if (
+        requiresYjsTextRewrite(
+          snapshot.text,
+          snapshot.text.slice(0, start) + snapshot.text.slice(end),
+          (text) => text.delete(start, end - start),
+        )
+      )
+        throw new TypeError(
+          "Yjs cannot preserve this ECMAScript string exactly.",
+        );
       this.currentText().delete(start, end - start);
     }
   }
@@ -135,6 +162,8 @@ export class YjsPayloadCarrier implements PayloadCarrier {
         "Qualification text replacement requires an allowlisted Media Type.",
       );
     }
+    assertYjsExactText(text);
+    const encodedOrigin = encodeQualificationOrigin(origin);
     this.document.transact(() => {
       const payload = new Y.Map<unknown>();
       const payloadText = new Y.Text();
@@ -142,7 +171,7 @@ export class YjsPayloadCarrier implements PayloadCarrier {
       payload.set("mediaType", mediaType);
       if (text.length > 0) {
         payloadText.insert(0, text, {
-          [ORIGIN_ATTRIBUTE]: JSON.stringify(origin),
+          [ORIGIN_ATTRIBUTE]: encodedOrigin,
         });
       }
       payload.set("text", payloadText);
@@ -161,12 +190,13 @@ export class YjsPayloadCarrier implements PayloadCarrier {
         "Allowlisted Media Types must use the text qualification path.",
       );
     }
+    const encodedOrigin = encodeQualificationOrigin(origin);
     this.document.transact(() => {
       const payload = new Y.Map<unknown>();
       payload.set("kind", "opaque");
       payload.set("mediaType", mediaType);
       payload.set("bytes", bytes.slice());
-      payload.set("origin", JSON.stringify(origin));
+      payload.set("origin", encodedOrigin);
       this.root.set(CURRENT_PAYLOAD, payload);
     });
   }
@@ -210,6 +240,47 @@ export const yjsPayloadCarrierFactory: PayloadCarrierFactory = {
     return new YjsPayloadCarrier(encoded);
   },
 };
+
+function assertYjsExactText(text: string): void {
+  for (let index = 0; index < text.length; index += 1) {
+    const codeUnit = text.charCodeAt(index);
+    if (codeUnit >= 0xd800 && codeUnit <= 0xdbff) {
+      const next = text.charCodeAt(index + 1);
+      if (index + 1 >= text.length || next < 0xdc00 || next > 0xdfff) {
+        throw new TypeError(
+          "Yjs cannot preserve this ECMAScript string exactly.",
+        );
+      }
+      index += 1;
+      continue;
+    }
+    if (codeUnit >= 0xdc00 && codeUnit <= 0xdfff) {
+      throw new TypeError(
+        "Yjs cannot preserve this ECMAScript string exactly.",
+      );
+    }
+  }
+}
+
+function requiresYjsTextRewrite(
+  current: string,
+  expected: string,
+  edit: (text: Y.Text) => void,
+): boolean {
+  assertYjsExactText(expected);
+  const document = new Y.Doc();
+  const text = document.getText("text-edit-preflight");
+  text.insert(0, current);
+  edit(text);
+  const projected = (text.toDelta() as readonly { readonly insert?: unknown }[])
+    .map((operation) => {
+      if (typeof operation.insert !== "string")
+        throw new TypeError("Yjs text edit result is invalid.");
+      return operation.insert;
+    })
+    .join("");
+  return projected !== expected;
+}
 
 function parseOrigin(value: unknown): QualificationOrigin {
   if (typeof value !== "string") {
