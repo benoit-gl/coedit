@@ -127,6 +127,54 @@ for (const factory of factories) {
       expect(text(carrier)).toBe("alphabeta!");
     });
 
+    it("rejects surrogate-pair midpoint edits against evolving transaction state atomically", () => {
+      const cases: readonly (readonly IntegratedPayloadChange[])[] = [
+        [
+          {
+            kind: "replace-text",
+            inlineContentId: textId,
+            mediaType: "text/plain",
+            text: "😀",
+            origin: human,
+          },
+          {
+            kind: "insert-text",
+            inlineContentId: textId,
+            offset: 1,
+            text: "X",
+            origin: imported,
+          },
+        ],
+        [
+          {
+            kind: "replace-text",
+            inlineContentId: textId,
+            mediaType: "text/plain",
+            text: "😀",
+            origin: human,
+          },
+          {
+            kind: "delete-text",
+            inlineContentId: textId,
+            start: 0,
+            end: 1,
+          },
+        ],
+      ];
+
+      for (const payloads of cases) {
+        const carrier = seeded(factory);
+        const before = carrier.snapshot();
+        expect(() =>
+          carrier.applyChange({
+            placements: [{ blockId: blockA, placement: position(2, 1) }],
+            payloads,
+          }),
+        ).toThrow(/surrogate pair/u);
+        expect(carrier.snapshot()).toEqual(before);
+      }
+    });
+
     it("preserves complete Origin projection through fine-grained edits", () => {
       const carrier = seeded(factory);
       carrier.applyChange({
