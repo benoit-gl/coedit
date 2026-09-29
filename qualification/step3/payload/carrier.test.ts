@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import type { PayloadCarrierFactory, QualificationOrigin } from "./carrier.js";
-import { isQualificationFineGrainedMediaType } from "./carrier.js";
+import {
+  assertTextSpliceRange,
+  isQualificationFineGrainedMediaType,
+} from "./carrier.js";
 import { automergePayloadCarrierFactory } from "./automergePayloadCarrier.js";
 import {
   readQualificationRawMedia,
@@ -49,6 +52,16 @@ describe("qualification Media Type dispatch", () => {
   });
 });
 
+describe("qualification UTF-16 splice validation", () => {
+  it("accepts code-point boundaries and rejects surrogate-pair midpoints", () => {
+    expect(() => assertTextSpliceRange(0, 0, "😀")).not.toThrow();
+    expect(() => assertTextSpliceRange(2, 2, "😀")).not.toThrow();
+    expect(() => assertTextSpliceRange(0, 2, "😀")).not.toThrow();
+    expect(() => assertTextSpliceRange(1, 1, "😀")).toThrow(/surrogate pair/u);
+    expect(() => assertTextSpliceRange(0, 1, "😀")).toThrow(/surrogate pair/u);
+  });
+});
+
 for (const factory of factories) {
   describe(`${factory.candidate} payload qualification`, () => {
     it("preserves exact Media Type spelling and native text", () => {
@@ -60,6 +73,28 @@ for (const factory of factories) {
         mediaType: 'Text/Plain; charset="UTF-8"',
         text: "A\r\n😀é",
         spans: [{ text: "A\r\n😀é", origin: human }],
+      });
+    });
+
+    it("rejects edits that split a surrogate pair atomically", () => {
+      const carrier = factory.createText("text/plain", human);
+      carrier.insertText(0, "😀", human);
+      const before = carrier.snapshot();
+
+      expect(() => carrier.insertText(1, "X", imported)).toThrow(
+        /surrogate pair/u,
+      );
+      expect(carrier.snapshot()).toEqual(before);
+
+      expect(() => carrier.deleteText(0, 1)).toThrow(/surrogate pair/u);
+      expect(carrier.snapshot()).toEqual(before);
+
+      carrier.deleteText(0, 2);
+      expect(carrier.snapshot()).toEqual({
+        kind: "text",
+        mediaType: "text/plain",
+        text: "",
+        spans: [],
       });
     });
 
