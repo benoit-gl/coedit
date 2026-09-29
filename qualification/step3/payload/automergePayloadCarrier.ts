@@ -8,9 +8,9 @@ import type {
   QualificationTextSpan,
 } from "./carrier.js";
 import {
+  assertQualificationOrigin,
   assertTextOffset,
   assertTextRange,
-  assertTextSpliceRange,
   isQualificationFineGrainedMediaType,
 } from "./carrier.js";
 
@@ -110,10 +110,13 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
     }
     assertTextOffset(offset, snapshot.text);
     assertAutomergeExactText(text);
+    assertQualificationOrigin(origin);
     if (text.length === 0) {
       return;
     }
-    assertTextSpliceRange(offset, offset, snapshot.text);
+    assertAutomergeExactText(
+      snapshot.text.slice(0, offset) + text + snapshot.text.slice(offset),
+    );
     this.document = Automerge.change(this.document, (draft) => {
       Automerge.splice(draft, [...TEXT_PATH], offset, 0, text);
       Automerge.mark(
@@ -138,7 +141,9 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
     if (start === end) {
       return;
     }
-    assertTextSpliceRange(start, end, snapshot.text);
+    assertAutomergeExactText(
+      snapshot.text.slice(0, start) + snapshot.text.slice(end),
+    );
     this.document = Automerge.change(this.document, (draft) => {
       Automerge.splice(draft, [...TEXT_PATH], start, end - start);
     });
@@ -156,6 +161,7 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
       );
     }
     assertAutomergeExactText(text);
+    assertQualificationOrigin(origin);
     this.document = Automerge.change(this.document, (draft) => {
       draft.payload = { kind: "text", mediaType, text: "" };
       if (text.length > 0) {
@@ -182,6 +188,7 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
         "Allowlisted Media Types must use the text qualification path.",
       );
     }
+    assertQualificationOrigin(origin);
     this.document = Automerge.change(this.document, (draft) => {
       draft.payload = {
         kind: "opaque",

@@ -17,7 +17,6 @@ import {
 import {
   assertTextOffset,
   assertTextRange,
-  assertTextSpliceRange,
   isQualificationFineGrainedMediaType,
 } from "../payload/carrier.js";
 import type {
@@ -226,6 +225,7 @@ function validateChange<Position>(
           "Text replacement requires an allowlisted Media Type.",
         );
       assertAutomergeExactText(update.text);
+      assertOrigin(update.origin);
       working.set(update.inlineContentId, {
         kind: "text",
         mediaType: update.mediaType,
@@ -238,6 +238,7 @@ function validateChange<Position>(
     } else if (update.kind === "replace-opaque") {
       if (isQualificationFineGrainedMediaType(update.mediaType))
         throw new TypeError("Allowlisted Media Types require text payloads.");
+      assertOrigin(update.origin);
       working.set(update.inlineContentId, {
         kind: "opaque",
         mediaType: update.mediaType,
@@ -253,24 +254,24 @@ function validateChange<Position>(
       if (update.kind === "insert-text") {
         assertTextOffset(update.offset, payload.text);
         assertAutomergeExactText(update.text);
-        if (update.text.length > 0)
-          assertTextSpliceRange(update.offset, update.offset, payload.text);
+        assertOrigin(update.origin);
+        const text =
+          payload.text.slice(0, update.offset) +
+          update.text +
+          payload.text.slice(update.offset);
+        assertAutomergeExactText(text);
         working.set(update.inlineContentId, {
           ...payload,
-          text:
-            payload.text.slice(0, update.offset) +
-            update.text +
-            payload.text.slice(update.offset),
+          text,
         });
       } else {
         assertTextRange(update.start, update.end, payload.text);
-        if (update.start !== update.end)
-          assertTextSpliceRange(update.start, update.end, payload.text);
+        const text =
+          payload.text.slice(0, update.start) + payload.text.slice(update.end);
+        assertAutomergeExactText(text);
         working.set(update.inlineContentId, {
           ...payload,
-          text:
-            payload.text.slice(0, update.start) +
-            payload.text.slice(update.end),
+          text,
         });
       }
     }
@@ -330,6 +331,16 @@ function parseOrigin(value: string): QualificationOrigin {
   )
     throw new TypeError("Integrated payload Origin is invalid.");
   return parsed as QualificationOrigin;
+}
+
+function assertOrigin(origin: QualificationOrigin): void {
+  const id = origin.id;
+  const kind = origin.kind;
+  if (
+    typeof id !== "string" ||
+    !["human", "imported", "automation", "ai", "unknown"].includes(kind)
+  )
+    throw new TypeError("Integrated payload Origin is invalid.");
 }
 
 function assertAutomergeExactText(text: string): void {

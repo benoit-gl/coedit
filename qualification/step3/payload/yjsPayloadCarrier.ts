@@ -8,9 +8,9 @@ import type {
   QualificationTextSpan,
 } from "./carrier.js";
 import {
+  assertQualificationOrigin,
   assertTextOffset,
   assertTextRange,
-  assertTextSpliceRange,
   isQualificationFineGrainedMediaType,
 } from "./carrier.js";
 
@@ -76,7 +76,11 @@ export class YjsPayloadCarrier implements PayloadCarrier {
       projectedText += operation.insert;
       const origin = parseOrigin(operation.attributes?.[ORIGIN_ATTRIBUTE]);
       const previous = spans.at(-1);
-      if (previous !== undefined && previous.origin.id === origin.id) {
+      if (
+        previous !== undefined &&
+        previous.origin.id === origin.id &&
+        previous.origin.kind === origin.kind
+      ) {
         spans[spans.length - 1] = {
           text: previous.text + operation.insert,
           origin: previous.origin,
@@ -102,14 +106,26 @@ export class YjsPayloadCarrier implements PayloadCarrier {
     }
     assertTextOffset(offset, snapshot.text);
     assertYjsExactText(inserted);
+    assertQualificationOrigin(origin);
     if (inserted.length === 0) {
       return;
     }
-    assertTextSpliceRange(offset, offset, snapshot.text);
+    const rewrite = requiresYjsTextRewrite(
+      snapshot.text,
+      snapshot.text.slice(0, offset) + inserted + snapshot.text.slice(offset),
+      (text) => text.insert(offset, inserted),
+    );
     this.document.transact(() => {
-      this.currentText().insert(offset, inserted, {
-        [ORIGIN_ATTRIBUTE]: JSON.stringify(origin),
-      });
+      const text = this.currentText();
+      if (rewrite)
+        rewriteYjsText(
+          text,
+          spliceTextSpans(snapshot.spans, offset, offset, inserted, origin),
+        );
+      else
+        text.insert(offset, inserted, {
+          [ORIGIN_ATTRIBUTE]: JSON.stringify(origin),
+        });
     });
   }
 
@@ -123,8 +139,15 @@ export class YjsPayloadCarrier implements PayloadCarrier {
     }
     assertTextRange(start, end, snapshot.text);
     if (start !== end) {
-      assertTextSpliceRange(start, end, snapshot.text);
-      this.currentText().delete(start, end - start);
+      const rewrite = requiresYjsTextRewrite(
+        snapshot.text,
+        snapshot.text.slice(0, start) + snapshot.text.slice(end),
+        (text) => text.delete(start, end - start),
+      );
+      const text = this.currentText();
+      if (rewrite)
+        rewriteYjsText(text, spliceTextSpans(snapshot.spans, start, end));
+      else text.delete(start, end - start);
     }
   }
 
@@ -140,6 +163,7 @@ export class YjsPayloadCarrier implements PayloadCarrier {
       );
     }
     assertYjsExactText(text);
+    assertQualificationOrigin(origin);
     this.document.transact(() => {
       const payload = new Y.Map<unknown>();
       const payloadText = new Y.Text();
@@ -166,6 +190,7 @@ export class YjsPayloadCarrier implements PayloadCarrier {
         "Allowlisted Media Types must use the text qualification path.",
       );
     }
+    assertQualificationOrigin(origin);
     this.document.transact(() => {
       const payload = new Y.Map<unknown>();
       payload.set("kind", "opaque");
@@ -235,6 +260,75 @@ function assertYjsExactText(text: string): void {
       );
     }
   }
+}
+
+function requiresYjsTextRewrite(
+  current: string,
+  expected: string,
+  edit: (text: Y.Text) => void,
+): boolean {
+  assertYjsExactText(expected);
+  const document = new Y.Doc();
+  const text = document.getText("text-edit-preflight");
+  text.insert(0, current);
+  edit(text);
+  const projected = (text.toDelta() as readonly { readonly insert?: unknown }[])
+    .map((operation) => {
+      if (typeof operation.insert !== "string")
+        throw new TypeError("Yjs text edit result is invalid.");
+      return operation.insert;
+    })
+    .join("");
+  return projected !== expected;
+}
+
+function rewriteYjsText(
+  text: Y.Text,
+  spans: readonly QualificationTextSpan[],
+): void {
+  text.delete(0, text.length);
+  for (const span of spans)
+    text.insert(text.length, span.text, {
+      [ORIGIN_ATTRIBUTE]: JSON.stringify(span.origin),
+    });
+}
+
+function spliceTextSpans(
+  spans: readonly QualificationTextSpan[],
+  start: number,
+  end: number,
+  inserted = "",
+  origin?: QualificationOrigin,
+): QualificationTextSpan[] {
+  const units = spans.flatMap((span) =>
+    Array.from({ length: span.text.length }, (_, index) => ({
+      text: span.text.charAt(index),
+      origin: span.origin,
+    })),
+  );
+  const insertedUnits: { text: string; origin: QualificationOrigin }[] = [];
+  if (inserted.length > 0) {
+    if (origin === undefined)
+      throw new TypeError("Inserted Origin is missing.");
+    for (let index = 0; index < inserted.length; index += 1)
+      insertedUnits.push({ text: inserted.charAt(index), origin });
+  }
+  units.splice(start, end - start, ...insertedUnits);
+  const result: QualificationTextSpan[] = [];
+  for (const unit of units) {
+    const previous = result.at(-1);
+    if (
+      previous !== undefined &&
+      previous.origin.id === unit.origin.id &&
+      previous.origin.kind === unit.origin.kind
+    )
+      result[result.length - 1] = {
+        text: previous.text + unit.text,
+        origin: previous.origin,
+      };
+    else result.push(unit);
+  }
+  return result;
 }
 
 function parseOrigin(value: unknown): QualificationOrigin {

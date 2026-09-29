@@ -18,6 +18,7 @@ import { localDensePositionAllocator } from "../structure/localDensePosition.js"
 
 const rootId = parseBlockId("70000000-0000-4000-8000-000000000001");
 const blockA = parseBlockId("70000000-0000-4000-8000-000000000002");
+const blockB = parseBlockId("70000000-0000-4000-8000-000000000006");
 const otherRootId = parseBlockId("70000000-0000-4000-8000-000000000005");
 const textId = parseInlineContentId("70000000-0000-4000-8000-000000000003");
 const opaqueId = parseInlineContentId("70000000-0000-4000-8000-000000000004");
@@ -128,7 +129,7 @@ for (const factory of factories) {
       expect(text(carrier)).toBe("alphabeta!");
     });
 
-    it("rejects surrogate-pair midpoint edits against evolving transaction state atomically", () => {
+    it("rejects lossily represented splice results against evolving transaction state atomically", () => {
       const cases: readonly (readonly IntegratedPayloadChange[])[] = [
         [
           {
@@ -171,9 +172,36 @@ for (const factory of factories) {
             placements: [{ blockId: blockA, placement: position(2, 1) }],
             payloads,
           }),
-        ).toThrow(/surrogate pair/u);
+        ).toThrow(/cannot preserve/u);
         expect(carrier.snapshot()).toEqual(before);
       }
+    });
+
+    it("preserves an exact surrogate-crossing result", () => {
+      const carrier = seeded(factory);
+      carrier.applyChange({
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: textId,
+            mediaType: "text/plain",
+            text: "😀😀",
+            origin: human,
+          },
+        ],
+      });
+      carrier.applyChange({
+        payloads: [
+          {
+            kind: "delete-text",
+            inlineContentId: textId,
+            start: 1,
+            end: 3,
+          },
+        ],
+      });
+
+      expect(text(carrier)).toBe("😀");
     });
 
     it("preserves complete Origin projection through fine-grained edits", () => {
@@ -250,7 +278,7 @@ for (const factory of factories) {
       }
     });
 
-    it("converges replicas from one encoded genesis and reloads serialization", () => {
+    it("converges replicas from one encoded genesis and active reopens", () => {
       const base = seeded(factory);
       const left = factory.load(base.encode());
       const right = factory.load(base.encode());
@@ -273,7 +301,33 @@ for (const factory of factories) {
       left.mergeEncoded(rightState);
       right.mergeEncoded(leftState);
       expect(right.snapshot()).toEqual(left.snapshot());
-      expect(factory.load(left.encode()).snapshot()).toEqual(left.snapshot());
+
+      const reopened = left.encode();
+      const reopenedLeft = factory.load(reopened);
+      const reopenedRight = factory.load(reopened);
+      reopenedLeft.applyChange({
+        payloads: [
+          {
+            kind: "insert-text",
+            inlineContentId: textId,
+            offset: text(reopenedLeft).length,
+            text: "-reopened-left",
+            origin: human,
+          },
+        ],
+      });
+      reopenedRight.applyChange({
+        placements: [{ blockId: blockA, placement: position(4, 1) }],
+      });
+      const reopenedLeftState = reopenedLeft.encode();
+      const reopenedRightState = reopenedRight.encode();
+      reopenedLeft.mergeEncoded(reopenedRightState);
+      reopenedRight.mergeEncoded(reopenedLeftState);
+
+      expect(reopenedRight.snapshot()).toEqual(reopenedLeft.snapshot());
+      expect(factory.load(reopenedLeft.encode()).snapshot()).toEqual(
+        reopenedLeft.snapshot(),
+      );
     });
 
     it("rejects the same root from a different replica lineage", () => {
@@ -318,6 +372,73 @@ describe("automerge integrated Origin validation", () => {
 
     expect(() => factory.load(encoded).snapshot()).toThrow(/missing Origin/u);
   });
+
+  it("rejects invalid Origin input before publishing a mixed change", () => {
+    const carrier = seeded(factory);
+    const before = carrier.snapshot();
+    const invalidOrigin = { id: "invalid", kind: "invalid" } as never;
+
+    for (const payload of [
+      {
+        kind: "replace-text" as const,
+        inlineContentId: textId,
+        mediaType: "text/plain",
+        text: "replacement",
+        origin: invalidOrigin,
+      },
+      {
+        kind: "insert-text" as const,
+        inlineContentId: textId,
+        offset: 0,
+        text: "inserted",
+        origin: invalidOrigin,
+      },
+      {
+        kind: "replace-opaque" as const,
+        inlineContentId: opaqueId,
+        mediaType: "application/example",
+        bytes: Uint8Array.of(1),
+        origin: invalidOrigin,
+      },
+    ]) {
+      expect(() =>
+        carrier.applyChange({
+          placements: [{ blockId: blockA, placement: position(2, 1) }],
+          payloads: [payload],
+        }),
+      ).toThrow(/Origin is invalid/u);
+      expect(carrier.snapshot()).toEqual(before);
+    }
+  });
+
+  it("rolls back draft mutations when a later placement encoding fails", () => {
+    const throwingFactory = createAutomergeIntegratedDocumentCarrierFactory(
+      {
+        encode(value: LocalDensePosition): string {
+          if (value.digits[0] === 2)
+            throw new TypeError("Position encode failed.");
+          return localDensePositionAllocator.encode(value);
+        },
+        decode(value: string): LocalDensePosition {
+          return localDensePositionAllocator.decode(value);
+        },
+      },
+      localDensePositionAllocator,
+    );
+    const carrier = seeded(throwingFactory);
+    const before = carrier.snapshot();
+
+    expect(() =>
+      carrier.applyChange({
+        placements: [
+          { blockId: blockA, placement: position(3, 1) },
+          { blockId: blockB, placement: position(2, 1) },
+        ],
+      }),
+    ).toThrow(/Position encode failed/u);
+    expect(carrier.snapshot()).toEqual(before);
+    expect(throwingFactory.load(carrier.encode()).snapshot()).toEqual(before);
+  });
 });
 
 describe("yjs integrated transaction preflight", () => {
@@ -360,6 +481,28 @@ describe("yjs integrated transaction preflight", () => {
       Y.encodeStateVectorFromUpdate(nativeUpdate),
     );
     expect(stateVector.size).toBe(1);
+  });
+
+  it("authors repeated reopened changes with one new native client identity", () => {
+    const original = seeded(factory);
+    const reopened = factory.load(original.encode());
+    const baseline = yjsStateVectorSize(reopened.encode());
+    reopened.applyChange({
+      payloads: [
+        {
+          kind: "insert-text",
+          inlineContentId: textId,
+          offset: 5,
+          text: "!",
+          origin: imported,
+        },
+      ],
+    });
+    reopened.applyChange({
+      placements: [{ blockId: blockA, placement: position(2, 1) }],
+    });
+
+    expect(yjsStateVectorSize(reopened.encode())).toBe(baseline + 1);
   });
 
   it("rejects Origin preparation failure before mutating structure", () => {
@@ -465,4 +608,9 @@ function text(
 function overwriteEnvelopeRoot(encoded: Uint8Array, replacement: string): void {
   for (let index = 0; index < replacement.length; index += 1)
     encoded[index] = replacement.charCodeAt(index);
+}
+
+function yjsStateVectorSize(encoded: Uint8Array): number {
+  const nativeUpdate = encoded.subarray(rootId.length + 1);
+  return Y.decodeStateVector(Y.encodeStateVectorFromUpdate(nativeUpdate)).size;
 }
