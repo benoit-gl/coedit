@@ -1,6 +1,6 @@
 # Coedit document-engine MVP scaffolding plan
 
-**Status:** Accepted implementation plan; Steps 0-2 and the first three Step 3 qualification merge units are complete; integrated semantic and application qualification is next.
+**Status:** Accepted implementation plan; Steps 0-2 and the first three Step 3 qualification merge units are complete; integrated structural and payload semantics qualification is next.
 
 **Target branch:** `main`
 
@@ -124,7 +124,7 @@ The former `TextAnchor` blocker is resolved. Formatting and media syntax are app
 - no authoritative document silently contradicts a retained preserved decision; and
 - no unresolved implementation-blocking decision remains.
 
-This documentation set establishes and revalidates the Step 0 authority baseline with Media-Type-labelled InlineContent payloads, the durable text Range authority, and the revised Step 3-and-later sequence. Steps 1 and 2 subsequently established the browser scaffold and pure Block domain. Step 3 carrier qualification is in progress: the payload, structural/allocator, and integrated collaborative-document foundation merge units are complete; integrated semantic and application qualification is next. Gate B selects the carrier, the observable deterministic concurrent-replacement winner rule, the carrier-private implementation of that rule, mixed replacement/text-edit semantics, and payload/carrier resource-admission behavior. Step 4 selects and qualifies the production Media Type parser implementation and implements the first raw-media processor capability. Gate C later selects the text Range representation before `.coedit` version 1 is frozen.
+This documentation set establishes and revalidates the Step 0 authority baseline with Media-Type-labelled InlineContent payloads, the durable text Range authority, and the revised Step 3-and-later sequence. Steps 1 and 2 subsequently established the browser scaffold and pure Block domain. Step 3 carrier qualification is in progress: the payload, structural/allocator, and integrated collaborative-document foundation merge units are complete; integrated structural and payload semantics qualification is next. Gate B selects the carrier, the observable deterministic concurrent-replacement winner rule, the carrier-private implementation of that rule, mixed replacement/text-edit semantics, and payload/carrier resource-admission behavior. Step 4 selects and qualifies the production Media Type parser implementation and implements the first raw-media processor capability. Gate C later selects the text Range representation before `.coedit` version 1 is frozen.
 
 ### Step 1 — Establish the browser-only repository scaffold
 
@@ -174,7 +174,7 @@ See [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md), [`docs/MVP_I
 
 Run the same pinned headless and Tiptap/ProseMirror suite against stable Yjs v13 and Automerge. Track Yjs v14 only after stable release; use Loro as a cursor/movable-tree benchmark, not a current candidate. Before comparing candidates, record one run-specific fixture profile and measurement method used for both. Record dependency/license review, adapter complexity, target devices, measurements, the observable deterministic whole-payload replacement winner rule, its carrier-private implementation, mixed replacement/text-edit semantics, payload/carrier resource-admission behavior, and the selection rationale. Exercise the raw/coarse media boundary with representative test codec fixtures, but do not select the production processor or supported representation profiles in this step.
 
-Deliver Step 3 as six reviewable merge units with one fork-and-join boundary:
+Deliver Step 3 as eight reviewable merge units with one fork-and-join boundary:
 
 1. **Payload/carrier qualification implementation.** Add the carrier-neutral
    Media-Type-labelled payload qualification boundary and its common semantic
@@ -201,18 +201,20 @@ Deliver Step 3 as six reviewable merge units with one fork-and-join boundary:
    unit does not yet claim the complete Block-local liveness join, History,
    Range/cursor, editor, clipboard, or garbage-collection/compaction
    qualification.
-4. **Integrated semantic and application qualification.** Build on the
+4. **Integrated structural and payload semantics qualification.** Build on the
    integrated foundation and complete the explicit join of the landed payload
    and structural semantics. Qualify Block-local payload ownership, activity and
-   liveness effects, deletion conflicts, and semantic update-over-delete with
-   real payload changes. Complete the remaining integrated common-suite
-   coverage: atomic mixed-payload transactions with liveness, restore, History
-   and Range feasibility surrogates, cursor behavior, carrier
-   serialization/reopen and portable-format qualification surrogates, supported
-   garbage collection/compaction, Tiptap/ProseMirror transaction translation,
-   IME, cut/paste, undo/redo, and the private clipboard boundary. These portable
-   checks do not implement the `.coedit` codec or freeze portable bytes.
-5. **Comparative qualification evidence.** Add the reproducible qualification
+   liveness effects, deletion conflicts, semantic update-over-delete with real
+   payload changes, and atomic mixed-payload transactions with liveness.
+5. **Integrated carrier lifecycle qualification.** Build on the integrated
+   structural and payload semantics. Qualify restore, History and Range
+   feasibility surrogates, carrier serialization/reopen and portable-format
+   qualification surrogates, and supported garbage collection/compaction. These
+   portable checks do not implement the `.coedit` codec or freeze portable bytes.
+6. **Application and editor qualification.** Build on the integrated lifecycle
+   qualification. Qualify cursor behavior, Tiptap/ProseMirror transaction
+   translation, IME, cut/paste, undo/redo, and the private clipboard boundary.
+7. **Comparative qualification evidence.** Add the reproducible qualification
    runner that orchestrates the landed common suites. Before the comparative run,
    record the shared run-specific fixture profile and measurement method. Run all
    carrier and allocator candidates under that profile, then commit summarized
@@ -223,7 +225,7 @@ Deliver Step 3 as six reviewable merge units with one fork-and-join boundary:
    evidence are the durable qualification record; Actions artifacts are
    supplementary. This merge unit can identify candidate guard and admission
    alternatives but does not select them.
-6. **Gate B decision.** In a deliberately small decision change, record the
+8. **Gate B decision.** In a deliberately small decision change, record the
    selected carrier and allocator, observable concurrent-replacement winner rule,
    mixed replacement/edit semantics, selected carrier string domain,
    payload/carrier resource-admission behavior, private-clipboard guards, rejected
@@ -232,12 +234,13 @@ Deliver Step 3 as six reviewable merge units with one fork-and-join boundary:
 The first two merge units are semantically independent and normally target
 `main`; whichever merges second is brought current with `main` without taking
 an implementation dependency on the first. The third unit establishes the
-shared native-document seam. The fourth unit is the explicit semantic and
-application join. Those first four units build and exercise the mandatory
-semantic suites, but their development runs are not the final comparative
-evidence. The fifth unit runs the complete comparison against those
-implementations after they land on `main`, under one recorded profile and
-method. Do not create a deep stack merely to keep candidate files adjacent.
+shared native-document seam. The fourth, fifth, and sixth units separately
+qualify the semantic join, carrier lifecycle, and application/editor behavior.
+Those first six units build and exercise the mandatory suites, but their
+development runs are not the final comparative evidence. The seventh unit runs
+the complete comparison against those implementations after they land on `main`,
+under one recorded profile and method. Do not create a deep stack merely to keep
+candidate files adjacent.
 
 Qualification-only candidate implementations can live side-by-side on `main`
 while Gate B is open. `CODING_STYLE.md` owns their source placement,

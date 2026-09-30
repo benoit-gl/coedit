@@ -28,8 +28,9 @@ replacement/text-edit semantics.
 
 The structural/allocator and integrated collaborative-document foundation merge
 units now build on this payload qualification. The next Step 3 merge unit adds
-integrated semantic and application qualification; comparative measurements and
-resource evidence and the Gate B decision follow. The validation/dispatch helper
-and representative codec here are
+integrated structural and payload semantics qualification. Separate carrier-
+lifecycle and application/editor qualification units, comparative measurements
+and resource evidence, and the Gate B decision follow. The validation/dispatch
+helper and representative codec here are
 qualification scaffolding only. They do not select the Step 4 production Media
 Type parser or raw-media processor.
