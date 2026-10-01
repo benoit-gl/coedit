@@ -234,22 +234,23 @@ supported browser path because the build uses native ES modules.
 Step 1 must provide these non-OS-specific commands. npm is the public command interface; pnpm remains the pinned
 dependency resolver and lockfile owner.
 
-| Command                 | Contract                                                                                |
-| ----------------------- | --------------------------------------------------------------------------------------- |
-| `npm run bootstrap`     | Obtains pinned pnpm through npm and performs the frozen dependency install.             |
-| `npm run dev`           | Starts the interactive Vite development server.                                         |
-| `npm run build`         | Produces the production browser build non-interactively.                                |
-| `npm run preview`       | Serves the production build locally over HTTP for interactive inspection.               |
-| `npm run test`          | Runs the complete default test suite once and exits.                                    |
-| `npm run test:watch`    | Runs the explicitly interactive local test watcher.                                     |
-| `npm run typecheck`     | Runs TypeScript checking without relying on a production emit.                          |
-| `npm run lint`          | Runs ESLint with zero warnings accepted.                                                |
-| `npm run lint:deps`     | Runs dependency-cruiser architectural checks.                                           |
-| `npm run lint:markdown` | Checks Markdown prose line width without reflowing it.                                  |
-| `npm run format`        | Applies Prettier to supported files.                                                    |
-| `npm run format:check`  | Checks formatting without writing.                                                      |
-| `npm run docs:check`    | Validates TSDoc and generated API-reference inputs without tracking generated HTML.     |
-| `npm run check`         | Runs all non-interactive format, type, lint, dependency, documentation, and test gates. |
+| Command                                                 | Contract                                                                                |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `npm run bootstrap`                                     | Obtains pinned pnpm through npm and performs the frozen dependency install.             |
+| `npm run dev`                                           | Starts the interactive Vite development server.                                         |
+| `npm run build`                                         | Produces the production browser build non-interactively.                                |
+| `npm run preview`                                       | Serves the production build locally over HTTP for interactive inspection.               |
+| `npm run test`                                          | Runs the complete default test suite once and exits.                                    |
+| `npm run test:watch`                                    | Runs the explicitly interactive local test watcher.                                     |
+| `npm run typecheck`                                     | Runs TypeScript checking without relying on a production emit.                          |
+| `npm run lint`                                          | Runs ESLint with zero warnings accepted.                                                |
+| `npm run lint:deps`                                     | Runs dependency-cruiser architectural checks.                                           |
+| `npm run lint:markdown`                                 | Checks Markdown prose line width without reflowing it.                                  |
+| `npm run markdown:equivalence -- <base-ref> <head-ref>` | Compares changed Markdown under the ADR semantic-equivalence rule.                      |
+| `npm run format`                                        | Applies Prettier to supported files.                                                    |
+| `npm run format:check`                                  | Checks formatting without writing.                                                      |
+| `npm run docs:check`                                    | Validates TSDoc and generated API-reference inputs without tracking generated HTML.     |
+| `npm run check`                                         | Runs all non-interactive format, type, lint, dependency, documentation, and test gates. |
 
 `npm run bootstrap`, `npm run check`, and `npm run build` are the canonical clean-checkout verification sequence. The
 bootstrap command must use the exact pnpm version pinned by the project and must not require pnpm to be installed

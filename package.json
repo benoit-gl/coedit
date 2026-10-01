@@ -20,6 +20,7 @@
     "lint:deps": "depcruise src qualification --config dependency-cruiser.config.mjs",
     "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"#node_modules\"",
     "adr:check": "node scripts/check-adr-integrity.mjs",
+    "markdown:equivalence": "node scripts/verify-markdown-semantic-equivalence.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "docs:check": "typedoc --options typedoc.json",
