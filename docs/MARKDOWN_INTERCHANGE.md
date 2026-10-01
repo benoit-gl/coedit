@@ -202,7 +202,8 @@ The importer does not otherwise trim, dedent, or normalize the remaining payload
 For example:
 
 ```markdown
-- first line continuation
+- first line
+  continuation
 ```
 
 maps to one list-item paragraph payload containing `first line\ncontinuation`. The list marker and the two

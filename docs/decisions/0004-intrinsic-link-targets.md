@@ -4,21 +4,30 @@
 
 **Superseded by:** [ADR 0010](0010-typed-inline-content-payloads.md)
 
-**Superseded scope:** ADR 0010 replaces the engine-owned intrinsic-link formatting model, typed internal Block-link state, and link-specific canonical fallback behavior. The reusable Range decision remains governed by ADR 0009.
+**Superseded scope:** ADR 0010 replaces the engine-owned intrinsic-link formatting model, typed internal Block-link
+state, and link-specific canonical fallback behavior. The reusable Range decision remains governed by ADR 0009.
 
 **Date:** 2026-08-31
 
 **Amended:** 2026-09-03
 
-**Authority:** [`../FINE_GRAINED_TEXT_AND_ORIGIN.md`](../FINE_GRAINED_TEXT_AND_ORIGIN.md) controls fine-grained Origin and Range-holder behavior. [`../RANGE_MODEL.md`](../RANGE_MODEL.md) controls Range behavior. [`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md) controls product ontology.
+**Authority:** [`../FINE_GRAINED_TEXT_AND_ORIGIN.md`](../FINE_GRAINED_TEXT_AND_ORIGIN.md) controls fine-grained Origin
+and Range-holder behavior. [`../RANGE_MODEL.md`](../RANGE_MODEL.md) controls Range behavior.
+[`../PRODUCT_DOMAIN_MODEL.md`](../PRODUCT_DOMAIN_MODEL.md) controls product ontology.
 
 ## Context
 
-Step 3 qualifies candidate carriers against canonical CollaborativeContent with intrinsic formatting marks. Step 4 implements the selected carrier. The initial vocabulary includes links. Earlier wording called the link destination a validated safe destination. That wording incorrectly made the document model responsible for application navigation and security semantics.
+Step 3 qualifies candidate carriers against canonical CollaborativeContent with intrinsic formatting marks. Step 4
+implements the selected carrier. The initial vocabulary includes links. Earlier wording called the link destination a
+validated safe destination. That wording incorrectly made the document model responsible for application navigation and
+security semantics.
 
-Coedit also needs document-local links. A Block has a durable `BlockId`, but a Block-only target can be too coarse for navigation to a specific passage. The durable Range contract defines shared resolution behavior across Blocks and InlineContents without freezing the tracking representation.
+Coedit also needs document-local links. A Block has a durable `BlockId`, but a Block-only target can be too coarse for
+navigation to a specific passage. The durable Range contract defines shared resolution behavior across Blocks and
+InlineContents without freezing the tracking representation.
 
-The domain model deliberately keeps intrinsic formatting separate from external comments and annotations. It defines a shared durable Range value, not one generic annotation entity or registry.
+The domain model deliberately keeps intrinsic formatting separate from external comments and annotations. It defines a
+shared durable Range value, not one generic annotation entity or registry.
 
 ## Decision
 
@@ -26,16 +35,25 @@ A link remains an intrinsic formatting mark.
 
 A link target has one of two forms:
 
-1. **Opaque link metadata.** The document engine preserves a carrier-neutral value subject to applicable implementation resource guards without interpreting its application meaning. The presentation or integration layer decides whether and how to interpret or activate it.
-2. **Internal Block target.** The link stores a document-local `BlockId`. It can optionally contain a durable Range refinement.
+1. **Opaque link metadata.** The document engine preserves a carrier-neutral value subject to applicable implementation
+   resource guards without interpreting its application meaning. The presentation or integration layer decides whether
+   and how to interpret or activate it.
+2. **Internal Block target.** The link stores a document-local `BlockId`. It can optionally contain a durable Range
+   refinement.
 
-The optional internal-link refinement uses the shared Range value and Range service. This reuse does not create a shared `RangeAnnotation` domain entity and does not make comments intrinsic formatting.
+The optional internal-link refinement uses the shared Range value and Range service. This reuse does not create a shared
+`RangeAnnotation` domain entity and does not make comments intrinsic formatting.
 
-The `BlockId` is the primary internal target. The optional Range resolves only against the current document. If it produces no resolved span or position but the Block exists, the link falls back to the Block. If the Block does not exist in the selected Version, the link remains valid canonical content but is unresolved.
+The `BlockId` is the primary internal target. The optional Range resolves only against the current document. If it
+produces no resolved span or position but the Block exists, the link falls back to the Block. If the Block does not
+exist in the selected Version, the link remains valid canonical content but is unresolved.
 
-An internal link is a reference only. It does not own the target, prevent deletion, or require incoming-link rewrites when the target disappears.
+An internal link is a reference only. It does not own the target, prevent deletion, or require incoming-link rewrites
+when the target disappears.
 
-Internal Block targets are document-local. Cross-document transfer must reject or remove the internal target, or convert it to an external deep link. The application owns the external document URI and supplies its extracted Range fragment to that document's Range service. The Range service performs no cross-document mapping.
+Internal Block targets are document-local. Cross-document transfer must reject or remove the internal target, or convert
+it to an external deep link. The application owns the external document URI and supplies its extracted Range fragment to
+that document's Range service. The Range service performs no cross-document mapping.
 
 ## Consequences
 
@@ -43,7 +61,8 @@ Internal Block targets are document-local. Cross-document transfer must reject o
 - Carrier qualification must prove durable Range feasibility for internal links as well as future comments.
 - Presentation code, not the document model, owns URL or navigation safety policy.
 - Same-document copy and restore can preserve internal targets.
-- Cross-document import or paste cannot keep an internal target as a destination-document reference without explicit application conversion to an external deep link.
+- Cross-document import or paste cannot keep an internal target as a destination-document reference without explicit
+  application conversion to an external deep link.
 - Deleting a Block can leave unresolved incoming links without causing referential-integrity mutation.
 - Comment and annotation lifecycle remains external and distinct from link formatting.
 
@@ -51,7 +70,8 @@ Internal Block targets are document-local. Cross-document transfer must reject o
 
 ### Make the canonical model validate URL schemes
 
-Rejected because the document engine would then own presentation and security semantics that can vary by host and application policy.
+Rejected because the document engine would then own presentation and security semantics that can vary by host and
+application policy.
 
 ### Represent internal links only at Block granularity
 
@@ -59,8 +79,10 @@ Rejected because navigation can require a stable passage-level refinement.
 
 ### Reuse a comment record as the link target entity
 
-Rejected because comments have an external-record lifecycle and comment-specific attachment and repair state. A link is intrinsic formatting and can fall back to its primary Block target.
+Rejected because comments have an external-record lifecycle and comment-specific attachment and repair state. A link is
+intrinsic formatting and can fall back to its primary Block target.
 
 ### Introduce a generic durable range-annotation entity or registry
 
-Rejected because formatting, Origin, comments, and navigation have different ownership and lifecycle semantics. A shared Range value and service do not require a shared product entity or registry.
+Rejected because formatting, Origin, comments, and navigation have different ownership and lifecycle semantics. A shared
+Range value and service do not require a shared product entity or registry.

@@ -187,8 +187,7 @@ whose bytes are contractual, and other explicitly byte-stable artifacts.
 
 Markdown prose uses semantic line breaks. Prettier preserves those breaks; routine formatting does not reflow
 paragraphs. `npm run lint:markdown` enforces a 120-character line limit for Markdown prose. It excludes code blocks and
-tables. Accepted ADR bodies are exempt because the ADR lifecycle policy makes them immutable. Long unbreakable content,
-such as a URL, remains permitted when it has no whitespace beyond the limit.
+tables. Long unbreakable content, such as a URL, remains permitted when it has no whitespace beyond the limit.
 
 Add `.editorconfig` and `.gitattributes` in Step 1. Repository text uses UTF-8 and LF on every operating system. Git and
 editors may present native tooling, but a checkout or formatter run must not produce line-ending-only diffs.
