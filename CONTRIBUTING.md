@@ -96,10 +96,13 @@ itself require an edit to the older record.
 
 The `adr-integrity` pull-request check enforces that policy. For every ADR already
 present on the target branch, all content beginning with its first level-two
-heading (`##`) is immutable. The check also rejects deletion of an existing ADR,
-invalid supersession metadata, broken links in mutable ADR headers, and divergence
-between ADR lifecycle classes in the metadata and decision index. Historical
-links in immutable ADR bodies are deliberately not checked.
+heading (`##`) must retain the same parsed Markdown structure and presentation. It
+permits only soft line-ending reflow in ordinary prose text. The check rejects
+deletion of an existing ADR, structural or text changes, hard-break changes,
+link-target changes, code or HTML changes, invalid supersession metadata, broken
+links in mutable ADR headers, and divergence between ADR lifecycle classes in the
+metadata and decision index. Historical links in ADR bodies are deliberately not
+checked for whether their targets still exist.
 
 Run the same comparison locally after committing with:
 

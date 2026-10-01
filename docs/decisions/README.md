@@ -41,12 +41,14 @@ is no longer authoritative.
 ## Automated enforcement
 
 For every ADR already present on the target branch, all content beginning with
-the first level-two heading (`##`) is immutable. Maintenance changes belong in
-the header before that heading. The `adr-integrity` pull-request check rejects
-historical-body edits, deletion of existing ADRs, invalid supersession metadata,
-broken links in mutable ADR headers, and disagreement between ADR lifecycle
-classes in the metadata and this index. It deliberately ignores links in
-immutable historical bodies.
+the first level-two heading (`##`) must retain the same parsed Markdown structure
+and presentation. Maintenance changes belong in the header before that heading.
+The `adr-integrity` pull-request check permits only soft line-ending reflow in
+ordinary prose text. It rejects historical text or structure changes, hard-break
+changes, link-target changes, code or HTML changes, deletion of existing ADRs,
+invalid supersession metadata, broken links in mutable ADR headers, and
+disagreement between ADR lifecycle classes in the metadata and this index. It
+deliberately ignores whether links in historical ADR bodies still resolve.
 
 ## Index
 
