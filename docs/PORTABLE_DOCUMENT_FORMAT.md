@@ -1,36 +1,32 @@
 # `.coedit` portable document format
 
-**Status:** Accepted logical recovery contract; carrier-specific fields, Range
-lineage/encoding details, supported native-string container encoding details, and
-implementation guards remain pending or experimental until Gates B and C pass
-and Step 8 freezes version 1.
+**Status:** Accepted logical recovery contract; carrier-specific fields, Range lineage/encoding details, supported
+native-string container encoding details, and implementation guards remain pending or experimental until Gates B and C
+pass and Step 8 freezes version 1.
 
 ## 1. Purpose and authority
 
 This document defines lossless portable recovery for the document-engine MVP.
 
-The user-facing extension is `.coedit`. A portable artifact retains current Media-Type-labelled InlineContent payloads, every Version, product History, Contributors and Origins, semantic Checkpoints, source/derivation information, stable public Version identity, and command idempotency subject to explicit implementation resource capacity.
+The user-facing extension is `.coedit`. A portable artifact retains current Media-Type-labelled InlineContent payloads,
+every Version, product History, Contributors and Origins, semantic Checkpoints, source/derivation information, stable
+public Version identity, and command idempotency subject to explicit implementation resource capacity.
 
 [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md) controls domain meaning.
-[`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) controls InlineContent Media Types, universal whole-payload replacement, and convergence semantics.
-[`FINE_GRAINED_TEXT_AND_ORIGIN.md`](FINE_GRAINED_TEXT_AND_ORIGIN.md)
-controls allowlisted fine-grained text and fine-grained Origin behavior. [`RANGE_MODEL.md`](RANGE_MODEL.md)
-controls durable allowlisted fine-grained text Range values and required lineage. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md)
-controls the public serialization boundary. This document controls portable
-logical records, validation, compatibility, and the candidate version-1
-container.
-[`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md)
-controls cross-cutting capacity semantics and contract maturity. This document
-owns portable codec and hostile-input behavior, experimental guard candidates,
-and the guards selected during Step 8.
+[`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) controls InlineContent Media Types, universal whole-payload
+replacement, and convergence semantics. [`FINE_GRAINED_TEXT_AND_ORIGIN.md`](FINE_GRAINED_TEXT_AND_ORIGIN.md) controls
+allowlisted fine-grained text and fine-grained Origin behavior. [`RANGE_MODEL.md`](RANGE_MODEL.md) controls durable
+allowlisted fine-grained text Range values and required lineage. [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) controls
+the public serialization boundary. This document controls portable logical records, validation, compatibility, and the
+candidate version-1 container. [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) controls
+cross-cutting capacity semantics and contract maturity. This document owns portable codec and hostile-input behavior,
+experimental guard candidates, and the guards selected during Step 8.
 
-The internal browser repository is separately specified by
-[`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Its stores and checkpoint
-layout are not the `.coedit` wire format.
+The internal browser repository is separately specified by [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md). Its
+stores and checkpoint layout are not the `.coedit` wire format.
 
-The preserved SQLite `.coedit` format on `tauri-experimental-orphan` is
-historical evidence only. The shared extension identifies a Coedit document
-family; it does not make the formats compatible.
+The preserved SQLite `.coedit` format on `tauri-experimental-orphan` is historical evidence only. The shared extension
+identifies a Coedit document family; it does not make the formats compatible.
 
 ## 2. Public transport and freeze rule
 
@@ -40,61 +36,54 @@ The user-facing transport identity is:
 suggestedExtension: ".coedit"
 ```
 
-The public architecture keeps `mediaType` as opaque transport metadata until a
-media type is registered or deliberately selected.
+The public architecture keeps `mediaType` as opaque transport metadata until a media type is registered or deliberately
+selected.
 
-Version 1 currently proposes one bounded UTF-8 JSON container with base64 for
-binary chunks. Container selection remains pending until carrier qualification
-and Step 8 measurements confirm acceptable resource and performance behavior.
-JSON is a candidate portable container, not the internal database layout or a
-permanent promise that all future versions remain monolithic JSON.
+Version 1 currently proposes one bounded UTF-8 JSON container with base64 for binary chunks. Container selection remains
+pending until carrier qualification and Step 8 measurements confirm acceptable resource and performance behavior. JSON
+is a candidate portable container, not the internal database layout or a permanent promise that all future versions
+remain monolithic JSON.
 
-The portable string domain follows the collaborative text domain selected at
-Gate B. Step 8 must preserve every native string value that can exist in accepted
-carrier state. It does not broaden that domain to every ECMAScript UTF-16 code-unit
-sequence merely because JavaScript can construct such a value. Carrier behavior
-for ill-formed ECMAScript strings, including lone surrogates, is qualification
-evidence rather than a version-1 portability requirement.
+The portable string domain follows the collaborative text domain selected at Gate B. Step 8 must preserve every native
+string value that can exist in accepted carrier state. It does not broaden that domain to every ECMAScript UTF-16
+code-unit sequence merely because JavaScript can construct such a value. Carrier behavior for ill-formed ECMAScript
+strings, including lone surrogates, is qualification evidence rather than a version-1 portability requirement.
 
-If JSON remains the container, Step 8 must select a representation that preserves
-supported carrier-native strings exactly without Unicode normalization or silent
-repair. This requirement does not select the physical representation here.
+If JSON remains the container, Step 8 must select a representation that preserves supported carrier-native strings
+exactly without Unicode normalization or silent repair. This requirement does not select the physical representation
+here.
 
-Do not freeze `formatVersion: 1`, publish a version-1 fixture, or implement the
-Step 8 encoder until Gate B has recorded:
+Do not freeze `formatVersion: 1`, publish a version-1 fixture, or implement the Step 8 encoder until Gate B has
+recorded:
 
 - the selected carrier and exact supported version range;
 - its canonical checkpoint and incremental-effect encodings;
 - the carrier representation for allowlisted fine-grained text and representative opaque Media Types;
-- whole-payload replacement encoding and the observable deterministic concurrent-winner rule plus its private implementation;
+- whole-payload replacement encoding and the observable deterministic concurrent-winner rule plus its private
+  implementation;
 - mixed replacement/text-edit semantics;
 - logical-state and historical-materialization verification;
 - supported native ECMAScript string and Origin round-trip behavior through carrier state;
 - exact opaque payload byte and payload-Origin round-trip behavior;
-- garbage collection and compaction that preserve every Version and required
-  text Range lineage; and
+- garbage collection and compaction that preserve every Version and required text Range lineage; and
 - the measured candidate-container size and load cost.
 
-Step 4 must separately have selected and qualified the production Media Type
-parser implementation and fixtures conforming to the fixed acceptance contract,
-along with the first raw-media processor and its supported representation profiles. Those media-byte processing
-capabilities do not determine how `.coedit` stores the already-canonical native
+Step 4 must separately have selected and qualified the production Media Type parser implementation and fixtures
+conforming to the fixed acceptance contract, along with the first raw-media processor and its supported representation
+profiles. Those media-byte processing capabilities do not determine how `.coedit` stores the already-canonical native
 string state.
 
-Gate C must also record the carrier-neutral text Range API result wrappers, the
-selected Range-tracking representation, and the document-relative Range-fragment
-encoding. Version 1 must preserve the document state and lineage required to
-resolve a Range after reopen without creating a document-owned Range registry or
-an engine-owned link-holder representation.
+Gate C must also record the carrier-neutral text Range API result wrappers, the selected Range-tracking representation,
+and the document-relative Range-fragment encoding. Version 1 must preserve the document state and lineage required to
+resolve a Range after reopen without creating a document-owned Range registry or an engine-owned link-holder
+representation.
 
-These are implementation qualification gates. They do not reopen the product
-semantics defined by current authorities.
+These are implementation qualification gates. They do not reopen the product semantics defined by current authorities.
 
 ## 3. Logical package
 
-The version-1 container represents these logical records. Exact property names,
-native-string representation, and binary sub-encodings are finalized by Step 8
-after the prerequisite gates without changing their meaning:
+The version-1 container represents these logical records. Exact property names, native-string representation, and binary
+sub-encodings are finalized by Step 8 after the prerequisite gates without changing their meaning:
 
 ```text
 PortableManifest
@@ -135,98 +124,81 @@ optional source Version and derivation references
 authored display timestamp
 ```
 
-Each Version maps one stable public `VersionToken` to the private
-frontier/checkpoint/effect information required to materialize it exactly.
-Clients never decode that mapping.
+Each Version maps one stable public `VersionToken` to the private frontier/checkpoint/effect information required to
+materialize it exactly. Clients never decode that mapping.
 
-`exportedAt` is transport metadata. Assembling or transporting an artifact does
-not create a Contribution or Version.
+`exportedAt` is transport metadata. Assembling or transporting an artifact does not create a Contribution or Version.
 
-The package contains sufficient physical recovery checkpoints and immutable
-effects to reconstruct every Version and the text lineage needed to resolve
-Ranges created against retained Versions. Current state is the materialization
-named by `currentVersionToken`; it is not a second independent document object.
+The package contains sufficient physical recovery checkpoints and immutable effects to reconstruct every Version and the
+text lineage needed to resolve Ranges created against retained Versions. Current state is the materialization named by
+`currentVersionToken`; it is not a second independent document object.
 
-A losing concurrent whole-payload replacement remains represented by its
-Contribution and materializable Version even when another concurrent replacement
-wins the current replicated register. Portable recovery must not discard or
-rewrite that History merely because only one value is current.
+A losing concurrent whole-payload replacement remains represented by its Contribution and materializable Version even
+when another concurrent replacement wins the current replicated register. Portable recovery must not discard or rewrite
+that History merely because only one value is current.
 
 ## 4. Physical and semantic records stay distinct
 
-A semantic **Checkpoint** is an attributed, content-identical Contribution in
-product History.
+A semantic **Checkpoint** is an attributed, content-identical Contribution in product History.
 
-A physical recovery checkpoint is a carrier/storage optimization used to bound
-replay. It has no Contributor, does not create a Version, and does not appear as
-a History action.
+A physical recovery checkpoint is a carrier/storage optimization used to bound replay. It has no Contributor, does not
+create a Version, and does not appear as a History action.
 
-Similarly, carrier updates/effects are not Product History by themselves. The
-portable package preserves the verified relationship between each semantic
-Contribution and its exact convergence effect.
+Similarly, carrier updates/effects are not Product History by themselves. The portable package preserves the verified
+relationship between each semantic Contribution and its exact convergence effect.
 
-Complete snapshots per Contribution can be used by bounded early prototype
-fixtures, but version 1 must not require them if the selected carrier can provide
-immutable effects plus periodic checkpoints. A codec optimization cannot make
-any Version or required text Range lineage unavailable.
+Complete snapshots per Contribution can be used by bounded early prototype fixtures, but version 1 must not require them
+if the selected carrier can provide immutable effects plus periodic checkpoints. A codec optimization cannot make any
+Version or required text Range lineage unavailable.
 
 ## 5. Canonical collaborative state
 
-One logical carrier checkpoint/update set reconstructs the Coedit document's
-Block registry/order and every InlineContent's Media-Type-labelled payload. The format does not
-default to one independent carrier document or opaque payload per InlineContent.
+One logical carrier checkpoint/update set reconstructs the Coedit document's Block registry/order and every
+InlineContent's Media-Type-labelled payload. The format does not default to one independent carrier document or opaque
+payload per InlineContent.
 
 Carrier state preserves exactly:
 
 - each InlineContent Media Type;
-- supported allowlisted fine-grained native ECMAScript strings, including
-  line-feed, carriage-return, supplementary characters, combining sequences,
-  variation selectors, and representative complex scripts;
+- supported allowlisted fine-grained native ECMAScript strings, including line-feed, carriage-return, supplementary
+  characters, combining sequences, variation selectors, and representative complex scripts;
 - protected fine-grained text Origin references;
 - opaque payload bytes and their payload-level Origin reference;
 - stable Block and InlineContent identities and ordering;
-- the private identities and retained evidence required for accepted editing,
-  whole-payload replacement, restore, and text Range behavior;
+- the private identities and retained evidence required for accepted editing, whole-payload replacement, restore, and
+  text Range behavior;
 - the History and lineage required to resolve portable Range values supplied by an application holder; and
 - atomic effects spanning structure and several InlineContents of either capability class.
 
-There is no canonical `HardBreak` item, formatting-mark layer, or engine-owned
-link object in the portable logical state. Supported native string content that
-exists in allowlisted fine-grained text is serialized losslessly according to the
-final portable string codec. This is separate from raw media encoding under the
-payload Media Type. Markdown formatting/link syntax remains in the source string
-unless an application has translated it into structural operations. Block and
-InlineContent boundaries do not synthesize separator characters during encoding
-or decoding.
+There is no canonical `HardBreak` item, formatting-mark layer, or engine-owned link object in the portable logical
+state. Supported native string content that exists in allowlisted fine-grained text is serialized losslessly according
+to the final portable string codec. This is separate from raw media encoding under the payload Media Type. Markdown
+formatting/link syntax remains in the source string unless an application has translated it into structural operations.
+Block and InlineContent boundaries do not synthesize separator characters during encoding or decoding.
 
-An opaque payload is opaque to the document model. Its bytes can be stored in a carrier
-chunk or another version-1 binary chunk selected by Gate B/Step 8. That physical
-choice does not make the opaque payload an independent document entity or assign it an
-application media type.
+An opaque payload is opaque to the document model. Its bytes can be stored in a carrier chunk or another version-1
+binary chunk selected by Gate B/Step 8. That physical choice does not make the opaque payload an independent document
+entity or assign it an application media type.
 
-A normalized Block/payload projection can be computed during validation. If
-stored as an index or diagnostic aid, it is derived and must be verified against
-the carrier state; it is never a competing authority.
+A normalized Block/payload projection can be computed during validation. If stored as an index or diagnostic aid, it is
+derived and must be verified against the carrier state; it is never a competing authority.
 
-The format does not contain external formatting or provenance Ranges. External
-comment, navigation, and application-link records are not added to the strict MVP
-package. An application can retain a serialized Range value outside the package
-and resolve it after reopen because `.coedit` preserves the referenced Versions
-and required lineage. Generic opaque sub-content has no Range encoding under the
-current contract.
+The format does not contain external formatting or provenance Ranges. External comment, navigation, and application-link
+records are not added to the strict MVP package. An application can retain a serialized Range value outside the package
+and resolve it after reopen because `.coedit` preserves the referenced Versions and required lineage. Generic opaque
+sub-content has no Range encoding under the current contract.
 
 ## 6. Origin, actor, and derivation
 
-The package preserves immutable Origin records and every reference from payload
-material to those records. Each record names its claimed agent kind/Contributor
-and any source or upstream Origin reference required by the current document.
+The package preserves immutable Origin records and every reference from payload material to those records. Each record
+names its claimed agent kind/Contributor and any source or upstream Origin reference required by the current document.
 
-Allowlisted fine-grained text can reference Origins at fine granularity. A current opaque payload value has
-one payload-level Origin. A future Media Type can add finer Origin semantics
-only through its own accepted contract and format evolution.
+Allowlisted fine-grained text can reference Origins at fine granularity. A current opaque payload value has one
+payload-level Origin. A future Media Type can add finer Origin semantics only through its own accepted contract and
+format evolution.
 
-The Contribution that introduces, edits, pastes, copies, restores, imports, or
-replaces material separately names the acting Contributor. In particular:
+The Contribution that introduces, edits, pastes, copies, restores, imports, or replaces material separately names the
+acting Contributor. In particular:
 
 - internal copy and restore retain source Origin according to the payload contract while recording the new actor;
 - restored allowlisted fine-grained text uses fresh carrier identities without a new `restored` Origin category;
@@ -234,60 +206,50 @@ replaces material separately names the acting Contributor. In particular:
 - external textual material uses imported or unknown Origin unless a validated source claim exists; and
 - a human accepting AI material does not replace its software-agent Origin.
 
-These records are descriptive attribution. SHA-256 integrity and local
-Contributor IDs are not authentication or a signature.
+These records are descriptive attribution. SHA-256 integrity and local Contributor IDs are not authentication or a
+signature.
 
 ## 7. IDs and scalar wire rules
 
 Use these rules:
 
-- Durable user-created and domain entity IDs are canonical lowercase UUID-v4
-  strings. Other persisted record IDs use the same representation unless their
-  authoritative type defines another opaque form. Trusted code allocates IDs;
-  pure reducers do not generate them.
-- `VersionToken` is public, document-scoped, and opaque. The codec retains the
-  private mapping needed to reproduce every token after open.
-- Timestamps are canonical RFC 3339 UTC with millisecond precision:
-  `YYYY-MM-DDTHH:mm:ss.sssZ`.
+- Durable user-created and domain entity IDs are canonical lowercase UUID-v4 strings. Other persisted record IDs use the
+  same representation unless their authoritative type defines another opaque form. Trusted code allocates IDs; pure
+  reducers do not generate them.
+- `VersionToken` is public, document-scoped, and opaque. The codec retains the private mapping needed to reproduce every
+  token after open.
+- Timestamps are canonical RFC 3339 UTC with millisecond precision: `YYYY-MM-DDTHH:mm:ss.sssZ`.
 - SHA-256 hashes are exactly 64 lowercase hexadecimal characters.
-- Optional properties are omitted when absent. Do not alternate silently
-  between omitted and `null`.
+- Optional properties are omitted when absent. Do not alternate silently between omitted and `null`.
 - Required integer fields are safe JSON integers.
 - Unknown properties are rejected in format version 1.
-- Binary chunks use one exact base64 spelling selected by the final v1 codec;
-  alternate or non-canonical spellings are rejected.
-- Portable fields that carry engine-native strings use the Step 8-selected
-  representation for the selected carrier domain. Decoding must recover the
-  exact supported native string; it must not perform Unicode normalization or
-  silent repair.
+- Binary chunks use one exact base64 spelling selected by the final v1 codec; alternate or non-canonical spellings are
+  rejected.
+- Portable fields that carry engine-native strings use the Step 8-selected representation for the selected carrier
+  domain. Decoding must recover the exact supported native string; it must not perform Unicode normalization or silent
+  repair.
 
-Identity reuse means assigning an existing durable ID to a different entity,
-record, or lifetime. An ordinary reference to the same immutable record, such
-as an Origin retained by copy or restore, is not reuse. Neither is an exact
+Identity reuse means assigning an existing durable ID to a different entity, record, or lifetime. An ordinary reference
+to the same immutable record, such as an Origin retained by copy or restore, is not reuse. Neither is an exact
 idempotent retry of the same successful `CommandId`.
 
 ## 8. Contributor and Origin bootstrap
 
-A blank document or import session begins with a human Contributor supplied by
-the UX. This does not create an account or security-principal model.
+A blank document or import session begins with a human Contributor supplied by the UX. This does not create an account
+or security-principal model.
 
-The MVP package preserves each document-local Contributor's stable ID, kind, and
-validated display name so History attribution survives Save/Open. Display-name
-validation is owned by `MVP_IMPLEMENTATION_SPEC.md`; the product defines no finite
-length maximum. Display names are descriptive metadata, not authenticated identity.
-A later separately managed profile can change presentation without changing stable
-attribution IDs.
+The MVP package preserves each document-local Contributor's stable ID, kind, and validated display name so History
+attribution survives Save/Open. Display-name validation is owned by `MVP_IMPLEMENTATION_SPEC.md`; the product defines no
+finite length maximum. Display names are descriptive metadata, not authenticated identity. A later separately managed
+profile can change presentation without changing stable attribution IDs.
 
-Human allowlisted fine-grained text editing creates human Origin records. Markdown/file import
-creates imported or unknown Origin for textual source material while the import
-Contribution is attributed to the human or system actor that performed the
-action. The source file is not impersonated as the actor. Generic opaque creation or
-replacement obtains its payload Origin from the same trusted attribution
-boundary rather than from a raw caller-controlled metadata field.
+Human allowlisted fine-grained text editing creates human Origin records. Markdown/file import creates imported or
+unknown Origin for textual source material while the import Contribution is attributed to the human or system actor that
+performed the action. The source file is not impersonated as the actor. Generic opaque creation or replacement obtains
+its payload Origin from the same trusted attribution boundary rather than from a raw caller-controlled metadata field.
 
-Every payload Origin reference and Contribution actor must resolve to a valid
-record under the accepted identity rules. A portable file cannot cause a local
-session identity, CRDT client ID, or transport connection to become a durable
+Every payload Origin reference and Contribution actor must resolve to a valid record under the accepted identity rules.
+A portable file cannot cause a local session identity, CRDT client ID, or transport connection to become a durable
 Contributor implicitly.
 
 ## 9. Validation order
@@ -295,85 +257,76 @@ Contributor implicitly.
 Treat portable input as hostile. Validate a detached copy in this order:
 
 1. implementation raw byte-size guard;
-2. container encoding, JSON depth if applicable, duplicate keys, envelope
-   identifier, exact supported version, known properties, collection resource
-   guards, and safe integers;
+2. container encoding, JSON depth if applicable, duplicate keys, envelope identifier, exact supported version, known
+   properties, collection resource guards, and safe integers;
 3. carrier name/version/schema support and encoded binary shape;
 4. per-chunk decoded-size guard and SHA-256 content address;
 5. envelope corruption digest over the still-untrusted canonical payload;
-6. unique live IDs, immutable-record conflicts, command-idempotency records,
-   and prohibited durable identity reuse across retained lifetimes;
-7. Contribution graph/frontier acyclicity, parent/result references, retained
-   Version mappings, current pointer, and reachability;
+6. unique live IDs, immutable-record conflicts, command-idempotency records, and prohibited durable identity reuse
+   across retained lifetimes;
+7. Contribution graph/frontier acyclicity, parent/result references, retained Version mappings, current pointer, and
+   reachability;
 8. Contributor, Origin, source, derivation, effect, and checkpoint references;
-9. carrier checkpoint/effect schema, dependency closure, deterministic whole-replacement register state, and implementation resource guards;
-10. reconstructed Block topology, ownership, ordering, tags, Media-Type values,
-    and structural invariants plus implementation capacity;
+9. carrier checkpoint/effect schema, dependency closure, deterministic whole-replacement register state, and
+   implementation resource guards;
+10. reconstructed Block topology, ownership, ordering, tags, Media-Type values, and structural invariants plus
+    implementation capacity;
 11. Media Type acceptance and capability classification under the fixed syntax and acceptance contract;
-12. reconstructed supported allowlisted fine-grained native strings and
-    fine-grained Origin coverage, with exact carrier-state preservation and no
-    Unicode normalization or silent repair;
+12. reconstructed supported allowlisted fine-grained native strings and fine-grained Origin coverage, with exact
+    carrier-state preservation and no Unicode normalization or silent repair;
 13. reconstructed opaque payload bytes and exactly one valid payload-level Origin for each current opaque payload value;
-14. payload-specific invariants, including rejection of incompatible fine-grained operations and no implicit Media Type change outside explicit whole-payload replacement; and
+14. payload-specific invariants, including rejection of incompatible fine-grained operations and no implicit Media Type
+    change outside explicit whole-payload replacement; and
 15. History replay/materialization and required text Range-lineage invariants.
 
-The portable package stores canonical collaborative state, not an external raw
-media representation of allowlisted text. Therefore reopening `.coedit` does not
-encode or decode that canonical native string according to its payload Media Type
-and does not reject it merely because the selected raw-media processor does not
-support the preserved representation profile. Representation-profile support is
-checked only when an operation actually crosses the raw/coarse media boundary.
-The complete supplied Media Type remains durable metadata and is validated against
-the fixed Media Type syntax contract here.
+The portable package stores canonical collaborative state, not an external raw media representation of allowlisted text.
+Therefore reopening `.coedit` does not encode or decode that canonical native string according to its payload Media Type
+and does not reject it merely because the selected raw-media processor does not support the preserved representation
+profile. Representation-profile support is checked only when an operation actually crosses the raw/coarse media
+boundary. The complete supplied Media Type remains durable metadata and is validated against the fixed Media Type syntax
+contract here.
 
-An accepted unfamiliar Media Type value uses generic opaque handling without
-format-specific validation. An accepted allowlisted Media Type value can still
-fail a later Coedit-owned raw representation operation when the selected
-processor does not support its representation profile. It is not reclassified as
-opaque or reported as rejected by the Media Type acceptance contract for that
-reason.
+An accepted unfamiliar Media Type value uses generic opaque handling without format-specific validation. An accepted
+allowlisted Media Type value can still fail a later Coedit-owned raw representation operation when the selected
+processor does not support its representation profile. It is not reclassified as opaque or reported as rejected by the
+Media Type acceptance contract for that reason.
 
-Validate a complete candidate engine before replacing the active engine or
-committing it to the browser repository.
+Validate a complete candidate engine before replacing the active engine or committing it to the browser repository.
 
-A capacity/resource rejection is not a semantic-format rejection. Keep those
-failure classes distinct so a conforming implementation can safely decline an
-artifact it cannot currently process without declaring that the artifact is
+A capacity/resource rejection is not a semantic-format rejection. Keep those failure classes distinct so a conforming
+implementation can safely decline an artifact it cannot currently process without declaring that the artifact is
 universally invalid.
 
 ## 10. History verification
 
-Verify complete History from genesis/frontier dependencies rather than trusting
-array or packet order.
+Verify complete History from genesis/frontier dependencies rather than trusting array or packet order.
 
-Genesis must contain the initial root and no Contribution. The first retained
-user mutation must be represented by the first Contribution rather than being
-folded into genesis.
+Genesis must contain the initial root and no Contribution. The first retained user mutation must be represented by the
+first Contribution rather than being folded into genesis.
 
 For each Contribution:
 
 - verify that its exact effect applies to its declared base/frontier;
 - verify the resulting Version/frontier mapping and affected targets;
 - verify acting Contributor, Origin, source, and derivation references;
-- verify whole-payload replacement preserves InlineContent identity while allowing Media Type to change and records its exact value/Origin effect;
-- verify deterministic current-state selection for concurrent whole-payload replacements from the reconstructed causal state using the Gate B observable winner rule;
+- verify whole-payload replacement preserves InlineContent identity while allowing Media Type to change and records its
+  exact value/Origin effect;
+- verify deterministic current-state selection for concurrent whole-payload replacements from the reconstructed causal
+  state using the Gate B observable winner rule;
 - verify semantic Checkpoints are content-identical to their declared base; and
 - verify successful CommandId records reproduce the original receipt and reject conflicting reuse.
 
-For local single-writer restore, verify that visible material equals the selected
-target while restored allowlisted fine-grained text items retain historical Origin, restored
-opaque payload values retain their payload Origin, and the restore Contribution names the
-new actor and target. A future replicated format verifies the causal compensation
-rules in `COLLABORATION_MODEL.md`, including preservation of work outside the
-restore author's observed frontier.
+For local single-writer restore, verify that visible material equals the selected target while restored allowlisted
+fine-grained text items retain historical Origin, restored opaque payload values retain their payload Origin, and the
+restore Contribution names the new actor and target. A future replicated format verifies the causal compensation rules
+in `COLLABORATION_MODEL.md`, including preservation of work outside the restore author's observed frontier.
 
-Recompute derived projection hashes, affected targets, indexes, and reserved-ID
-sets. Do not trust serialized derived claims.
+Recompute derived projection hashes, affected targets, indexes, and reserved-ID sets. Do not trust serialized derived
+claims.
 
 ## 11. Hostile-input and codec resource-guard selection
 
-The Step 8 decoder cannot ship until it uses selected finite guards before
-dangerous allocation or graph work.
+The Step 8 decoder cannot ship until it uses selected finite guards before dangerous allocation or graph work.
 
 **Maturity:** Experimental guard candidates; final selection pending.
 
@@ -392,65 +345,53 @@ Use these values as initial characterization points:
 - 48 MiB decoded binary chunk data across the archive; and
 - 1,000,000 ECMAScript UTF-16 code units in one allowlisted fine-grained text InlineContent.
 
-The string count is an implementation workload metric, not a semantic character
-unit. These candidates do not define current acceptance, rejection,
-compatibility, or correctness-test thresholds. They are possible implementation
-resource guards, not version-1 document maxima. Shared content and History
-qualification workloads belong only in `MVP_VERIFICATION_PLAN.md`.
+The string count is an implementation workload metric, not a semantic character unit. These candidates do not define
+current acceptance, rejection, compatibility, or correctness-test thresholds. They are possible implementation resource
+guards, not version-1 document maxima. Shared content and History qualification workloads belong only in
+`MVP_VERIFICATION_PLAN.md`.
 
-Step 8 profiling must characterize raw bytes, decoded allocation, nesting,
-collection cardinality, graph-processing work, opaque payload bytes, portable
-native-string decoding, and carrier state. The selection record must consider
-Versions, Contributions, Blocks, InlineContents, Media Types, per-Contribution and
-archive operations, carrier chunks, opaque-payload chunks, and allowlisted
-fine-grained text size. It must record which dimensions need explicit guards, why
-the selected values are safe on target environments, and why an omitted guard is
-safely bounded elsewhere.
+Step 8 profiling must characterize raw bytes, decoded allocation, nesting, collection cardinality, graph-processing
+work, opaque payload bytes, portable native-string decoding, and carrier state. The selection record must consider
+Versions, Contributions, Blocks, InlineContents, Media Types, per-Contribution and archive operations, carrier chunks,
+opaque-payload chunks, and allowlisted fine-grained text size. It must record which dimensions need explicit guards, why
+the selected values are safe on target environments, and why an omitted guard is safely bounded elsewhere.
 
-After promotion, the encoder preflights the selected resource guards that apply
-to the artifact it produces. Return a typed capacity error rather than truncate
-History, Origins, supported native string content, opaque payload bytes, or
-document state. A capacity failure does not make the document semantically
-invalid.
+After promotion, the encoder preflights the selected resource guards that apply to the artifact it produces. Return a
+typed capacity error rather than truncate History, Origins, supported native string content, opaque payload bytes, or
+document state. A capacity failure does not make the document semantically invalid.
 
-Before freezing version 1, verify that the selected container can round-trip the
-representative supported-text fixtures recorded by the qualification run. If
-monolithic JSON/base64 or the chosen string representation is the actual limiting
-factor for supported carrier state, change the container rather than promote that
-implementation limit into document semantics.
+Before freezing version 1, verify that the selected container can round-trip the representative supported-text fixtures
+recorded by the qualification run. If monolithic JSON/base64 or the chosen string representation is the actual limiting
+factor for supported carrier state, change the container rather than promote that implementation limit into document
+semantics.
 
 ## 12. Integrity and chunk identity
 
-Use SHA-256 for corruption detection and content addressing. Do not describe it
-as authentication or tamper-proofing.
+Use SHA-256 for corruption detection and content addressing. Do not describe it as authentication or tamper-proofing.
 
-Each immutable binary chunk records the digest of its decoded canonical bytes.
-This rule applies equally when a chunk stores carrier state or opaque payload bytes.
-The envelope also records a digest over the final version-1 canonical container
-representation with the envelope digest field omitted. If JSON is selected, Step
-8 must define canonical object-key ordering, array ordering, and the exact
-supported-string representation before fixture digests are frozen.
+Each immutable binary chunk records the digest of its decoded canonical bytes. This rule applies equally when a chunk
+stores carrier state or opaque payload bytes. The envelope also records a digest over the final version-1 canonical
+container representation with the envelope digest field omitted. If JSON is selected, Step 8 must define canonical
+object-key ordering, array ordering, and the exact supported-string representation before fixture digests are frozen.
 
 After the prerequisite gates and Step 8 codec selection, check in:
 
 - one minimal canonical version-1 fixture;
-- one realistic Media-Type-labelled-payload/history fixture containing supported
-  allowlisted fine-grained text and representative opaque Media Types;
+- one realistic Media-Type-labelled-payload/history fixture containing supported allowlisted fine-grained text and
+  representative opaque Media Types;
 - their exact canonical bytes and digests; and
 - malformed/mis-hashed variants.
 
 ## 13. Serialization concurrency
 
-Serialization is a non-mutating engine query against an expected VersionToken.
-It captures the complete immutable History through one stable current frontier.
+Serialization is a non-mutating engine query against an expected VersionToken. It captures the complete immutable
+History through one stable current frontier.
 
-If the engine advanced before serialization begins, return `VersionConflict`.
-Do not silently serialize a different Version. Concurrent repository activity
-cannot cause a mixture of two heads in one artifact.
+If the engine advanced before serialization begins, return `VersionConflict`. Do not silently serialize a different
+Version. Concurrent repository activity cannot cause a mixture of two heads in one artifact.
 
-The returned artifact identifies the Version it contains. Explicit `.coedit`
-assembly can read immutable repository records, but normal browser autosave never
-serializes the complete artifact.
+The returned artifact identifies the Version it contains. Explicit `.coedit` assembly can read immutable repository
+records, but normal browser autosave never serializes the complete artifact.
 
 ## 14. Required verification
 
@@ -461,24 +402,27 @@ At minimum, verify:
 - Media Types survive exactly;
 - supported allowlisted fine-grained native strings and fine-grained Origin survive exactly;
 - no Unicode normalization or silent repair occurs during Save/Open for supported carrier state;
-- no formatting-mark layer, engine-owned link object, hard-break item, or implicit structural separator appears after round trip;
+- no formatting-mark layer, engine-owned link object, hard-break item, or implicit structural separator appears after
+  round trip;
 - opaque payload bytes and payload-level Origin survive exactly;
-- universal whole-payload replacement and deterministic current-winner behavior survive without losing the History of concurrent replacements;
+- universal whole-payload replacement and deterministic current-winner behavior survive without losing the History of
+  concurrent replacements;
 - Origin, actor, derivation, and text Range-tracking lineage remain distinct and exact;
 - semantic Checkpoints and physical recovery checkpoints remain distinct;
 - every VersionToken remains stable and exactly materializable after Save/Open;
 - successful CommandId retries remain idempotent after Save/Open;
-- a serialized Range value retained by the test outside the package resolves to the same surviving spans and exact concatenated native string after Save/Open;
+- a serialized Range value retained by the test outside the package resolves to the same surviving spans and exact
+  concatenated native string after Save/Open;
 - missing, duplicate, unreachable, mis-hashed, or conflicting chunks fail;
-- malformed graph/frontiers, Contributor/Origin references, carrier state,
-  topology, ownership, Media Type acceptance, portable native-string
-  representation, and opaque payload bytes fail in their appropriate validation
-  class;
-- an accepted allowlisted Media Type value whose representation profile is unsupported by the selected raw-media processor remains allowlisted and fails only when an operation crosses the raw/coarse media boundary; accepted unfamiliar Media Type values remain opaque;
-- malformed, truncated, duplicate-key, unknown-property, or unsupported
-  container/carrier versions fail;
+- malformed graph/frontiers, Contributor/Origin references, carrier state, topology, ownership, Media Type acceptance,
+  portable native-string representation, and opaque payload bytes fail in their appropriate validation class;
+- an accepted allowlisted Media Type value whose representation profile is unsupported by the selected raw-media
+  processor remains allowlisted and fails only when an operation crosses the raw/coarse media boundary; accepted
+  unfamiliar Media Type values remain opaque;
+- malformed, truncated, duplicate-key, unknown-property, or unsupported container/carrier versions fail;
 - every resource guard selected and promoted under section 11 is exercised safely;
-- exceeding a selected implementation resource guard produces a capacity error without partial publication or semantic-invalidity claims;
+- exceeding a selected implementation resource guard produces a capacity error without partial publication or
+  semantic-invalidity claims;
 - stale serialization returns no artifact;
 - caller mutation of input bytes after open starts cannot alter the candidate;
 - a failed open never replaces the active engine;
@@ -492,25 +436,20 @@ Any durable schema change requires one of:
 - a proven backward-compatible version-1 change explicitly permitted by the final version-1 contract; or
 - a new format version with explicit migration and compatibility rules.
 
-A carrier name/version/schema change is not assumed binary-compatible. It needs
-a supported migration through carrier-neutral logical materialization or a new
-container version. Public engine APIs and product IDs must not expose carrier
-bytes merely to avoid that migration boundary.
+A carrier name/version/schema change is not assumed binary-compatible. It needs a supported migration through
+carrier-neutral logical materialization or a new container version. Public engine APIs and product IDs must not expose
+carrier bytes merely to avoid that migration boundary.
 
-Valid unfamiliar Media Types use the existing opaque payload representation and
-payload-level Origin. Their labels and bytes do not require a format revision
-merely because Coedit has no decoder or renderer for them. Malformed generic
-Media Type syntax and failures at an allowlisted raw representation boundary
-remain distinct; `INLINE_CONTENT_PAYLOADS.md` section 3.1 defines that boundary.
+Valid unfamiliar Media Types use the existing opaque payload representation and payload-level Origin. Their labels and
+bytes do not require a format revision merely because Coedit has no decoder or renderer for them. Malformed generic
+Media Type syntax and failures at an allowlisted raw representation boundary remain distinct;
+`INLINE_CONTENT_PAYLOADS.md` section 3.1 defines that boundary.
 
-New fine-grained payload state or operations, future comments, conversations,
-authenticated claims, signatures, attachment records, in-package Range holders,
-or replicated protocol records require an explicit compatibility decision. An
-additional fine-grained Media-Type-specific contract must define its portable
-state and Origin behavior. Minimum Origin metadata for text and generic opaque
-payloads is already part of the version-1 logical requirement.
+New fine-grained payload state or operations, future comments, conversations, authenticated claims, signatures,
+attachment records, in-package Range holders, or replicated protocol records require an explicit compatibility decision.
+An additional fine-grained Media-Type-specific contract must define its portable state and Origin behavior. Minimum
+Origin metadata for text and generic opaque payloads is already part of the version-1 logical requirement.
 
-Measurements can justify a later manifest plus compressed binary chunks instead
-of monolithic JSON/base64. Such a container change can preserve the same logical
-records and product contract, but it still requires an explicit format version
-and migration decision.
+Measurements can justify a later manifest plus compressed binary chunks instead of monolithic JSON/base64. Such a
+container change can preserve the same logical records and product contract, but it still requires an explicit format
+version and migration decision.

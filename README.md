@@ -1,16 +1,27 @@
 # Coedit
 
-Coedit is a browser-first collaborative document engine. Steps 1 and 2 are complete. Step 3 carrier qualification is in progress: the payload, structural/allocator, and integrated collaborative-document foundation merge units are complete; integrated structural and payload semantics, carrier lifecycle, application/editor qualification, and comparative evidence remain before Gate B selects the carrier. Step 3 qualifies Media-Type-labelled InlineContent payloads (`text/markdown`, `text/plain`, and representative opaque Media Types), universal whole-payload replacement, native-string fine-grained text, structure, and text Range feasibility against Yjs and Automerge. Step 4 implements the selected collaborative core, Step 5 establishes permanent exact History and Version materialization, and Step 6 implements the durable fine-grained text Range service.
+Coedit is a browser-first collaborative document engine. Steps 1 and 2 are complete. Step 3 carrier qualification is in
+progress: the payload, structural/allocator, and integrated collaborative-document foundation merge units are complete;
+integrated structural and payload semantics, carrier lifecycle, application/editor qualification, and comparative
+evidence remain before Gate B selects the carrier. Step 3 qualifies Media-Type-labelled InlineContent payloads
+(`text/markdown`, `text/plain`, and representative opaque Media Types), universal whole-payload replacement,
+native-string fine-grained text, structure, and text Range feasibility against Yjs and Automerge. Step 4 implements the
+selected collaborative core, Step 5 establishes permanent exact History and Version materialization, and Step 6
+implements the durable fine-grained text Range service.
 
-The authoritative documentation index is [`docs/README.md`](docs/README.md). The ordered implementation plan is [`SCAFFOLDING_PLAN.md`](SCAFFOLDING_PLAN.md).
+The authoritative documentation index is [`docs/README.md`](docs/README.md). The ordered implementation plan is
+[`SCAFFOLDING_PLAN.md`](SCAFFOLDING_PLAN.md).
 
 ## Requirements
 
-Use Node.js `>=22.13.0 <25`. Node.js includes npm, which is the repository bootstrap interface. No global pnpm installation is required.
+Use Node.js `>=22.13.0 <25`. Node.js includes npm, which is the repository bootstrap interface. No global pnpm
+installation is required.
 
-The repository pins pnpm `11.24.0` in `package.json`. `npm run bootstrap` obtains that exact pnpm version through `npm exec` and uses it with the committed `pnpm-lock.yaml`. Do not use `npm install` for project dependencies.
+The repository pins pnpm `11.24.0` in `package.json`. `npm run bootstrap` obtains that exact pnpm version through
+`npm exec` and uses it with the committed `pnpm-lock.yaml`. Do not use `npm install` for project dependencies.
 
-Windows and Linux are required native development platforms. macOS is an intended supported platform. The commands below use package scripts and do not require an OS-specific shell.
+Windows and Linux are required native development platforms. macOS is an intended supported platform. The commands below
+use package scripts and do not require an OS-specific shell.
 
 ## Commands
 
@@ -23,6 +34,7 @@ Windows and Linux are required native development platforms. macOS is an intende
 - `npm run typecheck` runs TypeScript checks.
 - `npm run lint` runs ESLint and accepts zero warnings.
 - `npm run lint:deps` runs dependency-cruiser architecture checks.
+- `npm run lint:markdown` checks Markdown line width without reflowing prose.
 - `npm run format` applies Prettier.
 - `npm run format:check` checks formatting without writing.
 - `npm run docs:check` validates TSDoc and TypeDoc input without writing generated documentation.
@@ -36,10 +48,15 @@ npm run check
 npm run build
 ```
 
-After `npm run build`, use `npm run preview` to inspect `dist` in a browser. Do not open `dist/index.html` through `file://`; browsers block the ES modules in that mode. The build uses relative asset URLs so a static HTTP host can mount `dist` below an arbitrary URL prefix.
+After `npm run build`, use `npm run preview` to inspect `dist` in a browser. Do not open `dist/index.html` through
+`file://`; browsers block the ES modules in that mode. The build uses relative asset URLs so a static HTTP host can
+mount `dist` below an arbitrary URL prefix.
 
-See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the contributor contract, definition of done, test requirements, and pull-request hygiene.
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the contributor contract, definition of done, test requirements, and
+pull-request hygiene.
 
 ## Preserved experiment
 
-The earlier Tauri experiment remains on `tauri-experimental-orphan` as read-only evidence. Do not merge, rebase, reset, or commit to that branch. Consult [`docs/PRESERVED_BRANCH_RECONCILIATION.md`](docs/PRESERVED_BRANCH_RECONCILIATION.md) before you reuse behavior or tests from it.
+The earlier Tauri experiment remains on `tauri-experimental-orphan` as read-only evidence. Do not merge, rebase, reset,
+or commit to that branch. Consult [`docs/PRESERVED_BRANCH_RECONCILIATION.md`](docs/PRESERVED_BRANCH_RECONCILIATION.md)
+before you reuse behavior or tests from it.

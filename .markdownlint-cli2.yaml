@@ -1,0 +1,22 @@
+config:
+  default: false
+  MD013:
+    line_length: 120
+    code_blocks: false
+    tables: false
+overrides:
+  - filter:
+      - docs/decisions/0001-collaborative-content-provenance-history.md
+      - docs/decisions/0002-global-durable-identity-and-empty-genesis-root.md
+      - docs/decisions/0003-flat-structural-placement.md
+      - docs/decisions/0004-intrinsic-link-targets.md
+      - docs/decisions/0005-semantic-interpretation-boundaries.md
+      - docs/decisions/0006-text-position-ownership.md
+      - docs/decisions/0007-structural-position-allocator-abstraction.md
+      - docs/decisions/0008-capacity-contract-maturity.md
+      - docs/decisions/0009-durable-range-semantics.md
+      - docs/decisions/0010-typed-inline-content-payloads.md
+      - docs/decisions/0011-minimal-indicated-structural-depth.md
+    config:
+      MD013: false
+    combine: merge
