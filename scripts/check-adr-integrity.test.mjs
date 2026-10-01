@@ -63,7 +63,50 @@ describe("ADR integrity", () => {
     expect(checkAdrIntegritySnapshot(files)).toContainEqual(
       expect.objectContaining({
         path: adrPath,
-        message: expect.stringContaining("Immutable ADR body changed"),
+        message: expect.stringContaining("Historical ADR body changed"),
+      }),
+    );
+  });
+
+  it("allows soft line wrapping in historical prose", () => {
+    const files = snapshot(
+      adr(
+        "Accepted",
+        "A historical sentence has the same presentation after reflow.",
+      ),
+      adr(
+        "Accepted",
+        "A historical sentence has the same\npresentation after reflow.",
+      ),
+    );
+
+    expect(checkAdrIntegritySnapshot(files)).toEqual([]);
+  });
+
+  it("rejects a hard-break change in historical prose", () => {
+    const files = snapshot(
+      adr("Accepted", "First historical line.\nSecond historical line."),
+      adr("Accepted", "First historical line.  \nSecond historical line."),
+    );
+
+    expect(checkAdrIntegritySnapshot(files)).toContainEqual(
+      expect.objectContaining({
+        path: adrPath,
+        message: expect.stringContaining("Historical ADR body changed"),
+      }),
+    );
+  });
+
+  it("rejects a historical link-target change", () => {
+    const files = snapshot(
+      adr("Accepted", "Read [the historical source](https://example.com/one)."),
+      adr("Accepted", "Read [the historical source](https://example.com/two)."),
+    );
+
+    expect(checkAdrIntegritySnapshot(files)).toContainEqual(
+      expect.objectContaining({
+        path: adrPath,
+        message: expect.stringContaining("Historical ADR body changed"),
       }),
     );
   });

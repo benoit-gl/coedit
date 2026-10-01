@@ -45,6 +45,29 @@ function splitHistoricalBody(path, text) {
   };
 }
 
+function canonicalHistoricalBody(text) {
+  function canonicalNode(node) {
+    const canonical = {};
+    for (const [key, value] of Object.entries(node)) {
+      if (key === "position") {
+        continue;
+      }
+      if (key === "children") {
+        canonical.children = value.map((child) => canonicalNode(child));
+        continue;
+      }
+      if (key === "value" && node.type === "text") {
+        canonical.value = value.replace(/[ \t]*\r?\n[ \t]*/gu, " ");
+        continue;
+      }
+      canonical[key] = value;
+    }
+    return canonical;
+  }
+
+  return JSON.stringify(canonicalNode(fromMarkdown(text)));
+}
+
 function metadataValue(header, name) {
   const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const pattern = new RegExp(`^\\*\\*${escapedName}:\\*\\*\\s*(.+)$`, "gm");
@@ -262,10 +285,12 @@ export function checkAdrIntegritySnapshot({ baseFiles, headFiles, headPaths }) {
     try {
       const baseBody = splitHistoricalBody(path, baseText).body;
       const headBody = splitHistoricalBody(path, headText).body;
-      if (baseBody !== headBody) {
+      if (
+        canonicalHistoricalBody(baseBody) !== canonicalHistoricalBody(headBody)
+      ) {
         failures.push({
           path,
-          message: `Immutable ADR body changed near body line ${firstDifferentLine(baseBody, headBody)}. Record later decisions through header metadata and a new ADR.`,
+          message: `Historical ADR body changed near body line ${firstDifferentLine(baseBody, headBody)}. Record later decisions through header metadata and a new ADR.`,
         });
       }
     } catch (error) {
