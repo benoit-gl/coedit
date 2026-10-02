@@ -22,7 +22,7 @@ function markdownChanges(baseRef, headRef) {
   }
 
   const changes = [];
-  for (let index = 0; index < fields.length; ) {
+  for (let index = 0; index < fields.length;) {
     const status = fields[index];
     const sourcePath = fields[index + 1];
     if (status === undefined || sourcePath === undefined) {
