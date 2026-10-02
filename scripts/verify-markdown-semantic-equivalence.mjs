@@ -6,6 +6,15 @@ function git(arguments_) {
   return execFileSync("git", arguments_, { encoding: "utf8" });
 }
 
+function treeEntryMode(ref, path) {
+  const entry = git(["ls-tree", "-z", ref, "--", path]);
+  const tab = entry.indexOf("\t");
+  if (tab === -1) {
+    throw new Error(`Markdown file could not be read from ${ref}.`);
+  }
+  return entry.slice(0, tab).split(" ")[0];
+}
+
 function markdownChanges(baseRef, headRef) {
   const fields = git([
     "diff",
@@ -81,13 +90,21 @@ for (const change of changes) {
   }
 
   const path = change.path;
+  let baseMode;
+  let headMode;
   let baseText;
   let headText;
   try {
+    baseMode = treeEntryMode(baseRef, path);
+    headMode = treeEntryMode(headRef, path);
     baseText = git(["show", `${baseRef}:${path}`]);
     headText = git(["show", `${headRef}:${path}`]);
   } catch {
     failures.push(`${path}: Markdown file could not be read from both refs.`);
+    continue;
+  }
+  if (baseMode !== headMode) {
+    failures.push(`${path}: Markdown file mode changed.`);
     continue;
   }
   if (!markdownSemanticsEqual(baseText, headText)) {

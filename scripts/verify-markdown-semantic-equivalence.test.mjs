@@ -138,4 +138,18 @@ describe("Markdown semantic-equivalence verifier", () => {
       "doc.md: Markdown file changed Git object type.",
     );
   });
+
+  it("rejects a Markdown file mode change", () => {
+    const repository = createRepository();
+    writeFileSync(join(repository, "doc.md"), "Historical Markdown.\n");
+    const baseRef = commitWorkingTree(repository, "base");
+    const blob = git(repository, ["rev-parse", "HEAD:doc.md"]).trim();
+    git(repository, ["update-index", "--cacheinfo", `100755,${blob},doc.md`]);
+    const headRef = commitIndex(repository, "change Markdown file mode");
+
+    const result = runVerifier(repository, baseRef, headRef);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("doc.md: Markdown file mode changed.");
+  });
 });
