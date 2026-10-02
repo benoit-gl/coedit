@@ -1,18 +1,16 @@
 # Structural position allocator
 
-**Status:** Accepted allocator abstraction; Step 3 selects the concrete
-algorithm and Step 4 implements it in the selected collaborative core.
+**Status:** Accepted allocator abstraction; Step 3 selects the concrete algorithm and Step 4 implements it in the
+selected collaborative core.
 
 ## 1. Purpose and authority
 
-This document defines the internal abstraction between the structural document
-engine and the dense-order position allocator. It supplements
-[`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md), which owns flat Block
-placement, tree projection, and structural concurrency semantics.
+This document defines the internal abstraction between the structural document engine and the dense-order position
+allocator. It supplements [`STRUCTURAL_CARRIER_MODEL.md`](STRUCTURAL_CARRIER_MODEL.md), which owns flat Block placement,
+tree projection, and structural concurrency semantics.
 
-The abstraction is part of the production engine design. It is not a test-only
-qualification adapter. Qualification must exercise candidate algorithms through
-the same abstraction that production structural operations use.
+The abstraction is part of the production engine design. It is not a test-only qualification adapter. Qualification must
+exercise candidate algorithms through the same abstraction that production structural operations use.
 
 ## 2. Responsibility boundary
 
@@ -34,13 +32,13 @@ The position allocator owns:
 - algorithm-specific uniqueness or collision-avoidance machinery; and
 - algorithm-specific growth behavior.
 
-The structural engine must not inspect an allocator's digits, paths, tree nodes,
-site identifiers, random values, or other private representation.
+The structural engine must not inspect an allocator's digits, paths, tree nodes, site identifiers, random values, or
+other private representation.
 
 ## 3. Production allocator abstraction
 
-The exact programming-language shape is an implementation detail. The production
-abstraction must provide behavior equivalent to:
+The exact programming-language shape is an implementation detail. The production abstraction must provide behavior
+equivalent to:
 
 ```text
 StructuralPositionAllocator<Position>
@@ -50,95 +48,81 @@ compare(left, right) -> before | equal | after
 allocateRun(lower?, upper?, count, allocationContext) -> Position[] | failure
 ```
 
-`comparePrimary` reports whether two positions occupy the same logical ordering
-location for collision handling. Distinct positions can compare equal at this
-level.
+`comparePrimary` reports whether two positions occupy the same logical ordering location for collision handling.
+Distinct positions can compare equal at this level.
 
-`compare` provides the allocator's deterministic order for encoded positions.
-It must refine `comparePrimary`: when two primary positions differ, `compare`
-must return the same ordering direction. Positions that compare equal at the
-primary level can use allocator-private secondary ordering, but each primary
-equivalence class must remain contiguous in complete comparator order. Collision
-normalization relies on this property.
+`compare` provides the allocator's deterministic order for encoded positions. It must refine `comparePrimary`: when two
+primary positions differ, `compare` must return the same ordering direction. Positions that compare equal at the primary
+level can use allocator-private secondary ordering, but each primary equivalence class must remain contiguous in
+complete comparator order. Collision normalization relies on this property.
 
-The structural projection can apply stable `BlockId` as the final tie-break when
-required. The combined projection order must be total and deterministic.
+The structural projection can apply stable `BlockId` as the final tie-break when required. The combined projection order
+must be total and deterministic.
 
-`allocateRun` returns `count` fresh positions strictly inside the requested open
-interval. Returned positions preserve run order. `allocationContext` can contain
-the algorithm-native identity or entropy needed for deterministic replicated
+`allocateRun` returns `count` fresh positions strictly inside the requested open interval. Returned positions preserve
+run order. `allocationContext` can contain the algorithm-native identity or entropy needed for deterministic replicated
 allocation, but the structural engine must not interpret its private fields.
 
-Do not require every algorithm to expose a concept such as `anchor`, `digits`, or
-`member`. Those concepts are candidate-specific.
+Do not require every algorithm to expose a concept such as `anchor`, `digits`, or `member`. Those concepts are
+candidate-specific.
 
 ## 4. Collision tolerance
 
-The structural model must tolerate primary-position collisions even when the
-selected allocator is designed to prevent them during normal operation.
+The structural model must tolerate primary-position collisions even when the selected allocator is designed to prevent
+them during normal operation.
 
-This rule protects deterministic projection for exceptional carrier states,
-migration, reconstruction, older data, and future allocator implementations. It
-also prevents tree semantics from depending on a collision-free claim made by
-one algorithm.
+This rule protects deterministic projection for exceptional carrier states, migration, reconstruction, older data, and
+future allocator implementations. It also prevents tree semantics from depending on a collision-free claim made by one
+algorithm.
 
-A primary-position collision does not make a Block unreachable. The structural
-engine uses the allocator order and stable `BlockId` tie-breaking to produce one
-deterministic projected order.
+A primary-position collision does not make a Block unreachable. The structural engine uses the allocator order and
+stable `BlockId` tie-breaking to produce one deterministic projected order.
 
-If insertion is required inside a collision run, the structural engine decides
-which minimum later portion must move. It then asks the allocator for a fresh
-ordered replacement run in a usable surrounding interval. The allocator does not
+If insertion is required inside a collision run, the structural engine decides which minimum later portion must move. It
+then asks the allocator for a fresh ordered replacement run in a usable surrounding interval. The allocator does not
 need to know that the request is normalization.
 
-An allocator that makes primary collisions impossible for all valid distinct
-positions can satisfy this contract without a candidate-specific collision
-repair path. The engine-level collision model still remains valid.
+An allocator that makes primary collisions impossible for all valid distinct positions can satisfy this contract without
+a candidate-specific collision repair path. The engine-level collision model still remains valid.
 
 ## 5. Qualification candidates
 
-Step 3 must characterize established dense-order algorithm families and select
-the production allocator. Step 4 retains the selected implementation behind the
-same abstraction. Relevant prior art includes fractional indexing, LSEQ-family
+Step 3 must characterize established dense-order algorithm families and select the production allocator. Step 4 retains
+the selected implementation behind the same abstraction. Relevant prior art includes fractional indexing, LSEQ-family
 approaches, and non-interleaving sequence approaches such as Fugue/FugueMax.
 
-A locally developed allocator can also be characterized as a candidate. It does
-not become the selected design merely because it exists or passes its own unit
-tests.
+A locally developed allocator can also be characterized as a candidate. It does not become the selected design merely
+because it exists or passes its own unit tests.
 
-Qualification evidence must be persisted in the repository. Unrecorded
-experiments are not qualification evidence and must not justify selection.
+Qualification evidence must be persisted in the repository. Unrecorded experiments are not qualification evidence and
+must not justify selection.
 
 ## 6. Common qualification suite
 
-Run the same behavioral suite against every viable candidate through the
-production allocator abstraction. At minimum verify:
+Run the same behavioral suite against every viable candidate through the production allocator abstraction. At minimum
+verify:
 
 - allocation before the first and after the last position;
 - allocation strictly between adjacent positions;
 - ordered allocation of runs of one and many positions;
 - deterministic comparison and projection;
-- complete ordering refines primary ordering and keeps each primary-collision
-  equivalence class contiguous;
+- complete ordering refines primary ordering and keeps each primary-collision equivalence class contiguous;
 - concurrent allocation at the same logical destination;
 - run non-interleaving, or measured residual interleaving;
 - repeated narrow-gap insertion;
 - repeated moves with fresh destination allocation;
-- deterministic handling of primary-position collisions when the candidate can
-  represent them;
+- deterministic handling of primary-position collisions when the candidate can represent them;
 - continued insertion around collision runs;
-- convergence after duplicate, delayed, reordered, partitioned, and reconnected
-  carrier updates; and
+- convergence after duplicate, delayed, reordered, partitioned, and reconnected carrier updates; and
 - compatibility with structural normalization when normalization is required.
 
-Candidate-specific unit tests remain separate. They can verify private path,
-identifier, entropy, tree, or encoding invariants that do not apply to other
-algorithms.
+Candidate-specific unit tests remain separate. They can verify private path, identifier, entropy, tree, or encoding
+invariants that do not apply to other algorithms.
 
 ## 7. Characterization measurements
 
-Do not convert candidate-specific representation details into common pass/fail
-requirements. Record comparable measurements instead.
+Do not convert candidate-specific representation details into common pass/fail requirements. Record comparable
+measurements instead.
 
 At minimum record:
 
@@ -151,17 +135,15 @@ At minimum record:
 - observed collision rate when collisions are possible; and
 - observed concurrent-run interleaving behavior.
 
-Record the hardware, runtime, dependency versions, workload sizes, and other
-conditions needed to reproduce performance results.
+Record the hardware, runtime, dependency versions, workload sizes, and other conditions needed to reproduce performance
+results.
 
-A candidate can fail a mandatory semantic invariant. Performance and growth
-results otherwise inform selection; they are not arbitrary product-level numeric
-limits unless a separate requirement establishes such a limit.
+A candidate can fail a mandatory semantic invariant. Performance and growth results otherwise inform selection; they are
+not arbitrary product-level numeric limits unless a separate requirement establishes such a limit.
 
 ## 8. Selection record
 
-The final allocator selection must be a persisted decision based on the common
-qualification evidence. Record:
+The final allocator selection must be a persisted decision based on the common qualification evidence. Record:
 
 - candidates evaluated;
 - evidence and measurements;
@@ -175,13 +157,9 @@ Do not freeze the concrete position encoding before this selection exists.
 
 ## 9. Consequences
 
-- The production structural engine depends on an allocator abstraction, not one
-  concrete position representation.
+- The production structural engine depends on an allocator abstraction, not one concrete position representation.
 - Qualification does not need a separate test-only adapter.
-- The common qualification suite is reusable when a future allocator is
-  considered.
-- Collision tolerance remains an engine invariant even when normal allocation
-  prevents collisions.
-- Structural collision normalization remains engine policy; position generation
-  remains allocator policy.
+- The common qualification suite is reusable when a future allocator is considered.
+- Collision tolerance remains an engine invariant even when normal allocation prevents collisions.
+- Structural collision normalization remains engine policy; position generation remains allocator policy.
 - Concrete allocator selection remains open until persisted evidence supports it.

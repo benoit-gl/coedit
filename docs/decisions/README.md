@@ -1,54 +1,43 @@
 # Architecture decision records
 
-This directory preserves the context, alternatives, evidence, and consequences
-behind accepted architectural decisions.
+This directory preserves the context, alternatives, evidence, and consequences behind accepted architectural decisions.
 
-Decision records are durable rationale, not a second normative specification.
-The authoritative document listed in each record controls product, architecture,
-implementation, format, verification, and planning behavior.
+Decision records are durable rationale, not a second normative specification. The authoritative document listed in each
+record controls product, architecture, implementation, format, verification, and planning behavior.
 
 ## Lifecycle policy
 
-Treat an accepted ADR as a historical record of the decision that was made. Do
-not rewrite its context, decision, alternatives, rationale, evidence, or
-consequences to make the record agree with a later design.
+Treat an accepted ADR as a historical record of the decision that was made. Do not rewrite its context, decision,
+alternatives, rationale, evidence, or consequences to make the record agree with a later design.
 
-Maintenance metadata can change after acceptance. This includes the ADR status,
-supersession relationships, and the index in this file. Keep those updates
-separate from the historical decision text.
+Maintenance metadata can change after acceptance. This includes the ADR status, supersession relationships, and the
+index in this file. Keep those updates separate from the historical decision text.
 
 When a later decision invalidates all or part of an accepted ADR:
 
 - retain the older ADR;
 - mark its status clearly as fully or partly superseded;
-- add a `Superseded by` reference near the ADR metadata that links to each ADR
-  that replaces it;
+- add a `Superseded by` reference near the ADR metadata that links to each ADR that replaces it;
 - state the affected scope when supersession is partial; and
 - update this index to show the same current status.
 
-A later ADR can refine, extend, or build on an accepted ADR without invalidating
-it. In that case, the older ADR remains accepted and does not have to be amended
-only to add a backward reference. The newer ADR must identify the earlier
-decision that it refines or extends when that relationship is material to
-understanding the new decision.
+A later ADR can refine, extend, or build on an accepted ADR without invalidating it. In that case, the older ADR remains
+accepted and does not have to be amended only to add a backward reference. The newer ADR must identify the earlier
+decision that it refines or extends when that relationship is material to understanding the new decision.
 
-References inside the historical decision text remain part of that historical
-record. They do not require obsolete documents to remain on `main`, and they do
-not justify rewriting the accepted decision only to keep old links current. A
-supersession notice must provide the current path forward when the old decision
-is no longer authoritative.
+References inside the historical decision text remain part of that historical record. They do not require obsolete
+documents to remain on `main`, and they do not justify rewriting the accepted decision only to keep old links current. A
+supersession notice must provide the current path forward when the old decision is no longer authoritative.
 
 ## Automated enforcement
 
-For every ADR already present on the target branch, all content beginning with
-the first level-two heading (`##`) must retain the same parsed Markdown structure
-and presentation. Maintenance changes belong in the header before that heading.
-The `adr-integrity` pull-request check permits only soft line-ending reflow in
-ordinary prose text. It rejects historical text or structure changes, hard-break
-changes, link-target changes, code or HTML changes, deletion of existing ADRs,
-invalid supersession metadata, broken links in mutable ADR headers, and
-disagreement between ADR lifecycle classes in the metadata and this index. It
-deliberately ignores whether links in historical ADR bodies still resolve.
+For every ADR already present on the target branch, all content beginning with the first level-two heading (`##`) must
+retain the same parsed Markdown structure and presentation. Maintenance changes belong in the header before that
+heading. The `adr-integrity` pull-request check permits only soft line-ending reflow in ordinary prose text. It rejects
+historical text or structure changes, hard-break changes, link-target changes, code or HTML changes, deletion of
+existing ADRs, invalid supersession metadata, broken links in mutable ADR headers, and disagreement between ADR
+lifecycle classes in the metadata and this index. It deliberately ignores whether links in historical ADR bodies still
+resolve.
 
 ## Index
 

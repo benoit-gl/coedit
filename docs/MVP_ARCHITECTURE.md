@@ -2,18 +2,28 @@
 
 **Status:** Accepted clean-slate MVP direction.
 
-This document is authoritative for component ownership and the public document-engine boundary. Product ontology belongs in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Implementation order belongs in [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md). Capacity classification belongs in [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md). InlineContent Media Types and universal replacement belong in [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md). Fine-grained text attribution, durable text Range behavior, Markdown interchange, `.coedit`, and browser persistence details belong in their focused specifications. Post-MVP replication belongs in [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md).
+This document is authoritative for component ownership and the public document-engine boundary. Product ontology belongs
+in [`PRODUCT_DOMAIN_MODEL.md`](PRODUCT_DOMAIN_MODEL.md). Implementation order belongs in
+[`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md). Capacity classification belongs in
+[`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md). InlineContent Media Types and universal
+replacement belong in [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md). Fine-grained text attribution, durable
+text Range behavior, Markdown interchange, `.coedit`, and browser persistence details belong in their focused
+specifications. Post-MVP replication belongs in [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md).
 
-The document engine is a logical backend. In the MVP it runs locally in the browser process. It does not need to be a server, worker, native process, or separate package.
+The document engine is a logical backend. In the MVP it runs locally in the browser process. It does not need to be a
+server, worker, native process, or separate package.
 
 ## 1. MVP definition
 
 The prototype has two principal components:
 
-1. A headless document engine owns durable document state, validation, commands, queries, History, portable serialization, and change notification.
-2. A browser UX renders query results, gathers edits, invokes engine commands, and handles browser capabilities and transient interaction state.
+1. A headless document engine owns durable document state, validation, commands, queries, History, portable
+   serialization, and change notification.
+2. A browser UX renders query results, gathers edits, invokes engine commands, and handles browser capabilities and
+   transient interaction state.
 
-Markdown import/export, file transport, the browser repository, clipboard handling, payload-aware editors/renderers, and future AI tools are adapters around this boundary. They are not alternate document authorities.
+Markdown import/export, file transport, the browser repository, clipboard handling, payload-aware editors/renderers, and
+future AI tools are adapters around this boundary. They are not alternate document authorities.
 
 ```text
 Browser UX ------------------+
@@ -26,9 +36,14 @@ Portable file transport -----+                    repository port  portable code
                                                  memory / IndexedDB    .coedit bytes
 ```
 
-The strict MVP can import Markdown, inspect and edit the Block tree and InlineContents, use allowlisted fine-grained text and opaque payloads, replace any InlineContent content atomically, use lenses, inspect and restore History, create semantic Checkpoints, create and resolve durable text Ranges, export Markdown, save/reopen `.coedit`, and survive browser reload.
+The strict MVP can import Markdown, inspect and edit the Block tree and InlineContents, use allowlisted fine-grained
+text and opaque payloads, replace any InlineContent content atomically, use lenses, inspect and restore History, create
+semantic Checkpoints, create and resolve durable text Ranges, export Markdown, save/reopen `.coedit`, and survive
+browser reload.
 
-Tauri, Rust, SQLite, AI providers, provenance visualization, comments, durable discussions, multi-user networking, fine-grained non-text editing, signed claims, and final History compaction are not MVP requirements. Minimum protected Origin metadata is an MVP foundation even though a provenance product is not.
+Tauri, Rust, SQLite, AI providers, provenance visualization, comments, durable discussions, multi-user networking,
+fine-grained non-text editing, signed claims, and final History compaction are not MVP requirements. Minimum protected
+Origin metadata is an MVP foundation even though a provenance product is not.
 
 ## 2. Responsibility boundary
 
@@ -36,8 +51,10 @@ Tauri, Rust, SQLite, AI providers, provenance visualization, comments, durable d
 
 The engine owns:
 
-- `Block`, `InlineContent`, Media-Type-labelled InlineContent payloads, Media-Type acceptance and capability dispatch, Origin records, and tags;
-- the universal atomic whole-payload replacement contract for every Media Type, including its raw/coarse media input boundary;
+- `Block`, `InlineContent`, Media-Type-labelled InlineContent payloads, Media-Type acceptance and capability dispatch,
+  Origin records, and tags;
+- the universal atomic whole-payload replacement contract for every Media Type, including its raw/coarse media input
+  boundary;
 - allowlisted native-string text state and protected fine-grained Origin;
 - opaque payload byte state and payload-level Origin;
 - carrier-neutral raw/coarse media materialization for InlineContents at an explicit Version;
@@ -45,18 +62,21 @@ The engine owns:
 - typed, attributed, version-checked, atomic command application;
 - stable document, content, Contribution, and Version identities;
 - current projections and exact historical materialization;
-- carrier-neutral allowlisted fine-grained text Range creation, span and text resolution, rationalization, parsing, and serialization;
+- carrier-neutral allowlisted fine-grained text Range creation, span and text resolution, rationalization, parsing, and
+  serialization;
 - lightweight History listing and semantic changeset summaries;
 - semantic Checkpoint creation;
 - compensating restore;
 - validation and lossless `.coedit` serialization;
 - change notifications after successful publication;
-- private choices about snapshots, deltas, CRDT updates, replicated registers, indexes, caching, compaction, and storage representation; and
+- private choices about snapshots, deltas, CRDT updates, replicated registers, indexes, caching, compaction, and storage
+  representation; and
 - atomic publication through a supplied in-memory or durable repository port.
 
 Every client-originated durable mutation enters through `execute`. No client receives a privileged persistence path.
 
-The engine does not assign application meaning to payload text or bytes. Block and InlineContent boundaries imply no character or textual separator. Payload-aware adapters decide how content is edited and presented.
+The engine does not assign application meaning to payload text or bytes. Block and InlineContent boundaries imply no
+character or textual separator. Payload-aware adapters decide how content is edited and presented.
 
 ### 2.2 Browser UX
 
@@ -75,17 +95,21 @@ The UX owns:
 - presenting repository durability, quota, persistence, conflict, retry, and backup status; and
 - tracking the Version most recently transported successfully.
 
-The UX does not mutate returned domain objects, read a private ledger/archive, reconstruct History, parse `.coedit`, or apply raw replication state as durable truth.
+The UX does not mutate returned domain objects, read a private ledger/archive, reconstruct History, parse `.coedit`, or
+apply raw replication state as durable truth.
 
 ### 2.3 Adapters
 
 Adapters translate between an external concern and the engine:
 
-- the Markdown importer plans ordinary typed allowlisted fine-grained text and structural operations plus imported Origin claims;
+- the Markdown importer plans ordinary typed allowlisted fine-grained text and structural operations plus imported
+  Origin claims;
 - the Markdown renderer queries an explicit Version and emits Markdown plus diagnostics;
 - the allowlisted fine-grained text editor translates editor transactions into fine-grained text operations;
-- application holders can serialize, store, parse, and reuse Range values in links, comments, navigation metadata, or other application state without adding holder semantics to the Range service;
-- a future opaque payload or structured-data application adapter can use universal whole-payload replacement without receiving direct carrier authority;
+- application holders can serialize, store, parse, and reuse Range values in links, comments, navigation metadata, or
+  other application state without adding holder semantics to the Range service;
+- a future opaque payload or structured-data application adapter can use universal whole-payload replacement without
+  receiving direct carrier authority;
 - file adapters transport opaque `.coedit` artifacts;
 - the browser repository persists private immutable engine records behind its port;
 - clipboard adapters validate private Coedit text fragments; and
@@ -95,25 +119,35 @@ Authority, not deployment, defines the boundary.
 
 ### 2.4 Semantic interpretation and capacity boundaries
 
-Canonical document state stores durable document facts and accepted product semantics. Adapters and consumers derive judgments that depend on current source syntax, payload format, host capabilities, security policy, renderer behavior, or implementation capacity.
+Canonical document state stores durable document facts and accepted product semantics. Adapters and consumers derive
+judgments that depend on current source syntax, payload format, host capabilities, security policy, renderer behavior,
+or implementation capacity.
 
 Before a new classification becomes durable state, ask:
 
-1. Is it an objective fact about the document, or a judgment made by the current adapter, environment, policy, or implementation?
-2. Would it still mean the same thing in another renderer, host, importer version, security policy, payload consumer, or future application?
+1. Is it an objective fact about the document, or a judgment made by the current adapter, environment, policy, or
+   implementation?
+2. Would it still mean the same thing in another renderer, host, importer version, security policy, payload consumer, or
+   future application?
 3. Is there a real document workflow that requires it to survive independently of the component that derived it?
 
-A contextual classification that can change with the consumer and has no durable workflow normally remains a diagnostic, projection result, activation decision, or other boundary result. ADR 0005 records the rationale and examples.
+A contextual classification that can change with the consumer and has no durable workflow normally remains a diagnostic,
+projection result, activation decision, or other boundary result. ADR 0005 records the rationale and examples.
 
-Preserved payload source is inert document data, not an activation-security policy.
-When an application adapter turns Markdown, embedded HTML, links, or other payload
-content into active DOM, navigation, commands, or another executable effect, that
-application boundary must select an appropriate sanitization and activation policy
-and verify hostile-source behavior before activation. This architecture does not
-preselect a sanitizer, URL policy, or library; the implementation step that adds
-the activating feature owns that choice and its verification evidence.
+Preserved payload source is inert document data, not an activation-security policy. When an application adapter turns
+Markdown, embedded HTML, links, or other payload content into active DOM, navigation, commands, or another executable
+effect, that application boundary must select an appropriate sanitization and activation policy and verify
+hostile-source behavior before activation. This architecture does not preselect a sanitizer, URL policy, or library; the
+implementation step that adds the activating feature owns that choice and its verification evidence.
 
-The same rule applies to capacity. `CAPACITY_AND_PERFORMANCE_TARGETS.md` owns the detailed classification and default rule. The domain has no arbitrary finite size ceiling only because one carrier, parser, codec, browser, payload handler, or storage implementation has finite resources. An actual implementation constraint returns an explicit capacity/resource failure and does not make larger content semantically invalid. Any public engine error can report that a local bound or capacity limit caused the operation to fail when applicable. The error must identify that cause as a capacity/resource failure so that clients do not mistake it for a statement that the document or requested state is semantically invalid. This rule does not require the MVP to define a complete error taxonomy in advance. Hostile external inputs still require bounded processing at the consuming boundary.
+The same rule applies to capacity. `CAPACITY_AND_PERFORMANCE_TARGETS.md` owns the detailed classification and default
+rule. The domain has no arbitrary finite size ceiling only because one carrier, parser, codec, browser, payload handler,
+or storage implementation has finite resources. An actual implementation constraint returns an explicit
+capacity/resource failure and does not make larger content semantically invalid. Any public engine error can report that
+a local bound or capacity limit caused the operation to fail when applicable. The error must identify that cause as a
+capacity/resource failure so that clients do not mistake it for a statement that the document or requested state is
+semantically invalid. This rule does not require the MVP to define a complete error taxonomy in advance. Hostile
+external inputs still require bounded processing at the consuming boundary.
 
 ## 3. Public engine behavior
 
@@ -261,29 +295,53 @@ interface PortableDocumentInput {
 }
 ```
 
-The universal whole-payload replacement operation belongs to the ordinary `DocumentOperation` family. Its coarse input is the complete replacement Media Type plus raw media bytes. It preserves the target `InlineContentId` while atomically replacing the complete payload value: Media Type, Media-Type-specific content, and the required Origin effect. The Media Type can stay the same or change. For opaque content, the bytes become the exact new payload after ordinary validation. For an allowlisted type, the Step 4 Media-Type-aware processor converts the raw bytes into the carrier's canonical collaborative representation before publication. Any acceptance, representation-profile, decoding, capacity, or other processing failure leaves the previous complete payload unchanged. Capability dispatch after success follows the resulting Media Type. Payload-specific fine-grained operations reject incompatible Media Types explicitly. Exact operation names and request shapes remain implementation details until their implementation step freezes them.
+The universal whole-payload replacement operation belongs to the ordinary `DocumentOperation` family. Its coarse input
+is the complete replacement Media Type plus raw media bytes. It preserves the target `InlineContentId` while atomically
+replacing the complete payload value: Media Type, Media-Type-specific content, and the required Origin effect. The Media
+Type can stay the same or change. For opaque content, the bytes become the exact new payload after ordinary validation.
+For an allowlisted type, the Step 4 Media-Type-aware processor converts the raw bytes into the carrier's canonical
+collaborative representation before publication. Any acceptance, representation-profile, decoding, capacity, or other
+processing failure leaves the previous complete payload unchanged. Capability dispatch after success follows the
+resulting Media Type. Payload-specific fine-grained operations reject incompatible Media Types explicitly. Exact
+operation names and request shapes remain implementation details until their implementation step freezes them.
 
-`RANGE_MODEL.md` owns allowlisted fine-grained text Range behavior. The selected `DocumentEngine` supplies document context. Step 6 Gate C finalizes result wrappers, parse diagnostics, resource-guard behavior, and serialization types without exposing carrier-native objects. The engine has no holder-specific reinjection operation: applications place a serialized Range into their own holder and later pass the value back to `parseRange`/resolution as needed.
+`RANGE_MODEL.md` owns allowlisted fine-grained text Range behavior. The selected `DocumentEngine` supplies document
+context. Step 6 Gate C finalizes result wrappers, parse diagnostics, resource-guard behavior, and serialization types
+without exposing carrier-native objects. The engine has no holder-specific reinjection operation: applications place a
+serialized Range into their own holder and later pass the value back to `parseRange`/resolution as needed.
 
-`PORTABLE_DOCUMENT_FORMAT.md` owns the exact `.coedit` wire contract. The UX treats `bytes` as opaque. No specific Media Type for the `.coedit` artifact itself is part of the accepted MVP design yet.
+`PORTABLE_DOCUMENT_FORMAT.md` owns the exact `.coedit` wire contract. The UX treats `bytes` as opaque. No specific Media
+Type for the `.coedit` artifact itself is part of the accepted MVP design yet.
 
 ## 4. Version and command contract
 
 `VersionToken` is equality-comparable, document-scoped, opaque, and not orderable or decodable by clients.
 
-Every VersionToken remains stable and exactly materializable for the lifetime of its document, including across a lossless `.coedit` Save/Open round trip. A VersionToken remains document-scoped; it need not be globally unique.
+Every VersionToken remains stable and exactly materializable for the lifetime of its document, including across a
+lossless `.coedit` Save/Open round trip. A VersionToken remains document-scoped; it need not be globally unique.
 
-The trusted document factory creates genesis with one real root from supplied durable IDs and no Contribution. Root creation is not a structural command. The first successful user mutation creates the first Contribution and resulting Version.
+The trusted document factory creates genesis with one real root from supplied durable IDs and no Contribution. Root
+creation is not a structural command. The first successful user mutation creates the first Contribution and resulting
+Version.
 
 Commands are typed, validated, attributed, atomic, and checked against an expected VersionToken.
 
-Each successful command atomically publishes one logical Contribution, its exact content/structure effect, any new Origin records, one resulting Version, and its successful idempotency receipt. When a durable repository is attached, publication occurs only after the repository transaction commits. A failed command publishes nothing.
+Each successful command atomically publishes one logical Contribution, its exact content/structure effect, any new
+Origin records, one resulting Version, and its successful idempotency receipt. When a durable repository is attached,
+publication occurs only after the repository transaction commits. A failed command publishes nothing.
 
-Whole-payload replacement is one such durable command effect. It preserves the target InlineContent identity and atomically publishes the replacement Media Type, Media-Type-specific content, and required Origin effect. Under later replication, a causally later replacement supersedes replacements it observed and concurrent replacements select one deterministic current winner. That winner cannot depend on wall-clock time or delivery order. The losing Contributions and Versions remain in History.
+Whole-payload replacement is one such durable command effect. It preserves the target InlineContent identity and
+atomically publishes the replacement Media Type, Media-Type-specific content, and required Origin effect. Under later
+replication, a causally later replacement supersedes replacements it observed and concurrent replacements select one
+deterministic current winner. That winner cannot depend on wall-clock time or delivery order. The losing Contributions
+and Versions remain in History.
 
-Several immutable Contributions can share a semantic group ID for History presentation. Grouping never changes their identities, Versions, or durability.
+Several immutable Contributions can share a semantic group ID for History presentation. Grouping never changes their
+identities, Versions, or durability.
 
-Command idempotency survives `.coedit` Save/Open. A successful `CommandId` exact retry returns the original receipt and emits no new Contribution or notification. Reuse of the same CommandId with different canonical request content is an error.
+Command idempotency survives `.coedit` Save/Open. A successful `CommandId` exact retry returns the original receipt and
+emits no new Contribution or notification. Reuse of the same CommandId with different canonical request content is an
+error.
 
 The implementation checks an existing successful CommandId before stale-base rejection.
 
@@ -294,7 +352,8 @@ A query that returns document state returns both:
 - the Version from which the value was materialized; and
 - the current engine frontier at which the selector/policy was evaluated.
 
-An edit derived from a current query uses the returned correlated token as its expected base. The UX must not issue a separate version read and assume it is atomic with the projection read.
+An edit derived from a current query uses the returned correlated token as its expected base. The UX must not issue a
+separate version read and assume it is atomic with the projection read.
 
 Initial query behavior supports:
 
@@ -310,13 +369,25 @@ Initial query behavior supports:
 
 Checkpoint Contributions are ordinary History entries with an exact resulting VersionToken.
 
-Historical materialization is detached and read-only. Restore always enters through a new command against the current Version.
+Historical materialization is detached and read-only. Restore always enters through a new command against the current
+Version.
 
 ## 6. Payload and editor-content boundary
 
-A query can return a detached InlineContent payload value sufficient for an application adapter to inspect the Media Type and render or replace the content without carrier access.
+A query can return a detached InlineContent payload value sufficient for an application adapter to inspect the Media
+Type and render or replace the content without carrier access.
 
-The public engine provides symmetric carrier-neutral raw/coarse media boundaries for replacement input and materialization output. Raw/coarse replacement supplies the complete replacement Media Type and raw media bytes and is available for every payload type; it can change both at once. Opaque bytes are stored exactly after validation. Allowlisted bytes are processed by the Step 4 Media-Type-aware processor into canonical collaborative state before atomic publication, and any processing failure preserves the previous payload. Raw/coarse materialization for an InlineContent at an explicit Version returns the preserved Media Type and media-representation bytes, not carrier state or the complete `.coedit` collaboration envelope. Opaque payloads return their exact stored bytes. Allowlisted fine-grained text is encoded from its native string according to the preserved Media Type and the processor capability selected in Step 4. Missing required representation metadata, an unsupported effective encoding, or text that cannot be represented exactly returns an explicit payload-media failure. Materialization is read-only and never rewrites the Media Type or document state. Exact public names remain illustrative until implementation freezes them.
+The public engine provides symmetric carrier-neutral raw/coarse media boundaries for replacement input and
+materialization output. Raw/coarse replacement supplies the complete replacement Media Type and raw media bytes and is
+available for every payload type; it can change both at once. Opaque bytes are stored exactly after validation.
+Allowlisted bytes are processed by the Step 4 Media-Type-aware processor into canonical collaborative state before
+atomic publication, and any processing failure preserves the previous payload. Raw/coarse materialization for an
+InlineContent at an explicit Version returns the preserved Media Type and media-representation bytes, not carrier state
+or the complete `.coedit` collaboration envelope. Opaque payloads return their exact stored bytes. Allowlisted
+fine-grained text is encoded from its native string according to the preserved Media Type and the processor capability
+selected in Step 4. Missing required representation metadata, an unsupported effective encoding, or text that cannot be
+represented exactly returns an explicit payload-media failure. Materialization is read-only and never rewrites the Media
+Type or document state. Exact public names remain illustrative until implementation freezes them.
 
 The fine-grained text editor boundary is specifically for allowlisted text. Conceptually:
 
@@ -329,19 +400,33 @@ interface CoeditTextEditorContentValue {
 }
 ```
 
-The value contains the exact supplied Media Type, the current native string, and detached protected Origin information required for correct attributed editing. It contains no engine-owned formatting, parsed Markdown, rendered tree, or document-level `HardBreak` value.
+The value contains the exact supplied Media Type, the current native string, and detached protected Origin information
+required for correct attributed editing. It contains no engine-owned formatting, parsed Markdown, rendered tree, or
+document-level `HardBreak` value.
 
-`DetachedTextOriginState` is a carrier-neutral public projection, not an opaque carrier token. For every live logical authored text unit in the returned string, the client must be able to determine its `OriginId` and inspect the corresponding immutable OriginRecord without private carrier access. The implementation can coalesce adjacent equal Origins into runs, provided the mapping remains exact and version-correlated with the returned text. Exact TypeScript shapes and text-coordinate representation remain illustrative until implementation freezes them.
+`DetachedTextOriginState` is a carrier-neutral public projection, not an opaque carrier token. For every live logical
+authored text unit in the returned string, the client must be able to determine its `OriginId` and inspect the
+corresponding immutable OriginRecord without private carrier access. The implementation can coalesce adjacent equal
+Origins into runs, provided the mapping remains exact and version-correlated with the returned text. Exact TypeScript
+shapes and text-coordinate representation remain illustrative until implementation freezes them.
 
-This MVP boundary does not define a per-text Contribution-run or `last modifier` projection. Contribution activity remains available through History listing and semantic changeset summaries. A finer modification-attribution projection requires a separate contract.
+This MVP boundary does not define a per-text Contribution-run or `last modifier` projection. Contribution activity
+remains available through History listing and semantic changeset summaries. A finer modification-attribution projection
+requires a separate contract.
 
-The application editor can parse or render the source string and can reconstruct or bind transient editor/carrier state from this value or a controlled engine session. Mutating detached local state does not mutate engine state. Requesting a text-editor session for an opaque payload fails explicitly or is not offered by the application.
+The application editor can parse or render the source string and can reconstruct or bind transient editor/carrier state
+from this value or a controlled engine session. Mutating detached local state does not mutate engine state. Requesting a
+text-editor session for an opaque payload fails explicitly or is not offered by the application.
 
-A durable fine-grained text commit must pass through `execute` and preserve the accepted atomic text-plus-Origin contract. The client can request ordinary editing intent but cannot assign arbitrary Origin or submit raw carrier updates.
+A durable fine-grained text commit must pass through `execute` and preserve the accepted atomic text-plus-Origin
+contract. The client can request ordinary editing intent but cannot assign arbitrary Origin or submit raw carrier
+updates.
 
-An opaque payload adapter receives detached bytes and payload metadata. It can request universal whole-payload replacement but receives no fine-grained opaque-payload mutation or raw carrier authority.
+An opaque payload adapter receives detached bytes and payload metadata. It can request universal whole-payload
+replacement but receives no fine-grained opaque-payload mutation or raw carrier authority.
 
-Do not expose a live engine-owned Y.Doc/Automerge object, an Origin mutation side channel, or a generic payload capability registry merely to support the collaborative-text and generic opaque capability classes.
+Do not expose a live engine-owned Y.Doc/Automerge object, an Origin mutation side channel, or a generic payload
+capability registry merely to support the collaborative-text and generic opaque capability classes.
 
 ## 7. Change notification contract
 
@@ -360,7 +445,8 @@ interface DocumentChanged {
 }
 ```
 
-The MVP need not emit the `remote` change source. Implementations can coalesce notifications. Failed commands and exact idempotent retries emit none.
+The MVP need not emit the `remote` change source. Implementations can coalesce notifications. Failed commands and exact
+idempotent retries emit none.
 
 ## 8. Required workflows
 
@@ -377,9 +463,13 @@ UX holds transient editor/composition state
   -> UX re-queries
 ```
 
-IME is not split mid-composition, and paste/cut/replacement/undo/redo are atomic editor actions. A renderer or editor can interpret text characters or structural operations as presentation breaks, but that interpretation does not add a hard-break entity to the document model. Idle/focus/mode boundaries seal semantic groups; they do not create a second durability ledger. A physical recovery checkpoint is not a semantic History Checkpoint.
+IME is not split mid-composition, and paste/cut/replacement/undo/redo are atomic editor actions. A renderer or editor
+can interpret text characters or structural operations as presentation breaks, but that interpretation does not add a
+hard-break entity to the document model. Idle/focus/mode boundaries seal semantic groups; they do not create a second
+durability ledger. A physical recovery checkpoint is not a semantic History Checkpoint.
 
-If a commit fails, canonical state is unchanged and the UX retains recoverable transient work or presents an explicit retry/discard path.
+If a commit fails, canonical state is unchanged and the UX retains recoverable transient work or presents an explicit
+retry/discard path.
 
 ### Whole-payload replacement
 
@@ -395,7 +485,10 @@ payload-aware client intent
   -> engine emits invalidation
 ```
 
-This workflow is available for every Media Type under the payload contract. It preserves InlineContent identity and can keep or change the Media Type atomically with the content and Origin effect. If validation or raw-media processing fails, canonical state is unchanged. Fine-grained opaque-payload mutation is not an MVP operation. Mixed replacement/text-edit concurrency remains a Gate B decision under `INLINE_CONTENT_PAYLOADS.md`.
+This workflow is available for every Media Type under the payload contract. It preserves InlineContent identity and can
+keep or change the Media Type atomically with the content and Origin effect. If validation or raw-media processing
+fails, canonical state is unchanged. Fine-grained opaque-payload mutation is not an MVP operation. Mixed
+replacement/text-edit concurrency remains a Gate B decision under `INLINE_CONTENT_PAYLOADS.md`.
 
 ### Semantic Checkpoint
 
@@ -418,7 +511,8 @@ Markdown bytes
   -> active session replaced only after success
 ```
 
-`MARKDOWN_INTERCHANGE.md` owns detailed rules. Markdown import initially creates allowlisted fine-grained text; it does not require an opaque payload interchange convention.
+`MARKDOWN_INTERCHANGE.md` owns detailed rules. Markdown import initially creates allowlisted fine-grained text; it does
+not require an opaque payload interchange convention.
 
 ### Markdown export
 
@@ -430,7 +524,9 @@ VersionToken + optional lens/subtree
   -> UX transports output
 ```
 
-For imported/canonical Markdown-representable allowlisted fine-grained text structures, export/re-import must satisfy the normalized Coedit round-trip invariant. Unsupported Media Types produce the focused Markdown non-representability behavior rather than being silently decoded as text.
+For imported/canonical Markdown-representable allowlisted fine-grained text structures, export/re-import must satisfy
+the normalized Coedit round-trip invariant. Unsupported Media Types produce the focused Markdown non-representability
+behavior rather than being silently decoded as text.
 
 ### `.coedit` Save and Open
 
@@ -448,66 +544,97 @@ Open validates into a candidate engine. Only a successful open replaces the acti
 
 ### Browser durability
 
-The browser composition root supplies an IndexedDB repository to the engine. Normal commits append immutable Contribution/effect records and advance a small compare-and-swap head in one short transaction. Periodic physical checkpoints bound recovery. Explicit `.coedit` serialization is not the autosave path.
+The browser composition root supplies an IndexedDB repository to the engine. Normal commits append immutable
+Contribution/effect records and advance a small compare-and-swap head in one short transaction. Periodic physical
+checkpoints bound recovery. Explicit `.coedit` serialization is not the autosave path.
 
-The UX uses StorageManager capabilities where available, reports quota/persistence status, retains retryable work after failure, and offers explicit `.coedit` backup. `BROWSER_PERSISTENCE.md` owns detailed behavior.
+The UX uses StorageManager capabilities where available, reports quota/persistence status, retains retryable work after
+failure, and offers explicit `.coedit` backup. `BROWSER_PERSISTENCE.md` owns detailed behavior.
 
 ## 9. Committed and transient state
 
 Serialization and export observe committed engine state.
 
-Before Save, export, navigation, restore, editor-owner transfer, or another operation that can invalidate active editor context, the UX must use the accepted controlled-transition policy: freeze, submit required work, drain required durable commands, then continue or expose a deliberate discard decision.
+Before Save, export, navigation, restore, editor-owner transfer, or another operation that can invalidate active editor
+context, the UX must use the accepted controlled-transition policy: freeze, submit required work, drain required durable
+commands, then continue or expose a deliberate discard decision.
 
-Selection, focus, disclosure, active lens, dialogs, presence, cursor state, retry UI, and unfinished input are transient unless a later feature explicitly makes them durable.
+Selection, focus, disclosure, active lens, dialogs, presence, cursor state, retry UI, and unfinished input are transient
+unless a later feature explicitly makes them durable.
 
 ## 10. History representation is private
 
 The public promise is:
 
-> Every Contribution can be listed and summarized. Every VersionToken can be materialized exactly and restored through the engine API for the lifetime of its document.
+> Every Contribution can be listed and summarized. Every VersionToken can be materialized exactly and restored through
+> the engine API for the lifetime of its document.
 
-A complete private snapshot per Contribution is acceptable only in bounded in-memory tests or an explicitly identified early prototype because it is simple to verify. It is not the Step 13 browser target, a public data type, or a long-term storage contract.
+A complete private snapshot per Contribution is acceptable only in bounded in-memory tests or an explicitly identified
+early prototype because it is simple to verify. It is not the Step 13 browser target, a public data type, or a long-term
+storage contract.
 
-The browser target uses immutable Contributions/effect chunks, periodic physical recovery checkpoints or cached materializations, and a small CAS head. The engine can change structural sharing, chunking, caches, indexes, checkpoint cadence, or compaction only if it preserves every Version and the text lineage needed by Range resolution. Physical snapshots create no product Versions.
+The browser target uses immutable Contributions/effect chunks, periodic physical recovery checkpoints or cached
+materializations, and a small CAS head. The engine can change structural sharing, chunking, caches, indexes, checkpoint
+cadence, or compaction only if it preserves every Version and the text lineage needed by Range resolution. Physical
+snapshots create no product Versions.
 
 ## 11. Compatibility with later consumers
 
-A future AI tool queries an explicit Version and submits typed attributed commands. AI content receives software-agent Origin according to the target payload contract; human acceptance is a separate Contribution. It has no privileged mutation or raw-carrier path.
+A future AI tool queries an explicit Version and submits typed attributed commands. AI content receives software-agent
+Origin according to the target payload contract; human acceptance is a separate Contribution. It has no privileged
+mutation or raw-carrier path.
 
-A future structured payload can initially use the same whole-payload replacement boundary without adding fine-grained CRDT operations. Additional payload-specific editing or content-local addressing requires an explicit focused contract.
+A future structured payload can initially use the same whole-payload replacement boundary without adding fine-grained
+CRDT operations. Additional payload-specific editing or content-local addressing requires an explicit focused contract.
 
-For collaboration, each UX talks to a local engine. Replication integrates remote work through private engine machinery and surfaces ordinary invalidation notifications.
+For collaboration, each UX talks to a local engine. Replication integrates remote work through private engine machinery
+and surfaces ordinary invalidation notifications.
 
-Product Contributions remain distinct from carrier transport effects. `COLLABORATION_MODEL.md` defines the later distributed constraints.
+Product Contributions remain distinct from carrier transport effects. `COLLABORATION_MODEL.md` defines the later
+distributed constraints.
 
 ## 12. MVP architecture verification
 
 The MVP must prove:
 
 - core commands, queries, History, and serialization require no React, file API, or IndexedDB;
-- allowlisted fine-grained text and representative opaque Media Types are explicit Media Types and no payload-specific operation silently coerces between them;
-- whole-payload replacement accepts raw media bytes for every payload type, succeeds for both the collaborative-text and generic opaque capability classes, preserves InlineContent identity, can keep or change Media Type, assigns the required Origin, processes allowlisted input before publication, and fails atomically;
-- concurrent whole-payload replacements choose the same deterministic winner on every replica with the same valid causal input, independent of arrival order and wall-clock time;
+- allowlisted fine-grained text and representative opaque Media Types are explicit Media Types and no payload-specific
+  operation silently coerces between them;
+- whole-payload replacement accepts raw media bytes for every payload type, succeeds for both the collaborative-text and
+  generic opaque capability classes, preserves InlineContent identity, can keep or change Media Type, assigns the
+  required Origin, processes allowlisted input before publication, and fails atomically;
+- concurrent whole-payload replacements choose the same deterministic winner on every replica with the same valid causal
+  input, independent of arrival order and wall-clock time;
 - every losing concurrent replacement remains represented by immutable History and exactly materializable Versions;
 - interactive text edits and Markdown import use the same validation, attribution, atomicity, and History boundary;
 - text and its fine-grained Origin cannot publish in mismatched state;
-- every live fine-grained text unit has one protected Origin, and ordinary text operations cannot spoof or alter existing Origin;
+- every live fine-grained text unit has one protected Origin, and ordinary text operations cannot spoof or alter
+  existing Origin;
 - each current opaque payload value has its required payload-level Origin;
-- copy and restore preserve Origin according to the payload contract while attributing their new Contributions to the acting Contributor;
+- copy and restore preserve Origin according to the payload contract while attributing their new Contributions to the
+  acting Contributor;
 - no Block or InlineContent boundary manufactures a character or textual separator;
-- line-feed, carriage-return, or another text character is not invalid merely because an application can present it as a break;
+- line-feed, carriage-return, or another text character is not invalid merely because an application can present it as a
+  break;
 - semantic Checkpoints publish one attributed Contribution and one content-identical Version;
 - historical materialization is exact, detached, and read-only;
-- the headless Range service accepts only allowlisted fine-grained text, records each Range's creation Version, rejects direct creation when any supplied target is unresolved or non-text, preserves arbitrary source order and multiplicity, resolves surviving spans in creation and lineage order, concatenates exact stored text without inferred separators, and never follows copied content;
+- the headless Range service accepts only allowlisted fine-grained text, records each Range's creation Version, rejects
+  direct creation when any supplied target is unresolved or non-text, preserves arbitrary source order and multiplicity,
+  resolves surviving spans in creation and lineage order, concatenates exact stored text without inferred separators,
+  and never follows copied content;
 - explicit rationalization merges only consecutive exact adjacency caused by a lineage merge;
-- best-effort parsing omits unresolved or ambiguous members without speculative rebinding, and document-relative serialization round trips each surviving member;
-- Range operations expose no live carrier object, document-wide holder registry, holder-specific fallback/reinjection policy, or universal opaque payload locator;
+- best-effort parsing omits unresolved or ambiguous members without speculative rebinding, and document-relative
+  serialization round trips each surviving member;
+- Range operations expose no live carrier object, document-wide holder registry, holder-specific fallback/reinjection
+  policy, or universal opaque payload locator;
 - editor-content and payload values are detached and cannot mutate engine state;
 - restore appends instead of rewinding;
 - `.coedit` serialization checks its expected Version;
 - a failed Save/Open does not claim success or replace the active engine;
-- `.coedit` round trip preserves Media Types, opaque payload bytes, Origins, current and historical behavior, and command idempotency;
+- `.coedit` round trip preserves Media Types, opaque payload bytes, Origins, current and historical behavior, and
+  command idempotency;
 - repository commit and CAS-head advancement are atomic, and failure publishes no partial in-memory state;
 - IndexedDB recovery, competing-tab conflict, quota denial, and explicit backup paths are verified;
-- Markdown imported documents satisfy the export/re-import normalized equivalence property for their allowlisted fine-grained text subset; and
+- Markdown imported documents satisfy the export/re-import normalized equivalence property for their allowlisted
+  fine-grained text subset; and
 - a different private History representation can pass the same public contract suite.

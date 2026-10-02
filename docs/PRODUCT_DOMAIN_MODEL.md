@@ -4,80 +4,112 @@
 
 **Clean-slate baseline:** 2026-08-25.
 
-This document defines the logical product ontology for Coedit. It defines what durable document concepts mean. It does not define the public engine API, implementation order, portable wire format, or replication protocol.
+This document defines the logical product ontology for Coedit. It defines what durable document concepts mean. It does
+not define the public engine API, implementation order, portable wire format, or replication protocol.
 
 Use these documents for those concerns:
 
 - [`MVP_CONTRACT.md`](MVP_CONTRACT.md) defines what the document-engine prototype must prove.
 - [`MVP_ARCHITECTURE.md`](MVP_ARCHITECTURE.md) defines component authority and the public engine boundary.
-- [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) defines cross-cutting capacity and resource semantics.
-- [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) defines InlineContent Media Types, universal whole-payload replacement, and payload convergence.
-- [`FINE_GRAINED_TEXT_AND_ORIGIN.md`](FINE_GRAINED_TEXT_AND_ORIGIN.md) defines detailed fine-grained text, Origin, clipboard, and Range-holder behavior.
-- [`RANGE_MODEL.md`](RANGE_MODEL.md) defines durable multi-span and positional Range behavior inside allowlisted fine-grained text payloads.
-- [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md) defines private MVP implementation contracts that are not owned by focused specifications.
+- [`CAPACITY_AND_PERFORMANCE_TARGETS.md`](CAPACITY_AND_PERFORMANCE_TARGETS.md) defines cross-cutting capacity and
+  resource semantics.
+- [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md) defines InlineContent Media Types, universal whole-payload
+  replacement, and payload convergence.
+- [`FINE_GRAINED_TEXT_AND_ORIGIN.md`](FINE_GRAINED_TEXT_AND_ORIGIN.md) defines detailed fine-grained text, Origin,
+  clipboard, and Range-holder behavior.
+- [`RANGE_MODEL.md`](RANGE_MODEL.md) defines durable multi-span and positional Range behavior inside allowlisted
+  fine-grained text payloads.
+- [`MVP_IMPLEMENTATION_SPEC.md`](MVP_IMPLEMENTATION_SPEC.md) defines private MVP implementation contracts that are not
+  owned by focused specifications.
 - [`MARKDOWN_INTERCHANGE.md`](MARKDOWN_INTERCHANGE.md) defines Markdown interchange semantics.
 - [`PORTABLE_DOCUMENT_FORMAT.md`](PORTABLE_DOCUMENT_FORMAT.md) defines the `.coedit` recovery format.
 - [`BROWSER_PERSISTENCE.md`](BROWSER_PERSISTENCE.md) defines the incremental browser repository and recovery contract.
 - [`../SCAFFOLDING_PLAN.md`](../SCAFFOLDING_PLAN.md) defines implementation order and phase gates.
 - [`COLLABORATION_MODEL.md`](COLLABORATION_MODEL.md) defines post-MVP replication constraints.
 
-The earlier product-domain snapshot remains on `tauri-experimental-orphan`. It is historical evidence. [`PRESERVED_BRANCH_RECONCILIATION.md`](PRESERVED_BRANCH_RECONCILIATION.md) records how material preserved decisions map to the current clean-slate direction.
+The earlier product-domain snapshot remains on `tauri-experimental-orphan`. It is historical evidence.
+[`PRESERVED_BRANCH_RECONCILIATION.md`](PRESERVED_BRANCH_RECONCILIATION.md) records how material preserved decisions map
+to the current clean-slate direction.
 
 ## 1. Product thesis
 
 Coedit should feel like one coherent document, not a tree database with an editor attached.
 
-An author should experience chapters, sections, paragraphs, list items, optional alternate content, History, comments, discussions, and later collaborator contributions as related material in one inspectable document. The hierarchy gives stable structure. The hierarchy must not dominate ordinary writing.
+An author should experience chapters, sections, paragraphs, list items, optional alternate content, History, comments,
+discussions, and later collaborator contributions as related material in one inspectable document. The hierarchy gives
+stable structure. The hierarchy must not dominate ordinary writing.
 
-The current MVP is a **document-engine prototype**. It validates the document model, editing boundary, History, projections, Markdown interchange, and durability. AI is not an MVP requirement. A later AI integration acts as an additional contributor through the same engine boundary as other clients.
+The current MVP is a **document-engine prototype**. It validates the document model, editing boundary, History,
+projections, Markdown interchange, and durability. AI is not an MVP requirement. A later AI integration acts as an
+additional contributor through the same engine boundary as other clients.
 
 ## 2. Product principles
 
 ### 2.1 The document is the primary object
 
-The user works with one document made of meaningful structural and content units. Internal records support that model. Internal records must not define the user experience.
+The user works with one document made of meaningful structural and content units. Internal records support that model.
+Internal records must not define the user experience.
 
 ### 2.2 Structure and content share one surface
 
-Outline navigation and manuscript rendering are projections of the same Blocks. A displayed heading and its outline label normally use the same selected InlineContent.
+Outline navigation and manuscript rendering are projections of the same Blocks. A displayed heading and its outline
+label normally use the same selected InlineContent.
 
-A Block or InlineContent boundary is structural. It does not itself insert a space, line break, paragraph break, or another textual separator. The application decides how structure is presented.
+A Block or InlineContent boundary is structural. It does not itself insert a space, line break, paragraph break, or
+another textual separator. The application decides how structure is presented.
 
 ### 2.3 The Block model is generic
 
-The structural core uses one recursive `Block` type. `Idea`, `Heading`, `Body`, `Paragraph`, and `Leaf` are not persisted entity types.
+The structural core uses one recursive `Block` type. `Idea`, `Heading`, `Body`, `Paragraph`, and `Leaf` are not
+persisted entity types.
 
-A Block can act as a document root, section, paragraph, list item, or grouping container because of its structural context. Its persisted type does not change with that role.
+A Block can act as a document root, section, paragraph, list item, or grouping container because of its structural
+context. Its persisted type does not change with that role.
 
 ### 2.4 History is first-class
 
-Each committed durable mutation creates one attributed Contribution. Historical Versions are inspectable without mutation. Restore creates a new compensating Contribution. Restore never deletes or rewinds History.
+Each committed durable mutation creates one attributed Contribution. Historical Versions are inspectable without
+mutation. Restore creates a new compensating Contribution. Restore never deletes or rewinds History.
 
 Earlier working and checkpointed states remain in History. They do not require parallel live copies.
 
 ### 2.5 Optional simultaneous contents are allowed
 
-A Block can contain zero, one, or several InlineContents. Several InlineContents are optional. The ordinary case can contain one.
+A Block can contain zero, one, or several InlineContents. Several InlineContents are optional. The ordinary case can
+contain one.
 
-Use several InlineContents only when several content values must coexist in one materialized Version, for example a main text and a maintained summary.
+Use several InlineContents only when several content values must coexist in one materialized Version, for example a main
+text and a maintained summary.
 
 ### 2.6 Contributors use one mutation boundary
 
-Human users, imports, automation, and later AI collaborators use the same durable command and Contribution boundary. No collaborator gets a privileged persistence path.
+Human users, imports, automation, and later AI collaborators use the same durable command and Contribution boundary. No
+collaborator gets a privileged persistence path.
 
 ### 2.7 Payload metadata follows its semantics
 
-`InlineContent` is payload-neutral at the document level. Media Types in the fine-grained allowlist use fine-grained text; all other accepted Media Type values initially use the generic opaque capability set.
+`InlineContent` is payload-neutral at the document level. Media Types in the fine-grained allowlist use fine-grained
+text; all other accepted Media Type values initially use the generic opaque capability set.
 
-Formatting and media syntax are application concerns. Fine-grained Origin provenance is protected metadata that travels with authored allowlisted text but never inherits from neighboring text. An opaque payload has one payload-level Origin for its current whole value. Comments are external records with repairable text targets. Ordinary selections are transient.
+Formatting and media syntax are application concerns. Fine-grained Origin provenance is protected metadata that travels
+with authored allowlisted text but never inherits from neighboring text. An opaque payload has one payload-level Origin
+for its current whole value. Comments are external records with repairable text targets. Ordinary selections are
+transient.
 
-Origin and Range lineage share atomic versioning with text where required. Comments, navigation, application links, and later durable reference holders can store or serialize the shared Range value for allowlisted fine-grained text without making Range a universal payload or provenance entity.
+Origin and Range lineage share atomic versioning with text where required. Comments, navigation, application links, and
+later durable reference holders can store or serialize the shared Range value for allowlisted fine-grained text without
+making Range a universal payload or provenance entity.
 
-Coedit has two independent attribution axes. Origin describes who or what created payload material; Contribution attribution describes who performed each durable semantic mutation. Payload material participates in both models. Structural state — Block and InlineContent existence, placement, ownership, ordering, tags, and child presentation — is attributable through Contributions but has no Origin. Trusted genesis construction is the deliberate exception: it creates the initial root before the first Contribution.
+Coedit has two independent attribution axes. Origin describes who or what created payload material; Contribution
+attribution describes who performed each durable semantic mutation. Payload material participates in both models.
+Structural state — Block and InlineContent existence, placement, ownership, ordering, tags, and child presentation — is
+attributable through Contributions but has no Origin. Trusted genesis construction is the deliberate exception: it
+creates the initial root before the first Contribution.
 
 ### 2.8 Presentation is a projection
 
-Lens selection, historical selection, pane layout, disclosure, focus, navigation, textual separators, and content rendering are presentation state unless the product explicitly makes one of them durable document material.
+Lens selection, historical selection, pane layout, disclosure, focus, navigation, textual separators, and content
+rendering are presentation state unless the product explicitly makes one of them durable document material.
 
 ## 3. Core structural model
 
@@ -122,15 +154,22 @@ OriginRecord
   source and derivation references when applicable
 ```
 
-`InlineContent` is the independently addressable content entity owned by a Block. It owns identity, tags, and one Media-Type-labelled collaborative payload.
+`InlineContent` is the independently addressable content entity owned by a Block. It owns identity, tags, and one
+Media-Type-labelled collaborative payload.
 
-The payload has no independent product identity, tags, lifecycle, or sharing relationship. A storage implementation can index carrier state by `InlineContentId`, but that index does not create another domain entity.
+The payload has no independent product identity, tags, lifecycle, or sharing relationship. A storage implementation can
+index carrier state by `InlineContentId`, but that index does not create another domain entity.
 
-The document model does not interpret payload text or bytes. Payload-specific contracts define valid fine-grained operations. Every Media Type supports whole-payload replacement through the engine boundary and must converge under replication.
+The document model does not interpret payload text or bytes. Payload-specific contracts define valid fine-grained
+operations. Every Media Type supports whole-payload replacement through the engine boundary and must converge under
+replication.
 
-There is no current `BlockContent` entity. The preserved experimental branch used `BlockContent` as a separate identity layer. On `main`, `InlineContent` owns that identity and those tags directly.
+There is no current `BlockContent` entity. The preserved experimental branch used `BlockContent` as a separate identity
+layer. On `main`, `InlineContent` owns that identity and those tags directly.
 
-Blocks and InlineContents do not initially contain `createdAt`, `updatedAt`, `deletedAt`, or tombstone fields. Contributions and historical Versions record lifecycle and recovery. Private storage or future replication can retain physical tombstones or causal data without adding them to the logical live entities.
+Blocks and InlineContents do not initially contain `createdAt`, `updatedAt`, `deletedAt`, or tombstone fields.
+Contributions and historical Versions record lifecycle and recovery. Private storage or future replication can retain
+physical tombstones or causal data without adding them to the logical live entities.
 
 ### 3.2 Root and ownership invariants
 
@@ -143,23 +182,35 @@ The clean-slate model requires these invariants:
 5. Each InlineContent ID is unique within the document.
 6. Each InlineContent belongs to exactly one Block.
 7. Each InlineContent owns exactly one Media-Type-labelled payload.
-8. Every InlineContent payload supports atomic whole-payload replacement that preserves InlineContent identity and can keep or change the Media Type, with explicit Origin behavior.
-9. An allowlisted fine-grained text payload owns its native source string and fine-grained Origin metadata as canonical collaborative state.
-10. A payload using the generic opaque capability set owns exact bytes and one payload-level Origin for its current value.
+8. Every InlineContent payload supports atomic whole-payload replacement that preserves InlineContent identity and can
+   keep or change the Media Type, with explicit Origin behavior.
+9. An allowlisted fine-grained text payload owns its native source string and fine-grained Origin metadata as canonical
+   collaborative state.
+10. A payload using the generic opaque capability set owns exact bytes and one payload-level Origin for its current
+    value.
 11. Sibling order is the order of the parent's `children` vector.
 12. InlineContent order is the order of the Block's `contents` vector.
 13. The live Block tree contains no cycle.
 14. Crossing a Block or InlineContent boundary implies no textual separator.
 
-These invariants do not impose finite document-size, tag-size, payload-size, or tree-depth maxima. `CAPACITY_AND_PERFORMANCE_TARGETS.md` controls capacity semantics, and focused payload/implementation contracts own current boundary behavior.
+These invariants do not impose finite document-size, tag-size, payload-size, or tree-depth maxima.
+`CAPACITY_AND_PERFORMANCE_TARGETS.md` controls capacity semantics, and focused payload/implementation contracts own
+current boundary behavior.
 
-All durable user-created and domain entity identities use canonical lowercase UUID-v4 values. Trusted construction or application code allocates them; pure structural reducers never generate identities. The Step 2 domain rejects duplicate Block and InlineContent IDs in the live structure but keeps no lifetime-ID registry. Once History exists, it rejects reuse of an identity across retained lifetimes, and portable validation enforces the same rule when opening a document.
+All durable user-created and domain entity identities use canonical lowercase UUID-v4 values. Trusted construction or
+application code allocates them; pure structural reducers never generate identities. The Step 2 domain rejects duplicate
+Block and InlineContent IDs in the live structure but keeps no lifetime-ID registry. Once History exists, it rejects
+reuse of an identity across retained lifetimes, and portable validation enforces the same rule when opening a document.
 
-Document/genesis construction creates the one real root through a trusted factory such as `createEmptyDocument(...)`. Root construction is not a structural mutation, and `CreateBlock` always creates a non-root child under a real parent. Genesis includes the initial root but no Contribution; the first successful user mutation creates the first Contribution.
+Document/genesis construction creates the one real root through a trusted factory such as `createEmptyDocument(...)`.
+Root construction is not a structural mutation, and `CreateBlock` always creates a non-root child under a real parent.
+Genesis includes the initial root but no Contribution; the first successful user mutation creates the first
+Contribution.
 
 ### 3.3 Content role is contextual
 
-A Block does not persist a heading/body/list-item role. Incoming structural context and the selected InlineContent payload determine how content renders.
+A Block does not persist a heading/body/list-item role. Incoming structural context and the selected InlineContent
+payload determine how content renders.
 
 The initial writing application renders selected allowlisted fine-grained text payloads with this precedence:
 
@@ -169,13 +220,15 @@ The initial writing application renders selected allowlisted fine-grained text p
 4. selected content on a child of `bullets` or `numbers` renders as a list item; and
 5. a contentless Block renders no content of its own.
 
-These rules select application presentation. They do not manufacture characters inside the payload. A future opaque-payload renderer can use the same structural context without redefining Block ontology.
+These rules select application presentation. They do not manufacture characters inside the payload. A future
+opaque-payload renderer can use the same structural context without redefining Block ontology.
 
 A contentful Block can also own children. Its `childrenPresentation` controls how those children render.
 
 ### 3.4 Child presentation belongs to the parent
 
-`childrenPresentation` describes the relationship between a parent and its direct children. The initial closed vocabulary is:
+`childrenPresentation` describes the relationship between a parent and its direct children. The initial closed
+vocabulary is:
 
 ```text
 sections
@@ -188,29 +241,41 @@ The same Block type supports all four cases. Do not create separate structural e
 
 ### 3.5 Contentless Blocks are transparent groups
 
-A non-root Block with no InlineContents is a transparent grouping Block. It emits no heading, prose, list-item text, or other payload of its own. Its children render according to its `childrenPresentation`.
+A non-root Block with no InlineContents is a transparent grouping Block. It emits no heading, prose, list-item text, or
+other payload of its own. Its children render according to its `childrenPresentation`.
 
-An authored but empty section or list item normally owns one empty allowlisted fine-grained text InlineContent. This preserves the distinction between an empty authored unit and a structural grouping container without making emptiness or textual separators structural characters.
+An authored but empty section or list item normally owns one empty allowlisted fine-grained text InlineContent. This
+preserves the distinction between an empty authored unit and a structural grouping container without making emptiness or
+textual separators structural characters.
 
 ### 3.6 Introductory prose uses child flow
 
-A section heading belongs to the section Block. Introductory body material below that heading is represented by child Blocks in `flow` presentation.
+A section heading belongs to the section Block. Introductory body material below that heading is represented by child
+Blocks in `flow` presentation.
 
-When one section contains both body material and subsections, transparent grouping Blocks can keep the two child relationships explicit. `MARKDOWN_INTERCHANGE.md` defines the canonical Markdown construction rule.
+When one section contains both body material and subsections, transparent grouping Blocks can keep the two child
+relationships explicit. `MARKDOWN_INTERCHANGE.md` defines the canonical Markdown construction rule.
 
 ## 4. InlineContent payloads and collaborative text
 
 ### 4.1 InlineContent is the selectable content identity
 
-`InlineContent` provides the identity required for editing, tags, payload Origin, copies, optional simultaneous representations, and payload-specific durable references where supported.
+`InlineContent` provides the identity required for editing, tags, payload Origin, copies, optional simultaneous
+representations, and payload-specific durable references where supported.
 
-Most Blocks can contain one InlineContent. Zero contents are valid for grouping Blocks. Additional InlineContents exist only when the product needs simultaneous material.
+Most Blocks can contain one InlineContent. Zero contents are valid for grouping Blocks. Additional InlineContents exist
+only when the product needs simultaneous material.
 
-During Step 2, `InlineContentValue` is typed and opaque to structural code. Structural operations can create, move, tag, reorder, and delete InlineContents without inspecting payload internals. Step 3 qualifies the candidate carriers against allowlisted fine-grained text plus representative generic opaque Media Types, including `application/octet-stream`. Step 4 implements that behavior with the selected carrier. No intermediate step creates partially valid attributed text or interprets opaque payload bytes.
+During Step 2, `InlineContentValue` is typed and opaque to structural code. Structural operations can create, move, tag,
+reorder, and delete InlineContents without inspecting payload internals. Step 3 qualifies the candidate carriers against
+allowlisted fine-grained text plus representative generic opaque Media Types, including `application/octet-stream`. Step
+4 implements that behavior with the selected carrier. No intermediate step creates partially valid attributed text or
+interprets opaque payload bytes.
 
 ### 4.2 No mandatory content role enum
 
-InlineContent does not require `ContentForm`, `ContentStage`, `ContentRole`, `Primary`, `Summary`, `Working`, `Accepted`, or `Checkpoint` fields.
+InlineContent does not require `ContentForm`, `ContentStage`, `ContentRole`, `Primary`, `Summary`, `Working`,
+`Accepted`, or `Checkpoint` fields.
 
 The application expresses product conventions with namespaced tags, lens rules, Media Type, and History Contributions.
 
@@ -229,55 +294,92 @@ History kind:      checkpoint
 
 Block tags and InlineContent tags use the same normalization rules. Their ownership is independent.
 
-A Block tag describes the semantic structural unit across its contents. An InlineContent tag describes one specific content value. Tags do not inherit or synchronize automatically between these owners.
+A Block tag describes the semantic structural unit across its contents. An InlineContent tag describes one specific
+content value. Tags do not inherit or synchronize automatically between these owners.
 
 ### 4.4 Media Type is explicit
 
-Each InlineContent owns one payload labelled with an Internet Media Type. `INLINE_CONTENT_PAYLOADS.md` owns the detailed rules.
+Each InlineContent owns one payload labelled with an Internet Media Type. `INLINE_CONTENT_PAYLOADS.md` owns the detailed
+rules.
 
-The Media Type is part of the current payload value, not the InlineContent identity. Whole-payload replacement preserves the InlineContent identity while atomically replacing the Media Type and Media-Type-specific content; the replacement can keep or change the Media Type. Any application-level conversion semantics remain an adapter concern; the document model needs no separate conversion operation.
+The Media Type is part of the current payload value, not the InlineContent identity. Whole-payload replacement preserves
+the InlineContent identity while atomically replacing the Media Type and Media-Type-specific content; the replacement
+can keep or change the Media Type. Any application-level conversion semantics remain an adapter concern; the document
+model needs no separate conversion operation.
 
-Every payload supports atomic whole-payload replacement. Media-Type-specific contracts can expose additional fine-grained operations. Allowlisted fine-grained text does; all other accepted Media Type values initially use the generic opaque capability set.
+Every payload supports atomic whole-payload replacement. Media-Type-specific contracts can expose additional
+fine-grained operations. Allowlisted fine-grained text does; all other accepted Media Type values initially use the
+generic opaque capability set.
 
-Concurrent whole-payload replacements converge deterministically. Causally later replacements supersede observed replacements. Concurrent replacements choose one deterministic current winner without using packet arrival order or wall-clock time. Losing replacements remain in immutable History and their Versions remain materializable.
+Concurrent whole-payload replacements converge deterministically. Causally later replacements supersede observed
+replacements. Concurrent replacements choose one deterministic current winner without using packet arrival order or
+wall-clock time. Losing replacements remain in immutable History and their Versions remain materializable.
 
 ### 4.5 Allowlisted fine-grained text is canonical source text
 
-An allowlisted fine-grained text payload stores a native source string plus protected fine-grained Origin. For `text/markdown`, the string is Markdown source. For `text/plain`, it is plain source text. The engine does not parse, render, or normalize application syntax merely because a Media Type is allowlisted.
+An allowlisted fine-grained text payload stores a native source string plus protected fine-grained Origin. For
+`text/markdown`, the string is Markdown source. For `text/plain`, it is plain source text. The engine does not parse,
+render, or normalize application syntax merely because a Media Type is allowlisted.
 
-There is no document-level `HardBreak` content item. Line-feed, carriage-return, delimiters, and other characters are text data. Block and InlineContent boundaries add no character.
+There is no document-level `HardBreak` content item. Line-feed, carriage-return, delimiters, and other characters are
+text data. Block and InlineContent boundaries add no character.
 
-Formatting, Markdown parsing/rendering, list interpretation, and link interpretation belong to application adapters. A Markdown application can consume recognized structural syntax into the Block tree while leaving inline or unrecognized syntax in the payload string. It can serialize a Coedit Range into a Markdown URL if that application convention is useful. None of these interpretations creates an engine-owned formatting or link object.
+Formatting, Markdown parsing/rendering, list interpretation, and link interpretation belong to application adapters. A
+Markdown application can consume recognized structural syntax into the Block tree while leaving inline or unrecognized
+syntax in the payload string. It can serialize a Coedit Range into a Markdown URL if that application convention is
+useful. None of these interpretations creates an engine-owned formatting or link object.
 
-The carrier is private behind the document engine. Yjs stable v13 is the provisional implementation default, not a public domain type. The Elaboration carrier gate compares it with Automerge before carrier-dependent implementation and portable encoding are frozen.
+The carrier is private behind the document engine. Yjs stable v13 is the provisional implementation default, not a
+public domain type. The Elaboration carrier gate compares it with Automerge before carrier-dependent implementation and
+portable encoding are frozen.
 
 ### 4.6 Origin follows payload semantics
 
-Origin identifies the human, imported source, automation, AI/software agent, or unknown source that created logical payload material. It is distinct from the Contributor who later copies, moves, pastes, replaces, or restores that material. Origin is a payload-material concept, not a property of Block or InlineContent structure.
+Origin identifies the human, imported source, automation, AI/software agent, or unknown source that created logical
+payload material. It is distinct from the Contributor who later copies, moves, pastes, replaces, or restores that
+material. Origin is a payload-material concept, not a property of Block or InlineContent structure.
 
-In allowlisted fine-grained text, newly inserted material receives explicit fine-grained Origin and never inherits Origin from adjacent text. A query or renderer can coalesce adjacent equal origins into display spans, but those spans are not durable `RangeAnnotation<Provenance>` entities.
+In allowlisted fine-grained text, newly inserted material receives explicit fine-grained Origin and never inherits
+Origin from adjacent text. A query or renderer can coalesce adjacent equal origins into display spans, but those spans
+are not durable `RangeAnnotation<Provenance>` entities.
 
-For every Media Type using the generic opaque capability set, the current whole payload has one Origin. Whole-payload replacement supplies the new payload Origin. A future structured payload can define finer Origin granularity only through its own payload contract.
+For every Media Type using the generic opaque capability set, the current whole payload has one Origin. Whole-payload
+replacement supplies the new payload Origin. A future structured payload can define finer Origin granularity only
+through its own payload contract.
 
 There is no `restored` origin kind. Restore is an activity, not an authorship category.
 
 ### 4.7 Copy and move preserve different identities
 
-Moving a Block or reordering an InlineContent preserves the InlineContent identity, Media Type, complete payload state, and Origins.
+Moving a Block or reordering an InlineContent preserves the InlineContent identity, Media Type, complete payload state,
+and Origins.
 
-Copying an InlineContent entity creates a new InlineContent ID and new carrier item identities where the payload has such identities. Same-document copy preserves the source Media Type and Origin according to the payload contract and records a copy Contribution with source/derivation references.
+Copying an InlineContent entity creates a new InlineContent ID and new carrier item identities where the payload has
+such identities. Same-document copy preserves the source Media Type and Origin according to the payload contract and
+records a copy Contribution with source/derivation references.
 
-Ordinary allowlisted fine-grained text copy/paste inserts text into the target InlineContent. It does not transfer the source InlineContent identity. A validated private Coedit clipboard representation preserves same-document Origins; ordinary external HTML or plain text receives imported or unknown Origin and never manufactures authorship for the paster.
+Ordinary allowlisted fine-grained text copy/paste inserts text into the target InlineContent. It does not transfer the
+source InlineContent identity. A validated private Coedit clipboard representation preserves same-document Origins;
+ordinary external HTML or plain text receives imported or unknown Origin and never manufactures authorship for the
+paster.
 
 Generic opaque copy and restore operate at whole-payload granularity under the initial contract.
 
 ### 4.8 Durable Range references are allowlisted fine-grained text values
 
-A Range is a document-relative durable semantic reference value supplied and resolved by the document engine for allowlisted fine-grained text. It records a document-scoped creation Version and the original Block and InlineContent location of each source member. It is not an independently identified product entity, document-owned registry entry, formatting annotation, provenance record, or universal payload locator.
+A Range is a document-relative durable semantic reference value supplied and resolved by the document engine for
+allowlisted fine-grained text. It records a document-scoped creation Version and the original Block and InlineContent
+location of each source member. It is not an independently identified product entity, document-owned registry entry,
+formatting annotation, provenance record, or universal payload locator.
 
-A Range can be stored outside the document, as with a future comment, or serialized by an application into a URL, Markdown link destination, navigation record, or other holder. A Span Range preserves its source members in creation order without sorting, merging, or deduplication. Its members follow movement, split, and merge lineage but not copy lineage. A Positional Range refers to one logical text position and remains distinct from a zero-length Span. `RANGE_MODEL.md` owns their detailed behavior and staged representation decision.
+A Range can be stored outside the document, as with a future comment, or serialized by an application into a URL,
+Markdown link destination, navigation record, or other holder. A Span Range preserves its source members in creation
+order without sorting, merging, or deduplication. Its members follow movement, split, and merge lineage but not copy
+lineage. A Positional Range refers to one logical text position and remains distinct from a zero-length Span.
+`RANGE_MODEL.md` owns their detailed behavior and staged representation decision.
 
-An opaque InlineContent remains addressable by its `InlineContentId`, but the current Range service does not address subregions inside opaque payload bytes.
+An opaque InlineContent remains addressable by its `InlineContentId`, but the current Range service does not address
+subregions inside opaque payload bytes.
 
 ## 5. History, Versions, Contributions, and Checkpoints
 
@@ -285,29 +387,39 @@ An opaque InlineContent remains addressable by its `InlineContentId`, but the cu
 
 Use these terms consistently:
 
-- **Contribution:** one immutable, attributed durable semantic activity, including its acting Contributor, base/frontier, kind, optional semantic group, exact effect reference, affected targets, and optional source/derivation references.
+- **Contribution:** one immutable, attributed durable semantic activity, including its acting Contributor,
+  base/frontier, kind, optional semantic group, exact effect reference, affected targets, and optional source/derivation
+  references.
 - **Version:** one materializable state of the document.
 - **History:** immutable Contributions and permanently materializable Versions for the lifetime of the document.
 - **VersionToken:** the opaque public identifier for a Version.
-- **Checkpoint:** one semantic Contribution that marks an exact point in History and produces a new content-identical Version.
+- **Checkpoint:** one semantic Contribution that marks an exact point in History and produces a new content-identical
+  Version.
 
-The private MVP can implement a linear revision ledger and use complete snapshots in bounded tests or an identified early prototype. The browser target uses immutable effects plus periodic physical recovery checkpoints or cached materializations. These private optimizations do not create product Versions and cannot make an existing Version unavailable.
+The private MVP can implement a linear revision ledger and use complete snapshots in bounded tests or an identified
+early prototype. The browser target uses immutable effects plus periodic physical recovery checkpoints or cached
+materializations. These private optimizations do not create product Versions and cannot make an existing Version
+unavailable.
 
 Semantic editor groups and physical recovery checkpoints are not semantic Checkpoints.
 
 ### 5.2 Historical state is read-only
 
-Historical materialization returns detached, read-only state. Entering or leaving historical viewing does not mutate the current Version.
+Historical materialization returns detached, read-only state. Entering or leaving historical viewing does not mutate the
+current Version.
 
-Restore creates a new Contribution from the current Version to material that matches the selected historical target according to the engine restore contract.
+Restore creates a new Contribution from the current Version to material that matches the selected historical target
+according to the engine restore contract.
 
 ### 5.3 Checkpoints are Version-producing Contributions
 
 A Checkpoint is a first-class durable interaction. It is not a mutable tag or pointer attached outside History.
 
-Creating a Checkpoint records who created it, its causal/base Version, and its place in History. The Checkpoint Contribution produces a new Version whose document material is identical to its base Version.
+Creating a Checkpoint records who created it, its causal/base Version, and its place in History. The Checkpoint
+Contribution produces a new Version whose document material is identical to its base Version.
 
-A Checkpoint does not mean final, published, approved, or immutable. A document can contain zero, one, or many Checkpoints.
+A Checkpoint does not mean final, published, approved, or immutable. A document can contain zero, one, or many
+Checkpoints.
 
 ### 5.4 History and simultaneous contents are different
 
@@ -328,7 +440,8 @@ The initial model allows a lens to:
 - select a subtree; and
 - add later overlays without changing the underlying document.
 
-Within one materialized Version, initial lenses preserve the complete Block tree. A lens does not silently reparent Blocks.
+Within one materialized Version, initial lenses preserve the complete Block tree. A lens does not silently reparent
+Blocks.
 
 Initial content selection is:
 
@@ -343,27 +456,41 @@ Lens selection is transient UI state unless a later feature explicitly makes a n
 
 Markdown is an interchange format, not a native recovery representation.
 
-For each successfully imported Markdown document, export and re-import must preserve the normalized Coedit structure and semantic allowlisted fine-grained text content defined in `MARKDOWN_INTERCHANGE.md`.
+For each successfully imported Markdown document, export and re-import must preserve the normalized Coedit structure and
+semantic allowlisted fine-grained text content defined in `MARKDOWN_INTERCHANGE.md`.
 
-This requirement does not mean that every arbitrary Coedit tree or Media Type is exactly representable in Markdown. Non-representable constructs, including opaque payloads unless an application-level Markdown representation is later defined, must produce explicit export diagnostics.
+This requirement does not mean that every arbitrary Coedit tree or Media Type is exactly representable in Markdown.
+Non-representable constructs, including opaque payloads unless an application-level Markdown representation is later
+defined, must produce explicit export diagnostics.
 
 ## 8. Comments, conversations, and provenance
 
-Minimum allowlisted fine-grained text Origin and its copy/restore invariants and opaque-payload Origin are part of the content foundation. Production provenance visualization, analytics, retention policy, authenticated claims, and signing remain later product phases.
+Minimum allowlisted fine-grained text Origin and its copy/restore invariants and opaque-payload Origin are part of the
+content foundation. Production provenance visualization, analytics, retention policy, authenticated claims, and signing
+remain later product phases.
 
-Comments and durable conversations are typed external records that can hold a Range value plus comment-specific attachment and repair state for allowlisted fine-grained text. They are not disguised manuscript Blocks, InlineContents, or Range entities. They never silently reattach to an uncertain match.
+Comments and durable conversations are typed external records that can hold a Range value plus comment-specific
+attachment and repair state for allowlisted fine-grained text. They are not disguised manuscript Blocks, InlineContents,
+or Range entities. They never silently reattach to an uncertain match.
 
-Comments are a primary durable use case for a target outside authored text. Applications can also serialize the same Range value into links or navigation metadata and define their own fallback behavior. Ordinary selections and remote cursors remain transient. `RANGE_MODEL.md` owns text Range behavior.
+Comments are a primary durable use case for a target outside authored text. Applications can also serialize the same
+Range value into links or navigation metadata and define their own fallback behavior. Ordinary selections and remote
+cursors remain transient. `RANGE_MODEL.md` owns text Range behavior.
 
 ## 9. Contributor model and future AI collaboration
 
-Contributor identity is durable agent attribution identity. It is separate from a UI session, security principal, replica/device, network connection, or carrier client ID.
+Contributor identity is durable agent attribution identity. It is separate from a UI session, security principal,
+replica/device, network connection, or carrier client ID.
 
-The domain allows contributor kinds such as human, imported, unknown, automation, and AI. The strict MVP needs human plus imported/unknown attribution.
+The domain allows contributor kinds such as human, imported, unknown, automation, and AI. The strict MVP needs human
+plus imported/unknown attribution.
 
-For MVP bootstrap, the UX can request a free-form human display name before document-session creation. This does not imply an account or persistent user-profile model.
+For MVP bootstrap, the UX can request a free-form human display name before document-session creation. This does not
+imply an account or persistent user-profile model.
 
-A later AI collaborator queries explicit Versions and submits ordinary typed commands. AI-originated content is attributed to the software agent. Human acceptance is a separate Contribution and does not reattribute that content to the human. AI does not get direct private-storage or live-carrier access.
+A later AI collaborator queries explicit Versions and submits ordinary typed commands. AI-originated content is
+attributed to the software agent. Human acceptance is a separate Contribution and does not reattribute that content to
+the human. AI does not get direct private-storage or live-carrier access.
 
 ## 10. Workspace composition
 
@@ -380,7 +507,9 @@ materialized Version
 
 The product can show several projections at the same time. No fixed pane layout is a domain requirement.
 
-Only one allowlisted fine-grained text InlineContent needs to own active text editor machinery at one time in the initial browser implementation. An opaque payload can use a different application adapter without changing the document ontology.
+Only one allowlisted fine-grained text InlineContent needs to own active text editor machinery at one time in the
+initial browser implementation. An opaque payload can use a different application adapter without changing the document
+ontology.
 
 ## 11. Recorded clean-slate decisions
 
@@ -413,13 +542,15 @@ The current ontology requires:
 25. detached read-only historical viewing;
 26. append-only compensating restore;
 27. Contribution-level MVP activity attribution;
-28. protected, non-inheriting fine-grained text Origin and payload-level opaque-payload Origin, both distinct from Contribution actor;
+28. protected, non-inheriting fine-grained text Origin and payload-level opaque-payload Origin, both distinct from
+    Contribution actor;
 29. origin-preserving copy and restore with separate operation derivation;
 30. external repairable text targets for comments rather than formatting or provenance;
 31. transient ordinary selections and presence;
 32. one shared Block spine for initial lenses within a Version;
 33. one logical collaborative document per Coedit document by default, hidden behind the engine;
-34. Range as a durable allowlisted fine-grained text value and engine service rather than a canonical entity or registry;
+34. Range as a durable allowlisted fine-grained text value and engine service rather than a canonical entity or
+    registry;
 35. direct one-span and multi-span Range creation;
 36. greedy Span Ranges and Block-local preceding-sticky Positional Ranges;
 37. Range resolution in creation and lineage order, independent of current Block tree order;
@@ -430,18 +561,24 @@ The current ontology requires:
 
 ## 12. Open questions
 
-No product-domain question blocks the completed Steps 1 and 2. Step 3 compares Yjs v13 with Automerge and Gate B records the carrier selection under the Media-Type-labelled payload contract. Step 6 owns the separate durable fine-grained text Range implementation and Gate C records the Range API and lineage-representation decisions. Gate B also closes the explicitly deferred mixed replacement/text-edit semantics. These gates do not permit an adapter to change accepted Range behavior.
+No product-domain question blocks the completed Steps 1 and 2. Step 3 compares Yjs v13 with Automerge and Gate B records
+the carrier selection under the Media-Type-labelled payload contract. Step 6 owns the separate durable fine-grained text
+Range implementation and Gate C records the Range API and lineage-representation decisions. Gate B also closes the
+explicitly deferred mixed replacement/text-edit semantics. These gates do not permit an adapter to change accepted Range
+behavior.
 
 Remaining decisions include:
 
 - mixed whole-payload replacement/text-edit concurrency, selected at Gate B under `INLINE_CONTENT_PAYLOADS.md`;
-- additional fine-grained Media-Type-specific operation contracts; accepted unfamiliar Media Type values already use generic opaque handling;
+- additional fine-grained Media-Type-specific operation contracts; accepted unfamiliar Media Type values already use
+  generic opaque handling;
 - content-local addressing for future non-text payloads;
 - provenance visualization, retention, anonymization, and signed-claim policy;
 - exact comment repair confidence and conversation target scopes;
 - comment-specific multi-span repair and presentation policy;
 - post-genesis Contributor registration;
-- physical History compaction and collaborative-text garbage collection that preserve every Version and required Range lineage;
+- physical History compaction and collaborative-text garbage collection that preserve every Version and required Range
+  lineage;
 - durable named lenses;
 - simultaneous independently editable outlines;
 - the exact concurrent Block-tree algorithm or relay-coordination policy;
@@ -466,18 +603,31 @@ A future design is compatible with this domain direction only if it preserves th
 10. Every payload can be replaced atomically and converges under replicated replacement.
 11. formatting and media-syntax interpretation remain application concerns rather than engine state.
 12. AI can be added later through the ordinary mutation boundary.
-13. Content Origin remains distinct from Contribution activity and survives copy and restore according to the payload contract.
+13. Content Origin remains distinct from Contribution activity and survives copy and restore according to the payload
+    contract.
 14. Local portability, verification, and recovery remain product constraints.
 15. UI layout, structural separators, and transient navigation do not leak into durable payload state by accident.
 16. Private implementation choices do not become product concepts without an explicit decision.
-17. Durable text Range references preserve creation and lineage order and holder independence without creating a document-wide registry or universal opaque payload locator.
+17. Durable text Range references preserve creation and lineage order and holder independence without creating a
+    document-wide registry or universal opaque payload locator.
 
 ## 14. Summary
 
-The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule, optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and one collaborative payload labelled with an Internet Media Type. allowlisted fine-grained text has native-string collaboration, protected Origin, and text Range capabilities. Every other accepted Media Type value initially uses the generic opaque capability set with exact bytes and payload-level Origin. Every payload supports atomic whole-payload replacement and deterministic convergence.
+The central structural object is one recursive Block. Each Block owns semantic tags, a direct-child presentation rule,
+optional InlineContents, and ordered child Blocks. Each InlineContent owns identity, tags, and one collaborative payload
+labelled with an Internet Media Type. allowlisted fine-grained text has native-string collaboration, protected Origin,
+and text Range capabilities. Every other accepted Media Type value initially uses the generic opaque capability set with
+exact bytes and payload-level Origin. Every payload supports atomic whole-payload replacement and deterministic
+convergence.
 
-Block and InlineContent boundaries are structural and imply no textual separator. Application adapters decide how content and structure are presented.
+Block and InlineContent boundaries are structural and imply no textual separator. Application adapters decide how
+content and structure are presented.
 
-History preserves every Version for the lifetime of its document. Semantic Checkpoints are ordinary attributed Contributions that create content-identical Versions; private materialization snapshots are only an optimization. The headless engine supplies document-relative durable multi-span and positional Range values for allowlisted fine-grained text without adding a Range entity or registry. Markdown is reversible interchange for the canonical imported text subset. `.coedit` is lossless recovery.
+History preserves every Version for the lifetime of its document. Semantic Checkpoints are ordinary attributed
+Contributions that create content-identical Versions; private materialization snapshots are only an optimization. The
+headless engine supplies document-relative durable multi-span and positional Range values for allowlisted fine-grained
+text without adding a Range entity or registry. Markdown is reversible interchange for the canonical imported text
+subset. `.coedit` is lossless recovery.
 
-The MVP is a document-engine prototype. It qualifies and preserves minimum Origin semantics without requiring a provenance UI, comments product, AI provider, networking, Tauri, Rust, or SQLite.
+The MVP is a document-engine prototype. It qualifies and preserves minimum Origin semantics without requiring a
+provenance UI, comments product, AI provider, networking, Tauri, Rust, or SQLite.
