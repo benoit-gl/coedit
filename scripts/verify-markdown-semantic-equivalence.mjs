@@ -57,8 +57,10 @@ function structuralChangeMessage(change) {
       return `${change.path}: Markdown file was renamed.`;
     case "T":
       return `${change.path}: Markdown file changed Git object type.`;
-    default:
-      return `${change.path}: unsupported Markdown change status ${change.status}.`;
+    default: {
+      const { status } = change;
+      return `${change.path}: unsupported Markdown change status ${status}.`;
+    }
   }
 }
 

@@ -16,7 +16,9 @@ function git(cwd, arguments_, input) {
 }
 
 function createRepository() {
-  const repository = mkdtempSync(join(tmpdir(), "coedit-markdown-equivalence-"));
+  const repository = mkdtempSync(
+    join(tmpdir(), "coedit-markdown-equivalence-"),
+  );
   temporaryRepositories.push(repository);
   git(repository, ["init", "--quiet"]);
   git(repository, ["config", "user.name", "Coedit Test"]);
