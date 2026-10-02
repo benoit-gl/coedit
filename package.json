@@ -22,7 +22,7 @@
     "adr:check": "node scripts/check-adr-integrity.mjs",
     "markdown:equivalence": "node scripts/verify-markdown-semantic-equivalence.mjs",
     "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format:check": "prettier --write scripts/verify-markdown-semantic-equivalence.mjs && git diff -- scripts/verify-markdown-semantic-equivalence.mjs && node -e \"process.exit(1)\"",
     "docs:check": "typedoc --options typedoc.json",
     "check": "npm run format:check && npm run lint:markdown && npm run typecheck && npm run lint && npm run lint:deps && npm run docs:check && npm run test",
     "test:step3:payload": "vitest run qualification/step3/payload",
