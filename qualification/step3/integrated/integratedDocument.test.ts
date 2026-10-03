@@ -6,10 +6,12 @@ import {
   parseBlockId,
   parseInlineContentId,
 } from "../../../src/domain/index.js";
+import { projectStructuralSnapshot as projectCarrierSnapshot } from "../../../src/carrier/index.js";
 import type { StructuralPlacement } from "../../../src/carrier/index.js";
 import { createAutomergeIntegratedDocumentCarrierFactory } from "./automergeIntegratedDocumentCarrier.js";
 import type {
   IntegratedDocumentCarrierFactory,
+  IntegratedDocumentCarrier,
   IntegratedPayloadChange,
 } from "./carrier.js";
 import { createYjsIntegratedDocumentCarrierFactory } from "./yjsIntegratedDocumentCarrier.js";
@@ -22,6 +24,9 @@ const blockB = parseBlockId("70000000-0000-4000-8000-000000000006");
 const otherRootId = parseBlockId("70000000-0000-4000-8000-000000000005");
 const textId = parseInlineContentId("70000000-0000-4000-8000-000000000003");
 const opaqueId = parseInlineContentId("70000000-0000-4000-8000-000000000004");
+const childTextId = parseInlineContentId(
+  "70000000-0000-4000-8000-000000000007",
+);
 const human = { id: "human-a", kind: "human" as const };
 const imported = { id: "import-a", kind: "imported" as const };
 
@@ -43,6 +48,10 @@ for (const factory of factories) {
       const carrier = factory.create(rootId);
       carrier.applyChange({
         placements: [{ blockId: blockA, placement: position(1, 1) }],
+        inlineContents: [
+          { inlineContentId: textId, blockId: blockA },
+          { inlineContentId: opaqueId, blockId: blockA },
+        ],
         payloads: [
           {
             kind: "replace-text",
@@ -98,6 +107,262 @@ for (const factory of factories) {
         }),
       ).toThrow(/root cannot have a placement/u);
       expect(carrier.snapshot()).toEqual(beforePlacementFailure);
+    });
+
+    it("creates immutable Block-local ownership and hides deleted Blocks atomically", () => {
+      const carrier = seeded(factory);
+      expect(carrier.snapshot().inlineContentOwners).toEqual(
+        new Map([
+          [textId, blockA],
+          [opaqueId, blockA],
+        ]),
+      );
+
+      const before = carrier.snapshot();
+      expect(() =>
+        carrier.applyChange({
+          inlineContents: [{ inlineContentId: textId, blockId: blockA }],
+          payloads: [
+            {
+              kind: "replace-text",
+              inlineContentId: textId,
+              mediaType: "text/plain",
+              text: "replacement",
+              origin: human,
+            },
+          ],
+        }),
+      ).toThrow(/ownership is immutable/u);
+      expect(carrier.snapshot()).toEqual(before);
+
+      carrier.applyChange({ deleteBlockIds: [blockA, blockA] });
+      expect(carrier.snapshot()).toEqual({
+        rootId,
+        blockLiveness: new Map([
+          [rootId, true],
+          [blockA, false],
+        ]),
+        placements: new Map(),
+        inlineContentOwners: new Map(),
+        payloads: new Map(),
+      });
+
+      carrier.applyChange({
+        placements: [{ blockId: blockB, placement: position(2, 1) }],
+      });
+      const beforeRecreation = carrier.snapshot();
+      expect(() =>
+        carrier.applyChange({
+          inlineContents: [{ inlineContentId: textId, blockId: blockB }],
+          payloads: [
+            {
+              kind: "replace-text",
+              inlineContentId: textId,
+              mediaType: "text/plain",
+              text: "recreated",
+              origin: human,
+            },
+          ],
+        }),
+      ).toThrow(/ownership is immutable/u);
+      expect(carrier.snapshot()).toEqual(beforeRecreation);
+    });
+
+    it("creates InlineContent against the live root", () => {
+      const carrier = factory.create(rootId);
+      carrier.applyChange({
+        inlineContents: [{ inlineContentId: textId, blockId: rootId }],
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: textId,
+            mediaType: "text/plain",
+            text: "root content",
+            origin: human,
+          },
+        ],
+      });
+
+      expect(carrier.snapshot().inlineContentOwners).toEqual(
+        new Map([[textId, rootId]]),
+      );
+      expect(carrier.snapshot().payloads.get(textId)).toMatchObject({
+        kind: "text",
+        text: "root content",
+      });
+      assertUsableSnapshot(carrier.snapshot());
+    });
+
+    it("keeps concurrent semantic changes live and each delivery state usable", () => {
+      const base = seeded(factory).encode();
+      const deletion = factory.load(base);
+      const move = factory.load(base);
+      deletion.applyChange({ deleteBlockIds: [blockA] });
+      move.applyChange({
+        placements: [{ blockId: blockA, placement: position(2, 1) }],
+      });
+      assertUsableSnapshot(deletion.snapshot());
+      assertUsableSnapshot(move.snapshot());
+      converge(deletion, move);
+      expect(deletion.snapshot()).toEqual(move.snapshot());
+      expect(deletion.snapshot().placements.has(blockA)).toBe(true);
+
+      const updates: readonly IntegratedPayloadChange[] = [
+        {
+          kind: "insert-text",
+          inlineContentId: textId,
+          offset: 5,
+          text: "!",
+          origin: human,
+        },
+        {
+          kind: "replace-text",
+          inlineContentId: textId,
+          mediaType: "text/plain",
+          text: "replacement",
+          origin: human,
+        },
+        {
+          kind: "replace-opaque",
+          inlineContentId: opaqueId,
+          mediaType: "application/example",
+          bytes: Uint8Array.of(4, 5, 6),
+          origin: imported,
+        },
+      ];
+
+      for (const payload of updates) {
+        const deletion = factory.load(base);
+        const update = factory.load(base);
+        deletion.applyChange({ deleteBlockIds: [blockA] });
+        update.applyChange({ payloads: [payload] });
+        assertUsableSnapshot(deletion.snapshot());
+        assertUsableSnapshot(update.snapshot());
+        converge(deletion, update);
+        expect(deletion.snapshot()).toEqual(update.snapshot());
+        expect(deletion.snapshot().placements.has(blockA)).toBe(true);
+        expect(deletion.snapshot().inlineContentOwners.get(textId)).toBe(
+          blockA,
+        );
+        const snapshot = deletion.snapshot();
+        if (payload.kind === "insert-text") {
+          expect(snapshot.payloads.get(textId)).toEqual({
+            kind: "text",
+            mediaType: "text/plain",
+            text: "alpha!",
+            spans: [{ text: "alpha!", origin: human }],
+          });
+        } else if (payload.kind === "replace-text") {
+          expect(snapshot.payloads.get(textId)).toEqual({
+            kind: "text",
+            mediaType: "text/plain",
+            text: "replacement",
+            spans: [{ text: "replacement", origin: human }],
+          });
+        } else {
+          expect(snapshot.payloads.get(opaqueId)).toEqual({
+            kind: "opaque",
+            mediaType: "application/example",
+            bytes: Uint8Array.of(4, 5, 6),
+            origin: imported,
+          });
+        }
+        assertUsableSnapshot(deletion.snapshot());
+      }
+    });
+
+    it("reprojects surviving children after an application-selected deletion list", () => {
+      const carrier = seeded(factory);
+      carrier.applyChange({
+        placements: [{ blockId: blockB, placement: position(2, 2) }],
+      });
+      carrier.applyChange({ deleteBlockIds: [blockA] });
+      const snapshot = carrier.snapshot();
+      expect(snapshot.placements.has(blockA)).toBe(false);
+      expect(snapshot.placements.has(blockB)).toBe(true);
+      expect(
+        projectIntegratedSnapshot(snapshot, factory.positionOrdering).find(
+          (block) => block.blockId === blockB,
+        )?.parentId,
+      ).toBe(rootId);
+      assertUsableSnapshot(snapshot);
+    });
+
+    it("does not revive an ancestor from a concurrent descendant update", () => {
+      const source = seeded(factory);
+      source.applyChange({
+        placements: [{ blockId: blockB, placement: position(2, 2) }],
+        inlineContents: [{ inlineContentId: childTextId, blockId: blockB }],
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: childTextId,
+            mediaType: "text/plain",
+            text: "child",
+            origin: human,
+          },
+        ],
+      });
+      const base = source.encode();
+      const deletion = factory.load(base);
+      const descendantUpdate = factory.load(base);
+      deletion.applyChange({ deleteBlockIds: [blockA, blockB] });
+      descendantUpdate.applyChange({
+        payloads: [
+          {
+            kind: "insert-text",
+            inlineContentId: childTextId,
+            offset: 5,
+            text: "!",
+            origin: human,
+          },
+        ],
+      });
+
+      converge(deletion, descendantUpdate);
+      const snapshot = deletion.snapshot();
+      expect(snapshot).toEqual(descendantUpdate.snapshot());
+      expect(snapshot.blockLiveness.get(blockA)).toBe(false);
+      expect(snapshot.placements.has(blockA)).toBe(false);
+      expect(snapshot.blockLiveness.get(blockB)).toBe(true);
+      expect(
+        projectIntegratedSnapshot(snapshot, factory.positionOrdering).find(
+          (block) => block.blockId === blockB,
+        )?.parentId,
+      ).toBe(rootId);
+      assertUsableSnapshot(snapshot);
+    });
+
+    it("does not treat no-op text commands as liveness activity", () => {
+      const noOps: readonly IntegratedPayloadChange[] = [
+        {
+          kind: "insert-text",
+          inlineContentId: textId,
+          offset: 0,
+          text: "",
+          origin: human,
+        },
+        {
+          kind: "delete-text",
+          inlineContentId: textId,
+          start: 0,
+          end: 0,
+        },
+      ];
+
+      for (const noOp of noOps) {
+        const base = seeded(factory).encode();
+        const deletion = factory.load(base);
+        const noOpReplica = factory.load(base);
+        deletion.applyChange({ deleteBlockIds: [blockA] });
+        noOpReplica.applyChange({ payloads: [noOp] });
+
+        converge(deletion, noOpReplica);
+        expect(deletion.snapshot()).toEqual(noOpReplica.snapshot());
+        expect(deletion.snapshot().blockLiveness.get(blockA)).toBe(false);
+        expect(deletion.snapshot().placements.has(blockA)).toBe(false);
+        assertUsableSnapshot(deletion.snapshot());
+      }
     });
 
     it("applies sequential text operations against evolving transaction state", () => {
@@ -358,6 +623,54 @@ for (const factory of factories) {
   });
 }
 
+describe("cross-candidate update-over-delete projection", () => {
+  it("agrees on carrier-neutral final snapshots for each payload update", () => {
+    const updates: readonly IntegratedPayloadChange[] = [
+      {
+        kind: "insert-text",
+        inlineContentId: textId,
+        offset: 5,
+        text: "!",
+        origin: human,
+      },
+      {
+        kind: "replace-text",
+        inlineContentId: textId,
+        mediaType: "text/plain",
+        text: "replacement",
+        origin: human,
+      },
+      {
+        kind: "replace-opaque",
+        inlineContentId: opaqueId,
+        mediaType: "application/example",
+        bytes: Uint8Array.of(4, 5, 6),
+        origin: imported,
+      },
+    ];
+
+    for (const payload of updates) {
+      const snapshots = factories.map((factory) => {
+        const base = seeded(factory).encode();
+        const deletion = factory.load(base);
+        const update = factory.load(base);
+        deletion.applyChange({ deleteBlockIds: [blockA] });
+        update.applyChange({ payloads: [payload] });
+        converge(deletion, update);
+        const snapshot = deletion.snapshot();
+        return {
+          snapshot,
+          structure: projectIntegratedSnapshot(
+            snapshot,
+            factory.positionOrdering,
+          ),
+        };
+      });
+      expect(snapshots[0]).toEqual(snapshots[1]);
+    }
+  });
+});
+
 describe("automerge integrated Origin validation", () => {
   const factory = createAutomergeIntegratedDocumentCarrierFactory(
     localDensePositionAllocator,
@@ -370,6 +683,8 @@ describe("automerge integrated Origin validation", () => {
         rootId,
         lineageId: "origin-validation-fixture",
         blocks: {},
+        liveness: {},
+        inlineContentOwners: { [textId]: rootId },
         payloads: {
           [textId]: {
             kind: "text" as const,
@@ -543,6 +858,7 @@ describe("yjs integrated transaction preflight", () => {
       placements: [{ blockId: blockA, placement: position(1, 1) }],
     });
     carrier.applyChange({
+      inlineContents: [{ inlineContentId: textId, blockId: blockA }],
       payloads: [
         {
           kind: "replace-text",
@@ -727,6 +1043,10 @@ function seeded(factory: IntegratedDocumentCarrierFactory<LocalDensePosition>) {
   const carrier = factory.create(rootId);
   carrier.applyChange({
     placements: [{ blockId: blockA, placement: position(1, 1) }],
+    inlineContents: [
+      { inlineContentId: textId, blockId: blockA },
+      { inlineContentId: opaqueId, blockId: blockA },
+    ],
     payloads: [
       {
         kind: "replace-text",
@@ -793,4 +1113,60 @@ function overwriteEnvelopeRoot(encoded: Uint8Array, replacement: string): void {
 function yjsStateVectorSize(encoded: Uint8Array): number {
   const nativeUpdate = encoded.subarray(rootId.length + 1);
   return Y.decodeStateVector(Y.encodeStateVectorFromUpdate(nativeUpdate)).size;
+}
+
+function converge(
+  left: IntegratedDocumentCarrier<LocalDensePosition>,
+  right: IntegratedDocumentCarrier<LocalDensePosition>,
+): void {
+  // Replicas make their changes during a partition. Delivery is delayed, then
+  // sent in opposite directions; the first delivery is duplicated.
+  const leftDuringPartition = left.encode();
+  const rightDuringPartition = right.encode();
+  right.mergeEncoded(leftDuringPartition);
+  assertUsableSnapshot(right.snapshot());
+  right.mergeEncoded(leftDuringPartition);
+  assertUsableSnapshot(right.snapshot());
+  left.mergeEncoded(rightDuringPartition);
+  assertUsableSnapshot(left.snapshot());
+}
+
+function assertUsableSnapshot(
+  snapshot: ReturnType<
+    IntegratedDocumentCarrier<LocalDensePosition>["snapshot"]
+  >,
+): void {
+  expect(snapshot.blockLiveness.get(snapshot.rootId)).toBe(true);
+  for (const blockId of snapshot.placements.keys())
+    expect(snapshot.blockLiveness.get(blockId)).toBe(true);
+  for (const [inlineContentId, ownerId] of snapshot.inlineContentOwners) {
+    if (ownerId !== snapshot.rootId && !snapshot.placements.has(ownerId))
+      throw new TypeError("Visible InlineContent owner must be live.");
+    if (!snapshot.payloads.has(inlineContentId))
+      throw new TypeError("Visible InlineContent must have a payload.");
+  }
+  expect(
+    projectIntegratedSnapshot(snapshot, localDensePositionAllocator),
+  ).toHaveLength(snapshot.placements.size + 1);
+}
+
+function projectIntegratedSnapshot(
+  snapshot: ReturnType<
+    IntegratedDocumentCarrier<LocalDensePosition>["snapshot"]
+  >,
+  ordering: IntegratedDocumentCarrierFactory<LocalDensePosition>["positionOrdering"],
+) {
+  return projectCarrierSnapshot(
+    {
+      rootId: snapshot.rootId,
+      entries: [
+        { blockId: snapshot.rootId },
+        ...[...snapshot.placements].map(([blockId, placement]) => ({
+          blockId,
+          placement,
+        })),
+      ],
+    },
+    ordering,
+  );
 }
