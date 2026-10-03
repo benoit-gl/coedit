@@ -286,8 +286,8 @@ current with `main` without taking an implementation dependency on the first. Th
 native-document seam. Units four through seven qualify the semantic join, historical lifecycle, retained-state and
 Range lifecycle, and application/editor behavior. Those first seven units build and exercise the mandatory suites, but
 their development runs are not the final comparative evidence. The eighth unit runs the complete comparison against
-those implementations after they land on `main`, under one recorded profile and method. Do not create a deep stack merely to keep candidate
-files adjacent.
+those implementations after they land on `main`, under one recorded profile and method. Do not create a deep stack
+merely to keep candidate files adjacent.
 
 Qualification-only candidate implementations can live side-by-side on `main` while Gate B is open. `CODING_STYLE.md`
 owns their source placement, qualification-helper privacy, production dependency boundary, and source verification

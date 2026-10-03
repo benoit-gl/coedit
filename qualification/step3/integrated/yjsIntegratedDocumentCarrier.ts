@@ -193,6 +193,9 @@ class YjsIntegratedDocumentCarrier<
   public restoreHistoricalState(token: string): void {
     const target = this.materializeHistoricalState(token);
     const owners = this.inlineContentOwners();
+    const liveness = this.root.get(LIVENESS);
+    if (!(liveness instanceof Y.Map))
+      throw new TypeError("Integrated liveness namespace is missing.");
     for (const [id, owner] of target.inlineContentOwners)
       if (owners.get(id) !== owner)
         throw new TypeError("Historical InlineContent ownership is invalid.");
@@ -200,14 +203,14 @@ class YjsIntegratedDocumentCarrier<
       if (!this.blocks().has(id) || !this.liveness().has(id))
         throw new TypeError("Historical Block lifetime is missing.");
     this.document.transact(() => {
-      for (const id of this.liveness().keys())
-        retireObservedTokens(this.liveness(), parseBlockId(id));
+      for (const id of liveness.keys())
+        retireObservedTokens(liveness, parseBlockId(id));
       for (const [id, placement] of target.placements) {
         this.blocks().set(
           id,
           encodeStructuralPlacement(placement, this.positionCodec),
         );
-        addLiveToken(this.liveness(), id);
+        addLiveToken(liveness, id);
       }
       for (const [id, payload] of target.payloads) {
         const restored = new Y.Map<unknown>();
@@ -450,7 +453,7 @@ function prepareInlineContentCreations<Position>(
     if (
       retainedBlockIds.has(creation.inlineContentId) ||
       (change.placements ?? []).some(
-        (placement) => placement.blockId === creation.inlineContentId,
+        (placement) => String(placement.blockId) === creation.inlineContentId,
       )
     )
       throw new TypeError("Integrated durable identity is already used.");

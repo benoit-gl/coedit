@@ -447,7 +447,7 @@ function prepareInlineContentCreations<Position>(
     if (
       retainedBlockIds.has(creation.inlineContentId) ||
       (change.placements ?? []).some(
-        (placement) => placement.blockId === creation.inlineContentId,
+        (placement) => String(placement.blockId) === creation.inlineContentId,
       )
     )
       throw new TypeError("Integrated durable identity is already used.");

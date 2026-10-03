@@ -1,5 +1,8 @@
-import type { BlockId, InlineContentId } from "../../../src/domain/index.js";
-import { parseBlockId, parseInlineContentId } from "../../../src/domain/index.js";
+import type { InlineContentId } from "../../../src/domain/index.js";
+import {
+  parseBlockId,
+  parseInlineContentId,
+} from "../../../src/domain/index.js";
 import type { StructuralPositionCodec } from "../../../src/carrier/index.js";
 import {
   decodeStructuralPlacement,
@@ -30,7 +33,7 @@ interface HistoricalPayload {
 }
 
 /** Detached qualification-only material, with no product Version semantics. */
-export interface HistoricalState {
+interface HistoricalState {
   readonly rootId: string;
   readonly blockLiveness: readonly (readonly [string, boolean])[];
   readonly placements: readonly (readonly [string, string])[];

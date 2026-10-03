@@ -274,10 +274,7 @@ for (const factory of factories) {
         // A later-created Block remains known, but is no longer live.
         {
           ...expected,
-          blockLiveness: new Map([
-            ...expected.blockLiveness,
-            [blockB, false],
-          ]),
+          blockLiveness: new Map([...expected.blockLiveness, [blockB, false]]),
         },
       );
       expect(reopened.materializeHistoricalState(token)).toEqual(expected);
