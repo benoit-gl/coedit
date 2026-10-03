@@ -55,6 +55,7 @@ interface State extends Record<string, unknown> {
   blocks: Record<string, string>;
   liveness: Record<string, Record<string, boolean>>;
   inlineContentOwners: Record<string, string>;
+  inlineContentLiveness: Record<string, Record<string, boolean>>;
   payloads: Record<string, TextState | OpaqueState>;
   historicalStates: Record<string, string>;
 }
@@ -79,6 +80,7 @@ class AutomergeIntegratedDocumentCarrier<
         blocks: {},
         liveness: {},
         inlineContentOwners: {},
+        inlineContentLiveness: {},
         payloads: {},
         historicalStates: {},
       });
@@ -120,8 +122,10 @@ class AutomergeIntegratedDocumentCarrier<
         );
         addLiveToken(draft.liveness, update.blockId);
       }
-      for (const creation of inlineContents)
+      for (const creation of inlineContents) {
         draft.inlineContentOwners[creation.inlineContentId] = creation.blockId;
+        addLiveToken(draft.inlineContentLiveness, creation.inlineContentId);
+      }
       for (const update of change.payloads ?? []) {
         const ownerId = draft.inlineContentOwners[update.inlineContentId];
         if (ownerId === undefined)
@@ -210,6 +214,7 @@ class AutomergeIntegratedDocumentCarrier<
         parseBlockId(rawId),
         Object.values(tokens).some((value) => value === true),
       );
+    blockLiveness.set(parseBlockId(this.document.rootId), true);
     for (const [rawId, encoded] of Object.entries(this.document.blocks)) {
       if (!liveBlocks.has(rawId)) continue;
       placements.set(
@@ -222,6 +227,7 @@ class AutomergeIntegratedDocumentCarrier<
     for (const [rawId, rawOwnerId] of Object.entries(
       this.document.inlineContentOwners,
     )) {
+      if (!isLive(this.document.inlineContentLiveness, rawId)) continue;
       if (!liveBlocks.has(rawOwnerId)) continue;
       const payload = this.document.payloads[rawId];
       if (payload === undefined)
@@ -274,16 +280,28 @@ class AutomergeIntegratedDocumentCarrier<
         this.document.liveness[id] === undefined
       )
         throw new TypeError("Historical Block lifetime is missing.");
+    for (const id of target.inlineContentOwners.keys())
+      if (this.document.inlineContentLiveness[id] === undefined)
+        throw new TypeError("Historical InlineContent lifetime is missing.");
+    const placements = [...target.placements].map(([id, placement]) => ({
+      id,
+      encoded: encodeStructuralPlacement(placement, this.positionCodec),
+      livenessToken: crypto.randomUUID(),
+    }));
+    const inlineContentLiveness = [...target.inlineContentOwners.keys()].map(
+      (id) => ({ id, livenessToken: crypto.randomUUID() }),
+    );
     this.document = Automerge.change(this.document, (draft) => {
       for (const id of Object.keys(draft.liveness))
-        retireObservedTokens(draft.liveness, parseBlockId(id));
-      for (const [id, placement] of target.placements) {
-        draft.blocks[id] = encodeStructuralPlacement(
-          placement,
-          this.positionCodec,
-        );
-        addLiveToken(draft.liveness, id);
+        if (id !== draft.rootId) retireObservedTokens(draft.liveness, id);
+      for (const id of Object.keys(draft.inlineContentLiveness))
+        retireObservedTokens(draft.inlineContentLiveness, id);
+      for (const { id, encoded, livenessToken } of placements) {
+        draft.blocks[id] = encoded;
+        addLiveToken(draft.liveness, id, livenessToken);
       }
+      for (const { id, livenessToken } of inlineContentLiveness)
+        addLiveToken(draft.inlineContentLiveness, id, livenessToken);
       for (const [id, payload] of target.payloads) {
         if (payload.kind === "opaque") {
           draft.payloads[id] = {
@@ -492,23 +510,31 @@ function prepareDeletes<Position>(
 
 function addLiveToken(
   liveness: Record<string, Record<string, boolean>>,
-  blockId: BlockId,
+  id: string,
+  token = crypto.randomUUID(),
 ): void {
-  const token = crypto.randomUUID();
-  if (liveness[blockId] === undefined) {
-    liveness[blockId] = { [token]: true };
+  if (liveness[id] === undefined) {
+    liveness[id] = { [token]: true };
     return;
   }
-  liveness[blockId][token] = true;
+  liveness[id][token] = true;
 }
 
 function retireObservedTokens(
   liveness: Record<string, Record<string, boolean>>,
-  blockId: BlockId,
+  id: string,
 ): void {
-  const tokens = liveness[blockId];
+  const tokens = liveness[id];
   if (tokens === undefined) return;
   for (const token of Object.keys(tokens)) tokens[token] = false;
+}
+
+function isLive(
+  liveness: Record<string, Record<string, boolean>> | undefined,
+  id: string,
+): boolean {
+  if (liveness === undefined) return true;
+  return Object.values(liveness[id] ?? {}).some((value) => value === true);
 }
 
 function liveBlockIds(document: Automerge.Doc<State>): ReadonlySet<string> {

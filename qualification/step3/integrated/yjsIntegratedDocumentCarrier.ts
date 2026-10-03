@@ -43,6 +43,7 @@ const LINEAGE_ID = "lineageId";
 const BLOCKS = "blocks";
 const PAYLOADS = "payloads";
 const INLINE_CONTENT_OWNERS = "inlineContentOwners";
+const INLINE_CONTENT_LIVENESS = "inlineContentLiveness";
 const LIVENESS = "liveness";
 const HISTORICAL_STATES = "historicalStates";
 const ORIGIN = "coedit:origin";
@@ -73,6 +74,7 @@ class YjsIntegratedDocumentCarrier<
       this.root.set(BLOCKS, new Y.Map<string>());
       this.root.set(PAYLOADS, new Y.Map<Y.Map<unknown>>());
       this.root.set(INLINE_CONTENT_OWNERS, new Y.Map<string>());
+      this.root.set(INLINE_CONTENT_LIVENESS, new Y.Map<Y.Map<boolean>>());
       this.root.set(LIVENESS, new Y.Map<Y.Map<boolean>>());
       this.root.set(HISTORICAL_STATES, new Y.Map<string>());
     } else {
@@ -85,6 +87,7 @@ class YjsIntegratedDocumentCarrier<
     this.blocks();
     this.payloads();
     this.inlineContentOwners();
+    this.inlineContentLiveness();
     this.liveness();
     this.historicalStates();
   }
@@ -142,6 +145,7 @@ class YjsIntegratedDocumentCarrier<
         parseBlockId(rawId),
         [...tokens.values()].some((value) => value === true),
       );
+    blockLiveness.set(this.requireRootId(), true);
     for (const [rawId, encoded] of this.blocks()) {
       const blockId = parseBlockId(rawId);
       if (!liveBlocks.has(blockId)) continue;
@@ -155,6 +159,7 @@ class YjsIntegratedDocumentCarrier<
     for (const [rawId, rawOwnerId] of this.inlineContentOwners()) {
       const inlineContentId = parseInlineContentId(rawId);
       const ownerId = parseBlockId(rawOwnerId);
+      if (!isLive(this.inlineContentLiveness(), inlineContentId)) continue;
       if (!liveBlocks.has(ownerId)) continue;
       const payload = this.payloads().get(rawId);
       if (payload === undefined)
@@ -192,6 +197,7 @@ class YjsIntegratedDocumentCarrier<
 
   public restoreHistoricalState(token: string): void {
     const target = this.materializeHistoricalState(token);
+    const rootId = this.requireRootId();
     const owners = this.inlineContentOwners();
     const liveness = this.root.get(LIVENESS);
     if (!(liveness instanceof Y.Map))
@@ -202,35 +208,41 @@ class YjsIntegratedDocumentCarrier<
     for (const id of target.placements.keys())
       if (!this.blocks().has(id) || !this.liveness().has(id))
         throw new TypeError("Historical Block lifetime is missing.");
+    for (const id of target.inlineContentOwners.keys())
+      if (!this.inlineContentLiveness().has(id))
+        throw new TypeError("Historical InlineContent lifetime is missing.");
+    const placements = [...target.placements].map(([id, placement]) => ({
+      id,
+      encoded: encodeStructuralPlacement(placement, this.positionCodec),
+      livenessToken: crypto.randomUUID(),
+    }));
+    const payloads = [...target.payloads].map(([id, payload]) => ({
+      id,
+      value: createRestoredPayload(payload),
+    }));
+    const inlineContentLiveness = [...target.inlineContentOwners.keys()].map(
+      (id) => ({ id, livenessToken: crypto.randomUUID() }),
+    );
     this.document.transact(() => {
       for (const id of liveness.keys())
-        retireObservedTokens(liveness, parseBlockId(id));
-      for (const [id, placement] of target.placements) {
-        this.blocks().set(
+        if (id !== rootId) retireObservedTokens(liveness, id);
+      for (const id of this.inlineContentLiveness().keys())
+        retireObservedTokens(
+          this.inlineContentLiveness() as Y.Map<unknown>,
           id,
-          encodeStructuralPlacement(placement, this.positionCodec),
         );
-        addLiveToken(liveness, id);
+      for (const { id, encoded, livenessToken } of placements) {
+        this.blocks().set(id, encoded);
+        addLiveToken(liveness, id, livenessToken);
       }
-      for (const [id, payload] of target.payloads) {
-        const restored = new Y.Map<unknown>();
-        restored.set("kind", payload.kind);
-        restored.set("mediaType", payload.mediaType);
-        if (payload.kind === "opaque") {
-          restored.set("bytes", payload.bytes.slice());
-          restored.set("origin", encodeOrigin(payload.origin));
-        } else {
-          const text = new Y.Text();
-          let offset = 0;
-          for (const span of payload.spans) {
-            text.insert(offset, span.text, {
-              [ORIGIN]: encodeOrigin(span.origin),
-            });
-            offset += span.text.length;
-          }
-          restored.set("text", text);
-        }
-        this.payloads().set(id, restored);
+      for (const { id, livenessToken } of inlineContentLiveness)
+        addLiveToken(
+          this.inlineContentLiveness() as Y.Map<unknown>,
+          id,
+          livenessToken,
+        );
+      for (const { id, value } of payloads) {
+        this.payloads().set(id, value);
       }
     });
   }
@@ -297,6 +309,14 @@ class YjsIntegratedDocumentCarrier<
       throw new TypeError("Integrated ownership namespace is missing.");
     return value as Y.Map<string>;
   }
+  private inlineContentLiveness(): Y.Map<Y.Map<boolean>> {
+    const value = this.root.get(INLINE_CONTENT_LIVENESS);
+    if (!(value instanceof Y.Map))
+      throw new TypeError(
+        "Integrated InlineContent liveness namespace is missing.",
+      );
+    return value as Y.Map<Y.Map<boolean>>;
+  }
   private liveness(): Y.Map<Y.Map<boolean>> {
     const value = this.root.get(LIVENESS);
     if (!(value instanceof Y.Map))
@@ -333,11 +353,13 @@ function applyPreparedChange(
   const blocks = root.get(BLOCKS);
   const payloadMap = root.get(PAYLOADS);
   const owners = root.get(INLINE_CONTENT_OWNERS);
+  const inlineContentLiveness = root.get(INLINE_CONTENT_LIVENESS);
   const liveness = root.get(LIVENESS);
   if (
     !(blocks instanceof Y.Map) ||
     !(payloadMap instanceof Y.Map) ||
     !(owners instanceof Y.Map) ||
+    !(inlineContentLiveness instanceof Y.Map) ||
     !(liveness instanceof Y.Map)
   )
     throw new TypeError("Integrated document is invalid.");
@@ -348,8 +370,13 @@ function applyPreparedChange(
       (blocks as Y.Map<string>).set(update.blockId, update.encoded);
       addLiveToken(liveness, update.blockId);
     }
-    for (const creation of inlineContents)
+    for (const creation of inlineContents) {
       (owners as Y.Map<string>).set(creation.inlineContentId, creation.blockId);
+      addLiveToken(
+        inlineContentLiveness as Y.Map<unknown>,
+        creation.inlineContentId,
+      );
+    }
     for (const update of payloads) {
       const ownerId = (owners as Y.Map<string>).get(update.inlineContentId);
       if (ownerId === undefined)
@@ -497,23 +524,51 @@ function prepareDeletes<Position>(
   return [...unique];
 }
 
-function addLiveToken(liveness: Y.Map<unknown>, blockId: BlockId): void {
-  let tokens = liveness.get(blockId);
+function addLiveToken(
+  liveness: Y.Map<unknown>,
+  id: string,
+  token = crypto.randomUUID(),
+): void {
+  let tokens = liveness.get(id);
   if (!(tokens instanceof Y.Map)) {
     tokens = new Y.Map<boolean>();
-    liveness.set(blockId, tokens);
+    liveness.set(id, tokens);
   }
-  (tokens as Y.Map<boolean>).set(crypto.randomUUID(), true);
+  (tokens as Y.Map<boolean>).set(token, true);
 }
 
-function retireObservedTokens(
-  liveness: Y.Map<unknown>,
-  blockId: BlockId,
-): void {
-  const tokens = liveness.get(blockId);
+function retireObservedTokens(liveness: Y.Map<unknown>, id: string): void {
+  const tokens = liveness.get(id);
   if (!(tokens instanceof Y.Map)) return;
   for (const [token, live] of tokens)
     if (live === true) tokens.set(token, false);
+}
+
+function isLive(liveness: Y.Map<Y.Map<boolean>>, id: string): boolean {
+  return [...(liveness.get(id)?.values() ?? [])].some(
+    (value) => value === true,
+  );
+}
+
+function createRestoredPayload(
+  payload: QualificationPayloadSnapshot,
+): Y.Map<unknown> {
+  const restored = new Y.Map<unknown>();
+  restored.set("kind", payload.kind);
+  restored.set("mediaType", payload.mediaType);
+  if (payload.kind === "opaque") {
+    restored.set("bytes", payload.bytes.slice());
+    restored.set("origin", encodeOrigin(payload.origin));
+    return restored;
+  }
+  const text = new Y.Text();
+  let offset = 0;
+  for (const span of payload.spans) {
+    text.insert(offset, span.text, { [ORIGIN]: encodeOrigin(span.origin) });
+    offset += span.text.length;
+  }
+  restored.set("text", text);
+  return restored;
 }
 
 function preparePayloadChanges(

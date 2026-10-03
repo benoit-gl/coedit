@@ -1,6 +1,6 @@
 import * as Automerge from "@automerge/automerge";
 import * as Y from "yjs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   parseBlockId,
@@ -295,6 +295,47 @@ for (const factory of factories) {
           ],
         }),
       ).toThrow(/ownership is immutable/u);
+    });
+
+    it("restores exact InlineContent membership and keeps the root live", () => {
+      const carrier = seeded(factory);
+      const expected = carrier.snapshot();
+      const token = carrier.captureHistoricalState();
+      carrier.applyChange({
+        inlineContents: [{ inlineContentId: childTextId, blockId: blockA }],
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: childTextId,
+            mediaType: "text/plain",
+            text: "later content",
+            origin: human,
+          },
+        ],
+      });
+
+      carrier.restoreHistoricalState(token);
+      expect(carrier.snapshot()).toEqual(expected);
+
+      const rootCarrier = factory.create(rootId);
+      rootCarrier.applyChange({
+        inlineContents: [{ inlineContentId: textId, blockId: rootId }],
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: textId,
+            mediaType: "text/plain",
+            text: "root content",
+            origin: human,
+          },
+        ],
+      });
+      const rootExpected = rootCarrier.snapshot();
+      const rootToken = rootCarrier.captureHistoricalState();
+
+      rootCarrier.restoreHistoricalState(rootToken);
+      expect(rootCarrier.snapshot()).toEqual(rootExpected);
+      assertUsableSnapshot(rootCarrier.snapshot());
     });
 
     it("keeps concurrent semantic changes live and each delivery state usable", () => {
@@ -1116,6 +1157,69 @@ describe("yjs integrated transaction preflight", () => {
       kind: "opaque",
       bytes: Uint8Array.of(1, 2, 3),
     });
+  });
+
+  it("does not publish a restore when position encoding fails", () => {
+    let rejectRestoreEncoding = false;
+    const throwingFactory = createYjsIntegratedDocumentCarrierFactory(
+      {
+        encode(value: LocalDensePosition): string {
+          if (
+            rejectRestoreEncoding &&
+            localDensePositionAllocator.compare(
+              value,
+              position(2, 1).position,
+            ) === 0
+          )
+            throw new TypeError("Position encode failed.");
+          return localDensePositionAllocator.encode(value);
+        },
+        decode(value: string): LocalDensePosition {
+          return localDensePositionAllocator.decode(value);
+        },
+      },
+      localDensePositionAllocator,
+    );
+    const carrier = seeded(throwingFactory);
+    carrier.applyChange({
+      placements: [{ blockId: blockA, placement: position(2, 1) }],
+    });
+    const token = carrier.captureHistoricalState();
+    carrier.applyChange({
+      placements: [{ blockId: blockA, placement: position(3, 1) }],
+    });
+    const before = carrier.snapshot();
+    const beforeBytes = carrier.encode();
+    rejectRestoreEncoding = true;
+
+    expect(() => carrier.restoreHistoricalState(token)).toThrow(
+      /Position encode failed/u,
+    );
+    expect(carrier.snapshot()).toEqual(before);
+    expect(carrier.encode()).toEqual(beforeBytes);
+  });
+
+  it("does not start a restore when liveness token allocation fails", () => {
+    const carrier = seeded(factory);
+    const token = carrier.captureHistoricalState();
+    carrier.applyChange({
+      placements: [{ blockId: blockA, placement: position(2, 1) }],
+    });
+    const before = carrier.snapshot();
+    const beforeBytes = carrier.encode();
+    const randomUuid = vi.spyOn(crypto, "randomUUID").mockImplementation(() => {
+      throw new TypeError("Liveness token allocation failed.");
+    });
+
+    try {
+      expect(() => carrier.restoreHistoricalState(token)).toThrow(
+        /Liveness token allocation failed/u,
+      );
+      expect(carrier.snapshot()).toEqual(before);
+      expect(carrier.encode()).toEqual(beforeBytes);
+    } finally {
+      randomUuid.mockRestore();
+    }
   });
 });
 
