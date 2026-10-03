@@ -176,12 +176,18 @@ Crypto, tests inject valid deterministic sequences, and pure reducers never gene
 
 Step 2 rejects duplicate Block and InlineContent IDs in the live structural candidate. It does not keep deleted IDs,
 reserve submitted IDs, or maintain a lifetime-ID registry. After History exists, successful publication records enough
-retained identity use to reject reuse across retained lifetimes. Portable validation applies the same rule when opening
-a document. An ID supplied to a failed Step 2 operation group does not enter retained domain state.
+retained identity use to reject reuse across retained lifetimes. This enforces the existing rule that a durable ID
+identifies one entity lifetime, even after deletion. Step 2's inability to detect past use is not permission to reuse
+it. Portable and remote ingress reject such reuse atomically. An ID supplied to a failed Step 2 operation group does
+not enter retained domain state.
 
 Identity reuse means assigning an existing durable ID to a different entity, record, or lifetime. Reusing a reference to
 the same immutable Origin record during copy or restore and exactly retrying the same successful `CommandId` are not
 identity reuse.
+
+Whole-Version restore is a separate engine operation. It reactivates historical Block and InlineContent lifetimes
+internally and atomically; callers cannot use ordinary creation to select old IDs for a new lifetime. Read-only
+historical materialization does not mutate the current document.
 
 Use one tag-normalization implementation for Block and InlineContent tags. Keep ownership separate.
 

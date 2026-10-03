@@ -128,6 +128,14 @@ export interface IntegratedDocumentCarrier<Position> {
   readonly candidate: IntegratedCarrierCandidate;
   /** Applies one all-or-none integrated transaction. */
   applyChange(change: IntegratedDocumentChange<Position>): void;
+  /** Retains a detached qualification state and returns its opaque local token. */
+  captureHistoricalState(): string;
+  /** Materializes one retained qualification state without changing the tip. */
+  materializeHistoricalState(
+    token: string,
+  ): IntegratedDocumentSnapshot<Position>;
+  /** Restores one retained state as one carrier change, preserving entity identities. */
+  restoreHistoricalState(token: string): void;
   /** Projects detached carrier-neutral state. */
   snapshot(): IntegratedDocumentSnapshot<Position>;
   /** Encodes complete candidate state for reload or merge qualification. */

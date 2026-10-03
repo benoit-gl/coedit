@@ -10,7 +10,11 @@ creation, allowlisted fine-grained text, and opaque payloads. It also qualifies 
 application-selected BlockId deletion list, update-over-delete for real payload changes, and projection of surviving
 children without re-parenting operations. Snapshots expose only live placements and their owned payloads.
 
-This directory does not yet qualify History or Range feasibility, carrier cursor behavior, Tiptap/ProseMirror
-integration, IME, cut/paste, undo/redo, private clipboard behavior, portable-format surrogates, or garbage collection
-and compaction. Separate carrier-lifecycle and application/editor qualification units follow before comparative
-evidence and Gate B.
+The historical lifecycle suite retains qualification-only state tokens in each candidate document. It materializes
+captured state without changing the tip and restores the same Block and InlineContent lifetimes in one native change.
+Ordinary creation rejects a known-dead Block ID or retained InlineContent ID. Retained state survives candidate reopen.
+These tokens are not product Versions or a selected History representation.
+
+This directory does not yet qualify Range feasibility, carrier cursor behavior, Tiptap/ProseMirror integration, IME,
+cut/paste, undo/redo, private clipboard behavior, portable-format surrogates, or garbage collection and compaction.
+Separate retained-state/Range and application/editor qualification units follow before comparative evidence and Gate B.

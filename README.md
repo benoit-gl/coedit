@@ -1,9 +1,10 @@
 # Coedit
 
 Coedit is a browser-first collaborative document engine. Steps 1 and 2 are complete. Step 3 carrier qualification is in
-progress: the payload, structural/allocator, and integrated collaborative-document foundation merge units are complete;
-integrated structural and payload semantics, carrier lifecycle, application/editor qualification, and comparative
-evidence remain before Gate B selects the carrier. Step 3 qualifies Media-Type-labelled InlineContent payloads
+progress: the payload, structural/allocator, integrated collaborative-document foundation, integrated
+structural/payload semantics, and historical lifecycle merge units are complete; retained-state and Range lifecycle,
+application/editor qualification, and comparative evidence remain before Gate B selects the carrier. Step 3 qualifies
+Media-Type-labelled InlineContent payloads
 (`text/markdown`, `text/plain`, and representative opaque Media Types), universal whole-payload replacement,
 native-string fine-grained text, structure, and text Range feasibility against Yjs and Automerge. Step 4 implements the
 selected collaborative core, Step 5 establishes permanent exact History and Version materialization, and Step 6

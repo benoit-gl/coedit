@@ -72,8 +72,9 @@ When implementation evidence invalidates an accepted rule, update the responsibl
 ## Current implementation status
 
 Steps 1 and 2 are complete. Step 3 carrier qualification is in progress: the payload, structural/allocator, and
-integrated collaborative-document foundation merge units are complete; integrated structural and payload semantics,
-carrier lifecycle, application/editor qualification, and comparative evidence remain. No carrier or allocator is
+integrated collaborative-document foundation, integrated structural/payload semantics, and historical lifecycle
+merge units are complete; retained-state and Range lifecycle, application/editor qualification, and comparative
+evidence remain. No carrier or allocator is
 selected, and no production collaborative API exists yet. The payload requirements below remain accepted design
 direction. Gate B owns carrier selection, deterministic concurrent whole-payload replacement, and the mixed
 replacement/text-edit policy. Step 4 selects and qualifies the production Media Type parser implementation and fixtures
@@ -119,15 +120,17 @@ changing completed Step 2 structural ownership and ordering semantics.
 
 Durable user-created and domain entity UUID text uses one global namespace. The same UUID text cannot identify two
 different live durable entities, even across different branded TypeScript ID types. UUID text contains no required type
-discriminator. Step 2 keeps no lifetime-ID registry; History and portable validation later reject durable identity reuse
-across retained lifetimes.
+discriminator. A durable ID identifies one entity lifetime. Step 2 keeps no lifetime-ID registry and cannot detect
+reuse after deletion; trusted callers still supply fresh IDs. History, portable validation, and remote ingress reject
+reuse across retained lifetimes. Whole-Version restore reactivates those same lifetimes through a separate operation.
 [`decisions/0002-global-durable-identity-and-empty-genesis-root.md`](decisions/0002-global-durable-identity-and-empty-genesis-root.md)
 records the accepted rationale.
 
 Step 3 is the current implementation step. Its payload, structural/allocator, and integrated collaborative-document
-foundation merge units are complete; integrated structural and payload semantics qualification is next, followed by
-carrier lifecycle, application/editor qualification, comparative evidence, and Gate B. Step 3 qualifies the Yjs and
-Automerge candidates without also owning the complete production implementation. The payload suite covers allowlisted
+foundation, integrated structural/payload semantics, and historical lifecycle merge units are complete; retained-state
+and Range lifecycle qualification is next, followed by application/editor qualification, comparative evidence, and
+Gate B. Step 3 qualifies the Yjs and Automerge candidates without also owning the complete production implementation.
+The payload suite covers allowlisted
 fine-grained text, representative generic opaque Media Types, universal whole-payload replacement, deterministic
 concurrent replacement, and raw/coarse boundary factorization through representative test codecs. The structural carrier
 direction remains explicit: use one logical placement per `BlockId`, with atomic position and depth, and project the
