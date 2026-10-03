@@ -24,6 +24,9 @@ const blockB = parseBlockId("70000000-0000-4000-8000-000000000006");
 const otherRootId = parseBlockId("70000000-0000-4000-8000-000000000005");
 const textId = parseInlineContentId("70000000-0000-4000-8000-000000000003");
 const opaqueId = parseInlineContentId("70000000-0000-4000-8000-000000000004");
+const childTextId = parseInlineContentId(
+  "70000000-0000-4000-8000-000000000007",
+);
 const human = { id: "human-a", kind: "human" as const };
 const imported = { id: "import-a", kind: "imported" as const };
 
@@ -215,6 +218,83 @@ for (const factory of factories) {
         )?.parentId,
       ).toBe(rootId);
       assertUsableSnapshot(snapshot);
+    });
+
+    it("does not revive an ancestor from a concurrent descendant update", () => {
+      const source = seeded(factory);
+      source.applyChange({
+        placements: [{ blockId: blockB, placement: position(2, 2) }],
+        inlineContents: [{ inlineContentId: childTextId, blockId: blockB }],
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: childTextId,
+            mediaType: "text/plain",
+            text: "child",
+            origin: human,
+          },
+        ],
+      });
+      const base = source.encode();
+      const deletion = factory.load(base);
+      const descendantUpdate = factory.load(base);
+      deletion.applyChange({ deleteBlockIds: [blockA, blockB] });
+      descendantUpdate.applyChange({
+        payloads: [
+          {
+            kind: "insert-text",
+            inlineContentId: childTextId,
+            offset: 5,
+            text: "!",
+            origin: human,
+          },
+        ],
+      });
+
+      converge(deletion, descendantUpdate);
+      const snapshot = deletion.snapshot();
+      expect(snapshot).toEqual(descendantUpdate.snapshot());
+      expect(snapshot.blockLiveness.get(blockA)).toBe(false);
+      expect(snapshot.placements.has(blockA)).toBe(false);
+      expect(snapshot.blockLiveness.get(blockB)).toBe(true);
+      expect(
+        projectIntegratedSnapshot(snapshot, factory.positionOrdering).find(
+          (block) => block.blockId === blockB,
+        )?.parentId,
+      ).toBe(rootId);
+      assertUsableSnapshot(snapshot);
+    });
+
+    it("does not treat no-op text commands as liveness activity", () => {
+      const noOps: readonly IntegratedPayloadChange[] = [
+        {
+          kind: "insert-text",
+          inlineContentId: textId,
+          offset: 0,
+          text: "",
+          origin: human,
+        },
+        {
+          kind: "delete-text",
+          inlineContentId: textId,
+          start: 0,
+          end: 0,
+        },
+      ];
+
+      for (const noOp of noOps) {
+        const base = seeded(factory).encode();
+        const deletion = factory.load(base);
+        const noOpReplica = factory.load(base);
+        deletion.applyChange({ deleteBlockIds: [blockA] });
+        noOpReplica.applyChange({ payloads: [noOp] });
+
+        converge(deletion, noOpReplica);
+        expect(deletion.snapshot()).toEqual(noOpReplica.snapshot());
+        expect(deletion.snapshot().blockLiveness.get(blockA)).toBe(false);
+        expect(deletion.snapshot().placements.has(blockA)).toBe(false);
+        assertUsableSnapshot(deletion.snapshot());
+      }
     });
 
     it("applies sequential text operations against evolving transaction state", () => {
@@ -923,10 +1003,16 @@ function converge(
   left: IntegratedDocumentCarrier<LocalDensePosition>,
   right: IntegratedDocumentCarrier<LocalDensePosition>,
 ): void {
-  const leftEncoded = left.encode();
-  const rightEncoded = right.encode();
-  left.mergeEncoded(rightEncoded);
-  right.mergeEncoded(leftEncoded);
+  // Replicas make their changes during a partition. Delivery is delayed, then
+  // sent in opposite directions; the first delivery is duplicated.
+  const leftDuringPartition = left.encode();
+  const rightDuringPartition = right.encode();
+  right.mergeEncoded(leftDuringPartition);
+  assertUsableSnapshot(right.snapshot());
+  right.mergeEncoded(leftDuringPartition);
+  assertUsableSnapshot(right.snapshot());
+  left.mergeEncoded(rightDuringPartition);
+  assertUsableSnapshot(left.snapshot());
 }
 
 function assertUsableSnapshot(

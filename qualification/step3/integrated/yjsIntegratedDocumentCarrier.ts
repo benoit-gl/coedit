@@ -268,8 +268,8 @@ function applyPreparedChange(
       const ownerId = (owners as Y.Map<string>).get(update.inlineContentId);
       if (ownerId === undefined)
         throw new TypeError("Integrated InlineContent owner is missing.");
-      addLiveToken(liveness, parseBlockId(ownerId));
       if (update.kind === "replace-text") {
+        addLiveToken(liveness, parseBlockId(ownerId));
         const payload = new Y.Map<unknown>();
         payload.set("kind", "text");
         payload.set("mediaType", update.mediaType);
@@ -284,6 +284,7 @@ function applyPreparedChange(
         continue;
       }
       if (update.kind === "replace-opaque") {
+        addLiveToken(liveness, parseBlockId(ownerId));
         const payload = new Y.Map<unknown>();
         payload.set("kind", "opaque");
         payload.set("mediaType", update.mediaType);
@@ -302,9 +303,12 @@ function applyPreparedChange(
       if (!(text instanceof Y.Text))
         throw new TypeError("Fine-grained operations require a text payload.");
       if (update.kind === "insert-text") {
-        if (update.text.length > 0)
+        if (update.text.length > 0) {
+          addLiveToken(liveness, parseBlockId(ownerId));
           text.insert(update.offset, update.text, { [ORIGIN]: update.origin });
+        }
       } else if (update.start !== update.end) {
+        addLiveToken(liveness, parseBlockId(ownerId));
         text.delete(update.start, update.end - update.start);
       }
     }
