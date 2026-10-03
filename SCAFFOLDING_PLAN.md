@@ -239,9 +239,21 @@ Deliver Step 3 as eight reviewable merge units with one fork-and-join boundary:
    Use the landed structural-position allocator abstraction. This unit does not yet claim the complete Block-local
    liveness join, History, Range/cursor, editor, clipboard, or garbage-collection/compaction qualification.
 4. **Integrated structural and payload semantics qualification.** Build on the integrated foundation and complete the
-   explicit join of the landed payload and structural semantics. Qualify Block-local payload ownership, activity and
-   liveness effects, deletion conflicts, semantic update-over-delete with real payload changes, and atomic mixed-payload
-   transactions with liveness.
+   explicit Block-local join of the landed payload and structural semantics. Create each InlineContent against one
+   immutable owning Block, and expose carrier-neutral Block liveness, placement, ownership, and payload state without
+   exposing candidate-private conflict machinery. Treat a placement change, fine-grained payload edit, or whole-payload
+   replacement as activity on its owning Block: its semantic effect, activity, and liveness effect publish in one
+   all-or-none carrier change. Accept an application-selected atomic BlockId deletion list that retires each listed
+   Block's observed liveness effects; do not emit re-parenting operations. Surviving Blocks project under the parent
+   derived from the resulting live placement set. Qualify move-versus-delete and payload-update-versus-delete for
+   fine-grained text and text and opaque whole-payload replacement. After every accepted delivery, each replica must
+   remain immediately projectable and usable: every surviving Block is visible exactly once, ownership and liveness are
+   coherent, and surviving content remains reachable. After complete convergence, the concurrent semantic update keeps
+   its Block live and both candidates agree on carrier-neutral structure, ownership, liveness, payload, Media Type, and
+   Origin. Prove that descendant activity does not keep a deleted ancestor live. Exercise opposite, duplicate, delayed,
+   and partition/reconnect delivery. Defer History and Range surrogates, reload and portable-format qualification,
+   garbage collection and compaction, editor behavior, comparative measurements, and the Gate B mixed
+   replacement-versus-edit decision to later merge units.
 5. **Integrated carrier lifecycle qualification.** Build on the integrated structural and payload semantics. Qualify
    restore, History and Range feasibility surrogates, carrier serialization/reopen and portable-format qualification
    surrogates, and supported garbage collection/compaction. These portable checks do not implement the `.coedit` codec

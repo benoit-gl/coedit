@@ -29,6 +29,7 @@ import type {
   IntegratedDocumentCarrierFactory,
   IntegratedDocumentChange,
   IntegratedDocumentSnapshot,
+  IntegratedInlineContentCreation,
 } from "./carrier.js";
 
 const ORIGIN_MARK = "__coedit_origin";
@@ -48,6 +49,8 @@ interface State extends Record<string, unknown> {
   rootId: string;
   lineageId: string;
   blocks: Record<string, string>;
+  liveness: Record<string, Record<string, boolean>>;
+  inlineContentOwners: Record<string, string>;
   payloads: Record<string, TextState | OpaqueState>;
 }
 
@@ -69,6 +72,8 @@ class AutomergeIntegratedDocumentCarrier<
         rootId,
         lineageId: crypto.randomUUID(),
         blocks: {},
+        liveness: {},
+        inlineContentOwners: {},
         payloads: {},
       });
     else
@@ -80,8 +85,13 @@ class AutomergeIntegratedDocumentCarrier<
   }
 
   public applyChange(change: IntegratedDocumentChange<Position>): void {
-    validateChange(change, this.snapshot());
+    const snapshot = this.snapshot();
+    validateChange(change, snapshot);
+    const inlineContents = prepareInlineContentCreations(change, snapshot);
+    const deletes = prepareDeletes(change.deleteBlockIds ?? [], snapshot);
     this.document = Automerge.change(this.document, (draft) => {
+      for (const blockId of deletes)
+        retireObservedTokens(draft.liveness, blockId);
       for (const update of change.placements ?? []) {
         if (update.blockId === draft.rootId)
           throw new TypeError("The integrated root cannot have a placement.");
@@ -89,8 +99,15 @@ class AutomergeIntegratedDocumentCarrier<
           update.placement,
           this.positionCodec,
         );
+        addLiveToken(draft.liveness, update.blockId);
       }
+      for (const creation of inlineContents)
+        draft.inlineContentOwners[creation.inlineContentId] = creation.blockId;
       for (const update of change.payloads ?? []) {
+        const ownerId = draft.inlineContentOwners[update.inlineContentId];
+        if (ownerId === undefined)
+          throw new TypeError("Integrated InlineContent owner is missing.");
+        addLiveToken(draft.liveness, parseBlockId(ownerId));
         if (update.kind === "replace-text") {
           draft.payloads[update.inlineContentId] = {
             kind: "text",
@@ -162,18 +179,45 @@ class AutomergeIntegratedDocumentCarrier<
 
   public snapshot(): IntegratedDocumentSnapshot<Position> {
     const placements = new Map<BlockId, StructuralPlacement<Position>>();
-    for (const [rawId, encoded] of Object.entries(this.document.blocks))
+    const liveBlocks = liveBlockIds(this.document);
+    const blockLiveness = new Map<BlockId, boolean>([
+      [parseBlockId(this.document.rootId), true],
+    ]);
+    for (const [rawId, tokens] of Object.entries(this.document.liveness))
+      blockLiveness.set(
+        parseBlockId(rawId),
+        Object.values(tokens).some((value) => value === true),
+      );
+    for (const [rawId, encoded] of Object.entries(this.document.blocks)) {
+      if (!liveBlocks.has(rawId)) continue;
       placements.set(
         parseBlockId(rawId),
         decodeStructuralPlacement(encoded, this.positionCodec),
       );
+    }
     const payloads = new Map<InlineContentId, QualificationPayloadSnapshot>();
-    for (const [rawId, payload] of Object.entries(this.document.payloads))
+    const inlineContentOwners = new Map<InlineContentId, BlockId>();
+    for (const [rawId, rawOwnerId] of Object.entries(
+      this.document.inlineContentOwners,
+    )) {
+      if (!liveBlocks.has(rawOwnerId)) continue;
+      const payload = this.document.payloads[rawId];
+      if (payload === undefined)
+        throw new TypeError("Integrated InlineContent payload is missing.");
+      const inlineContentId = parseInlineContentId(rawId);
+      inlineContentOwners.set(inlineContentId, parseBlockId(rawOwnerId));
       payloads.set(
-        parseInlineContentId(rawId),
+        inlineContentId,
         projectPayload(this.document, rawId, payload),
       );
-    return { rootId: parseBlockId(this.document.rootId), placements, payloads };
+    }
+    return {
+      rootId: parseBlockId(this.document.rootId),
+      blockLiveness,
+      placements,
+      inlineContentOwners,
+      payloads,
+    };
   }
 
   public encode(): Uint8Array {
@@ -273,6 +317,88 @@ function validateChange<Position>(
       }
     }
   }
+}
+
+function prepareInlineContentCreations<Position>(
+  change: IntegratedDocumentChange<Position>,
+  snapshot: IntegratedDocumentSnapshot<Position>,
+): readonly IntegratedInlineContentCreation[] {
+  const created = new Set<InlineContentId>();
+  const availableBlocks = new Set(snapshot.placements.keys());
+  for (const placement of change.placements ?? [])
+    availableBlocks.add(placement.blockId);
+  const payloadIds = new Set(
+    (change.payloads ?? []).map((payload) => payload.inlineContentId),
+  );
+  for (const creation of change.inlineContents ?? []) {
+    if (snapshot.inlineContentOwners.has(creation.inlineContentId))
+      throw new TypeError("Integrated InlineContent ownership is immutable.");
+    if (created.has(creation.inlineContentId))
+      throw new TypeError("Integrated InlineContent creation is duplicated.");
+    if (!availableBlocks.has(creation.blockId))
+      throw new TypeError(
+        "Integrated InlineContent owner must be a live Block.",
+      );
+    if (!payloadIds.has(creation.inlineContentId))
+      throw new TypeError(
+        "Integrated InlineContent creation requires a payload.",
+      );
+    created.add(creation.inlineContentId);
+  }
+  for (const payload of change.payloads ?? []) {
+    if (
+      !snapshot.inlineContentOwners.has(payload.inlineContentId) &&
+      !created.has(payload.inlineContentId)
+    )
+      throw new TypeError(
+        "Integrated payload requires an owned InlineContent.",
+      );
+  }
+  return change.inlineContents ?? [];
+}
+
+function prepareDeletes<Position>(
+  deletes: readonly BlockId[],
+  snapshot: IntegratedDocumentSnapshot<Position>,
+): readonly BlockId[] {
+  const unique = new Set<BlockId>();
+  for (const blockId of deletes) {
+    if (blockId === snapshot.rootId)
+      throw new TypeError("The integrated root cannot be deleted.");
+    if (!snapshot.placements.has(blockId))
+      throw new TypeError("Integrated deletion requires a live Block.");
+    unique.add(blockId);
+  }
+  return [...unique];
+}
+
+function addLiveToken(
+  liveness: Record<string, Record<string, boolean>>,
+  blockId: BlockId,
+): void {
+  const token = crypto.randomUUID();
+  if (liveness[blockId] === undefined) {
+    liveness[blockId] = { [token]: true };
+    return;
+  }
+  liveness[blockId][token] = true;
+}
+
+function retireObservedTokens(
+  liveness: Record<string, Record<string, boolean>>,
+  blockId: BlockId,
+): void {
+  const tokens = liveness[blockId];
+  if (tokens === undefined) return;
+  for (const token of Object.keys(tokens)) tokens[token] = false;
+}
+
+function liveBlockIds(document: Automerge.Doc<State>): ReadonlySet<string> {
+  const live = new Set<string>([document.rootId]);
+  for (const [blockId, tokens] of Object.entries(document.liveness ?? {}))
+    if (Object.values(tokens).some((value) => value === true))
+      live.add(blockId);
+  return live;
 }
 
 function projectPayload(

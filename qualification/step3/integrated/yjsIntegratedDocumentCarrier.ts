@@ -29,6 +29,7 @@ import type {
   IntegratedDocumentCarrierFactory,
   IntegratedDocumentChange,
   IntegratedDocumentSnapshot,
+  IntegratedInlineContentCreation,
   IntegratedPayloadChange,
 } from "./carrier.js";
 
@@ -37,6 +38,8 @@ const ROOT_ID = "rootId";
 const LINEAGE_ID = "lineageId";
 const BLOCKS = "blocks";
 const PAYLOADS = "payloads";
+const INLINE_CONTENT_OWNERS = "inlineContentOwners";
+const LIVENESS = "liveness";
 const ORIGIN = "coedit:origin";
 const ENVELOPE_SEPARATOR = 0;
 const ROOT_ID_BYTE_LENGTH = 36;
@@ -64,6 +67,8 @@ class YjsIntegratedDocumentCarrier<
       this.root.set(LINEAGE_ID, crypto.randomUUID());
       this.root.set(BLOCKS, new Y.Map<string>());
       this.root.set(PAYLOADS, new Y.Map<Y.Map<unknown>>());
+      this.root.set(INLINE_CONTENT_OWNERS, new Y.Map<string>());
+      this.root.set(LIVENESS, new Y.Map<Y.Map<boolean>>());
     } else {
       throw new TypeError(
         "Integrated carrier creation requires a root identity.",
@@ -73,10 +78,13 @@ class YjsIntegratedDocumentCarrier<
     this.requireLineageId();
     this.blocks();
     this.payloads();
+    this.inlineContentOwners();
+    this.liveness();
   }
 
   public applyChange(change: IntegratedDocumentChange<Position>): void {
     const rootId = this.requireRootId();
+    const snapshot = this.snapshot();
     const placements = (change.placements ?? []).map((update) => {
       if (update.blockId === rootId)
         throw new TypeError("The integrated root cannot have a placement.");
@@ -90,25 +98,61 @@ class YjsIntegratedDocumentCarrier<
     });
     const payloads = preparePayloadChanges(
       change.payloads ?? [],
-      this.snapshot().payloads,
+      snapshot.payloads,
     );
-    applyPreparedChange(this.document, placements, payloads);
+    const inlineContents = prepareInlineContentCreations(change, snapshot);
+    const deletes = prepareDeletes(
+      change.deleteBlockIds ?? [],
+      rootId,
+      snapshot,
+    );
+    applyPreparedChange(
+      this.document,
+      placements,
+      inlineContents,
+      payloads,
+      deletes,
+    );
   }
 
   public snapshot(): IntegratedDocumentSnapshot<Position> {
     const placements = new Map<BlockId, StructuralPlacement<Position>>();
+    const liveBlocks = this.liveBlockIds();
+    const blockLiveness = new Map<BlockId, boolean>([
+      [this.requireRootId(), true],
+    ]);
+    for (const [rawId, tokens] of this.liveness())
+      blockLiveness.set(
+        parseBlockId(rawId),
+        [...tokens.values()].some((value) => value === true),
+      );
     for (const [rawId, encoded] of this.blocks()) {
       const blockId = parseBlockId(rawId);
+      if (!liveBlocks.has(blockId)) continue;
       placements.set(
         blockId,
         decodeStructuralPlacement(encoded, this.positionCodec),
       );
     }
     const payloads = new Map<InlineContentId, QualificationPayloadSnapshot>();
-    for (const [rawId, payload] of this.payloads()) {
-      payloads.set(parseInlineContentId(rawId), projectPayload(payload));
+    const inlineContentOwners = new Map<InlineContentId, BlockId>();
+    for (const [rawId, rawOwnerId] of this.inlineContentOwners()) {
+      const inlineContentId = parseInlineContentId(rawId);
+      const ownerId = parseBlockId(rawOwnerId);
+      if (!liveBlocks.has(ownerId)) continue;
+      const payload = this.payloads().get(rawId);
+      if (payload === undefined)
+        throw new TypeError("Integrated InlineContent payload is missing.");
+      inlineContentOwners.set(inlineContentId, ownerId);
+      payloads.set(inlineContentId, projectPayload(payload));
     }
-    return { rootId: this.requireRootId(), placements, payloads };
+    return {
+      rootId: this.requireRootId(),
+      blockLiveness,
+      placements,
+      inlineContentOwners,
+      payloads,
+    };
   }
 
   public encode(): Uint8Array {
@@ -167,6 +211,26 @@ class YjsIntegratedDocumentCarrier<
       throw new TypeError("Integrated payload namespace is missing.");
     return value as Y.Map<Y.Map<unknown>>;
   }
+  private inlineContentOwners(): Y.Map<string> {
+    const value = this.root.get(INLINE_CONTENT_OWNERS);
+    if (!(value instanceof Y.Map))
+      throw new TypeError("Integrated ownership namespace is missing.");
+    return value as Y.Map<string>;
+  }
+  private liveness(): Y.Map<Y.Map<boolean>> {
+    const value = this.root.get(LIVENESS);
+    if (!(value instanceof Y.Map))
+      throw new TypeError("Integrated liveness namespace is missing.");
+    return value as Y.Map<Y.Map<boolean>>;
+  }
+  private liveBlockIds(): ReadonlySet<BlockId> {
+    const live = new Set<BlockId>([this.requireRootId()]);
+    for (const [rawId, tokens] of this.liveness()) {
+      if ([...tokens.values()].some((value) => value === true))
+        live.add(parseBlockId(rawId));
+    }
+    return live;
+  }
 }
 
 function applyPreparedChange(
@@ -175,18 +239,36 @@ function applyPreparedChange(
     readonly blockId: BlockId;
     readonly encoded: string;
   }[],
+  inlineContents: readonly IntegratedInlineContentCreation[],
   payloads: readonly PreparedPayloadChange[],
+  deletes: readonly BlockId[],
 ): void {
   const root = document.getMap<unknown>(ROOT);
   const blocks = root.get(BLOCKS);
   const payloadMap = root.get(PAYLOADS);
-  if (!(blocks instanceof Y.Map) || !(payloadMap instanceof Y.Map))
+  const owners = root.get(INLINE_CONTENT_OWNERS);
+  const liveness = root.get(LIVENESS);
+  if (
+    !(blocks instanceof Y.Map) ||
+    !(payloadMap instanceof Y.Map) ||
+    !(owners instanceof Y.Map) ||
+    !(liveness instanceof Y.Map)
+  )
     throw new TypeError("Integrated document is invalid.");
 
   document.transact(() => {
-    for (const update of placements)
+    for (const blockId of deletes) retireObservedTokens(liveness, blockId);
+    for (const update of placements) {
       (blocks as Y.Map<string>).set(update.blockId, update.encoded);
+      addLiveToken(liveness, update.blockId);
+    }
+    for (const creation of inlineContents)
+      (owners as Y.Map<string>).set(creation.inlineContentId, creation.blockId);
     for (const update of payloads) {
+      const ownerId = (owners as Y.Map<string>).get(update.inlineContentId);
+      if (ownerId === undefined)
+        throw new TypeError("Integrated InlineContent owner is missing.");
+      addLiveToken(liveness, parseBlockId(ownerId));
       if (update.kind === "replace-text") {
         const payload = new Y.Map<unknown>();
         payload.set("kind", "text");
@@ -258,6 +340,79 @@ type PreparedPayloadChange =
       "origin"
     > & { readonly origin: string })
   | Extract<IntegratedPayloadChange, { readonly kind: "delete-text" }>;
+
+function prepareInlineContentCreations<Position>(
+  change: IntegratedDocumentChange<Position>,
+  snapshot: IntegratedDocumentSnapshot<Position>,
+): readonly IntegratedInlineContentCreation[] {
+  const created = new Set<InlineContentId>();
+  const availableBlocks = new Set(snapshot.placements.keys());
+  for (const placement of change.placements ?? [])
+    availableBlocks.add(placement.blockId);
+  const payloadIds = new Set(
+    (change.payloads ?? []).map((payload) => payload.inlineContentId),
+  );
+  for (const creation of change.inlineContents ?? []) {
+    if (snapshot.inlineContentOwners.has(creation.inlineContentId))
+      throw new TypeError("Integrated InlineContent ownership is immutable.");
+    if (created.has(creation.inlineContentId))
+      throw new TypeError("Integrated InlineContent creation is duplicated.");
+    if (!availableBlocks.has(creation.blockId))
+      throw new TypeError(
+        "Integrated InlineContent owner must be a live Block.",
+      );
+    if (!payloadIds.has(creation.inlineContentId))
+      throw new TypeError(
+        "Integrated InlineContent creation requires a payload.",
+      );
+    created.add(creation.inlineContentId);
+  }
+  for (const payload of change.payloads ?? []) {
+    if (
+      !snapshot.inlineContentOwners.has(payload.inlineContentId) &&
+      !created.has(payload.inlineContentId)
+    )
+      throw new TypeError(
+        "Integrated payload requires an owned InlineContent.",
+      );
+  }
+  return change.inlineContents ?? [];
+}
+
+function prepareDeletes<Position>(
+  deletes: readonly BlockId[],
+  rootId: BlockId,
+  snapshot: IntegratedDocumentSnapshot<Position>,
+): readonly BlockId[] {
+  const unique = new Set<BlockId>();
+  for (const blockId of deletes) {
+    if (blockId === rootId)
+      throw new TypeError("The integrated root cannot be deleted.");
+    if (!snapshot.placements.has(blockId))
+      throw new TypeError("Integrated deletion requires a live Block.");
+    unique.add(blockId);
+  }
+  return [...unique];
+}
+
+function addLiveToken(liveness: Y.Map<unknown>, blockId: BlockId): void {
+  let tokens = liveness.get(blockId);
+  if (!(tokens instanceof Y.Map)) {
+    tokens = new Y.Map<boolean>();
+    liveness.set(blockId, tokens);
+  }
+  (tokens as Y.Map<boolean>).set(crypto.randomUUID(), true);
+}
+
+function retireObservedTokens(
+  liveness: Y.Map<unknown>,
+  blockId: BlockId,
+): void {
+  const tokens = liveness.get(blockId);
+  if (!(tokens instanceof Y.Map)) return;
+  for (const [token, live] of tokens)
+    if (live === true) tokens.set(token, false);
+}
 
 function preparePayloadChanges(
   changes: readonly IntegratedPayloadChange[],

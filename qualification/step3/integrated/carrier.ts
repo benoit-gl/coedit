@@ -81,20 +81,43 @@ export interface IntegratedPlacementChange<Position> {
   readonly placement: StructuralPlacement<Position>;
 }
 
+/** Creates one immutable InlineContent-to-Block ownership relationship. */
+export interface IntegratedInlineContentCreation {
+  /** Newly created InlineContent identity. */
+  readonly inlineContentId: InlineContentId;
+  /** Live Block that owns the new InlineContent. */
+  readonly blockId: BlockId;
+}
+
 /** One all-or-none integrated qualification transaction. */
 export interface IntegratedDocumentChange<Position> {
   /** Structural placement replacements in this transaction. */
   readonly placements?: readonly IntegratedPlacementChange<Position>[];
+  /** InlineContents created against their immutable owning Blocks. */
+  readonly inlineContents?: readonly IntegratedInlineContentCreation[];
   /** Payload operations in this transaction. */
   readonly payloads?: readonly IntegratedPayloadChange[];
+  /**
+   * Blocks whose observed liveness effects this transaction retires.
+   *
+   * @remarks
+   * The list is one atomic application command. Surviving descendants receive
+   * their parent from normal projection; this change emits no re-parenting
+   * operations.
+   */
+  readonly deleteBlockIds?: readonly BlockId[];
 }
 
 /** Detached integrated document projection. */
 export interface IntegratedDocumentSnapshot<Position> {
   /** Immutable document root identity. */
   readonly rootId: BlockId;
+  /** Liveness by known Block identity, including the immutable root. */
+  readonly blockLiveness: ReadonlyMap<BlockId, boolean>;
   /** Current non-root structural placements by Block identity. */
   readonly placements: ReadonlyMap<BlockId, StructuralPlacement<Position>>;
+  /** Owning Block for each visible InlineContent payload. */
+  readonly inlineContentOwners: ReadonlyMap<InlineContentId, BlockId>;
   /** Current detached payload projections by InlineContent identity. */
   readonly payloads: ReadonlyMap<InlineContentId, QualificationPayloadSnapshot>;
 }
