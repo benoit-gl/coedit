@@ -350,7 +350,10 @@ function prepareInlineContentCreations<Position>(
   snapshot: IntegratedDocumentSnapshot<Position>,
 ): readonly IntegratedInlineContentCreation[] {
   const created = new Set<InlineContentId>();
-  const availableBlocks = new Set(snapshot.placements.keys());
+  const availableBlocks = new Set([
+    snapshot.rootId,
+    ...snapshot.placements.keys(),
+  ]);
   for (const placement of change.placements ?? [])
     availableBlocks.add(placement.blockId);
   const payloadIds = new Set(

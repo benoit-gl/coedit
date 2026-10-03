@@ -148,6 +148,31 @@ for (const factory of factories) {
       });
     });
 
+    it("creates InlineContent against the live root", () => {
+      const carrier = factory.create(rootId);
+      carrier.applyChange({
+        inlineContents: [{ inlineContentId: textId, blockId: rootId }],
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: textId,
+            mediaType: "text/plain",
+            text: "root content",
+            origin: human,
+          },
+        ],
+      });
+
+      expect(carrier.snapshot().inlineContentOwners).toEqual(
+        new Map([[textId, rootId]]),
+      );
+      expect(carrier.snapshot().payloads.get(textId)).toMatchObject({
+        kind: "text",
+        text: "root content",
+      });
+      assertUsableSnapshot(carrier.snapshot());
+    });
+
     it("keeps concurrent semantic changes live and each delivery state usable", () => {
       const base = seeded(factory).encode();
       const deletion = factory.load(base);
@@ -1024,7 +1049,7 @@ function assertUsableSnapshot(
   for (const blockId of snapshot.placements.keys())
     expect(snapshot.blockLiveness.get(blockId)).toBe(true);
   for (const [inlineContentId, ownerId] of snapshot.inlineContentOwners) {
-    if (!snapshot.placements.has(ownerId))
+    if (ownerId !== snapshot.rootId && !snapshot.placements.has(ownerId))
       throw new TypeError("Visible InlineContent owner must be live.");
     if (!snapshot.payloads.has(inlineContentId))
       throw new TypeError("Visible InlineContent must have a payload.");
