@@ -146,6 +146,26 @@ for (const factory of factories) {
         inlineContentOwners: new Map(),
         payloads: new Map(),
       });
+
+      carrier.applyChange({
+        placements: [{ blockId: blockB, placement: position(2, 1) }],
+      });
+      const beforeRecreation = carrier.snapshot();
+      expect(() =>
+        carrier.applyChange({
+          inlineContents: [{ inlineContentId: textId, blockId: blockB }],
+          payloads: [
+            {
+              kind: "replace-text",
+              inlineContentId: textId,
+              mediaType: "text/plain",
+              text: "recreated",
+              origin: human,
+            },
+          ],
+        }),
+      ).toThrow(/ownership is immutable/u);
+      expect(carrier.snapshot()).toEqual(beforeRecreation);
     });
 
     it("creates InlineContent against the live root", () => {
@@ -224,6 +244,29 @@ for (const factory of factories) {
         expect(deletion.snapshot().inlineContentOwners.get(textId)).toBe(
           blockA,
         );
+        const snapshot = deletion.snapshot();
+        if (payload.kind === "insert-text") {
+          expect(snapshot.payloads.get(textId)).toEqual({
+            kind: "text",
+            mediaType: "text/plain",
+            text: "alpha!",
+            spans: [{ text: "alpha!", origin: human }],
+          });
+        } else if (payload.kind === "replace-text") {
+          expect(snapshot.payloads.get(textId)).toEqual({
+            kind: "text",
+            mediaType: "text/plain",
+            text: "replacement",
+            spans: [{ text: "replacement", origin: human }],
+          });
+        } else {
+          expect(snapshot.payloads.get(opaqueId)).toEqual({
+            kind: "opaque",
+            mediaType: "application/example",
+            bytes: Uint8Array.of(4, 5, 6),
+            origin: imported,
+          });
+        }
         assertUsableSnapshot(deletion.snapshot());
       }
     });
@@ -579,6 +622,54 @@ for (const factory of factories) {
     });
   });
 }
+
+describe("cross-candidate update-over-delete projection", () => {
+  it("agrees on carrier-neutral final snapshots for each payload update", () => {
+    const updates: readonly IntegratedPayloadChange[] = [
+      {
+        kind: "insert-text",
+        inlineContentId: textId,
+        offset: 5,
+        text: "!",
+        origin: human,
+      },
+      {
+        kind: "replace-text",
+        inlineContentId: textId,
+        mediaType: "text/plain",
+        text: "replacement",
+        origin: human,
+      },
+      {
+        kind: "replace-opaque",
+        inlineContentId: opaqueId,
+        mediaType: "application/example",
+        bytes: Uint8Array.of(4, 5, 6),
+        origin: imported,
+      },
+    ];
+
+    for (const payload of updates) {
+      const snapshots = factories.map((factory) => {
+        const base = seeded(factory).encode();
+        const deletion = factory.load(base);
+        const update = factory.load(base);
+        deletion.applyChange({ deleteBlockIds: [blockA] });
+        update.applyChange({ payloads: [payload] });
+        converge(deletion, update);
+        const snapshot = deletion.snapshot();
+        return {
+          snapshot,
+          structure: projectIntegratedSnapshot(
+            snapshot,
+            factory.positionOrdering,
+          ),
+        };
+      });
+      expect(snapshots[0]).toEqual(snapshots[1]);
+    }
+  });
+});
 
 describe("automerge integrated Origin validation", () => {
   const factory = createAutomergeIntegratedDocumentCarrierFactory(

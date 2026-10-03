@@ -87,7 +87,15 @@ class AutomergeIntegratedDocumentCarrier<
   public applyChange(change: IntegratedDocumentChange<Position>): void {
     const snapshot = this.snapshot();
     validateChange(change, snapshot);
-    const inlineContents = prepareInlineContentCreations(change, snapshot);
+    const inlineContents = prepareInlineContentCreations(
+      change,
+      snapshot,
+      new Set(
+        Object.keys(this.document.inlineContentOwners).map(
+          parseInlineContentId,
+        ),
+      ),
+    );
     const deletes = prepareDeletes(change.deleteBlockIds ?? [], snapshot);
     this.document = Automerge.change(this.document, (draft) => {
       for (const blockId of deletes)
@@ -325,6 +333,7 @@ function validateChange<Position>(
 function prepareInlineContentCreations<Position>(
   change: IntegratedDocumentChange<Position>,
   snapshot: IntegratedDocumentSnapshot<Position>,
+  retainedOwnershipIds: ReadonlySet<InlineContentId>,
 ): readonly IntegratedInlineContentCreation[] {
   const created = new Set<InlineContentId>();
   const availableBlocks = new Set([
@@ -337,7 +346,7 @@ function prepareInlineContentCreations<Position>(
     (change.payloads ?? []).map((payload) => payload.inlineContentId),
   );
   for (const creation of change.inlineContents ?? []) {
-    if (snapshot.inlineContentOwners.has(creation.inlineContentId))
+    if (retainedOwnershipIds.has(creation.inlineContentId))
       throw new TypeError("Integrated InlineContent ownership is immutable.");
     if (created.has(creation.inlineContentId))
       throw new TypeError("Integrated InlineContent creation is duplicated.");
