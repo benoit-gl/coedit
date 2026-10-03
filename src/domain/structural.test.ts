@@ -247,7 +247,7 @@ describe("structural operations", () => {
     expect(document.root.children).toEqual([]);
   });
 
-  it("allows reuse after deletion because Step 2 keeps no lifetime registry", () => {
+  it("cannot detect prior Block identity use after deletion in Step 2", () => {
     const id = blockId(70);
     const result = applyStructuralOperations(emptyDocument(), [
       createBlock(id, 0),
@@ -258,7 +258,7 @@ describe("structural operations", () => {
     expect(result.ok).toBe(true);
   });
 
-  it("deletes complete subtrees and their owned InlineContents", () => {
+  it("deletes complete subtrees and their owned InlineContents without retaining their IDs", () => {
     const parent = blockId(80);
     const child = blockId(81);
     const contentId = inlineId(82);

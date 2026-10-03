@@ -199,8 +199,11 @@ current boundary behavior.
 
 All durable user-created and domain entity identities use canonical lowercase UUID-v4 values. Trusted construction or
 application code allocates them; pure structural reducers never generate identities. The Step 2 domain rejects duplicate
-Block and InlineContent IDs in the live structure but keeps no lifetime-ID registry. Once History exists, it rejects
-reuse of an identity across retained lifetimes, and portable validation enforces the same rule when opening a document.
+Block and InlineContent IDs in the live structure but keeps no lifetime-ID registry. A durable ID identifies one
+entity lifetime in a document. Deletion does not free it for a different entity. The Step 2 reducer cannot detect
+reuse after deletion, but trusted callers must supply fresh IDs. History rejects reuse across retained lifetimes,
+and untrusted portable and replication input must reject it atomically. Read-only materialization of an earlier
+Version does not create entities. A separate whole-Version restore may reactivate the same retained lifetimes.
 
 Document/genesis construction creates the one real root through a trusted factory such as `createEmptyDocument(...)`.
 Root construction is not a structural mutation, and `CreateBlock` always creates a non-root child under a real parent.

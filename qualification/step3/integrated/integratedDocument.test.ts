@@ -193,6 +193,113 @@ for (const factory of factories) {
       assertUsableSnapshot(carrier.snapshot());
     });
 
+    it("rejects durable identity reuse across entity types", () => {
+      const carrier = seeded(factory);
+      carrier.applyChange({ deleteBlockIds: [blockA] });
+      const before = carrier.snapshot();
+      expect(() =>
+        carrier.applyChange({
+          placements: [
+            { blockId: parseBlockId(textId), placement: position(3, 1) },
+          ],
+        }),
+      ).toThrow(/identity is already used/u);
+      expect(() =>
+        carrier.applyChange({
+          inlineContents: [
+            { inlineContentId: parseInlineContentId(blockA), blockId: rootId },
+          ],
+          payloads: [
+            {
+              kind: "replace-text",
+              inlineContentId: parseInlineContentId(blockA),
+              mediaType: "text/plain",
+              text: "collision",
+              origin: human,
+            },
+          ],
+        }),
+      ).toThrow(/identity is already used/u);
+      expect(carrier.snapshot()).toEqual(before);
+    });
+
+    it("retains historical lifetimes and restores their exact material after reopen", () => {
+      const carrier = seeded(factory);
+      carrier.applyChange({
+        payloads: [
+          {
+            kind: "insert-text",
+            inlineContentId: textId,
+            offset: 2,
+            text: "X",
+            origin: imported,
+          },
+        ],
+      });
+      const expected = carrier.snapshot();
+      const token = carrier.captureHistoricalState();
+      carrier.applyChange({
+        deleteBlockIds: [blockA],
+        placements: [{ blockId: blockB, placement: position(2, 1) }],
+      });
+      const reopened = factory.load(carrier.encode());
+      expect(reopened.materializeHistoricalState(token)).toEqual(expected);
+      const deleted = reopened.snapshot();
+      expect(() =>
+        reopened.applyChange({
+          placements: [{ blockId: blockA, placement: position(3, 1) }],
+        }),
+      ).toThrow(/identity cannot be reused/u);
+      expect(() =>
+        reopened.applyChange({
+          inlineContents: [{ inlineContentId: textId, blockId: blockB }],
+          payloads: [
+            {
+              kind: "replace-text",
+              inlineContentId: textId,
+              mediaType: "text/plain",
+              text: "different lifetime",
+              origin: human,
+            },
+          ],
+        }),
+      ).toThrow(/ownership is immutable/u);
+      expect(() => reopened.restoreHistoricalState("unknown")).toThrow(
+        /unknown/u,
+      );
+      expect(reopened.snapshot()).toEqual(deleted);
+
+      reopened.restoreHistoricalState(token);
+      expect(reopened.snapshot()).toEqual(
+        // A later-created Block remains known, but is no longer live.
+        {
+          ...expected,
+          blockLiveness: new Map([
+            ...expected.blockLiveness,
+            [blockB, false],
+          ]),
+        },
+      );
+      expect(reopened.materializeHistoricalState(token)).toEqual(expected);
+      const restored = factory.load(reopened.encode());
+      expect(restored.snapshot()).toEqual(reopened.snapshot());
+      expect(restored.materializeHistoricalState(token)).toEqual(expected);
+      expect(() =>
+        restored.applyChange({
+          inlineContents: [{ inlineContentId: textId, blockId: blockA }],
+          payloads: [
+            {
+              kind: "replace-text",
+              inlineContentId: textId,
+              mediaType: "text/plain",
+              text: "another lifetime",
+              origin: human,
+            },
+          ],
+        }),
+      ).toThrow(/ownership is immutable/u);
+    });
+
     it("keeps concurrent semantic changes live and each delivery state usable", () => {
       const base = seeded(factory).encode();
       const deletion = factory.load(base);

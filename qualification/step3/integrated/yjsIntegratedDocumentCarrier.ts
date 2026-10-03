@@ -32,6 +32,10 @@ import type {
   IntegratedInlineContentCreation,
   IntegratedPayloadChange,
 } from "./carrier.js";
+import {
+  captureHistoricalState,
+  decodeHistoricalState,
+} from "./historicalState.js";
 
 const ROOT = "integrated";
 const ROOT_ID = "rootId";
@@ -40,6 +44,7 @@ const BLOCKS = "blocks";
 const PAYLOADS = "payloads";
 const INLINE_CONTENT_OWNERS = "inlineContentOwners";
 const LIVENESS = "liveness";
+const HISTORICAL_STATES = "historicalStates";
 const ORIGIN = "coedit:origin";
 const ENVELOPE_SEPARATOR = 0;
 const ROOT_ID_BYTE_LENGTH = 36;
@@ -69,6 +74,7 @@ class YjsIntegratedDocumentCarrier<
       this.root.set(PAYLOADS, new Y.Map<Y.Map<unknown>>());
       this.root.set(INLINE_CONTENT_OWNERS, new Y.Map<string>());
       this.root.set(LIVENESS, new Y.Map<Y.Map<boolean>>());
+      this.root.set(HISTORICAL_STATES, new Y.Map<string>());
     } else {
       throw new TypeError(
         "Integrated carrier creation requires a root identity.",
@@ -80,6 +86,7 @@ class YjsIntegratedDocumentCarrier<
     this.payloads();
     this.inlineContentOwners();
     this.liveness();
+    this.historicalStates();
   }
 
   public applyChange(change: IntegratedDocumentChange<Position>): void {
@@ -88,6 +95,10 @@ class YjsIntegratedDocumentCarrier<
     const placements = (change.placements ?? []).map((update) => {
       if (update.blockId === rootId)
         throw new TypeError("The integrated root cannot have a placement.");
+      if (snapshot.blockLiveness.get(update.blockId) === false)
+        throw new TypeError("Integrated Block identity cannot be reused.");
+      if (this.inlineContentOwners().has(update.blockId))
+        throw new TypeError("Integrated durable identity is already used.");
       return {
         blockId: update.blockId,
         encoded: encodeStructuralPlacement(
@@ -104,6 +115,7 @@ class YjsIntegratedDocumentCarrier<
       change,
       snapshot,
       new Set([...this.inlineContentOwners().keys()].map(parseInlineContentId)),
+      new Set([rootId, ...this.liveness().keys()]),
     );
     const deletes = prepareDeletes(
       change.deleteBlockIds ?? [],
@@ -157,6 +169,67 @@ class YjsIntegratedDocumentCarrier<
       inlineContentOwners,
       payloads,
     };
+  }
+
+  public captureHistoricalState(): string {
+    const token = crypto.randomUUID();
+    const state = captureHistoricalState(this.snapshot(), this.positionCodec);
+    this.historicalStates().set(token, state);
+    return token;
+  }
+
+  public materializeHistoricalState(
+    token: string,
+  ): IntegratedDocumentSnapshot<Position> {
+    const state = this.historicalStates().get(token);
+    if (state === undefined)
+      throw new TypeError("Historical qualification state is unknown.");
+    const snapshot = decodeHistoricalState(state, this.positionCodec);
+    if (snapshot.rootId !== this.requireRootId())
+      throw new TypeError("Historical qualification root is invalid.");
+    return snapshot;
+  }
+
+  public restoreHistoricalState(token: string): void {
+    const target = this.materializeHistoricalState(token);
+    const owners = this.inlineContentOwners();
+    for (const [id, owner] of target.inlineContentOwners)
+      if (owners.get(id) !== owner)
+        throw new TypeError("Historical InlineContent ownership is invalid.");
+    for (const id of target.placements.keys())
+      if (!this.blocks().has(id) || !this.liveness().has(id))
+        throw new TypeError("Historical Block lifetime is missing.");
+    this.document.transact(() => {
+      for (const id of this.liveness().keys())
+        retireObservedTokens(this.liveness(), parseBlockId(id));
+      for (const [id, placement] of target.placements) {
+        this.blocks().set(
+          id,
+          encodeStructuralPlacement(placement, this.positionCodec),
+        );
+        addLiveToken(this.liveness(), id);
+      }
+      for (const [id, payload] of target.payloads) {
+        const restored = new Y.Map<unknown>();
+        restored.set("kind", payload.kind);
+        restored.set("mediaType", payload.mediaType);
+        if (payload.kind === "opaque") {
+          restored.set("bytes", payload.bytes.slice());
+          restored.set("origin", encodeOrigin(payload.origin));
+        } else {
+          const text = new Y.Text();
+          let offset = 0;
+          for (const span of payload.spans) {
+            text.insert(offset, span.text, {
+              [ORIGIN]: encodeOrigin(span.origin),
+            });
+            offset += span.text.length;
+          }
+          restored.set("text", text);
+        }
+        this.payloads().set(id, restored);
+      }
+    });
   }
 
   public encode(): Uint8Array {
@@ -226,6 +299,12 @@ class YjsIntegratedDocumentCarrier<
     if (!(value instanceof Y.Map))
       throw new TypeError("Integrated liveness namespace is missing.");
     return value as Y.Map<Y.Map<boolean>>;
+  }
+  private historicalStates(): Y.Map<string> {
+    const value = this.root.get(HISTORICAL_STATES);
+    if (!(value instanceof Y.Map))
+      throw new TypeError("Integrated historical namespace is missing.");
+    return value as Y.Map<string>;
   }
   private liveBlockIds(): ReadonlySet<BlockId> {
     const live = new Set<BlockId>([this.requireRootId()]);
@@ -353,6 +432,7 @@ function prepareInlineContentCreations<Position>(
   change: IntegratedDocumentChange<Position>,
   snapshot: IntegratedDocumentSnapshot<Position>,
   retainedOwnershipIds: ReadonlySet<InlineContentId>,
+  retainedBlockIds: ReadonlySet<string>,
 ): readonly IntegratedInlineContentCreation[] {
   const created = new Set<InlineContentId>();
   const availableBlocks = new Set([
@@ -367,6 +447,13 @@ function prepareInlineContentCreations<Position>(
   for (const creation of change.inlineContents ?? []) {
     if (retainedOwnershipIds.has(creation.inlineContentId))
       throw new TypeError("Integrated InlineContent ownership is immutable.");
+    if (
+      retainedBlockIds.has(creation.inlineContentId) ||
+      (change.placements ?? []).some(
+        (placement) => placement.blockId === creation.inlineContentId,
+      )
+    )
+      throw new TypeError("Integrated durable identity is already used.");
     if (created.has(creation.inlineContentId))
       throw new TypeError("Integrated InlineContent creation is duplicated.");
     if (!availableBlocks.has(creation.blockId))
