@@ -1,6 +1,6 @@
 import * as Automerge from "@automerge/automerge";
 import * as Y from "yjs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   parseBlockId,
@@ -193,6 +193,151 @@ for (const factory of factories) {
       assertUsableSnapshot(carrier.snapshot());
     });
 
+    it("rejects durable identity reuse across entity types", () => {
+      const carrier = seeded(factory);
+      carrier.applyChange({ deleteBlockIds: [blockA] });
+      const before = carrier.snapshot();
+      expect(() =>
+        carrier.applyChange({
+          placements: [
+            { blockId: parseBlockId(textId), placement: position(3, 1) },
+          ],
+        }),
+      ).toThrow(/identity is already used/u);
+      expect(() =>
+        carrier.applyChange({
+          inlineContents: [
+            { inlineContentId: parseInlineContentId(blockA), blockId: rootId },
+          ],
+          payloads: [
+            {
+              kind: "replace-text",
+              inlineContentId: parseInlineContentId(blockA),
+              mediaType: "text/plain",
+              text: "collision",
+              origin: human,
+            },
+          ],
+        }),
+      ).toThrow(/identity is already used/u);
+      expect(carrier.snapshot()).toEqual(before);
+    });
+
+    it("retains historical lifetimes and restores their exact material after reopen", () => {
+      const carrier = seeded(factory);
+      carrier.applyChange({
+        payloads: [
+          {
+            kind: "insert-text",
+            inlineContentId: textId,
+            offset: 2,
+            text: "X",
+            origin: imported,
+          },
+        ],
+      });
+      const expected = carrier.snapshot();
+      const token = carrier.captureHistoricalState();
+      carrier.applyChange({
+        deleteBlockIds: [blockA],
+        placements: [{ blockId: blockB, placement: position(2, 1) }],
+      });
+      const reopened = factory.load(carrier.encode());
+      expect(reopened.materializeHistoricalState(token)).toEqual(expected);
+      const deleted = reopened.snapshot();
+      expect(() =>
+        reopened.applyChange({
+          placements: [{ blockId: blockA, placement: position(3, 1) }],
+        }),
+      ).toThrow(/identity cannot be reused/u);
+      expect(() =>
+        reopened.applyChange({
+          inlineContents: [{ inlineContentId: textId, blockId: blockB }],
+          payloads: [
+            {
+              kind: "replace-text",
+              inlineContentId: textId,
+              mediaType: "text/plain",
+              text: "different lifetime",
+              origin: human,
+            },
+          ],
+        }),
+      ).toThrow(/ownership is immutable/u);
+      expect(() => reopened.restoreHistoricalState("unknown")).toThrow(
+        /unknown/u,
+      );
+      expect(reopened.snapshot()).toEqual(deleted);
+
+      reopened.restoreHistoricalState(token);
+      expect(reopened.snapshot()).toEqual(
+        // A later-created Block remains known, but is no longer live.
+        {
+          ...expected,
+          blockLiveness: new Map([...expected.blockLiveness, [blockB, false]]),
+        },
+      );
+      expect(reopened.materializeHistoricalState(token)).toEqual(expected);
+      const restored = factory.load(reopened.encode());
+      expect(restored.snapshot()).toEqual(reopened.snapshot());
+      expect(restored.materializeHistoricalState(token)).toEqual(expected);
+      expect(() =>
+        restored.applyChange({
+          inlineContents: [{ inlineContentId: textId, blockId: blockA }],
+          payloads: [
+            {
+              kind: "replace-text",
+              inlineContentId: textId,
+              mediaType: "text/plain",
+              text: "another lifetime",
+              origin: human,
+            },
+          ],
+        }),
+      ).toThrow(/ownership is immutable/u);
+    });
+
+    it("restores exact InlineContent membership and keeps the root live", () => {
+      const carrier = seeded(factory);
+      const expected = carrier.snapshot();
+      const token = carrier.captureHistoricalState();
+      carrier.applyChange({
+        inlineContents: [{ inlineContentId: childTextId, blockId: blockA }],
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: childTextId,
+            mediaType: "text/plain",
+            text: "later content",
+            origin: human,
+          },
+        ],
+      });
+
+      carrier.restoreHistoricalState(token);
+      expect(carrier.snapshot()).toEqual(expected);
+
+      const rootCarrier = factory.create(rootId);
+      rootCarrier.applyChange({
+        inlineContents: [{ inlineContentId: textId, blockId: rootId }],
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: textId,
+            mediaType: "text/plain",
+            text: "root content",
+            origin: human,
+          },
+        ],
+      });
+      const rootExpected = rootCarrier.snapshot();
+      const rootToken = rootCarrier.captureHistoricalState();
+
+      rootCarrier.restoreHistoricalState(rootToken);
+      expect(rootCarrier.snapshot()).toEqual(rootExpected);
+      assertUsableSnapshot(rootCarrier.snapshot());
+    });
+
     it("keeps concurrent semantic changes live and each delivery state usable", () => {
       const base = seeded(factory).encode();
       const deletion = factory.load(base);
@@ -268,6 +413,53 @@ for (const factory of factories) {
           });
         }
         assertUsableSnapshot(deletion.snapshot());
+      }
+    });
+
+    it("keeps payload activity live after restoring a deleted state", () => {
+      const updates: readonly IntegratedPayloadChange[] = [
+        {
+          kind: "insert-text",
+          inlineContentId: textId,
+          offset: 5,
+          text: "!",
+          origin: human,
+        },
+        {
+          kind: "replace-text",
+          inlineContentId: textId,
+          mediaType: "text/plain",
+          text: "replacement",
+          origin: human,
+        },
+        {
+          kind: "replace-opaque",
+          inlineContentId: opaqueId,
+          mediaType: "application/example",
+          bytes: Uint8Array.of(4, 5, 6),
+          origin: imported,
+        },
+      ];
+
+      for (const payload of updates) {
+        const base = seeded(factory).encode();
+        const restore = factory.load(base);
+        const update = factory.load(base);
+        restore.applyChange({ deleteBlockIds: [blockA] });
+        const deletedState = restore.captureHistoricalState();
+        restore.restoreHistoricalState(deletedState);
+        update.applyChange({ payloads: [payload] });
+
+        converge(restore, update);
+        expect(restore.snapshot()).toEqual(update.snapshot());
+        expect(restore.snapshot().placements.has(blockA)).toBe(true);
+        expect(
+          restore.snapshot().inlineContentOwners.get(payload.inlineContentId),
+        ).toBe(blockA);
+        assertUsableSnapshot(restore.snapshot());
+        const reopened = factory.load(restore.encode());
+        expect(reopened.snapshot()).toEqual(restore.snapshot());
+        assertUsableSnapshot(reopened.snapshot());
       }
     });
 
@@ -1012,6 +1204,69 @@ describe("yjs integrated transaction preflight", () => {
       kind: "opaque",
       bytes: Uint8Array.of(1, 2, 3),
     });
+  });
+
+  it("does not publish a restore when position encoding fails", () => {
+    let rejectRestoreEncoding = false;
+    const throwingFactory = createYjsIntegratedDocumentCarrierFactory(
+      {
+        encode(value: LocalDensePosition): string {
+          if (
+            rejectRestoreEncoding &&
+            localDensePositionAllocator.compare(
+              value,
+              position(2, 1).position,
+            ) === 0
+          )
+            throw new TypeError("Position encode failed.");
+          return localDensePositionAllocator.encode(value);
+        },
+        decode(value: string): LocalDensePosition {
+          return localDensePositionAllocator.decode(value);
+        },
+      },
+      localDensePositionAllocator,
+    );
+    const carrier = seeded(throwingFactory);
+    carrier.applyChange({
+      placements: [{ blockId: blockA, placement: position(2, 1) }],
+    });
+    const token = carrier.captureHistoricalState();
+    carrier.applyChange({
+      placements: [{ blockId: blockA, placement: position(3, 1) }],
+    });
+    const before = carrier.snapshot();
+    const beforeBytes = carrier.encode();
+    rejectRestoreEncoding = true;
+
+    expect(() => carrier.restoreHistoricalState(token)).toThrow(
+      /Position encode failed/u,
+    );
+    expect(carrier.snapshot()).toEqual(before);
+    expect(carrier.encode()).toEqual(beforeBytes);
+  });
+
+  it("does not start a restore when liveness token allocation fails", () => {
+    const carrier = seeded(factory);
+    const token = carrier.captureHistoricalState();
+    carrier.applyChange({
+      placements: [{ blockId: blockA, placement: position(2, 1) }],
+    });
+    const before = carrier.snapshot();
+    const beforeBytes = carrier.encode();
+    const randomUuid = vi.spyOn(crypto, "randomUUID").mockImplementation(() => {
+      throw new TypeError("Liveness token allocation failed.");
+    });
+
+    try {
+      expect(() => carrier.restoreHistoricalState(token)).toThrow(
+        /Liveness token allocation failed/u,
+      );
+      expect(carrier.snapshot()).toEqual(before);
+      expect(carrier.encode()).toEqual(beforeBytes);
+    } finally {
+      randomUuid.mockRestore();
+    }
   });
 });
 

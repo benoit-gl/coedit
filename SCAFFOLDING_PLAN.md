@@ -1,7 +1,7 @@
 # Coedit document-engine MVP scaffolding plan
 
-**Status:** Accepted implementation plan; Steps 0-2 and the first three Step 3 qualification merge units are complete;
-integrated structural and payload semantics qualification is next.
+**Status:** Accepted implementation plan; Steps 0-2 and the first five Step 3 qualification merge units are complete;
+integrated retained-state and Range lifecycle qualification is next.
 
 **Target branch:** `main`
 
@@ -154,8 +154,9 @@ rich text. The accepted rationale is recorded in `docs/decisions/0001-collaborat
 This documentation set establishes and revalidates the Step 0 authority baseline with Media-Type-labelled InlineContent
 payloads, the durable text Range authority, and the revised Step 3-and-later sequence. Steps 1 and 2 subsequently
 established the browser scaffold and pure Block domain. Step 3 carrier qualification is in progress: the payload,
-structural/allocator, and integrated collaborative-document foundation merge units are complete; integrated structural
-and payload semantics qualification is next. Gate B selects the carrier, the observable deterministic
+structural/allocator, integrated collaborative-document foundation, integrated structural/payload semantics, and
+historical lifecycle merge units are complete; retained-state and Range lifecycle qualification is next. Gate B selects
+the carrier, the observable deterministic
 concurrent-replacement winner rule, the carrier-private implementation of that rule, mixed replacement/text-edit
 semantics, and payload/carrier resource-admission behavior. Step 4 selects and qualifies the production Media Type
 parser implementation and implements the first raw-media processor capability. Gate C later selects the text Range
@@ -199,8 +200,8 @@ Media-Type-labelled payload representation without changing completed Step 2 str
 
 **Exit gate:** Structural invariants, live-identity uniqueness, trusted ID allocation, root construction, opaque empty
 InlineContent behavior, ordering, effectively unbounded Step 2 capacity behavior, and rollback behavior are verified at
-the domain boundary. Step 2 requires no lifetime-ID registry; History and portable validation later reject durable
-identity reuse across retained lifetimes.
+the domain boundary. Step 2 requires no lifetime-ID registry. A durable ID identifies one entity lifetime; deletion
+does not make it available for a different lifetime. History and portable validation later enforce this rule.
 
 See [`docs/PRODUCT_DOMAIN_MODEL.md`](docs/PRODUCT_DOMAIN_MODEL.md),
 [`docs/MVP_IMPLEMENTATION_SPEC.md`](docs/MVP_IMPLEMENTATION_SPEC.md), and
@@ -220,7 +221,7 @@ carrier-private implementation, mixed replacement/text-edit semantics, payload/c
 the selection rationale. Exercise the raw/coarse media boundary with representative test codec fixtures, but do not
 select the production processor or supported representation profiles in this step.
 
-Deliver Step 3 as eight reviewable merge units with one fork-and-join boundary:
+Deliver Step 3 as nine reviewable merge units with one fork-and-join boundary:
 
 1. **Payload/carrier qualification implementation.** Add the carrier-neutral Media-Type-labelled payload qualification
    boundary and its common semantic suite for Yjs and Automerge. Cover allowlisted native-string text, protected Origin,
@@ -246,7 +247,7 @@ Deliver Step 3 as eight reviewable merge units with one fork-and-join boundary:
    all-or-none carrier change. Accept an application-selected atomic BlockId deletion list that retires each listed
    Block's observed liveness effects; do not emit re-parenting operations. Surviving Blocks project under the parent
    derived from the resulting live placement set. Qualify move-versus-delete and payload-update-versus-delete for
-   fine-grained text and text and opaque whole-payload replacement. After every accepted delivery, each replica must
+   fine-grained text and opaque whole-payload replacement. After every accepted delivery, each replica must
    remain immediately projectable and usable: every surviving Block is visible exactly once, ownership and liveness are
    coherent, and surviving content remains reachable. After complete convergence, the concurrent semantic update keeps
    its Block live and both candidates agree on carrier-neutral structure, ownership, liveness, payload, Media Type, and
@@ -254,30 +255,39 @@ Deliver Step 3 as eight reviewable merge units with one fork-and-join boundary:
    and partition/reconnect delivery. Defer History and Range surrogates, reload and portable-format qualification,
    garbage collection and compaction, editor behavior, comparative measurements, and the Gate B mixed
    replacement-versus-edit decision to later merge units.
-5. **Integrated carrier lifecycle qualification.** Build on the integrated structural and payload semantics. Qualify
-   restore, History and Range feasibility surrogates, carrier serialization/reopen and portable-format qualification
-   surrogates, and supported garbage collection/compaction. These portable checks do not implement the `.coedit` codec
-   or freeze portable bytes.
-6. **Application and editor qualification.** Build on the integrated lifecycle qualification. Qualify cursor behavior,
+5. **Integrated historical lifecycle qualification.** Build on integrated structural and payload semantics. Add
+   qualification-only capture and exact read-only materialization of a retained historical state, and a separate atomic
+   restore path that reactivates the same Block and InlineContent lifetimes. Ordinary creation must reject previously
+   used durable IDs after deletion; restore preserves immutable ownership, Media Types, bytes, text, and Origin. Keep
+   update-over-delete behavior for concurrent changes authored before deletion. Prove retained historical material and
+   restore behavior after candidate serialization/reopen. Do not implement production History, a Version API, or a
+   final History representation.
+6. **Integrated retained-state and Range lifecycle qualification.** Build on the historical lifecycle seam. Qualify
+   the Step 3 Range-feasibility subset across deletion, Block movement, split/merge lineage fixtures, whole-payload
+   replacement, reload, and lazy resolution. Exercise candidate-supported garbage collection/compaction and a
+   portable-format surrogate only when they preserve required historical states and Range evidence. Record destructive
+   native lifecycle operations as unsuitable; do not select a final Range representation or freeze `.coedit` bytes.
+7. **Application and editor qualification.** Build on integrated retained-state and Range lifecycle qualification.
+   Qualify cursor behavior,
    Tiptap/ProseMirror transaction translation, IME, cut/paste, undo/redo, and the private clipboard boundary.
-7. **Comparative qualification evidence.** Add the reproducible qualification runner that orchestrates the landed common
+8. **Comparative qualification evidence.** Add the reproducible qualification runner that orchestrates the landed common
    suites. Before the comparative run, record the shared run-specific fixture profile and measurement method. Run all
    carrier and allocator candidates under that profile, then commit summarized measurements, resource characterization,
    environment capture, representative-growth results, and other selection evidence in the repository. Also upload
    machine-readable raw results as Actions artifacts for review and debugging. The committed fixture profile, method,
    and summarized evidence are the durable qualification record; Actions artifacts are supplementary. This merge unit
    can identify candidate guard and admission alternatives but does not select them.
-8. **Gate B decision.** In a deliberately small decision change, record the selected carrier and allocator, observable
+9. **Gate B decision.** In a deliberately small decision change, record the selected carrier and allocator, observable
    concurrent-replacement winner rule, mixed replacement/edit semantics, selected carrier string domain, payload/carrier
    resource-admission behavior, private-clipboard guards, rejected candidates, and rationale.
 
 The first two merge units are semantically independent and normally target `main`; whichever merges second is brought
 current with `main` without taking an implementation dependency on the first. The third unit establishes the shared
-native-document seam. The fourth, fifth, and sixth units separately qualify the semantic join, carrier lifecycle, and
-application/editor behavior. Those first six units build and exercise the mandatory suites, but their development runs
-are not the final comparative evidence. The seventh unit runs the complete comparison against those implementations
-after they land on `main`, under one recorded profile and method. Do not create a deep stack merely to keep candidate
-files adjacent.
+native-document seam. Units four through seven qualify the semantic join, historical lifecycle, retained-state and
+Range lifecycle, and application/editor behavior. Those first seven units build and exercise the mandatory suites, but
+their development runs are not the final comparative evidence. The eighth unit runs the complete comparison against
+those implementations after they land on `main`, under one recorded profile and method. Do not create a deep stack
+merely to keep candidate files adjacent.
 
 Qualification-only candidate implementations can live side-by-side on `main` while Gate B is open. `CODING_STYLE.md`
 owns their source placement, qualification-helper privacy, production dependency boundary, and source verification
