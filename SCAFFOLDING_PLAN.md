@@ -262,32 +262,71 @@ Deliver Step 3 as nine reviewable merge units with one fork-and-join boundary:
    update-over-delete behavior for concurrent changes authored before deletion. Prove retained historical material and
    restore behavior after candidate serialization/reopen. Do not implement production History, a Version API, or a
    final History representation.
-6. **Integrated retained-state and Range lifecycle qualification.** Build on the historical lifecycle seam. Qualify
-   the Step 3 Range-feasibility subset across deletion, Block movement, split/merge lineage fixtures, whole-payload
-   replacement, reload, and lazy resolution. Exercise candidate-supported garbage collection/compaction and a
-   portable-format surrogate only when they preserve required historical states and Range evidence. Record destructive
-   native lifecycle operations as unsuitable; do not select a final Range representation or freeze `.coedit` bytes.
-7. **Application and editor qualification.** Build on integrated retained-state and Range lifecycle qualification.
-   Qualify cursor behavior,
-   Tiptap/ProseMirror transaction translation, IME, cut/paste, undo/redo, and the private clipboard boundary.
+6. **Integrated retained-state and Range lifecycle qualification.** Build on the historical lifecycle seam. Add a
+   private carrier-neutral Range-feasibility probe and use retained historical tokens as qualification-only Version
+   surrogates. Split/merge fixtures supply their lineage mapping and any fixture-designated continuing Block and
+   InlineContent identities as test inputs. These mappings prove one-to-many and many-to-one lineage feasibility; they
+   do not select the Step 6 continuing-identity rules, merged-away-reference behavior, or final Range representation.
+   Qualify the Step 3 Range-feasibility subset across deletion, Block movement, split/merge lineage fixtures,
+   whole-payload replacement, reload, and lazy resolution. Replacement away from allowlisted text makes the affected
+   member unresolved, and later coincidental identity, Media Type, or text equality must not silently rebind it.
+
+   In the same unit, add a qualification-only command/effect context sufficient to prove atomic publication of semantic
+   state with stable actor/effect identity and the source or derivation reference needed by copy and restore fixtures.
+   This context is not a product Contribution, Version API, or History representation. Complete the remaining integrated
+   whole-payload-replacement qualification before comparative evidence: retain independently reconstructible concurrent
+   replacement effects and enough immutable replicated identity/state to exercise the same carrier-neutral deterministic
+   precedence mechanism with both candidates; cover same-type and cross-type replacement concurrent with insertion,
+   deletion, and text replacement, including edits authored against a replacement that later loses. Exercise opposite,
+   duplicate, delayed, reordered, partition/reconnect, and reload cases. This unit qualifies feasible mechanisms and
+   alternatives; Gate B selects the observable winner rule and mixed replacement/edit policy.
+
+   Exercise only garbage-collection or compaction operations actually supported by each pinned candidate. Do not add a
+   repair layer or synthetic compactor to make candidate lifecycle APIs look equivalent. Record a native lifecycle
+   operation as unsuitable when it destroys required retained historical state, replacement evidence, or Range evidence.
+   A portable-format surrogate can round-trip only the qualification state needed by these fixtures; it must not define
+   `.coedit` grammar, version markers, or frozen bytes. Build the lazy-resolution/scaling fixtures here, but defer their
+   comparative measurements to merge unit 8.
+7. **Application and editor qualification.** Build on integrated retained-state and Range lifecycle qualification and
+   its qualification-only command/effect context. Qualify stable carrier-position behavior, Tiptap/ProseMirror
+   transaction translation, IME, cut/paste, undo/redo, editor mount/unmount, and the private clipboard boundary. Treat
+   ProseMirror/Tiptap selection, composition, formatting, and undo-stack state as transient adapter state; canonical
+   text, structure, and Origin remain the integrated carrier projection. Undo and redo are application/editor intents
+   translated through the same carrier-neutral semantic-change seam as ordinary editing. Carrier-native undo or state
+   rewind does not by itself satisfy product undo/redo qualification and must not become product History semantics.
+
+   Same-document private paste/copy fixtures preserve applicable Origin while the qualification context records the
+   acting actor and derivation/source relationship. Ordinary HTML/plain paste and cross-document private fragments use
+   imported/unknown Origin as required by the focused contract. Exercise malformed and over-capacity private fragments,
+   fallback behavior, and candidate editor-position behavior in a real browser where required. This unit produces the
+   hostile-input and clipboard evidence used by Gate B; it does not select Step 11 semantic-group timing or queue
+   thresholds.
 8. **Comparative qualification evidence.** Add the reproducible qualification runner that orchestrates the landed common
    suites. Before the comparative run, record the shared run-specific fixture profile and measurement method. Run all
-   carrier and allocator candidates under that profile, then commit summarized measurements, resource characterization,
+   selectable carrier and allocator candidates under that profile, including the landed Range lazy-resolution/scaling,
+   replacement-policy, lifecycle, editor, clipboard, and resource-admission workloads. Run Loro only as the planned
+   non-selectable reference benchmark for comparable cursor/movable-tree workloads; it does not enter the common
+   correctness gate or become a production dependency merely because it is measured. Do not invent a synthetic
+   lifecycle operation for a candidate that lacks one. Commit summarized measurements, resource characterization,
    environment capture, representative-growth results, and other selection evidence in the repository. Also upload
    machine-readable raw results as Actions artifacts for review and debugging. The committed fixture profile, method,
    and summarized evidence are the durable qualification record; Actions artifacts are supplementary. This merge unit
-   can identify candidate guard and admission alternatives but does not select them.
+   can identify candidate guard, admission, replacement-policy, and clipboard alternatives but does not select them.
 9. **Gate B decision.** In a deliberately small decision change, record the selected carrier and allocator, observable
    concurrent-replacement winner rule, mixed replacement/edit semantics, selected carrier string domain, payload/carrier
-   resource-admission behavior, private-clipboard guards, rejected candidates, and rationale.
+   resource-admission behavior, private-clipboard guards, rejected candidates, and rationale. Every selected behavior
+   must refer to a mechanism and fixture already exercised by the landed qualification suites and comparative run; the
+   Gate B change does not first introduce a new carrier behavior.
 
 The first two merge units are semantically independent and normally target `main`; whichever merges second is brought
 current with `main` without taking an implementation dependency on the first. The third unit establishes the shared
 native-document seam. Units four through seven qualify the semantic join, historical lifecycle, retained-state and
-Range lifecycle, and application/editor behavior. Those first seven units build and exercise the mandatory suites, but
-their development runs are not the final comparative evidence. The eighth unit runs the complete comparison against
-those implementations after they land on `main`, under one recorded profile and method. Do not create a deep stack
-merely to keep candidate files adjacent.
+Range lifecycle, replacement-policy feasibility, qualification-only attribution/derivation context, and
+application/editor behavior. The qualification-only context proves atomicity and attribution without implementing
+first-class History early. Those first seven units build and exercise the mandatory suites, but their development runs
+are not the final comparative evidence. The eighth unit runs the complete comparison against those implementations after
+they land on `main`, under one recorded profile and method. Do not create a deep stack merely to keep candidate files
+adjacent.
 
 Qualification-only candidate implementations can live side-by-side on `main` while Gate B is open. `CODING_STYLE.md`
 owns their source placement, qualification-helper privacy, production dependency boundary, and source verification
@@ -304,7 +343,11 @@ The suite covers:
   representative profile, explicit unsupported-profile failure, and no silent transcoding, relabelling, parameter
   ignoring, or opaque fallback;
 - universal whole-payload replacement;
-- deterministic convergence of concurrent whole-payload replacements without wall-clock or arrival-order arbitration;
+- deterministic convergence of concurrent whole-payload replacements without wall-clock or arrival-order arbitration,
+  including independently reconstructible replacement evidence and carrier-neutral precedence mechanisms that Gate B
+  can select from;
+- mixed whole-payload replacement and fine-grained edit qualification for same-type and cross-type replacement,
+  including edits authored against a replacement that later loses;
 - exact collaboration for ordinary supported native ECMAScript strings for both allowlisted fine-grained Media Types,
   including ill-formed string edge cases such as lone surrogates, with exact preservation on success or atomic rejection
   when unsupported;
@@ -313,8 +356,11 @@ The suite covers:
 - resource characterization for fine-grained editing, whole-payload replacement, and representative opaque payloads,
   including atomic refusal when the selected implementation determines that work is unsafe;
 - flat Block placement, liveness, and allocator behavior;
-- one transaction across structure and several InlineContents of mixed Media Types;
-- application text-editor integration, reload, compaction, and representative growth; and
+- one transaction across structure and several InlineContents of mixed Media Types plus qualification-only actor/effect
+  and derivation/source context, without implementing first-class History;
+- application text-editor integration, including semantic-operation undo/redo qualification, reload, supported native
+  lifecycle operations, and representative growth;
+- the non-selectable Loro cursor/movable-tree reference benchmark in the comparative-evidence unit; and
 - the fine-grained text Range-feasibility subset in `RANGE_MODEL.md`: direct multi-span creation, greedy and positional
   boundaries, structural tracking, lazy resolution, whole-payload replacement of fine-grained text feasibility, and
   practical cost.
