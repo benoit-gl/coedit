@@ -132,6 +132,7 @@ class AutomergeIntegratedDocumentCarrier<
           throw new TypeError("Integrated InlineContent owner is missing.");
         if (update.kind === "replace-text") {
           addLiveToken(draft.liveness, parseBlockId(ownerId));
+          addLiveToken(draft.inlineContentLiveness, update.inlineContentId);
           draft.payloads[update.inlineContentId] = {
             kind: "text",
             mediaType: update.mediaType,
@@ -155,6 +156,7 @@ class AutomergeIntegratedDocumentCarrier<
           }
         } else if (update.kind === "replace-opaque") {
           addLiveToken(draft.liveness, parseBlockId(ownerId));
+          addLiveToken(draft.inlineContentLiveness, update.inlineContentId);
           draft.payloads[update.inlineContentId] = {
             kind: "opaque",
             mediaType: update.mediaType,
@@ -170,6 +172,7 @@ class AutomergeIntegratedDocumentCarrier<
           if (update.kind === "insert-text") {
             if (update.text.length > 0) {
               addLiveToken(draft.liveness, parseBlockId(ownerId));
+              addLiveToken(draft.inlineContentLiveness, update.inlineContentId);
               Automerge.splice(
                 draft,
                 ["payloads", update.inlineContentId, "text"],
@@ -191,6 +194,7 @@ class AutomergeIntegratedDocumentCarrier<
             }
           } else if (update.start !== update.end) {
             addLiveToken(draft.liveness, parseBlockId(ownerId));
+            addLiveToken(draft.inlineContentLiveness, update.inlineContentId);
             Automerge.splice(
               draft,
               ["payloads", update.inlineContentId, "text"],

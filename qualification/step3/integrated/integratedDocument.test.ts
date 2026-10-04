@@ -416,6 +416,53 @@ for (const factory of factories) {
       }
     });
 
+    it("keeps payload activity live after restoring a deleted state", () => {
+      const updates: readonly IntegratedPayloadChange[] = [
+        {
+          kind: "insert-text",
+          inlineContentId: textId,
+          offset: 5,
+          text: "!",
+          origin: human,
+        },
+        {
+          kind: "replace-text",
+          inlineContentId: textId,
+          mediaType: "text/plain",
+          text: "replacement",
+          origin: human,
+        },
+        {
+          kind: "replace-opaque",
+          inlineContentId: opaqueId,
+          mediaType: "application/example",
+          bytes: Uint8Array.of(4, 5, 6),
+          origin: imported,
+        },
+      ];
+
+      for (const payload of updates) {
+        const base = seeded(factory).encode();
+        const restore = factory.load(base);
+        const update = factory.load(base);
+        restore.applyChange({ deleteBlockIds: [blockA] });
+        const deletedState = restore.captureHistoricalState();
+        restore.restoreHistoricalState(deletedState);
+        update.applyChange({ payloads: [payload] });
+
+        converge(restore, update);
+        expect(restore.snapshot()).toEqual(update.snapshot());
+        expect(restore.snapshot().placements.has(blockA)).toBe(true);
+        expect(
+          restore.snapshot().inlineContentOwners.get(payload.inlineContentId),
+        ).toBe(blockA);
+        assertUsableSnapshot(restore.snapshot());
+        const reopened = factory.load(restore.encode());
+        expect(reopened.snapshot()).toEqual(restore.snapshot());
+        assertUsableSnapshot(reopened.snapshot());
+      }
+    });
+
     it("reprojects surviving children after an application-selected deletion list", () => {
       const carrier = seeded(factory);
       carrier.applyChange({

@@ -15,6 +15,10 @@ captured state without changing the tip and restores the same Block and InlineCo
 Ordinary creation rejects a known-dead Block ID or retained InlineContent ID. Retained state survives candidate reopen.
 These tokens are not product Versions or a selected History representation.
 
+The common suite enforces the global durable-ID rule for locally submitted changes. It does not yet define a replicated
+conflict-resolution policy for a concurrent Block and InlineContent UUID collision. Revisit that case if a later
+consumer needs an untyped durable-ID lookup.
+
 This directory does not yet qualify Range feasibility, carrier cursor behavior, Tiptap/ProseMirror integration, IME,
 cut/paste, undo/redo, private clipboard behavior, portable-format surrogates, or garbage collection and compaction.
 Separate retained-state/Range and application/editor qualification units follow before comparative evidence and Gate B.

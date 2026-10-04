@@ -383,6 +383,10 @@ function applyPreparedChange(
         throw new TypeError("Integrated InlineContent owner is missing.");
       if (update.kind === "replace-text") {
         addLiveToken(liveness, parseBlockId(ownerId));
+        addLiveToken(
+          inlineContentLiveness as Y.Map<unknown>,
+          update.inlineContentId,
+        );
         const payload = new Y.Map<unknown>();
         payload.set("kind", "text");
         payload.set("mediaType", update.mediaType);
@@ -398,6 +402,10 @@ function applyPreparedChange(
       }
       if (update.kind === "replace-opaque") {
         addLiveToken(liveness, parseBlockId(ownerId));
+        addLiveToken(
+          inlineContentLiveness as Y.Map<unknown>,
+          update.inlineContentId,
+        );
         const payload = new Y.Map<unknown>();
         payload.set("kind", "opaque");
         payload.set("mediaType", update.mediaType);
@@ -418,10 +426,18 @@ function applyPreparedChange(
       if (update.kind === "insert-text") {
         if (update.text.length > 0) {
           addLiveToken(liveness, parseBlockId(ownerId));
+          addLiveToken(
+            inlineContentLiveness as Y.Map<unknown>,
+            update.inlineContentId,
+          );
           text.insert(update.offset, update.text, { [ORIGIN]: update.origin });
         }
       } else if (update.start !== update.end) {
         addLiveToken(liveness, parseBlockId(ownerId));
+        addLiveToken(
+          inlineContentLiveness as Y.Map<unknown>,
+          update.inlineContentId,
+        );
         text.delete(update.start, update.end - update.start);
       }
     }
