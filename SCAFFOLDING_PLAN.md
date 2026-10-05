@@ -227,18 +227,21 @@ Deliver Step 3 as nine reviewable merge units with one fork-and-join boundary:
    boundary and its common semantic suite for Yjs and Automerge. Cover allowlisted native-string text, protected Origin,
    opaque bytes and Origin, whole-payload replacement, Media Type preservation and classification, representative
    raw/coarse test codecs, and candidate replacement behavior.
+
 2. **Structural carrier and allocator qualification implementation.** Independently add flat structural placement and
    the structural-position allocator candidates behind the accepted allocator abstraction, together with their common
    semantic suite. Cover collision and normalization behavior, structural convergence, ordering, and the semantic stress
    workloads used by later growth comparison. Representative structural/allocator growth, exhaustion, and cost
    measurements are deferred to the comparative-evidence merge unit. This work does not depend on the payload
    qualification implementation.
+
 3. **Integrated collaborative-document foundation.** After the first two merge units are on `main`, establish one
    qualification-only integrated adapter per carrier candidate, backed by one native collaborative document. Prove the
    carrier-neutral transaction seam with atomic structural placement plus fine-grained and opaque payload changes,
    sequential payload operations, independent structural/payload convergence, and candidate serialization reload/reopen.
    Use the landed structural-position allocator abstraction. This unit does not yet claim the complete Block-local
    liveness join, History, Range/cursor, editor, clipboard, or garbage-collection/compaction qualification.
+
 4. **Integrated structural and payload semantics qualification.** Build on the integrated foundation and complete the
    explicit Block-local join of the landed payload and structural semantics. Create each InlineContent against one
    immutable owning Block, and expose carrier-neutral Block liveness, placement, ownership, and payload state without
@@ -255,6 +258,7 @@ Deliver Step 3 as nine reviewable merge units with one fork-and-join boundary:
    and partition/reconnect delivery. Defer History and Range surrogates, reload and portable-format qualification,
    garbage collection and compaction, editor behavior, comparative measurements, and the Gate B mixed
    replacement-versus-edit decision to later merge units.
+
 5. **Integrated historical lifecycle qualification.** Build on integrated structural and payload semantics. Add
    qualification-only capture and exact read-only materialization of a retained historical state, and a separate atomic
    restore path that reactivates the same Block and InlineContent lifetimes. Ordinary creation must reject previously
@@ -262,6 +266,7 @@ Deliver Step 3 as nine reviewable merge units with one fork-and-join boundary:
    update-over-delete behavior for concurrent changes authored before deletion. Prove retained historical material and
    restore behavior after candidate serialization/reopen. Do not implement production History, a Version API, or a
    final History representation.
+
 6. **Integrated retained-state and Range lifecycle qualification.** Build on the historical lifecycle seam. Add a
    private carrier-neutral Range-feasibility probe and use retained historical tokens as qualification-only Version
    surrogates. Split/merge fixtures supply their lineage mapping and any fixture-designated continuing Block and
@@ -287,6 +292,7 @@ Deliver Step 3 as nine reviewable merge units with one fork-and-join boundary:
    A portable-format surrogate can round-trip only the qualification state needed by these fixtures; it must not define
    `.coedit` grammar, version markers, or frozen bytes. Build the lazy-resolution/scaling fixtures here, but defer their
    comparative measurements to merge unit 8.
+
 7. **Application and editor qualification.** Build on integrated retained-state and Range lifecycle qualification and
    its qualification-only command/effect context. Qualify stable carrier-position behavior, Tiptap/ProseMirror
    transaction translation, IME, cut/paste, undo/redo, editor mount/unmount, and the private clipboard boundary. Treat
@@ -301,6 +307,7 @@ Deliver Step 3 as nine reviewable merge units with one fork-and-join boundary:
    fallback behavior, and candidate editor-position behavior in a real browser where required. This unit produces the
    hostile-input and clipboard evidence used by Gate B; it does not select Step 11 semantic-group timing or queue
    thresholds.
+
 8. **Comparative qualification evidence.** Add the reproducible qualification runner that orchestrates the landed common
    suites. Before the comparative run, record the shared run-specific fixture profile and measurement method. Run all
    selectable carrier and allocator candidates under that profile, including the landed Range lazy-resolution/scaling,
@@ -312,6 +319,7 @@ Deliver Step 3 as nine reviewable merge units with one fork-and-join boundary:
    machine-readable raw results as Actions artifacts for review and debugging. The committed fixture profile, method,
    and summarized evidence are the durable qualification record; Actions artifacts are supplementary. This merge unit
    can identify candidate guard, admission, replacement-policy, and clipboard alternatives but does not select them.
+
 9. **Gate B decision.** In a deliberately small decision change, record the selected carrier and allocator, observable
    concurrent-replacement winner rule, mixed replacement/edit semantics, selected carrier string domain, payload/carrier
    resource-admission behavior, private-clipboard guards, rejected candidates, and rationale. Every selected behavior
