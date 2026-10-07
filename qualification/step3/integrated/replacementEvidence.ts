@@ -103,7 +103,9 @@ export function replacementWinnerAlternatives(
   effects: readonly RecordedPayloadEffect[],
   inlineContentId: InlineContentId,
 ): {
+  /** Lexically lowest concurrent replacement effect identity. */
   readonly lowest: string | undefined;
+  /** Lexically highest concurrent replacement effect identity. */
   readonly highest: string | undefined;
 } {
   const frontier = replacementFrontier(effects, inlineContentId);
