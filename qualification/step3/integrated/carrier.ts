@@ -4,6 +4,8 @@ import type {
   StructuralPositionCodec,
   StructuralPositionOrdering,
 } from "../../../src/carrier/index.js";
+import type { QualificationEffectContext } from "./effectContext.js";
+import type { RecordedPayloadEffect } from "./replacementEvidence.js";
 import type {
   QualificationOrigin,
   QualificationPayloadSnapshot,
@@ -106,6 +108,8 @@ export interface IntegratedDocumentChange<Position> {
    * operations.
    */
   readonly deleteBlockIds?: readonly BlockId[];
+  /** Optional actor/effect attribution, published with this semantic change. */
+  readonly context?: QualificationEffectContext;
 }
 
 /** Detached integrated document projection. */
@@ -135,7 +139,11 @@ export interface IntegratedDocumentCarrier<Position> {
     token: string,
   ): IntegratedDocumentSnapshot<Position>;
   /** Restores one retained state as one carrier change, preserving entity identities. */
-  restoreHistoricalState(token: string): void;
+  restoreHistoricalState(token: string, context?: QualificationEffectContext): void;
+  /** Detached, replicated semantic-effect context (not product Contributions). */
+  effects(): ReadonlyMap<string, QualificationEffectContext>;
+  /** Immutable candidate-native payload effect evidence for Gate B alternatives. */
+  recordedPayloadEffects(): readonly RecordedPayloadEffect[];
   /** Projects detached carrier-neutral state. */
   snapshot(): IntegratedDocumentSnapshot<Position>;
   /** Encodes complete candidate state for reload or merge qualification. */

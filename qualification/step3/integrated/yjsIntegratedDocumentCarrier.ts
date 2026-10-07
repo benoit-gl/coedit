@@ -32,6 +32,10 @@ import type {
   IntegratedInlineContentCreation,
   IntegratedPayloadChange,
 } from "./carrier.js";
+import { decodeEffectContext, encodeEffectContext } from "./effectContext.js";
+import { decodePayloadEffect, encodePayloadEffect } from "./replacementEvidence.js";
+import type { RecordedPayloadEffect } from "./replacementEvidence.js";
+import type { QualificationEffectContext } from "./effectContext.js";
 import {
   captureHistoricalState,
   decodeHistoricalState,
@@ -46,6 +50,8 @@ const INLINE_CONTENT_OWNERS = "inlineContentOwners";
 const INLINE_CONTENT_LIVENESS = "inlineContentLiveness";
 const LIVENESS = "liveness";
 const HISTORICAL_STATES = "historicalStates";
+const EFFECT_CONTEXTS = "effectContexts";
+const PAYLOAD_EFFECTS = "payloadEffects";
 const ORIGIN = "coedit:origin";
 const ENVELOPE_SEPARATOR = 0;
 const ROOT_ID_BYTE_LENGTH = 36;
@@ -77,6 +83,8 @@ class YjsIntegratedDocumentCarrier<
       this.root.set(INLINE_CONTENT_LIVENESS, new Y.Map<Y.Map<boolean>>());
       this.root.set(LIVENESS, new Y.Map<Y.Map<boolean>>());
       this.root.set(HISTORICAL_STATES, new Y.Map<string>());
+      this.root.set(EFFECT_CONTEXTS, new Y.Map<string>());
+      this.root.set(PAYLOAD_EFFECTS, new Y.Map<string>());
     } else {
       throw new TypeError(
         "Integrated carrier creation requires a root identity.",
@@ -90,6 +98,8 @@ class YjsIntegratedDocumentCarrier<
     this.inlineContentLiveness();
     this.liveness();
     this.historicalStates();
+    this.effectContexts();
+    this.payloadEffects();
   }
 
   public applyChange(change: IntegratedDocumentChange<Position>): void {
@@ -120,6 +130,10 @@ class YjsIntegratedDocumentCarrier<
       new Set([...this.inlineContentOwners().keys()].map(parseInlineContentId)),
       new Set([rootId, ...this.liveness().keys()]),
     );
+    const context = this.prepareContext(change.context);
+    const evidence = context === undefined || (change.payloads?.length ?? 0) === 0
+      ? undefined : {id: context.id, encoded: encodePayloadEffect(context.id,
+        [...this.payloadEffects().keys()], change.payloads ?? [])};
     const deletes = prepareDeletes(
       change.deleteBlockIds ?? [],
       rootId,
@@ -131,6 +145,8 @@ class YjsIntegratedDocumentCarrier<
       inlineContents,
       payloads,
       deletes,
+      context,
+      evidence,
     );
   }
 
@@ -195,8 +211,9 @@ class YjsIntegratedDocumentCarrier<
     return snapshot;
   }
 
-  public restoreHistoricalState(token: string): void {
+  public restoreHistoricalState(token: string, context?: QualificationEffectContext): void {
     const target = this.materializeHistoricalState(token);
+    const effect = this.prepareContext(context);
     const rootId = this.requireRootId();
     const owners = this.inlineContentOwners();
     const liveness = this.root.get(LIVENESS);
@@ -244,7 +261,28 @@ class YjsIntegratedDocumentCarrier<
       for (const { id, value } of payloads) {
         this.payloads().set(id, value);
       }
+      if (effect !== undefined) this.effectContexts().set(effect.id, effect.encoded);
     });
+  }
+
+  public recordedPayloadEffects(): readonly RecordedPayloadEffect[] {
+    return [...this.payloadEffects()].sort(([left], [right]) => left.localeCompare(right))
+      .map(([, encoded]) => decodePayloadEffect(encoded));
+  }
+
+  public effects(): ReadonlyMap<string, QualificationEffectContext> {
+    return new Map([...this.effectContexts()].sort(([left], [right]) => left.localeCompare(right)).map(
+      ([id, encoded]) => [id, decodeEffectContext(encoded)],
+    ));
+  }
+
+  private prepareContext(context?: QualificationEffectContext): { id: string; encoded: string } | undefined {
+    if (context === undefined) return undefined;
+    const encoded = encodeEffectContext(context);
+    const id = JSON.parse(encoded) as { effectId: string };
+    if (this.effectContexts().has(id.effectId))
+      throw new TypeError("Qualification effect identity cannot be reused.");
+    return { id: id.effectId, encoded };
   }
 
   public encode(): Uint8Array {
@@ -323,6 +361,16 @@ class YjsIntegratedDocumentCarrier<
       throw new TypeError("Integrated liveness namespace is missing.");
     return value as Y.Map<Y.Map<boolean>>;
   }
+  private payloadEffects(): Y.Map<string> {
+    const value = this.root.get(PAYLOAD_EFFECTS);
+    if (!(value instanceof Y.Map)) throw new TypeError("Integrated payload effects namespace is missing.");
+    return value as Y.Map<string>;
+  }
+  private effectContexts(): Y.Map<string> {
+    const value = this.root.get(EFFECT_CONTEXTS);
+    if (!(value instanceof Y.Map)) throw new TypeError("Integrated effect context namespace is missing.");
+    return value as Y.Map<string>;
+  }
   private historicalStates(): Y.Map<string> {
     const value = this.root.get(HISTORICAL_STATES);
     if (!(value instanceof Y.Map))
@@ -348,6 +396,8 @@ function applyPreparedChange(
   inlineContents: readonly IntegratedInlineContentCreation[],
   payloads: readonly PreparedPayloadChange[],
   deletes: readonly BlockId[],
+  context?: { readonly id: string; readonly encoded: string },
+  evidence?: { readonly id: string; readonly encoded: string },
 ): void {
   const root = document.getMap<unknown>(ROOT);
   const blocks = root.get(BLOCKS);
@@ -355,12 +405,16 @@ function applyPreparedChange(
   const owners = root.get(INLINE_CONTENT_OWNERS);
   const inlineContentLiveness = root.get(INLINE_CONTENT_LIVENESS);
   const liveness = root.get(LIVENESS);
+  const contexts = root.get(EFFECT_CONTEXTS);
+  const evidenceMap = root.get(PAYLOAD_EFFECTS);
   if (
     !(blocks instanceof Y.Map) ||
     !(payloadMap instanceof Y.Map) ||
     !(owners instanceof Y.Map) ||
     !(inlineContentLiveness instanceof Y.Map) ||
-    !(liveness instanceof Y.Map)
+    !(liveness instanceof Y.Map) ||
+    !(contexts instanceof Y.Map) ||
+    !(evidenceMap instanceof Y.Map)
   )
     throw new TypeError("Integrated document is invalid.");
 
@@ -441,6 +495,8 @@ function applyPreparedChange(
         text.delete(update.start, update.end - update.start);
       }
     }
+    if (context !== undefined) (contexts as Y.Map<string>).set(context.id, context.encoded);
+    if (evidence !== undefined) (evidenceMap as Y.Map<string>).set(evidence.id, evidence.encoded);
   });
 }
 

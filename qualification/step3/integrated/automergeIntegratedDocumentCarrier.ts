@@ -31,6 +31,10 @@ import type {
   IntegratedDocumentSnapshot,
   IntegratedInlineContentCreation,
 } from "./carrier.js";
+import { decodeEffectContext, encodeEffectContext } from "./effectContext.js";
+import { decodePayloadEffect, encodePayloadEffect } from "./replacementEvidence.js";
+import type { RecordedPayloadEffect } from "./replacementEvidence.js";
+import type { QualificationEffectContext } from "./effectContext.js";
 import {
   captureHistoricalState,
   decodeHistoricalState,
@@ -58,6 +62,8 @@ interface State extends Record<string, unknown> {
   inlineContentLiveness: Record<string, Record<string, boolean>>;
   payloads: Record<string, TextState | OpaqueState>;
   historicalStates: Record<string, string>;
+  effectContexts: Record<string, string>;
+  payloadEffects: Record<string, string>;
 }
 
 /** Automerge candidate backed by one native document for integrated qualification. */
@@ -83,6 +89,8 @@ class AutomergeIntegratedDocumentCarrier<
         inlineContentLiveness: {},
         payloads: {},
         historicalStates: {},
+        effectContexts: {},
+        payloadEffects: {},
       });
     else
       throw new TypeError(
@@ -109,8 +117,14 @@ class AutomergeIntegratedDocumentCarrier<
       ),
       new Set([this.document.rootId, ...Object.keys(this.document.liveness)]),
     );
+    const context = this.prepareContext(change.context);
+    const evidence = context === undefined || (change.payloads?.length ?? 0) === 0
+      ? undefined : {id: context.id, encoded: encodePayloadEffect(context.id,
+        Object.keys(this.document.payloadEffects), change.payloads ?? [])};
     const deletes = prepareDeletes(change.deleteBlockIds ?? [], snapshot);
     this.document = Automerge.change(this.document, (draft) => {
+      if (context !== undefined) draft.effectContexts[context.id] = context.encoded;
+      if (evidence !== undefined) draft.payloadEffects[evidence.id] = evidence.encoded;
       for (const blockId of deletes)
         retireObservedTokens(draft.liveness, blockId);
       for (const update of change.placements ?? []) {
@@ -273,8 +287,9 @@ class AutomergeIntegratedDocumentCarrier<
     return snapshot;
   }
 
-  public restoreHistoricalState(token: string): void {
+  public restoreHistoricalState(token: string, context?: QualificationEffectContext): void {
     const target = this.materializeHistoricalState(token);
+    const effect = this.prepareContext(context);
     for (const [id, owner] of target.inlineContentOwners)
       if (this.document.inlineContentOwners[id] !== owner)
         throw new TypeError("Historical InlineContent ownership is invalid.");
@@ -296,6 +311,7 @@ class AutomergeIntegratedDocumentCarrier<
       (id) => ({ id, livenessToken: crypto.randomUUID() }),
     );
     this.document = Automerge.change(this.document, (draft) => {
+      if (effect !== undefined) draft.effectContexts[effect.id] = effect.encoded;
       for (const id of Object.keys(draft.liveness))
         if (id !== draft.rootId) retireObservedTokens(draft.liveness, id);
       for (const id of Object.keys(draft.inlineContentLiveness))
@@ -341,6 +357,26 @@ class AutomergeIntegratedDocumentCarrier<
         }
       }
     });
+  }
+
+  public recordedPayloadEffects(): readonly RecordedPayloadEffect[] {
+    return Object.entries(this.document.payloadEffects).sort(([left], [right]) => left.localeCompare(right))
+      .map(([, encoded]) => decodePayloadEffect(encoded));
+  }
+
+  public effects(): ReadonlyMap<string, QualificationEffectContext> {
+    return new Map(Object.entries(this.document.effectContexts).sort(([left], [right]) => left.localeCompare(right)).map(
+      ([id, encoded]) => [id, decodeEffectContext(encoded)],
+    ));
+  }
+
+  private prepareContext(context?: QualificationEffectContext): { id: string; encoded: string } | undefined {
+    if (context === undefined) return undefined;
+    const encoded = encodeEffectContext(context);
+    const id = JSON.parse(encoded) as { effectId: string };
+    if (this.document.effectContexts[id.effectId] !== undefined)
+      throw new TypeError("Qualification effect identity cannot be reused.");
+    return { id: id.effectId, encoded };
   }
 
   public encode(): Uint8Array {
