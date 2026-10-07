@@ -1,0 +1,23 @@
+name: Temporary Merge 6 formatting diagnostic
+on:
+  push:
+    branches:
+      - step3-merge6-retained-range-qualification
+permissions:
+  contents: read
+jobs:
+  capture-formatted-files:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm run bootstrap
+      - name: Print normalized qualification file bytes for scoped repair
+        run: |
+          npx prettier --write qualification/step3/integrated/automergeIntegratedDocumentCarrier.ts qualification/step3/integrated/carrier.ts qualification/step3/integrated/effectContext.ts qualification/step3/integrated/rangeProbe.ts qualification/step3/integrated/replacementEvidence.ts qualification/step3/integrated/retainedRange.test.ts qualification/step3/integrated/yjsIntegratedDocumentCarrier.ts
+          node -e 'const fs=require("node:fs"); for(const p of process.argv.slice(1)){ console.log("COEDIT_FORMAT_START "+p);console.log(fs.readFileSync(p).toString("base64"));console.log("COEDIT_FORMAT_END "+p); }' qualification/step3/integrated/automergeIntegratedDocumentCarrier.ts qualification/step3/integrated/carrier.ts qualification/step3/integrated/effectContext.ts qualification/step3/integrated/rangeProbe.ts qualification/step3/integrated/replacementEvidence.ts qualification/step3/integrated/retainedRange.test.ts qualification/step3/integrated/yjsIntegratedDocumentCarrier.ts
