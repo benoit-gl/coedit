@@ -19,6 +19,11 @@ The common suite enforces the global durable-ID rule for locally submitted chang
 conflict-resolution policy for a concurrent Block and InlineContent UUID collision. Revisit that case if a later
 consumer needs an untyped durable-ID lookup.
 
-The retained-state merge unit adds private Range-feasibility probes and replicated actor/effect and payload replacement evidence. The probes use fixture-supplied structural lineage and do not select product Range or Version representations. Native lifecycle, mixed replacement/edit behavior, and advanced lineage scenarios remain subject to qualification evidence.\n\nThis directory does not yet qualify carrier cursor behavior, Tiptap/ProseMirror integration, IME,
+The retained-state merge unit adds private Range-feasibility probes and replicated actor/effect and payload replacement
+evidence. The probes use fixture-supplied structural lineage and do not select product Range or Version representations.
+Native lifecycle, mixed replacement/edit behavior, and advanced lineage scenarios remain subject to qualification
+evidence.
+
+This directory does not yet qualify carrier cursor behavior, Tiptap/ProseMirror integration, IME,
 cut/paste, undo/redo, private clipboard behavior, portable-format surrogates, or garbage collection and compaction.
 Application/editor qualification and comparative evidence follow before Gate B.

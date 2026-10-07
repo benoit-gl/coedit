@@ -1,6 +1,9 @@
 import type { BlockId, InlineContentId } from "../../../src/domain/index.js";
 import { assertTextRange } from "../payload/carrier.js";
-import type { IntegratedDocumentCarrier, IntegratedDocumentSnapshot } from "./carrier.js";
+import type {
+  IntegratedDocumentCarrier,
+  IntegratedDocumentSnapshot,
+} from "./carrier.js";
 
 /**
  * Step 3 probe source member. Coordinates are fixture-native UTF-16 offsets,
@@ -114,10 +117,19 @@ export function createProbeRange<Position>(
   members: readonly ProbeMember[],
 ): ProbeRange {
   const snapshot = carrier.materializeHistoricalState(token);
-  if (kind === "position" && (members.length !== 1 || members[0]?.start !== members[0]?.end))
-    throw new TypeError("A positional probe requires exactly one zero-length member.");
+  if (
+    kind === "position" &&
+    (members.length !== 1 || members[0]?.start !== members[0]?.end)
+  )
+    throw new TypeError(
+      "A positional probe requires exactly one zero-length member.",
+    );
   for (const member of members) requireMember(snapshot, member);
-  return { kind, creationToken: token, members: members.map((member) => ({ ...member })) };
+  return {
+    kind,
+    creationToken: token,
+    members: members.map((member) => ({ ...member })),
+  };
 }
 
 /**
@@ -149,7 +161,8 @@ export function resolveProbeRange<Position>(
     }
     const mapped: ProbeMember[] = [];
     for (const member of current) {
-      if ((transition.invalidated ?? []).includes(member.inlineContentId)) continue;
+      if ((transition.invalidated ?? []).includes(member.inlineContentId))
+        continue;
       const lineage = (transition.lineage ?? []).filter(
         (segment) => segment.sourceInlineContentId === member.inlineContentId,
       );
@@ -158,14 +171,25 @@ export function resolveProbeRange<Position>(
         continue;
       }
       for (const segment of lineage) {
-        assertTextRange(segment.sourceStart, segment.sourceEnd, beforeText(before, member.inlineContentId));
-        if (!Number.isSafeInteger(segment.targetStart) || segment.targetStart < 0)
+        assertTextRange(
+          segment.sourceStart,
+          segment.sourceEnd,
+          beforeText(before, member.inlineContentId),
+        );
+        if (
+          !Number.isSafeInteger(segment.targetStart) ||
+          segment.targetStart < 0
+        )
           throw new RangeError("Probe lineage target offset is invalid.");
         const start = Math.max(member.start, segment.sourceStart);
         const end = Math.min(member.end, segment.sourceEnd);
-        if (start > end ||
-          (start === end && (member.start !== member.end ||
-            segment.ownsZeroLengthBoundary !== true))) continue;
+        if (
+          start > end ||
+          (start === end &&
+            (member.start !== member.end ||
+              segment.ownsZeroLengthBoundary !== true))
+        )
+          continue;
         mapped.push({
           blockId: segment.targetBlockId,
           inlineContentId: segment.targetInlineContentId,
@@ -180,11 +204,16 @@ export function resolveProbeRange<Position>(
     token = transition.to;
   }
   if (token !== selectedToken)
-    throw new TypeError("Probe selected state is not on the supplied descendant path.");
+    throw new TypeError(
+      "Probe selected state is not on the supplied descendant path.",
+    );
   const snapshot = carrier.materializeHistoricalState(selectedToken);
   return current.map((member) => ({
     ...member,
-    text: beforeText(snapshot, member.inlineContentId).slice(member.start, member.end),
+    text: beforeText(snapshot, member.inlineContentId).slice(
+      member.start,
+      member.end,
+    ),
   }));
 }
 
@@ -196,7 +225,8 @@ export function resolveProbeText<Position>(
   transitions: readonly ProbeTransition[],
 ): string {
   return resolveProbeRange(carrier, range, selectedToken, transitions)
-    .map((span) => span.text).join("");
+    .map((span) => span.text)
+    .join("");
 }
 
 function beforeText<Position>(
@@ -204,7 +234,8 @@ function beforeText<Position>(
   id: InlineContentId,
 ): string {
   const payload = snapshot.payloads.get(id);
-  if (payload?.kind !== "text") throw new TypeError("Probe member requires live allowlisted text.");
+  if (payload?.kind !== "text")
+    throw new TypeError("Probe member requires live allowlisted text.");
   return payload.text;
 }
 
@@ -213,40 +244,66 @@ function requireMember<Position>(
   member: ProbeMember,
 ): void {
   if (!isMember(snapshot, member))
-    throw new TypeError("Probe member is not a live text target in this historical state.");
+    throw new TypeError(
+      "Probe member is not a live text target in this historical state.",
+    );
 }
 
 function isMember<Position>(
   snapshot: IntegratedDocumentSnapshot<Position>,
   member: ProbeMember,
 ): boolean {
-  if (snapshot.inlineContentOwners.get(member.inlineContentId) !== member.blockId)
+  if (
+    snapshot.inlineContentOwners.get(member.inlineContentId) !== member.blockId
+  )
     return false;
   const payload = snapshot.payloads.get(member.inlineContentId);
-  return payload?.kind === "text" &&
-    Number.isSafeInteger(member.start) && Number.isSafeInteger(member.end) &&
-    member.start >= 0 && member.start <= member.end && member.end <= payload.text.length;
+  return (
+    payload?.kind === "text" &&
+    Number.isSafeInteger(member.start) &&
+    Number.isSafeInteger(member.end) &&
+    member.start >= 0 &&
+    member.start <= member.end &&
+    member.end <= payload.text.length
+  );
 }
 
 function assertEdit(edit: ProbeTextEdit): void {
   if (edit.kind === "insert") {
-    if (!Number.isSafeInteger(edit.offset) || edit.offset < 0 ||
-        !Number.isSafeInteger(edit.length) || edit.length < 0)
+    if (
+      !Number.isSafeInteger(edit.offset) ||
+      edit.offset < 0 ||
+      !Number.isSafeInteger(edit.length) ||
+      edit.length < 0
+    )
       throw new RangeError("Probe insertion is invalid.");
   } else {
-    if (!Number.isSafeInteger(edit.start) || !Number.isSafeInteger(edit.end) ||
-        edit.start < 0 || edit.end < edit.start ||
-        (edit.kind === "replace" && (!Number.isSafeInteger(edit.length) || edit.length < 0)))
+    if (
+      !Number.isSafeInteger(edit.start) ||
+      !Number.isSafeInteger(edit.end) ||
+      edit.start < 0 ||
+      edit.end < edit.start ||
+      (edit.kind === "replace" &&
+        (!Number.isSafeInteger(edit.length) || edit.length < 0))
+    )
       throw new RangeError("Probe deletion or replacement is invalid.");
   }
 }
 
-function applyEdit(member: ProbeMember, edit: ProbeTextEdit, kind: ProbeRange["kind"]): ProbeMember {
+function applyEdit(
+  member: ProbeMember,
+  edit: ProbeTextEdit,
+  kind: ProbeRange["kind"],
+): ProbeMember {
   let start = member.start;
   let end = member.end;
   if (edit.kind !== "insert") {
     const boundary = (offset: number): number =>
-      offset < edit.start ? offset : offset <= edit.end ? edit.start : offset - (edit.end - edit.start);
+      offset < edit.start
+        ? offset
+        : offset <= edit.end
+          ? edit.start
+          : offset - (edit.end - edit.start);
     start = boundary(start);
     end = boundary(end);
   }

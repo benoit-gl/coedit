@@ -33,7 +33,10 @@ import type {
   IntegratedPayloadChange,
 } from "./carrier.js";
 import { decodeEffectContext, encodeEffectContext } from "./effectContext.js";
-import { decodePayloadEffect, encodePayloadEffect } from "./replacementEvidence.js";
+import {
+  decodePayloadEffect,
+  encodePayloadEffect,
+} from "./replacementEvidence.js";
 import type { RecordedPayloadEffect } from "./replacementEvidence.js";
 import type { QualificationEffectContext } from "./effectContext.js";
 import {
@@ -131,9 +134,17 @@ class YjsIntegratedDocumentCarrier<
       new Set([rootId, ...this.liveness().keys()]),
     );
     const context = this.prepareContext(change.context);
-    const evidence = context === undefined || (change.payloads?.length ?? 0) === 0
-      ? undefined : {id: context.id, encoded: encodePayloadEffect(context.id,
-        [...this.payloadEffects().keys()], change.payloads ?? [])};
+    const evidence =
+      context === undefined || (change.payloads?.length ?? 0) === 0
+        ? undefined
+        : {
+            id: context.id,
+            encoded: encodePayloadEffect(
+              context.id,
+              [...this.payloadEffects().keys()],
+              change.payloads ?? [],
+            ),
+          };
     const deletes = prepareDeletes(
       change.deleteBlockIds ?? [],
       rootId,
@@ -211,7 +222,10 @@ class YjsIntegratedDocumentCarrier<
     return snapshot;
   }
 
-  public restoreHistoricalState(token: string, context?: QualificationEffectContext): void {
+  public restoreHistoricalState(
+    token: string,
+    context?: QualificationEffectContext,
+  ): void {
     const target = this.materializeHistoricalState(token);
     const effect = this.prepareContext(context);
     const rootId = this.requireRootId();
@@ -261,22 +275,28 @@ class YjsIntegratedDocumentCarrier<
       for (const { id, value } of payloads) {
         this.payloads().set(id, value);
       }
-      if (effect !== undefined) this.effectContexts().set(effect.id, effect.encoded);
+      if (effect !== undefined)
+        this.effectContexts().set(effect.id, effect.encoded);
     });
   }
 
   public recordedPayloadEffects(): readonly RecordedPayloadEffect[] {
-    return [...this.payloadEffects()].sort(([left], [right]) => left.localeCompare(right))
+    return [...this.payloadEffects()]
+      .sort(([left], [right]) => left.localeCompare(right))
       .map(([, encoded]) => decodePayloadEffect(encoded));
   }
 
   public effects(): ReadonlyMap<string, QualificationEffectContext> {
-    return new Map([...this.effectContexts()].sort(([left], [right]) => left.localeCompare(right)).map(
-      ([id, encoded]) => [id, decodeEffectContext(encoded)],
-    ));
+    return new Map(
+      [...this.effectContexts()]
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([id, encoded]) => [id, decodeEffectContext(encoded)]),
+    );
   }
 
-  private prepareContext(context?: QualificationEffectContext): { id: string; encoded: string } | undefined {
+  private prepareContext(
+    context?: QualificationEffectContext,
+  ): { id: string; encoded: string } | undefined {
     if (context === undefined) return undefined;
     const encoded = encodeEffectContext(context);
     const id = JSON.parse(encoded) as { effectId: string };
@@ -363,12 +383,14 @@ class YjsIntegratedDocumentCarrier<
   }
   private payloadEffects(): Y.Map<string> {
     const value = this.root.get(PAYLOAD_EFFECTS);
-    if (!(value instanceof Y.Map)) throw new TypeError("Integrated payload effects namespace is missing.");
+    if (!(value instanceof Y.Map))
+      throw new TypeError("Integrated payload effects namespace is missing.");
     return value as Y.Map<string>;
   }
   private effectContexts(): Y.Map<string> {
     const value = this.root.get(EFFECT_CONTEXTS);
-    if (!(value instanceof Y.Map)) throw new TypeError("Integrated effect context namespace is missing.");
+    if (!(value instanceof Y.Map))
+      throw new TypeError("Integrated effect context namespace is missing.");
     return value as Y.Map<string>;
   }
   private historicalStates(): Y.Map<string> {
@@ -495,8 +517,10 @@ function applyPreparedChange(
         text.delete(update.start, update.end - update.start);
       }
     }
-    if (context !== undefined) (contexts as Y.Map<string>).set(context.id, context.encoded);
-    if (evidence !== undefined) (evidenceMap as Y.Map<string>).set(evidence.id, evidence.encoded);
+    if (context !== undefined)
+      (contexts as Y.Map<string>).set(context.id, context.encoded);
+    if (evidence !== undefined)
+      (evidenceMap as Y.Map<string>).set(evidence.id, evidence.encoded);
   });
 }
 

@@ -139,7 +139,10 @@ export interface IntegratedDocumentCarrier<Position> {
     token: string,
   ): IntegratedDocumentSnapshot<Position>;
   /** Restores one retained state as one carrier change, preserving entity identities. */
-  restoreHistoricalState(token: string, context?: QualificationEffectContext): void;
+  restoreHistoricalState(
+    token: string,
+    context?: QualificationEffectContext,
+  ): void;
   /** Detached, replicated semantic-effect context (not product Contributions). */
   effects(): ReadonlyMap<string, QualificationEffectContext>;
   /** Immutable candidate-native payload effect evidence for Gate B alternatives. */

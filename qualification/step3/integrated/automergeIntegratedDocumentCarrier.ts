@@ -32,7 +32,10 @@ import type {
   IntegratedInlineContentCreation,
 } from "./carrier.js";
 import { decodeEffectContext, encodeEffectContext } from "./effectContext.js";
-import { decodePayloadEffect, encodePayloadEffect } from "./replacementEvidence.js";
+import {
+  decodePayloadEffect,
+  encodePayloadEffect,
+} from "./replacementEvidence.js";
 import type { RecordedPayloadEffect } from "./replacementEvidence.js";
 import type { QualificationEffectContext } from "./effectContext.js";
 import {
@@ -118,13 +121,23 @@ class AutomergeIntegratedDocumentCarrier<
       new Set([this.document.rootId, ...Object.keys(this.document.liveness)]),
     );
     const context = this.prepareContext(change.context);
-    const evidence = context === undefined || (change.payloads?.length ?? 0) === 0
-      ? undefined : {id: context.id, encoded: encodePayloadEffect(context.id,
-        Object.keys(this.document.payloadEffects), change.payloads ?? [])};
+    const evidence =
+      context === undefined || (change.payloads?.length ?? 0) === 0
+        ? undefined
+        : {
+            id: context.id,
+            encoded: encodePayloadEffect(
+              context.id,
+              Object.keys(this.document.payloadEffects),
+              change.payloads ?? [],
+            ),
+          };
     const deletes = prepareDeletes(change.deleteBlockIds ?? [], snapshot);
     this.document = Automerge.change(this.document, (draft) => {
-      if (context !== undefined) draft.effectContexts[context.id] = context.encoded;
-      if (evidence !== undefined) draft.payloadEffects[evidence.id] = evidence.encoded;
+      if (context !== undefined)
+        draft.effectContexts[context.id] = context.encoded;
+      if (evidence !== undefined)
+        draft.payloadEffects[evidence.id] = evidence.encoded;
       for (const blockId of deletes)
         retireObservedTokens(draft.liveness, blockId);
       for (const update of change.placements ?? []) {
@@ -287,7 +300,10 @@ class AutomergeIntegratedDocumentCarrier<
     return snapshot;
   }
 
-  public restoreHistoricalState(token: string, context?: QualificationEffectContext): void {
+  public restoreHistoricalState(
+    token: string,
+    context?: QualificationEffectContext,
+  ): void {
     const target = this.materializeHistoricalState(token);
     const effect = this.prepareContext(context);
     for (const [id, owner] of target.inlineContentOwners)
@@ -311,7 +327,8 @@ class AutomergeIntegratedDocumentCarrier<
       (id) => ({ id, livenessToken: crypto.randomUUID() }),
     );
     this.document = Automerge.change(this.document, (draft) => {
-      if (effect !== undefined) draft.effectContexts[effect.id] = effect.encoded;
+      if (effect !== undefined)
+        draft.effectContexts[effect.id] = effect.encoded;
       for (const id of Object.keys(draft.liveness))
         if (id !== draft.rootId) retireObservedTokens(draft.liveness, id);
       for (const id of Object.keys(draft.inlineContentLiveness))
@@ -360,17 +377,22 @@ class AutomergeIntegratedDocumentCarrier<
   }
 
   public recordedPayloadEffects(): readonly RecordedPayloadEffect[] {
-    return Object.entries(this.document.payloadEffects).sort(([left], [right]) => left.localeCompare(right))
+    return Object.entries(this.document.payloadEffects)
+      .sort(([left], [right]) => left.localeCompare(right))
       .map(([, encoded]) => decodePayloadEffect(encoded));
   }
 
   public effects(): ReadonlyMap<string, QualificationEffectContext> {
-    return new Map(Object.entries(this.document.effectContexts).sort(([left], [right]) => left.localeCompare(right)).map(
-      ([id, encoded]) => [id, decodeEffectContext(encoded)],
-    ));
+    return new Map(
+      Object.entries(this.document.effectContexts)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([id, encoded]) => [id, decodeEffectContext(encoded)]),
+    );
   }
 
-  private prepareContext(context?: QualificationEffectContext): { id: string; encoded: string } | undefined {
+  private prepareContext(
+    context?: QualificationEffectContext,
+  ): { id: string; encoded: string } | undefined {
     if (context === undefined) return undefined;
     const encoded = encodeEffectContext(context);
     const id = JSON.parse(encoded) as { effectId: string };
