@@ -538,7 +538,7 @@ for (const factory of factories) {
           splitEdge,
           {
             ...mergeEdge,
-            lineage: mergeEdge.lineage?.map((segment) =>
+            lineage: (mergeEdge.lineage ?? []).map((segment) =>
               segment.sourceInlineContentId === content
                 ? { ...segment, sourceEnd: 3 }
                 : segment,
