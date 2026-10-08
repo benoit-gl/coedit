@@ -17,6 +17,7 @@ import {
   resolveProbeRange,
   resolveProbeText,
 } from "./rangeProbe.js";
+import type { ProbeTransition } from "./rangeProbe.js";
 import {
   editsNotBasedOnWinner,
   replacementAlternatives,
@@ -383,6 +384,163 @@ for (const factory of factories) {
           { from: merged, to: deleted },
         ]),
       ).toBe("");
+    });
+
+    it("maps combined text edits and structural lineage", () => {
+      const carrier = factory.create(root);
+      carrier.applyChange({
+        placements: [{ blockId: block, placement: position(1) }],
+        inlineContents: [{ inlineContentId: content, blockId: block }],
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: content,
+            mediaType: "text/plain",
+            text: "abcd",
+            origin: actor,
+          },
+        ],
+      });
+      const before = carrier.captureHistoricalState();
+      const range = createProbeRange(carrier, before, "span", [
+        { blockId: block, inlineContentId: content, start: 1, end: 3 },
+      ]);
+
+      // Both the insertion and the split publish in one native carrier change.
+      carrier.applyChange({
+        placements: [{ blockId: splitBlock, placement: position(2) }],
+        inlineContents: [
+          { inlineContentId: splitContent, blockId: splitBlock },
+        ],
+        payloads: [
+          {
+            kind: "insert-text",
+            inlineContentId: content,
+            offset: 0,
+            text: "X",
+            origin: actor,
+          },
+          {
+            kind: "replace-text",
+            inlineContentId: content,
+            mediaType: "text/plain",
+            text: "Xab",
+            origin: actor,
+          },
+          {
+            kind: "replace-text",
+            inlineContentId: splitContent,
+            mediaType: "text/plain",
+            text: "cd",
+            origin: actor,
+          },
+        ],
+      });
+      const afterSplit = carrier.captureHistoricalState();
+      const splitEdge: ProbeTransition = {
+        from: before,
+        to: afterSplit,
+        edits: [
+          { kind: "insert", inlineContentId: content, offset: 0, length: 1 },
+        ],
+        lineage: [
+          {
+            sourceInlineContentId: content,
+            sourceStart: 0,
+            sourceEnd: 3,
+            targetBlockId: block,
+            targetInlineContentId: content,
+            targetStart: 0,
+          },
+          {
+            sourceInlineContentId: content,
+            sourceStart: 3,
+            sourceEnd: 5,
+            targetBlockId: splitBlock,
+            targetInlineContentId: splitContent,
+            targetStart: 0,
+          },
+        ],
+      };
+      expect(
+        resolveProbeRange(carrier, range, afterSplit, [splitEdge]),
+      ).toMatchObject([
+        { inlineContentId: content, start: 2, end: 3, text: "b" },
+        { inlineContentId: splitContent, start: 0, end: 1, text: "c" },
+      ]);
+      expect(resolveProbeText(carrier, range, afterSplit, [splitEdge])).toBe("bc");
+      expect(() =>
+        resolveProbeRange(carrier, range, afterSplit, [
+          {
+            ...splitEdge,
+            edits: [
+              { kind: "insert", inlineContentId: content, offset: 5, length: 1 },
+            ],
+          },
+        ]),
+      ).toThrow(/Probe edit exceeds source text bounds/u);
+
+      // A deletion and merge likewise share one atomic carrier change.
+      carrier.applyChange({
+        deleteBlockIds: [splitBlock],
+        payloads: [
+          {
+            kind: "delete-text",
+            inlineContentId: content,
+            start: 0,
+            end: 1,
+          },
+          {
+            kind: "replace-text",
+            inlineContentId: content,
+            mediaType: "text/plain",
+            text: "abcd",
+            origin: actor,
+          },
+        ],
+      });
+      const afterMerge = carrier.captureHistoricalState();
+      const mergeEdge: ProbeTransition = {
+        from: afterSplit,
+        to: afterMerge,
+        edits: [
+          { kind: "delete", inlineContentId: content, start: 0, end: 1 },
+        ],
+        lineage: [
+          {
+            sourceInlineContentId: content,
+            sourceStart: 0,
+            sourceEnd: 2,
+            targetBlockId: block,
+            targetInlineContentId: content,
+            targetStart: 0,
+          },
+          {
+            sourceInlineContentId: splitContent,
+            sourceStart: 0,
+            sourceEnd: 2,
+            targetBlockId: block,
+            targetInlineContentId: content,
+            targetStart: 2,
+          },
+        ],
+      };
+      expect(
+        resolveProbeText(carrier, range, afterMerge, [splitEdge, mergeEdge]),
+      ).toBe("bc");
+      expect(() =>
+        resolveProbeRange(carrier, range, afterMerge, [
+          splitEdge,
+          {
+            ...mergeEdge,
+            lineage: mergeEdge.lineage?.map((segment) =>
+              segment.sourceInlineContentId === content
+                ? { ...segment, sourceEnd: 3 }
+                : segment,
+            ),
+          },
+        ]),
+      ).toThrow(/Probe lineage source offsets are invalid/u);
     });
 
     it("maps atomic replacement like delete then insert across span boundaries", () => {

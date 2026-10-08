@@ -1,7 +1,7 @@
 # Coedit document-engine MVP scaffolding plan
 
-**Status:** Accepted implementation plan; Steps 0-2 and the first five Step 3 qualification merge units are complete;
-integrated retained-state and Range lifecycle qualification is next.
+**Status:** Accepted implementation plan; Steps 0-2 and the first six Step 3 qualification merge units are complete;
+application and editor qualification is next.
 
 **Target branch:** `main`
 
@@ -155,8 +155,8 @@ This documentation set establishes and revalidates the Step 0 authority baseline
 payloads, the durable text Range authority, and the revised Step 3-and-later sequence. Steps 1 and 2 subsequently
 established the browser scaffold and pure Block domain. Step 3 carrier qualification is in progress: the payload,
 structural/allocator, integrated collaborative-document foundation, integrated structural/payload semantics, and
-historical lifecycle merge units are complete; retained-state and Range lifecycle qualification is next. Gate B selects
-the carrier, the observable deterministic
+historical lifecycle, and retained-state/Range lifecycle merge units are complete; application/editor qualification is
+next. Gate B selects the carrier, the observable deterministic
 concurrent-replacement winner rule, the carrier-private implementation of that rule, mixed replacement/text-edit
 semantics, and payload/carrier resource-admission behavior. Step 4 selects and qualifies the production Media Type
 parser implementation and implements the first raw-media processor capability. Gate C later selects the text Range

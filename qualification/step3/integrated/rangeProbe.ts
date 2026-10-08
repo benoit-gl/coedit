@@ -1,5 +1,4 @@
 import type { BlockId, InlineContentId } from "../../../src/domain/index.js";
-import { assertTextRange } from "../payload/carrier.js";
 import type {
   IntegratedDocumentCarrier,
   IntegratedDocumentSnapshot,
@@ -75,9 +74,9 @@ export type ProbeTextEdit =
 export interface ProbeLineageSegment {
   /** Source InlineContent. */
   readonly sourceInlineContentId: InlineContentId;
-  /** Inclusive source segment start. */
+  /** Inclusive source segment start after this transition's text edits. */
   readonly sourceStart: number;
-  /** Exclusive source segment end. */
+  /** Exclusive source segment end after this transition's text edits. */
   readonly sourceEnd: number;
   /** Fixture-designated target Block. */
   readonly targetBlockId: BlockId;
@@ -97,7 +96,7 @@ export interface ProbeTransition {
   readonly to: string;
   /** Fine-grained edits performed during this edge, in semantic order. */
   readonly edits?: readonly ProbeTextEdit[];
-  /** Supplied one-to-many/many-to-one structural lineage. */
+  /** Supplied structural lineage in post-edit text coordinates. */
   readonly lineage?: readonly ProbeLineageSegment[];
   /** Whole-replaced InlineContents without explicitly continuing text lineage. */
   readonly invalidated?: readonly InlineContentId[];
@@ -150,9 +149,24 @@ export function resolveProbeRange<Position>(
       throw new TypeError("Probe transition is not a descendant edge.");
     const before = carrier.materializeHistoricalState(token);
     const after = carrier.materializeHistoricalState(transition.to);
+    const editedTextLengths = new Map<InlineContentId, number>();
     for (const member of current) requireMember(before, member);
     for (const edit of transition.edits ?? []) {
       assertEdit(edit);
+      const previousLength =
+        editedTextLengths.get(edit.inlineContentId) ??
+        beforeText(before, edit.inlineContentId).length;
+      const end = edit.kind === "insert" ? edit.offset : edit.end;
+      const deletedLength = edit.kind === "insert" ? 0 : edit.end - edit.start;
+      const insertedLength = edit.kind === "delete" ? 0 : edit.length;
+      const nextLength = previousLength - deletedLength + insertedLength;
+      if (
+        end > previousLength ||
+        !Number.isSafeInteger(nextLength) ||
+        nextLength < 0
+      )
+        throw new RangeError("Probe edit exceeds source text bounds.");
+      editedTextLengths.set(edit.inlineContentId, nextLength);
       current = current.map((member) =>
         member.inlineContentId !== edit.inlineContentId
           ? member
@@ -171,11 +185,18 @@ export function resolveProbeRange<Position>(
         continue;
       }
       for (const segment of lineage) {
-        assertTextRange(
-          segment.sourceStart,
-          segment.sourceEnd,
-          beforeText(before, member.inlineContentId),
-        );
+        // Structural lineage is indexed against text after this edge's edits.
+        const sourceLength =
+          editedTextLengths.get(segment.sourceInlineContentId) ??
+          beforeText(before, segment.sourceInlineContentId).length;
+        if (
+          !Number.isSafeInteger(segment.sourceStart) ||
+          !Number.isSafeInteger(segment.sourceEnd) ||
+          segment.sourceStart < 0 ||
+          segment.sourceEnd < segment.sourceStart ||
+          segment.sourceEnd > sourceLength
+        )
+          throw new RangeError("Probe lineage source offsets are invalid.");
         if (
           !Number.isSafeInteger(segment.targetStart) ||
           segment.targetStart < 0
