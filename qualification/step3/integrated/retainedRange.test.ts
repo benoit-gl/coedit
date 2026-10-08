@@ -468,13 +468,20 @@ for (const factory of factories) {
         { inlineContentId: content, start: 2, end: 3, text: "b" },
         { inlineContentId: splitContent, start: 0, end: 1, text: "c" },
       ]);
-      expect(resolveProbeText(carrier, range, afterSplit, [splitEdge])).toBe("bc");
+      expect(
+        resolveProbeText(carrier, range, afterSplit, [splitEdge]),
+      ).toBe("bc");
       expect(() =>
         resolveProbeRange(carrier, range, afterSplit, [
           {
             ...splitEdge,
             edits: [
-              { kind: "insert", inlineContentId: content, offset: 5, length: 1 },
+              {
+                kind: "insert",
+                inlineContentId: content,
+                offset: 5,
+                length: 1,
+              },
             ],
           },
         ]),
