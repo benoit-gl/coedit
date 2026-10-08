@@ -74,9 +74,10 @@ When implementation evidence invalidates an accepted rule, update the responsibl
 Steps 1 and 2 are complete. Step 3 carrier qualification is in progress: the payload, structural/allocator, and
 integrated collaborative-document foundation, integrated structural/payload semantics, historical lifecycle, and
 retained-state/Range lifecycle merge units are complete; application/editor qualification and comparative evidence
-remain. No carrier or allocator is selected, and no production collaborative API exists yet. The payload requirements below remain accepted design
-direction. Gate B owns carrier selection, deterministic concurrent whole-payload replacement, and the mixed
-replacement/text-edit policy. Step 4 selects and qualifies the production Media Type parser implementation and fixtures
+remain. No carrier or allocator is selected, and no production collaborative API exists yet. The payload requirements
+below remain accepted design direction. Gate B owns carrier selection and deterministic concurrent whole-payload
+replacement, and the mixed replacement/text-edit policy.
+Step 4 selects and qualifies the production Media Type parser implementation and fixtures
 conforming to the fixed acceptance contract, along with the first raw-media processor and its supported representation
 profiles. Range lineage remains a Gate C decision. The stage-by-stage ownership is in
 [`INLINE_CONTENT_PAYLOADS.md`](INLINE_CONTENT_PAYLOADS.md#13-qualification-and-staged-decisions).
@@ -127,8 +128,9 @@ records the accepted rationale.
 
 Step 3 is the current implementation step. Its payload, structural/allocator, and integrated collaborative-document
 foundation, integrated structural/payload semantics, historical lifecycle, and retained-state/Range lifecycle merge
-units are complete; application/editor qualification is next, followed by comparative evidence and Gate B. Step 3 qualifies the Yjs and Automerge candidates without also owning the complete production implementation.
-The payload suite covers allowlisted
+units are complete; application/editor qualification is next, followed by comparative evidence and Gate B. Step 3
+qualifies the Yjs and Automerge candidates without also owning the complete production implementation. The payload suite
+covers allowlisted
 fine-grained text, representative generic opaque Media Types, universal whole-payload replacement, deterministic
 concurrent replacement, and raw/coarse boundary factorization through representative test codecs. The structural carrier
 direction remains explicit: use one logical placement per `BlockId`, with atomic position and depth, and project the
