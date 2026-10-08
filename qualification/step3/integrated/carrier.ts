@@ -147,6 +147,8 @@ export interface IntegratedDocumentCarrier<Position> {
   effects(): ReadonlyMap<string, QualificationEffectContext>;
   /** Immutable candidate-native payload effect evidence for Gate B alternatives. */
   recordedPayloadEffects(): readonly RecordedPayloadEffect[];
+  /** Native lifecycle capability exposed by this pinned candidate. */
+  nativeLifecycle(): IntegratedNativeLifecycleCapability;
   /** Projects detached carrier-neutral state. */
   snapshot(): IntegratedDocumentSnapshot<Position>;
   /** Encodes complete candidate state for reload or merge qualification. */
@@ -160,6 +162,21 @@ export interface IntegratedDocumentCarrier<Position> {
    */
   mergeEncoded(encoded: Uint8Array): void;
 }
+
+/** Native lifecycle capability recorded without synthesizing a compactor. */
+export type IntegratedNativeLifecycleCapability =
+  | {
+      /** Candidate performs collection automatically as part of native updates. */
+      readonly kind: "automatic-garbage-collection";
+      /** The fixture can exercise this native behavior. */
+      readonly availability: "supported";
+    }
+  | {
+      /** Pinned candidate exposes no native garbage-collection or compaction operation. */
+      readonly kind: "none";
+      /** No equivalent behavior is synthesized for qualification. */
+      readonly availability: "unavailable";
+    };
 
 /** Factory for one integrated candidate and structural position representation. */
 export interface IntegratedDocumentCarrierFactory<Position> {

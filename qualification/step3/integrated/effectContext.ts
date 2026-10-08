@@ -1,6 +1,13 @@
 /** Attribution for one qualification-only semantic effect. */
 export interface QualificationEffectContext {
-  /** Stable, caller-generated identity for this effect across replicas. */
+  /**
+   * Stable, caller-generated effect component, unique for this actor.
+   *
+   * @remarks
+   * The actor/effect pair identifies one replicated semantic effect. Reusing
+   * that pair for distinct effects is rejected from its immutable authored
+   * envelope before a merge can combine or discard retained evidence.
+   */
   readonly effectId: string;
   /** Acting actor identity, distinct from payload material Origin. */
   readonly actorId: string;
@@ -11,6 +18,18 @@ export interface QualificationEffectContext {
     /** Stable source effect or retained historical-state token. */
     readonly reference: string;
   };
+}
+
+/** Return the canonical qualification-only identity for one actor/effect pair. */
+export function qualificationEffectIdentity(
+  context: QualificationEffectContext,
+): string {
+  const encoded = encodeEffectContext(context);
+  const { actorId, effectId } = JSON.parse(encoded) as {
+    readonly actorId: string;
+    readonly effectId: string;
+  };
+  return JSON.stringify([actorId, effectId]);
 }
 
 /** Serialize validated primitives, without invoking caller JSON hooks. */
