@@ -30,9 +30,6 @@ jobs:
       - name: Bootstrap dependencies
         run: npm run bootstrap
 
-      - name: Diagnose retained Range formatting
-        run: ./node_modules/.bin/prettier qualification/step3/integrated/retainedRange.test.ts | diff -u qualification/step3/integrated/retainedRange.test.ts - || true
-
       - name: Check source
         run: npm run check
 

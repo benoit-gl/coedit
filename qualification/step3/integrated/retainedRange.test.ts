@@ -468,9 +468,9 @@ for (const factory of factories) {
         { inlineContentId: content, start: 2, end: 3, text: "b" },
         { inlineContentId: splitContent, start: 0, end: 1, text: "c" },
       ]);
-      expect(
-        resolveProbeText(carrier, range, afterSplit, [splitEdge]),
-      ).toBe("bc");
+      expect(resolveProbeText(carrier, range, afterSplit, [splitEdge])).toBe(
+        "bc",
+      );
       expect(() =>
         resolveProbeRange(carrier, range, afterSplit, [
           {
@@ -510,9 +510,7 @@ for (const factory of factories) {
       const mergeEdge: ProbeTransition = {
         from: afterSplit,
         to: afterMerge,
-        edits: [
-          { kind: "delete", inlineContentId: content, start: 0, end: 1 },
-        ],
+        edits: [{ kind: "delete", inlineContentId: content, start: 0, end: 1 }],
         lineage: [
           {
             sourceInlineContentId: content,
