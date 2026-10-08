@@ -150,7 +150,7 @@ for (const factory of factories) {
       );
     });
 
-    it("preserves unordered, duplicate, overlapping, and zero-length members", () => {
+    it("preserves unordered, duplicate, and overlapping members", () => {
       const carrier = factory.create(root);
       carrier.applyChange({
         inlineContents: [
@@ -185,9 +185,15 @@ for (const factory of factories) {
       ];
       const range = createProbeRange(carrier, retained, "span", members);
       expect(range.members).toEqual(members);
-      expect(
-        resolveProbeRange(carrier, range, retained, []).map((span) => span.text),
-      ).toEqual(["y", "BC\r", "A\n", "BC\r", "\nB", ""]);
+      const spans = resolveProbeRange(carrier, range, retained, []);
+      expect(spans.map((span) => span.text)).toEqual([
+        "y",
+        "BC\r",
+        "A\n",
+        "BC\r",
+        "\nB",
+        "",
+      ]);
       const expectedText = "yBC\rA\nBC\r\nB";
       expect(resolveProbeText(carrier, range, retained, [])).toBe(expectedText);
       const beforeFailure = carrier.encode();
@@ -199,7 +205,8 @@ for (const factory of factories) {
       ).toThrow(/not a live text target/u);
       expect(carrier.encode()).toEqual(beforeFailure);
       const reopened = factory.load(carrier.encode());
-      expect(resolveProbeText(reopened, range, retained, [])).toBe(expectedText);
+      const reopenedText = resolveProbeText(reopened, range, retained, []);
+      expect(reopenedText).toBe(expectedText);
     });
 
     it("qualifies direct ranges across edits, movement, split, merge, delete, and reload", () => {
