@@ -150,6 +150,58 @@ for (const factory of factories) {
       );
     });
 
+    it("preserves unordered, duplicate, overlapping, and zero-length members", () => {
+      const carrier = factory.create(root);
+      carrier.applyChange({
+        inlineContents: [
+          { inlineContentId: content, blockId: root },
+          { inlineContentId: splitContent, blockId: root },
+        ],
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: content,
+            mediaType: "text/plain",
+            text: "A\nBC\r",
+            origin: actor,
+          },
+          {
+            kind: "replace-text",
+            inlineContentId: splitContent,
+            mediaType: "text/plain",
+            text: "xy",
+            origin: actor,
+          },
+        ],
+      });
+      const retained = carrier.captureHistoricalState();
+      const members = [
+        { blockId: root, inlineContentId: splitContent, start: 1, end: 2 },
+        { blockId: root, inlineContentId: content, start: 2, end: 5 },
+        { blockId: root, inlineContentId: content, start: 0, end: 2 },
+        { blockId: root, inlineContentId: content, start: 2, end: 5 },
+        { blockId: root, inlineContentId: content, start: 1, end: 3 },
+        { blockId: root, inlineContentId: content, start: 4, end: 4 },
+      ];
+      const range = createProbeRange(carrier, retained, "span", members);
+      expect(range.members).toEqual(members);
+      expect(
+        resolveProbeRange(carrier, range, retained, []).map((span) => span.text),
+      ).toEqual(["y", "BC\r", "A\n", "BC\r", "\nB", ""]);
+      const expectedText = "yBC\rA\nBC\r\nB";
+      expect(resolveProbeText(carrier, range, retained, [])).toBe(expectedText);
+      const beforeFailure = carrier.encode();
+      expect(() =>
+        createProbeRange(carrier, retained, "span", [
+          ...members,
+          { blockId: root, inlineContentId: content, start: 0, end: 99 },
+        ]),
+      ).toThrow(/not a live text target/u);
+      expect(carrier.encode()).toEqual(beforeFailure);
+      const reopened = factory.load(carrier.encode());
+      expect(resolveProbeText(reopened, range, retained, [])).toBe(expectedText);
+    });
+
     it("qualifies direct ranges across edits, movement, split, merge, delete, and reload", () => {
       const carrier = factory.create(root);
       carrier.applyChange({
