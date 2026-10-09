@@ -62,7 +62,9 @@ export function readEditorText<Position>(
 ): EditorTextBuffer {
   const value = carrier.snapshot().payloads.get(inlineContentId);
   if (value?.kind !== "text")
-    throw new TypeError("Editor target must be a live fine-grained text payload.");
+    throw new TypeError(
+      "Editor target must be a live fine-grained text payload.",
+    );
   return {
     text: value.text,
     spans: value.spans.map((span) => ({
@@ -85,17 +87,26 @@ export function translateEditorText<Position>(
   after: EditorTextBuffer,
   context: QualificationEffectContext,
 ): IntegratedDocumentChange<Position> | undefined {
-  if (attributedIdentity(before) === attributedIdentity(after)) return undefined;
+  if (attributedIdentity(before) === attributedIdentity(after))
+    return undefined;
   if (before.text === after.text) {
-    const payloads: IntegratedPayloadChange[] = [{
-      kind: "delete-text", inlineContentId, start: 0, end: before.text.length,
-    }];
+    const payloads: IntegratedPayloadChange[] = [
+      {
+        kind: "delete-text",
+        inlineContentId,
+        start: 0,
+        end: before.text.length,
+      },
+    ];
     let offset = 0;
     for (const span of after.spans) {
       if (span.text.length === 0) continue;
       payloads.push({
-        kind: "insert-text", inlineContentId, offset,
-        text: span.text, origin: span.origin,
+        kind: "insert-text",
+        inlineContentId,
+        offset,
+        text: span.text,
+        origin: span.origin,
       });
       offset += span.text.length;
     }
@@ -147,7 +158,12 @@ function attributedInsertion(
   text: string,
   origin: QualificationOrigin,
 ): EditorTextBuffer {
-  return attributedSplice(before, start, end, text === "" ? [] : [{ text, origin }]);
+  return attributedSplice(
+    before,
+    start,
+    end,
+    text === "" ? [] : [{ text, origin }],
+  );
 }
 
 function attributedSplice(
@@ -158,14 +174,21 @@ function attributedSplice(
 ): EditorTextBuffer {
   const prefix = sliceAttributedText(before, 0, start);
   const suffix = sliceAttributedText(before, end, before.text.length);
-  if (insertion.some((span) => typeof span.text !== "string" || span.text.length === 0))
+  if (
+    insertion.some(
+      (span) => typeof span.text !== "string" || span.text.length === 0,
+    )
+  )
     throw new TypeError("Inserted clipboard spans must contain nonempty text.");
   const text = insertion.map((span) => span.text).join("");
   return {
     text: before.text.slice(0, start) + text + before.text.slice(end),
     spans: [
       ...prefix,
-      ...insertion.map((span) => ({ text: span.text, origin: { ...span.origin } })),
+      ...insertion.map((span) => ({
+        text: span.text,
+        origin: { ...span.origin },
+      })),
       ...suffix,
     ],
   };
@@ -178,7 +201,12 @@ function attributedIdentity(buffer: EditorTextBuffer): string {
     const previous = normalized.at(-1);
     if (previous?.id === span.origin.id && previous.kind === span.origin.kind)
       previous.text += span.text;
-    else normalized.push({ text: span.text, id: span.origin.id, kind: span.origin.kind });
+    else
+      normalized.push({
+        text: span.text,
+        id: span.origin.id,
+        kind: span.origin.kind,
+      });
   }
   return JSON.stringify(normalized);
 }
@@ -202,7 +230,9 @@ export class QualificationTextEditor<Position> {
   /** Transient editor projection; not replicated. */
   public buffer(): EditorTextBuffer {
     this.requireMounted();
-    return this.composition ?? readEditorText(this.carrier, this.inlineContentId);
+    return (
+      this.composition ?? readEditorText(this.carrier, this.inlineContentId)
+    );
   }
 
   /** Submit one application action as one integrated semantic change. */
@@ -215,7 +245,9 @@ export class QualificationTextEditor<Position> {
   ): void {
     this.requireMounted();
     if (this.composition !== undefined)
-      throw new TypeError("Commit IME composition before another editor action.");
+      throw new TypeError(
+        "Commit IME composition before another editor action.",
+      );
     const before = readEditorText(this.carrier, this.inlineContentId);
     const after = attributedInsertion(before, start, end, text, origin);
     this.publish(before, after, context);
@@ -341,7 +373,9 @@ export class QualificationTextEditor<Position> {
 
   private requireNoComposition(): void {
     if (this.composition !== undefined)
-      throw new TypeError("An active composition must be committed or cancelled.");
+      throw new TypeError(
+        "An active composition must be committed or cancelled.",
+      );
   }
 
   private requireMounted(): void {

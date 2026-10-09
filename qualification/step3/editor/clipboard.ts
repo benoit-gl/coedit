@@ -110,8 +110,7 @@ export function decodePrivateClipboard(
     let combined = "";
     const spans: QualificationTextSpan[] = [];
     for (const part of value.spans as readonly unknown[]) {
-      if (!isObject(part) || typeof part.text !== "string")
-        return fallback();
+      if (!isObject(part) || typeof part.text !== "string") return fallback();
       if (
         combined.length + part.text.length > limits.maxTextLength ||
         part.text.length === 0 ||
@@ -142,12 +141,8 @@ export function decodePrivateClipboard(
   }
 }
 
-function isObject(
-  value: unknown,
-): value is Readonly<Record<string, unknown>> {
-  return (
-    typeof value === "object" && value !== null && !Array.isArray(value)
-  );
+function isObject(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 function assertLimits(limits: PrivateClipboardLimits): void {
@@ -157,6 +152,8 @@ function assertLimits(limits: PrivateClipboardLimits): void {
     limits.maxTextLength,
   ]) {
     if (!Number.isSafeInteger(value) || value < 0)
-      throw new TypeError("Clipboard fixture limits must be nonnegative integers.");
+      throw new TypeError(
+        "Clipboard fixture limits must be nonnegative integers.",
+      );
   }
 }

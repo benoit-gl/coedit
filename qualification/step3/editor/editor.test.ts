@@ -15,10 +15,7 @@ import {
   readEditorText,
   translateEditorText,
 } from "./semanticText.js";
-import {
-  decodePrivateClipboard,
-  encodePrivateClipboard,
-} from "./clipboard.js";
+import { decodePrivateClipboard, encodePrivateClipboard } from "./clipboard.js";
 
 const rootId = parseBlockId("80000000-0000-4000-8000-000000000001");
 const contentId = parseInlineContentId("80000000-0000-4000-8000-000000000002");
@@ -30,16 +27,17 @@ const imported = { id: "external-import", kind: "imported" as const };
 const context = (effectId: string) => ({ actorId: "actor-a", effectId });
 const limits = { maxEncodedLength: 4096, maxSpans: 8, maxTextLength: 64 };
 
-const factories: readonly IntegratedDocumentCarrierFactory<LocalDensePosition>[] = [
-  createYjsIntegratedDocumentCarrierFactory(
-    localDensePositionAllocator,
-    localDensePositionAllocator,
-  ),
-  createAutomergeIntegratedDocumentCarrierFactory(
-    localDensePositionAllocator,
-    localDensePositionAllocator,
-  ),
-];
+const factories: readonly IntegratedDocumentCarrierFactory<LocalDensePosition>[] =
+  [
+    createYjsIntegratedDocumentCarrierFactory(
+      localDensePositionAllocator,
+      localDensePositionAllocator,
+    ),
+    createAutomergeIntegratedDocumentCarrierFactory(
+      localDensePositionAllocator,
+      localDensePositionAllocator,
+    ),
+  ];
 
 for (const factory of factories) {
   describe(factory.candidate + " editor qualification", () => {
@@ -47,13 +45,15 @@ for (const factory of factories) {
       const carrier = factory.create(rootId);
       carrier.applyChange({
         inlineContents: [{ inlineContentId: contentId, blockId: rootId }],
-        payloads: [{
-          kind: "replace-text",
-          inlineContentId: contentId,
-          mediaType: "text/plain",
-          text: "alpha",
-          origin: original,
-        }],
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: contentId,
+            mediaType: "text/plain",
+            text: "alpha",
+            origin: original,
+          },
+        ],
         context: context("seed"),
       });
       return carrier;
@@ -69,7 +69,9 @@ for (const factory of factories) {
         { text: "BC", origin: editing },
         { text: "a", origin: original },
       ]);
-      expect([...carrier.effects().values()].map((e) => e.effectId)).toContain("type");
+      expect([...carrier.effects().values()].map((e) => e.effectId)).toContain(
+        "type",
+      );
       expect(
         translateEditorText(
           contentId,
@@ -118,13 +120,15 @@ for (const factory of factories) {
       const editor = new QualificationTextEditor(carrier, contentId);
       editor.replaceSelection(5, 5, "!", editing, context("my-edit"));
       carrier.applyChange({
-        payloads: [{
-          kind: "insert-text",
-          inlineContentId: contentId,
-          offset: 0,
-          text: "remote ",
-          origin: original,
-        }],
+        payloads: [
+          {
+            kind: "insert-text",
+            inlineContentId: contentId,
+            offset: 0,
+            text: "remote ",
+            origin: original,
+          },
+        ],
         context: { actorId: "actor-b", effectId: "remote-edit" },
       });
       const before = carrier.snapshot();
@@ -154,7 +158,10 @@ for (const factory of factories) {
         limits,
       );
       expect(accepted.privateOriginPreserved).toBe(true);
-      expect(accepted.source).toEqual({ kind: "copy", reference: "source-effect" });
+      expect(accepted.source).toEqual({
+        kind: "copy",
+        reference: "source-effect",
+      });
       editor.replaceSelection(1, 4, "", editing, context("cut"));
       expect(readEditorText(carrier, contentId).text).toBe("aa");
       editor.replaceAttributedSelection(1, 1, accepted.spans, {
@@ -166,7 +173,9 @@ for (const factory of factories) {
         text: "alpha",
         spans: [{ text: "alpha", origin: original }],
       });
-      expect(carrier.effects().get(JSON.stringify(["actor-a", "paste"]))).toMatchObject({
+      expect(
+        carrier.effects().get(JSON.stringify(["actor-a", "paste"])),
+      ).toMatchObject({
         source: { kind: "copy", reference: "source-effect" },
       });
 
@@ -207,11 +216,18 @@ describe("clipboard admission", () => {
       "source",
     );
     expect(() =>
-      decodePrivateClipboard(encoded.privateText, "abc", documentId, catalog, imported, {
-        maxEncodedLength: -1,
-        maxSpans: 2,
-        maxTextLength: 3,
-      }),
+      decodePrivateClipboard(
+        encoded.privateText,
+        "abc",
+        documentId,
+        catalog,
+        imported,
+        {
+          maxEncodedLength: -1,
+          maxSpans: 2,
+          maxTextLength: 3,
+        },
+      ),
     ).toThrow(/limits/u);
     for (const candidate of [
       { maxEncodedLength: 5, maxSpans: 2, maxTextLength: 3 },
@@ -230,8 +246,14 @@ describe("clipboard admission", () => {
       ).toBe(false);
     }
     expect(
-      decodePrivateClipboard(undefined, "abc", documentId, catalog, imported, limits)
-        .spans,
+      decodePrivateClipboard(
+        undefined,
+        "abc",
+        documentId,
+        catalog,
+        imported,
+        limits,
+      ).spans,
     ).toEqual([{ text: "abc", origin: imported }]);
   });
 });
