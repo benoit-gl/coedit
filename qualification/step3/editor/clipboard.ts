@@ -31,9 +31,19 @@ export interface ClipboardText {
   readonly privateOriginPreserved: boolean;
   /** Qualification-only source relationship, when private data was trusted. */
   readonly source?: {
+    /** Clipboard derivation relationship. */
     readonly kind: "copy";
+    /** Trusted source effect reference. */
     readonly reference: string;
   };
+}
+
+/** Encoded private and ordinary plain-text clipboard representations. */
+export interface EncodedPrivateClipboard {
+  /** Ordinary plain-text clipboard payload. */
+  readonly plainText: string;
+  /** Versioned candidate private fragment. */
+  readonly privateText: string;
 }
 
 /** Serialize a same-document copy using source Origin without editor metadata. */
@@ -43,7 +53,7 @@ export function encodePrivateClipboard(
   end: number,
   documentId: DocumentId,
   sourceReference: string,
-): { readonly plainText: string; readonly privateText: string } {
+): EncodedPrivateClipboard {
   if (typeof sourceReference !== "string" || sourceReference.length === 0)
     throw new TypeError("Clipboard source reference is invalid.");
   const spans = sliceAttributedText(buffer, start, end);
