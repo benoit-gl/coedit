@@ -304,20 +304,20 @@ for (const factory of factories) {
       expect(
         resolveProbeRange(carrier, rightPosition, split, [splitEdge]),
       ).toEqual([rightAtSplit]);
-      expect(
-        resolveProbeRange(carrier, zeroSpan, split, [splitEdge]),
-      ).toEqual([leftAtSplit]);
+      expect(resolveProbeRange(carrier, zeroSpan, split, [splitEdge])).toEqual([
+        leftAtSplit,
+      ]);
 
       // An exact split boundary still needs the fixture's ownership choice.
       const boundary = createProbeRange(carrier, before, "position", [
         { ...leftMember, start: 2, end: 2 },
       ]);
-      expect(
-        resolveProbeRange(carrier, boundary, split, [splitEdge]),
-      ).toEqual([]);
+      expect(resolveProbeRange(carrier, boundary, split, [splitEdge])).toEqual(
+        [],
+      );
       const rightOwnedSplit: ProbeTransition = {
         ...splitEdge,
-        lineage: splitEdge.lineage?.map((segment) =>
+        lineage: (splitEdge.lineage ?? []).map((segment) =>
           segment.targetInlineContentId === splitContent
             ? { ...segment, ownsZeroLengthBoundary: true }
             : segment,
@@ -371,15 +371,15 @@ for (const factory of factories) {
         ],
       };
       const edges = [splitEdge, mergeEdge];
-      expect(
-        resolveProbeRange(carrier, leftPosition, merged, edges),
-      ).toEqual([leftAtSplit]);
-      expect(
-        resolveProbeRange(carrier, rightPosition, merged, edges),
-      ).toEqual([{ ...rightMember, text: "" }]);
-      expect(
-        resolveProbeRange(carrier, zeroSpan, merged, edges),
-      ).toEqual([leftAtSplit]);
+      expect(resolveProbeRange(carrier, leftPosition, merged, edges)).toEqual([
+        leftAtSplit,
+      ]);
+      expect(resolveProbeRange(carrier, rightPosition, merged, edges)).toEqual([
+        { ...rightMember, text: "" },
+      ]);
+      expect(resolveProbeRange(carrier, zeroSpan, merged, edges)).toEqual([
+        leftAtSplit,
+      ]);
     });
 
     it("qualifies direct ranges across edits, movement, split, merge, delete, and reload", () => {
@@ -798,6 +798,12 @@ for (const factory of factories) {
       const boundary = createProbeRange(carrier, before, "span", [
         { blockId: root, inlineContentId: content, start: 1, end: 5 },
       ]);
+      const leftBoundary = createProbeRange(carrier, before, "span", [
+        { blockId: root, inlineContentId: content, start: 0, end: 1 },
+      ]);
+      const rightBoundary = createProbeRange(carrier, before, "span", [
+        { blockId: root, inlineContentId: content, start: 5, end: 6 },
+      ]);
       const crossing = createProbeRange(carrier, before, "span", [
         { blockId: root, inlineContentId: content, start: 0, end: 6 },
       ]);
@@ -854,11 +860,122 @@ for (const factory of factories) {
         "WXYZ",
       );
       expect(
+        resolveProbeText(carrier, leftBoundary, after, [replacement]),
+      ).toBe("aWXYZ");
+      expect(
+        resolveProbeText(carrier, rightBoundary, after, [replacement]),
+      ).toBe("WXYZf");
+      expect(
         resolveProbeRange(carrier, boundary, after, [replacement]),
       ).toEqual(resolveProbeRange(carrier, boundary, after, [separateEdits]));
+      expect(
+        resolveProbeRange(carrier, leftBoundary, after, [replacement]),
+      ).toEqual(
+        resolveProbeRange(carrier, leftBoundary, after, [separateEdits]),
+      );
+      expect(
+        resolveProbeRange(carrier, rightBoundary, after, [replacement]),
+      ).toEqual(
+        resolveProbeRange(carrier, rightBoundary, after, [separateEdits]),
+      );
       expect(resolveProbeText(carrier, crossing, after, [replacement])).toBe(
         "aWXYZf",
       );
+    });
+
+    it("keeps positional members Block-local after their text becomes empty", () => {
+      const carrier = factory.create(root);
+      carrier.applyChange({
+        placements: [{ blockId: block, placement: position(1) }],
+        inlineContents: [{ inlineContentId: content, blockId: block }],
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: content,
+            mediaType: "text/plain",
+            text: "text",
+            origin: actor,
+          },
+        ],
+      });
+      const before = carrier.captureHistoricalState();
+      const positionRange = createProbeRange(carrier, before, "position", [
+        { blockId: block, inlineContentId: content, start: 2, end: 2 },
+      ]);
+
+      carrier.applyChange({
+        payloads: [
+          {
+            kind: "delete-text",
+            inlineContentId: content,
+            start: 0,
+            end: 4,
+          },
+        ],
+      });
+      const emptied = carrier.captureHistoricalState();
+      expect(
+        resolveProbeRange(carrier, positionRange, emptied, [
+          {
+            from: before,
+            to: emptied,
+            edits: [
+              {
+                kind: "delete",
+                inlineContentId: content,
+                start: 0,
+                end: 4,
+              },
+            ],
+          },
+        ]),
+      ).toEqual([
+        {
+          blockId: block,
+          inlineContentId: content,
+          start: 0,
+          end: 0,
+          text: "",
+        },
+      ]);
+    });
+
+    it("can explicitly invalidate a Range for same-type whole-payload replacement", () => {
+      const carrier = factory.create(root);
+      carrier.applyChange({
+        inlineContents: [{ inlineContentId: content, blockId: root }],
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: content,
+            mediaType: "text/plain",
+            text: "before",
+            origin: actor,
+          },
+        ],
+      });
+      const before = carrier.captureHistoricalState();
+      const range = createProbeRange(carrier, before, "span", [
+        { blockId: root, inlineContentId: content, start: 0, end: 6 },
+      ]);
+
+      carrier.applyChange({
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: content,
+            mediaType: "text/plain",
+            text: "after",
+            origin: actor,
+          },
+        ],
+      });
+      const replaced = carrier.captureHistoricalState();
+      expect(
+        resolveProbeText(carrier, range, replaced, [
+          { from: before, to: replaced, invalidated: [content] },
+        ]),
+      ).toBe("");
     });
 
     it("rejects opaque members and never rebinds after an opaque replacement", () => {

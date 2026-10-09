@@ -134,7 +134,9 @@ export function createProbeRange<Position>(
 /**
  * Resolve only when asked: no stored holder ledger or per-Range edit updates.
  * The fixture supplies the path from creation to the selected descendant.
- * A missing, out-of-order, or unrelated path is rejected, not guessed.
+ * A missing or out-of-order path is rejected, not guessed. Retained-state
+ * tokens do not encode ancestry, so the fixture is responsible for supplying
+ * actual descendant edges.
  */
 export function resolveProbeRange<Position>(
   carrier: IntegratedDocumentCarrier<Position>,
@@ -210,8 +212,7 @@ export function resolveProbeRange<Position>(
           start > end ||
           (start === end &&
             (member.start !== member.end ||
-              ((start === segment.sourceStart ||
-                start === segment.sourceEnd) &&
+              ((start === segment.sourceStart || start === segment.sourceEnd) &&
                 segment.ownsZeroLengthBoundary !== true)))
         )
           continue;
