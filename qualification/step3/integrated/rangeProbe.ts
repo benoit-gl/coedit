@@ -204,11 +204,15 @@ export function resolveProbeRange<Position>(
           throw new RangeError("Probe lineage target offset is invalid.");
         const start = Math.max(member.start, segment.sourceStart);
         const end = Math.min(member.end, segment.sourceEnd);
+        // Interior positions have one owner. Only split boundaries need
+        // an explicit fixture-selected owner.
         if (
           start > end ||
           (start === end &&
             (member.start !== member.end ||
-              segment.ownsZeroLengthBoundary !== true))
+              ((start === segment.sourceStart ||
+                start === segment.sourceEnd) &&
+                segment.ownsZeroLengthBoundary !== true)))
         )
           continue;
         mapped.push({

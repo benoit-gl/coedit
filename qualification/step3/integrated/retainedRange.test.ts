@@ -209,6 +209,179 @@ for (const factory of factories) {
       expect(reopenedText).toBe(expectedText);
     });
 
+    it("preserves interior zero-length Ranges across split and merge", () => {
+      const carrier = factory.create(root);
+      carrier.applyChange({
+        placements: [{ blockId: block, placement: position(1) }],
+        inlineContents: [{ inlineContentId: content, blockId: block }],
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: content,
+            mediaType: "text/plain",
+            text: "abcd",
+            origin: actor,
+          },
+        ],
+      });
+      const before = carrier.captureHistoricalState();
+      const leftMember = {
+        blockId: block,
+        inlineContentId: content,
+        start: 1,
+        end: 1,
+      };
+      const rightMember = {
+        blockId: block,
+        inlineContentId: content,
+        start: 3,
+        end: 3,
+      };
+      const leftPosition = createProbeRange(carrier, before, "position", [
+        leftMember,
+      ]);
+      const rightPosition = createProbeRange(carrier, before, "position", [
+        rightMember,
+      ]);
+      const zeroSpan = createProbeRange(carrier, before, "span", [leftMember]);
+
+      carrier.applyChange({
+        placements: [{ blockId: splitBlock, placement: position(2) }],
+        inlineContents: [
+          { inlineContentId: splitContent, blockId: splitBlock },
+        ],
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: content,
+            mediaType: "text/plain",
+            text: "ab",
+            origin: actor,
+          },
+          {
+            kind: "replace-text",
+            inlineContentId: splitContent,
+            mediaType: "text/plain",
+            text: "cd",
+            origin: actor,
+          },
+        ],
+      });
+      const split = carrier.captureHistoricalState();
+      const splitEdge: ProbeTransition = {
+        from: before,
+        to: split,
+        lineage: [
+          {
+            sourceInlineContentId: content,
+            sourceStart: 0,
+            sourceEnd: 2,
+            targetBlockId: block,
+            targetInlineContentId: content,
+            targetStart: 0,
+          },
+          {
+            sourceInlineContentId: content,
+            sourceStart: 2,
+            sourceEnd: 4,
+            targetBlockId: splitBlock,
+            targetInlineContentId: splitContent,
+            targetStart: 0,
+          },
+        ],
+      };
+      const leftAtSplit = { ...leftMember, text: "" };
+      const rightAtSplit = {
+        blockId: splitBlock,
+        inlineContentId: splitContent,
+        start: 1,
+        end: 1,
+        text: "",
+      };
+      expect(
+        resolveProbeRange(carrier, leftPosition, split, [splitEdge]),
+      ).toEqual([leftAtSplit]);
+      expect(
+        resolveProbeRange(carrier, rightPosition, split, [splitEdge]),
+      ).toEqual([rightAtSplit]);
+      expect(
+        resolveProbeRange(carrier, zeroSpan, split, [splitEdge]),
+      ).toEqual([leftAtSplit]);
+
+      // An exact split boundary still needs the fixture's ownership choice.
+      const boundary = createProbeRange(carrier, before, "position", [
+        { ...leftMember, start: 2, end: 2 },
+      ]);
+      expect(
+        resolveProbeRange(carrier, boundary, split, [splitEdge]),
+      ).toEqual([]);
+      const rightOwnedSplit: ProbeTransition = {
+        ...splitEdge,
+        lineage: splitEdge.lineage?.map((segment) =>
+          segment.targetInlineContentId === splitContent
+            ? { ...segment, ownsZeroLengthBoundary: true }
+            : segment,
+        ),
+      };
+      expect(
+        resolveProbeRange(carrier, boundary, split, [rightOwnedSplit]),
+      ).toEqual([
+        {
+          blockId: splitBlock,
+          inlineContentId: splitContent,
+          start: 0,
+          end: 0,
+          text: "",
+        },
+      ]);
+
+      carrier.applyChange({
+        deleteBlockIds: [splitBlock],
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: content,
+            mediaType: "text/plain",
+            text: "abcd",
+            origin: actor,
+          },
+        ],
+      });
+      const merged = carrier.captureHistoricalState();
+      const mergeEdge: ProbeTransition = {
+        from: split,
+        to: merged,
+        lineage: [
+          {
+            sourceInlineContentId: content,
+            sourceStart: 0,
+            sourceEnd: 2,
+            targetBlockId: block,
+            targetInlineContentId: content,
+            targetStart: 0,
+          },
+          {
+            sourceInlineContentId: splitContent,
+            sourceStart: 0,
+            sourceEnd: 2,
+            targetBlockId: block,
+            targetInlineContentId: content,
+            targetStart: 2,
+          },
+        ],
+      };
+      const edges = [splitEdge, mergeEdge];
+      expect(
+        resolveProbeRange(carrier, leftPosition, merged, edges),
+      ).toEqual([leftAtSplit]);
+      expect(
+        resolveProbeRange(carrier, rightPosition, merged, edges),
+      ).toEqual([{ ...rightMember, text: "" }]);
+      expect(
+        resolveProbeRange(carrier, zeroSpan, merged, edges),
+      ).toEqual([leftAtSplit]);
+    });
+
     it("qualifies direct ranges across edits, movement, split, merge, delete, and reload", () => {
       const carrier = factory.create(root);
       carrier.applyChange({
