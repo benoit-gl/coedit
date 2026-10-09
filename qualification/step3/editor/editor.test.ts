@@ -127,8 +127,7 @@ for (const factory of factories) {
       editor.replaceSelection(4, 5, "!", editing, context("mixed-edit"));
       expect(readEditorText(carrier, contentId).spans).toEqual([
         { text: "a", origin: original },
-        { text: "lph", origin: editing },
-        { text: "!", origin: editing },
+        { text: "lph!", origin: editing },
       ]);
       editor.undo(context("undo-mixed-edit"));
       expect(readEditorText(carrier, contentId).spans).toEqual([
