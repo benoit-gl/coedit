@@ -34,6 +34,8 @@ describe("pinned native cursor qualification", () => {
     expect(resolve(document, following)).toBe(2);
 
     const reopened = new Y.Doc({ gc: true });
+    // Instantiate the named native type before decoding remote state.
+    reopened.getText("content");
     Y.applyUpdate(reopened, Y.encodeStateAsUpdate(document));
     expect(resolve(reopened, preceding)).toBe(1);
     expect(resolve(reopened, following)).toBe(2);
