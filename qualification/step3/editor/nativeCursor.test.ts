@@ -41,37 +41,21 @@ describe("pinned native cursor qualification", () => {
 
   it("characterizes pinned Automerge cursors through insertion and reload", () => {
     const original = Automerge.from({ text: "ac" });
-    const before = Automerge.getCursor(
-      original,
-      ["text"],
-      1,
-      "before",
-    );
-    const after = Automerge.getCursor(
-      original,
-      ["text"],
-      1,
-      "after",
-    );
+    const before = Automerge.getCursor(original, ["text"], 1, "before");
+    const after = Automerge.getCursor(original, ["text"], 1, "after");
     const changed = Automerge.change(original, (draft) => {
       Automerge.splice(draft, ["text"], 1, 0, "b");
     });
     expect(changed.text).toBe("abc");
 
-    const beforeIndex = Automerge.getCursorPosition(
-      changed,
-      ["text"],
-      before,
-    );
+    const beforeIndex = Automerge.getCursorPosition(changed, ["text"], before);
     const afterIndex = Automerge.getCursorPosition(changed, ["text"], after);
     // The candidate decides its insertion affinity. Characterize both values
     // without adopting them as a product Range or editor-selection policy.
     expect([1, 2]).toContain(beforeIndex);
     expect([1, 2]).toContain(afterIndex);
 
-    const reloaded = Automerge.load<{ text: string }>(
-      Automerge.save(changed),
-    );
+    const reloaded = Automerge.load<{ text: string }>(Automerge.save(changed));
     expect(Automerge.getCursorPosition(reloaded, ["text"], before)).toBe(
       beforeIndex,
     );
