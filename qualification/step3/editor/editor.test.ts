@@ -96,6 +96,20 @@ for (const factory of factories) {
       );
     });
 
+    it("preserves attribution-only edits and their semantic inverse", () => {
+      const carrier = seeded();
+      const editor = new QualificationTextEditor(carrier, contentId);
+      editor.replaceSelection(0, 5, "alpha", editing, context("reattribute"));
+      expect(readEditorText(carrier, contentId).spans).toEqual([
+        { text: "alpha", origin: editing },
+      ]);
+      editor.undo(context("undo-attribution"));
+      expect(readEditorText(carrier, contentId)).toEqual({
+        text: "alpha",
+        spans: [{ text: "alpha", origin: original }],
+      });
+    });
+
     it("buffers IME composition until one atomic commit and rejects silent unmount", () => {
       const carrier = seeded();
       const editor = new QualificationTextEditor(carrier, contentId);
