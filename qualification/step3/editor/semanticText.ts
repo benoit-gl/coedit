@@ -85,7 +85,22 @@ export function translateEditorText<Position>(
   after: EditorTextBuffer,
   context: QualificationEffectContext,
 ): IntegratedDocumentChange<Position> | undefined {
-  if (before.text === after.text) return undefined;
+  if (attributedIdentity(before) === attributedIdentity(after)) return undefined;
+  if (before.text === after.text) {
+    const payloads: IntegratedPayloadChange[] = [{
+      kind: "delete-text", inlineContentId, start: 0, end: before.text.length,
+    }];
+    let offset = 0;
+    for (const span of after.spans) {
+      if (span.text.length === 0) continue;
+      payloads.push({
+        kind: "insert-text", inlineContentId, offset,
+        text: span.text, origin: span.origin,
+      });
+      offset += span.text.length;
+    }
+    return { payloads, context };
+  }
   let prefix = 0;
   while (
     prefix < before.text.length &&
@@ -204,7 +219,7 @@ export class QualificationTextEditor<Position> {
     const before = readEditorText(this.carrier, this.inlineContentId);
     const after = attributedInsertion(before, start, end, text, origin);
     this.publish(before, after, context);
-    if (before.text !== after.text) {
+    if (attributedIdentity(before) !== attributedIdentity(after)) {
       this.undos.push({ before, after });
       this.redos.length = 0;
     }
@@ -222,7 +237,7 @@ export class QualificationTextEditor<Position> {
     const before = readEditorText(this.carrier, this.inlineContentId);
     const after = attributedSplice(before, start, end, insertion);
     this.publish(before, after, context);
-    if (before.text !== after.text) {
+    if (attributedIdentity(before) !== attributedIdentity(after)) {
       this.undos.push({ before, after });
       this.redos.length = 0;
     }
@@ -264,7 +279,7 @@ export class QualificationTextEditor<Position> {
     const before = readEditorText(this.carrier, this.inlineContentId);
     this.publish(before, after, context);
     this.composition = undefined;
-    if (before.text !== after.text) {
+    if (attributedIdentity(before) !== attributedIdentity(after)) {
       this.undos.push({ before, after });
       this.redos.length = 0;
     }
