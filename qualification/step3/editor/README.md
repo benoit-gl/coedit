@@ -27,9 +27,12 @@ interpretation is outside this contract.
 The common tests run both pinned carriers and exercise the existing integrated
 semantic change seam, IME publication, semantic undo/redo, cut/copy/paste,
 origin preservation, hostile input fallback, and candidate reload.
+`nativeCursor.test.ts` separately characterizes the pinned native cursor
+primitives through insertion and reload, without selecting a carrier or
+claiming an integrated carrier-position interface.
 
 **Still required for Merge 7:** Real Tiptap/ProseMirror transaction translation;
-native carrier-position/cursor qualification; browser integration for IME,
+integrated carrier-position/cursor qualification; browser integration for IME,
 clipboard, mount/unmount, and editor-position behavior; cross-platform full
 repository checks; and an independent fresh review. No PR convergence or
 qualification is claimed by the files in this directory alone.
