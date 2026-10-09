@@ -167,7 +167,7 @@ for (const factory of factories) {
       editor.replaceAttributedSelection(1, 1, accepted.spans, {
         actorId: "actor-a",
         effectId: "paste",
-        source: accepted.source,
+        ...(accepted.source === undefined ? {} : { source: accepted.source }),
       });
       expect(readEditorText(carrier, contentId)).toEqual({
         text: "alpha",
