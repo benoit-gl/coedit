@@ -89,34 +89,14 @@ export function translateEditorText<Position>(
 ): IntegratedDocumentChange<Position> | undefined {
   if (attributedIdentity(before) === attributedIdentity(after))
     return undefined;
-  if (before.text === after.text) {
-    const payloads: IntegratedPayloadChange[] = [
-      {
-        kind: "delete-text",
-        inlineContentId,
-        start: 0,
-        end: before.text.length,
-      },
-    ];
-    let offset = 0;
-    for (const span of after.spans) {
-      if (span.text.length === 0) continue;
-      payloads.push({
-        kind: "insert-text",
-        inlineContentId,
-        offset,
-        text: span.text,
-        origin: span.origin,
-      });
-      offset += span.text.length;
-    }
-    return { payloads, context };
-  }
+  const beforeOrigins = originBoundaries(before);
+  const afterOrigins = originBoundaries(after);
   let prefix = 0;
   while (
     prefix < before.text.length &&
     prefix < after.text.length &&
-    before.text[prefix] === after.text[prefix]
+    before.text[prefix] === after.text[prefix] &&
+    sameOrigin(beforeOrigins, prefix, afterOrigins, prefix)
   )
     prefix += 1;
   let suffix = 0;
@@ -124,7 +104,13 @@ export function translateEditorText<Position>(
     suffix < before.text.length - prefix &&
     suffix < after.text.length - prefix &&
     before.text[before.text.length - suffix - 1] ===
-      after.text[after.text.length - suffix - 1]
+      after.text[after.text.length - suffix - 1] &&
+    sameOrigin(
+      beforeOrigins,
+      before.text.length - suffix - 1,
+      afterOrigins,
+      after.text.length - suffix - 1,
+    )
   )
     suffix += 1;
   const endBefore = before.text.length - suffix;
@@ -192,6 +178,48 @@ function attributedSplice(
       ...suffix,
     ],
   };
+}
+
+interface OriginBoundary {
+  readonly end: number;
+  readonly id: string;
+  readonly kind: string;
+}
+
+function originBoundaries(buffer: EditorTextBuffer): readonly OriginBoundary[] {
+  let end = 0;
+  return buffer.spans.map((span) => {
+    end += span.text.length;
+    return { end, id: span.origin.id, kind: span.origin.kind };
+  });
+}
+
+function originAt(
+  boundaries: readonly OriginBoundary[],
+  offset: number,
+): OriginBoundary {
+  let low = 0;
+  let high = boundaries.length;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2);
+    if (boundaries[middle]!.end <= offset) low = middle + 1;
+    else high = middle;
+  }
+  const origin = boundaries[low];
+  if (origin === undefined)
+    throw new TypeError("Editor Origin coverage is invalid.");
+  return origin;
+}
+
+function sameOrigin(
+  before: readonly OriginBoundary[],
+  beforeOffset: number,
+  after: readonly OriginBoundary[],
+  afterOffset: number,
+): boolean {
+  const left = originAt(before, beforeOffset);
+  const right = originAt(after, afterOffset);
+  return left.id === right.id && left.kind === right.kind;
 }
 
 function attributedIdentity(buffer: EditorTextBuffer): string {

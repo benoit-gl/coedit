@@ -110,6 +110,34 @@ for (const factory of factories) {
       });
     });
 
+    it("preserves Origins on mixed same-string attribution and text changes", () => {
+      const carrier = seeded();
+      const editor = new QualificationTextEditor(carrier, contentId);
+      editor.replaceAttributedSelection(
+        1,
+        4,
+        [{ text: "lph", origin: editing }],
+        context("middle-origin"),
+      );
+      expect(readEditorText(carrier, contentId).spans).toEqual([
+        { text: "a", origin: original },
+        { text: "lph", origin: editing },
+        { text: "a", origin: original },
+      ]);
+      editor.replaceSelection(4, 5, "!", editing, context("mixed-edit"));
+      expect(readEditorText(carrier, contentId).spans).toEqual([
+        { text: "a", origin: original },
+        { text: "lph", origin: editing },
+        { text: "!", origin: editing },
+      ]);
+      editor.undo(context("undo-mixed-edit"));
+      expect(readEditorText(carrier, contentId).spans).toEqual([
+        { text: "a", origin: original },
+        { text: "lph", origin: editing },
+        { text: "a", origin: original },
+      ]);
+    });
+
     it("buffers IME composition until one atomic commit and rejects silent unmount", () => {
       const carrier = seeded();
       const editor = new QualificationTextEditor(carrier, contentId);
