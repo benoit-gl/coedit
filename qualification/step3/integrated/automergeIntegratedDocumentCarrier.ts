@@ -32,9 +32,25 @@ import type {
   IntegratedInlineContentCreation,
 } from "./carrier.js";
 import {
+  decodeEffectContext,
+  encodeEffectContext,
+  qualificationEffectIdentity,
+} from "./effectContext.js";
+import {
+  decodePayloadEffect,
+  derivePayloadEffectBases,
+  encodePayloadEffect,
+} from "./replacementEvidence.js";
+import type { RecordedPayloadEffect } from "./replacementEvidence.js";
+import type { QualificationEffectContext } from "./effectContext.js";
+import {
   captureHistoricalState,
   decodeHistoricalState,
 } from "./historicalState.js";
+import {
+  encodeAppliedEffectEnvelope,
+  encodeRestoreEffectEnvelope,
+} from "./effectEnvelope.js";
 
 const ORIGIN_MARK = "__coedit_origin";
 
@@ -42,12 +58,14 @@ interface TextState extends Record<string, unknown> {
   kind: "text";
   mediaType: string;
   text: string;
+  replacementEffectId?: string;
 }
 interface OpaqueState extends Record<string, unknown> {
   kind: "opaque";
   mediaType: string;
   bytes: number[];
   origin: string;
+  replacementEffectId?: string;
 }
 interface State extends Record<string, unknown> {
   rootId: string;
@@ -58,6 +76,9 @@ interface State extends Record<string, unknown> {
   inlineContentLiveness: Record<string, Record<string, boolean>>;
   payloads: Record<string, TextState | OpaqueState>;
   historicalStates: Record<string, string>;
+  effectContexts: Record<string, string>;
+  effectEnvelopes: Record<string, string>;
+  payloadEffects: Record<string, string>;
 }
 
 /** Automerge candidate backed by one native document for integrated qualification. */
@@ -83,6 +104,9 @@ class AutomergeIntegratedDocumentCarrier<
         inlineContentLiveness: {},
         payloads: {},
         historicalStates: {},
+        effectContexts: {},
+        effectEnvelopes: {},
+        payloadEffects: {},
       });
     else
       throw new TypeError(
@@ -109,8 +133,51 @@ class AutomergeIntegratedDocumentCarrier<
       ),
       new Set([this.document.rootId, ...Object.keys(this.document.liveness)]),
     );
+    const context = this.prepareContext(change.context);
+    const evidence =
+      context === undefined || (change.payloads?.length ?? 0) === 0
+        ? undefined
+        : {
+            id: context.id,
+            encoded: encodePayloadEffect(
+              context.id,
+              Object.keys(this.document.payloadEffects),
+              change.payloads ?? [],
+              derivePayloadEffectBases(
+                change.payloads ?? [],
+                context.id,
+                (inlineContentId) =>
+                  replacementEffectId(this.document.payloads[inlineContentId]),
+              ),
+            ),
+          };
     const deletes = prepareDeletes(change.deleteBlockIds ?? [], snapshot);
+    const envelope =
+      context === undefined
+        ? undefined
+        : {
+            id: context.id,
+            encoded: encodeAppliedEffectEnvelope(
+              crypto.randomUUID(),
+              (change.placements ?? []).map((update) => ({
+                blockId: update.blockId,
+                encoded: encodeStructuralPlacement(
+                  update.placement,
+                  this.positionCodec,
+                ),
+              })),
+              inlineContents,
+              deletes,
+              evidence?.encoded,
+            ),
+          };
     this.document = Automerge.change(this.document, (draft) => {
+      if (context !== undefined)
+        draft.effectContexts[context.id] = context.encoded;
+      if (envelope !== undefined)
+        draft.effectEnvelopes[envelope.id] = envelope.encoded;
+      if (evidence !== undefined)
+        draft.payloadEffects[evidence.id] = evidence.encoded;
       for (const blockId of deletes)
         retireObservedTokens(draft.liveness, blockId);
       for (const update of change.placements ?? []) {
@@ -137,6 +204,9 @@ class AutomergeIntegratedDocumentCarrier<
             kind: "text",
             mediaType: update.mediaType,
             text: "",
+            ...(context === undefined
+              ? {}
+              : { replacementEffectId: context.id }),
           };
           if (update.text.length > 0) {
             Automerge.splice(
@@ -162,6 +232,9 @@ class AutomergeIntegratedDocumentCarrier<
             mediaType: update.mediaType,
             bytes: [...update.bytes],
             origin: encodeOrigin(update.origin),
+            ...(context === undefined
+              ? {}
+              : { replacementEffectId: context.id }),
           };
         } else {
           const payload = draft.payloads[update.inlineContentId];
@@ -273,8 +346,23 @@ class AutomergeIntegratedDocumentCarrier<
     return snapshot;
   }
 
-  public restoreHistoricalState(token: string): void {
+  public restoreHistoricalState(
+    token: string,
+    context?: QualificationEffectContext,
+  ): void {
     const target = this.materializeHistoricalState(token);
+    const effect = this.prepareContext(context);
+    const envelope =
+      effect === undefined
+        ? undefined
+        : {
+            id: effect.id,
+            encoded: encodeRestoreEffectEnvelope(
+              crypto.randomUUID(),
+              target,
+              this.positionCodec,
+            ),
+          };
     for (const [id, owner] of target.inlineContentOwners)
       if (this.document.inlineContentOwners[id] !== owner)
         throw new TypeError("Historical InlineContent ownership is invalid.");
@@ -296,6 +384,10 @@ class AutomergeIntegratedDocumentCarrier<
       (id) => ({ id, livenessToken: crypto.randomUUID() }),
     );
     this.document = Automerge.change(this.document, (draft) => {
+      if (effect !== undefined)
+        draft.effectContexts[effect.id] = effect.encoded;
+      if (envelope !== undefined)
+        draft.effectEnvelopes[envelope.id] = envelope.encoded;
       for (const id of Object.keys(draft.liveness))
         if (id !== draft.rootId) retireObservedTokens(draft.liveness, id);
       for (const id of Object.keys(draft.inlineContentLiveness))
@@ -343,6 +435,35 @@ class AutomergeIntegratedDocumentCarrier<
     });
   }
 
+  public recordedPayloadEffects(): readonly RecordedPayloadEffect[] {
+    return Object.entries(this.document.payloadEffects)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([, encoded]) => decodePayloadEffect(encoded));
+  }
+
+  public nativeLifecycle() {
+    return { kind: "none" as const, availability: "unavailable" as const };
+  }
+
+  public effects(): ReadonlyMap<string, QualificationEffectContext> {
+    return new Map(
+      Object.entries(this.document.effectContexts)
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([id, encoded]) => [id, decodeEffectContext(encoded)]),
+    );
+  }
+
+  private prepareContext(
+    context?: QualificationEffectContext,
+  ): { id: string; encoded: string } | undefined {
+    if (context === undefined) return undefined;
+    const encoded = encodeEffectContext(context);
+    const id = qualificationEffectIdentity(context);
+    if (this.document.effectContexts[id] !== undefined)
+      throw new TypeError("Qualification effect identity cannot be reused.");
+    return { id, encoded };
+  }
+
   public encode(): Uint8Array {
     return Automerge.save(this.document);
   }
@@ -357,6 +478,21 @@ class AutomergeIntegratedDocumentCarrier<
       throw new TypeError(
         "Integrated replicas must share one replica lineage.",
       );
+    assertNoConflictingEvidence(
+      this.document.effectContexts,
+      remote.effectContexts,
+      "effect context",
+    );
+    assertNoConflictingEvidence(
+      this.document.effectEnvelopes,
+      remote.effectEnvelopes,
+      "effect envelope",
+    );
+    assertNoConflictingEvidence(
+      this.document.payloadEffects,
+      remote.payloadEffects,
+      "payload effect",
+    );
     this.document = Automerge.merge(this.document, remote);
   }
 }
@@ -547,6 +683,30 @@ function liveBlockIds(document: Automerge.Doc<State>): ReadonlySet<string> {
     if (Object.values(tokens).some((value) => value === true))
       live.add(blockId);
   return live;
+}
+
+function replacementEffectId(
+  payload: TextState | OpaqueState | undefined,
+): string | undefined {
+  const value = payload?.replacementEffectId;
+  if (value === undefined) return undefined;
+  if (typeof value !== "string" || value.length === 0)
+    throw new TypeError("Integrated payload replacement branch is invalid.");
+  return value;
+}
+
+function assertNoConflictingEvidence(
+  local: Record<string, string>,
+  remote: Record<string, string>,
+  kind: "effect context" | "effect envelope" | "payload effect",
+): void {
+  for (const [id, encoded] of Object.entries(remote)) {
+    const existing = local[id];
+    if (existing !== undefined && existing !== encoded)
+      throw new TypeError(
+        `Conflicting qualification effect identity would discard ${kind} evidence.`,
+      );
+  }
 }
 
 function projectPayload(

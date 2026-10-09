@@ -33,9 +33,25 @@ import type {
   IntegratedPayloadChange,
 } from "./carrier.js";
 import {
+  decodeEffectContext,
+  encodeEffectContext,
+  qualificationEffectIdentity,
+} from "./effectContext.js";
+import {
+  decodePayloadEffect,
+  derivePayloadEffectBases,
+  encodePayloadEffect,
+} from "./replacementEvidence.js";
+import type { RecordedPayloadEffect } from "./replacementEvidence.js";
+import type { QualificationEffectContext } from "./effectContext.js";
+import {
   captureHistoricalState,
   decodeHistoricalState,
 } from "./historicalState.js";
+import {
+  encodeAppliedEffectEnvelope,
+  encodeRestoreEffectEnvelope,
+} from "./effectEnvelope.js";
 
 const ROOT = "integrated";
 const ROOT_ID = "rootId";
@@ -46,6 +62,10 @@ const INLINE_CONTENT_OWNERS = "inlineContentOwners";
 const INLINE_CONTENT_LIVENESS = "inlineContentLiveness";
 const LIVENESS = "liveness";
 const HISTORICAL_STATES = "historicalStates";
+const EFFECT_CONTEXTS = "effectContexts";
+const EFFECT_ENVELOPES = "effectEnvelopes";
+const PAYLOAD_EFFECTS = "payloadEffects";
+const REPLACEMENT_EFFECT_ID = "replacementEffectId";
 const ORIGIN = "coedit:origin";
 const ENVELOPE_SEPARATOR = 0;
 const ROOT_ID_BYTE_LENGTH = 36;
@@ -55,7 +75,7 @@ class YjsIntegratedDocumentCarrier<
   Position,
 > implements IntegratedDocumentCarrier<Position> {
   public readonly candidate = "yjs" as const;
-  private readonly document = new Y.Doc();
+  private readonly document = new Y.Doc({ gc: true });
   private readonly root = this.document.getMap<unknown>(ROOT);
 
   public constructor(
@@ -77,6 +97,9 @@ class YjsIntegratedDocumentCarrier<
       this.root.set(INLINE_CONTENT_LIVENESS, new Y.Map<Y.Map<boolean>>());
       this.root.set(LIVENESS, new Y.Map<Y.Map<boolean>>());
       this.root.set(HISTORICAL_STATES, new Y.Map<string>());
+      this.root.set(EFFECT_CONTEXTS, new Y.Map<string>());
+      this.root.set(EFFECT_ENVELOPES, new Y.Map<string>());
+      this.root.set(PAYLOAD_EFFECTS, new Y.Map<string>());
     } else {
       throw new TypeError(
         "Integrated carrier creation requires a root identity.",
@@ -90,6 +113,9 @@ class YjsIntegratedDocumentCarrier<
     this.inlineContentLiveness();
     this.liveness();
     this.historicalStates();
+    this.effectContexts();
+    this.effectEnvelopes();
+    this.payloadEffects();
   }
 
   public applyChange(change: IntegratedDocumentChange<Position>): void {
@@ -120,17 +146,51 @@ class YjsIntegratedDocumentCarrier<
       new Set([...this.inlineContentOwners().keys()].map(parseInlineContentId)),
       new Set([rootId, ...this.liveness().keys()]),
     );
+    const context = this.prepareContext(change.context);
+    const evidence =
+      context === undefined || (change.payloads?.length ?? 0) === 0
+        ? undefined
+        : {
+            id: context.id,
+            encoded: encodePayloadEffect(
+              context.id,
+              [...this.payloadEffects().keys()],
+              change.payloads ?? [],
+              derivePayloadEffectBases(
+                change.payloads ?? [],
+                context.id,
+                (inlineContentId) =>
+                  replacementEffectId(this.payloads().get(inlineContentId)),
+              ),
+            ),
+          };
     const deletes = prepareDeletes(
       change.deleteBlockIds ?? [],
       rootId,
       snapshot,
     );
+    const envelope =
+      context === undefined
+        ? undefined
+        : {
+            id: context.id,
+            encoded: encodeAppliedEffectEnvelope(
+              crypto.randomUUID(),
+              placements,
+              inlineContents,
+              deletes,
+              evidence?.encoded,
+            ),
+          };
     applyPreparedChange(
       this.document,
       placements,
       inlineContents,
       payloads,
       deletes,
+      context,
+      envelope,
+      evidence,
     );
   }
 
@@ -195,8 +255,23 @@ class YjsIntegratedDocumentCarrier<
     return snapshot;
   }
 
-  public restoreHistoricalState(token: string): void {
+  public restoreHistoricalState(
+    token: string,
+    context?: QualificationEffectContext,
+  ): void {
     const target = this.materializeHistoricalState(token);
+    const effect = this.prepareContext(context);
+    const envelope =
+      effect === undefined
+        ? undefined
+        : {
+            id: effect.id,
+            encoded: encodeRestoreEffectEnvelope(
+              crypto.randomUUID(),
+              target,
+              this.positionCodec,
+            ),
+          };
     const rootId = this.requireRootId();
     const owners = this.inlineContentOwners();
     const liveness = this.root.get(LIVENESS);
@@ -244,7 +319,43 @@ class YjsIntegratedDocumentCarrier<
       for (const { id, value } of payloads) {
         this.payloads().set(id, value);
       }
+      if (effect !== undefined)
+        this.effectContexts().set(effect.id, effect.encoded);
+      if (envelope !== undefined)
+        this.effectEnvelopes().set(envelope.id, envelope.encoded);
     });
+  }
+
+  public recordedPayloadEffects(): readonly RecordedPayloadEffect[] {
+    return [...this.payloadEffects()]
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([, encoded]) => decodePayloadEffect(encoded));
+  }
+
+  public nativeLifecycle() {
+    return {
+      kind: "automatic-garbage-collection" as const,
+      availability: "supported" as const,
+    };
+  }
+
+  public effects(): ReadonlyMap<string, QualificationEffectContext> {
+    return new Map(
+      [...this.effectContexts()]
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([id, encoded]) => [id, decodeEffectContext(encoded)]),
+    );
+  }
+
+  private prepareContext(
+    context?: QualificationEffectContext,
+  ): { id: string; encoded: string } | undefined {
+    if (context === undefined) return undefined;
+    const encoded = encodeEffectContext(context);
+    const id = qualificationEffectIdentity(context);
+    if (this.effectContexts().has(id))
+      throw new TypeError("Qualification effect identity cannot be reused.");
+    return { id, encoded };
   }
 
   public encode(): Uint8Array {
@@ -269,6 +380,21 @@ class YjsIntegratedDocumentCarrier<
       throw new TypeError(
         "Integrated replicas must share one replica lineage.",
       );
+    assertNoConflictingEvidence(
+      this.effectContexts(),
+      remoteRoot.get(EFFECT_CONTEXTS),
+      "effect context",
+    );
+    assertNoConflictingEvidence(
+      this.effectEnvelopes(),
+      remoteRoot.get(EFFECT_ENVELOPES),
+      "effect envelope",
+    );
+    assertNoConflictingEvidence(
+      this.payloadEffects(),
+      remoteRoot.get(PAYLOAD_EFFECTS),
+      "payload effect",
+    );
 
     const staged = new Y.Doc();
     Y.applyUpdate(staged, Y.encodeStateAsUpdate(this.document));
@@ -323,6 +449,24 @@ class YjsIntegratedDocumentCarrier<
       throw new TypeError("Integrated liveness namespace is missing.");
     return value as Y.Map<Y.Map<boolean>>;
   }
+  private payloadEffects(): Y.Map<string> {
+    const value = this.root.get(PAYLOAD_EFFECTS);
+    if (!(value instanceof Y.Map))
+      throw new TypeError("Integrated payload effects namespace is missing.");
+    return value as Y.Map<string>;
+  }
+  private effectContexts(): Y.Map<string> {
+    const value = this.root.get(EFFECT_CONTEXTS);
+    if (!(value instanceof Y.Map))
+      throw new TypeError("Integrated effect context namespace is missing.");
+    return value as Y.Map<string>;
+  }
+  private effectEnvelopes(): Y.Map<string> {
+    const value = this.root.get(EFFECT_ENVELOPES);
+    if (!(value instanceof Y.Map))
+      throw new TypeError("Integrated effect envelope namespace is missing.");
+    return value as Y.Map<string>;
+  }
   private historicalStates(): Y.Map<string> {
     const value = this.root.get(HISTORICAL_STATES);
     if (!(value instanceof Y.Map))
@@ -348,6 +492,9 @@ function applyPreparedChange(
   inlineContents: readonly IntegratedInlineContentCreation[],
   payloads: readonly PreparedPayloadChange[],
   deletes: readonly BlockId[],
+  context?: { readonly id: string; readonly encoded: string },
+  envelope?: { readonly id: string; readonly encoded: string },
+  evidence?: { readonly id: string; readonly encoded: string },
 ): void {
   const root = document.getMap<unknown>(ROOT);
   const blocks = root.get(BLOCKS);
@@ -355,12 +502,18 @@ function applyPreparedChange(
   const owners = root.get(INLINE_CONTENT_OWNERS);
   const inlineContentLiveness = root.get(INLINE_CONTENT_LIVENESS);
   const liveness = root.get(LIVENESS);
+  const contexts = root.get(EFFECT_CONTEXTS);
+  const envelopes = root.get(EFFECT_ENVELOPES);
+  const evidenceMap = root.get(PAYLOAD_EFFECTS);
   if (
     !(blocks instanceof Y.Map) ||
     !(payloadMap instanceof Y.Map) ||
     !(owners instanceof Y.Map) ||
     !(inlineContentLiveness instanceof Y.Map) ||
-    !(liveness instanceof Y.Map)
+    !(liveness instanceof Y.Map) ||
+    !(contexts instanceof Y.Map) ||
+    !(envelopes instanceof Y.Map) ||
+    !(evidenceMap instanceof Y.Map)
   )
     throw new TypeError("Integrated document is invalid.");
 
@@ -390,6 +543,8 @@ function applyPreparedChange(
         const payload = new Y.Map<unknown>();
         payload.set("kind", "text");
         payload.set("mediaType", update.mediaType);
+        if (context !== undefined)
+          payload.set(REPLACEMENT_EFFECT_ID, context.id);
         const text = new Y.Text();
         if (update.text.length > 0)
           text.insert(0, update.text, { [ORIGIN]: update.origin });
@@ -409,6 +564,8 @@ function applyPreparedChange(
         const payload = new Y.Map<unknown>();
         payload.set("kind", "opaque");
         payload.set("mediaType", update.mediaType);
+        if (context !== undefined)
+          payload.set(REPLACEMENT_EFFECT_ID, context.id);
         payload.set("bytes", update.bytes);
         payload.set("origin", update.origin);
         (payloadMap as Y.Map<Y.Map<unknown>>).set(
@@ -441,6 +598,12 @@ function applyPreparedChange(
         text.delete(update.start, update.end - update.start);
       }
     }
+    if (context !== undefined)
+      (contexts as Y.Map<string>).set(context.id, context.encoded);
+    if (envelope !== undefined)
+      (envelopes as Y.Map<string>).set(envelope.id, envelope.encoded);
+    if (evidence !== undefined)
+      (evidenceMap as Y.Map<string>).set(evidence.id, evidence.encoded);
   });
 }
 
@@ -564,6 +727,34 @@ function isLive(liveness: Y.Map<Y.Map<boolean>>, id: string): boolean {
   return [...(liveness.get(id)?.values() ?? [])].some(
     (value) => value === true,
   );
+}
+
+function replacementEffectId(
+  payload: Y.Map<unknown> | undefined,
+): string | undefined {
+  const value = payload?.get(REPLACEMENT_EFFECT_ID);
+  if (value === undefined) return undefined;
+  if (typeof value !== "string" || value.length === 0)
+    throw new TypeError("Integrated payload replacement branch is invalid.");
+  return value;
+}
+
+function assertNoConflictingEvidence(
+  local: Y.Map<string>,
+  remote: unknown,
+  kind: "effect context" | "effect envelope" | "payload effect",
+): void {
+  if (!(remote instanceof Y.Map))
+    throw new TypeError(`Integrated ${kind} namespace is missing.`);
+  for (const [id, encoded] of remote) {
+    if (typeof encoded !== "string")
+      throw new TypeError(`Integrated ${kind} record is invalid.`);
+    const existing = local.get(id);
+    if (existing !== undefined && existing !== encoded)
+      throw new TypeError(
+        `Conflicting qualification effect identity would discard ${kind} evidence.`,
+      );
+  }
 }
 
 function createRestoredPayload(

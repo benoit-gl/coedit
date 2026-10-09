@@ -4,6 +4,8 @@ import type {
   StructuralPositionCodec,
   StructuralPositionOrdering,
 } from "../../../src/carrier/index.js";
+import type { QualificationEffectContext } from "./effectContext.js";
+import type { RecordedPayloadEffect } from "./replacementEvidence.js";
 import type {
   QualificationOrigin,
   QualificationPayloadSnapshot,
@@ -106,6 +108,8 @@ export interface IntegratedDocumentChange<Position> {
    * operations.
    */
   readonly deleteBlockIds?: readonly BlockId[];
+  /** Optional actor/effect attribution, published with this semantic change. */
+  readonly context?: QualificationEffectContext;
 }
 
 /** Detached integrated document projection. */
@@ -135,7 +139,16 @@ export interface IntegratedDocumentCarrier<Position> {
     token: string,
   ): IntegratedDocumentSnapshot<Position>;
   /** Restores one retained state as one carrier change, preserving entity identities. */
-  restoreHistoricalState(token: string): void;
+  restoreHistoricalState(
+    token: string,
+    context?: QualificationEffectContext,
+  ): void;
+  /** Detached, replicated semantic-effect context (not product Contributions). */
+  effects(): ReadonlyMap<string, QualificationEffectContext>;
+  /** Immutable candidate-native payload effect evidence for Gate B alternatives. */
+  recordedPayloadEffects(): readonly RecordedPayloadEffect[];
+  /** Native lifecycle capability exposed by this pinned candidate. */
+  nativeLifecycle(): IntegratedNativeLifecycleCapability;
   /** Projects detached carrier-neutral state. */
   snapshot(): IntegratedDocumentSnapshot<Position>;
   /** Encodes complete candidate state for reload or merge qualification. */
@@ -149,6 +162,21 @@ export interface IntegratedDocumentCarrier<Position> {
    */
   mergeEncoded(encoded: Uint8Array): void;
 }
+
+/** Native lifecycle capability recorded without synthesizing a compactor. */
+export type IntegratedNativeLifecycleCapability =
+  | {
+      /** Candidate performs collection automatically as part of native updates. */
+      readonly kind: "automatic-garbage-collection";
+      /** The fixture can exercise this native behavior. */
+      readonly availability: "supported";
+    }
+  | {
+      /** Pinned candidate exposes no native garbage-collection or compaction operation. */
+      readonly kind: "none";
+      /** No equivalent behavior is synthesized for qualification. */
+      readonly availability: "unavailable";
+    };
 
 /** Factory for one integrated candidate and structural position representation. */
 export interface IntegratedDocumentCarrierFactory<Position> {
