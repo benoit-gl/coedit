@@ -20,7 +20,7 @@ describe("pinned native cursor qualification", () => {
       Y.createRelativePositionFromTypeIndex(text, 1, 0),
     );
     text.insert(1, "b");
-    expect(text.toString()).toBe("abc");
+    expect(text.toJSON()).toBe("abc");
 
     const resolve = (doc: Y.Doc, encoded: Uint8Array) => {
       const position = Y.createAbsolutePositionFromRelativePosition(
