@@ -276,7 +276,12 @@ export function mountProseMirrorEditor<Position>(
 ): MountedProseMirrorEditor {
   let canonical = options.buffer;
   let composition:
-    { before: EditorTextBuffer; after: EditorTextBuffer } | undefined;
+    | {
+        before: EditorTextBuffer;
+        after: EditorTextBuffer;
+        insertionOffset: number | undefined;
+      }
+    | undefined;
   let compositionEnding = false;
   const undos: MountedGesture[] = [];
   const redos: MountedGesture[] = [];
@@ -287,7 +292,14 @@ export function mountProseMirrorEditor<Position>(
     handleDOMEvents: {
       compositionstart: () => {
         if (composition === undefined) {
-          composition = { before: canonical, after: canonical };
+          composition = {
+            before: canonical,
+            after: canonical,
+            insertionOffset:
+              state.selection.from === state.selection.to
+                ? nativeOffset(state.selection.from)
+                : undefined,
+          };
           compositionEnding = false;
         }
         return false;
@@ -305,7 +317,17 @@ export function mountProseMirrorEditor<Position>(
               return;
             }
             try {
-              publishAttributedChange(pending.before, pending.after);
+              publishAttributedChange(
+                pending.before,
+                pending.after,
+                undefined,
+                true,
+                pureInsertionAt(
+                  pending.before,
+                  pending.after,
+                  pending.insertionOffset,
+                ),
+              );
               composition = undefined;
               compositionEnding = false;
             } catch (error) {
@@ -341,7 +363,17 @@ export function mountProseMirrorEditor<Position>(
         compositionEnding &&
         transaction.getMeta("composition") === undefined
       ) {
-        publishAttributedChange(composition.before, composition.after);
+        publishAttributedChange(
+          composition.before,
+          composition.after,
+          undefined,
+          true,
+          pureInsertionAt(
+            composition.before,
+            composition.after,
+            composition.insertionOffset,
+          ),
+        );
         composition = undefined;
         compositionEnding = false;
       }
@@ -626,7 +658,21 @@ export function mountProseMirrorEditor<Position>(
       nativeOffset(to),
       decoded.spans,
     );
-    publishAttributedChange(before, after, decoded.source);
+    const insertionStart = nativeOffset(from);
+    const insertionEnd = nativeOffset(to);
+    publishAttributedChange(
+      before,
+      after,
+      decoded.source,
+      true,
+      insertionStart === insertionEnd && decoded.text.length > 0
+        ? {
+            start: insertionStart,
+            end: insertionStart + decoded.text.length,
+            text: decoded.text,
+          }
+        : undefined,
+    );
     const transaction = state.tr.insertText(decoded.text, from, to);
     state = state.apply(transaction);
     view.updateState(state);
@@ -681,6 +727,26 @@ function pureInsertionFromTransaction(
     end: range.newTo,
     text: after.text.slice(range.newFrom, range.newTo),
   };
+}
+
+/** Confirm a composition's known selection was extended without replacement. */
+function pureInsertionAt(
+  before: EditorTextBuffer,
+  after: EditorTextBuffer,
+  start: number | undefined,
+):
+  | { readonly start: number; readonly end: number; readonly text: string }
+  | undefined {
+  if (start === undefined || after.text.length <= before.text.length)
+    return undefined;
+  const insertedLength = after.text.length - before.text.length;
+  const end = start + insertedLength;
+  if (
+    before.text.slice(0, start) !== after.text.slice(0, start) ||
+    before.text.slice(start) !== after.text.slice(end)
+  )
+    return undefined;
+  return { start, end, text: after.text.slice(start, end) };
 }
 
 /** Compare logical Origin runs, not candidate-specific span segmentation. */
