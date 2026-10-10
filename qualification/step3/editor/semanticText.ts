@@ -75,6 +75,29 @@ export function sliceAttributedText(
   return result;
 }
 
+/** Compare attributed ranges while ignoring harmless adjacent-span segmentation. */
+export function sameAttributedRange(
+  left: EditorTextBuffer,
+  leftStart: number,
+  leftEnd: number,
+  right: EditorTextBuffer,
+  rightStart: number,
+  rightEnd: number,
+): boolean {
+  return (
+    left.text.slice(leftStart, leftEnd) ===
+      right.text.slice(rightStart, rightEnd) &&
+    attributedIdentity({
+      text: left.text.slice(leftStart, leftEnd),
+      spans: sliceAttributedText(left, leftStart, leftEnd),
+    }) ===
+      attributedIdentity({
+        text: right.text.slice(rightStart, rightEnd),
+        spans: sliceAttributedText(right, rightStart, rightEnd),
+      })
+  );
+}
+
 /** Returns detached current text, including fine-grained protected Origin. */
 export function readEditorText<Position>(
   carrier: IntegratedDocumentCarrier<Position>,
@@ -595,8 +618,15 @@ function pureInsertionAt(
   const insertedLength = after.text.length - before.text.length;
   const end = start + insertedLength;
   if (
-    before.text.slice(0, start) !== after.text.slice(0, start) ||
-    before.text.slice(start) !== after.text.slice(end)
+    !sameAttributedRange(before, 0, start, after, 0, start) ||
+    !sameAttributedRange(
+      before,
+      start,
+      before.text.length,
+      after,
+      end,
+      after.text.length,
+    )
   )
     return undefined;
   return { start, text: after.text.slice(start, end) };

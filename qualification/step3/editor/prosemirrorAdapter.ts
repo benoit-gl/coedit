@@ -20,6 +20,7 @@ import {
 } from "./clipboard.js";
 import {
   type EditorTextBuffer,
+  sameAttributedRange,
   sliceAttributedText,
   spliceAttributedText,
   translateEditorText,
@@ -660,19 +661,24 @@ export function mountProseMirrorEditor<Position>(
     );
     const insertionStart = nativeOffset(from);
     const insertionEnd = nativeOffset(to);
-    publishAttributedChange(
-      before,
-      after,
-      decoded.source,
-      true,
-      insertionStart === insertionEnd && decoded.text.length > 0
-        ? {
-            start: insertionStart,
-            end: insertionStart + decoded.text.length,
-            text: decoded.text,
-          }
-        : undefined,
-    );
+    try {
+      publishAttributedChange(
+        before,
+        after,
+        decoded.source,
+        true,
+        insertionStart === insertionEnd && decoded.text.length > 0
+          ? {
+              start: insertionStart,
+              end: insertionStart + decoded.text.length,
+              text: decoded.text,
+            }
+          : undefined,
+      );
+    } catch (error) {
+      resetViewToCurrent();
+      throw error;
+    }
     const transaction = state.tr.insertText(decoded.text, from, to);
     state = state.apply(transaction);
     view.updateState(state);
@@ -742,8 +748,15 @@ function pureInsertionAt(
   const insertedLength = after.text.length - before.text.length;
   const end = start + insertedLength;
   if (
-    before.text.slice(0, start) !== after.text.slice(0, start) ||
-    before.text.slice(start) !== after.text.slice(end)
+    !sameAttributedRange(before, 0, start, after, 0, start) ||
+    !sameAttributedRange(
+      before,
+      start,
+      before.text.length,
+      after,
+      end,
+      after.text.length,
+    )
   )
     return undefined;
   return { start, end, text: after.text.slice(start, end) };

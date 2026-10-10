@@ -177,6 +177,33 @@ for (const factory of factories) {
       expect(readEditorText(carrier, contentId).text).toBe("apha");
     });
 
+    it("does not classify an attribution-changing IME replacement as insertion", () => {
+      const carrier = factory.create(rootId);
+      carrier.applyChange({
+        inlineContents: [{ inlineContentId: contentId, blockId: rootId }],
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: contentId,
+            mediaType: "text/plain",
+            text: "aaa",
+            origin: original,
+          },
+        ],
+        context: context("seed-repeated"),
+      });
+      const editor = new QualificationTextEditor(carrier, contentId);
+      editor.beginComposition();
+      editor.updateComposition(0, 0, "a", editing);
+      editor.updateComposition(0, 2, "aa", editing);
+      editor.commitComposition(context("ime-replace"));
+      editor.undo(context("ime-replace-undo"));
+      expect(readEditorText(carrier, contentId)).toEqual({
+        text: "aaa",
+        spans: [{ text: "aaa", origin: original }],
+      });
+    });
+
     it("refuses an IME commit whose canonical base changed remotely", () => {
       const carrier = seeded();
       const editor = new QualificationTextEditor(carrier, contentId);
