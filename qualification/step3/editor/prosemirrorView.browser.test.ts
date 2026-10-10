@@ -155,7 +155,7 @@ describe("direct ProseMirror browser qualification", () => {
             origin: editing,
           },
         ],
-        context: { actorId: "actor-a", effectId: "ime" },
+        context: { actorId: "actor-a", effectId: "ime-0" },
       },
     ]);
     editor.undo();
@@ -207,7 +207,14 @@ describe("direct ProseMirror browser qualification", () => {
         kind: "insert-text",
         inlineContentId: contentId,
         offset: 5,
-        text: "ab",
+        text: "a",
+        origin: editing,
+      },
+      {
+        kind: "insert-text",
+        inlineContentId: contentId,
+        offset: 6,
+        text: "b",
         origin: editing,
       },
     ]);
