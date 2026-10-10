@@ -29,6 +29,13 @@ export interface ClipboardText {
   readonly spans: readonly QualificationTextSpan[];
   /** Whether the validated same-document private data was accepted. */
   readonly privateOriginPreserved: boolean;
+  /** Stable source evidence supplied by the target at copy time. */
+  readonly source?: {
+    /** Clipboard derivation relationship. */
+    readonly kind: "copy";
+    /** Stable source effect or retained historical-state token. */
+    readonly reference: string;
+  };
 }
 
 /** Encoded private and ordinary plain-text clipboard representations. */
@@ -153,6 +160,7 @@ export function decodePrivateClipboard(
       text: combined,
       spans,
       privateOriginPreserved: true,
+      source: { kind: "copy", reference: value.sourceReference },
     };
   } catch {
     return fallback();

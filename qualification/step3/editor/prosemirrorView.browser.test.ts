@@ -49,7 +49,26 @@ function applyPublishedChange(
     else
       throw new TypeError("Browser editor fixture received a non-text change.");
   }
-  return current;
+  return {
+    text: current.text,
+    spans: current.spans.reduce<EditorTextBuffer["spans"][number][]>(
+      (spans, span) => {
+        const prior = spans.at(-1);
+        if (
+          prior !== undefined &&
+          prior.origin.id === span.origin.id &&
+          prior.origin.kind === span.origin.kind
+        )
+          spans[spans.length - 1] = {
+            text: prior.text + span.text,
+            origin: prior.origin,
+          };
+        else spans.push(span);
+        return spans;
+      },
+      [],
+    ),
+  };
 }
 
 describe("direct ProseMirror browser qualification", () => {
@@ -314,7 +333,9 @@ describe("direct ProseMirror browser qualification", () => {
         trustedCopies: new Map(),
         fallbackOrigin: imported,
         limits: { maxEncodedLength: 4096, maxSpans: 8, maxTextLength: 64 },
-        nextCopyReference: () => "copy-0",
+        nextCopyReference: () => "historical-copy-0",
+        isStableSourceReference: (reference) =>
+          reference === "historical-copy-0",
       },
     });
 
@@ -326,7 +347,9 @@ describe("direct ProseMirror browser qualification", () => {
     const copied = new DataTransfer();
     editor.view.dom.dispatchEvent(clipboardEvent("copy", copied));
     expect(copied.getData("text/plain")).toBe("lph");
-    expect(copied.getData(STEP3_PRIVATE_CLIPBOARD_TYPE)).toContain("copy-0");
+    expect(copied.getData(STEP3_PRIVATE_CLIPBOARD_TYPE)).toContain(
+      "historical-copy-0",
+    );
 
     editor.view.dispatch(
       editor.view.state.tr.setSelection(
@@ -348,6 +371,7 @@ describe("direct ProseMirror browser qualification", () => {
         context: {
           actorId: "actor-a",
           effectId: "clipboard-0",
+          source: { kind: "copy", reference: "historical-copy-0" },
         },
       },
     ]);

@@ -205,8 +205,10 @@ export interface ProseMirrorClipboardOptions {
   readonly fallbackOrigin: QualificationOrigin;
   /** Experimental admission limits; Gate B selects any final values. */
   readonly limits: PrivateClipboardLimits;
-  /** Creates a source reference for an ordinary copy or cut gesture. */
+  /** Creates a stable source effect or retained historical-state token. */
   readonly nextCopyReference: () => string;
+  /** Verifies that a reference is durable carrier evidence, not a receipt key. */
+  readonly isStableSourceReference: (reference: string) => boolean;
 }
 
 /** Mounted transient ProseMirror adapter with an explicit cleanup operation. */
@@ -287,8 +289,7 @@ export function mountProseMirrorEditor<Position>(
         if (composition === undefined) publishAttributedChange(before, after);
         else composition = { ...composition, after };
       } catch (error) {
-        state = createProseMirrorEditorState(canonical);
-        view.updateState(state);
+        resetViewToCurrent();
         throw error;
       }
     },
@@ -324,16 +325,18 @@ export function mountProseMirrorEditor<Position>(
         ...(source === undefined ? {} : { source }),
       },
     );
+    let applied = after;
     if (change !== undefined) {
       options.publish(change);
-      if (!sameBuffer(options.readCurrentBuffer(), after))
+      applied = options.readCurrentBuffer();
+      if (!sameBuffer(applied, after))
         throw new TypeError(
           "Editor publication did not synchronously update canonical text.",
         );
     }
-    canonical = after;
+    canonical = applied;
     if (change !== undefined && record) {
-      undos.push({ before, after });
+      undos.push({ before, after: applied });
       redos.length = 0;
     }
   }
@@ -366,6 +369,10 @@ export function mountProseMirrorEditor<Position>(
     event.preventDefault();
     const { from, to } = state.selection;
     const sourceReference = clipboard.nextCopyReference();
+    if (!clipboard.isStableSourceReference(sourceReference))
+      throw new TypeError(
+        "Clipboard source reference is not durable evidence.",
+      );
     const encoded = encodePrivateClipboard(
       canonical,
       nativeOffset(from),
@@ -415,16 +422,45 @@ export function mountProseMirrorEditor<Position>(
       nativeOffset(to),
       decoded.spans,
     );
-    publishAttributedChange(before, after);
+    publishAttributedChange(before, after, decoded.source);
     const transaction = state.tr.insertText(decoded.text, from, to);
     state = state.apply(transaction);
     view.updateState(state);
     return true;
   }
+
+  function resetViewToCurrent(): void {
+    canonical = options.readCurrentBuffer();
+    state = createProseMirrorEditorState(canonical);
+    view.updateState(state);
+  }
 }
 
 function sameBuffer(left: EditorTextBuffer, right: EditorTextBuffer): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
+  return (
+    left.text === right.text &&
+    JSON.stringify(coalesceOrigins(left)) ===
+      JSON.stringify(coalesceOrigins(right))
+  );
+}
+
+/** Compare logical Origin runs, not candidate-specific span segmentation. */
+function coalesceOrigins(buffer: EditorTextBuffer): readonly {
+  readonly text: string;
+  readonly origin: QualificationOrigin;
+}[] {
+  const runs: { text: string; origin: QualificationOrigin }[] = [];
+  for (const span of buffer.spans) {
+    const prior = runs.at(-1);
+    if (
+      prior !== undefined &&
+      prior.origin.id === span.origin.id &&
+      prior.origin.kind === span.origin.kind
+    )
+      prior.text += span.text;
+    else runs.push({ text: span.text, origin: { ...span.origin } });
+  }
+  return runs;
 }
 
 /** Convert a flat-schema ProseMirror text position to a native-string offset. */

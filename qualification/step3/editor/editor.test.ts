@@ -233,6 +233,10 @@ for (const factory of factories) {
         limits,
       );
       expect(accepted.privateOriginPreserved).toBe(true);
+      expect(accepted.source).toEqual({
+        kind: "copy",
+        reference: "source-effect",
+      });
       const forgedReceipt = decodePrivateClipboard(
         source.privateText.replace("lph", "xyz"),
         "xyz",
@@ -252,6 +256,7 @@ for (const factory of factories) {
       editor.replaceAttributedSelection(1, 1, accepted.spans, {
         actorId: "actor-a",
         effectId: "paste",
+        ...(accepted.source === undefined ? {} : { source: accepted.source }),
       });
       expect(readEditorText(carrier, contentId)).toEqual({
         text: "alpha",
@@ -259,7 +264,9 @@ for (const factory of factories) {
       });
       expect(
         carrier.effects().get(JSON.stringify(["actor-a", "paste"])),
-      ).toBeDefined();
+      ).toMatchObject({
+        source: { kind: "copy", reference: "source-effect" },
+      });
 
       for (const privateText of [
         "{bad json",
