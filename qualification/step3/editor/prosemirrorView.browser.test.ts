@@ -338,7 +338,7 @@ describe("direct ProseMirror browser qualification", () => {
     current = spliceAttributedText(current, 0, 0, [
       { text: "R", origin: original },
     ]);
-    expect(() => editor.undo()).toThrow(/stale/u);
+    expect(() => editor.undo()).toThrow(/undo anchor/u);
     expect(published).toHaveLength(1);
     editor.unmount();
     mount.remove();

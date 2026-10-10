@@ -191,19 +191,24 @@ export interface ProseMirrorEditorMountOptions<Position> {
   /** Applies one complete carrier-neutral semantic change. */
   readonly publish: (change: IntegratedDocumentChange<Position>) => void;
   /** Candidate-native anchors used only for qualification insertion undo. */
-  readonly textPositions: {
-    readonly create: (
-      offset: number,
-      affinity: "before" | "after",
-    ) => QualificationStableTextPosition;
-    readonly resolve: (
-      position: QualificationStableTextPosition,
-    ) => number | undefined;
-  };
+  readonly textPositions: ProseMirrorTextPositionBridge;
   /** Observes a rejected asynchronous publication after the view is reset. */
   readonly onPublicationRejected?: (error: unknown) => void;
   /** Optional hostile-input policy for DOM clipboard events. */
   readonly clipboard?: ProseMirrorClipboardOptions;
+}
+
+/** Candidate-native position bridge used solely by insertion-undo qualification. */
+export interface ProseMirrorTextPositionBridge {
+  /** Creates one boundary anchor after the carrier has applied an insertion. */
+  readonly create: (
+    offset: number,
+    affinity: "before" | "after",
+  ) => QualificationStableTextPosition;
+  /** Resolves a previously created anchor in the carrier's current text. */
+  readonly resolve: (
+    position: QualificationStableTextPosition,
+  ) => number | undefined;
 }
 
 /** Explicit qualification inputs for browser clipboard events. */
