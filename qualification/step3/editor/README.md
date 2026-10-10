@@ -15,6 +15,13 @@ qualification prototype explicitly refuses an inverse against a changed base,
 rather than silently deleting concurrent edits. This refusal is evidence to
 inform later undo policy, not a frozen product rule.
 
+`prosemirrorAdapter.ts` uses a flat, direct ProseMirror schema for one active
+allowlisted InlineContent. It turns a committed document-changing transaction
+into the same integrated semantic-change seam. Selections and marks remain
+transient; inserted text receives the adapter's trusted Origin while unchanged
+text keeps its exact Origin. This is qualification-only adapter evidence, not a
+production editor binding.
+
 `clipboard.ts` tests a **candidate** private JSON text fragment with a
 `formatVersion`, source document/reference, and attributed text spans. Private
 input is always untrusted. It preserves Origin only for a same-document source
@@ -31,8 +38,11 @@ origin preservation, hostile input fallback, and candidate reload.
 primitives through insertion and reload, without selecting a carrier or
 claiming an integrated carrier-position interface.
 
-**Still required for Merge 7:** Real Tiptap/ProseMirror transaction translation;
-integrated carrier-position/cursor qualification; browser integration for IME,
-clipboard, mount/unmount, and editor-position behavior; cross-platform full
+The separate Chromium suite mounts and unmounts the direct adapter and confirms
+that a native editor edit reaches both carrier candidates. It intentionally keeps
+carrier and transaction assertions in the lower-cost Node suite.
+
+**Still required for Merge 7:** Real-browser integration for IME, clipboard,
+and editor-position behavior; cross-platform full
 repository checks; and an independent fresh review. No PR convergence or
 qualification is claimed by the files in this directory alone.

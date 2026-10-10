@@ -31,6 +31,7 @@ use package scripts and do not require an OS-specific shell.
 - `npm run build` type-checks and builds the production browser application.
 - `npm run preview` serves the production build locally over HTTP.
 - `npm run test` runs the test suite once.
+- `npm run test:browser` runs the Chromium browser qualification suite.
 - `npm run test:watch` starts the explicit test watcher.
 - `npm run typecheck` runs TypeScript checks.
 - `npm run lint` runs ESLint and accepts zero warnings.
