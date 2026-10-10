@@ -374,7 +374,10 @@ class YjsIntegratedDocumentCarrier<
   ): number | undefined {
     if (position.candidate !== "yjs")
       throw new TypeError("Stable text position belongs to another candidate.");
-    const text = this.requireTextPayload(position.inlineContentId);
+    const payload = this.snapshot().payloads.get(position.inlineContentId);
+    if (payload?.kind !== "text") return undefined;
+    const text = this.payloads().get(position.inlineContentId)?.get("text");
+    if (!(text instanceof Y.Text)) return undefined;
     const resolved = Y.createAbsolutePositionFromRelativePosition(
       Y.decodeRelativePosition(position.encoded),
       this.document,

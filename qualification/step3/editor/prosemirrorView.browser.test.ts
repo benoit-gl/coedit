@@ -241,6 +241,42 @@ describe("direct ProseMirror browser qualification", () => {
     mount.remove();
   });
 
+  it("rejects a stale IME commit without leaving the editor composed", async () => {
+    const mount = document.createElement("div");
+    document.body.append(mount);
+    const published: IntegratedDocumentChange<never>[] = [];
+    const rejected: unknown[] = [];
+    let current: EditorTextBuffer = {
+      text: "alpha",
+      spans: [{ text: "alpha", origin: original }],
+    };
+    const editor = mountProseMirrorEditor<never>({
+      element: mount,
+      inlineContentId: contentId,
+      buffer: current,
+      readCurrentBuffer: () => current,
+      origin: editing,
+      nextContext: () => ({ actorId: "actor-a", effectId: "stale-ime" }),
+      publish: (change) => {
+        published.push(change);
+        current = applyPublishedChange(current, change);
+      },
+      onPublicationRejected: (error) => rejected.push(error),
+    });
+    editor.view.dom.dispatchEvent(new CompositionEvent("compositionstart"));
+    editor.view.dispatch(editor.view.state.tr.insertText("!", 5));
+    current = spliceAttributedText(current, 0, 0, [
+      { text: "R", origin: original },
+    ]);
+    editor.view.dom.dispatchEvent(new CompositionEvent("compositionend"));
+    await waitForCompositionFlush();
+    expect(published).toEqual([]);
+    expect(rejected).toHaveLength(1);
+    expect(rejected[0]).toBeInstanceOf(TypeError);
+    editor.unmount();
+    mount.remove();
+  });
+
   it("refuses undo when the carrier projection changed remotely", () => {
     const mount = document.createElement("div");
     document.body.append(mount);

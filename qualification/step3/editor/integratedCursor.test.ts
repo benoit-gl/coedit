@@ -82,6 +82,18 @@ for (const factory of factories) {
       expect(() =>
         carrier.createStableTextPosition(opaqueId, 0, "after"),
       ).toThrow(/text payload/u);
+      carrier.applyChange({
+        payloads: [
+          {
+            kind: "replace-opaque",
+            inlineContentId: textId,
+            mediaType: "application/octet-stream",
+            bytes: new Uint8Array([2]),
+            origin,
+          },
+        ],
+      });
+      expect(carrier.resolveStableTextPosition(preceding)).toBeUndefined();
     });
 
     it("keeps a candidate position resolvable after concurrent carrier edits", () => {

@@ -189,6 +189,8 @@ export interface ProseMirrorEditorMountOptions<Position> {
   readonly nextContext: () => QualificationEffectContext;
   /** Applies one complete carrier-neutral semantic change. */
   readonly publish: (change: IntegratedDocumentChange<Position>) => void;
+  /** Observes a rejected asynchronous publication after the view is reset. */
+  readonly onPublicationRejected?: (error: unknown) => void;
   /** Optional hostile-input policy for DOM clipboard events. */
   readonly clipboard?: ProseMirrorClipboardOptions;
 }
@@ -257,17 +259,25 @@ export function mountProseMirrorEditor<Position>(
           setTimeout(() => {
             const pending = composition;
             if (pending === undefined) return;
-            publishAttributedChange(pending.before, pending.after);
-            composition = undefined;
+            try {
+              publishAttributedChange(pending.before, pending.after);
+              composition = undefined;
+            } catch (error) {
+              composition = undefined;
+              resetViewToCurrent();
+              options.onPublicationRejected?.(error);
+            }
           }, 0);
         }, 0);
         return false;
       },
       copy: (_view, event) => {
+        if (options.clipboard === undefined) return false;
         copySelection(event);
         return true;
       },
       cut: (_view, event) => {
+        if (options.clipboard === undefined) return false;
         copySelection(event);
         const { from, to } = state.selection;
         if (from !== to) view.dispatch(state.tr.delete(from, to));
