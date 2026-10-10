@@ -3,7 +3,10 @@ import { TextSelection } from "prosemirror-state";
 
 import type { DocumentId } from "../../../src/domain/index.js";
 import type { InlineContentId } from "../../../src/domain/index.js";
-import type { IntegratedDocumentChange } from "../integrated/carrier.js";
+import type {
+  IntegratedDocumentChange,
+  QualificationStableTextPosition,
+} from "../integrated/carrier.js";
 import { STEP3_PRIVATE_CLIPBOARD_TYPE } from "./clipboard.js";
 import { type EditorTextBuffer, spliceAttributedText } from "./semanticText.js";
 import {
@@ -38,10 +41,8 @@ function browserTextPositions(): {
   create: (
     offset: number,
     affinity: "before" | "after",
-  ) => import("../integrated/carrier.js").QualificationStableTextPosition;
-  resolve: (
-    position: import("../integrated/carrier.js").QualificationStableTextPosition,
-  ) => number | undefined;
+  ) => QualificationStableTextPosition;
+  resolve: (position: QualificationStableTextPosition) => number | undefined;
 } {
   let next = 0;
   const offsets = new Map<number, number>();
