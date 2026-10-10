@@ -144,7 +144,7 @@ function attributedInsertion(
   text: string,
   origin: QualificationOrigin,
 ): EditorTextBuffer {
-  return attributedSplice(
+  return spliceAttributedText(
     before,
     start,
     end,
@@ -152,7 +152,13 @@ function attributedInsertion(
   );
 }
 
-function attributedSplice(
+/**
+ * Apply an attributed native-string replacement to a detached editor buffer.
+ *
+ * This is an adapter helper only: callers must still translate the result
+ * through the integrated semantic-change seam before canonical publication.
+ */
+export function spliceAttributedText(
   before: EditorTextBuffer,
   start: number,
   end: number,
@@ -295,7 +301,7 @@ export class QualificationTextEditor<Position> {
     this.requireMounted();
     this.requireNoComposition();
     const before = readEditorText(this.carrier, this.inlineContentId);
-    const after = attributedSplice(before, start, end, insertion);
+    const after = spliceAttributedText(before, start, end, insertion);
     this.publish(before, after, context);
     if (attributedIdentity(before) !== attributedIdentity(after)) {
       this.undos.push({ before, after });

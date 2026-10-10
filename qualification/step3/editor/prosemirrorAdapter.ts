@@ -3,12 +3,20 @@ import { EditorState, type Transaction } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
 
 import type { InlineContentId } from "../../../src/domain/index.js";
+import type { DocumentId } from "../../../src/domain/index.js";
 import type { QualificationOrigin } from "../payload/carrier.js";
 import type { IntegratedDocumentChange } from "../integrated/carrier.js";
 import type { QualificationEffectContext } from "../integrated/effectContext.js";
 import {
+  decodePrivateClipboard,
+  encodePrivateClipboard,
+  STEP3_PRIVATE_CLIPBOARD_TYPE,
+  type PrivateClipboardLimits,
+} from "./clipboard.js";
+import {
   type EditorTextBuffer,
   sliceAttributedText,
+  spliceAttributedText,
   translateEditorText,
 } from "./semanticText.js";
 
@@ -127,6 +135,22 @@ export interface ProseMirrorEditorMountOptions<Position> {
   readonly nextContext: () => QualificationEffectContext;
   /** Applies one complete carrier-neutral semantic change. */
   readonly publish: (change: IntegratedDocumentChange<Position>) => void;
+  /** Optional hostile-input policy for DOM clipboard events. */
+  readonly clipboard?: ProseMirrorClipboardOptions;
+}
+
+/** Explicit qualification inputs for browser clipboard events. */
+export interface ProseMirrorClipboardOptions {
+  /** Document identity required before private Origin can be trusted. */
+  readonly documentId: DocumentId;
+  /** Trusted target-side Origin catalog; clipboard data never supplies it. */
+  readonly originCatalog: ReadonlyMap<string, QualificationOrigin>;
+  /** Attribution for HTML/plain text and rejected private fragments. */
+  readonly fallbackOrigin: QualificationOrigin;
+  /** Experimental admission limits; Gate B selects any final values. */
+  readonly limits: PrivateClipboardLimits;
+  /** Creates a source reference for an ordinary copy or cut gesture. */
+  readonly nextCopyReference: () => string;
 }
 
 /** Mounted transient ProseMirror adapter with an explicit cleanup operation. */
@@ -150,29 +174,133 @@ export function mountProseMirrorEditor<Position>(
   options: ProseMirrorEditorMountOptions<Position>,
 ): MountedProseMirrorEditor {
   let canonical = options.buffer;
+  let compositionBefore: EditorTextBuffer | undefined;
   let state = createProseMirrorEditorState(canonical);
   const view = new EditorView(options.element, {
     state,
+    handleDOMEvents: {
+      compositionstart: () => {
+        if (compositionBefore === undefined) compositionBefore = canonical;
+        return false;
+      },
+      compositionend: () => {
+        const before = compositionBefore;
+        compositionBefore = undefined;
+        if (before !== undefined)
+          publishNativeChange(before, nativeTextFromProseMirror(state.doc));
+        return false;
+      },
+      copy: (_view, event) => {
+        copySelection(event);
+        return true;
+      },
+      cut: (_view, event) => {
+        copySelection(event);
+        const { from, to } = state.selection;
+        if (from !== to) view.dispatch(state.tr.delete(from, to));
+        return true;
+      },
+      paste: (_view, event) => pasteSelection(event),
+    },
     dispatchTransaction(transaction) {
       state = state.apply(transaction);
       view.updateState(state);
-      const change = translateProseMirrorTransaction<Position>(
-        options.inlineContentId,
-        canonical,
-        transaction,
-        options.origin,
-        options.nextContext(),
-      );
-      if (change === undefined) return;
-      options.publish(change);
-      canonical = attributeNativeReplacement(
-        canonical,
-        nativeTextFromProseMirror(transaction.doc),
-        options.origin,
-      );
+      if (compositionBefore === undefined)
+        publishNativeChange(
+          canonical,
+          nativeTextFromProseMirror(transaction.doc),
+        );
     },
   });
-  return { view, unmount: () => view.destroy() };
+
+  return {
+    view,
+    unmount: () => {
+      if (compositionBefore !== undefined)
+        throw new TypeError("Commit or cancel composition before unmounting.");
+      view.destroy();
+    },
+  };
+
+  function publishNativeChange(
+    before: EditorTextBuffer,
+    afterText: string,
+  ): void {
+    const after = attributeNativeReplacement(before, afterText, options.origin);
+    const change = translateEditorText<Position>(
+      options.inlineContentId,
+      before,
+      after,
+      options.nextContext(),
+    );
+    if (change !== undefined) options.publish(change);
+    canonical = after;
+  }
+
+  function copySelection(event: ClipboardEvent): void {
+    const clipboard = options.clipboard;
+    if (clipboard === undefined) return;
+    event.preventDefault();
+    const { from, to } = state.selection;
+    const encoded = encodePrivateClipboard(
+      canonical,
+      nativeOffset(from),
+      nativeOffset(to),
+      clipboard.documentId,
+      clipboard.nextCopyReference(),
+    );
+    event.clipboardData?.setData("text/plain", encoded.plainText);
+    event.clipboardData?.setData(
+      STEP3_PRIVATE_CLIPBOARD_TYPE,
+      encoded.privateText,
+    );
+  }
+
+  function pasteSelection(event: ClipboardEvent): boolean {
+    const clipboard = options.clipboard;
+    if (clipboard === undefined) return false;
+    event.preventDefault();
+    const privateText = event.clipboardData?.getData(
+      STEP3_PRIVATE_CLIPBOARD_TYPE,
+    );
+    const plainText = event.clipboardData?.getData("text/plain") ?? "";
+    const decoded = decodePrivateClipboard(
+      privateText === "" ? undefined : privateText,
+      plainText,
+      clipboard.documentId,
+      clipboard.originCatalog,
+      clipboard.fallbackOrigin,
+      clipboard.limits,
+    );
+    const { from, to } = state.selection;
+    const before = canonical;
+    const after = spliceAttributedText(
+      before,
+      nativeOffset(from),
+      nativeOffset(to),
+      decoded.spans,
+    );
+    const transaction = state.tr.insertText(decoded.text, from, to);
+    state = state.apply(transaction);
+    view.updateState(state);
+    const change = translateEditorText<Position>(
+      options.inlineContentId,
+      before,
+      after,
+      {
+        ...options.nextContext(),
+        ...(decoded.source === undefined ? {} : { source: decoded.source }),
+      },
+    );
+    if (change !== undefined) options.publish(change);
+    canonical = after;
+    return true;
+  }
+}
+
+/** Convert a flat-schema ProseMirror text position to a native-string offset. */
+function nativeOffset(proseMirrorPosition: number): number {
+  return proseMirrorPosition;
 }
 
 function documentFromNativeText(text: string): ProseMirrorNode {
