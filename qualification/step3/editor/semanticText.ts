@@ -275,6 +275,7 @@ export class QualificationTextEditor<Position> {
   private readonly redos: EditorGesture[] = [];
   private compositionBase: EditorTextBuffer | undefined;
   private composition: EditorTextBuffer | undefined;
+  private compositionInsertionOffset: number | undefined;
   private mounted = true;
 
   public constructor(
@@ -332,6 +333,7 @@ export class QualificationTextEditor<Position> {
       throw new TypeError("Composition is already active.");
     this.compositionBase = readEditorText(this.carrier, this.inlineContentId);
     this.composition = this.compositionBase;
+    this.compositionInsertionOffset = undefined;
   }
 
   /** Update transient composition text. */
@@ -344,6 +346,15 @@ export class QualificationTextEditor<Position> {
     this.requireMounted();
     if (this.composition === undefined)
       throw new TypeError("Composition has not started.");
+    if (
+      this.compositionInsertionOffset === undefined &&
+      this.compositionBase !== undefined &&
+      attributedIdentity(this.composition) ===
+        attributedIdentity(this.compositionBase) &&
+      start === end &&
+      text.length > 0
+    )
+      this.compositionInsertionOffset = start;
     this.composition = attributedInsertion(
       this.composition,
       start,
@@ -365,10 +376,19 @@ export class QualificationTextEditor<Position> {
     this.publish(before, after, context);
     this.compositionBase = undefined;
     this.composition = undefined;
-    if (attributedIdentity(before) !== attributedIdentity(after)) {
-      this.undos.push({ kind: "snapshot", before, after });
-      this.redos.length = 0;
-    }
+    const insertion = pureInsertionAt(
+      before,
+      after,
+      this.compositionInsertionOffset,
+    );
+    this.compositionInsertionOffset = undefined;
+    this.recordGesture(
+      before,
+      after,
+      insertion !== undefined,
+      insertion?.text ?? "",
+      insertion?.start ?? 0,
+    );
   }
 
   /** Cancel only uncommitted transient composition state. */
@@ -376,6 +396,7 @@ export class QualificationTextEditor<Position> {
     this.requireMounted();
     this.compositionBase = undefined;
     this.composition = undefined;
+    this.compositionInsertionOffset = undefined;
   }
 
   /** Perform an application undo intent through the semantic change seam. */
@@ -561,4 +582,22 @@ export class QualificationTextEditor<Position> {
   private requireMounted(): void {
     if (!this.mounted) throw new TypeError("Editor is unmounted.");
   }
+}
+
+/** Confirm an IME's collapsed starting selection was extended, not replaced. */
+function pureInsertionAt(
+  before: EditorTextBuffer,
+  after: EditorTextBuffer,
+  start: number | undefined,
+): { readonly start: number; readonly text: string } | undefined {
+  if (start === undefined || after.text.length <= before.text.length)
+    return undefined;
+  const insertedLength = after.text.length - before.text.length;
+  const end = start + insertedLength;
+  if (
+    before.text.slice(0, start) !== after.text.slice(0, start) ||
+    before.text.slice(start) !== after.text.slice(end)
+  )
+    return undefined;
+  return { start, text: after.text.slice(start, end) };
 }

@@ -156,6 +156,27 @@ for (const factory of factories) {
       ).toThrow(/unmounted/u);
     });
 
+    it("reconciles a pure IME insertion undo through a concurrent deletion", () => {
+      const carrier = seeded();
+      const editor = new QualificationTextEditor(carrier, contentId);
+      editor.beginComposition();
+      editor.updateComposition(5, 5, "!", editing);
+      editor.commitComposition(context("ime-insert"));
+      carrier.applyChange({
+        payloads: [
+          {
+            kind: "delete-text",
+            inlineContentId: contentId,
+            start: 1,
+            end: 2,
+          },
+        ],
+        context: { actorId: "actor-b", effectId: "remote-ime-edit" },
+      });
+      editor.undo(context("ime-reconciled-undo"));
+      expect(readEditorText(carrier, contentId).text).toBe("apha");
+    });
+
     it("refuses an IME commit whose canonical base changed remotely", () => {
       const carrier = seeded();
       const editor = new QualificationTextEditor(carrier, contentId);
