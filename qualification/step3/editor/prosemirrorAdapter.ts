@@ -4,7 +4,10 @@ import { EditorView } from "prosemirror-view";
 
 import type { InlineContentId } from "../../../src/domain/index.js";
 import type { DocumentId } from "../../../src/domain/index.js";
-import type { QualificationOrigin } from "../payload/carrier.js";
+import type {
+  QualificationOrigin,
+  QualificationTextSpan,
+} from "../payload/carrier.js";
 import type { IntegratedDocumentChange } from "../integrated/carrier.js";
 import type { QualificationStableTextPosition } from "../integrated/carrier.js";
 import type { QualificationEffectContext } from "../integrated/effectContext.js";
@@ -252,8 +255,11 @@ type MountedGesture =
       readonly before: EditorTextBuffer;
       readonly after: EditorTextBuffer;
       readonly expectedText: string;
+      readonly insertion: readonly QualificationTextSpan[];
+      readonly insertionOffset: number;
       readonly start: QualificationStableTextPosition;
       readonly end: QualificationStableTextPosition;
+      readonly redoAt: QualificationStableTextPosition | undefined;
     };
 
 /**
@@ -271,30 +277,40 @@ export function mountProseMirrorEditor<Position>(
   let canonical = options.buffer;
   let composition:
     { before: EditorTextBuffer; after: EditorTextBuffer } | undefined;
+  let compositionEnding = false;
   const undos: MountedGesture[] = [];
   const redos: MountedGesture[] = [];
+  let mounted = true;
   let state = createProseMirrorEditorState(canonical);
   const view = new EditorView(options.element, {
     state,
     handleDOMEvents: {
       compositionstart: () => {
-        if (composition === undefined)
+        if (composition === undefined) {
           composition = { before: canonical, after: canonical };
+          compositionEnding = false;
+        }
         return false;
       },
       compositionend: () => {
+        compositionEnding = true;
         // ProseMirror may flush the final IME DOM mutation on its own queued
         // turn after this hook. A second turn prevents splitting that final
         // mutation into a separate semantic action.
         setTimeout(() => {
           setTimeout(() => {
             const pending = composition;
-            if (pending === undefined) return;
+            if (pending === undefined) {
+              compositionEnding = false;
+              return;
+            }
             try {
               publishAttributedChange(pending.before, pending.after);
               composition = undefined;
+              compositionEnding = false;
             } catch (error) {
               composition = undefined;
+              compositionEnding = false;
               resetViewToCurrent();
               options.onPublicationRejected?.(error);
             }
@@ -317,8 +333,18 @@ export function mountProseMirrorEditor<Position>(
       paste: (_view, event) => pasteSelection(event),
     },
     dispatchTransaction(transaction) {
+      requireMounted();
       state = state.apply(transaction);
       view.updateState(state);
+      if (
+        composition !== undefined &&
+        compositionEnding &&
+        transaction.getMeta("composition") === undefined
+      ) {
+        publishAttributedChange(composition.before, composition.after);
+        composition = undefined;
+        compositionEnding = false;
+      }
       const before = composition?.after ?? canonical;
       const after = attributeNativeTransaction(
         before,
@@ -327,7 +353,14 @@ export function mountProseMirrorEditor<Position>(
       );
       if (after === undefined) return;
       try {
-        if (composition === undefined) publishAttributedChange(before, after);
+        if (composition === undefined)
+          publishAttributedChange(
+            before,
+            after,
+            undefined,
+            true,
+            pureInsertionFromTransaction(before, after, transaction),
+          );
         else composition = { ...composition, after };
       } catch (error) {
         resetViewToCurrent();
@@ -338,12 +371,20 @@ export function mountProseMirrorEditor<Position>(
 
   return {
     view,
-    undo: () => replay(undos, redos, "undo"),
-    redo: () => replay(redos, undos, "redo"),
+    undo: () => {
+      requireMounted();
+      replay(undos, redos, "undo");
+    },
+    redo: () => {
+      requireMounted();
+      replay(redos, undos, "redo");
+    },
     unmount: () => {
+      requireMounted();
       if (composition !== undefined)
         throw new TypeError("Commit or cancel composition before unmounting.");
       view.destroy();
+      mounted = false;
     },
   };
 
@@ -352,6 +393,11 @@ export function mountProseMirrorEditor<Position>(
     after: EditorTextBuffer,
     source?: QualificationEffectContext["source"],
     record = true,
+    insertion?: {
+      readonly start: number;
+      readonly end: number;
+      readonly text: string;
+    },
   ): void {
     if (!sameBuffer(options.readCurrentBuffer(), before))
       throw new TypeError(
@@ -377,7 +423,7 @@ export function mountProseMirrorEditor<Position>(
     }
     canonical = applied;
     if (change !== undefined && record) {
-      undos.push(recordGesture(before, applied));
+      undos.push(recordGesture(before, applied, insertion));
       redos.length = 0;
     }
   }
@@ -405,7 +451,38 @@ export function mountProseMirrorEditor<Position>(
       const after = spliceAttributedText(before, start, end, []);
       publishAttributedChange(before, after, undefined, false);
       source.pop();
-      destination.push(gesture);
+      destination.push({
+        ...gesture,
+        before,
+        after,
+        redoAt: options.textPositions.create(start, "before"),
+      });
+      state = createProseMirrorEditorState(canonical);
+      view.updateState(state);
+      return;
+    }
+    if (
+      direction === "redo" &&
+      gesture.kind === "anchored-insertion" &&
+      gesture.redoAt !== undefined
+    ) {
+      const offset = options.textPositions.resolve(gesture.redoAt);
+      if (offset === undefined)
+        throw new TypeError(
+          "Inserted text redo anchor is no longer resolvable.",
+        );
+      const before = options.readCurrentBuffer();
+      const after = spliceAttributedText(
+        before,
+        offset,
+        offset,
+        gesture.insertion,
+      );
+      publishAttributedChange(before, after, undefined, false);
+      source.pop();
+      destination.push(
+        createAnchoredGesture(before, after, gesture.expectedText, offset),
+      );
       state = createProseMirrorEditorState(canonical);
       view.updateState(state);
       return;
@@ -418,7 +495,11 @@ export function mountProseMirrorEditor<Position>(
       );
     publishAttributedChange(before, after, undefined, false);
     source.pop();
-    destination.push(gesture);
+    destination.push(
+      direction === "redo" && gesture.kind === "anchored-insertion"
+        ? refreshAnchoredGesture(gesture)
+        : gesture,
+    );
     state = createProseMirrorEditorState(canonical);
     view.updateState(state);
   }
@@ -426,16 +507,59 @@ export function mountProseMirrorEditor<Position>(
   function recordGesture(
     before: EditorTextBuffer,
     after: EditorTextBuffer,
+    insertion:
+      | { readonly start: number; readonly end: number; readonly text: string }
+      | undefined,
   ): MountedGesture {
-    const insertion = pureInsertion(before.text, after.text);
     if (insertion === undefined) return { kind: "snapshot", before, after };
     return {
       kind: "anchored-insertion",
       before,
       after,
       expectedText: insertion.text,
+      insertion: sliceAttributedText(after, insertion.start, insertion.end),
+      insertionOffset: insertion.start,
       start: options.textPositions.create(insertion.start, "before"),
       end: options.textPositions.create(insertion.end, "after"),
+      redoAt: undefined,
+    };
+  }
+
+  /** Redo recreates the inserted carrier identities; never reuse old anchors. */
+  function refreshAnchoredGesture(
+    gesture: Extract<MountedGesture, { readonly kind: "anchored-insertion" }>,
+  ): MountedGesture {
+    return createAnchoredGesture(
+      gesture.before,
+      gesture.after,
+      gesture.expectedText,
+      gesture.insertionOffset,
+    );
+  }
+
+  function createAnchoredGesture(
+    before: EditorTextBuffer,
+    after: EditorTextBuffer,
+    expectedText: string,
+    insertionOffset: number,
+  ): MountedGesture {
+    return {
+      kind: "anchored-insertion",
+      before,
+      after,
+      expectedText,
+      insertion: sliceAttributedText(
+        after,
+        insertionOffset,
+        insertionOffset + expectedText.length,
+      ),
+      insertionOffset,
+      start: options.textPositions.create(insertionOffset, "before"),
+      end: options.textPositions.create(
+        insertionOffset + expectedText.length,
+        "after",
+      ),
+      redoAt: undefined,
     };
   }
 
@@ -444,6 +568,10 @@ export function mountProseMirrorEditor<Position>(
     if (clipboard === undefined) return;
     event.preventDefault();
     const { from, to } = state.selection;
+    if (!sameBuffer(options.readCurrentBuffer(), canonical)) {
+      resetViewToCurrent();
+      throw new TypeError("Cannot copy from a stale editor projection.");
+    }
     const sourceReference = clipboard.nextCopyReference();
     if (!clipboard.isStableSourceReference(sourceReference))
       throw new TypeError(
@@ -510,6 +638,10 @@ export function mountProseMirrorEditor<Position>(
     state = createProseMirrorEditorState(canonical);
     view.updateState(state);
   }
+
+  function requireMounted(): void {
+    if (!mounted) throw new TypeError("Editor is unmounted.");
+  }
 }
 
 function sameBuffer(left: EditorTextBuffer, right: EditorTextBuffer): boolean {
@@ -520,22 +652,34 @@ function sameBuffer(left: EditorTextBuffer, right: EditorTextBuffer): boolean {
   );
 }
 
-function pureInsertion(
-  before: string,
-  after: string,
+function pureInsertionFromTransaction(
+  before: EditorTextBuffer,
+  after: EditorTextBuffer,
+  transaction: Transaction,
 ):
   | { readonly start: number; readonly end: number; readonly text: string }
   | undefined {
-  if (after.length <= before.length) return undefined;
-  let start = 0;
-  while (start < before.length && before[start] === after[start]) start += 1;
-  const insertedLength = after.length - before.length;
-  if (before.slice(start) !== after.slice(start + insertedLength))
+  if (transaction.steps.length !== 1 || after.text.length <= before.text.length)
+    return undefined;
+  const ranges: { from: number; to: number; newFrom: number; newTo: number }[] =
+    [];
+  transaction.steps[0]!.getMap().forEach((from, to, newFrom, newTo) =>
+    ranges.push({ from, to, newFrom, newTo }),
+  );
+  const range = ranges[0];
+  if (
+    ranges.length !== 1 ||
+    range === undefined ||
+    range.from !== range.to ||
+    range.newTo <= range.newFrom ||
+    before.text.slice(0, range.from) !== after.text.slice(0, range.newFrom) ||
+    before.text.slice(range.to) !== after.text.slice(range.newTo)
+  )
     return undefined;
   return {
-    start,
-    end: start + insertedLength,
-    text: after.slice(start, start + insertedLength),
+    start: range.newFrom,
+    end: range.newTo,
+    text: after.text.slice(range.newFrom, range.newTo),
   };
 }
 

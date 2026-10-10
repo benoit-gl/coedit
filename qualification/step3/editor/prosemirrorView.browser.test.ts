@@ -43,13 +43,18 @@ function browserTextPositions(): {
     affinity: "before" | "after",
   ) => QualificationStableTextPosition;
   resolve: (position: QualificationStableTextPosition) => number | undefined;
+  insert: (offset: number, length: number) => void;
+  apply: (change: IntegratedDocumentChange<never>) => void;
 } {
   let next = 0;
-  const offsets = new Map<number, number>();
+  const offsets = new Map<
+    number,
+    { offset: number; affinity: "before" | "after" }
+  >();
   return {
-    create: (offset) => {
+    create: (offset, affinity) => {
       next += 1;
-      offsets.set(next, offset);
+      offsets.set(next, { offset, affinity });
       return {
         candidate: "yjs",
         inlineContentId: contentId,
@@ -58,8 +63,36 @@ function browserTextPositions(): {
     },
     resolve: (position) =>
       position.candidate === "yjs"
-        ? offsets.get(position.encoded[0] ?? -1)
+        ? offsets.get(position.encoded[0] ?? -1)?.offset
         : undefined,
+    insert: (offset, length) => {
+      for (const position of offsets.values())
+        if (
+          position.offset > offset ||
+          (position.offset === offset && position.affinity === "after")
+        )
+          position.offset += length;
+    },
+    apply: (change) => {
+      for (const payload of change.payloads ?? []) {
+        if (payload.kind === "insert-text") {
+          for (const position of offsets.values())
+            if (
+              position.offset > payload.offset ||
+              (position.offset === payload.offset &&
+                position.affinity === "after")
+            )
+              position.offset += payload.text.length;
+        } else if (payload.kind === "delete-text") {
+          const length = payload.end - payload.start;
+          for (const position of offsets.values()) {
+            if (position.offset >= payload.end) position.offset -= length;
+            else if (position.offset > payload.start)
+              position.offset = payload.start;
+          }
+        }
+      }
+    },
   };
 }
 
@@ -144,7 +177,8 @@ describe("direct ProseMirror browser qualification", () => {
     ]);
     editor.undo();
     editor.redo();
-    expect(published).toHaveLength(3);
+    editor.undo();
+    expect(published).toHaveLength(4);
     expect(published[1]?.payloads).toEqual([
       { kind: "delete-text", inlineContentId: contentId, start: 5, end: 6 },
     ]);
@@ -157,9 +191,46 @@ describe("direct ProseMirror browser qualification", () => {
         origin: editing,
       },
     ]);
+    expect(published[3]?.payloads).toEqual([
+      { kind: "delete-text", inlineContentId: contentId, start: 5, end: 6 },
+    ]);
 
     editor.unmount();
     expect(mount.querySelector("[contenteditable='true']")).toBeNull();
+    expect(() => editor.undo()).toThrow(/unmounted/u);
+    mount.remove();
+  });
+
+  it("anchors repeated-text insertion at the ProseMirror transaction position", () => {
+    const mount = document.createElement("div");
+    document.body.append(mount);
+    let current: EditorTextBuffer = {
+      text: "aaa",
+      spans: [{ text: "aaa", origin: original }],
+    };
+    const editor = mountProseMirrorEditor<never>({
+      element: mount,
+      inlineContentId: contentId,
+      buffer: current,
+      readCurrentBuffer: () => current,
+      textPositions: browserTextPositions(),
+      origin: editing,
+      nextContext: () => ({ actorId: "actor-a", effectId: "repeated" }),
+      publish: (change) => {
+        current = applyPublishedChange(current, change);
+      },
+    });
+    editor.view.dispatch(editor.view.state.tr.insertText("a", 0));
+    expect(current.spans).toEqual([
+      { text: "a", origin: editing },
+      { text: "aaa", origin: original },
+    ]);
+    editor.undo();
+    expect(current).toEqual({
+      text: "aaa",
+      spans: [{ text: "aaa", origin: original }],
+    });
+    editor.unmount();
     mount.remove();
   });
 
@@ -249,7 +320,9 @@ describe("direct ProseMirror browser qualification", () => {
     editor.view.dispatch(editor.view.state.tr.insertText("a", 5));
     editor.view.dom.dispatchEvent(new CompositionEvent("compositionend"));
     queueMicrotask(() =>
-      editor.view.dispatch(editor.view.state.tr.insertText("b", 6)),
+      editor.view.dispatch(
+        editor.view.state.tr.insertText("b", 6).setMeta("composition", 1),
+      ),
     );
     await waitForCompositionFlush();
     expect(published).toHaveLength(1);
@@ -310,7 +383,7 @@ describe("direct ProseMirror browser qualification", () => {
     mount.remove();
   });
 
-  it("refuses undo when the carrier projection changed remotely", () => {
+  it("reconciles mounted insertion undo after a remote prefix edit", () => {
     const mount = document.createElement("div");
     document.body.append(mount);
     const published: IntegratedDocumentChange<never>[] = [];
@@ -318,12 +391,13 @@ describe("direct ProseMirror browser qualification", () => {
       text: "alpha",
       spans: [{ text: "alpha", origin: original }],
     };
+    const positions = browserTextPositions();
     const editor = mountProseMirrorEditor<never>({
       element: mount,
       inlineContentId: contentId,
       buffer: current,
       readCurrentBuffer: () => current,
-      textPositions: browserTextPositions(),
+      textPositions: positions,
       origin: editing,
       nextContext: () => ({
         actorId: "actor-a",
@@ -332,14 +406,17 @@ describe("direct ProseMirror browser qualification", () => {
       publish: (change) => {
         published.push(change);
         current = applyPublishedChange(current, change);
+        positions.apply(change);
       },
     });
     editor.view.dispatch(editor.view.state.tr.insertText("!", 5));
     current = spliceAttributedText(current, 0, 0, [
       { text: "R", origin: original },
     ]);
-    expect(() => editor.undo()).toThrow(/undo anchor/u);
-    expect(published).toHaveLength(1);
+    positions.insert(0, 1);
+    editor.undo();
+    expect(current.text).toBe("Ralpha");
+    expect(published).toHaveLength(2);
     editor.unmount();
     mount.remove();
   });

@@ -19,7 +19,10 @@ only when it still contains that exact text; it intentionally does not require
 the original Origin or an unchanged whole-document frontier. Edits before the
 range therefore reconcile its position, while changed or ambiguous content
 refuses the undo. This is a qualification policy for inserted text, not yet a
-final policy for deletion, replacement, grouping, or product History.
+final policy for deletion, replacement, grouping, or product History. A redo
+creates fresh carrier identities and therefore refreshes those boundary anchors
+before a later undo. The mounted adapter takes the insertion coordinates from
+the ProseMirror transaction, rather than inferring them from repeated text.
 
 `prosemirrorAdapter.ts` uses a flat, direct ProseMirror schema for one active
 allowlisted InlineContent. It turns a committed document-changing transaction

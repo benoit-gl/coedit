@@ -201,6 +201,29 @@ for (const factory of factories) {
       editor.undo(context("reconciled-undo"));
       expect(readEditorText(carrier, contentId).text).toBe("apha");
       expect(carrier.effects().size).toBe(4);
+      editor.redo(context("reconciled-redo"));
+      expect(readEditorText(carrier, contentId).text).toBe("apha!");
+    });
+
+    it("refreshes an insertion anchor after redo before reconciling undo", () => {
+      const carrier = seeded();
+      const editor = new QualificationTextEditor(carrier, contentId);
+      editor.replaceSelection(5, 5, "!", editing, context("my-edit"));
+      editor.undo(context("first-undo"));
+      editor.redo(context("redo"));
+      carrier.applyChange({
+        payloads: [
+          {
+            kind: "delete-text",
+            inlineContentId: contentId,
+            start: 1,
+            end: 2,
+          },
+        ],
+        context: { actorId: "actor-b", effectId: "remote-edit-after-redo" },
+      });
+      editor.undo(context("second-undo"));
+      expect(readEditorText(carrier, contentId).text).toBe("apha");
     });
 
     it("qualifies same-document private copy, paste, cut, and hostile fallback", () => {

@@ -31,8 +31,14 @@ interface AnchoredInsertionGesture {
   readonly before: EditorTextBuffer;
   readonly after: EditorTextBuffer;
   readonly expectedText: string;
+  /** Exact attributed content to recreate when a reconciled undo is redone. */
+  readonly insertion: readonly QualificationTextSpan[];
+  /** Native offset at which redo recreates fresh carrier identities. */
+  readonly insertionOffset: number;
   readonly start: QualificationStableTextPosition;
   readonly end: QualificationStableTextPosition;
+  /** Boundary created by undo after deleting the anchored inserted range. */
+  readonly redoAt: QualificationStableTextPosition | undefined;
 }
 
 type EditorGesture = SnapshotGesture | AnchoredInsertionGesture;
@@ -380,7 +386,12 @@ export class QualificationTextEditor<Position> {
     if (gesture === undefined) throw new RangeError("Nothing to undo.");
     if (gesture.kind === "snapshot")
       this.publish(gesture.after, gesture.before, context);
-    else this.undoAnchoredInsertion(gesture, context);
+    else {
+      const reconciled = this.undoAnchoredInsertion(gesture, context);
+      this.undos.pop();
+      this.redos.push(reconciled);
+      return;
+    }
     this.undos.pop();
     this.redos.push(gesture);
   }
@@ -391,9 +402,38 @@ export class QualificationTextEditor<Position> {
     this.requireNoComposition();
     const gesture = this.redos.at(-1);
     if (gesture === undefined) throw new RangeError("Nothing to redo.");
+    if (gesture.kind === "anchored-insertion" && gesture.redoAt !== undefined) {
+      const offset = this.carrier.resolveStableTextPosition(gesture.redoAt);
+      if (offset === undefined)
+        throw new TypeError(
+          "Inserted text redo anchor is no longer resolvable.",
+        );
+      const before = readEditorText(this.carrier, this.inlineContentId);
+      const after = spliceAttributedText(
+        before,
+        offset,
+        offset,
+        gesture.insertion,
+      );
+      this.publish(before, after, context);
+      this.redos.pop();
+      this.undos.push(
+        this.createAnchoredInsertionGesture(
+          before,
+          after,
+          gesture.expectedText,
+          offset,
+        ),
+      );
+      return;
+    }
     this.publish(gesture.before, gesture.after, context);
     this.redos.pop();
-    this.undos.push(gesture);
+    this.undos.push(
+      gesture.kind === "anchored-insertion"
+        ? this.anchorInsertionGesture(gesture)
+        : gesture,
+    );
   }
 
   /** Explicitly close a clean editor. Never silently discard IME work. */
@@ -430,39 +470,66 @@ export class QualificationTextEditor<Position> {
     insertionOffset: number,
   ): void {
     if (attributedIdentity(before) === attributedIdentity(after)) return;
-    const start =
+    const gesture =
       isPureInsertion && expectedText.length > 0
-        ? this.carrier.createStableTextPosition(
-            this.inlineContentId,
+        ? this.createAnchoredInsertionGesture(
+            before,
+            after,
+            expectedText,
             insertionOffset,
-            "before",
           )
-        : undefined;
-    const end =
-      start === undefined
-        ? undefined
-        : this.carrier.createStableTextPosition(
-            this.inlineContentId,
-            insertionOffset + expectedText.length,
-            "after",
-          );
-    if (start !== undefined && end !== undefined)
-      this.undos.push({
-        kind: "anchored-insertion",
-        before,
-        after,
-        expectedText,
-        start,
-        end,
-      });
-    else this.undos.push({ kind: "snapshot", before, after });
+        : { kind: "snapshot" as const, before, after };
+    this.undos.push(gesture);
     this.redos.length = 0;
+  }
+
+  /** Redo creates new carrier identities, so its undo anchors must be fresh. */
+  private anchorInsertionGesture(
+    gesture: AnchoredInsertionGesture,
+  ): AnchoredInsertionGesture {
+    return this.createAnchoredInsertionGesture(
+      gesture.before,
+      gesture.after,
+      gesture.expectedText,
+      gesture.insertionOffset,
+    );
+  }
+
+  private createAnchoredInsertionGesture(
+    before: EditorTextBuffer,
+    after: EditorTextBuffer,
+    expectedText: string,
+    insertionOffset: number,
+  ): AnchoredInsertionGesture {
+    return {
+      kind: "anchored-insertion",
+      before,
+      after,
+      expectedText,
+      insertion: sliceAttributedText(
+        after,
+        insertionOffset,
+        insertionOffset + expectedText.length,
+      ),
+      insertionOffset,
+      start: this.carrier.createStableTextPosition(
+        this.inlineContentId,
+        insertionOffset,
+        "before",
+      ),
+      end: this.carrier.createStableTextPosition(
+        this.inlineContentId,
+        insertionOffset + expectedText.length,
+        "after",
+      ),
+      redoAt: undefined,
+    };
   }
 
   private undoAnchoredInsertion(
     gesture: AnchoredInsertionGesture,
     context: QualificationEffectContext,
-  ): void {
+  ): AnchoredInsertionGesture {
     const start = this.carrier.resolveStableTextPosition(gesture.start);
     const end = this.carrier.resolveStableTextPosition(gesture.end);
     if (start === undefined || end === undefined || end < start)
@@ -470,7 +537,18 @@ export class QualificationTextEditor<Position> {
     const before = readEditorText(this.carrier, this.inlineContentId);
     if (before.text.slice(start, end) !== gesture.expectedText)
       throw new TypeError("Inserted text no longer matches its undo anchor.");
-    this.publish(before, spliceAttributedText(before, start, end, []), context);
+    const after = spliceAttributedText(before, start, end, []);
+    this.publish(before, after, context);
+    return {
+      ...gesture,
+      before,
+      after,
+      redoAt: this.carrier.createStableTextPosition(
+        this.inlineContentId,
+        start,
+        "before",
+      ),
+    };
   }
 
   private requireNoComposition(): void {
