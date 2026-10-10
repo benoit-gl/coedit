@@ -46,6 +46,14 @@ export interface EncodedPrivateClipboard {
   readonly privateText: string;
 }
 
+/** Target-controlled receipt for one locally issued private clipboard copy. */
+export interface TrustedPrivateClipboardCopy {
+  /** Exact plain text admitted at copy time. */
+  readonly text: string;
+  /** Exact detached attributed spans admitted at copy time. */
+  readonly spans: readonly QualificationTextSpan[];
+}
+
 /** Serialize a same-document copy using source Origin without editor metadata. */
 export function encodePrivateClipboard(
   buffer: EditorTextBuffer,
@@ -84,6 +92,7 @@ export function decodePrivateClipboard(
   plainText: string,
   targetDocumentId: DocumentId,
   originCatalog: ReadonlyMap<string, QualificationOrigin>,
+  trustedCopies: ReadonlyMap<string, TrustedPrivateClipboardCopy>,
   fallbackOrigin: QualificationOrigin,
   limits: PrivateClipboardLimits,
 ): ClipboardText {
@@ -140,6 +149,13 @@ export function decodePrivateClipboard(
     }
     if (combined !== plainText || combined.length > limits.maxTextLength)
       return fallback();
+    const trusted = trustedCopies.get(value.sourceReference);
+    if (
+      trusted === undefined ||
+      trusted.text !== combined ||
+      !sameSpans(trusted.spans, spans)
+    )
+      return fallback();
     return {
       text: combined,
       spans,
@@ -149,6 +165,13 @@ export function decodePrivateClipboard(
   } catch {
     return fallback();
   }
+}
+
+function sameSpans(
+  left: readonly QualificationTextSpan[],
+  right: readonly QualificationTextSpan[],
+): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 function isObject(value: unknown): value is Readonly<Record<string, unknown>> {

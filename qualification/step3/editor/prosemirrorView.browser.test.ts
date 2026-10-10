@@ -57,13 +57,28 @@ describe("direct ProseMirror browser qualification", () => {
         context: { actorId: "actor-a", effectId: "browser-0" },
       },
     ]);
+    editor.undo();
+    editor.redo();
+    expect(published).toHaveLength(3);
+    expect(published[1]?.payloads).toEqual([
+      { kind: "delete-text", inlineContentId: contentId, start: 5, end: 6 },
+    ]);
+    expect(published[2]?.payloads).toEqual([
+      {
+        kind: "insert-text",
+        inlineContentId: contentId,
+        offset: 5,
+        text: "!",
+        origin: editing,
+      },
+    ]);
 
     editor.unmount();
     expect(mount.querySelector("[contenteditable='true']")).toBeNull();
     mount.remove();
   });
 
-  it("holds IME updates until composition ends and refuses dirty unmount", () => {
+  it("holds IME updates until composition ends and refuses dirty unmount", async () => {
     const mount = document.createElement("div");
     document.body.append(mount);
     const published: IntegratedDocumentChange<never>[] = [];
@@ -81,6 +96,7 @@ describe("direct ProseMirror browser qualification", () => {
     expect(published).toEqual([]);
     expect(() => editor.unmount()).toThrow(/composition/u);
     editor.view.dom.dispatchEvent(new CompositionEvent("compositionend"));
+    await Promise.resolve();
     expect(published).toEqual([
       {
         payloads: [
@@ -142,6 +158,7 @@ describe("direct ProseMirror browser qualification", () => {
       clipboard: {
         documentId,
         originCatalog: new Map([[original.id, original]]),
+        trustedCopies: new Map(),
         fallbackOrigin: imported,
         limits: { maxEncodedLength: 4096, maxSpans: 8, maxTextLength: 64 },
         nextCopyReference: () => "copy-0",

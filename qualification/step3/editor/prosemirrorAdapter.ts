@@ -12,6 +12,7 @@ import {
   encodePrivateClipboard,
   STEP3_PRIVATE_CLIPBOARD_TYPE,
   type PrivateClipboardLimits,
+  type TrustedPrivateClipboardCopy,
 } from "./clipboard.js";
 import {
   type EditorTextBuffer,
@@ -196,6 +197,8 @@ export interface ProseMirrorClipboardOptions {
   readonly documentId: DocumentId;
   /** Trusted target-side Origin catalog; clipboard data never supplies it. */
   readonly originCatalog: ReadonlyMap<string, QualificationOrigin>;
+  /** Target-controlled receipts for private copy gestures issued by this editor. */
+  readonly trustedCopies: Map<string, TrustedPrivateClipboardCopy>;
   /** Attribution for HTML/plain text and rejected private fragments. */
   readonly fallbackOrigin: QualificationOrigin;
   /** Experimental admission limits; Gate B selects any final values. */
@@ -208,6 +211,10 @@ export interface ProseMirrorClipboardOptions {
 export interface MountedProseMirrorEditor {
   /** Underlying browser editor view; it is never canonical state. */
   readonly view: EditorView;
+  /** Submit one semantic undo intent without rewinding carrier state. */
+  readonly undo: () => void;
+  /** Submit one semantic redo intent without rewinding carrier state. */
+  readonly redo: () => void;
   /** Releases DOM listeners and the transient ProseMirror view. */
   readonly unmount: () => void;
 }
@@ -227,6 +234,8 @@ export function mountProseMirrorEditor<Position>(
   let canonical = options.buffer;
   let composition:
     { before: EditorTextBuffer; after: EditorTextBuffer } | undefined;
+  const undos: { before: EditorTextBuffer; after: EditorTextBuffer }[] = [];
+  const redos: { before: EditorTextBuffer; after: EditorTextBuffer }[] = [];
   let state = createProseMirrorEditorState(canonical);
   const view = new EditorView(options.element, {
     state,
@@ -237,10 +246,12 @@ export function mountProseMirrorEditor<Position>(
         return false;
       },
       compositionend: () => {
-        const pending = composition;
-        composition = undefined;
-        if (pending !== undefined)
+        queueMicrotask(() => {
+          const pending = composition;
+          if (pending === undefined) return;
           publishAttributedChange(pending.before, pending.after);
+          composition = undefined;
+        });
         return false;
       },
       copy: (_view, event) => {
@@ -272,6 +283,8 @@ export function mountProseMirrorEditor<Position>(
 
   return {
     view,
+    undo: () => replay(undos, redos, "undo"),
+    redo: () => replay(redos, undos, "redo"),
     unmount: () => {
       if (composition !== undefined)
         throw new TypeError("Commit or cancel composition before unmounting.");
@@ -282,6 +295,7 @@ export function mountProseMirrorEditor<Position>(
   function publishAttributedChange(
     before: EditorTextBuffer,
     after: EditorTextBuffer,
+    record = true,
   ): void {
     const change = translateEditorText<Position>(
       options.inlineContentId,
@@ -291,6 +305,32 @@ export function mountProseMirrorEditor<Position>(
     );
     if (change !== undefined) options.publish(change);
     canonical = after;
+    if (change !== undefined && record) {
+      undos.push({ before, after });
+      redos.length = 0;
+    }
+  }
+
+  function replay(
+    source: { before: EditorTextBuffer; after: EditorTextBuffer }[],
+    destination: { before: EditorTextBuffer; after: EditorTextBuffer }[],
+    direction: "undo" | "redo",
+  ): void {
+    if (composition !== undefined)
+      throw new TypeError("Commit or cancel composition before replaying.");
+    const gesture = source.at(-1);
+    if (gesture === undefined) throw new RangeError(`Nothing to ${direction}.`);
+    const before = direction === "undo" ? gesture.after : gesture.before;
+    const after = direction === "undo" ? gesture.before : gesture.after;
+    if (JSON.stringify(canonical) !== JSON.stringify(before))
+      throw new TypeError(
+        `Editor ${direction} has a stale canonical text base.`,
+      );
+    publishAttributedChange(before, after, false);
+    source.pop();
+    destination.push(gesture);
+    state = createProseMirrorEditorState(canonical);
+    view.updateState(state);
   }
 
   function copySelection(event: ClipboardEvent): void {
@@ -298,18 +338,27 @@ export function mountProseMirrorEditor<Position>(
     if (clipboard === undefined) return;
     event.preventDefault();
     const { from, to } = state.selection;
+    const sourceReference = clipboard.nextCopyReference();
     const encoded = encodePrivateClipboard(
       canonical,
       nativeOffset(from),
       nativeOffset(to),
       clipboard.documentId,
-      clipboard.nextCopyReference(),
+      sourceReference,
     );
     event.clipboardData?.setData("text/plain", encoded.plainText);
     event.clipboardData?.setData(
       STEP3_PRIVATE_CLIPBOARD_TYPE,
       encoded.privateText,
     );
+    clipboard.trustedCopies.set(sourceReference, {
+      text: encoded.plainText,
+      spans: sliceAttributedText(
+        canonical,
+        nativeOffset(from),
+        nativeOffset(to),
+      ),
+    });
   }
 
   function pasteSelection(event: ClipboardEvent): boolean {
@@ -325,6 +374,7 @@ export function mountProseMirrorEditor<Position>(
       plainText,
       clipboard.documentId,
       clipboard.originCatalog,
+      clipboard.trustedCopies,
       clipboard.fallbackOrigin,
       clipboard.limits,
     );

@@ -217,11 +217,18 @@ for (const factory of factories) {
       );
       expect(source.plainText).toBe("lph");
       const originCatalog = new Map([[original.id, original]]);
+      const trustedCopies = new Map([
+        [
+          "source-effect",
+          { text: "lph", spans: [{ text: "lph", origin: original }] },
+        ],
+      ]);
       const accepted = decodePrivateClipboard(
         source.privateText,
         source.plainText,
         documentId,
         originCatalog,
+        trustedCopies,
         imported,
         limits,
       );
@@ -260,6 +267,7 @@ for (const factory of factories) {
           source.plainText,
           documentId,
           originCatalog,
+          trustedCopies,
           imported,
           limits,
         );
@@ -289,6 +297,7 @@ describe("clipboard admission", () => {
         "abc",
         documentId,
         catalog,
+        new Map(),
         imported,
         {
           maxEncodedLength: -1,
@@ -308,6 +317,7 @@ describe("clipboard admission", () => {
           "abc",
           documentId,
           catalog,
+          new Map(),
           imported,
           candidate,
         ).privateOriginPreserved,
@@ -319,6 +329,7 @@ describe("clipboard admission", () => {
         "abc",
         documentId,
         catalog,
+        new Map(),
         imported,
         limits,
       ).spans,
