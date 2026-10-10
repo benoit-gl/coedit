@@ -253,6 +253,7 @@ function attributedIdentity(buffer: EditorTextBuffer): string {
 export class QualificationTextEditor<Position> {
   private readonly undos: EditorGesture[] = [];
   private readonly redos: EditorGesture[] = [];
+  private compositionBase: EditorTextBuffer | undefined;
   private composition: EditorTextBuffer | undefined;
   private mounted = true;
 
@@ -314,7 +315,8 @@ export class QualificationTextEditor<Position> {
     this.requireMounted();
     if (this.composition !== undefined)
       throw new TypeError("Composition is already active.");
-    this.composition = readEditorText(this.carrier, this.inlineContentId);
+    this.compositionBase = readEditorText(this.carrier, this.inlineContentId);
+    this.composition = this.compositionBase;
   }
 
   /** Update transient composition text. */
@@ -342,8 +344,11 @@ export class QualificationTextEditor<Position> {
     const after = this.composition;
     if (after === undefined)
       throw new TypeError("Composition has not started.");
-    const before = readEditorText(this.carrier, this.inlineContentId);
+    const before = this.compositionBase;
+    if (before === undefined)
+      throw new TypeError("Composition has not started.");
     this.publish(before, after, context);
+    this.compositionBase = undefined;
     this.composition = undefined;
     if (attributedIdentity(before) !== attributedIdentity(after)) {
       this.undos.push({ before, after });
@@ -354,6 +359,7 @@ export class QualificationTextEditor<Position> {
   /** Cancel only uncommitted transient composition state. */
   public cancelComposition(): void {
     this.requireMounted();
+    this.compositionBase = undefined;
     this.composition = undefined;
   }
 

@@ -109,5 +109,46 @@ for (const factory of factories) {
       ).toBeUndefined();
       expect(nativeTextFromProseMirror(state.doc)).toBe("a\nb");
     });
+
+    it("retains the actual replacement coordinate for repeated and identical text", () => {
+      const before = {
+        text: "aaa",
+        spans: [{ text: "aaa", origin: original }],
+      };
+      const state = createProseMirrorEditorState(before);
+      const insertion = translateProseMirrorTransaction<LocalDensePosition>(
+        contentId,
+        before,
+        state.tr.insertText("a", 0),
+        editing,
+        { actorId: "actor-a", effectId: "repeated-insert" },
+      );
+      expect(insertion?.payloads).toEqual([
+        {
+          kind: "insert-text",
+          inlineContentId: contentId,
+          offset: 0,
+          text: "a",
+          origin: editing,
+        },
+      ]);
+      const identical = translateProseMirrorTransaction<LocalDensePosition>(
+        contentId,
+        before,
+        state.tr.insertText("aaa", 0, 3),
+        editing,
+        { actorId: "actor-a", effectId: "identical-replace" },
+      );
+      expect(identical?.payloads).toEqual([
+        { kind: "delete-text", inlineContentId: contentId, start: 0, end: 3 },
+        {
+          kind: "insert-text",
+          inlineContentId: contentId,
+          offset: 0,
+          text: "aaa",
+          origin: editing,
+        },
+      ]);
+    });
   });
 }

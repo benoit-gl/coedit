@@ -30,11 +30,16 @@ export const qualificationProseMirrorSchema = new Schema({
   nodes: {
     doc: { content: "inline*" },
     text: { group: "inline" },
-    hard_break: { group: "inline", inline: true, selectable: false },
+    hard_break: {
+      group: "inline",
+      inline: true,
+      selectable: false,
+      toDOM: () => ["br"],
+    },
   },
   marks: {
-    em: {},
-    strong: {},
+    em: { toDOM: () => ["em", 0] },
+    strong: { toDOM: () => ["strong", 0] },
   },
 });
 
@@ -78,9 +83,55 @@ export function translateProseMirrorTransaction<Position>(
   context: QualificationEffectContext,
 ): IntegratedDocumentChange<Position> | undefined {
   if (!transaction.docChanged) return undefined;
-  const afterText = nativeTextFromProseMirror(transaction.doc);
-  const after = attributeNativeReplacement(before, afterText, origin);
+  const after = attributeNativeTransaction(before, transaction, origin);
+  if (after === undefined) return undefined;
   return translateEditorText(inlineContentId, before, after, context);
+}
+
+/**
+ * Apply transaction replacement steps to attribution at their actual editor
+ * coordinates. This avoids ambiguous prefix/suffix inference for repeated or
+ * identical text while keeping mark-only transactions transient.
+ */
+export function attributeNativeTransaction(
+  before: EditorTextBuffer,
+  transaction: Transaction,
+  origin: QualificationOrigin,
+): EditorTextBuffer | undefined {
+  let current = before;
+  let changed = false;
+  for (let index = 0; index < transaction.steps.length; index += 1) {
+    const step = transaction.steps[index]!;
+    const beforeDocument = transaction.docs[index];
+    if (beforeDocument === undefined)
+      throw new TypeError("ProseMirror transaction step base is missing.");
+    const result = step.apply(beforeDocument);
+    if (result.failed !== null || result.doc === null)
+      throw new TypeError("ProseMirror transaction step is invalid.");
+    const afterText = nativeTextFromProseMirror(result.doc);
+    const replacements: { from: number; to: number; inserted: string }[] = [];
+    step.getMap().forEach((from, to, newFrom, newTo) => {
+      replacements.push({
+        from,
+        to,
+        inserted: afterText.slice(newFrom, newTo),
+      });
+    });
+    for (const replacement of replacements.sort(
+      (left, right) => right.from - left.from,
+    )) {
+      current = spliceAttributedText(
+        current,
+        replacement.from,
+        replacement.to,
+        replacement.inserted === ""
+          ? []
+          : [{ text: replacement.inserted, origin: { ...origin } }],
+      );
+      changed = true;
+    }
+  }
+  return changed ? current : undefined;
 }
 
 /**
@@ -174,20 +225,22 @@ export function mountProseMirrorEditor<Position>(
   options: ProseMirrorEditorMountOptions<Position>,
 ): MountedProseMirrorEditor {
   let canonical = options.buffer;
-  let compositionBefore: EditorTextBuffer | undefined;
+  let composition:
+    { before: EditorTextBuffer; after: EditorTextBuffer } | undefined;
   let state = createProseMirrorEditorState(canonical);
   const view = new EditorView(options.element, {
     state,
     handleDOMEvents: {
       compositionstart: () => {
-        if (compositionBefore === undefined) compositionBefore = canonical;
+        if (composition === undefined)
+          composition = { before: canonical, after: canonical };
         return false;
       },
       compositionend: () => {
-        const before = compositionBefore;
-        compositionBefore = undefined;
-        if (before !== undefined)
-          publishNativeChange(before, nativeTextFromProseMirror(state.doc));
+        const pending = composition;
+        composition = undefined;
+        if (pending !== undefined)
+          publishAttributedChange(pending.before, pending.after);
         return false;
       },
       copy: (_view, event) => {
@@ -205,28 +258,31 @@ export function mountProseMirrorEditor<Position>(
     dispatchTransaction(transaction) {
       state = state.apply(transaction);
       view.updateState(state);
-      if (compositionBefore === undefined)
-        publishNativeChange(
-          canonical,
-          nativeTextFromProseMirror(transaction.doc),
-        );
+      const before = composition?.after ?? canonical;
+      const after = attributeNativeTransaction(
+        before,
+        transaction,
+        options.origin,
+      );
+      if (after === undefined) return;
+      if (composition === undefined) publishAttributedChange(before, after);
+      else composition = { ...composition, after };
     },
   });
 
   return {
     view,
     unmount: () => {
-      if (compositionBefore !== undefined)
+      if (composition !== undefined)
         throw new TypeError("Commit or cancel composition before unmounting.");
       view.destroy();
     },
   };
 
-  function publishNativeChange(
+  function publishAttributedChange(
     before: EditorTextBuffer,
-    afterText: string,
+    after: EditorTextBuffer,
   ): void {
-    const after = attributeNativeReplacement(before, afterText, options.origin);
     const change = translateEditorText<Position>(
       options.inlineContentId,
       before,

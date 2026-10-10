@@ -5,7 +5,10 @@ import type { DocumentId } from "../../../src/domain/index.js";
 import type { InlineContentId } from "../../../src/domain/index.js";
 import type { IntegratedDocumentChange } from "../integrated/carrier.js";
 import { STEP3_PRIVATE_CLIPBOARD_TYPE } from "./clipboard.js";
-import { mountProseMirrorEditor } from "./prosemirrorAdapter.js";
+import {
+  mountProseMirrorEditor,
+  qualificationProseMirrorSchema,
+} from "./prosemirrorAdapter.js";
 
 const contentId = "83000000-0000-4000-8000-000000000002" as InlineContentId;
 const documentId = "83000000-0000-4000-8000-000000000003" as DocumentId;
@@ -92,6 +95,32 @@ describe("direct ProseMirror browser qualification", () => {
         context: { actorId: "actor-a", effectId: "ime" },
       },
     ]);
+    editor.unmount();
+    mount.remove();
+  });
+
+  it("mounts native line feeds and keeps marks transient", () => {
+    const mount = document.createElement("div");
+    document.body.append(mount);
+    const published: IntegratedDocumentChange<never>[] = [];
+    const editor = mountProseMirrorEditor<never>({
+      element: mount,
+      inlineContentId: contentId,
+      buffer: { text: "a\nb", spans: [{ text: "a\nb", origin: original }] },
+      origin: editing,
+      nextContext: () => ({ actorId: "actor-a", effectId: "mark" }),
+      publish: (change) => published.push(change),
+    });
+    expect(mount.querySelector("br")).not.toBeNull();
+    editor.view.dispatch(
+      editor.view.state.tr.addMark(
+        0,
+        1,
+        qualificationProseMirrorSchema.marks.em.create(),
+      ),
+    );
+    expect(mount.querySelector("em")).not.toBeNull();
+    expect(published).toEqual([]);
     editor.unmount();
     mount.remove();
   });

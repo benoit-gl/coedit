@@ -156,6 +156,33 @@ for (const factory of factories) {
       ).toThrow(/unmounted/u);
     });
 
+    it("refuses an IME commit whose canonical base changed remotely", () => {
+      const carrier = seeded();
+      const editor = new QualificationTextEditor(carrier, contentId);
+      editor.beginComposition();
+      editor.updateComposition(5, 5, "!", editing);
+      carrier.applyChange({
+        payloads: [
+          {
+            kind: "insert-text",
+            inlineContentId: contentId,
+            offset: 0,
+            text: "remote ",
+            origin: original,
+          },
+        ],
+        context: context("remote-composition-edit"),
+      });
+      const beforeFailure = carrier.snapshot();
+      expect(() => editor.commitComposition(context("ime-stale"))).toThrow(
+        /stale/u,
+      );
+      expect(carrier.snapshot()).toEqual(beforeFailure);
+      expect(() => editor.unmount()).toThrow(/composition/u);
+      editor.cancelComposition();
+      editor.unmount();
+    });
+
     it("does not rewind over a concurrent canonical edit", () => {
       const carrier = seeded();
       const editor = new QualificationTextEditor(carrier, contentId);
