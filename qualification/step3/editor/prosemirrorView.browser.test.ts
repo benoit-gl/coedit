@@ -34,6 +34,34 @@ function waitForCompositionFlush(): Promise<void> {
   });
 }
 
+function browserTextPositions(): {
+  create: (
+    offset: number,
+    affinity: "before" | "after",
+  ) => import("../integrated/carrier.js").QualificationStableTextPosition;
+  resolve: (
+    position: import("../integrated/carrier.js").QualificationStableTextPosition,
+  ) => number | undefined;
+} {
+  let next = 0;
+  const offsets = new Map<number, number>();
+  return {
+    create: (offset) => {
+      next += 1;
+      offsets.set(next, offset);
+      return {
+        candidate: "yjs",
+        inlineContentId: contentId,
+        encoded: new Uint8Array([next]),
+      };
+    },
+    resolve: (position) =>
+      position.candidate === "yjs"
+        ? offsets.get(position.encoded[0] ?? -1)
+        : undefined,
+  };
+}
+
 function applyPublishedChange(
   buffer: EditorTextBuffer,
   change: IntegratedDocumentChange<never>,
@@ -85,6 +113,7 @@ describe("direct ProseMirror browser qualification", () => {
       inlineContentId: contentId,
       buffer: current,
       readCurrentBuffer: () => current,
+      textPositions: browserTextPositions(),
       origin: editing,
       nextContext: () => ({
         actorId: "actor-a",
@@ -146,6 +175,7 @@ describe("direct ProseMirror browser qualification", () => {
       inlineContentId: contentId,
       buffer: current,
       readCurrentBuffer: () => current,
+      textPositions: browserTextPositions(),
       origin: editing,
       nextContext: () => ({
         actorId: "actor-a",
@@ -203,6 +233,7 @@ describe("direct ProseMirror browser qualification", () => {
       inlineContentId: contentId,
       buffer: current,
       readCurrentBuffer: () => current,
+      textPositions: browserTextPositions(),
       origin: editing,
       nextContext: () => ({
         actorId: "actor-a",
@@ -255,6 +286,7 @@ describe("direct ProseMirror browser qualification", () => {
       inlineContentId: contentId,
       buffer: current,
       readCurrentBuffer: () => current,
+      textPositions: browserTextPositions(),
       origin: editing,
       nextContext: () => ({ actorId: "actor-a", effectId: "stale-ime" }),
       publish: (change) => {
@@ -290,6 +322,7 @@ describe("direct ProseMirror browser qualification", () => {
       inlineContentId: contentId,
       buffer: current,
       readCurrentBuffer: () => current,
+      textPositions: browserTextPositions(),
       origin: editing,
       nextContext: () => ({
         actorId: "actor-a",
@@ -323,6 +356,7 @@ describe("direct ProseMirror browser qualification", () => {
       inlineContentId: contentId,
       buffer: current,
       readCurrentBuffer: () => current,
+      textPositions: browserTextPositions(),
       origin: editing,
       nextContext: () => ({ actorId: "actor-a", effectId: "mark" }),
       publish: (change) => published.push(change),
@@ -354,6 +388,7 @@ describe("direct ProseMirror browser qualification", () => {
       inlineContentId: contentId,
       buffer: current,
       readCurrentBuffer: () => current,
+      textPositions: browserTextPositions(),
       origin: editing,
       nextContext: () => ({
         actorId: "actor-a",

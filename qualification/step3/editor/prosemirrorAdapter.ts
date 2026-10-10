@@ -6,6 +6,7 @@ import type { InlineContentId } from "../../../src/domain/index.js";
 import type { DocumentId } from "../../../src/domain/index.js";
 import type { QualificationOrigin } from "../payload/carrier.js";
 import type { IntegratedDocumentChange } from "../integrated/carrier.js";
+import type { QualificationStableTextPosition } from "../integrated/carrier.js";
 import type { QualificationEffectContext } from "../integrated/effectContext.js";
 import {
   decodePrivateClipboard,
@@ -189,6 +190,16 @@ export interface ProseMirrorEditorMountOptions<Position> {
   readonly nextContext: () => QualificationEffectContext;
   /** Applies one complete carrier-neutral semantic change. */
   readonly publish: (change: IntegratedDocumentChange<Position>) => void;
+  /** Candidate-native anchors used only for qualification insertion undo. */
+  readonly textPositions: {
+    readonly create: (
+      offset: number,
+      affinity: "before" | "after",
+    ) => QualificationStableTextPosition;
+    readonly resolve: (
+      position: QualificationStableTextPosition,
+    ) => number | undefined;
+  };
   /** Observes a rejected asynchronous publication after the view is reset. */
   readonly onPublicationRejected?: (error: unknown) => void;
   /** Optional hostile-input policy for DOM clipboard events. */
@@ -225,6 +236,21 @@ export interface MountedProseMirrorEditor {
   readonly unmount: () => void;
 }
 
+type MountedGesture =
+  | {
+      readonly kind: "snapshot";
+      readonly before: EditorTextBuffer;
+      readonly after: EditorTextBuffer;
+    }
+  | {
+      readonly kind: "anchored-insertion";
+      readonly before: EditorTextBuffer;
+      readonly after: EditorTextBuffer;
+      readonly expectedText: string;
+      readonly start: QualificationStableTextPosition;
+      readonly end: QualificationStableTextPosition;
+    };
+
 /**
  * Mount a direct ProseMirror view that publishes document changes through the
  * qualification semantic-change seam.
@@ -240,8 +266,8 @@ export function mountProseMirrorEditor<Position>(
   let canonical = options.buffer;
   let composition:
     { before: EditorTextBuffer; after: EditorTextBuffer } | undefined;
-  const undos: { before: EditorTextBuffer; after: EditorTextBuffer }[] = [];
-  const redos: { before: EditorTextBuffer; after: EditorTextBuffer }[] = [];
+  const undos: MountedGesture[] = [];
+  const redos: MountedGesture[] = [];
   let state = createProseMirrorEditorState(canonical);
   const view = new EditorView(options.element, {
     state,
@@ -346,20 +372,39 @@ export function mountProseMirrorEditor<Position>(
     }
     canonical = applied;
     if (change !== undefined && record) {
-      undos.push({ before, after: applied });
+      undos.push(recordGesture(before, applied));
       redos.length = 0;
     }
   }
 
   function replay(
-    source: { before: EditorTextBuffer; after: EditorTextBuffer }[],
-    destination: { before: EditorTextBuffer; after: EditorTextBuffer }[],
+    source: MountedGesture[],
+    destination: MountedGesture[],
     direction: "undo" | "redo",
   ): void {
     if (composition !== undefined)
       throw new TypeError("Commit or cancel composition before replaying.");
     const gesture = source.at(-1);
     if (gesture === undefined) throw new RangeError(`Nothing to ${direction}.`);
+    if (direction === "undo" && gesture.kind === "anchored-insertion") {
+      const start = options.textPositions.resolve(gesture.start);
+      const end = options.textPositions.resolve(gesture.end);
+      const before = options.readCurrentBuffer();
+      if (
+        start === undefined ||
+        end === undefined ||
+        end < start ||
+        before.text.slice(start, end) !== gesture.expectedText
+      )
+        throw new TypeError("Inserted text no longer matches its undo anchor.");
+      const after = spliceAttributedText(before, start, end, []);
+      publishAttributedChange(before, after, undefined, false);
+      source.pop();
+      destination.push(gesture);
+      state = createProseMirrorEditorState(canonical);
+      view.updateState(state);
+      return;
+    }
     const before = direction === "undo" ? gesture.after : gesture.before;
     const after = direction === "undo" ? gesture.before : gesture.after;
     if (!sameBuffer(options.readCurrentBuffer(), before))
@@ -371,6 +416,22 @@ export function mountProseMirrorEditor<Position>(
     destination.push(gesture);
     state = createProseMirrorEditorState(canonical);
     view.updateState(state);
+  }
+
+  function recordGesture(
+    before: EditorTextBuffer,
+    after: EditorTextBuffer,
+  ): MountedGesture {
+    const insertion = pureInsertion(before.text, after.text);
+    if (insertion === undefined) return { kind: "snapshot", before, after };
+    return {
+      kind: "anchored-insertion",
+      before,
+      after,
+      expectedText: insertion.text,
+      start: options.textPositions.create(insertion.start, "before"),
+      end: options.textPositions.create(insertion.end, "after"),
+    };
   }
 
   function copySelection(event: ClipboardEvent): void {
@@ -452,6 +513,25 @@ function sameBuffer(left: EditorTextBuffer, right: EditorTextBuffer): boolean {
     JSON.stringify(coalesceOrigins(left)) ===
       JSON.stringify(coalesceOrigins(right))
   );
+}
+
+function pureInsertion(
+  before: string,
+  after: string,
+):
+  | { readonly start: number; readonly end: number; readonly text: string }
+  | undefined {
+  if (after.length <= before.length) return undefined;
+  let start = 0;
+  while (start < before.length && before[start] === after[start]) start += 1;
+  const insertedLength = after.length - before.length;
+  if (before.slice(start) !== after.slice(start + insertedLength))
+    return undefined;
+  return {
+    start,
+    end: start + insertedLength,
+    text: after.slice(start, start + insertedLength),
+  };
 }
 
 /** Compare logical Origin runs, not candidate-specific span segmentation. */
