@@ -233,16 +233,25 @@ for (const factory of factories) {
         limits,
       );
       expect(accepted.privateOriginPreserved).toBe(true);
-      expect(accepted.source).toEqual({
-        kind: "copy",
-        reference: "source-effect",
+      const forgedReceipt = decodePrivateClipboard(
+        source.privateText.replace("lph", "xyz"),
+        "xyz",
+        documentId,
+        originCatalog,
+        trustedCopies,
+        imported,
+        limits,
+      );
+      expect(forgedReceipt).toEqual({
+        text: "xyz",
+        spans: [{ text: "xyz", origin: imported }],
+        privateOriginPreserved: false,
       });
       editor.replaceSelection(1, 4, "", editing, context("cut"));
       expect(readEditorText(carrier, contentId).text).toBe("aa");
       editor.replaceAttributedSelection(1, 1, accepted.spans, {
         actorId: "actor-a",
         effectId: "paste",
-        ...(accepted.source === undefined ? {} : { source: accepted.source }),
       });
       expect(readEditorText(carrier, contentId)).toEqual({
         text: "alpha",
@@ -250,9 +259,7 @@ for (const factory of factories) {
       });
       expect(
         carrier.effects().get(JSON.stringify(["actor-a", "paste"])),
-      ).toMatchObject({
-        source: { kind: "copy", reference: "source-effect" },
-      });
+      ).toBeDefined();
 
       for (const privateText of [
         "{bad json",

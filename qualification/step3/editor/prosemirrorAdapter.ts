@@ -181,6 +181,8 @@ export interface ProseMirrorEditorMountOptions<Position> {
   readonly inlineContentId: InlineContentId;
   /** Current detached canonical projection at mount time. */
   readonly buffer: EditorTextBuffer;
+  /** Reads the carrier projection immediately before a semantic publication. */
+  readonly readCurrentBuffer: () => EditorTextBuffer;
   /** Trusted Origin assigned only to newly inserted native text. */
   readonly origin: QualificationOrigin;
   /** Produces one fresh qualification context for each published action. */
@@ -225,8 +227,8 @@ export interface MountedProseMirrorEditor {
  *
  * The caller owns carrier lifecycle and must apply `publish` synchronously.
  * Selection and marks update only the transient view and create no carrier
- * operation. This adapter intentionally does not implement clipboard or IME
- * policies; their browser boundary remains a separate qualification concern.
+ * operation. Its IME and clipboard hooks characterize the browser boundary;
+ * they deliberately do not establish final product policies or formats.
  */
 export function mountProseMirrorEditor<Position>(
   options: ProseMirrorEditorMountOptions<Position>,
@@ -246,12 +248,17 @@ export function mountProseMirrorEditor<Position>(
         return false;
       },
       compositionend: () => {
-        queueMicrotask(() => {
-          const pending = composition;
-          if (pending === undefined) return;
-          publishAttributedChange(pending.before, pending.after);
-          composition = undefined;
-        });
+        // ProseMirror may flush the final IME DOM mutation on its own queued
+        // turn after this hook. A second turn prevents splitting that final
+        // mutation into a separate semantic action.
+        setTimeout(() => {
+          setTimeout(() => {
+            const pending = composition;
+            if (pending === undefined) return;
+            publishAttributedChange(pending.before, pending.after);
+            composition = undefined;
+          }, 0);
+        }, 0);
         return false;
       },
       copy: (_view, event) => {
@@ -276,8 +283,14 @@ export function mountProseMirrorEditor<Position>(
         options.origin,
       );
       if (after === undefined) return;
-      if (composition === undefined) publishAttributedChange(before, after);
-      else composition = { ...composition, after };
+      try {
+        if (composition === undefined) publishAttributedChange(before, after);
+        else composition = { ...composition, after };
+      } catch (error) {
+        state = createProseMirrorEditorState(canonical);
+        view.updateState(state);
+        throw error;
+      }
     },
   });
 
@@ -295,15 +308,29 @@ export function mountProseMirrorEditor<Position>(
   function publishAttributedChange(
     before: EditorTextBuffer,
     after: EditorTextBuffer,
+    source?: QualificationEffectContext["source"],
     record = true,
   ): void {
+    if (!sameBuffer(options.readCurrentBuffer(), before))
+      throw new TypeError(
+        "Editor publication has a stale canonical text base.",
+      );
     const change = translateEditorText<Position>(
       options.inlineContentId,
       before,
       after,
-      options.nextContext(),
+      {
+        ...options.nextContext(),
+        ...(source === undefined ? {} : { source }),
+      },
     );
-    if (change !== undefined) options.publish(change);
+    if (change !== undefined) {
+      options.publish(change);
+      if (!sameBuffer(options.readCurrentBuffer(), after))
+        throw new TypeError(
+          "Editor publication did not synchronously update canonical text.",
+        );
+    }
     canonical = after;
     if (change !== undefined && record) {
       undos.push({ before, after });
@@ -322,11 +349,11 @@ export function mountProseMirrorEditor<Position>(
     if (gesture === undefined) throw new RangeError(`Nothing to ${direction}.`);
     const before = direction === "undo" ? gesture.after : gesture.before;
     const after = direction === "undo" ? gesture.before : gesture.after;
-    if (JSON.stringify(canonical) !== JSON.stringify(before))
+    if (!sameBuffer(options.readCurrentBuffer(), before))
       throw new TypeError(
         `Editor ${direction} has a stale canonical text base.`,
       );
-    publishAttributedChange(before, after, false);
+    publishAttributedChange(before, after, undefined, false);
     source.pop();
     destination.push(gesture);
     state = createProseMirrorEditorState(canonical);
@@ -364,6 +391,8 @@ export function mountProseMirrorEditor<Position>(
   function pasteSelection(event: ClipboardEvent): boolean {
     const clipboard = options.clipboard;
     if (clipboard === undefined) return false;
+    if (composition !== undefined)
+      throw new TypeError("Commit or cancel composition before pasting.");
     event.preventDefault();
     const privateText = event.clipboardData?.getData(
       STEP3_PRIVATE_CLIPBOARD_TYPE,
@@ -386,22 +415,16 @@ export function mountProseMirrorEditor<Position>(
       nativeOffset(to),
       decoded.spans,
     );
+    publishAttributedChange(before, after);
     const transaction = state.tr.insertText(decoded.text, from, to);
     state = state.apply(transaction);
     view.updateState(state);
-    const change = translateEditorText<Position>(
-      options.inlineContentId,
-      before,
-      after,
-      {
-        ...options.nextContext(),
-        ...(decoded.source === undefined ? {} : { source: decoded.source }),
-      },
-    );
-    if (change !== undefined) options.publish(change);
-    canonical = after;
     return true;
   }
+}
+
+function sameBuffer(left: EditorTextBuffer, right: EditorTextBuffer): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 /** Convert a flat-schema ProseMirror text position to a native-string offset. */
