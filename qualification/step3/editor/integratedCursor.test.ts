@@ -71,10 +71,9 @@ for (const factory of factories) {
         carrier.resolveStableTextPosition(following),
       ];
       // Candidate affinity is observed, not normalized into a premature
-      // carrier-neutral editor-position policy. Both endpoints must remain at
-      // the edited boundary and retain their observed resolution on reload.
-      expect(selection[0]).toBeOneOf([1, 2]);
-      expect(selection[1]).toBeOneOf([1, 2]);
+      // carrier-neutral editor-position policy. The pinned candidates have
+      // distinct, recorded boundary behavior.
+      expect(selection).toEqual(factory.candidate === "yjs" ? [1, 2] : [2, 2]);
       const reopened = factory.load(carrier.encode());
       expect([
         reopened.resolveStableTextPosition(preceding),
