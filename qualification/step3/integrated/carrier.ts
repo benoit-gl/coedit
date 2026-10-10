@@ -14,6 +14,31 @@ import type {
 /** Candidate names used by integrated Step 3 qualification. */
 export type IntegratedCarrierCandidate = "yjs" | "automerge";
 
+/**
+ * Opaque candidate-native live text position used only for Step 3
+ * qualification. It is not a portable Range representation or public API.
+ */
+export type QualificationStableTextPosition =
+  | {
+      /** Candidate that owns this opaque position. */
+      readonly candidate: "yjs";
+      /** Allowlisted text payload to which the position belongs. */
+      readonly inlineContentId: InlineContentId;
+      /** Yjs relative-position bytes; never a portable document value. */
+      readonly encoded: Uint8Array;
+    }
+  | {
+      /** Candidate that owns this opaque position. */
+      readonly candidate: "automerge";
+      /** Allowlisted text payload to which the position belongs. */
+      readonly inlineContentId: InlineContentId;
+      /** Automerge cursor token; never a portable document value. */
+      readonly cursor: string;
+    };
+
+/** Candidate-defined insertion affinity at an editor text boundary. */
+export type QualificationTextAffinity = "before" | "after";
+
 /** Complete fine-grained text replacement inside one integrated transaction. */
 export interface IntegratedTextReplacement {
   /** Operation discriminator. */
@@ -151,6 +176,16 @@ export interface IntegratedDocumentCarrier<Position> {
   nativeLifecycle(): IntegratedNativeLifecycleCapability;
   /** Projects detached carrier-neutral state. */
   snapshot(): IntegratedDocumentSnapshot<Position>;
+  /** Creates one carrier-native live text position from an editor UTF-16 offset. */
+  createStableTextPosition(
+    inlineContentId: InlineContentId,
+    editorUtf16Offset: number,
+    affinity: QualificationTextAffinity,
+  ): QualificationStableTextPosition;
+  /** Resolves one carrier-native live text position to an editor UTF-16 offset. */
+  resolveStableTextPosition(
+    position: QualificationStableTextPosition,
+  ): number | undefined;
   /** Encodes complete candidate state for reload or merge qualification. */
   encode(): Uint8Array;
   /**

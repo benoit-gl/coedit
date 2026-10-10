@@ -31,6 +31,8 @@ import type {
   IntegratedDocumentSnapshot,
   IntegratedInlineContentCreation,
   IntegratedPayloadChange,
+  QualificationStableTextPosition,
+  QualificationTextAffinity,
 } from "./carrier.js";
 import {
   decodeEffectContext,
@@ -347,6 +349,43 @@ class YjsIntegratedDocumentCarrier<
     );
   }
 
+  public createStableTextPosition(
+    inlineContentId: InlineContentId,
+    editorUtf16Offset: number,
+    affinity: QualificationTextAffinity,
+  ): QualificationStableTextPosition {
+    const text = this.requireTextPayload(inlineContentId);
+    assertTextOffset(editorUtf16Offset, text.toJSON());
+    return {
+      candidate: "yjs",
+      inlineContentId,
+      encoded: Y.encodeRelativePosition(
+        Y.createRelativePositionFromTypeIndex(
+          text,
+          editorUtf16Offset,
+          affinity === "before" ? -1 : 0,
+        ),
+      ),
+    };
+  }
+
+  public resolveStableTextPosition(
+    position: QualificationStableTextPosition,
+  ): number | undefined {
+    if (position.candidate !== "yjs")
+      throw new TypeError("Stable text position belongs to another candidate.");
+    const payload = this.snapshot().payloads.get(position.inlineContentId);
+    if (payload?.kind !== "text") return undefined;
+    const text = this.payloads().get(position.inlineContentId)?.get("text");
+    if (!(text instanceof Y.Text)) return undefined;
+    const resolved = Y.createAbsolutePositionFromRelativePosition(
+      Y.decodeRelativePosition(position.encoded),
+      this.document,
+    );
+    if (resolved === null || resolved.type !== text) return undefined;
+    return resolved.index;
+  }
+
   private prepareContext(
     context?: QualificationEffectContext,
   ): { id: string; encoded: string } | undefined {
@@ -428,6 +467,15 @@ class YjsIntegratedDocumentCarrier<
     if (!(value instanceof Y.Map))
       throw new TypeError("Integrated payload namespace is missing.");
     return value as Y.Map<Y.Map<unknown>>;
+  }
+  private requireTextPayload(inlineContentId: InlineContentId): Y.Text {
+    const payload = this.payloads().get(inlineContentId);
+    const text = payload?.get("text");
+    if (!(text instanceof Y.Text))
+      throw new TypeError("Stable positions require a live text payload.");
+    if (!this.snapshot().payloads.has(inlineContentId))
+      throw new TypeError("Stable positions require a live text payload.");
+    return text;
   }
   private inlineContentOwners(): Y.Map<string> {
     const value = this.root.get(INLINE_CONTENT_OWNERS);

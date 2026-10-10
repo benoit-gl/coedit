@@ -41,6 +41,10 @@
             "source": "github-actions"
           },
           {
+            "context": "browser-qualification",
+            "source": "github-actions"
+          },
+          {
             "context": "adr-integrity",
             "source": "github-actions"
           },

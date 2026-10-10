@@ -31,6 +31,7 @@ Do not enable a merge queue until the required policy workflows support and vali
 The `main` ruleset must require these status contexts from the GitHub Actions source:
 
 - `verify`;
+- `browser-qualification`;
 - `adr-integrity`; and
 - `pr-description`.
 

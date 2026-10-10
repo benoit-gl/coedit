@@ -30,6 +30,8 @@ import type {
   IntegratedDocumentChange,
   IntegratedDocumentSnapshot,
   IntegratedInlineContentCreation,
+  QualificationStableTextPosition,
+  QualificationTextAffinity,
 } from "./carrier.js";
 import {
   decodeEffectContext,
@@ -450,6 +452,41 @@ class AutomergeIntegratedDocumentCarrier<
       Object.entries(this.document.effectContexts)
         .sort(([left], [right]) => left.localeCompare(right))
         .map(([id, encoded]) => [id, decodeEffectContext(encoded)]),
+    );
+  }
+
+  public createStableTextPosition(
+    inlineContentId: InlineContentId,
+    editorUtf16Offset: number,
+    affinity: QualificationTextAffinity,
+  ): QualificationStableTextPosition {
+    const payload = this.snapshot().payloads.get(inlineContentId);
+    if (payload?.kind !== "text")
+      throw new TypeError("Stable positions require a live text payload.");
+    assertTextOffset(editorUtf16Offset, payload.text);
+    return {
+      candidate: "automerge",
+      inlineContentId,
+      cursor: Automerge.getCursor(
+        this.document,
+        ["payloads", inlineContentId, "text"],
+        editorUtf16Offset,
+        affinity,
+      ),
+    };
+  }
+
+  public resolveStableTextPosition(
+    position: QualificationStableTextPosition,
+  ): number | undefined {
+    if (position.candidate !== "automerge")
+      throw new TypeError("Stable text position belongs to another candidate.");
+    const payload = this.snapshot().payloads.get(position.inlineContentId);
+    if (payload?.kind !== "text") return undefined;
+    return Automerge.getCursorPosition(
+      this.document,
+      ["payloads", position.inlineContentId, "text"],
+      position.cursor,
     );
   }
 
