@@ -10,10 +10,16 @@ integrated structural/payload transaction seam. It preserves fine-grained Origin
 for untouched text. Text insertion, deletion, replacement, and attributed private
 paste use one carrier change with one qualification actor/effect context. IME
 updates remain transient until a complete composition is submitted. Undo and redo
-submit new semantic operations; they never rewind carrier state. The current
-qualification prototype explicitly refuses an inverse against a changed base,
-rather than silently deleting concurrent edits. This refusal is evidence to
-inform later undo policy, not a frozen product rule.
+submit new semantic operations; they never rewind carrier state.
+
+For a pure text insertion, the qualification decision is to retain
+candidate-native boundary anchors and the expected inserted native text. Undo
+resolves those anchors against the current carrier state and deletes the range
+only when it still contains that exact text; it intentionally does not require
+the original Origin or an unchanged whole-document frontier. Edits before the
+range therefore reconcile its position, while changed or ambiguous content
+refuses the undo. This is a qualification policy for inserted text, not yet a
+final policy for deletion, replacement, grouping, or product History.
 
 `prosemirrorAdapter.ts` uses a flat, direct ProseMirror schema for one active
 allowlisted InlineContent. It turns a committed document-changing transaction

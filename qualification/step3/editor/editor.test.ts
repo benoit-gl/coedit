@@ -183,26 +183,24 @@ for (const factory of factories) {
       editor.unmount();
     });
 
-    it("does not rewind over a concurrent canonical edit", () => {
+    it("reconciles an insertion undo through a concurrent deletion", () => {
       const carrier = seeded();
       const editor = new QualificationTextEditor(carrier, contentId);
       editor.replaceSelection(5, 5, "!", editing, context("my-edit"));
       carrier.applyChange({
         payloads: [
           {
-            kind: "insert-text",
+            kind: "delete-text",
             inlineContentId: contentId,
-            offset: 0,
-            text: "remote ",
-            origin: original,
+            start: 1,
+            end: 2,
           },
         ],
         context: { actorId: "actor-b", effectId: "remote-edit" },
       });
-      const before = carrier.snapshot();
-      expect(() => editor.undo(context("stale-undo"))).toThrow(/stale/u);
-      expect(carrier.snapshot()).toEqual(before);
-      expect(carrier.effects().size).toBe(3);
+      editor.undo(context("reconciled-undo"));
+      expect(readEditorText(carrier, contentId).text).toBe("apha");
+      expect(carrier.effects().size).toBe(4);
     });
 
     it("qualifies same-document private copy, paste, cut, and hostile fallback", () => {

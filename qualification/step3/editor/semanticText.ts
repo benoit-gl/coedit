@@ -7,6 +7,7 @@ import type {
   IntegratedDocumentCarrier,
   IntegratedDocumentChange,
   IntegratedPayloadChange,
+  QualificationStableTextPosition,
 } from "../integrated/carrier.js";
 import type { QualificationEffectContext } from "../integrated/effectContext.js";
 
@@ -18,10 +19,23 @@ export interface EditorTextBuffer {
   readonly spans: readonly QualificationTextSpan[];
 }
 
-interface EditorGesture {
+interface SnapshotGesture {
+  readonly kind: "snapshot";
   readonly before: EditorTextBuffer;
   readonly after: EditorTextBuffer;
 }
+
+interface AnchoredInsertionGesture {
+  readonly kind: "anchored-insertion";
+  /** Snapshot fallback keeps local redo qualification separate from anchored undo. */
+  readonly before: EditorTextBuffer;
+  readonly after: EditorTextBuffer;
+  readonly expectedText: string;
+  readonly start: QualificationStableTextPosition;
+  readonly end: QualificationStableTextPosition;
+}
+
+type EditorGesture = SnapshotGesture | AnchoredInsertionGesture;
 
 /** Extract an exact attributed substring without inheriting adjacent Origins. */
 export function sliceAttributedText(
@@ -286,10 +300,7 @@ export class QualificationTextEditor<Position> {
     const before = readEditorText(this.carrier, this.inlineContentId);
     const after = attributedInsertion(before, start, end, text, origin);
     this.publish(before, after, context);
-    if (attributedIdentity(before) !== attributedIdentity(after)) {
-      this.undos.push({ before, after });
-      this.redos.length = 0;
-    }
+    this.recordGesture(before, after, start === end, text, start);
   }
 
   /** Paste attributed private text, or imported fallback, as one editor action. */
@@ -303,11 +314,9 @@ export class QualificationTextEditor<Position> {
     this.requireNoComposition();
     const before = readEditorText(this.carrier, this.inlineContentId);
     const after = spliceAttributedText(before, start, end, insertion);
+    const expectedText = insertion.map((span) => span.text).join("");
     this.publish(before, after, context);
-    if (attributedIdentity(before) !== attributedIdentity(after)) {
-      this.undos.push({ before, after });
-      this.redos.length = 0;
-    }
+    this.recordGesture(before, after, start === end, expectedText, start);
   }
 
   /** Start IME composition without publishing partial text. */
@@ -351,7 +360,7 @@ export class QualificationTextEditor<Position> {
     this.compositionBase = undefined;
     this.composition = undefined;
     if (attributedIdentity(before) !== attributedIdentity(after)) {
-      this.undos.push({ before, after });
+      this.undos.push({ kind: "snapshot", before, after });
       this.redos.length = 0;
     }
   }
@@ -369,7 +378,9 @@ export class QualificationTextEditor<Position> {
     this.requireNoComposition();
     const gesture = this.undos.at(-1);
     if (gesture === undefined) throw new RangeError("Nothing to undo.");
-    this.publish(gesture.after, gesture.before, context);
+    if (gesture.kind === "snapshot")
+      this.publish(gesture.after, gesture.before, context);
+    else this.undoAnchoredInsertion(gesture, context);
     this.undos.pop();
     this.redos.push(gesture);
   }
@@ -409,6 +420,57 @@ export class QualificationTextEditor<Position> {
       context,
     );
     if (change !== undefined) this.carrier.applyChange(change);
+  }
+
+  private recordGesture(
+    before: EditorTextBuffer,
+    after: EditorTextBuffer,
+    isPureInsertion: boolean,
+    expectedText: string,
+    insertionOffset: number,
+  ): void {
+    if (attributedIdentity(before) === attributedIdentity(after)) return;
+    const start =
+      isPureInsertion && expectedText.length > 0
+        ? this.carrier.createStableTextPosition(
+            this.inlineContentId,
+            insertionOffset,
+            "before",
+          )
+        : undefined;
+    const end =
+      start === undefined
+        ? undefined
+        : this.carrier.createStableTextPosition(
+            this.inlineContentId,
+            insertionOffset + expectedText.length,
+            "after",
+          );
+    if (start !== undefined && end !== undefined)
+      this.undos.push({
+        kind: "anchored-insertion",
+        before,
+        after,
+        expectedText,
+        start,
+        end,
+      });
+    else this.undos.push({ kind: "snapshot", before, after });
+    this.redos.length = 0;
+  }
+
+  private undoAnchoredInsertion(
+    gesture: AnchoredInsertionGesture,
+    context: QualificationEffectContext,
+  ): void {
+    const start = this.carrier.resolveStableTextPosition(gesture.start);
+    const end = this.carrier.resolveStableTextPosition(gesture.end);
+    if (start === undefined || end === undefined || end < start)
+      throw new TypeError("Inserted text anchor is no longer resolvable.");
+    const before = readEditorText(this.carrier, this.inlineContentId);
+    if (before.text.slice(start, end) !== gesture.expectedText)
+      throw new TypeError("Inserted text no longer matches its undo anchor.");
+    this.publish(before, spliceAttributedText(before, start, end, []), context);
   }
 
   private requireNoComposition(): void {
