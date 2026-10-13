@@ -47,11 +47,13 @@ origin preservation, hostile input fallback, and candidate reload.
 primitives through insertion and reload, without selecting a carrier or
 claiming an integrated carrier-position interface.
 
-The separate Chromium suite mounts and unmounts the direct adapter and confirms
-that a native editor edit reaches both carrier candidates. It intentionally keeps
-carrier and transaction assertions in the lower-cost Node suite.
+The separate Chromium suite mounts and unmounts the direct adapter against both
+candidate carriers. It exercises browser typing, IME composition, cut/paste,
+and candidate-native insertion anchors through that path. The suite uses
+synthetic DOM composition and clipboard events; it does not claim OS-level
+IME or clipboard automation. It intentionally keeps detailed carrier and
+transaction assertions in the lower-cost Node suite.
 
-**Still required for Merge 7:** Real-browser integration for IME, clipboard,
-and editor-position behavior; cross-platform full
-repository checks; and an independent fresh review. No PR convergence or
-qualification is claimed by the files in this directory alone.
+**Still required for Merge 7:** Cross-platform full repository checks and an
+independent fresh review. No PR convergence or qualification is claimed by the
+files in this directory alone.

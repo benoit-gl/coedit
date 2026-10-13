@@ -278,11 +278,13 @@ export function mountProseMirrorEditor<Position>(
   let canonical = options.buffer;
   let composition:
     | {
+        readonly id: number;
         before: EditorTextBuffer;
         after: EditorTextBuffer;
         insertionOffset: number | undefined;
       }
     | undefined;
+  let nextCompositionId = 0;
   let compositionEnding = false;
   const undos: MountedGesture[] = [];
   const redos: MountedGesture[] = [];
@@ -292,8 +294,11 @@ export function mountProseMirrorEditor<Position>(
     state,
     handleDOMEvents: {
       compositionstart: () => {
+        if (composition !== undefined && compositionEnding)
+          flushComposition(false);
         if (composition === undefined) {
           composition = {
+            id: nextCompositionId++,
             before: canonical,
             after: canonical,
             insertionOffset:
@@ -306,37 +311,16 @@ export function mountProseMirrorEditor<Position>(
         return false;
       },
       compositionend: () => {
+        const ending = composition;
+        if (ending === undefined) return false;
         compositionEnding = true;
         // ProseMirror may flush the final IME DOM mutation on its own queued
         // turn after this hook. A second turn prevents splitting that final
         // mutation into a separate semantic action.
         setTimeout(() => {
           setTimeout(() => {
-            const pending = composition;
-            if (pending === undefined) {
-              compositionEnding = false;
-              return;
-            }
-            try {
-              publishAttributedChange(
-                pending.before,
-                pending.after,
-                undefined,
-                true,
-                pureInsertionAt(
-                  pending.before,
-                  pending.after,
-                  pending.insertionOffset,
-                ),
-              );
-              composition = undefined;
-              compositionEnding = false;
-            } catch (error) {
-              composition = undefined;
-              compositionEnding = false;
-              resetViewToCurrent();
-              options.onPublicationRejected?.(error);
-            }
+            if (composition?.id !== ending.id || !compositionEnding) return;
+            flushComposition(false);
           }, 0);
         }, 0);
         return false;
@@ -363,21 +347,8 @@ export function mountProseMirrorEditor<Position>(
         composition !== undefined &&
         compositionEnding &&
         transaction.getMeta("composition") === undefined
-      ) {
-        publishAttributedChange(
-          composition.before,
-          composition.after,
-          undefined,
-          true,
-          pureInsertionAt(
-            composition.before,
-            composition.after,
-            composition.insertionOffset,
-          ),
-        );
-        composition = undefined;
-        compositionEnding = false;
-      }
+      )
+        flushComposition(true);
       const before = composition?.after ?? canonical;
       const after = attributeNativeTransaction(
         before,
@@ -459,6 +430,33 @@ export function mountProseMirrorEditor<Position>(
       undos.push(recordGesture(before, applied, insertion));
       redos.length = 0;
     }
+  }
+
+  /** Publish or reject pending IME state through one consistent recovery path. */
+  function flushComposition(rethrow: boolean): void {
+    const pending = composition;
+    if (pending === undefined) {
+      compositionEnding = false;
+      return;
+    }
+    try {
+      publishAttributedChange(
+        pending.before,
+        pending.after,
+        undefined,
+        true,
+        pureInsertionAt(pending.before, pending.after, pending.insertionOffset),
+      );
+    } catch (error) {
+      composition = undefined;
+      compositionEnding = false;
+      resetViewToCurrent();
+      options.onPublicationRejected?.(error);
+      if (rethrow) throw error;
+      return;
+    }
+    composition = undefined;
+    compositionEnding = false;
   }
 
   function replay(

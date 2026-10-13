@@ -1,15 +1,30 @@
 import { describe, expect, it } from "vitest";
+import { userEvent } from "@vitest/browser/context";
 import { TextSelection } from "prosemirror-state";
 
-import type { DocumentId } from "../../../src/domain/index.js";
-import type { InlineContentId } from "../../../src/domain/index.js";
+import {
+  parseBlockId,
+  type DocumentId,
+  type InlineContentId,
+} from "../../../src/domain/index.js";
 import type {
+  IntegratedDocumentCarrier,
   IntegratedDocumentChange,
   QualificationStableTextPosition,
 } from "../integrated/carrier.js";
+import { createAutomergeIntegratedDocumentCarrierFactory } from "../integrated/automergeIntegratedDocumentCarrier.js";
+import type { IntegratedDocumentCarrierFactory } from "../integrated/carrier.js";
+import { createYjsIntegratedDocumentCarrierFactory } from "../integrated/yjsIntegratedDocumentCarrier.js";
+import { localDensePositionAllocator } from "../structure/localDensePosition.js";
+import type { LocalDensePosition } from "../structure/localDensePosition.js";
 import { STEP3_PRIVATE_CLIPBOARD_TYPE } from "./clipboard.js";
-import { type EditorTextBuffer, spliceAttributedText } from "./semanticText.js";
 import {
+  type EditorTextBuffer,
+  readEditorText,
+  spliceAttributedText,
+} from "./semanticText.js";
+import {
+  type MountedProseMirrorEditor,
   mountProseMirrorEditor,
   qualificationProseMirrorSchema,
 } from "./prosemirrorAdapter.js";
@@ -19,6 +34,18 @@ const documentId = "83000000-0000-4000-8000-000000000003" as DocumentId;
 const original = { id: "human-original", kind: "human" as const };
 const editing = { id: "human-edit", kind: "human" as const };
 const imported = { id: "external-import", kind: "imported" as const };
+const rootId = parseBlockId("83000000-0000-4000-8000-000000000001");
+const carrierFactories: readonly IntegratedDocumentCarrierFactory<LocalDensePosition>[] =
+  [
+    createYjsIntegratedDocumentCarrierFactory(
+      localDensePositionAllocator,
+      localDensePositionAllocator,
+    ),
+    createAutomergeIntegratedDocumentCarrierFactory(
+      localDensePositionAllocator,
+      localDensePositionAllocator,
+    ),
+  ];
 
 function clipboardEvent(
   type: "copy" | "cut" | "paste",
@@ -133,7 +160,218 @@ function applyPublishedChange(
   };
 }
 
+function mountCarrierEditor(
+  factory: IntegratedDocumentCarrierFactory<LocalDensePosition>,
+): {
+  readonly carrier: IntegratedDocumentCarrier<LocalDensePosition>;
+  readonly editor: MountedProseMirrorEditor;
+  readonly mount: HTMLDivElement;
+  readonly copySource: () => string | undefined;
+} {
+  const mount = document.createElement("div");
+  document.body.append(mount);
+  const carrier = factory.create(rootId);
+  carrier.applyChange({
+    inlineContents: [{ inlineContentId: contentId, blockId: rootId }],
+    payloads: [
+      {
+        kind: "replace-text",
+        inlineContentId: contentId,
+        mediaType: "text/plain",
+        text: "alpha",
+        origin: original,
+      },
+    ],
+    context: { actorId: "actor-a", effectId: "seed" },
+  });
+  let nextEffect = 0;
+  let copySource: string | undefined;
+  const editor = mountProseMirrorEditor<LocalDensePosition>({
+    element: mount,
+    inlineContentId: contentId,
+    buffer: readEditorText(carrier, contentId),
+    readCurrentBuffer: () => readEditorText(carrier, contentId),
+    textPositions: {
+      create: (offset, affinity) =>
+        carrier.createStableTextPosition(contentId, offset, affinity),
+      resolve: (position) => carrier.resolveStableTextPosition(position),
+    },
+    origin: editing,
+    nextContext: () => ({
+      actorId: "actor-a",
+      effectId: `${factory.candidate}-browser-${nextEffect++}`,
+    }),
+    publish: (change) => carrier.applyChange(change),
+    clipboard: {
+      documentId,
+      originCatalog: new Map([[original.id, original]]),
+      trustedCopies: new Map(),
+      fallbackOrigin: imported,
+      limits: { maxEncodedLength: 4096, maxSpans: 8, maxTextLength: 64 },
+      nextCopyReference: () => {
+        copySource = carrier.captureHistoricalState();
+        return copySource;
+      },
+      isStableSourceReference: (reference) => reference === copySource,
+    },
+  });
+  return { carrier, editor, mount, copySource: () => copySource };
+}
+
+function unmountCarrierEditor(fixture: {
+  readonly editor: MountedProseMirrorEditor;
+  readonly mount: HTMLElement;
+}): void {
+  fixture.editor.unmount();
+  fixture.mount.remove();
+}
+
 describe("direct ProseMirror browser qualification", () => {
+  for (const factory of carrierFactories) {
+    it(`publishes Chromium keyboard input to ${factory.candidate}`, async () => {
+      const fixture = mountCarrierEditor(factory);
+      fixture.editor.view.dispatch(
+        fixture.editor.view.state.tr.setSelection(
+          TextSelection.create(fixture.editor.view.state.doc, 5),
+        ),
+      );
+      await userEvent.click(fixture.editor.view.dom);
+      await userEvent.keyboard("!");
+      expect(readEditorText(fixture.carrier, contentId)).toEqual({
+        text: "alpha!",
+        spans: [
+          { text: "alpha", origin: original },
+          { text: "!", origin: editing },
+        ],
+      });
+      unmountCarrierEditor(fixture);
+    });
+
+    it(`publishes one IME action through ${factory.candidate}`, async () => {
+      const fixture = mountCarrierEditor(factory);
+      fixture.editor.view.dom.dispatchEvent(
+        new CompositionEvent("compositionstart"),
+      );
+      fixture.editor.view.dispatch(
+        fixture.editor.view.state.tr.insertText("あ", 5),
+      );
+      expect(readEditorText(fixture.carrier, contentId).text).toBe("alpha");
+      fixture.editor.view.dom.dispatchEvent(
+        new CompositionEvent("compositionend"),
+      );
+      await waitForCompositionFlush();
+      expect(readEditorText(fixture.carrier, contentId)).toEqual({
+        text: "alphaあ",
+        spans: [
+          { text: "alpha", origin: original },
+          { text: "あ", origin: editing },
+        ],
+      });
+      fixture.editor.undo();
+      expect(readEditorText(fixture.carrier, contentId).text).toBe("alpha");
+      unmountCarrierEditor(fixture);
+    });
+
+    it(`uses ${factory.candidate} anchors to reconcile browser undo`, async () => {
+      const fixture = mountCarrierEditor(factory);
+      fixture.editor.view.dispatch(
+        fixture.editor.view.state.tr.setSelection(
+          TextSelection.create(fixture.editor.view.state.doc, 5),
+        ),
+      );
+      await userEvent.click(fixture.editor.view.dom);
+      await userEvent.keyboard("!");
+      fixture.carrier.applyChange({
+        payloads: [
+          {
+            kind: "insert-text",
+            inlineContentId: contentId,
+            offset: 0,
+            text: "R",
+            origin: original,
+          },
+        ],
+        context: { actorId: "actor-b", effectId: "remote-prefix" },
+      });
+      fixture.editor.undo();
+      expect(readEditorText(fixture.carrier, contentId).text).toBe("Ralpha");
+      unmountCarrierEditor(fixture);
+    });
+
+    it(`preserves trusted clipboard Origin through ${factory.candidate}`, () => {
+      const fixture = mountCarrierEditor(factory);
+      fixture.editor.view.dispatch(
+        fixture.editor.view.state.tr.setSelection(
+          TextSelection.create(fixture.editor.view.state.doc, 1, 4),
+        ),
+      );
+      const copied = new DataTransfer();
+      fixture.editor.view.dom.dispatchEvent(clipboardEvent("copy", copied));
+      fixture.editor.view.dispatch(
+        fixture.editor.view.state.tr.setSelection(
+          TextSelection.create(fixture.editor.view.state.doc, 5),
+        ),
+      );
+      fixture.editor.view.dom.dispatchEvent(clipboardEvent("paste", copied));
+      expect(readEditorText(fixture.carrier, contentId)).toEqual({
+        text: "alphalph",
+        spans: [{ text: "alphalph", origin: original }],
+      });
+      const copySource = fixture.copySource();
+      expect(copySource).toBeDefined();
+      const pasteEffect = {
+        actorId: "actor-a",
+        effectId: `${factory.candidate}-browser-0`,
+        source: { kind: "copy" as const, reference: copySource! },
+      };
+      expect(
+        fixture.carrier
+          .effects()
+          .get(JSON.stringify([pasteEffect.actorId, pasteEffect.effectId])),
+      ).toEqual(pasteEffect);
+      const reloaded = factory.load(fixture.carrier.encode());
+      expect(
+        reloaded
+          .effects()
+          .get(JSON.stringify([pasteEffect.actorId, pasteEffect.effectId])),
+      ).toEqual(pasteEffect);
+      expect(reloaded.materializeHistoricalState(copySource!)).toEqual(
+        fixture.carrier.materializeHistoricalState(copySource!),
+      );
+      const hostile = new DataTransfer();
+      hostile.setData("text/plain", "?");
+      hostile.setData(STEP3_PRIVATE_CLIPBOARD_TYPE, "{not-json");
+      fixture.editor.view.dispatch(
+        fixture.editor.view.state.tr.setSelection(
+          TextSelection.create(fixture.editor.view.state.doc, 0),
+        ),
+      );
+      fixture.editor.view.dom.dispatchEvent(clipboardEvent("paste", hostile));
+      expect(readEditorText(fixture.carrier, contentId).spans[0]).toEqual({
+        text: "?",
+        origin: imported,
+      });
+      unmountCarrierEditor(fixture);
+    });
+
+    it(`publishes a browser cut through ${factory.candidate}`, () => {
+      const fixture = mountCarrierEditor(factory);
+      fixture.editor.view.dispatch(
+        fixture.editor.view.state.tr.setSelection(
+          TextSelection.create(fixture.editor.view.state.doc, 1, 4),
+        ),
+      );
+      const cut = new DataTransfer();
+      fixture.editor.view.dom.dispatchEvent(clipboardEvent("cut", cut));
+      expect(cut.getData("text/plain")).toBe("lph");
+      expect(readEditorText(fixture.carrier, contentId)).toEqual({
+        text: "aa",
+        spans: [{ text: "aa", origin: original }],
+      });
+      unmountCarrierEditor(fixture);
+    });
+  }
+
   it("mounts a real Chromium editor and publishes one native edit", () => {
     const mount = document.createElement("div");
     document.body.append(mount);
@@ -346,6 +584,49 @@ describe("direct ProseMirror browser qualification", () => {
     mount.remove();
   });
 
+  it("does not let an earlier IME timer commit a later composition", async () => {
+    const mount = document.createElement("div");
+    document.body.append(mount);
+    const published: IntegratedDocumentChange<never>[] = [];
+    let current: EditorTextBuffer = {
+      text: "alpha",
+      spans: [{ text: "alpha", origin: original }],
+    };
+    const editor = mountProseMirrorEditor<never>({
+      element: mount,
+      inlineContentId: contentId,
+      buffer: current,
+      readCurrentBuffer: () => current,
+      textPositions: browserTextPositions(),
+      origin: editing,
+      nextContext: () => ({
+        actorId: "actor-a",
+        effectId: `ime-race-${published.length}`,
+      }),
+      publish: (change) => {
+        published.push(change);
+        current = applyPublishedChange(current, change);
+      },
+    });
+    editor.view.dom.dispatchEvent(new CompositionEvent("compositionstart"));
+    editor.view.dispatch(editor.view.state.tr.insertText("a", 5));
+    editor.view.dom.dispatchEvent(new CompositionEvent("compositionend"));
+    editor.view.dispatch(
+      editor.view.state.tr.setSelection(
+        TextSelection.atEnd(editor.view.state.doc),
+      ),
+    );
+    editor.view.dom.dispatchEvent(new CompositionEvent("compositionstart"));
+    editor.view.dispatch(editor.view.state.tr.insertText("b", 6));
+    await waitForCompositionFlush();
+    expect(published).toHaveLength(1);
+    editor.view.dom.dispatchEvent(new CompositionEvent("compositionend"));
+    await waitForCompositionFlush();
+    expect(published).toHaveLength(2);
+    editor.unmount();
+    mount.remove();
+  });
+
   it("rejects a stale IME commit without leaving the editor composed", async () => {
     const mount = document.createElement("div");
     document.body.append(mount);
@@ -379,6 +660,46 @@ describe("direct ProseMirror browser qualification", () => {
     expect(published).toEqual([]);
     expect(rejected).toHaveLength(1);
     expect(rejected[0]).toBeInstanceOf(TypeError);
+    editor.unmount();
+    mount.remove();
+  });
+
+  it("resets a stale composition before a deferred independent transaction", () => {
+    const mount = document.createElement("div");
+    document.body.append(mount);
+    const rejected: unknown[] = [];
+    let current: EditorTextBuffer = {
+      text: "alpha",
+      spans: [{ text: "alpha", origin: original }],
+    };
+    const editor = mountProseMirrorEditor<never>({
+      element: mount,
+      inlineContentId: contentId,
+      buffer: current,
+      readCurrentBuffer: () => current,
+      textPositions: browserTextPositions(),
+      origin: editing,
+      nextContext: () => ({ actorId: "actor-a", effectId: "stale-flush" }),
+      publish: (change) => {
+        current = applyPublishedChange(current, change);
+      },
+      onPublicationRejected: (error) => rejected.push(error),
+    });
+    editor.view.dom.dispatchEvent(new CompositionEvent("compositionstart"));
+    editor.view.dispatch(editor.view.state.tr.insertText("!", 5));
+    current = spliceAttributedText(current, 0, 0, [
+      { text: "R", origin: original },
+    ]);
+    editor.view.dom.dispatchEvent(new CompositionEvent("compositionend"));
+
+    expect(() =>
+      editor.view.dispatch(
+        editor.view.state.tr.setSelection(
+          TextSelection.create(editor.view.state.doc, 5),
+        ),
+      ),
+    ).toThrow(/stale canonical/u);
+    expect(rejected).toHaveLength(1);
     editor.unmount();
     mount.remove();
   });

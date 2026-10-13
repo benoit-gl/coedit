@@ -73,7 +73,8 @@ change.
 Before merging a pull request:
 
 1. Confirm that the branch is current with `main`.
-2. Confirm that `verify`, `adr-integrity`, and `pr-description` are successful for the current candidate head.
+2. Confirm that `verify`, `browser-qualification`, `adr-integrity`, and `pr-description` are successful for the current
+   candidate head.
 3. Inspect the current pull-request description after its final edit.
 4. From the latest Pull-request description workflow run, use **Re-run jobs** and then **Re-run all jobs**.
 5. Merge only while the current description remains valid and `pr-description` is successful for the current head.
