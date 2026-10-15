@@ -77,6 +77,28 @@ for (const factory of factories) {
       ).toBeDefined();
     });
 
+    it("preserves same-Origin insertion coordinates and disjoint replacements", () => {
+      const before = { text: "abcdef", spans: [{ text: "abcdef", origin: original }] };
+      const state = createProseMirrorEditorState(before);
+      const sameOrigin = translateProseMirrorTransaction<LocalDensePosition>(
+        contentId, before, state.tr.insertText("a", 0), original,
+        { actorId: "actor-a", effectId: "same-origin" },
+      );
+      expect(sameOrigin?.payloads).toEqual([
+        { kind: "insert-text", inlineContentId: contentId, offset: 0, text: "a", origin: original },
+      ]);
+      const disjoint = translateProseMirrorTransaction<LocalDensePosition>(
+        contentId, before, state.tr.insertText("X", 1, 2).insertText("Y", 4, 5),
+        editing, { actorId: "actor-a", effectId: "disjoint" },
+      );
+      expect(disjoint?.payloads).toEqual([
+        { kind: "delete-text", inlineContentId: contentId, start: 1, end: 2 },
+        { kind: "insert-text", inlineContentId: contentId, offset: 1, text: "X", origin: editing },
+        { kind: "delete-text", inlineContentId: contentId, start: 4, end: 5 },
+        { kind: "insert-text", inlineContentId: contentId, offset: 4, text: "Y", origin: editing },
+      ]);
+    });
+
     it("keeps selection and mark transactions out of canonical text", () => {
       const state = createProseMirrorEditorState({
         text: "a\nb",

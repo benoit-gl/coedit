@@ -23,6 +23,8 @@ interface SnapshotGesture {
   readonly kind: "snapshot";
   readonly before: EditorTextBuffer;
   readonly after: EditorTextBuffer;
+  readonly forward: readonly EditorTextOperation[];
+  readonly inverse: readonly EditorTextOperation[];
 }
 
 interface AnchoredInsertionGesture {
@@ -115,6 +117,85 @@ export function readEditorText<Position>(
       origin: { ...span.origin },
     })),
   };
+}
+
+/** Exact native-string edit coordinates in the preceding editor state. */
+export interface EditorTextOperation {
+  /** Inclusive start of replaced text. */
+  readonly start: number;
+  /** Exclusive end of replaced text. */
+  readonly end: number;
+  /** Inserted text with explicit trusted Origin. */
+  readonly insertion: readonly QualificationTextSpan[];
+}
+
+/** Invert operations while their original ranges are still available. */
+export function invertEditorTextOperations(
+  before: EditorTextBuffer,
+  operations: readonly EditorTextOperation[],
+): readonly EditorTextOperation[] {
+  let current = before;
+  const inverse: EditorTextOperation[] = [];
+  for (const operation of operations) {
+    const replaced = sliceAttributedText(current, operation.start, operation.end);
+    current = spliceAttributedText(
+      current, operation.start, operation.end, operation.insertion,
+    );
+    const length = operation.insertion.reduce(
+      (sum, span) => sum + span.text.length, 0,
+    );
+    inverse.unshift({
+      start: operation.start,
+      end: operation.start + length,
+      insertion: replaced,
+    });
+  }
+  return inverse;
+}
+
+/**
+ * Publish exact ordered editor operations without inferring edit positions
+ * from a whole-buffer difference. Validate the final attributed text.
+ */
+export function translateEditorOperations<Position>(
+  inlineContentId: InlineContentId,
+  before: EditorTextBuffer,
+  operations: readonly EditorTextOperation[],
+  context: QualificationEffectContext,
+  expectedAfter: EditorTextBuffer,
+): IntegratedDocumentChange<Position> | undefined {
+  const payloads: IntegratedPayloadChange[] = [];
+  let current = before;
+  for (const operation of operations) {
+    const next = spliceAttributedText(
+      current, operation.start, operation.end, operation.insertion,
+    );
+    if (operation.end > operation.start)
+      payloads.push({
+        kind: "delete-text",
+        inlineContentId,
+        start: operation.start,
+        end: operation.end,
+      });
+    let offset = operation.start;
+    for (const span of operation.insertion) {
+      payloads.push({
+        kind: "insert-text",
+        inlineContentId,
+        offset,
+        text: span.text,
+        origin: span.origin,
+      });
+      offset += span.text.length;
+    }
+    current = next;
+  }
+  if (
+    current.text !== expectedAfter.text ||
+    attributedIdentity(current) !== attributedIdentity(expectedAfter)
+  )
+    throw new TypeError("Editor operations do not produce expected attributed text.");
+  return payloads.length === 0 ? undefined : { payloads, context };
 }
 
 /**
@@ -299,6 +380,7 @@ export class QualificationTextEditor<Position> {
   private compositionBase: EditorTextBuffer | undefined;
   private composition: EditorTextBuffer | undefined;
   private compositionInsertionOffset: number | undefined;
+  private compositionOperations: EditorTextOperation[] = [];
   private mounted = true;
 
   public constructor(
@@ -329,8 +411,11 @@ export class QualificationTextEditor<Position> {
       );
     const before = readEditorText(this.carrier, this.inlineContentId);
     const after = attributedInsertion(before, start, end, text, origin);
-    this.publish(before, after, context);
-    this.recordGesture(before, after, start === end, text, start);
+    const operations = [{
+      start, end, insertion: text === "" ? [] : [{ text, origin }],
+    }];
+    this.publish(before, after, context, operations);
+    this.recordGesture(before, after, start === end, text, start, operations);
   }
 
   /** Paste attributed private text, or imported fallback, as one editor action. */
@@ -345,8 +430,9 @@ export class QualificationTextEditor<Position> {
     const before = readEditorText(this.carrier, this.inlineContentId);
     const after = spliceAttributedText(before, start, end, insertion);
     const expectedText = insertion.map((span) => span.text).join("");
-    this.publish(before, after, context);
-    this.recordGesture(before, after, start === end, expectedText, start);
+    const operations = [{ start, end, insertion }];
+    this.publish(before, after, context, operations);
+    this.recordGesture(before, after, start === end, expectedText, start, operations);
   }
 
   /** Start IME composition without publishing partial text. */
@@ -357,6 +443,7 @@ export class QualificationTextEditor<Position> {
     this.compositionBase = readEditorText(this.carrier, this.inlineContentId);
     this.composition = this.compositionBase;
     this.compositionInsertionOffset = undefined;
+    this.compositionOperations = [];
   }
 
   /** Update transient composition text. */
@@ -385,6 +472,9 @@ export class QualificationTextEditor<Position> {
       text,
       origin,
     );
+    this.compositionOperations.push({
+      start, end, insertion: text === "" ? [] : [{ text, origin }],
+    });
   }
 
   /** Publish the complete IME action, or retain it for retry on failure. */
@@ -396,9 +486,14 @@ export class QualificationTextEditor<Position> {
     const before = this.compositionBase;
     if (before === undefined)
       throw new TypeError("Composition has not started.");
-    this.publish(before, after, context);
+    const operations =
+      attributedIdentity(before) === attributedIdentity(after)
+        ? []
+        : this.compositionOperations;
+    this.publish(before, after, context, operations);
     this.compositionBase = undefined;
     this.composition = undefined;
+    this.compositionOperations = [];
     const insertion = pureInsertionAt(
       before,
       after,
@@ -411,6 +506,7 @@ export class QualificationTextEditor<Position> {
       insertion !== undefined,
       insertion?.text ?? "",
       insertion?.start ?? 0,
+      operations,
     );
   }
 
@@ -420,6 +516,7 @@ export class QualificationTextEditor<Position> {
     this.compositionBase = undefined;
     this.composition = undefined;
     this.compositionInsertionOffset = undefined;
+    this.compositionOperations = [];
   }
 
   /** Perform an application undo intent through the semantic change seam. */
@@ -429,7 +526,7 @@ export class QualificationTextEditor<Position> {
     const gesture = this.undos.at(-1);
     if (gesture === undefined) throw new RangeError("Nothing to undo.");
     if (gesture.kind === "snapshot")
-      this.publish(gesture.after, gesture.before, context);
+      this.publish(gesture.after, gesture.before, context, gesture.inverse);
     else {
       const reconciled = this.undoAnchoredInsertion(gesture, context);
       this.undos.pop();
@@ -459,7 +556,9 @@ export class QualificationTextEditor<Position> {
         offset,
         gesture.insertion,
       );
-      this.publish(before, after, context);
+      this.publish(before, after, context, [
+        { start: offset, end: offset, insertion: gesture.insertion },
+      ]);
       this.redos.pop();
       this.undos.push(
         this.createAnchoredInsertionGesture(
@@ -471,7 +570,10 @@ export class QualificationTextEditor<Position> {
       );
       return;
     }
-    this.publish(gesture.before, gesture.after, context);
+    this.publish(
+      gesture.before, gesture.after, context,
+      gesture.kind === "snapshot" ? gesture.forward : undefined,
+    );
     this.redos.pop();
     this.undos.push(
       gesture.kind === "anchored-insertion"
@@ -490,6 +592,7 @@ export class QualificationTextEditor<Position> {
     before: EditorTextBuffer,
     after: EditorTextBuffer,
     context: QualificationEffectContext,
+    operations?: readonly EditorTextOperation[],
   ): void {
     const current = readEditorText(this.carrier, this.inlineContentId);
     if (
@@ -497,12 +600,14 @@ export class QualificationTextEditor<Position> {
       attributedIdentity(current) !== attributedIdentity(before)
     )
       throw new TypeError("Editor action has a stale canonical text base.");
-    const change = translateEditorText<Position>(
-      this.inlineContentId,
-      before,
-      after,
-      context,
-    );
+    const change =
+      operations === undefined
+        ? translateEditorText<Position>(
+            this.inlineContentId, before, after, context,
+          )
+        : translateEditorOperations<Position>(
+            this.inlineContentId, before, operations, context, after,
+          );
     if (change !== undefined) this.carrier.applyChange(change);
   }
 
@@ -512,8 +617,9 @@ export class QualificationTextEditor<Position> {
     isPureInsertion: boolean,
     expectedText: string,
     insertionOffset: number,
+    operations: readonly EditorTextOperation[],
   ): void {
-    if (attributedIdentity(before) === attributedIdentity(after)) return;
+    if (operations.length === 0) return;
     const gesture =
       isPureInsertion && expectedText.length > 0
         ? this.createAnchoredInsertionGesture(
@@ -522,7 +628,11 @@ export class QualificationTextEditor<Position> {
             expectedText,
             insertionOffset,
           )
-        : { kind: "snapshot" as const, before, after };
+        : {
+            kind: "snapshot" as const, before, after,
+            forward: operations,
+            inverse: invertEditorTextOperations(before, operations),
+          };
     this.undos.push(gesture);
     this.redos.length = 0;
   }
@@ -582,7 +692,7 @@ export class QualificationTextEditor<Position> {
     if (before.text.slice(start, end) !== gesture.expectedText)
       throw new TypeError("Inserted text no longer matches its undo anchor.");
     const after = spliceAttributedText(before, start, end, []);
-    this.publish(before, after, context);
+    this.publish(before, after, context, [{ start, end, insertion: [] }]);
     return {
       ...gesture,
       before,

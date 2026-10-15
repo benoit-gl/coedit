@@ -21,8 +21,10 @@ range therefore reconcile its position, while changed or ambiguous content
 refuses the undo. This is a qualification policy for inserted text, not yet a
 final policy for deletion, replacement, grouping, or product History. A redo
 creates fresh carrier identities and therefore refreshes those boundary anchors
-before a later undo. The mounted adapter takes the insertion coordinates from
-the ProseMirror transaction, rather than inferring them from repeated text.
+before a later undo. The mounted adapter retains ordered edits at actual ProseMirror transaction
+coordinates instead of reconstructing operations from final text. Undo/redo
+replay those exact operations, preserving untouched carrier text identity.
+Whole-buffer comparison validates the result, not the edit positions.
 
 `prosemirrorAdapter.ts` uses a flat, direct ProseMirror schema for one active
 allowlisted InlineContent. It turns a committed document-changing transaction

@@ -20,6 +20,9 @@ import {
 } from "./clipboard.js";
 import {
   type EditorTextBuffer,
+  type EditorTextOperation,
+  invertEditorTextOperations,
+  translateEditorOperations,
   sameAttributedRange,
   sliceAttributedText,
   spliceAttributedText,
@@ -89,9 +92,11 @@ export function translateProseMirrorTransaction<Position>(
   context: QualificationEffectContext,
 ): IntegratedDocumentChange<Position> | undefined {
   if (!transaction.docChanged) return undefined;
-  const after = attributeNativeTransaction(before, transaction, origin);
-  if (after === undefined) return undefined;
-  return translateEditorText(inlineContentId, before, after, context);
+  const result = nativeTransactionOperations(before, transaction, origin);
+  if (result.operations.length === 0) return undefined;
+  return translateEditorOperations(
+    inlineContentId, before, result.operations, context, result.after,
+  );
 }
 
 /**
@@ -104,13 +109,25 @@ export function attributeNativeTransaction(
   transaction: Transaction,
   origin: QualificationOrigin,
 ): EditorTextBuffer | undefined {
+  const result = nativeTransactionOperations(before, transaction, origin);
+  return result.operations.length === 0 ? undefined : result.after;
+}
+
+/** Extract ordered replacements at the actual ProseMirror step coordinates. */
+function nativeTransactionOperations(
+  before: EditorTextBuffer,
+  transaction: Transaction,
+  origin: QualificationOrigin,
+): { readonly after: EditorTextBuffer; readonly operations: readonly EditorTextOperation[] } {
   let current = before;
-  let changed = false;
+  const operations: EditorTextOperation[] = [];
   for (let index = 0; index < transaction.steps.length; index += 1) {
     const step = transaction.steps[index]!;
     const beforeDocument = transaction.docs[index];
     if (beforeDocument === undefined)
       throw new TypeError("ProseMirror transaction step base is missing.");
+    if (nativeTextFromProseMirror(beforeDocument) !== current.text)
+      throw new TypeError("ProseMirror step text base differs from editor text.");
     const result = step.apply(beforeDocument);
     if (result.failed !== null || result.doc === null)
       throw new TypeError("ProseMirror transaction step is invalid.");
@@ -126,18 +143,23 @@ export function attributeNativeTransaction(
     for (const replacement of replacements.sort(
       (left, right) => right.from - left.from,
     )) {
-      current = spliceAttributedText(
-        current,
-        replacement.from,
-        replacement.to,
+      const insertion =
         replacement.inserted === ""
           ? []
-          : [{ text: replacement.inserted, origin: { ...origin } }],
+          : [{ text: replacement.inserted, origin: { ...origin } }];
+      if (replacement.from === replacement.to && insertion.length === 0)
+        continue;
+      operations.push({
+        start: replacement.from, end: replacement.to, insertion,
+      });
+      current = spliceAttributedText(
+        current, replacement.from, replacement.to, insertion,
       );
-      changed = true;
     }
+    if (current.text !== afterText)
+      throw new TypeError("ProseMirror text step map is inconsistent.");
   }
-  return changed ? current : undefined;
+  return { after: current, operations };
 }
 
 /**
@@ -250,6 +272,8 @@ type MountedGesture =
       readonly kind: "snapshot";
       readonly before: EditorTextBuffer;
       readonly after: EditorTextBuffer;
+      readonly forward: readonly EditorTextOperation[];
+      readonly inverse: readonly EditorTextOperation[];
     }
   | {
       readonly kind: "anchored-insertion";
@@ -282,6 +306,7 @@ export function mountProseMirrorEditor<Position>(
         before: EditorTextBuffer;
         after: EditorTextBuffer;
         insertionOffset: number | undefined;
+        operations: EditorTextOperation[];
       }
     | undefined;
   let nextCompositionId = 0;
@@ -301,6 +326,7 @@ export function mountProseMirrorEditor<Position>(
             id: nextCompositionId++,
             before: canonical,
             after: canonical,
+            operations: [],
             insertionOffset:
               state.selection.from === state.selection.to
                 ? nativeOffset(state.selection.from)
@@ -350,12 +376,10 @@ export function mountProseMirrorEditor<Position>(
       )
         flushComposition(true);
       const before = composition?.after ?? canonical;
-      const after = attributeNativeTransaction(
-        before,
-        transaction,
-        options.origin,
+      const { after, operations } = nativeTransactionOperations(
+        before, transaction, options.origin,
       );
-      if (after === undefined) return;
+      if (operations.length === 0) return;
       try {
         if (composition === undefined)
           publishAttributedChange(
@@ -364,8 +388,14 @@ export function mountProseMirrorEditor<Position>(
             undefined,
             true,
             pureInsertionFromTransaction(before, after, transaction),
+            operations,
           );
-        else composition = { ...composition, after };
+        else
+          composition = {
+            ...composition,
+            after,
+            operations: [...composition.operations, ...operations],
+          };
       } catch (error) {
         resetViewToCurrent();
         throw error;
@@ -402,20 +432,24 @@ export function mountProseMirrorEditor<Position>(
       readonly end: number;
       readonly text: string;
     },
+    operations?: readonly EditorTextOperation[],
   ): void {
     if (!sameBuffer(options.readCurrentBuffer(), before))
       throw new TypeError(
         "Editor publication has a stale canonical text base.",
       );
-    const change = translateEditorText<Position>(
-      options.inlineContentId,
-      before,
-      after,
-      {
-        ...options.nextContext(),
-        ...(source === undefined ? {} : { source }),
-      },
-    );
+    const context = {
+      ...options.nextContext(),
+      ...(source === undefined ? {} : { source }),
+    };
+    const change =
+      operations === undefined
+        ? translateEditorText<Position>(
+            options.inlineContentId, before, after, context,
+          )
+        : translateEditorOperations<Position>(
+            options.inlineContentId, before, operations, context, after,
+          );
     let applied = after;
     if (change !== undefined) {
       options.publish(change);
@@ -427,7 +461,7 @@ export function mountProseMirrorEditor<Position>(
     }
     canonical = applied;
     if (change !== undefined && record) {
-      undos.push(recordGesture(before, applied, insertion));
+      undos.push(recordGesture(before, applied, insertion, operations ?? []));
       redos.length = 0;
     }
   }
@@ -446,6 +480,7 @@ export function mountProseMirrorEditor<Position>(
         undefined,
         true,
         pureInsertionAt(pending.before, pending.after, pending.insertionOffset),
+        sameBuffer(pending.before, pending.after) ? [] : pending.operations,
       );
     } catch (error) {
       composition = undefined;
@@ -480,7 +515,10 @@ export function mountProseMirrorEditor<Position>(
       )
         throw new TypeError("Inserted text no longer matches its undo anchor.");
       const after = spliceAttributedText(before, start, end, []);
-      publishAttributedChange(before, after, undefined, false);
+      publishAttributedChange(
+        before, after, undefined, false, undefined,
+        [{ start, end, insertion: [] }],
+      );
       source.pop();
       destination.push({
         ...gesture,
@@ -509,7 +547,10 @@ export function mountProseMirrorEditor<Position>(
         offset,
         gesture.insertion,
       );
-      publishAttributedChange(before, after, undefined, false);
+      publishAttributedChange(
+        before, after, undefined, false, undefined,
+        [{ start: offset, end: offset, insertion: gesture.insertion }],
+      );
       source.pop();
       destination.push(
         createAnchoredGesture(before, after, gesture.expectedText, offset),
@@ -524,7 +565,12 @@ export function mountProseMirrorEditor<Position>(
       throw new TypeError(
         `Editor ${direction} has a stale canonical text base.`,
       );
-    publishAttributedChange(before, after, undefined, false);
+    publishAttributedChange(
+      before, after, undefined, false, undefined,
+      gesture.kind === "snapshot"
+        ? direction === "undo" ? gesture.inverse : gesture.forward
+        : undefined,
+    );
     source.pop();
     destination.push(
       direction === "redo" && gesture.kind === "anchored-insertion"
@@ -541,8 +587,14 @@ export function mountProseMirrorEditor<Position>(
     insertion:
       | { readonly start: number; readonly end: number; readonly text: string }
       | undefined,
+    operations: readonly EditorTextOperation[],
   ): MountedGesture {
-    if (insertion === undefined) return { kind: "snapshot", before, after };
+    if (insertion === undefined)
+      return {
+        kind: "snapshot", before, after,
+        forward: operations,
+        inverse: invertEditorTextOperations(before, operations),
+      };
     return {
       kind: "anchored-insertion",
       before,
@@ -672,6 +724,7 @@ export function mountProseMirrorEditor<Position>(
               text: decoded.text,
             }
           : undefined,
+        [{ start: insertionStart, end: insertionEnd, insertion: decoded.spans }],
       );
     } catch (error) {
       resetViewToCurrent();

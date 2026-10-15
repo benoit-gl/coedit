@@ -167,6 +167,7 @@ function mountCarrierEditor(
   readonly editor: MountedProseMirrorEditor;
   readonly mount: HTMLDivElement;
   readonly copySource: () => string | undefined;
+  readonly published: IntegratedDocumentChange<LocalDensePosition>[];
 } {
   const mount = document.createElement("div");
   document.body.append(mount);
@@ -186,6 +187,7 @@ function mountCarrierEditor(
   });
   let nextEffect = 0;
   let copySource: string | undefined;
+  const published: IntegratedDocumentChange<LocalDensePosition>[] = [];
   const editor = mountProseMirrorEditor<LocalDensePosition>({
     element: mount,
     inlineContentId: contentId,
@@ -201,7 +203,10 @@ function mountCarrierEditor(
       actorId: "actor-a",
       effectId: `${factory.candidate}-browser-${nextEffect++}`,
     }),
-    publish: (change) => carrier.applyChange(change),
+    publish: (change) => {
+      published.push(change);
+      carrier.applyChange(change);
+    },
     clipboard: {
       documentId,
       originCatalog: new Map([[original.id, original]]),
@@ -215,7 +220,7 @@ function mountCarrierEditor(
       isStableSourceReference: (reference) => reference === copySource,
     },
   });
-  return { carrier, editor, mount, copySource: () => copySource };
+  return { carrier, editor, mount, copySource: () => copySource, published };
 }
 
 function unmountCarrierEditor(fixture: {
@@ -351,6 +356,33 @@ describe("direct ProseMirror browser qualification", () => {
         text: "?",
         origin: imported,
       });
+      unmountCarrierEditor(fixture);
+    });
+
+    it(`keeps same-Origin paste at the selected offset on ${factory.candidate}`, () => {
+      const fixture = mountCarrierEditor(factory);
+      fixture.editor.view.dispatch(
+        fixture.editor.view.state.tr.setSelection(
+          TextSelection.create(fixture.editor.view.state.doc, 0, 1),
+        ),
+      );
+      const copied = new DataTransfer();
+      fixture.editor.view.dom.dispatchEvent(clipboardEvent("copy", copied));
+      fixture.editor.view.dispatch(
+        fixture.editor.view.state.tr.setSelection(
+          TextSelection.create(fixture.editor.view.state.doc, 0),
+        ),
+      );
+      fixture.editor.view.dom.dispatchEvent(clipboardEvent("paste", copied));
+      expect(fixture.published[0]?.payloads).toEqual([
+        { kind: "insert-text", inlineContentId: contentId, offset: 0, text: "a", origin: original },
+      ]);
+      expect(readEditorText(fixture.carrier, contentId).text).toBe("aalpha");
+      fixture.editor.undo();
+      expect(fixture.published[1]?.payloads).toEqual([
+        { kind: "delete-text", inlineContentId: contentId, start: 0, end: 1 },
+      ]);
+      expect(readEditorText(fixture.carrier, contentId).text).toBe("alpha");
       unmountCarrierEditor(fixture);
     });
 

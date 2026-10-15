@@ -96,6 +96,19 @@ for (const factory of factories) {
       );
     });
 
+    it("preserves the intended position for a same-Origin insertion", () => {
+      const carrier = seeded();
+      const editor = new QualificationTextEditor(carrier, contentId);
+      editor.replaceAttributedSelection(
+        0, 0, [{ text: "a", origin: original }], context("same-origin"),
+      );
+      expect(readEditorText(carrier, contentId).text).toBe("aalpha");
+      editor.undo(context("same-origin-undo"));
+      expect(readEditorText(carrier, contentId).text).toBe("alpha");
+      editor.redo(context("same-origin-redo"));
+      expect(readEditorText(carrier, contentId).text).toBe("aalpha");
+    });
+
     it("preserves attribution-only edits and their semantic inverse", () => {
       const carrier = seeded();
       const editor = new QualificationTextEditor(carrier, contentId);
