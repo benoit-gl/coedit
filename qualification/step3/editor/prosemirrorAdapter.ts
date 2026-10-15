@@ -95,7 +95,11 @@ export function translateProseMirrorTransaction<Position>(
   const result = nativeTransactionOperations(before, transaction, origin);
   if (result.operations.length === 0) return undefined;
   return translateEditorOperations(
-    inlineContentId, before, result.operations, context, result.after,
+    inlineContentId,
+    before,
+    result.operations,
+    context,
+    result.after,
   );
 }
 
@@ -118,7 +122,10 @@ function nativeTransactionOperations(
   before: EditorTextBuffer,
   transaction: Transaction,
   origin: QualificationOrigin,
-): { readonly after: EditorTextBuffer; readonly operations: readonly EditorTextOperation[] } {
+): {
+  readonly after: EditorTextBuffer;
+  readonly operations: readonly EditorTextOperation[];
+} {
   let current = before;
   const operations: EditorTextOperation[] = [];
   for (let index = 0; index < transaction.steps.length; index += 1) {
@@ -127,7 +134,9 @@ function nativeTransactionOperations(
     if (beforeDocument === undefined)
       throw new TypeError("ProseMirror transaction step base is missing.");
     if (nativeTextFromProseMirror(beforeDocument) !== current.text)
-      throw new TypeError("ProseMirror step text base differs from editor text.");
+      throw new TypeError(
+        "ProseMirror step text base differs from editor text.",
+      );
     const result = step.apply(beforeDocument);
     if (result.failed !== null || result.doc === null)
       throw new TypeError("ProseMirror transaction step is invalid.");
@@ -150,10 +159,15 @@ function nativeTransactionOperations(
       if (replacement.from === replacement.to && insertion.length === 0)
         continue;
       operations.push({
-        start: replacement.from, end: replacement.to, insertion,
+        start: replacement.from,
+        end: replacement.to,
+        insertion,
       });
       current = spliceAttributedText(
-        current, replacement.from, replacement.to, insertion,
+        current,
+        replacement.from,
+        replacement.to,
+        insertion,
       );
     }
     if (current.text !== afterText)
@@ -377,7 +391,9 @@ export function mountProseMirrorEditor<Position>(
         flushComposition(true);
       const before = composition?.after ?? canonical;
       const { after, operations } = nativeTransactionOperations(
-        before, transaction, options.origin,
+        before,
+        transaction,
+        options.origin,
       );
       if (operations.length === 0) return;
       try {
@@ -445,10 +461,17 @@ export function mountProseMirrorEditor<Position>(
     const change =
       operations === undefined
         ? translateEditorText<Position>(
-            options.inlineContentId, before, after, context,
+            options.inlineContentId,
+            before,
+            after,
+            context,
           )
         : translateEditorOperations<Position>(
-            options.inlineContentId, before, operations, context, after,
+            options.inlineContentId,
+            before,
+            operations,
+            context,
+            after,
           );
     let applied = after;
     if (change !== undefined) {
@@ -515,10 +538,9 @@ export function mountProseMirrorEditor<Position>(
       )
         throw new TypeError("Inserted text no longer matches its undo anchor.");
       const after = spliceAttributedText(before, start, end, []);
-      publishAttributedChange(
-        before, after, undefined, false, undefined,
-        [{ start, end, insertion: [] }],
-      );
+      publishAttributedChange(before, after, undefined, false, undefined, [
+        { start, end, insertion: [] },
+      ]);
       source.pop();
       destination.push({
         ...gesture,
@@ -547,10 +569,9 @@ export function mountProseMirrorEditor<Position>(
         offset,
         gesture.insertion,
       );
-      publishAttributedChange(
-        before, after, undefined, false, undefined,
-        [{ start: offset, end: offset, insertion: gesture.insertion }],
-      );
+      publishAttributedChange(before, after, undefined, false, undefined, [
+        { start: offset, end: offset, insertion: gesture.insertion },
+      ]);
       source.pop();
       destination.push(
         createAnchoredGesture(before, after, gesture.expectedText, offset),
@@ -566,9 +587,15 @@ export function mountProseMirrorEditor<Position>(
         `Editor ${direction} has a stale canonical text base.`,
       );
     publishAttributedChange(
-      before, after, undefined, false, undefined,
+      before,
+      after,
+      undefined,
+      false,
+      undefined,
       gesture.kind === "snapshot"
-        ? direction === "undo" ? gesture.inverse : gesture.forward
+        ? direction === "undo"
+          ? gesture.inverse
+          : gesture.forward
         : undefined,
     );
     source.pop();
@@ -591,7 +618,9 @@ export function mountProseMirrorEditor<Position>(
   ): MountedGesture {
     if (insertion === undefined)
       return {
-        kind: "snapshot", before, after,
+        kind: "snapshot",
+        before,
+        after,
         forward: operations,
         inverse: invertEditorTextOperations(before, operations),
       };
@@ -668,10 +697,7 @@ export function mountProseMirrorEditor<Position>(
       sourceReference,
     );
     event.clipboardData?.setData("text/plain", encoded.plainText);
-    event.clipboardData?.setData(
-      STEP3_PRIVATE_CLIPBOARD_TYPE,
-      encoded.privateText,
-    );
+    writePrivateClipboardData(event.clipboardData, encoded.privateText);
     clipboard.trustedCopies.set(sourceReference, {
       text: encoded.plainText,
       spans: sliceAttributedText(
@@ -688,10 +714,8 @@ export function mountProseMirrorEditor<Position>(
     if (composition !== undefined)
       throw new TypeError("Commit or cancel composition before pasting.");
     event.preventDefault();
-    const privateText = event.clipboardData?.getData(
-      STEP3_PRIVATE_CLIPBOARD_TYPE,
-    );
     const plainText = event.clipboardData?.getData("text/plain") ?? "";
+    const privateText = readPrivateClipboardData(event.clipboardData);
     const decoded = decodePrivateClipboard(
       privateText === "" ? undefined : privateText,
       plainText,
@@ -724,7 +748,13 @@ export function mountProseMirrorEditor<Position>(
               text: decoded.text,
             }
           : undefined,
-        [{ start: insertionStart, end: insertionEnd, insertion: decoded.spans }],
+        [
+          {
+            start: insertionStart,
+            end: insertionEnd,
+            insertion: decoded.spans,
+          },
+        ],
       );
     } catch (error) {
       resetViewToCurrent();
@@ -835,6 +865,29 @@ function coalesceOrigins(buffer: EditorTextBuffer): readonly {
 /** Convert a flat-schema ProseMirror text position to a native-string offset. */
 function nativeOffset(proseMirrorPosition: number): number {
   return proseMirrorPosition;
+}
+
+/** Custom clipboard transport is optional; plain text remains usable without it. */
+function writePrivateClipboardData(
+  clipboardData: DataTransfer | null,
+  privateText: string,
+): void {
+  try {
+    clipboardData?.setData(STEP3_PRIVATE_CLIPBOARD_TYPE, privateText);
+  } catch {
+    // Browser policy can reject custom clipboard types after text/plain succeeds.
+  }
+}
+
+/** Read the optional private payload without preventing ordinary-text paste. */
+function readPrivateClipboardData(
+  clipboardData: DataTransfer | null,
+): string | undefined {
+  try {
+    return clipboardData?.getData(STEP3_PRIVATE_CLIPBOARD_TYPE);
+  } catch {
+    return undefined;
+  }
 }
 
 function documentFromNativeText(text: string): ProseMirrorNode {

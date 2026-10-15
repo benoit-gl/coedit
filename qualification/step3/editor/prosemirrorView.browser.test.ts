@@ -58,6 +58,15 @@ function clipboardEvent(
   });
 }
 
+function clipboardEventWithTransport(
+  type: "copy" | "cut" | "paste",
+  clipboardData: Pick<DataTransfer, "getData" | "setData">,
+): ClipboardEvent {
+  const event = clipboardEvent(type, new DataTransfer());
+  Object.defineProperty(event, "clipboardData", { value: clipboardData });
+  return event;
+}
+
 function waitForCompositionFlush(): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(() => setTimeout(resolve, 0), 0);
@@ -375,7 +384,13 @@ describe("direct ProseMirror browser qualification", () => {
       );
       fixture.editor.view.dom.dispatchEvent(clipboardEvent("paste", copied));
       expect(fixture.published[0]?.payloads).toEqual([
-        { kind: "insert-text", inlineContentId: contentId, offset: 0, text: "a", origin: original },
+        {
+          kind: "insert-text",
+          inlineContentId: contentId,
+          offset: 0,
+          text: "a",
+          origin: original,
+        },
       ]);
       expect(readEditorText(fixture.carrier, contentId).text).toBe("aalpha");
       fixture.editor.undo();
@@ -898,6 +913,89 @@ describe("direct ProseMirror browser qualification", () => {
         },
       ],
     });
+    editor.unmount();
+    mount.remove();
+  });
+
+  it("keeps ordinary clipboard behavior when private transport is unavailable", () => {
+    const mount = document.createElement("div");
+    document.body.append(mount);
+    const published: IntegratedDocumentChange<never>[] = [];
+    let current: EditorTextBuffer = {
+      text: "alpha",
+      spans: [{ text: "alpha", origin: original }],
+    };
+    const editor = mountProseMirrorEditor<never>({
+      element: mount,
+      inlineContentId: contentId,
+      buffer: current,
+      readCurrentBuffer: () => current,
+      textPositions: browserTextPositions(),
+      origin: editing,
+      nextContext: () => ({ actorId: "actor-a", effectId: "transport" }),
+      publish: (change) => {
+        published.push(change);
+        current = applyPublishedChange(current, change);
+      },
+      clipboard: {
+        documentId,
+        originCatalog: new Map([[original.id, original]]),
+        trustedCopies: new Map(),
+        fallbackOrigin: imported,
+        limits: { maxEncodedLength: 4096, maxSpans: 8, maxTextLength: 64 },
+        nextCopyReference: () => "historical-copy-transport",
+        isStableSourceReference: () => true,
+      },
+    });
+    const written = new Map<string, string>();
+    const transport = {
+      getData: (type: string) => {
+        if (type === STEP3_PRIVATE_CLIPBOARD_TYPE)
+          throw new DOMException(
+            "Custom type is unavailable.",
+            "NotSupportedError",
+          );
+        return type === "text/plain" ? "?" : "";
+      },
+      setData: (type: string, value: string) => {
+        if (type === STEP3_PRIVATE_CLIPBOARD_TYPE)
+          throw new DOMException(
+            "Custom type is unavailable.",
+            "NotSupportedError",
+          );
+        written.set(type, value);
+      },
+    };
+    editor.view.dispatch(
+      editor.view.state.tr.setSelection(
+        TextSelection.create(editor.view.state.doc, 1, 4),
+      ),
+    );
+    expect(() =>
+      editor.view.dom.dispatchEvent(
+        clipboardEventWithTransport("cut", transport),
+      ),
+    ).not.toThrow();
+    expect(written.get("text/plain")).toBe("lph");
+    expect(current.text).toBe("aa");
+    editor.view.dispatch(
+      editor.view.state.tr.setSelection(
+        TextSelection.create(editor.view.state.doc, 2),
+      ),
+    );
+    expect(() =>
+      editor.view.dom.dispatchEvent(
+        clipboardEventWithTransport("paste", transport),
+      ),
+    ).not.toThrow();
+    expect(current).toEqual({
+      text: "aa?",
+      spans: [
+        { text: "aa", origin: original },
+        { text: "?", origin: imported },
+      ],
+    });
+    expect(published).toHaveLength(2);
     editor.unmount();
     mount.remove();
   });

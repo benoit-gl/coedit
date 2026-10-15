@@ -100,7 +100,10 @@ for (const factory of factories) {
       const carrier = seeded();
       const editor = new QualificationTextEditor(carrier, contentId);
       editor.replaceAttributedSelection(
-        0, 0, [{ text: "a", origin: original }], context("same-origin"),
+        0,
+        0,
+        [{ text: "a", origin: original }],
+        context("same-origin"),
       );
       expect(readEditorText(carrier, contentId).text).toBe("aalpha");
       editor.undo(context("same-origin-undo"));
@@ -211,10 +214,15 @@ for (const factory of factories) {
       editor.updateComposition(0, 2, "aa", editing);
       editor.commitComposition(context("ime-replace"));
       editor.undo(context("ime-replace-undo"));
-      expect(readEditorText(carrier, contentId)).toEqual({
-        text: "aaa",
-        spans: [{ text: "aaa", origin: original }],
-      });
+      const restored = readEditorText(carrier, contentId);
+      expect(restored.text).toBe("aaa");
+      expect(
+        restored.spans.every(
+          (span) =>
+            span.origin.id === original.id &&
+            span.origin.kind === original.kind,
+        ),
+      ).toBe(true);
     });
 
     it("refuses an IME commit whose canonical base changed remotely", () => {

@@ -137,12 +137,20 @@ export function invertEditorTextOperations(
   let current = before;
   const inverse: EditorTextOperation[] = [];
   for (const operation of operations) {
-    const replaced = sliceAttributedText(current, operation.start, operation.end);
+    const replaced = sliceAttributedText(
+      current,
+      operation.start,
+      operation.end,
+    );
     current = spliceAttributedText(
-      current, operation.start, operation.end, operation.insertion,
+      current,
+      operation.start,
+      operation.end,
+      operation.insertion,
     );
     const length = operation.insertion.reduce(
-      (sum, span) => sum + span.text.length, 0,
+      (sum, span) => sum + span.text.length,
+      0,
     );
     inverse.unshift({
       start: operation.start,
@@ -168,7 +176,10 @@ export function translateEditorOperations<Position>(
   let current = before;
   for (const operation of operations) {
     const next = spliceAttributedText(
-      current, operation.start, operation.end, operation.insertion,
+      current,
+      operation.start,
+      operation.end,
+      operation.insertion,
     );
     if (operation.end > operation.start)
       payloads.push({
@@ -194,7 +205,9 @@ export function translateEditorOperations<Position>(
     current.text !== expectedAfter.text ||
     attributedIdentity(current) !== attributedIdentity(expectedAfter)
   )
-    throw new TypeError("Editor operations do not produce expected attributed text.");
+    throw new TypeError(
+      "Editor operations do not produce expected attributed text.",
+    );
   return payloads.length === 0 ? undefined : { payloads, context };
 }
 
@@ -411,9 +424,13 @@ export class QualificationTextEditor<Position> {
       );
     const before = readEditorText(this.carrier, this.inlineContentId);
     const after = attributedInsertion(before, start, end, text, origin);
-    const operations = [{
-      start, end, insertion: text === "" ? [] : [{ text, origin }],
-    }];
+    const operations = [
+      {
+        start,
+        end,
+        insertion: text === "" ? [] : [{ text, origin }],
+      },
+    ];
     this.publish(before, after, context, operations);
     this.recordGesture(before, after, start === end, text, start, operations);
   }
@@ -432,7 +449,14 @@ export class QualificationTextEditor<Position> {
     const expectedText = insertion.map((span) => span.text).join("");
     const operations = [{ start, end, insertion }];
     this.publish(before, after, context, operations);
-    this.recordGesture(before, after, start === end, expectedText, start, operations);
+    this.recordGesture(
+      before,
+      after,
+      start === end,
+      expectedText,
+      start,
+      operations,
+    );
   }
 
   /** Start IME composition without publishing partial text. */
@@ -473,7 +497,9 @@ export class QualificationTextEditor<Position> {
       origin,
     );
     this.compositionOperations.push({
-      start, end, insertion: text === "" ? [] : [{ text, origin }],
+      start,
+      end,
+      insertion: text === "" ? [] : [{ text, origin }],
     });
   }
 
@@ -571,7 +597,9 @@ export class QualificationTextEditor<Position> {
       return;
     }
     this.publish(
-      gesture.before, gesture.after, context,
+      gesture.before,
+      gesture.after,
+      context,
       gesture.kind === "snapshot" ? gesture.forward : undefined,
     );
     this.redos.pop();
@@ -603,10 +631,17 @@ export class QualificationTextEditor<Position> {
     const change =
       operations === undefined
         ? translateEditorText<Position>(
-            this.inlineContentId, before, after, context,
+            this.inlineContentId,
+            before,
+            after,
+            context,
           )
         : translateEditorOperations<Position>(
-            this.inlineContentId, before, operations, context, after,
+            this.inlineContentId,
+            before,
+            operations,
+            context,
+            after,
           );
     if (change !== undefined) this.carrier.applyChange(change);
   }
@@ -629,7 +664,9 @@ export class QualificationTextEditor<Position> {
             insertionOffset,
           )
         : {
-            kind: "snapshot" as const, before, after,
+            kind: "snapshot" as const,
+            before,
+            after,
             forward: operations,
             inverse: invertEditorTextOperations(before, operations),
           };
