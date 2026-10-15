@@ -297,7 +297,6 @@ type MountedGesture =
       readonly insertion: readonly QualificationTextSpan[];
       readonly insertionOffset: number;
       readonly start: QualificationStableTextPosition;
-      readonly end: QualificationStableTextPosition;
       readonly redoAt: QualificationStableTextPosition | undefined;
     };
 
@@ -528,12 +527,12 @@ export function mountProseMirrorEditor<Position>(
     if (gesture === undefined) throw new RangeError(`Nothing to ${direction}.`);
     if (direction === "undo" && gesture.kind === "anchored-insertion") {
       const start = options.textPositions.resolve(gesture.start);
-      const end = options.textPositions.resolve(gesture.end);
       const before = options.readCurrentBuffer();
+      const end =
+        start === undefined ? undefined : start + gesture.expectedText.length;
       if (
         start === undefined ||
         end === undefined ||
-        end < start ||
         before.text.slice(start, end) !== gesture.expectedText
       )
         throw new TypeError("Inserted text no longer matches its undo anchor.");
@@ -631,8 +630,7 @@ export function mountProseMirrorEditor<Position>(
       expectedText: insertion.text,
       insertion: sliceAttributedText(after, insertion.start, insertion.end),
       insertionOffset: insertion.start,
-      start: options.textPositions.create(insertion.start, "before"),
-      end: options.textPositions.create(insertion.end, "after"),
+      start: options.textPositions.create(insertion.start, "after"),
       redoAt: undefined,
     };
   }
@@ -666,11 +664,7 @@ export function mountProseMirrorEditor<Position>(
         insertionOffset + expectedText.length,
       ),
       insertionOffset,
-      start: options.textPositions.create(insertionOffset, "before"),
-      end: options.textPositions.create(
-        insertionOffset + expectedText.length,
-        "after",
-      ),
+      start: options.textPositions.create(insertionOffset, "after"),
       redoAt: undefined,
     };
   }

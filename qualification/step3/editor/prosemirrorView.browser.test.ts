@@ -312,6 +312,72 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
+    it(`keeps browser undo anchors inside later ${factory.candidate} boundary edits`, async () => {
+      for (const [offset, placement] of [
+        [5, "before"],
+        [6, "after"],
+      ] as const) {
+        const fixture = mountCarrierEditor(factory);
+        fixture.editor.view.dispatch(
+          fixture.editor.view.state.tr.setSelection(
+            TextSelection.create(fixture.editor.view.state.doc, 5),
+          ),
+        );
+        await userEvent.click(fixture.editor.view.dom);
+        await userEvent.keyboard("!");
+        fixture.carrier.applyChange({
+          payloads: [
+            {
+              kind: "insert-text",
+              inlineContentId: contentId,
+              offset,
+              text: "?",
+              origin: original,
+            },
+          ],
+          context: {
+            actorId: "actor-b",
+            effectId: `remote-${placement}`,
+          },
+        });
+        fixture.editor.undo();
+        expect(readEditorText(fixture.carrier, contentId).text).toBe("alpha?");
+        unmountCarrierEditor(fixture);
+      }
+    });
+
+    it(`removes matching restored text through ${factory.candidate} browser undo`, async () => {
+      const fixture = mountCarrierEditor(factory);
+      fixture.editor.view.dispatch(
+        fixture.editor.view.state.tr.setSelection(
+          TextSelection.create(fixture.editor.view.state.doc, 5),
+        ),
+      );
+      await userEvent.click(fixture.editor.view.dom);
+      await userEvent.keyboard("!");
+      fixture.carrier.applyChange({
+        payloads: [
+          {
+            kind: "delete-text",
+            inlineContentId: contentId,
+            start: 5,
+            end: 6,
+          },
+          {
+            kind: "insert-text",
+            inlineContentId: contentId,
+            offset: 5,
+            text: "!",
+            origin: original,
+          },
+        ],
+        context: { actorId: "actor-b", effectId: "remote-restored-insert" },
+      });
+      fixture.editor.undo();
+      expect(readEditorText(fixture.carrier, contentId).text).toBe("alpha");
+      unmountCarrierEditor(fixture);
+    });
+
     it(`preserves trusted clipboard Origin through ${factory.candidate}`, () => {
       const fixture = mountCarrierEditor(factory);
       fixture.editor.view.dispatch(

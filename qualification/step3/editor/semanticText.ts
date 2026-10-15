@@ -37,8 +37,8 @@ interface AnchoredInsertionGesture {
   readonly insertion: readonly QualificationTextSpan[];
   /** Native offset at which redo recreates fresh carrier identities. */
   readonly insertionOffset: number;
+  /** Anchor attached to the first inserted character. */
   readonly start: QualificationStableTextPosition;
-  readonly end: QualificationStableTextPosition;
   /** Boundary created by undo after deleting the anchored inserted range. */
   readonly redoAt: QualificationStableTextPosition | undefined;
 }
@@ -706,11 +706,6 @@ export class QualificationTextEditor<Position> {
       start: this.carrier.createStableTextPosition(
         this.inlineContentId,
         insertionOffset,
-        "before",
-      ),
-      end: this.carrier.createStableTextPosition(
-        this.inlineContentId,
-        insertionOffset + expectedText.length,
         "after",
       ),
       redoAt: undefined,
@@ -722,10 +717,10 @@ export class QualificationTextEditor<Position> {
     context: QualificationEffectContext,
   ): AnchoredInsertionGesture {
     const start = this.carrier.resolveStableTextPosition(gesture.start);
-    const end = this.carrier.resolveStableTextPosition(gesture.end);
-    if (start === undefined || end === undefined || end < start)
+    if (start === undefined)
       throw new TypeError("Inserted text anchor is no longer resolvable.");
     const before = readEditorText(this.carrier, this.inlineContentId);
+    const end = start + gesture.expectedText.length;
     if (before.text.slice(start, end) !== gesture.expectedText)
       throw new TypeError("Inserted text no longer matches its undo anchor.");
     const after = spliceAttributedText(before, start, end, []);

@@ -41,7 +41,7 @@ const factories: readonly IntegratedDocumentCarrierFactory<LocalDensePosition>[]
 
 for (const factory of factories) {
   describe(factory.candidate + " editor qualification", () => {
-    function seeded() {
+    function seeded(text = "alpha") {
       const carrier = factory.create(rootId);
       carrier.applyChange({
         inlineContents: [{ inlineContentId: contentId, blockId: rootId }],
@@ -50,7 +50,7 @@ for (const factory of factories) {
             kind: "replace-text",
             inlineContentId: contentId,
             mediaType: "text/plain",
-            text: "alpha",
+            text,
             origin: original,
           },
         ],
@@ -293,6 +293,88 @@ for (const factory of factories) {
       });
       editor.undo(context("second-undo"));
       expect(readEditorText(carrier, contentId).text).toBe("apha");
+    });
+
+    it("keeps inserted text isolated from later edits on either boundary", () => {
+      for (const [offset, placement] of [
+        [5, "before"],
+        [6, "after"],
+      ] as const) {
+        const carrier = seeded();
+        const editor = new QualificationTextEditor(carrier, contentId);
+        editor.replaceSelection(
+          5,
+          5,
+          "!",
+          editing,
+          context(`local-${placement}`),
+        );
+        carrier.applyChange({
+          payloads: [
+            {
+              kind: "insert-text",
+              inlineContentId: contentId,
+              offset,
+              text: "?",
+              origin: original,
+            },
+          ],
+          context: { actorId: "actor-b", effectId: `remote-${placement}` },
+        });
+        editor.undo(context(`undo-${placement}`));
+        expect(readEditorText(carrier, contentId).text).toBe("alpha?");
+      }
+    });
+
+    it("deletes matching restored text regardless of its Origin", () => {
+      const carrier = seeded();
+      const editor = new QualificationTextEditor(carrier, contentId);
+      editor.replaceSelection(5, 5, "!", editing, context("local-insert"));
+      carrier.applyChange({
+        payloads: [
+          {
+            kind: "delete-text",
+            inlineContentId: contentId,
+            start: 5,
+            end: 6,
+          },
+          {
+            kind: "insert-text",
+            inlineContentId: contentId,
+            offset: 5,
+            text: "!",
+            origin: original,
+          },
+        ],
+        context: { actorId: "actor-b", effectId: "remote-restored-insert" },
+      });
+      editor.undo(context("undo-restored-insert"));
+      expect(readEditorText(carrier, contentId).text).toBe("alpha");
+    });
+
+    it("lets both users undo contiguous same-gap insertions", () => {
+      const local = seeded("Heo");
+      const remote = factory.load(local.encode());
+      const localEditor = new QualificationTextEditor(local, contentId);
+      const remoteEditor = new QualificationTextEditor(remote, contentId);
+
+      localEditor.replaceSelection(2, 2, "ll", editing, context("local-ll"));
+      remoteEditor.replaceSelection(2, 2, "l", original, {
+        actorId: "actor-b",
+        effectId: "remote-l",
+      });
+      local.mergeEncoded(remote.encode());
+      remote.mergeEncoded(local.encode());
+      expect(readEditorText(local, contentId).text).toBe("Helllo");
+      expect(remote.snapshot()).toEqual(local.snapshot());
+
+      localEditor.undo(context("local-undo"));
+      expect(readEditorText(local, contentId).text).toBe("Helo");
+      remote.mergeEncoded(local.encode());
+      remoteEditor.undo({ actorId: "actor-b", effectId: "remote-undo" });
+      expect(readEditorText(remote, contentId).text).toBe("Heo");
+      local.mergeEncoded(remote.encode());
+      expect(local.snapshot()).toEqual(remote.snapshot());
     });
 
     it("qualifies same-document private copy, paste, cut, and hostile fallback", () => {

@@ -12,10 +12,12 @@ paste use one carrier change with one qualification actor/effect context. IME
 updates remain transient until a complete composition is submitted. Undo and redo
 submit new semantic operations; they never rewind carrier state.
 
-For a pure text insertion, the qualification decision is to retain
-candidate-native boundary anchors and the expected inserted native text. Undo
-resolves those anchors against the current carrier state and deletes the range
-only when it still contains that exact text; it intentionally does not require
+For a pure text insertion, the qualification decision is to retain a
+candidate-native anchor attached to the first inserted character and the
+expected inserted native text. Undo resolves that anchor against the current
+carrier state and derives the candidate range from the expected text length. It
+deletes the range only when it still contains that exact text; it intentionally
+does not require
 the original Origin or an unchanged whole-document frontier. Edits before the
 range therefore reconcile its position, while changed or ambiguous content
 refuses the undo. This is a qualification policy for inserted text, not yet a
