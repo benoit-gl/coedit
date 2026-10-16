@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { userEvent } from "@vitest/browser/context";
+import { DOMParser as ProseMirrorDOMParser } from "prosemirror-model";
 import { TextSelection } from "prosemirror-state";
 
 import {
@@ -171,6 +172,7 @@ function applyPublishedChange(
 
 function mountCarrierEditor(
   factory: IntegratedDocumentCarrierFactory<LocalDensePosition>,
+  initialText = "alpha",
 ): {
   readonly carrier: IntegratedDocumentCarrier<LocalDensePosition>;
   readonly editor: MountedProseMirrorEditor;
@@ -188,7 +190,7 @@ function mountCarrierEditor(
         kind: "replace-text",
         inlineContentId: contentId,
         mediaType: "text/plain",
-        text: "alpha",
+        text: initialText,
         origin: original,
       },
     ],
@@ -258,6 +260,32 @@ describe("direct ProseMirror browser qualification", () => {
           { text: "!", origin: editing },
         ],
       });
+      unmountCarrierEditor(fixture);
+    });
+
+    it(`round-trips rendered line breaks and edits beside them on ${factory.candidate}`, async () => {
+      const fixture = mountCarrierEditor(factory, "a\nb");
+      const { view } = fixture.editor;
+      expect(view.dom.querySelector("br")).not.toBeNull();
+      const parser = ProseMirrorDOMParser.fromSchema(qualificationProseMirrorSchema);
+      expect(parser.parse(view.dom).eq(view.state.doc)).toBe(true);
+
+      await userEvent.click(view.dom);
+      view.dispatch(
+        view.state.tr.setSelection(TextSelection.create(view.state.doc, 2)),
+      );
+      await userEvent.keyboard("X");
+
+      expect(readEditorText(fixture.carrier, contentId)).toEqual({
+        text: "a\nXb",
+        spans: [
+          { text: "a\n", origin: original },
+          { text: "X", origin: editing },
+          { text: "b", origin: original },
+        ],
+      });
+      expect(fixture.published).toHaveLength(1);
+      expect(parser.parse(view.dom).eq(view.state.doc)).toBe(true);
       unmountCarrierEditor(fixture);
     });
 

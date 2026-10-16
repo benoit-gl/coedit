@@ -43,6 +43,7 @@ export const qualificationProseMirrorSchema = new Schema({
       group: "inline",
       inline: true,
       selectable: false,
+      parseDOM: [{ tag: "br" }],
       toDOM: () => ["br"],
     },
   },
