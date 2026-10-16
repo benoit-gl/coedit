@@ -56,9 +56,16 @@ claiming an integrated carrier-position interface.
 The mounted adapter requires an explicit imported/unknown Origin for ordinary
 paste, even when private clipboard support is absent. Cut copies plain text
 before deleting and does not delete when that clipboard write is unavailable.
+Copy and cut refuse an unfinished IME composition, including its deferred final
+publication, without writing clipboard data or deleting transient text. Selection
+coordinates in that state must not be applied to older canonical content.
+
 The production DocumentEngine already specifies asynchronous commands with
-expected-Version checks; whether to buffer inbound remote changes across an
-asynchronous Cut remains a Step 11 design question, not a Merge 7 decision.
+expected-Version checks. Step 11 must synchronize pending local editor commands
+and use one version-consistent selection/text/Origin projection for clipboard
+work, or refuse the action if the browser event cannot safely wait. This does
+not require remote-merge suspension; whether to buffer inbound remote changes
+across an asynchronous Cut remains a Step 11 design question.
 
 The separate Chromium suite mounts and unmounts the direct adapter against both
 candidate carriers. It exercises browser typing, IME composition, cut/paste,

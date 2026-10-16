@@ -594,6 +594,9 @@ Accepted behavior:
 - line-break or paragraph intent is translated by the application/editor adapter into text and/or structural operations;
   the document model does not require a hard-break item;
 - unrelated dirty work is submitted before an atomic action;
+- clipboard selection coordinates, text, and Origin come from one version-consistent projection; with asynchronous
+  commands, the editor drains prior local work before using that projection or refuses the clipboard action if the
+  browser event cannot safely wait, without assuming remote merges are suspended;
 - insertion/deletion mode changes, idle, real focus/editor-owner departure, and controlled transitions seal the current
   semantic group;
 - clean navigation creates neither a command nor a Contribution;

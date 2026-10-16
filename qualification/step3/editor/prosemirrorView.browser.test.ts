@@ -375,6 +375,55 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
+    it(`refuses copy and cut until IME publication on ${factory.candidate}`, async () => {
+      const fixture = mountCarrierEditor(factory);
+      const view = fixture.editor.view;
+      view.dom.dispatchEvent(new CompositionEvent("compositionstart"));
+      view.dispatch(view.state.tr.insertText("X", 1));
+      view.dispatch(
+        view.state.tr.setSelection(TextSelection.create(view.state.doc, 1, 2)),
+      );
+      expect(view.state.doc.textContent).toBe("aXlpha");
+      expect(readEditorText(fixture.carrier, contentId).text).toBe("alpha");
+
+      for (const phase of ["composing", "ending"] as const) {
+        if (phase === "ending")
+          view.dom.dispatchEvent(new CompositionEvent("compositionend"));
+        for (const kind of ["copy", "cut"] as const) {
+          const transfer = new DataTransfer();
+          transfer.setData("text/plain", "unchanged");
+          const event = clipboardEvent(kind, transfer);
+          view.dom.dispatchEvent(event);
+          expect(event.defaultPrevented).toBe(true);
+          expect(transfer.getData("text/plain")).toBe("unchanged");
+        }
+        expect(view.state.doc.textContent).toBe("aXlpha");
+        expect(readEditorText(fixture.carrier, contentId).text).toBe("alpha");
+        expect(fixture.published).toEqual([]);
+        expect(fixture.copySource()).toBeUndefined();
+      }
+
+      await waitForCompositionFlush();
+      expect(fixture.published).toHaveLength(1);
+      expect(readEditorText(fixture.carrier, contentId)).toEqual({
+        text: "aXlpha",
+        spans: [
+          { text: "a", origin: original },
+          { text: "X", origin: editing },
+          { text: "lpha", origin: original },
+        ],
+      });
+      const copied = new DataTransfer();
+      view.dom.dispatchEvent(clipboardEvent("copy", copied));
+      expect(copied.getData("text/plain")).toBe("X");
+      const cut = new DataTransfer();
+      view.dom.dispatchEvent(clipboardEvent("cut", cut));
+      expect(cut.getData("text/plain")).toBe("X");
+      expect(readEditorText(fixture.carrier, contentId).text).toBe("alpha");
+      expect(fixture.published).toHaveLength(2);
+      unmountCarrierEditor(fixture);
+    });
+
     it(`uses ${factory.candidate} anchors to reconcile browser undo`, async () => {
       const fixture = mountCarrierEditor(factory);
       fixture.editor.view.dispatch(

@@ -673,6 +673,8 @@ export function mountProseMirrorEditor<Position>(
   /** Require a successful plain-text write before Cut may delete anything. */
   function copySelection(event: ClipboardEvent): boolean {
     event.preventDefault();
+    // A transient composition selection may address text absent from canonical.
+    if (composition !== undefined) return false;
     const clipboardData = event.clipboardData;
     if (clipboardData === null) return false;
     const { from, to } = state.selection;
