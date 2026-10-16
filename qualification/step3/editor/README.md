@@ -53,6 +53,13 @@ origin preservation, hostile input fallback, and candidate reload.
 primitives through insertion and reload, without selecting a carrier or
 claiming an integrated carrier-position interface.
 
+The mounted adapter requires an explicit imported/unknown Origin for ordinary
+paste, even when private clipboard support is absent. Cut copies plain text
+before deleting and does not delete when that clipboard write is unavailable.
+The production DocumentEngine already specifies asynchronous commands with
+expected-Version checks; whether to buffer inbound remote changes across an
+asynchronous Cut remains a Step 11 design question, not a Merge 7 decision.
+
 The separate Chromium suite mounts and unmounts the direct adapter against both
 candidate carriers. It exercises browser typing, IME composition, cut/paste,
 and candidate-native insertion anchors through that path. The suite uses

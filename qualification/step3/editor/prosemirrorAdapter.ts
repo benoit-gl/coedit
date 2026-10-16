@@ -15,6 +15,7 @@ import {
   decodePrivateClipboard,
   encodePrivateClipboard,
   STEP3_PRIVATE_CLIPBOARD_TYPE,
+  type ClipboardText,
   type PrivateClipboardLimits,
   type TrustedPrivateClipboardCopy,
 } from "./clipboard.js";
@@ -227,6 +228,8 @@ export interface ProseMirrorEditorMountOptions<Position> {
   readonly readCurrentBuffer: () => EditorTextBuffer;
   /** Trusted Origin assigned only to newly inserted native text. */
   readonly origin: QualificationOrigin;
+  /** Explicit imported/unknown Origin for ordinary clipboard paste. */
+  readonly pasteOrigin: QualificationOrigin;
   /** Produces one fresh qualification context for each published action. */
   readonly nextContext: () => QualificationEffectContext;
   /** Applies one complete carrier-neutral semantic change. */
@@ -260,8 +263,6 @@ export interface ProseMirrorClipboardOptions {
   readonly originCatalog: ReadonlyMap<string, QualificationOrigin>;
   /** Target-controlled receipts for private copy gestures issued by this editor. */
   readonly trustedCopies: Map<string, TrustedPrivateClipboardCopy>;
-  /** Attribution for HTML/plain text and rejected private fragments. */
-  readonly fallbackOrigin: QualificationOrigin;
   /** Experimental admission limits; Gate B selects any final values. */
   readonly limits: PrivateClipboardLimits;
   /** Creates a stable source effect or retained historical-state token. */
@@ -366,15 +367,14 @@ export function mountProseMirrorEditor<Position>(
         return false;
       },
       copy: (_view, event) => {
-        if (options.clipboard === undefined) return false;
         copySelection(event);
         return true;
       },
       cut: (_view, event) => {
-        if (options.clipboard === undefined) return false;
-        copySelection(event);
-        const { from, to } = state.selection;
-        if (from !== to) view.dispatch(state.tr.delete(from, to));
+        if (copySelection(event)) {
+          const { from, to } = state.selection;
+          if (from !== to) view.dispatch(state.tr.delete(from, to));
+        }
         return true;
       },
       paste: (_view, event) => pasteSelection(event),
@@ -670,14 +670,27 @@ export function mountProseMirrorEditor<Position>(
     };
   }
 
-  function copySelection(event: ClipboardEvent): void {
-    const clipboard = options.clipboard;
-    if (clipboard === undefined) return;
+  /** Require a successful plain-text write before Cut may delete anything. */
+  function copySelection(event: ClipboardEvent): boolean {
     event.preventDefault();
+    const clipboardData = event.clipboardData;
+    if (clipboardData === null) return false;
     const { from, to } = state.selection;
     if (!sameBuffer(options.readCurrentBuffer(), canonical)) {
       resetViewToCurrent();
       throw new TypeError("Cannot copy from a stale editor projection.");
+    }
+    const clipboard = options.clipboard;
+    if (clipboard === undefined) {
+      try {
+        clipboardData.setData(
+          "text/plain",
+          canonical.text.slice(nativeOffset(from), nativeOffset(to)),
+        );
+        return true;
+      } catch {
+        return false;
+      }
     }
     const sourceReference = clipboard.nextCopyReference();
     if (!clipboard.isStableSourceReference(sourceReference))
@@ -691,8 +704,12 @@ export function mountProseMirrorEditor<Position>(
       clipboard.documentId,
       sourceReference,
     );
-    event.clipboardData?.setData("text/plain", encoded.plainText);
-    writePrivateClipboardData(event.clipboardData, encoded.privateText);
+    try {
+      clipboardData.setData("text/plain", encoded.plainText);
+    } catch {
+      return false;
+    }
+    writePrivateClipboardData(clipboardData, encoded.privateText);
     clipboard.trustedCopies.set(sourceReference, {
       text: encoded.plainText,
       spans: sliceAttributedText(
@@ -701,25 +718,36 @@ export function mountProseMirrorEditor<Position>(
         nativeOffset(to),
       ),
     });
+    return true;
   }
 
   function pasteSelection(event: ClipboardEvent): boolean {
-    const clipboard = options.clipboard;
-    if (clipboard === undefined) return false;
     if (composition !== undefined)
       throw new TypeError("Commit or cancel composition before pasting.");
     event.preventDefault();
-    const plainText = event.clipboardData?.getData("text/plain") ?? "";
-    const privateText = readPrivateClipboardData(event.clipboardData);
-    const decoded = decodePrivateClipboard(
-      privateText === "" ? undefined : privateText,
-      plainText,
-      clipboard.documentId,
-      clipboard.originCatalog,
-      clipboard.trustedCopies,
-      clipboard.fallbackOrigin,
-      clipboard.limits,
-    );
+    const clipboardData = event.clipboardData;
+    if (clipboardData === null) return true;
+    const plainText = clipboardData.getData("text/plain");
+    const clipboard = options.clipboard;
+    const decoded: ClipboardText =
+      clipboard === undefined
+        ? {
+            text: plainText,
+            spans:
+              plainText === ""
+                ? []
+                : [{ text: plainText, origin: { ...options.pasteOrigin } }],
+            privateOriginPreserved: false,
+          }
+        : decodePrivateClipboard(
+            readPrivateClipboardData(clipboardData) || undefined,
+            plainText,
+            clipboard.documentId,
+            clipboard.originCatalog,
+            clipboard.trustedCopies,
+            options.pasteOrigin,
+            clipboard.limits,
+          );
     const { from, to } = state.selection;
     if (from === to && decoded.text.length === 0) return true;
     const before = canonical;

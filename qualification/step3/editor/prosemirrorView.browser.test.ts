@@ -210,6 +210,7 @@ function mountCarrierEditor(
       resolve: (position) => carrier.resolveStableTextPosition(position),
     },
     origin: editing,
+    pasteOrigin: imported,
     nextContext: () => ({
       actorId: "actor-a",
       effectId: `${factory.candidate}-browser-${nextEffect++}`,
@@ -222,7 +223,6 @@ function mountCarrierEditor(
       documentId,
       originCatalog: new Map([[original.id, original]]),
       trustedCopies: new Map(),
-      fallbackOrigin: imported,
       limits: { maxEncodedLength: 4096, maxSpans: 8, maxTextLength: 64 },
       nextCopyReference: () => {
         copySource = carrier.captureHistoricalState();
@@ -529,6 +529,29 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
+    it(`refuses cut when the plain clipboard transport fails on ${factory.candidate}`, () => {
+      const fixture = mountCarrierEditor(factory);
+      fixture.editor.view.dispatch(
+        fixture.editor.view.state.tr.setSelection(
+          TextSelection.create(fixture.editor.view.state.doc, 1, 4),
+        ),
+      );
+      const failing = clipboardEventWithTransport("cut", {
+        getData: () => "",
+        setData: (type) => {
+          if (type === "text/plain")
+            throw new DOMException("Clipboard unavailable.", "NotAllowedError");
+        },
+      });
+      fixture.editor.view.dom.dispatchEvent(failing);
+      const missing = clipboardEvent("cut", new DataTransfer());
+      Object.defineProperty(missing, "clipboardData", { value: null });
+      fixture.editor.view.dom.dispatchEvent(missing);
+      expect(readEditorText(fixture.carrier, contentId).text).toBe("alpha");
+      expect(fixture.published).toEqual([]);
+      unmountCarrierEditor(fixture);
+    });
+
     it(`publishes a browser cut through ${factory.candidate}`, () => {
       const fixture = mountCarrierEditor(factory);
       fixture.editor.view.dispatch(
@@ -562,6 +585,7 @@ describe("direct ProseMirror browser qualification", () => {
       readCurrentBuffer: () => current,
       textPositions: browserTextPositions(),
       origin: editing,
+      pasteOrigin: imported,
       nextContext: () => ({
         actorId: "actor-a",
         effectId: `browser-${published.length}`,
@@ -628,6 +652,7 @@ describe("direct ProseMirror browser qualification", () => {
       readCurrentBuffer: () => current,
       textPositions: browserTextPositions(),
       origin: editing,
+      pasteOrigin: imported,
       nextContext: () => ({ actorId: "actor-a", effectId: "repeated" }),
       publish: (change) => {
         current = applyPublishedChange(current, change);
@@ -662,6 +687,7 @@ describe("direct ProseMirror browser qualification", () => {
       readCurrentBuffer: () => current,
       textPositions: browserTextPositions(),
       origin: editing,
+      pasteOrigin: imported,
       nextContext: () => ({
         actorId: "actor-a",
         effectId: `ime-${published.length}`,
@@ -720,6 +746,7 @@ describe("direct ProseMirror browser qualification", () => {
       readCurrentBuffer: () => current,
       textPositions: browserTextPositions(),
       origin: editing,
+      pasteOrigin: imported,
       nextContext: () => ({
         actorId: "actor-a",
         effectId: `ime-final-${published.length}`,
@@ -774,6 +801,7 @@ describe("direct ProseMirror browser qualification", () => {
       readCurrentBuffer: () => current,
       textPositions: browserTextPositions(),
       origin: editing,
+      pasteOrigin: imported,
       nextContext: () => ({
         actorId: "actor-a",
         effectId: `ime-race-${published.length}`,
@@ -818,6 +846,7 @@ describe("direct ProseMirror browser qualification", () => {
       readCurrentBuffer: () => current,
       textPositions: browserTextPositions(),
       origin: editing,
+      pasteOrigin: imported,
       nextContext: () => ({ actorId: "actor-a", effectId: "stale-ime" }),
       publish: (change) => {
         published.push(change);
@@ -854,6 +883,7 @@ describe("direct ProseMirror browser qualification", () => {
       readCurrentBuffer: () => current,
       textPositions: browserTextPositions(),
       origin: editing,
+      pasteOrigin: imported,
       nextContext: () => ({ actorId: "actor-a", effectId: "stale-flush" }),
       publish: (change) => {
         current = applyPublishedChange(current, change);
@@ -895,6 +925,7 @@ describe("direct ProseMirror browser qualification", () => {
       readCurrentBuffer: () => current,
       textPositions: positions,
       origin: editing,
+      pasteOrigin: imported,
       nextContext: () => ({
         actorId: "actor-a",
         effectId: `remote-${published.length}`,
@@ -932,6 +963,7 @@ describe("direct ProseMirror browser qualification", () => {
       readCurrentBuffer: () => current,
       textPositions: browserTextPositions(),
       origin: editing,
+      pasteOrigin: imported,
       nextContext: () => ({ actorId: "actor-a", effectId: "mark" }),
       publish: (change) => published.push(change),
     });
@@ -964,6 +996,7 @@ describe("direct ProseMirror browser qualification", () => {
       readCurrentBuffer: () => current,
       textPositions: browserTextPositions(),
       origin: editing,
+      pasteOrigin: imported,
       nextContext: () => ({
         actorId: "actor-a",
         effectId: `clipboard-${published.length}`,
@@ -976,7 +1009,6 @@ describe("direct ProseMirror browser qualification", () => {
         documentId,
         originCatalog: new Map([[original.id, original]]),
         trustedCopies: new Map(),
-        fallbackOrigin: imported,
         limits: { maxEncodedLength: 4096, maxSpans: 8, maxTextLength: 64 },
         nextCopyReference: () => "historical-copy-0",
         isStableSourceReference: (reference) =>
@@ -1045,6 +1077,60 @@ describe("direct ProseMirror browser qualification", () => {
     mount.remove();
   });
 
+  it("uses explicit imported Origin for plain paste without private clipboard support", () => {
+    const mount = document.createElement("div");
+    document.body.append(mount);
+    let current: EditorTextBuffer = {
+      text: "alpha",
+      spans: [{ text: "alpha", origin: original }],
+    };
+    const published: IntegratedDocumentChange<never>[] = [];
+    const editor = mountProseMirrorEditor<never>({
+      element: mount,
+      inlineContentId: contentId,
+      buffer: current,
+      readCurrentBuffer: () => current,
+      textPositions: browserTextPositions(),
+      origin: editing,
+      pasteOrigin: imported,
+      nextContext: () => ({
+        actorId: "actor-a",
+        effectId: `plain-${published.length}`,
+      }),
+      publish: (change) => {
+        published.push(change);
+        current = applyPublishedChange(current, change);
+      },
+    });
+    editor.view.dispatch(
+      editor.view.state.tr.setSelection(
+        TextSelection.create(editor.view.state.doc, 5),
+      ),
+    );
+    const pasted = new DataTransfer();
+    pasted.setData("text/plain", "?");
+    editor.view.dom.dispatchEvent(clipboardEvent("paste", pasted));
+    expect(current).toEqual({
+      text: "alpha?",
+      spans: [
+        { text: "alpha", origin: original },
+        { text: "?", origin: imported },
+      ],
+    });
+    editor.view.dispatch(
+      editor.view.state.tr.setSelection(
+        TextSelection.create(editor.view.state.doc, 5, 6),
+      ),
+    );
+    const cut = new DataTransfer();
+    editor.view.dom.dispatchEvent(clipboardEvent("cut", cut));
+    expect(cut.getData("text/plain")).toBe("?");
+    expect(current.text).toBe("alpha");
+    expect(published).toHaveLength(2);
+    editor.unmount();
+    mount.remove();
+  });
+
   it("keeps ordinary clipboard behavior when private transport is unavailable", () => {
     const mount = document.createElement("div");
     document.body.append(mount);
@@ -1060,6 +1146,7 @@ describe("direct ProseMirror browser qualification", () => {
       readCurrentBuffer: () => current,
       textPositions: browserTextPositions(),
       origin: editing,
+      pasteOrigin: imported,
       nextContext: () => ({ actorId: "actor-a", effectId: "transport" }),
       publish: (change) => {
         published.push(change);
@@ -1069,7 +1156,6 @@ describe("direct ProseMirror browser qualification", () => {
         documentId,
         originCatalog: new Map([[original.id, original]]),
         trustedCopies: new Map(),
-        fallbackOrigin: imported,
         limits: { maxEncodedLength: 4096, maxSpans: 8, maxTextLength: 64 },
         nextCopyReference: () => "historical-copy-transport",
         isStableSourceReference: () => true,
