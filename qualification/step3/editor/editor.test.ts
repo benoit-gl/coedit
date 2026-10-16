@@ -108,7 +108,9 @@ for (const factory of factories) {
       expect(carrier.effects()).toEqual(effects);
       editor.undo(context("undo-after-empty"));
       expect(readEditorText(carrier, contentId).text).toBe("alpha");
-      expect(() => editor.undo(context("extra-undo"))).toThrow(/Nothing to undo/u);
+      expect(() => editor.undo(context("extra-undo"))).toThrow(
+        /Nothing to undo/u,
+      );
       editor.replaceAttributedSelection(1, 4, [], context("delete-paste"));
       expect(readEditorText(carrier, contentId).text).toBe("aa");
       editor.undo(context("undo-delete"));
