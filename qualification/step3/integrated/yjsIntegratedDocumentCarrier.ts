@@ -870,6 +870,8 @@ function preparePayloadChanges(
         );
       if (change.kind === "insert-text") {
         assertTextOffset(change.offset, payload.text);
+        if (change.text.length === 0)
+          throw new TypeError("Text insertion requires nonempty text.");
         assertYjsExactText(change.text);
         const text =
           payload.text.slice(0, change.offset) +

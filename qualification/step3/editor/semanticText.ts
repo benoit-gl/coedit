@@ -424,6 +424,7 @@ export class QualificationTextEditor<Position> {
       );
     const before = readEditorText(this.carrier, this.inlineContentId);
     const after = attributedInsertion(before, start, end, text, origin);
+    if (start === end && text.length === 0) return;
     const operations = [
       {
         start,
@@ -446,6 +447,7 @@ export class QualificationTextEditor<Position> {
     this.requireNoComposition();
     const before = readEditorText(this.carrier, this.inlineContentId);
     const after = spliceAttributedText(before, start, end, insertion);
+    if (start === end && insertion.length === 0) return;
     const expectedText = insertion.map((span) => span.text).join("");
     const operations = [{ start, end, insertion }];
     this.publish(before, after, context, operations);

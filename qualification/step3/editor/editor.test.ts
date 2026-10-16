@@ -96,6 +96,25 @@ for (const factory of factories) {
       );
     });
 
+    it("ignores empty collapsed actions without a phantom undo", () => {
+      const carrier = seeded();
+      const editor = new QualificationTextEditor(carrier, contentId);
+      editor.replaceSelection(5, 5, "!", editing, context("insert"));
+      const before = carrier.snapshot();
+      const effects = carrier.effects();
+      editor.replaceSelection(2, 2, "", editing, context("empty-type"));
+      editor.replaceAttributedSelection(2, 2, [], context("empty-paste"));
+      expect(carrier.snapshot()).toEqual(before);
+      expect(carrier.effects()).toEqual(effects);
+      editor.undo(context("undo-after-empty"));
+      expect(readEditorText(carrier, contentId).text).toBe("alpha");
+      expect(() => editor.undo(context("extra-undo"))).toThrow(/Nothing to undo/u);
+      editor.replaceAttributedSelection(1, 4, [], context("delete-paste"));
+      expect(readEditorText(carrier, contentId).text).toBe("aa");
+      editor.undo(context("undo-delete"));
+      expect(readEditorText(carrier, contentId).text).toBe("alpha");
+    });
+
     it("preserves the intended position for a same-Origin insertion", () => {
       const carrier = seeded();
       const editor = new QualificationTextEditor(carrier, contentId);

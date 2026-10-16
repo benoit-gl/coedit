@@ -10,7 +10,9 @@ integrated structural/payload transaction seam. It preserves fine-grained Origin
 for untouched text. Text insertion, deletion, replacement, and attributed private
 paste use one carrier change with one qualification actor/effect context. IME
 updates remain transient until a complete composition is submitted. Undo and redo
-submit new semantic operations; they never rewind carrier state.
+submit new semantic operations; they never rewind carrier state. Empty insertion
+at a collapsed selection is ignored by the editor; both candidate carriers
+reject an empty fine-grained insertion command.
 
 For a pure text insertion, the qualification decision is to retain a
 candidate-native anchor attached to the first inserted character and the

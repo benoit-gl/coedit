@@ -261,6 +261,38 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
+    it(`ignores empty collapsed paste on ${factory.candidate}`, async () => {
+      const fixture = mountCarrierEditor(factory);
+      fixture.editor.view.dispatch(
+        fixture.editor.view.state.tr.setSelection(
+          TextSelection.create(fixture.editor.view.state.doc, 5),
+        ),
+      );
+      await userEvent.click(fixture.editor.view.dom);
+      await userEvent.keyboard("!");
+      const before = fixture.carrier.snapshot();
+      const count = fixture.published.length;
+      fixture.editor.view.dom.dispatchEvent(
+        clipboardEvent("paste", new DataTransfer()),
+      );
+      expect(fixture.carrier.snapshot()).toEqual(before);
+      expect(fixture.published).toHaveLength(count);
+      fixture.editor.undo();
+      expect(readEditorText(fixture.carrier, contentId).text).toBe("alpha");
+      fixture.editor.view.dispatch(
+        fixture.editor.view.state.tr.setSelection(
+          TextSelection.create(fixture.editor.view.state.doc, 1, 4),
+        ),
+      );
+      fixture.editor.view.dom.dispatchEvent(
+        clipboardEvent("paste", new DataTransfer()),
+      );
+      expect(readEditorText(fixture.carrier, contentId).text).toBe("aa");
+      fixture.editor.undo();
+      expect(readEditorText(fixture.carrier, contentId).text).toBe("alpha");
+      unmountCarrierEditor(fixture);
+    });
+
     it(`publishes one IME action through ${factory.candidate}`, async () => {
       const fixture = mountCarrierEditor(factory);
       fixture.editor.view.dom.dispatchEvent(

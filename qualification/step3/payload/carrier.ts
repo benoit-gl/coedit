@@ -52,7 +52,7 @@ export interface PayloadCarrier {
   /** Projects a detached carrier-neutral payload value. */
   snapshot(): QualificationPayloadSnapshot;
 
-  /** Inserts text with explicit protected Origin. */
+  /** Inserts nonempty text with explicit protected Origin; rejects empty text. */
   insertText(offset: number, text: string, origin: QualificationOrigin): void;
 
   /** Deletes one native-string UTF-16 range. */

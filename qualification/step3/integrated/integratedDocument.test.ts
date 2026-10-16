@@ -109,6 +109,38 @@ for (const factory of factories) {
       expect(carrier.snapshot()).toEqual(beforePlacementFailure);
     });
 
+    it("rejects an empty insertion atomically, including mixed changes", () => {
+      const carrier = seeded(factory);
+      const before = carrier.snapshot();
+      const encoded = carrier.encode();
+      const effects = carrier.effects();
+      expect(() =>
+        carrier.applyChange({
+          placements: [{ blockId: blockB, placement: position(2, 1) }],
+          payloads: [
+            {
+              kind: "insert-text",
+              inlineContentId: textId,
+              offset: 0,
+              text: "x",
+              origin: imported,
+            },
+            {
+              kind: "insert-text",
+              inlineContentId: textId,
+              offset: 1,
+              text: "",
+              origin: human,
+            },
+          ],
+          context: { actorId: "actor-a", effectId: "empty-insertion" },
+        }),
+      ).toThrow(/nonempty text/u);
+      expect(carrier.snapshot()).toEqual(before);
+      expect(carrier.effects()).toEqual(effects);
+      expect(carrier.encode()).toEqual(encoded);
+    });
+
     it("creates immutable Block-local ownership and hides deleted Blocks atomically", () => {
       const carrier = seeded(factory);
       expect(carrier.snapshot().inlineContentOwners).toEqual(

@@ -75,7 +75,7 @@ export interface IntegratedTextInsertion {
   readonly inlineContentId: InlineContentId;
   /** Native-string UTF-16 insertion offset. */
   readonly offset: number;
-  /** Inserted native string. */
+  /** Nonempty inserted native string; empty insertion is invalid. */
   readonly text: string;
   /** Origin assigned to inserted material. */
   readonly origin: QualificationOrigin;

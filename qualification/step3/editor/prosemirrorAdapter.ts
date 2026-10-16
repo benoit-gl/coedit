@@ -720,6 +720,7 @@ export function mountProseMirrorEditor<Position>(
       clipboard.limits,
     );
     const { from, to } = state.selection;
+    if (from === to && decoded.text.length === 0) return true;
     const before = canonical;
     const after = spliceAttributedText(
       before,

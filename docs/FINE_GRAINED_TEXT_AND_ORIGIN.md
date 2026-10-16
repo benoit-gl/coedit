@@ -122,7 +122,9 @@ text references. It includes behavior equivalent to:
 - apply whole-payload replacement through the universal coarse boundary.
 
 The exact public command names and TypeScript shapes remain implementation details until their implementation step
-freezes them.
+freezes them. A text insertion must contain a nonempty native string; empty insertion is invalid and fails atomically.
+An editor ignores empty text at a collapsed selection. Empty fine-grained payloads remain valid, and replacing a
+nonempty selection with empty text is a deletion.
 
 Fine-grained operations must fail explicitly when the target payload's normalized `type/subtype` is not in the
 compile-time allowlist. They do not inspect the text or bytes to infer a capability.

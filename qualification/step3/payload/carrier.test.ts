@@ -76,6 +76,16 @@ for (const factory of factories) {
       });
     });
 
+    it("rejects empty insertion without mutating state", () => {
+      const carrier = factory.createText("text/plain", human);
+      carrier.insertText(0, "alpha", human);
+      const before = carrier.snapshot();
+      const encoded = carrier.encode();
+      expect(() => carrier.insertText(2, "", human)).toThrow(/nonempty text/u);
+      expect(carrier.snapshot()).toEqual(before);
+      expect(carrier.encode()).toEqual(encoded);
+    });
+
     it("rejects lossily represented splice results atomically", () => {
       const carrier = factory.createText("text/plain", human);
       carrier.insertText(0, "😀", human);

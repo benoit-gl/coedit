@@ -111,9 +111,8 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
     assertTextOffset(offset, snapshot.text);
     assertAutomergeExactText(text);
     const encodedOrigin = encodeQualificationOrigin(origin);
-    if (text.length === 0) {
-      return;
-    }
+    if (text.length === 0)
+      throw new TypeError("Text insertion requires nonempty text.");
     assertAutomergeExactText(
       snapshot.text.slice(0, offset) + text + snapshot.text.slice(offset),
     );

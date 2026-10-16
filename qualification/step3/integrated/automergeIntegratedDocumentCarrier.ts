@@ -596,6 +596,8 @@ function validateChange<Position>(
         );
       if (update.kind === "insert-text") {
         assertTextOffset(update.offset, payload.text);
+        if (update.text.length === 0)
+          throw new TypeError("Text insertion requires nonempty text.");
         assertAutomergeExactText(update.text);
         const text =
           payload.text.slice(0, update.offset) +
