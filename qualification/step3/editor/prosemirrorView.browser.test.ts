@@ -323,6 +323,33 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
+    it(`represents multiline plain paste with hard breaks on ${factory.candidate}`, () => {
+      const fixture = mountCarrierEditor(factory, "ab");
+      const { view } = fixture.editor;
+      view.dispatch(
+        view.state.tr.setSelection(TextSelection.create(view.state.doc, 1)),
+      );
+      const pasted = new DataTransfer();
+      pasted.setData("text/plain", "x\ny");
+      view.dom.dispatchEvent(clipboardEvent("paste", pasted));
+      expect(readEditorText(fixture.carrier, contentId)).toEqual({
+        text: "ax\nyb",
+        spans: [
+          { text: "a", origin: original },
+          { text: "x\ny", origin: imported },
+          { text: "b", origin: original },
+        ],
+      });
+      expect(view.state.doc.child(1).type.name).toBe("hard_break");
+      expect(view.dom.querySelector("br")).not.toBeNull();
+      expect(
+        ProseMirrorDOMParser.fromSchema(qualificationProseMirrorSchema)
+          .parse(view.dom)
+          .eq(view.state.doc),
+      ).toBe(true);
+      unmountCarrierEditor(fixture);
+    });
+
     it(`publishes one IME action through ${factory.candidate}`, async () => {
       const fixture = mountCarrierEditor(factory);
       fixture.editor.view.dom.dispatchEvent(

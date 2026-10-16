@@ -784,7 +784,11 @@ export function mountProseMirrorEditor<Position>(
       resetViewToCurrent();
       throw error;
     }
-    const transaction = state.tr.insertText(decoded.text, from, to);
+    const transaction = state.tr.replaceWith(
+      from,
+      to,
+      documentFromNativeText(decoded.text).content,
+    );
     state = state.apply(transaction);
     view.updateState(state);
     return true;
