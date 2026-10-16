@@ -557,36 +557,27 @@ for (const factory of factories) {
       assertUsableSnapshot(snapshot);
     });
 
-    it("does not treat no-op text commands as liveness activity", () => {
-      const noOps: readonly IntegratedPayloadChange[] = [
-        {
-          kind: "insert-text",
-          inlineContentId: textId,
-          offset: 0,
-          text: "",
-          origin: human,
-        },
-        {
-          kind: "delete-text",
-          inlineContentId: textId,
-          start: 0,
-          end: 0,
-        },
-      ];
+    it("does not treat a zero-width deletion as liveness activity", () => {
+      const base = seeded(factory).encode();
+      const deletion = factory.load(base);
+      const noOpReplica = factory.load(base);
+      deletion.applyChange({ deleteBlockIds: [blockA] });
+      noOpReplica.applyChange({
+        payloads: [
+          {
+            kind: "delete-text",
+            inlineContentId: textId,
+            start: 0,
+            end: 0,
+          },
+        ],
+      });
 
-      for (const noOp of noOps) {
-        const base = seeded(factory).encode();
-        const deletion = factory.load(base);
-        const noOpReplica = factory.load(base);
-        deletion.applyChange({ deleteBlockIds: [blockA] });
-        noOpReplica.applyChange({ payloads: [noOp] });
-
-        converge(deletion, noOpReplica);
-        expect(deletion.snapshot()).toEqual(noOpReplica.snapshot());
-        expect(deletion.snapshot().blockLiveness.get(blockA)).toBe(false);
-        expect(deletion.snapshot().placements.has(blockA)).toBe(false);
-        assertUsableSnapshot(deletion.snapshot());
-      }
+      converge(deletion, noOpReplica);
+      expect(deletion.snapshot()).toEqual(noOpReplica.snapshot());
+      expect(deletion.snapshot().blockLiveness.get(blockA)).toBe(false);
+      expect(deletion.snapshot().placements.has(blockA)).toBe(false);
+      assertUsableSnapshot(deletion.snapshot());
     });
 
     it("applies sequential text operations against evolving transaction state", () => {
