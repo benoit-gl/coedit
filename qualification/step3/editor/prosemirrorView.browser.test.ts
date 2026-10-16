@@ -263,11 +263,13 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
-    it(`round-trips rendered line breaks and edits beside them on ${factory.candidate}`, async () => {
+    it(`parses <br> and edits text on ${factory.candidate}`, async () => {
       const fixture = mountCarrierEditor(factory, "a\nb");
       const { view } = fixture.editor;
       expect(view.dom.querySelector("br")).not.toBeNull();
-      const parser = ProseMirrorDOMParser.fromSchema(qualificationProseMirrorSchema);
+      const parser = ProseMirrorDOMParser.fromSchema(
+        qualificationProseMirrorSchema,
+      );
       expect(parser.parse(view.dom).eq(view.state.doc)).toBe(true);
 
       await userEvent.click(view.dom);
