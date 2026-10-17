@@ -484,7 +484,7 @@ for (const factory of factories) {
 }
 
 describe("clipboard portability", () => {
-  it("preserves independent fragments from one source across editor instances", () => {
+  it("preserves two fragments from one source across instances", () => {
     const buffer = {
       text: "ab",
       spans: [
@@ -493,7 +493,7 @@ describe("clipboard portability", () => {
       ],
     };
     const first = encodePrivateClipboard(buffer, 0, 1, documentId, "version-1");
-    const second = encodePrivateClipboard(buffer, 1, 2, documentId, "version-1");
+    const other = encodePrivateClipboard(buffer, 1, 2, documentId, "version-1");
 
     // Only serialized clipboard data moves between instances.
     const receivingCatalog = new Map<string, QualificationOrigin>([
@@ -502,7 +502,7 @@ describe("clipboard portability", () => {
     ]);
     for (const [encoded, origin] of [
       [first, original],
-      [second, imported],
+      [other, imported],
     ] as const) {
       expect(
         decodePrivateClipboard(
