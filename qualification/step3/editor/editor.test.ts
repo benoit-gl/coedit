@@ -16,6 +16,7 @@ import {
   translateEditorText,
 } from "./semanticText.js";
 import { decodePrivateClipboard, encodePrivateClipboard } from "./clipboard.js";
+import type { QualificationOrigin } from "../payload/carrier.js";
 
 const rootId = parseBlockId("80000000-0000-4000-8000-000000000001");
 const contentId = parseInlineContentId("80000000-0000-4000-8000-000000000002");
@@ -410,18 +411,11 @@ for (const factory of factories) {
       );
       expect(source.plainText).toBe("lph");
       const originCatalog = new Map([[original.id, original]]);
-      const trustedCopies = new Map([
-        [
-          "source-effect",
-          { text: "lph", spans: [{ text: "lph", origin: original }] },
-        ],
-      ]);
       const accepted = decodePrivateClipboard(
         source.privateText,
         source.plainText,
         documentId,
         originCatalog,
-        trustedCopies,
         imported,
         limits,
       );
@@ -430,19 +424,20 @@ for (const factory of factories) {
         kind: "copy",
         reference: "source-effect",
       });
-      const forgedReceipt = decodePrivateClipboard(
+      // Clipboard attribution is a claim, not authenticated proof.
+      const modifiedClaim = decodePrivateClipboard(
         source.privateText.replace("lph", "xyz"),
         "xyz",
         documentId,
         originCatalog,
-        trustedCopies,
         imported,
         limits,
       );
-      expect(forgedReceipt).toEqual({
+      expect(modifiedClaim).toEqual({
         text: "xyz",
-        spans: [{ text: "xyz", origin: imported }],
-        privateOriginPreserved: false,
+        spans: [{ text: "xyz", origin: original }],
+        privateOriginPreserved: true,
+        source: { kind: "copy", reference: "source-effect" },
       });
       editor.replaceSelection(1, 4, "", editing, context("cut"));
       expect(readEditorText(carrier, contentId).text).toBe("aa");
@@ -466,6 +461,7 @@ for (const factory of factories) {
         JSON.stringify({ formatVersion: 9 }),
         source.privateText + " ".repeat(limits.maxEncodedLength),
         source.privateText.replace(documentId, otherDocumentId),
+        source.privateText.replace("lph", "xyz"),
         source.privateText.replace(original.id, "unknown-origin"),
         source.privateText.replace('"human"', '"ai"'),
       ]) {
@@ -474,7 +470,6 @@ for (const factory of factories) {
           source.plainText,
           documentId,
           originCatalog,
-          trustedCopies,
           imported,
           limits,
         );
@@ -487,6 +482,46 @@ for (const factory of factories) {
     });
   });
 }
+
+describe("clipboard portability", () => {
+  it("preserves independent fragments from one source across editor instances", () => {
+    const buffer = {
+      text: "ab",
+      spans: [
+        { text: "a", origin: original },
+        { text: "b", origin: imported },
+      ],
+    };
+    const first = encodePrivateClipboard(buffer, 0, 1, documentId, "version-1");
+    const second = encodePrivateClipboard(buffer, 1, 2, documentId, "version-1");
+
+    // Only serialized clipboard data moves between instances.
+    const receivingCatalog = new Map<string, QualificationOrigin>([
+      [original.id, { ...original }],
+      [imported.id, { ...imported }],
+    ]);
+    for (const [encoded, origin] of [
+      [first, original],
+      [second, imported],
+    ] as const) {
+      expect(
+        decodePrivateClipboard(
+          encoded.privateText,
+          encoded.plainText,
+          documentId,
+          receivingCatalog,
+          imported,
+          limits,
+        ),
+      ).toEqual({
+        text: encoded.plainText,
+        spans: [{ text: encoded.plainText, origin }],
+        privateOriginPreserved: true,
+        source: { kind: "copy", reference: "version-1" },
+      });
+    }
+  });
+});
 
 describe("clipboard admission", () => {
   it("refuses invalid limits and over-capacity or malformed private data without dropping plain text", () => {
@@ -504,7 +539,6 @@ describe("clipboard admission", () => {
         "abc",
         documentId,
         catalog,
-        new Map(),
         imported,
         {
           maxEncodedLength: -1,
@@ -524,7 +558,6 @@ describe("clipboard admission", () => {
           "abc",
           documentId,
           catalog,
-          new Map(),
           imported,
           candidate,
         ).privateOriginPreserved,
@@ -536,7 +569,6 @@ describe("clipboard admission", () => {
         "abc",
         documentId,
         catalog,
-        new Map(),
         imported,
         limits,
       ).spans,

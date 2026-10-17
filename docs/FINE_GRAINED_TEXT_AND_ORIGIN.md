@@ -193,7 +193,11 @@ The initial private clipboard type is `application/x-coedit-fragment+json`; its 
 `formatVersion`. Failure to write or read that custom type does not prevent ordinary clipboard behavior.
 
 The private representation is untrusted input even when it originated in Coedit. Validate its version, sizes, IDs,
-Origin references, and source relationship before use.
+Origin references, and source relationship before use. Origin is provenance metadata, not cryptographic proof of
+authorship. The private fragment must be self-contained and portable between instances of the same document, including
+across application restarts. It must not require a private copy receipt, originating editor session, or process-local
+registry. Stable source document/Version references may resolve against the target's durable document state; references
+to transient runtime state are not sufficient.
 
 **Maturity:** Pending selection.
 

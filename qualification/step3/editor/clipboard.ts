@@ -25,11 +25,11 @@ export interface PrivateClipboardLimits {
 export interface ClipboardText {
   /** Native string to insert, or ordinary plain-text fallback. */
   readonly text: string;
-  /** Exact text pieces with trusted or imported attribution. */
+  /** Exact text pieces with resolved or imported attribution. */
   readonly spans: readonly QualificationTextSpan[];
   /** Whether the validated same-document private data was accepted. */
   readonly privateOriginPreserved: boolean;
-  /** Stable source evidence supplied by the target at copy time. */
+  /** Durable source reference carried by a valid same-document fragment. */
   readonly source?: {
     /** Clipboard derivation relationship. */
     readonly kind: "copy";
@@ -44,14 +44,6 @@ export interface EncodedPrivateClipboard {
   readonly plainText: string;
   /** Versioned candidate private fragment. */
   readonly privateText: string;
-}
-
-/** Target-controlled receipt for one locally issued private clipboard copy. */
-export interface TrustedPrivateClipboardCopy {
-  /** Exact plain text admitted at copy time. */
-  readonly text: string;
-  /** Exact detached attributed spans admitted at copy time. */
-  readonly spans: readonly QualificationTextSpan[];
 }
 
 /** Serialize a same-document copy using source Origin without editor metadata. */
@@ -85,14 +77,14 @@ export function encodePrivateClipboard(
  *
  * On invalid, oversized, cross-document, or unresolved private input, use only
  * the plain-text fallback with caller-supplied imported or unknown Origin.
- * The catalog must come from the target carrier, never from clipboard data.
+ * The catalog must come from the target document, never from clipboard data.
+ * No copy-session receipt or originating editor state is required.
  */
 export function decodePrivateClipboard(
   privateText: string | undefined,
   plainText: string,
   targetDocumentId: DocumentId,
   originCatalog: ReadonlyMap<string, QualificationOrigin>,
-  trustedCopies: ReadonlyMap<string, TrustedPrivateClipboardCopy>,
   fallbackOrigin: QualificationOrigin,
   limits: PrivateClipboardLimits,
 ): ClipboardText {
@@ -149,13 +141,6 @@ export function decodePrivateClipboard(
     }
     if (combined !== plainText || combined.length > limits.maxTextLength)
       return fallback();
-    const trusted = trustedCopies.get(value.sourceReference);
-    if (
-      trusted === undefined ||
-      trusted.text !== combined ||
-      !sameSpans(trusted.spans, spans)
-    )
-      return fallback();
     return {
       text: combined,
       spans,
@@ -165,13 +150,6 @@ export function decodePrivateClipboard(
   } catch {
     return fallback();
   }
-}
-
-function sameSpans(
-  left: readonly QualificationTextSpan[],
-  right: readonly QualificationTextSpan[],
-): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
 }
 
 function isObject(value: unknown): value is Readonly<Record<string, unknown>> {

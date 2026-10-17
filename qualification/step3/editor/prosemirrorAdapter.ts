@@ -17,7 +17,6 @@ import {
   STEP3_PRIVATE_CLIPBOARD_TYPE,
   type ClipboardText,
   type PrivateClipboardLimits,
-  type TrustedPrivateClipboardCopy,
 } from "./clipboard.js";
 import {
   type EditorTextBuffer,
@@ -261,13 +260,11 @@ export interface ProseMirrorClipboardOptions {
   readonly documentId: DocumentId;
   /** Trusted target-side Origin catalog; clipboard data never supplies it. */
   readonly originCatalog: ReadonlyMap<string, QualificationOrigin>;
-  /** Target-controlled receipts for private copy gestures issued by this editor. */
-  readonly trustedCopies: Map<string, TrustedPrivateClipboardCopy>;
   /** Experimental admission limits; Gate B selects any final values. */
   readonly limits: PrivateClipboardLimits;
   /** Creates a stable source effect or retained historical-state token. */
   readonly nextCopyReference: () => string;
-  /** Verifies that a reference is durable carrier evidence, not a receipt key. */
+  /** Confirms that the copy source is retained in the document's durable state. */
   readonly isStableSourceReference: (reference: string) => boolean;
 }
 
@@ -712,14 +709,6 @@ export function mountProseMirrorEditor<Position>(
       return false;
     }
     writePrivateClipboardData(clipboardData, encoded.privateText);
-    clipboard.trustedCopies.set(sourceReference, {
-      text: encoded.plainText,
-      spans: sliceAttributedText(
-        canonical,
-        nativeOffset(from),
-        nativeOffset(to),
-      ),
-    });
     return true;
   }
 
@@ -746,7 +735,6 @@ export function mountProseMirrorEditor<Position>(
             plainText,
             clipboard.documentId,
             clipboard.originCatalog,
-            clipboard.trustedCopies,
             options.pasteOrigin,
             clipboard.limits,
           );

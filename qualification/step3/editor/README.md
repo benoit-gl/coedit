@@ -40,9 +40,14 @@ production editor binding.
 `clipboard.ts` tests a **candidate** private JSON text fragment with a
 `formatVersion`, source document/reference, and attributed text spans. Private
 input is always untrusted. It preserves Origin only for a same-document source
-whose Origin references match the target's trusted Origin catalog. Malformed,
-cross-document, unknown-Origin, or fixture-over-capacity fragments fall back to
-ordinary supplied plain text with imported/unknown Origin. The limits are
+whose Origin references match the target document's Origin catalog. The
+fragment is self-contained: no private receipt, copy registry, or originating
+editor session is needed to paste it, including after restart or transfer to
+another instance of the same document. The source reference must identify
+durable document data, not a transient process-local token. It records
+derivation, not authenticated authorship. Malformed, cross-document,
+unknown-Origin, or fixture-over-capacity fragments fall back to ordinary
+supplied plain text with imported/unknown Origin. The limits are
 explicit fixture inputs, not selected production acceptance numbers. HTML
 interpretation is outside this contract.
 

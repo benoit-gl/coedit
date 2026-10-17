@@ -173,6 +173,7 @@ function applyPublishedChange(
 function mountCarrierEditor(
   factory: IntegratedDocumentCarrierFactory<LocalDensePosition>,
   initialText = "alpha",
+  encoded?: Uint8Array,
 ): {
   readonly carrier: IntegratedDocumentCarrier<LocalDensePosition>;
   readonly editor: MountedProseMirrorEditor;
@@ -182,20 +183,22 @@ function mountCarrierEditor(
 } {
   const mount = document.createElement("div");
   document.body.append(mount);
-  const carrier = factory.create(rootId);
-  carrier.applyChange({
-    inlineContents: [{ inlineContentId: contentId, blockId: rootId }],
-    payloads: [
-      {
-        kind: "replace-text",
-        inlineContentId: contentId,
-        mediaType: "text/plain",
-        text: initialText,
-        origin: original,
-      },
-    ],
-    context: { actorId: "actor-a", effectId: "seed" },
-  });
+  const carrier =
+    encoded === undefined ? factory.create(rootId) : factory.load(encoded);
+  if (encoded === undefined)
+    carrier.applyChange({
+      inlineContents: [{ inlineContentId: contentId, blockId: rootId }],
+      payloads: [
+        {
+          kind: "replace-text",
+          inlineContentId: contentId,
+          mediaType: "text/plain",
+          text: initialText,
+          origin: original,
+        },
+      ],
+      context: { actorId: "actor-a", effectId: "seed" },
+    });
   let nextEffect = 0;
   let copySource: string | undefined;
   const published: IntegratedDocumentChange<LocalDensePosition>[] = [];
@@ -222,7 +225,6 @@ function mountCarrierEditor(
     clipboard: {
       documentId,
       originCatalog: new Map([[original.id, original]]),
-      trustedCopies: new Map(),
       limits: { maxEncodedLength: 4096, maxSpans: 8, maxTextLength: 64 },
       nextCopyReference: () => {
         copySource = carrier.captureHistoricalState();
@@ -516,7 +518,7 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
-    it(`preserves trusted clipboard Origin through ${factory.candidate}`, () => {
+    it(`preserves clipboard Origin through ${factory.candidate}`, () => {
       const fixture = mountCarrierEditor(factory);
       fixture.editor.view.dispatch(
         fixture.editor.view.state.tr.setSelection(
@@ -570,6 +572,39 @@ describe("direct ProseMirror browser qualification", () => {
         origin: imported,
       });
       unmountCarrierEditor(fixture);
+    });
+
+    it(`pastes the same private fragment after restart on ${factory.candidate}`, () => {
+      const first = mountCarrierEditor(factory);
+      first.editor.view.dispatch(
+        first.editor.view.state.tr.setSelection(
+          TextSelection.create(first.editor.view.state.doc, 1, 4),
+        ),
+      );
+      const copied = new DataTransfer();
+      first.editor.view.dom.dispatchEvent(clipboardEvent("copy", copied));
+      const source = first.copySource();
+      expect(source).toBeDefined();
+      const encoded = first.carrier.encode();
+      unmountCarrierEditor(first);
+
+      const second = mountCarrierEditor(factory, "alpha", encoded);
+      expect(second.copySource()).toBeUndefined();
+      second.editor.view.dispatch(
+        second.editor.view.state.tr.setSelection(
+          TextSelection.create(second.editor.view.state.doc, 5),
+        ),
+      );
+      second.editor.view.dom.dispatchEvent(clipboardEvent("paste", copied));
+      expect(readEditorText(second.carrier, contentId)).toEqual({
+        text: "alphalph",
+        spans: [{ text: "alphalph", origin: original }],
+      });
+      expect(second.published[0]?.context?.source).toEqual({
+        kind: "copy",
+        reference: source,
+      });
+      unmountCarrierEditor(second);
     });
 
     it(`keeps same-Origin paste at the selected offset on ${factory.candidate}`, () => {
@@ -1084,7 +1119,6 @@ describe("direct ProseMirror browser qualification", () => {
       clipboard: {
         documentId,
         originCatalog: new Map([[original.id, original]]),
-        trustedCopies: new Map(),
         limits: { maxEncodedLength: 4096, maxSpans: 8, maxTextLength: 64 },
         nextCopyReference: () => "historical-copy-0",
         isStableSourceReference: (reference) =>
@@ -1231,7 +1265,6 @@ describe("direct ProseMirror browser qualification", () => {
       clipboard: {
         documentId,
         originCatalog: new Map([[original.id, original]]),
-        trustedCopies: new Map(),
         limits: { maxEncodedLength: 4096, maxSpans: 8, maxTextLength: 64 },
         nextCopyReference: () => "historical-copy-transport",
         isStableSourceReference: () => true,
