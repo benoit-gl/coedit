@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { userEvent } from "vitest/browser";
+import { userEvent } from "@vitest/browser/context";
 import { DOMParser as ProseMirrorDOMParser } from "prosemirror-model";
 import { TextSelection } from "prosemirror-state";
 
