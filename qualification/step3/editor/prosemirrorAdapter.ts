@@ -380,18 +380,21 @@ export function mountProseMirrorEditor<Position>(
       requireMounted();
       state = state.apply(transaction);
       view.updateState(state);
-      if (
-        composition !== undefined &&
-        compositionEnding &&
-        transaction.getMeta("composition") === undefined
-      )
-        flushComposition(true);
       const before = composition?.after ?? canonical;
       const { after, operations } = nativeTransactionOperations(
         before,
         transaction,
         options.origin,
       );
+      // Selection and mark-only transactions cannot finalize an IME action.
+      // A deferred final composition text step may still follow them.
+      if (
+        composition !== undefined &&
+        compositionEnding &&
+        transaction.getMeta("composition") === undefined &&
+        operations.length > 0
+      )
+        flushComposition(true);
       if (operations.length === 0) return;
       try {
         if (composition === undefined)

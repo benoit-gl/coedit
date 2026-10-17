@@ -377,6 +377,54 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
+    it(`keeps deferred IME text after transient transactions on ${factory.candidate}`, async () => {
+      const fixture = mountCarrierEditor(factory);
+      const { view } = fixture.editor;
+      view.dom.dispatchEvent(new CompositionEvent("compositionstart"));
+      view.dispatch(view.state.tr.insertText("a", 5));
+      view.dom.dispatchEvent(new CompositionEvent("compositionend"));
+
+      // ProseMirror can publish selection and mark updates before its final
+      // composition mutation. Neither is a separate semantic text action.
+      view.dispatch(
+        view.state.tr.setSelection(TextSelection.atEnd(view.state.doc)),
+      );
+      view.dispatch(
+        view.state.tr.addMark(
+          0,
+          1,
+          qualificationProseMirrorSchema.marks.em.create(),
+        ),
+      );
+      expect(fixture.published).toHaveLength(0);
+
+      queueMicrotask(() =>
+        view.dispatch(
+          view.state.tr.insertText("b", 6).setMeta("composition", 1),
+        ),
+      );
+      await waitForCompositionFlush();
+      expect(fixture.published).toHaveLength(1);
+      expect(fixture.published[0]?.payloads).toEqual([
+        {
+          kind: "insert-text",
+          inlineContentId: contentId,
+          offset: 5,
+          text: "a",
+          origin: editing,
+        },
+        {
+          kind: "insert-text",
+          inlineContentId: contentId,
+          offset: 6,
+          text: "b",
+          origin: editing,
+        },
+      ]);
+      expect(readEditorText(fixture.carrier, contentId).text).toBe("alphaab");
+      unmountCarrierEditor(fixture);
+    });
+
     it(`refuses copy and cut until IME publication on ${factory.candidate}`, async () => {
       const fixture = mountCarrierEditor(factory);
       const view = fixture.editor.view;
