@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { userEvent } from "@vitest/browser/context";
+import { userEvent } from "vitest/browser";
 import { DOMParser as ProseMirrorDOMParser } from "prosemirror-model";
 import { TextSelection } from "prosemirror-state";
 
@@ -1056,14 +1056,21 @@ describe("direct ProseMirror browser qualification", () => {
     ]);
     editor.view.dom.dispatchEvent(new CompositionEvent("compositionend"));
 
-    expect(() =>
-      editor.view.dispatch(
-        editor.view.state.tr.setSelection(
-          TextSelection.create(editor.view.state.doc, 5),
-        ),
+    // Selection changes must not finalize or reject pending IME text.
+    editor.view.dispatch(
+      editor.view.state.tr.setSelection(
+        TextSelection.create(editor.view.state.doc, 5),
       ),
+    );
+    expect(rejected).toEqual([]);
+
+    // The next independent text edit must first publish the ended composition.
+    expect(() =>
+      editor.view.dispatch(editor.view.state.tr.insertText("?", 5)),
     ).toThrow(/stale canonical/u);
     expect(rejected).toHaveLength(1);
+    expect(current.text).toBe("Ralpha");
+    expect(editor.view.state.doc.textContent).toBe("Ralpha");
     editor.unmount();
     mount.remove();
   });
