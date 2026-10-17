@@ -109,6 +109,38 @@ for (const factory of factories) {
       expect(carrier.snapshot()).toEqual(beforePlacementFailure);
     });
 
+    it("rejects an empty insertion atomically, including mixed changes", () => {
+      const carrier = seeded(factory);
+      const before = carrier.snapshot();
+      const encoded = carrier.encode();
+      const effects = carrier.effects();
+      expect(() =>
+        carrier.applyChange({
+          placements: [{ blockId: blockB, placement: position(2, 1) }],
+          payloads: [
+            {
+              kind: "insert-text",
+              inlineContentId: textId,
+              offset: 0,
+              text: "x",
+              origin: imported,
+            },
+            {
+              kind: "insert-text",
+              inlineContentId: textId,
+              offset: 1,
+              text: "",
+              origin: human,
+            },
+          ],
+          context: { actorId: "actor-a", effectId: "empty-insertion" },
+        }),
+      ).toThrow(/nonempty text/u);
+      expect(carrier.snapshot()).toEqual(before);
+      expect(carrier.effects()).toEqual(effects);
+      expect(carrier.encode()).toEqual(encoded);
+    });
+
     it("creates immutable Block-local ownership and hides deleted Blocks atomically", () => {
       const carrier = seeded(factory);
       expect(carrier.snapshot().inlineContentOwners).toEqual(
@@ -525,36 +557,27 @@ for (const factory of factories) {
       assertUsableSnapshot(snapshot);
     });
 
-    it("does not treat no-op text commands as liveness activity", () => {
-      const noOps: readonly IntegratedPayloadChange[] = [
-        {
-          kind: "insert-text",
-          inlineContentId: textId,
-          offset: 0,
-          text: "",
-          origin: human,
-        },
-        {
-          kind: "delete-text",
-          inlineContentId: textId,
-          start: 0,
-          end: 0,
-        },
-      ];
+    it("does not treat a zero-width deletion as liveness activity", () => {
+      const base = seeded(factory).encode();
+      const deletion = factory.load(base);
+      const noOpReplica = factory.load(base);
+      deletion.applyChange({ deleteBlockIds: [blockA] });
+      noOpReplica.applyChange({
+        payloads: [
+          {
+            kind: "delete-text",
+            inlineContentId: textId,
+            start: 0,
+            end: 0,
+          },
+        ],
+      });
 
-      for (const noOp of noOps) {
-        const base = seeded(factory).encode();
-        const deletion = factory.load(base);
-        const noOpReplica = factory.load(base);
-        deletion.applyChange({ deleteBlockIds: [blockA] });
-        noOpReplica.applyChange({ payloads: [noOp] });
-
-        converge(deletion, noOpReplica);
-        expect(deletion.snapshot()).toEqual(noOpReplica.snapshot());
-        expect(deletion.snapshot().blockLiveness.get(blockA)).toBe(false);
-        expect(deletion.snapshot().placements.has(blockA)).toBe(false);
-        assertUsableSnapshot(deletion.snapshot());
-      }
+      converge(deletion, noOpReplica);
+      expect(deletion.snapshot()).toEqual(noOpReplica.snapshot());
+      expect(deletion.snapshot().blockLiveness.get(blockA)).toBe(false);
+      expect(deletion.snapshot().placements.has(blockA)).toBe(false);
+      assertUsableSnapshot(deletion.snapshot());
     });
 
     it("applies sequential text operations against evolving transaction state", () => {

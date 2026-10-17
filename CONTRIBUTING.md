@@ -31,7 +31,8 @@ npm run build
 ```
 
 CI runs the same sequence and then runs `npm run check` again after the build to verify that generated output does not
-affect source checks.
+affect source checks. CI also runs `npm run test:browser` in Chromium. The browser suite is a separate required
+qualification check; keep browser-specific assertions limited to behavior that cannot be proved at the API layer.
 
 Verification claims must describe evidence that actually ran against the stated revision. Do not describe work as
 complete when a required gate has not run successfully. If verification cannot run because of an external limitation,

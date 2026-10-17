@@ -107,9 +107,8 @@ export class YjsPayloadCarrier implements PayloadCarrier {
     assertTextOffset(offset, snapshot.text);
     assertYjsExactText(inserted);
     const encodedOrigin = encodeQualificationOrigin(origin);
-    if (inserted.length === 0) {
-      return;
-    }
+    if (inserted.length === 0)
+      throw new TypeError("Text insertion requires nonempty text.");
     if (
       requiresYjsTextRewrite(
         snapshot.text,
