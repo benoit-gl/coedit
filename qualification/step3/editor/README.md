@@ -49,8 +49,7 @@ derivation only when the receiving document can resolve the source against
 retained state; an unresolved source claim is omitted without discarding
 separately validated same-document Origin. This is not authenticated authorship.
 Malformed, cross-document, unknown-Origin, or fixture-over-capacity fragments
-fall back to ordinary
-supplied plain text with imported/unknown Origin. The limits are
+fall back to ordinary supplied plain text with imported/unknown Origin. The limits are
 explicit fixture inputs, not selected production acceptance numbers. HTML
 interpretation is outside this contract.
 

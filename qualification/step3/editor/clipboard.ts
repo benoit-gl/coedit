@@ -153,13 +153,14 @@ export function decodePrivateClipboard(
     } catch {
       // A stale or unresolvable historical reference has no valid derivation.
     }
+    const source = sourceIsRetained
+      ? { kind: "copy" as const, reference: value.sourceReference }
+      : undefined;
     return {
       text: combined,
       spans,
       privateOriginPreserved: true,
-      ...(sourceIsRetained
-        ? { source: { kind: "copy" as const, reference: value.sourceReference } }
-        : {}),
+      ...(source === undefined ? {} : { source }),
     };
   } catch {
     return fallback();
