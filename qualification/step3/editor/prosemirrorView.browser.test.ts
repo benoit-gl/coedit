@@ -1337,6 +1337,65 @@ describe("direct ProseMirror browser qualification", () => {
     mount.remove();
   });
 
+  it("keeps plain Copy and Cut when private source resolution fails", () => {
+    for (const sourceFailure of ["throws", "unresolved"] as const) {
+      const mount = document.createElement("div");
+      document.body.append(mount);
+      let current: EditorTextBuffer = {
+        text: "alpha",
+        spans: [{ text: "alpha", origin: original }],
+      };
+      const published: IntegratedDocumentChange<never>[] = [];
+      const editor = mountProseMirrorEditor<never>({
+        element: mount,
+        inlineContentId: contentId,
+        buffer: current,
+        readCurrentBuffer: () => current,
+        textPositions: browserTextPositions(),
+        origin: editing,
+        pasteOrigin: imported,
+        nextContext: () => ({
+          actorId: "actor-a",
+          effectId: `source-failure-${sourceFailure}`,
+        }),
+        publish: (change) => {
+          published.push(change);
+          current = applyPublishedChange(current, change);
+        },
+        clipboard: {
+          documentId,
+          originCatalog: new Map([[original.id, original]]),
+          limits: { maxEncodedLength: 4096, maxSpans: 8, maxTextLength: 64 },
+          nextCopyReference: () => {
+            if (sourceFailure === "throws")
+              throw new TypeError("Historical state is unavailable.");
+            return "unresolved-source";
+          },
+          isStableSourceReference: () => false,
+        },
+      });
+      editor.view.dispatch(
+        editor.view.state.tr.setSelection(
+          TextSelection.create(editor.view.state.doc, 1, 4),
+        ),
+      );
+      const copied = new DataTransfer();
+      editor.view.dom.dispatchEvent(clipboardEvent("copy", copied));
+      expect(copied.getData("text/plain")).toBe("lph");
+      expect(copied.getData(STEP3_PRIVATE_CLIPBOARD_TYPE)).toBe("");
+      expect(current.text).toBe("alpha");
+
+      const cut = new DataTransfer();
+      editor.view.dom.dispatchEvent(clipboardEvent("cut", cut));
+      expect(cut.getData("text/plain")).toBe("lph");
+      expect(cut.getData(STEP3_PRIVATE_CLIPBOARD_TYPE)).toBe("");
+      expect(current.text).toBe("aa");
+      expect(published).toHaveLength(1);
+      editor.unmount();
+      mount.remove();
+    }
+  });
+
   it("keeps ordinary clipboard behavior when private transport is unavailable", () => {
     const mount = document.createElement("div");
     document.body.append(mount);

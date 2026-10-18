@@ -687,39 +687,35 @@ export function mountProseMirrorEditor<Position>(
       resetViewToCurrent();
       throw new TypeError("Cannot copy from a stale editor projection.");
     }
-    const clipboard = options.clipboard;
-    if (clipboard === undefined) {
-      try {
-        clipboardData.setData(
-          "text/plain",
-          canonical.text.slice(nativeOffset(from), nativeOffset(to)),
-        );
-        return true;
-      } catch {
-        return false;
-      }
-    }
-    // The Step 3 retained-state surrogate can mutate carrier metadata even
-    // when the clipboard write later fails. Production Copy in Step 11 must
-    // instead reference existing durable data without a new state capture.
-    const sourceReference = clipboard.nextCopyReference();
-    if (!clipboard.isStableSourceReference(sourceReference))
-      throw new TypeError(
-        "Clipboard source reference is not durable evidence.",
-      );
-    const encoded = encodePrivateClipboard(
-      canonical,
-      nativeOffset(from),
-      nativeOffset(to),
-      clipboard.documentId,
-      sourceReference,
-    );
+    // Private clipboard metadata is optional. Its generation and source
+    // resolution must never prevent an ordinary plain-text Copy or Cut.
     try {
-      clipboardData.setData("text/plain", encoded.plainText);
+      clipboardData.setData(
+        "text/plain",
+        canonical.text.slice(nativeOffset(from), nativeOffset(to)),
+      );
     } catch {
       return false;
     }
-    writePrivateClipboardData(clipboardData, encoded.privateText);
+    const clipboard = options.clipboard;
+    if (clipboard === undefined) return true;
+    // The Step 3 retained-state surrogate can mutate carrier metadata even
+    // when its source capture fails. Production Copy in Step 11 must instead
+    // reference existing durable data without a new state capture.
+    try {
+      const sourceReference = clipboard.nextCopyReference();
+      if (!clipboard.isStableSourceReference(sourceReference)) return true;
+      const encoded = encodePrivateClipboard(
+        canonical,
+        nativeOffset(from),
+        nativeOffset(to),
+        clipboard.documentId,
+        sourceReference,
+      );
+      writePrivateClipboardData(clipboardData, encoded.privateText);
+    } catch {
+      // Unavailable private provenance cannot invalidate successful plain text.
+    }
     return true;
   }
 
