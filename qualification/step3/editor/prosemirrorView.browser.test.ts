@@ -13,6 +13,7 @@ import type {
   IntegratedDocumentChange,
   QualificationStableTextPosition,
 } from "../integrated/carrier.js";
+import type { QualificationTextSpan } from "../payload/carrier.js";
 import { createAutomergeIntegratedDocumentCarrierFactory } from "../integrated/automergeIntegratedDocumentCarrier.js";
 import type { IntegratedDocumentCarrierFactory } from "../integrated/carrier.js";
 import { createYjsIntegratedDocumentCarrierFactory } from "../integrated/yjsIntegratedDocumentCarrier.js";
@@ -22,6 +23,7 @@ import { STEP3_PRIVATE_CLIPBOARD_TYPE } from "./clipboard.js";
 import {
   type EditorTextBuffer,
   readEditorText,
+  sliceAttributedText,
   spliceAttributedText,
 } from "./semanticText.js";
 import {
@@ -170,6 +172,28 @@ function applyPublishedChange(
   };
 }
 
+/** Verify a copied fragment against retained source text and Origin runs. */
+function containsAttributedFragment(
+  source: {
+    readonly text: string;
+    readonly spans: readonly QualificationTextSpan[];
+  },
+  fragment: readonly QualificationTextSpan[],
+): boolean {
+  const text = fragment.map((span) => span.text).join("");
+  if (text.length === 0) return true;
+  for (let start = source.text.indexOf(text); start !== -1;) {
+    if (
+      JSON.stringify(
+        sliceAttributedText(source, start, start + text.length),
+      ) === JSON.stringify(fragment)
+    )
+      return true;
+    start = source.text.indexOf(text, start + 1);
+  }
+  return false;
+}
+
 function mountCarrierEditor(
   factory: IntegratedDocumentCarrierFactory<LocalDensePosition>,
   initialText = "alpha",
@@ -230,10 +254,13 @@ function mountCarrierEditor(
         copySource = carrier.captureHistoricalState();
         return copySource;
       },
-      isStableSourceReference: (reference) => {
+      isStableSourceFragment: (reference, spans) => {
         try {
-          carrier.materializeHistoricalState(reference);
-          return true;
+          const payload = carrier
+            .materializeHistoricalState(reference)
+            .payloads.get(contentId);
+          if (payload?.kind !== "text") return false;
+          return containsAttributedFragment(payload, spans);
         } catch {
           return false;
         }
@@ -692,6 +719,27 @@ describe("direct ProseMirror browser qualification", () => {
       expect(fixture.published[0]?.context).toEqual({
         actorId: "actor-a",
         effectId: `${factory.candidate}-browser-0`,
+      });
+
+      // A retained token alone cannot prove a fabricated fragment was copied
+      // from its state. Valid same-document Origin may still be preserved.
+      const mismatched = new DataTransfer();
+      mismatched.setData("text/plain", "xyz");
+      mismatched.setData(
+        STEP3_PRIVATE_CLIPBOARD_TYPE,
+        copied.getData(STEP3_PRIVATE_CLIPBOARD_TYPE).replace("lph", "xyz"),
+      );
+      fixture.editor.view.dispatch(
+        fixture.editor.view.state.tr.setSelection(
+          TextSelection.create(fixture.editor.view.state.doc, 8),
+        ),
+      );
+      fixture.editor.view.dom.dispatchEvent(
+        clipboardEvent("paste", mismatched),
+      );
+      expect(fixture.published[1]?.context).toEqual({
+        actorId: "actor-a",
+        effectId: `${factory.candidate}-browser-1`,
       });
       unmountCarrierEditor(fixture);
     });
@@ -1217,8 +1265,12 @@ describe("direct ProseMirror browser qualification", () => {
         originCatalog: new Map([[original.id, original]]),
         limits: { maxEncodedLength: 4096, maxSpans: 8, maxTextLength: 64 },
         nextCopyReference: () => "historical-copy-0",
-        isStableSourceReference: (reference) =>
-          reference === "historical-copy-0",
+        isStableSourceFragment: (reference, spans) =>
+          reference === "historical-copy-0" &&
+          spans.length === 1 &&
+          spans[0]?.text === "lph" &&
+          spans[0]?.origin.id === original.id &&
+          spans[0]?.origin.kind === original.kind,
       },
     });
 
@@ -1371,7 +1423,7 @@ describe("direct ProseMirror browser qualification", () => {
               throw new TypeError("Historical state is unavailable.");
             return "unresolved-source";
           },
-          isStableSourceReference: () => false,
+          isStableSourceFragment: () => false,
         },
       });
       editor.view.dispatch(
@@ -1422,7 +1474,7 @@ describe("direct ProseMirror browser qualification", () => {
         originCatalog: new Map([[original.id, original]]),
         limits: { maxEncodedLength: 4096, maxSpans: 8, maxTextLength: 64 },
         nextCopyReference: () => "historical-copy-transport",
-        isStableSourceReference: () => true,
+        isStableSourceFragment: () => true,
       },
     });
     const written = new Map<string, string>();

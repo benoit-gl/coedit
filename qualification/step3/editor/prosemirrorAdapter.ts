@@ -265,7 +265,10 @@ export interface ProseMirrorClipboardOptions {
   /** Creates a stable source effect or retained historical-state token. */
   readonly nextCopyReference: () => string;
   /** Resolves copy/paste source references against durable document state. */
-  readonly isStableSourceReference: (reference: string) => boolean;
+  readonly isStableSourceFragment: (
+    reference: string,
+    spans: readonly QualificationTextSpan[],
+  ) => boolean;
 }
 
 /** Mounted transient ProseMirror adapter with an explicit cleanup operation. */
@@ -704,7 +707,13 @@ export function mountProseMirrorEditor<Position>(
     // reference existing durable data without a new state capture.
     try {
       const sourceReference = clipboard.nextCopyReference();
-      if (!clipboard.isStableSourceReference(sourceReference)) return true;
+      if (
+        !clipboard.isStableSourceFragment(
+          sourceReference,
+          sliceAttributedText(canonical, nativeOffset(from), nativeOffset(to)),
+        )
+      )
+        return true;
       const encoded = encodePrivateClipboard(
         canonical,
         nativeOffset(from),
@@ -744,7 +753,7 @@ export function mountProseMirrorEditor<Position>(
             clipboard.originCatalog,
             options.pasteOrigin,
             clipboard.limits,
-            clipboard.isStableSourceReference,
+            clipboard.isStableSourceFragment,
           );
     const { from, to } = state.selection;
     if (from === to && decoded.text.length === 0) return true;

@@ -26,8 +26,22 @@ const original = { id: "human-original", kind: "human" as const };
 const editing = { id: "human-edit", kind: "human" as const };
 const imported = { id: "external-import", kind: "imported" as const };
 const context = (effectId: string) => ({ actorId: "actor-a", effectId });
-const isRetainedFixtureSource = (reference: string): boolean =>
-  reference === "source-effect" || reference === "version-1";
+const isRetainedFixtureSource = (
+  reference: string,
+  spans: readonly {
+    readonly text: string;
+    readonly origin: { readonly id: string; readonly kind: string };
+  }[],
+): boolean =>
+  (reference === "source-effect" &&
+    spans.length === 1 &&
+    spans[0]?.text === "lph" &&
+    spans[0]?.origin.id === original.id &&
+    spans[0]?.origin.kind === original.kind) ||
+  (reference === "version-1" &&
+    spans.length === 1 &&
+    ((spans[0]?.text === "a" && spans[0]?.origin.id === original.id) ||
+      (spans[0]?.text === "b" && spans[0]?.origin.id === imported.id)));
 const limits = { maxEncodedLength: 4096, maxSpans: 8, maxTextLength: 64 };
 
 const factories: readonly IntegratedDocumentCarrierFactory<LocalDensePosition>[] =
@@ -427,7 +441,8 @@ for (const factory of factories) {
         kind: "copy",
         reference: "source-effect",
       });
-      // Clipboard attribution is a claim, not authenticated proof.
+      // Clipboard attribution is a claim, not authenticated proof. Its copy
+      // derivation must still match the retained source fragment.
       const modifiedClaim = decodePrivateClipboard(
         source.privateText.replace("lph", "xyz"),
         "xyz",
@@ -441,7 +456,6 @@ for (const factory of factories) {
         text: "xyz",
         spans: [{ text: "xyz", origin: original }],
         privateOriginPreserved: true,
-        source: { kind: "copy", reference: "source-effect" },
       });
       editor.replaceSelection(1, 4, "", editing, context("cut"));
       expect(readEditorText(carrier, contentId).text).toBe("aa");
