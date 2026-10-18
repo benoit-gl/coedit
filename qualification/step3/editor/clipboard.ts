@@ -79,6 +79,8 @@ export function encodePrivateClipboard(
  * the plain-text fallback with caller-supplied imported or unknown Origin.
  * The catalog must come from the target document, never from clipboard data.
  * No copy-session receipt or originating editor state is required.
+ * Source references are checked against the receiving document's retained
+ * state; an unresolved source is omitted, not recorded as derivation.
  */
 export function decodePrivateClipboard(
   privateText: string | undefined,
@@ -87,6 +89,7 @@ export function decodePrivateClipboard(
   originCatalog: ReadonlyMap<string, QualificationOrigin>,
   fallbackOrigin: QualificationOrigin,
   limits: PrivateClipboardLimits,
+  isRetainedSourceReference: (reference: string) => boolean,
 ): ClipboardText {
   if (typeof plainText !== "string")
     throw new TypeError("Plain clipboard text must be native text.");
@@ -141,11 +144,22 @@ export function decodePrivateClipboard(
     }
     if (combined !== plainText || combined.length > limits.maxTextLength)
       return fallback();
+    // Origin resolution and derivation resolution are independent. A missing
+    // retained source cannot become a false source claim, but valid Origins
+    // remain usable without a copy receipt or the originating editor session.
+    let sourceIsRetained = false;
+    try {
+      sourceIsRetained = isRetainedSourceReference(value.sourceReference);
+    } catch {
+      // A stale or unresolvable historical reference has no valid derivation.
+    }
     return {
       text: combined,
       spans,
       privateOriginPreserved: true,
-      source: { kind: "copy", reference: value.sourceReference },
+      ...(sourceIsRetained
+        ? { source: { kind: "copy" as const, reference: value.sourceReference } }
+        : {}),
     };
   } catch {
     return fallback();

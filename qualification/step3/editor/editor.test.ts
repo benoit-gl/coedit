@@ -26,6 +26,8 @@ const original = { id: "human-original", kind: "human" as const };
 const editing = { id: "human-edit", kind: "human" as const };
 const imported = { id: "external-import", kind: "imported" as const };
 const context = (effectId: string) => ({ actorId: "actor-a", effectId });
+const isRetainedFixtureSource = (reference: string): boolean =>
+  reference === "source-effect" || reference === "version-1";
 const limits = { maxEncodedLength: 4096, maxSpans: 8, maxTextLength: 64 };
 
 const factories: readonly IntegratedDocumentCarrierFactory<LocalDensePosition>[] =
@@ -418,6 +420,7 @@ for (const factory of factories) {
         originCatalog,
         imported,
         limits,
+        isRetainedFixtureSource,
       );
       expect(accepted.privateOriginPreserved).toBe(true);
       expect(accepted.source).toEqual({
@@ -432,6 +435,7 @@ for (const factory of factories) {
         originCatalog,
         imported,
         limits,
+        isRetainedFixtureSource,
       );
       expect(modifiedClaim).toEqual({
         text: "xyz",
@@ -472,6 +476,7 @@ for (const factory of factories) {
           originCatalog,
           imported,
           limits,
+          isRetainedFixtureSource,
         );
         expect(fallback).toEqual({
           text: "lph",
@@ -512,6 +517,7 @@ describe("clipboard portability", () => {
           receivingCatalog,
           imported,
           limits,
+          isRetainedFixtureSource,
         ),
       ).toEqual({
         text: encoded.plainText,
@@ -519,6 +525,41 @@ describe("clipboard portability", () => {
         privateOriginPreserved: true,
         source: { kind: "copy", reference: "version-1" },
       });
+    }
+  });
+});
+
+describe("clipboard source validation", () => {
+  it("keeps valid Origins but omits an unresolved or unreadable derivation", () => {
+    const encoded = encodePrivateClipboard(
+      { text: "abc", spans: [{ text: "abc", origin: original }] },
+      0,
+      3,
+      documentId,
+      "expired-source",
+    );
+    const expected = {
+      text: "abc",
+      spans: [{ text: "abc", origin: original }],
+      privateOriginPreserved: true,
+    };
+    for (const isRetained of [
+      () => false,
+      () => {
+        throw new TypeError("Historical source is unavailable.");
+      },
+    ]) {
+      expect(
+        decodePrivateClipboard(
+          encoded.privateText,
+          encoded.plainText,
+          documentId,
+          new Map([[original.id, original]]),
+          imported,
+          limits,
+          isRetained,
+        ),
+      ).toEqual(expected);
     }
   });
 });
@@ -545,6 +586,7 @@ describe("clipboard admission", () => {
           maxSpans: 2,
           maxTextLength: 3,
         },
+        isRetainedFixtureSource,
       ),
     ).toThrow(/limits/u);
     for (const candidate of [
@@ -560,6 +602,7 @@ describe("clipboard admission", () => {
           catalog,
           imported,
           candidate,
+          isRetainedFixtureSource,
         ).privateOriginPreserved,
       ).toBe(false);
     }
@@ -571,6 +614,7 @@ describe("clipboard admission", () => {
         catalog,
         imported,
         limits,
+        isRetainedFixtureSource,
       ).spans,
     ).toEqual([{ text: "abc", origin: imported }]);
   });

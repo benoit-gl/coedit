@@ -230,7 +230,14 @@ function mountCarrierEditor(
         copySource = carrier.captureHistoricalState();
         return copySource;
       },
-      isStableSourceReference: (reference) => reference === copySource,
+      isStableSourceReference: (reference) => {
+        try {
+          carrier.materializeHistoricalState(reference);
+          return true;
+        } catch {
+          return false;
+        }
+      },
     },
   });
   return { carrier, editor, mount, copySource: () => copySource, published };
@@ -653,6 +660,40 @@ describe("direct ProseMirror browser qualification", () => {
         reference: source,
       });
       unmountCarrierEditor(second);
+    });
+
+    it(`omits unresolved source on ${factory.candidate}`, () => {
+      const fixture = mountCarrierEditor(factory);
+      fixture.editor.view.dispatch(
+        fixture.editor.view.state.tr.setSelection(
+          TextSelection.create(fixture.editor.view.state.doc, 1, 4),
+        ),
+      );
+      const copied = new DataTransfer();
+      fixture.editor.view.dom.dispatchEvent(clipboardEvent("copy", copied));
+      const forged = new DataTransfer();
+      forged.setData("text/plain", copied.getData("text/plain"));
+      forged.setData(
+        STEP3_PRIVATE_CLIPBOARD_TYPE,
+        copied
+          .getData(STEP3_PRIVATE_CLIPBOARD_TYPE)
+          .replace(fixture.copySource()!, "not-retained"),
+      );
+      fixture.editor.view.dispatch(
+        fixture.editor.view.state.tr.setSelection(
+          TextSelection.create(fixture.editor.view.state.doc, 5),
+        ),
+      );
+      fixture.editor.view.dom.dispatchEvent(clipboardEvent("paste", forged));
+      expect(readEditorText(fixture.carrier, contentId)).toEqual({
+        text: "alphalph",
+        spans: [{ text: "alphalph", origin: original }],
+      });
+      expect(fixture.published[0]?.context).toEqual({
+        actorId: "actor-a",
+        effectId: `${factory.candidate}-browser-0`,
+      });
+      unmountCarrierEditor(fixture);
     });
 
     it(`keeps same-Origin paste at the selected offset on ${factory.candidate}`, () => {

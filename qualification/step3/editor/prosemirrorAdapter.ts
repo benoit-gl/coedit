@@ -264,7 +264,7 @@ export interface ProseMirrorClipboardOptions {
   readonly limits: PrivateClipboardLimits;
   /** Creates a stable source effect or retained historical-state token. */
   readonly nextCopyReference: () => string;
-  /** Confirms that the copy source is retained in the document's durable state. */
+  /** Resolves copy/paste source references against durable document state. */
   readonly isStableSourceReference: (reference: string) => boolean;
 }
 
@@ -506,6 +506,9 @@ export function mountProseMirrorEditor<Position>(
         sameBuffer(pending.before, pending.after) ? [] : pending.operations,
       );
     } catch (error) {
+      // Step 3 limitation: a rejected pending IME edit is discarded and the
+      // callback is optional. Step 11 must define visible failure and retry
+      // behavior; this fixture only proves atomic stale-state rejection.
       composition = undefined;
       compositionEnding = false;
       resetViewToCurrent();
@@ -678,6 +681,8 @@ export function mountProseMirrorEditor<Position>(
     const clipboardData = event.clipboardData;
     if (clipboardData === null) return false;
     const { from, to } = state.selection;
+    // Step 3 limitation: a collapsed Copy/Cut may replace the clipboard with
+    // empty text. Step 11 decides the final no-selection browser behavior.
     if (!sameBuffer(options.readCurrentBuffer(), canonical)) {
       resetViewToCurrent();
       throw new TypeError("Cannot copy from a stale editor projection.");
@@ -694,6 +699,9 @@ export function mountProseMirrorEditor<Position>(
         return false;
       }
     }
+    // The Step 3 retained-state surrogate can mutate carrier metadata even
+    // when the clipboard write later fails. Production Copy in Step 11 must
+    // instead reference existing durable data without a new state capture.
     const sourceReference = clipboard.nextCopyReference();
     if (!clipboard.isStableSourceReference(sourceReference))
       throw new TypeError(
@@ -740,6 +748,7 @@ export function mountProseMirrorEditor<Position>(
             clipboard.originCatalog,
             options.pasteOrigin,
             clipboard.limits,
+            clipboard.isStableSourceReference,
           );
     const { from, to } = state.selection;
     if (from === to && decoded.text.length === 0) return true;
