@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      LORO_REFERENCE_ROOT: ${{ runner.temp }}/step3-loro
+      LORO_REFERENCE_ROOT: ${{ github.workspace }}/.step3-loro-reference
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
