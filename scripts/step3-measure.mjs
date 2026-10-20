@@ -1,3 +1,5 @@
+import { Buffer } from "node:buffer";
+import { URL } from "node:url";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { cpus, platform, release, arch, totalmem } from "node:os";
 import { performance } from "node:perf_hooks";
