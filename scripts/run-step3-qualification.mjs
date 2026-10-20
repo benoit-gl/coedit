@@ -12,7 +12,10 @@ const results = [];
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 for (const stage of stages) {
   const started = new Date().toISOString();
-  const execution = spawnSync(npm, stage.args, { stdio: "inherit" });
+  const execution = spawnSync(npm, stage.args, {
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  });
   results.push({
     stage: stage.name,
     started,
