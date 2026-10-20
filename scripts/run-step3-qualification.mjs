@@ -22,7 +22,11 @@ for (const stage of stages) {
   });
   await writeFile(
     "step3-evidence/runner.json",
-    JSON.stringify({ revision: process.env.GITHUB_SHA ?? null, stages: results }, null, 2) + "\n",
+    JSON.stringify(
+      { revision: process.env.GITHUB_SHA ?? null, stages: results },
+      null,
+      2,
+    ) + "\n",
   );
   if (execution.error || execution.status !== 0) {
     throw new Error(

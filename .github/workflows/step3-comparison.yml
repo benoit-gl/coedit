@@ -11,28 +11,6 @@ on:
 permissions:
   contents: read
 jobs:
-  format-capture:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-      - run: npm run bootstrap
-      - run: |
-          npm exec -- prettier --write qualification/step3/comparison/profile.json qualification/step3/comparison/RESULTS.md scripts/run-step3-qualification.mjs
-          echo CAPTURE_PROFILE_START
-          base64 -w0 qualification/step3/comparison/profile.json
-          echo
-          echo CAPTURE_PROFILE_END
-          echo CAPTURE_RESULTS_START
-          base64 -w0 qualification/step3/comparison/RESULTS.md
-          echo
-          echo CAPTURE_RESULTS_END
-          echo CAPTURE_RUNNER_START
-          base64 -w0 scripts/run-step3-qualification.mjs
-          echo
-          echo CAPTURE_RUNNER_END
   compare:
     runs-on: ubuntu-latest
     timeout-minutes: 60
