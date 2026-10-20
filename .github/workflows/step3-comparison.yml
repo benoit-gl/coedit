@@ -19,13 +19,6 @@ jobs:
         with:
           node-version: 24
       - run: npm run bootstrap
-      - name: Print formatted measurement script for delivery
-        run: |
-          npm exec -- prettier --write scripts/step3-measure.mjs
-          echo "FORMATTED_SCRIPT_BEGIN"
-          base64 -w0 scripts/step3-measure.mjs
-          echo
-          echo "FORMATTED_SCRIPT_END"
       - run: npm run test
       - run: npm run step3:measure
       - name: Persist raw comparison results
