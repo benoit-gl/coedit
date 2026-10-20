@@ -3,7 +3,7 @@ on:
   pull_request:
     paths:
       - "qualification/step3/**"
-      - "scripts/step3-measure.mjs"
+      - "scripts/step3-*.mjs"
       - ".github/workflows/step3-comparison.yml"
       - "package.json"
   workflow_dispatch:
@@ -13,6 +13,8 @@ jobs:
   compare:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      LORO_REFERENCE_ROOT: ${{ runner.temp }}/step3-loro
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -21,6 +23,9 @@ jobs:
       - run: npm run bootstrap
       - run: npm run test
       - run: npm run step3:measure
+      - name: Install isolated pinned Loro reference
+        run: npm install --prefix "$LORO_REFERENCE_ROOT" --no-package-lock --no-save loro-crdt@1.16.4
+      - run: npm run step3:loro
       - name: Persist raw comparison results
         if: always()
         uses: actions/upload-artifact@v5
