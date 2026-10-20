@@ -166,6 +166,94 @@ try {
         },
       );
     }
+    // The retained effect history is independent of the large-content input.
+    for (const count of profile.history.effects) {
+      const original = seeded(factory, "a").encode();
+      const samples = count >= 5000 ? 1 : profile.method.samples;
+      const durations = [];
+      const encodedSizes = [];
+      for (let iteration = 0; iteration < samples; iteration++) {
+        const carrier = factory.load(original);
+        const started = performance.now();
+        for (let index = 0; index < count; index++) {
+          carrier.applyChange({
+            payloads: [{
+              kind: "insert-text",
+              inlineContentId: id,
+              offset: index + 1,
+              text: "a",
+              origin,
+            }],
+            context: { actorId: "bench-author", effectId: "effect-" + index },
+          });
+        }
+        durations.push(performance.now() - started);
+        if (carrier.effects().size !== count) throw Error("Retained effect count differs");
+        encodedSizes.push(carrier.encode().length);
+      }
+      rows.push({
+        candidate: factory.candidate,
+        workload: "attributed-effect-history",
+        size: count,
+        samplesMs: durations,
+        medianMs: percentile(durations, 50),
+        p95Ms: percentile(durations, 95),
+        details: { encodedBytes: encodedSizes, samples, warmups: 0 },
+      });
+    }
+    for (const count of profile.content.opaqueBytes) {
+      const opaqueId = parseInlineContentId(uuid(3));
+      const seed = seeded(factory, "a");
+      seed.applyChange({
+        inlineContents: [{ inlineContentId: opaqueId, blockId: root }],
+        payloads: [{
+          kind: "replace-opaque",
+          inlineContentId: opaqueId,
+          mediaType: "application/example",
+          bytes: new Uint8Array(1),
+          origin,
+        }],
+      });
+      const initial = seed.encode();
+      const bytes = new Uint8Array(count).fill(42);
+      bench(factory.candidate, "opaque-replacement", count, () => {
+        const carrier = factory.load(initial);
+        return () => {
+          carrier.applyChange({
+            payloads: [{
+              kind: "replace-opaque",
+              inlineContentId: opaqueId,
+              mediaType: "application/example",
+              bytes,
+              origin,
+            }],
+          });
+          const projected = carrier.snapshot().payloads.get(opaqueId);
+          if (projected?.kind !== "opaque" || projected.bytes.length !== count)
+            throw Error("Opaque replacement differs");
+          return { encodedBytes: carrier.encode().length };
+        };
+      });
+    }
+    bench(factory.candidate, "replacement-alternative-retention", 2, () => {
+      const initial = seeded(factory, "abc").encode();
+      const left = factory.load(initial);
+      const right = factory.load(initial);
+      return () => {
+        left.applyChange({
+          payloads: [{ kind: "replace-text", inlineContentId: id, mediaType: "text/plain", text: "left", origin }],
+          context: { actorId: "left", effectId: "replacement" },
+        });
+        right.applyChange({
+          payloads: [{ kind: "replace-text", inlineContentId: id, mediaType: "text/markdown", text: "right", origin }],
+          context: { actorId: "right", effectId: "replacement" },
+        });
+        left.mergeEncoded(right.encode());
+        const effects = left.recordedPayloadEffects();
+        if (effects.length < 2) throw Error("Replacement alternatives not retained");
+        return { recordedEffects: effects.length, encodedBytes: left.encode().length };
+      };
+    });
     console.log(
       "STEP3_NATIVE_LIFECYCLE " +
         JSON.stringify({
