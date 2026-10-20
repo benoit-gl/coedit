@@ -1,4 +1,5 @@
 import { Buffer } from "node:buffer";
+import { spawnSync } from "node:child_process";
 import { URL } from "node:url";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { cpus, platform, release, arch, totalmem } from "node:os";
@@ -168,8 +169,47 @@ try {
     }
     // The retained effect history is independent of the large-content input.
     for (const count of profile.history.effects) {
+      if (count >= 5000) {
+        const started = performance.now();
+        const execution = spawnSync(
+          process.execPath,
+          ["scripts/step3-history.mjs"],
+          {
+            encoding: "utf8",
+            env: {
+              ...process.env,
+              STEP3_HISTORY_CANDIDATE: factory.candidate,
+              STEP3_HISTORY_COUNT: String(count),
+            },
+          },
+        );
+        const elapsed = performance.now() - started;
+        const match = execution.stdout.match(/^STEP3_HISTORY (.+)$/m);
+        const result = match ? JSON.parse(match[1]) : null;
+        rows.push({
+          candidate: factory.candidate,
+          workload: "attributed-effect-history",
+          size: count,
+          samplesMs: [elapsed],
+          medianMs: elapsed,
+          p95Ms: elapsed,
+          details: result
+            ? { ...result, samples: 1, warmups: 0 }
+            : {
+                outcome: "candidate-process-failure",
+                failureKind: execution.stderr.includes("rust_oom")
+                  ? "resource-exhaustion"
+                  : "runtime-failure",
+                exitCode: execution.status,
+                signal: execution.signal,
+                samples: 1,
+                warmups: 0,
+              },
+        });
+        continue;
+      }
       const original = seeded(factory, "a").encode();
-      const samples = count >= 5000 ? 1 : profile.method.samples;
+      const samples = profile.method.samples;
       const durations = [];
       const encodedSizes = [];
       for (let iteration = 0; iteration < samples; iteration++) {
