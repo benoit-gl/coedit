@@ -127,8 +127,8 @@ reuse across retained lifetimes. Whole-Version restore reactivates those same li
 records the accepted rationale.
 
 Step 3 is the current implementation step. Its payload, structural/allocator, and integrated collaborative-document
-foundation, integrated structural/payload semantics, historical lifecycle, and retained-state/Range lifecycle and application/editor qualification merge
-units are complete; comparative evidence is next, followed by Gate B. Step 3
+foundation, integrated structural/payload semantics, historical lifecycle, retained-state/Range lifecycle, and
+application/editor qualification merge units are complete; comparative evidence is next, followed by Gate B. Step 3
 qualifies the Yjs and Automerge candidates without also owning the complete production implementation. The payload suite
 covers allowlisted
 fine-grained text, representative generic opaque Media Types, universal whole-payload replacement, deterministic
