@@ -4,3 +4,4 @@ coverage
 docs/api
 pnpm-lock.yaml
 *.tsbuildinfo
+step3-evidence/

@@ -6,3 +6,4 @@ docs/api/
 .vite/
 *.tsbuildinfo
 .DS_Store
+step3-evidence/

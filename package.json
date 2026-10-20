@@ -28,7 +28,8 @@
     "check": "npm run format:check && npm run lint:markdown && npm run typecheck && npm run lint && npm run lint:deps && npm run docs:check && npm run test",
     "test:step3:payload": "vitest run qualification/step3/payload",
     "test:step3:structure": "vitest run qualification/step3/structure",
-    "test:step3:integrated": "vitest run qualification/step3/integrated"
+    "test:step3:integrated": "vitest run qualification/step3/integrated",
+    "step3:measure": "node scripts/step3-measure.mjs"
   },
   "dependencies": {
     "react": "19.2.8",
