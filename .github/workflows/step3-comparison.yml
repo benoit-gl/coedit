@@ -21,6 +21,17 @@ jobs:
         with:
           node-version: 24
       - run: npm run bootstrap
+      - name: Render formatted sources for delivery
+        run: |
+          npm exec -- prettier --write scripts/step3-measure.mjs scripts/step3-loro.mjs
+          echo FORMAT_SOURCE_MEASURE_START
+          base64 -w0 scripts/step3-measure.mjs
+          echo
+          echo FORMAT_SOURCE_MEASURE_END
+          echo FORMAT_SOURCE_LORO_START
+          base64 -w0 scripts/step3-loro.mjs
+          echo
+          echo FORMAT_SOURCE_LORO_END
       - run: npm run test
       - run: npm run step3:measure
       - name: Install isolated pinned Loro reference
