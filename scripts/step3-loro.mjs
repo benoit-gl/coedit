@@ -1,6 +1,6 @@
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { URL, pathToFileURL } from "node:url";
 import { performance } from "node:perf_hooks";
 import { readFile, writeFile } from "node:fs/promises";
 
