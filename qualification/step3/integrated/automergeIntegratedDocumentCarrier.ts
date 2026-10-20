@@ -30,6 +30,8 @@ import type {
   IntegratedDocumentChange,
   IntegratedDocumentSnapshot,
   IntegratedInlineContentCreation,
+  QualificationStableTextPosition,
+  QualificationTextAffinity,
 } from "./carrier.js";
 import {
   decodeEffectContext,
@@ -453,6 +455,41 @@ class AutomergeIntegratedDocumentCarrier<
     );
   }
 
+  public createStableTextPosition(
+    inlineContentId: InlineContentId,
+    editorUtf16Offset: number,
+    affinity: QualificationTextAffinity,
+  ): QualificationStableTextPosition {
+    const payload = this.snapshot().payloads.get(inlineContentId);
+    if (payload?.kind !== "text")
+      throw new TypeError("Stable positions require a live text payload.");
+    assertTextOffset(editorUtf16Offset, payload.text);
+    return {
+      candidate: "automerge",
+      inlineContentId,
+      cursor: Automerge.getCursor(
+        this.document,
+        ["payloads", inlineContentId, "text"],
+        editorUtf16Offset,
+        affinity,
+      ),
+    };
+  }
+
+  public resolveStableTextPosition(
+    position: QualificationStableTextPosition,
+  ): number | undefined {
+    if (position.candidate !== "automerge")
+      throw new TypeError("Stable text position belongs to another candidate.");
+    const payload = this.snapshot().payloads.get(position.inlineContentId);
+    if (payload?.kind !== "text") return undefined;
+    return Automerge.getCursorPosition(
+      this.document,
+      ["payloads", position.inlineContentId, "text"],
+      position.cursor,
+    );
+  }
+
   private prepareContext(
     context?: QualificationEffectContext,
   ): { id: string; encoded: string } | undefined {
@@ -559,6 +596,8 @@ function validateChange<Position>(
         );
       if (update.kind === "insert-text") {
         assertTextOffset(update.offset, payload.text);
+        if (update.text.length === 0)
+          throw new TypeError("Text insertion requires nonempty text.");
         assertAutomergeExactText(update.text);
         const text =
           payload.text.slice(0, update.offset) +

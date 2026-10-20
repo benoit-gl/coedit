@@ -38,3 +38,34 @@ jobs:
 
       - name: Recheck after build
         run: npm run check
+
+  browser-qualification:
+    name: browser-qualification
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Bootstrap dependencies
+        run: npm run bootstrap
+
+      - name: Install Chromium
+        run: npm exec --yes --package=pnpm@11.24.0 -- pnpm exec playwright install --with-deps chromium
+
+      - name: Run browser qualification
+        run: npm run test:browser
+
+      - name: Upload failed browser traces
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: browser-qualification-traces
+          path: browser-traces/
+          if-no-files-found: ignore
+          retention-days: 14
