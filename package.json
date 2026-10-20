@@ -30,7 +30,8 @@
     "test:step3:structure": "vitest run qualification/step3/structure",
     "test:step3:integrated": "vitest run qualification/step3/integrated",
     "step3:measure": "node scripts/step3-measure.mjs",
-    "step3:loro": "node scripts/step3-loro.mjs"
+    "step3:loro": "node scripts/step3-loro.mjs",
+    "step3:qualification": "node scripts/run-step3-qualification.mjs"
   },
   "dependencies": {
     "react": "19.2.8",

@@ -4,6 +4,7 @@ on:
     paths:
       - "qualification/step3/**"
       - "scripts/step3-*.mjs"
+      - "scripts/run-step3-qualification.mjs"
       - ".github/workflows/step3-comparison.yml"
       - "package.json"
   workflow_dispatch:
@@ -21,11 +22,12 @@ jobs:
         with:
           node-version: 24
       - run: npm run bootstrap
-      - run: npm run test
-      - run: npm run step3:measure
+      - name: Install Chromium
+        run: npm exec --yes --package=pnpm@11.24.0 -- pnpm exec playwright install --with-deps chromium
       - name: Install isolated pinned Loro reference
         run: npm install --prefix "$LORO_REFERENCE_ROOT" --no-package-lock --no-save loro-crdt@1.16.4
-      - run: npm run step3:loro
+      - name: Run full reproducible comparison
+        run: npm run step3:qualification
       - name: Persist raw comparison results
         if: always()
         uses: actions/upload-artifact@v5

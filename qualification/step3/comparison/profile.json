@@ -8,28 +8,47 @@
     "samples": 5,
     "tailPercentile": 95,
     "comparison": "same job and host; report raw samples plus median and nearest-rank p95",
-    "interval": "only the named operation and its mandatory projection; fresh fixture construction is excluded"
+    "interval": "Timed operation and projection; some rows also encode state as part of the timed details (see RESULTS.md); fresh fixture construction excluded."
   },
   "content": {
     "distribution": "one text/plain and one application/example InlineContent under a live root",
     "text": "repeated ASCII a; UTF-16 length",
     "origin": "human benchmark-author",
-    "textUtf16Units": [1024, 10000, 100000],
-    "opaqueBytes": [4096, 65536],
+    "textUtf16Units": [
+      1024,
+      10000,
+      100000
+    ],
+    "opaqueBytes": [
+      4096,
+      65536
+    ],
     "combinedWithHistory": false
   },
   "history": {
     "separate": true,
-    "effects": [100, 1000, 5000],
+    "effects": [
+      100,
+      1000,
+      5000
+    ],
     "operation": "one new attributed text insertion with a unique actor/effect pair"
   },
   "ranges": {
-    "holders": [32, 256, 1024],
+    "holders": [
+      32,
+      256,
+      1024
+    ],
     "sourceTextUtf16Units": 1024,
     "operation": "landed retained Range scaling fixture; resolve one holder lazily"
   },
   "structure": {
-    "narrowGapInsertions": [16, 128, 512],
+    "narrowGapInsertions": [
+      16,
+      128,
+      512
+    ],
     "concurrentRunMembers": 4
   },
   "browser": "existing Chromium suite, separate from headless measurements",
