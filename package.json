@@ -9,7 +9,7 @@
     "pnpm": "11.24.0"
   },
   "scripts": {
-    "bootstrap": "npm exec --yes --package=pnpm@11.24.0 -- pnpm install --frozen-lockfile",
+    "bootstrap": "npm exec --yes --package=pnpm@11.24.0 -- pnpm install --frozen-lockfile && npm exec --yes --package=pnpm@11.24.0 -- pnpm exec playwright install chromium",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
@@ -28,7 +28,10 @@
     "check": "npm run format:check && npm run lint:markdown && npm run typecheck && npm run lint && npm run lint:deps && npm run docs:check && npm run test",
     "test:step3:payload": "vitest run qualification/step3/payload",
     "test:step3:structure": "vitest run qualification/step3/structure",
-    "test:step3:integrated": "vitest run qualification/step3/integrated"
+    "test:step3:integrated": "vitest run qualification/step3/integrated",
+    "step3:measure": "node scripts/step3-measure.mjs",
+    "step3:loro": "node scripts/step3-loro.mjs",
+    "step3:qualification": "node scripts/run-step3-qualification.mjs"
   },
   "dependencies": {
     "react": "19.2.8",

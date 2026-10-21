@@ -6,3 +6,5 @@ docs/api/
 .vite/
 *.tsbuildinfo
 .DS_Store
+step3-evidence/
+.step3-loro-reference/

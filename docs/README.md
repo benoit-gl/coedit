@@ -73,8 +73,8 @@ When implementation evidence invalidates an accepted rule, update the responsibl
 
 Steps 1 and 2 are complete. Step 3 carrier qualification is in progress: the payload, structural/allocator, and
 integrated collaborative-document foundation, integrated structural/payload semantics, historical lifecycle, and
-retained-state/Range lifecycle merge units are complete; application/editor qualification and comparative evidence
-remain. No carrier or allocator is selected, and no production collaborative API exists yet. The payload requirements
+retained-state/Range lifecycle and application/editor qualification merge units are complete; comparative evidence
+remains. No carrier or allocator is selected, and no production collaborative API exists yet. The payload requirements
 below remain accepted design direction. Gate B owns carrier selection and deterministic concurrent whole-payload
 replacement, and the mixed replacement/text-edit policy.
 Step 4 selects and qualifies the production Media Type parser implementation and fixtures
@@ -127,8 +127,8 @@ reuse across retained lifetimes. Whole-Version restore reactivates those same li
 records the accepted rationale.
 
 Step 3 is the current implementation step. Its payload, structural/allocator, and integrated collaborative-document
-foundation, integrated structural/payload semantics, historical lifecycle, and retained-state/Range lifecycle merge
-units are complete; application/editor qualification is next, followed by comparative evidence and Gate B. Step 3
+foundation, integrated structural/payload semantics, historical lifecycle, retained-state/Range lifecycle, and
+application/editor qualification merge units are complete; comparative evidence is next, followed by Gate B. Step 3
 qualifies the Yjs and Automerge candidates without also owning the complete production implementation. The payload suite
 covers allowlisted
 fine-grained text, representative generic opaque Media Types, universal whole-payload replacement, deterministic
