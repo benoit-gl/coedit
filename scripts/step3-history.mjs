@@ -1,4 +1,5 @@
 import { createServer } from "vite";
+import { performance } from "node:perf_hooks";
 
 const candidate = process.env.STEP3_HISTORY_CANDIDATE;
 const count = Number(process.env.STEP3_HISTORY_COUNT);
@@ -13,9 +14,32 @@ const server = await createServer({
   server: { middlewareMode: true, hmr: false },
   logLevel: "error",
 });
+let serverClosed = false;
+async function closeLoader() {
+  if (serverClosed) return;
+  await server.close();
+  serverClosed = true;
+}
 const load = (path) => server.ssrLoadModule("/" + path);
 const uuid = (n) =>
   `70000000-0000-4000-8000-${n.toString(16).padStart(12, "0")}`;
+const started = performance.now();
+let lastProgress = started;
+function reportProgress(completed, force = false) {
+  const now = performance.now();
+  if (!force && now - lastProgress < 15_000) return;
+  console.error(
+    "STEP3_HISTORY_PROGRESS " +
+      JSON.stringify({
+        candidate,
+        completed,
+        total: count,
+        percent: Math.floor((completed / count) * 100),
+        elapsedMs: Math.round(now - started),
+      }),
+  );
+  lastProgress = now;
+}
 
 try {
   const [
@@ -31,6 +55,7 @@ try {
       "qualification/step3/integrated/automergeIntegratedDocumentCarrier.ts",
     ),
   ]);
+  await closeLoader();
   const factory =
     candidate === "yjs"
       ? createYjsIntegratedDocumentCarrierFactory(
@@ -57,7 +82,9 @@ try {
       },
     ],
   });
+  reportProgress(0, true);
   for (let index = 0; index < count; index++) {
+    reportProgress(index);
     carrier.applyChange({
       payloads: [
         {
@@ -73,13 +100,18 @@ try {
   }
   if (carrier.effects().size !== count)
     throw Error("Retained effect count differs");
+  console.error(
+    "STEP3_HISTORY_PHASE " + JSON.stringify({ candidate, phase: "encoding" }),
+  );
+  const encodedBytes = carrier.encode().length;
+  reportProgress(count, true);
   console.log(
     "STEP3_HISTORY " +
       JSON.stringify({
         outcome: "completed",
-        encodedBytes: carrier.encode().length,
+        encodedBytes,
       }),
   );
 } finally {
-  await server.close();
+  await closeLoader();
 }

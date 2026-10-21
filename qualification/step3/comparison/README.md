@@ -13,6 +13,11 @@ Automerge has no exposed native compaction operation in the pinned adapter.
 A Loro cursor/movable-tree benchmark is reference-only and must never become
 a selectable carrier or a production dependency.
 
+After `npm run bootstrap`, run `npm run step3:qualification` for the full
+comparison. The Loro stage installs its pinned package into the ignored
+`.step3-loro-reference/` directory on first use. Set `LORO_REFERENCE_ROOT`
+only to use a different isolated installation location.
+
 The summary of actual measurements, tested host and exact Actions run must
 be committed before Merge 8 is called complete. The workflow artifact stores
 raw samples; it is supplemental to the committed evidence. Merge 9, not this

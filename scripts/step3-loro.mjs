@@ -1,14 +1,46 @@
 import { createRequire } from "node:module";
+import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { URL, pathToFileURL } from "node:url";
 import { performance } from "node:perf_hooks";
 import { readFile, writeFile } from "node:fs/promises";
 
-const prefix = process.env.LORO_REFERENCE_ROOT;
-if (!prefix)
-  throw Error(
-    "LORO_REFERENCE_ROOT must point to the isolated Loro installation",
+const prefix = resolve(
+  process.env.LORO_REFERENCE_ROOT ?? ".step3-loro-reference",
+);
+const packagePath = resolve(prefix, "node_modules/loro-crdt/package.json");
+let installedVersion;
+try {
+  installedVersion = JSON.parse(await readFile(packagePath, "utf8")).version;
+} catch (error) {
+  if (error.code !== "ENOENT") throw error;
+}
+if (installedVersion !== "1.16.4") {
+  const npmCli = process.env.npm_execpath;
+  const npm = npmCli
+    ? process.execPath
+    : process.platform === "win32"
+      ? "npm.cmd"
+      : "npm";
+  console.log(`Installing isolated loro-crdt@1.16.4 in ${prefix}`);
+  const installation = spawnSync(
+    npm,
+    [
+      ...(npmCli ? [npmCli] : []),
+      "install",
+      "--prefix",
+      prefix,
+      "--no-package-lock",
+      "--no-save",
+      "loro-crdt@1.16.4",
+    ],
+    { stdio: "inherit", shell: !npmCli && process.platform === "win32" },
   );
+  if (installation.error || installation.status !== 0)
+    throw Error(
+      `Isolated Loro installation failed: ${installation.error?.message ?? installation.status}`,
+    );
+}
 const requireFromPrefix = createRequire(resolve(prefix, "package.json"));
 const entry = requireFromPrefix.resolve("loro-crdt");
 const { LoroDoc } = await import(pathToFileURL(entry).href);
@@ -73,12 +105,7 @@ for (const count of [16, 128]) {
     };
   });
 }
-const packageInfo = JSON.parse(
-  await readFile(
-    resolve(prefix, "node_modules/loro-crdt/package.json"),
-    "utf8",
-  ),
-);
+const packageInfo = JSON.parse(await readFile(packagePath, "utf8"));
 if (packageInfo.version !== "1.16.4")
   throw Error("Isolated Loro reference version differs");
 const report = {

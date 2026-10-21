@@ -9,7 +9,7 @@
     "pnpm": "11.24.0"
   },
   "scripts": {
-    "bootstrap": "npm exec --yes --package=pnpm@11.24.0 -- pnpm install --frozen-lockfile",
+    "bootstrap": "npm exec --yes --package=pnpm@11.24.0 -- pnpm install --frozen-lockfile && npm exec --yes --package=pnpm@11.24.0 -- pnpm exec playwright install chromium",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",

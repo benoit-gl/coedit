@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { URL } from "node:url";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { cpus, platform, release, arch, totalmem } from "node:os";
@@ -17,6 +17,12 @@ const server = await createServer({
   server: { middlewareMode: true, hmr: false },
   logLevel: "error",
 });
+let serverClosed = false;
+async function closeLoader() {
+  if (serverClosed) return;
+  await server.close();
+  serverClosed = true;
+}
 const load = (path) => server.ssrLoadModule("/" + path);
 const rows = [];
 const percentile = (values, percent) =>
@@ -48,6 +54,35 @@ function bench(candidate, workload, size, setup) {
   rows.push(row);
   console.log("STEP3_ROW " + JSON.stringify(row));
 }
+async function runHistoryCandidate(candidate, count) {
+  const child = spawn(process.execPath, ["scripts/step3-history.mjs"], {
+    stdio: ["ignore", "pipe", "pipe"],
+    env: {
+      ...process.env,
+      STEP3_HISTORY_CANDIDATE: candidate,
+      STEP3_HISTORY_COUNT: String(count),
+    },
+  });
+  let stdout = "";
+  let stderrTail = "";
+  let error;
+  child.stdout.setEncoding("utf8").on("data", (chunk) => {
+    stdout += chunk;
+  });
+  child.stderr.setEncoding("utf8").on("data", (chunk) => {
+    process.stderr.write(chunk);
+    stderrTail = (stderrTail + chunk).slice(-65536);
+  });
+  child.on("error", (cause) => {
+    error = cause;
+  });
+  const { exitCode, signal } = await new Promise((resolve) => {
+    child.on("close", (code, exitSignal) => {
+      resolve({ exitCode: code, signal: exitSignal });
+    });
+  });
+  return { stdout, stderrTail, exitCode, signal, error };
+}
 const uuid = (n) =>
   `70000000-0000-4000-8000-${n.toString(16).padStart(12, "0")}`;
 const nonce = (n) =>
@@ -74,6 +109,7 @@ try {
     load("qualification/step3/integrated/rangeScaling.ts"),
     load("qualification/step3/integrated/rangeProbe.ts"),
   ]);
+  await closeLoader();
   const root = parseBlockId(uuid(1)),
     id = parseInlineContentId(uuid(2));
   const origin = { id: "benchmark-author", kind: "human" };
@@ -171,21 +207,28 @@ try {
     for (const count of profile.history.effects) {
       if (count >= 5000) {
         const started = performance.now();
-        const execution = spawnSync(
-          process.execPath,
-          ["scripts/step3-history.mjs"],
-          {
-            encoding: "utf8",
-            env: {
-              ...process.env,
-              STEP3_HISTORY_CANDIDATE: factory.candidate,
-              STEP3_HISTORY_COUNT: String(count),
-            },
-          },
+        console.log(
+          "STEP3_HISTORY_START " +
+            JSON.stringify({ candidate: factory.candidate, count }),
         );
+        const execution = await runHistoryCandidate(factory.candidate, count);
         const elapsed = performance.now() - started;
         const match = execution.stdout.match(/^STEP3_HISTORY (.+)$/m);
-        const result = match ? JSON.parse(match[1]) : null;
+        const result =
+          execution.exitCode === 0 && match ? JSON.parse(match[1]) : null;
+        const failureKind = execution.stderrTail.includes("rust_oom")
+          ? "resource-exhaustion"
+          : "runtime-failure";
+        console.log(
+          "STEP3_HISTORY_RESULT " +
+            JSON.stringify({
+              candidate: factory.candidate,
+              count,
+              elapsedMs: Math.round(elapsed),
+              outcome: result?.outcome ?? "candidate-process-failure",
+              ...(result ? {} : { failureKind }),
+            }),
+        );
         rows.push({
           candidate: factory.candidate,
           workload: "attributed-effect-history",
@@ -197,11 +240,10 @@ try {
             ? { ...result, samples: 1, warmups: 0 }
             : {
                 outcome: "candidate-process-failure",
-                failureKind: execution.stderr.includes("rust_oom")
-                  ? "resource-exhaustion"
-                  : "runtime-failure",
-                exitCode: execution.status,
+                failureKind,
+                exitCode: execution.exitCode,
                 signal: execution.signal,
+                error: execution.error?.message ?? null,
                 samples: 1,
                 warmups: 0,
               },
@@ -393,5 +435,5 @@ try {
     JSON.stringify(report, null, 2) + "\n",
   );
 } finally {
-  await server.close();
+  await closeLoader();
 }
