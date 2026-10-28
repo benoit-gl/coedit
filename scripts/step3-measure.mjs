@@ -1,7 +1,8 @@
 import { Buffer } from "node:buffer";
 import { spawn } from "node:child_process";
 import { URL } from "node:url";
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { cpus, platform, release, arch, totalmem } from "node:os";
 import { performance } from "node:perf_hooks";
 import { createServer } from "vite";
@@ -25,6 +26,30 @@ async function closeLoader() {
 }
 const load = (path) => server.ssrLoadModule("/" + path);
 const rows = [];
+function checkpoint(status) {
+  const report = {
+    schemaVersion: 1,
+    status,
+    profile,
+    generatedAt: new Date().toISOString(),
+    revision: process.env.GITHUB_SHA ?? null,
+    environment: {
+      platform: platform(),
+      release: release(),
+      arch: arch(),
+      node: process.version,
+      cpu: cpus()[0]?.model,
+      cpus: cpus().length,
+      ramBytes: totalmem(),
+    },
+    rows,
+  };
+  mkdirSync("step3-evidence", { recursive: true });
+  writeFileSync(
+    "step3-evidence/measurements.json",
+    JSON.stringify(report, null, 2) + "\n",
+  );
+}
 const percentile = (values, percent) =>
   [...values].sort((a, b) => a - b)[
     Math.ceil((values.length * percent) / 100) - 1
@@ -52,6 +77,7 @@ function bench(candidate, workload, size, setup) {
     details,
   };
   rows.push(row);
+  checkpoint("incomplete");
   console.log("STEP3_ROW " + JSON.stringify(row));
 }
 async function runHistoryCandidate(candidate, count) {
@@ -216,6 +242,13 @@ try {
         const match = execution.stdout.match(/^STEP3_HISTORY (.+)$/m);
         const result =
           execution.exitCode === 0 && match ? JSON.parse(match[1]) : null;
+        if (result === null && !execution.stderrTail.includes("rust_oom")) {
+          throw new Error(
+            `History candidate ${factory.candidate} failed unexpectedly: ` +
+              `exit=${execution.exitCode}, signal=${execution.signal}, ` +
+              `error=${execution.error?.message ?? "none"}\n${execution.stderrTail}`,
+          );
+        }
         const failureKind = execution.stderrTail.includes("rust_oom")
           ? "resource-exhaustion"
           : "runtime-failure";
@@ -234,13 +267,19 @@ try {
           workload: "attributed-effect-history",
           size: count,
           samplesMs: [elapsed],
-          medianMs: elapsed,
-          p95Ms: elapsed,
+          medianMs: result ? elapsed : null,
+          p95Ms: null,
           details: result
-            ? { ...result, samples: 1, warmups: 0 }
+            ? {
+                ...result,
+                samples: 1,
+                warmups: 0,
+                interval: "child-process-wall-time",
+              }
             : {
                 outcome: "candidate-process-failure",
                 failureKind,
+                interval: "child-process-wall-time",
                 exitCode: execution.exitCode,
                 signal: execution.signal,
                 error: execution.error?.message ?? null,
@@ -248,6 +287,7 @@ try {
                 warmups: 0,
               },
         });
+        checkpoint("incomplete");
         continue;
       }
       const original = seeded(factory, "a").encode();
@@ -285,6 +325,7 @@ try {
         p95Ms: percentile(durations, 95),
         details: { encodedBytes: encodedSizes, samples, warmups: 0 },
       });
+      checkpoint("incomplete");
     }
     for (const count of profile.content.opaqueBytes) {
       const opaqueId = parseInlineContentId(uuid(3));
@@ -413,27 +454,7 @@ try {
       });
     }
   }
-  const report = {
-    schemaVersion: 1,
-    profile,
-    generatedAt: new Date().toISOString(),
-    revision: process.env.GITHUB_SHA ?? null,
-    environment: {
-      platform: platform(),
-      release: release(),
-      arch: arch(),
-      node: process.version,
-      cpu: cpus()[0]?.model,
-      cpus: cpus().length,
-      ramBytes: totalmem(),
-    },
-    rows,
-  };
-  await mkdir("step3-evidence", { recursive: true });
-  await writeFile(
-    "step3-evidence/measurements.json",
-    JSON.stringify(report, null, 2) + "\n",
-  );
+  checkpoint("completed");
 } finally {
   await closeLoader();
 }

@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readdir, writeFile } from "node:fs/promises";
 
 const stages = [
   { name: "headless-common-suites", args: ["run", "test"] },
@@ -8,6 +8,10 @@ const stages = [
   { name: "nonselectable-loro-reference", args: ["run", "step3:loro"] },
 ];
 await mkdir("step3-evidence", { recursive: true });
+if ((await readdir("step3-evidence")).length !== 0)
+  throw new Error(
+    "step3-evidence is not empty. Preserve or move its prior results before starting a new run.",
+  );
 const results = [];
 const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 for (const stage of stages) {

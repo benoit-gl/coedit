@@ -308,7 +308,10 @@ Deliver Step 3 as nine reviewable merge units with one fork-and-join boundary:
    hostile-input and clipboard evidence used by Gate B; it does not select Step 11 semantic-group timing or queue
    thresholds.
 
-8. **Comparative qualification evidence.** Add the reproducible qualification runner that orchestrates the landed common
+8. **Comparative qualification evidence.** A preliminary runner and partial experimental evidence can land as a
+   baseline for further investigation. They do not complete this unit or satisfy Gate B. Continue the comparative
+   work on top of that baseline and retain the following acceptance criteria. Add the reproducible qualification runner
+   that orchestrates the landed common
    suites. Before the comparative run, record the shared run-specific fixture profile and measurement method. Run all
    selectable carrier and allocator candidates under that profile, including the landed Range lazy-resolution/scaling,
    replacement-policy, lifecycle, editor, clipboard, and resource-admission workloads. Run Loro only as the planned

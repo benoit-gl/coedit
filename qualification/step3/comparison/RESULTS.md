@@ -1,6 +1,6 @@
 # Preliminary Step 3 comparative measurements
 
-**Status:** Partial, experimental evidence. Not sufficient for Merge 8 completion or Gate B selection.
+**Status:** Partial, experimental baseline. Not sufficient for comparative qualification or Gate B selection.
 
 The measurements below are from [Actions run 39483013858](https://github.com/benoit-gl/coedit/actions/runs/39483013858),
 on PR head `df9fbbab8a86df5c1de51498e6b662c12461432b`. The run recorded the
@@ -32,9 +32,9 @@ The native lifecycle query reported automatic garbage collection for Yjs
 and no exposed native compaction capability for pinned Automerge.
 Save/load is not evidence of native Automerge compaction.
 
-**Remaining before an admissible comparative record:** complete same-profile
-history and opaque workloads, concurrent replacement and other integrated
-structure tests, Chromium/editor/clipboard/resource characterization, the
-non-selectable Loro reference, and full successful current-revision checks.
-Publish raw artifacts and update this summary against the final qualified run.
+**Remaining before an admissible comparative record:** expand same-profile
+history and opaque workloads, concurrent replacement and integrated structure
+tests, Chromium/editor/clipboard/resource characterization, and the
+non-selectable Loro reference. Investigate the history workload's resource
+growth and publish a current, complete summary with its raw artifacts.
 No current number selects a candidate, freezes a limit, or promotes a target.

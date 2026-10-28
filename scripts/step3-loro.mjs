@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
 import { URL, pathToFileURL } from "node:url";
 import { performance } from "node:perf_hooks";
-import { readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 
 const prefix = resolve(
   process.env.LORO_REFERENCE_ROOT ?? ".step3-loro-reference",
@@ -119,6 +119,7 @@ const report = {
     "Native Loro operations are not equivalent to Coedit integrated carrier adapter operations.",
   rows,
 };
+await mkdir("step3-evidence", { recursive: true });
 await writeFile(
   "step3-evidence/loro-reference.json",
   JSON.stringify(report, null, 2) + "\n",
