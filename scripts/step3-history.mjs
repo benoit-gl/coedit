@@ -5,7 +5,8 @@ const candidate = process.env.STEP3_HISTORY_CANDIDATE;
 const count = Number(process.env.STEP3_HISTORY_COUNT);
 if (
   (candidate !== "yjs" && candidate !== "automerge") ||
-  !Number.isInteger(count)
+  !Number.isInteger(count) ||
+  count < 1
 )
   throw Error("STEP3_HISTORY_CANDIDATE and STEP3_HISTORY_COUNT are required");
 
@@ -83,6 +84,7 @@ try {
     ],
   });
   reportProgress(0, true);
+  const editStart = performance.now();
   for (let index = 0; index < count; index++) {
     reportProgress(index);
     carrier.applyChange({
@@ -98,18 +100,29 @@ try {
       context: { actorId: "bench-author", effectId: "effect-" + index },
     });
   }
+  const editLoopMs = performance.now() - editStart;
   if (carrier.effects().size !== count)
     throw Error("Retained effect count differs");
   console.error(
     "STEP3_HISTORY_PHASE " + JSON.stringify({ candidate, phase: "encoding" }),
   );
+  const encodeStart = performance.now();
   const encodedBytes = carrier.encode().length;
+  const encodeMs = performance.now() - encodeStart;
   reportProgress(count, true);
   console.log(
     "STEP3_HISTORY " +
       JSON.stringify({
         outcome: "completed",
         encodedBytes,
+        editLoopMs,
+        encodeMs,
+        peakRss: {
+          value: process.resourceUsage().maxRSS,
+          unit: "KiB",
+          platform: process.platform,
+          scope: "process lifetime including setup and encoding",
+        },
       }),
   );
 } finally {

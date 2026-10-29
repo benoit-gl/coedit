@@ -32,6 +32,31 @@ The native lifecycle query reported automatic garbage collection for Yjs
 and no exposed native compaction capability for pinned Automerge.
 Save/load is not evidence of native Automerge compaction.
 
+## Later partial comparison
+
+[Actions run 40824974753](https://github.com/benoit-gl/coedit/actions/runs/40824974753) measured PR head
+`9e94c1bbbd80ef42b036a4373dea8fbaa510a0c3` on test-merge `e00818cb781929df25137750489896c7d727abf4`.
+Its [raw artifact](https://github.com/benoit-gl/coedit/actions/runs/40824974753/artifacts/12876153994) includes
+the profile, all samples, process outcomes, browser fixture, and environment. The artifact is supplementary and has a
+finite retention period. This later run adds evidence; it does not complete the comparative qualification.
+
+The host was Linux 7.0.0-1017-azure x64, Node.js 24.22.1, AMD EPYC 7763, four reported CPUs, and 16,760,344,576 bytes
+reported RAM. The candidates were Yjs 13.6.32 and Automerge 3.4.1. Five isolated process samples per count alternated
+candidate order without warm-ups. The edit interval excludes setup and encoding. Process peak RSS includes setup and
+encoding. The fixture uses one initial ASCII `a` and one attributed `a` insertion per effect, not product Contributions.
+
+| Candidate | Effects | Median edit loop | Median encode | Median encoded bytes | Median peak RSS |
+| --------- | ------: | ---------------: | ------------: | -------------------: | --------------: |
+| Yjs       |   5,000 |         3,464 ms |       48.0 ms |            3,744,302 |     220,956 KiB |
+| Automerge |   5,000 |        70,168 ms |       76.0 ms |              620,138 |     411,672 KiB |
+
+These are total loop times, not single-keystroke or visible-feedback latency. Five samples do not give a reliable p95.
+The synthetic browser fixture records its raw driver and synchronous-publication intervals in the artifact; it does not
+measure physical paint, independent asynchronous feedback, or slow persistence or replication. In this historical run,
+both integrated adapters called `snapshot()` during ordinary changes. The later targeted experiment can avoid this
+for eligible edits with no retained placements, or with an explicitly opted-in pure position decoder. Arbitrary decoders
+with retained placements still use full preflight. The normal-typing whole-document-work criterion remains open.
+
 **Remaining before an admissible comparative record:** expand same-profile
 history and opaque workloads, concurrent replacement and integrated structure
 tests, Chromium/editor/clipboard/resource characterization, and the

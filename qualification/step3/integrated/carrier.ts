@@ -11,6 +11,14 @@ import type {
   QualificationPayloadSnapshot,
 } from "../payload/carrier.js";
 
+/** Diagnostic-only ordinary-edit preflight variants; neither selects a carrier. */
+export interface IntegratedCarrierQualificationOptions {
+  /** Targeted is the qualification default; snapshot retains the reference path. */
+  readonly ordinaryEditVariant?: "snapshot" | "targeted";
+  /** Opt in only if position decode is pure, deterministic and stable for the carrier lifetime. */
+  readonly purePositionDecoder?: boolean;
+}
+
 /** Candidate names used by integrated Step 3 qualification. */
 export type IntegratedCarrierCandidate = "yjs" | "automerge";
 

@@ -25,6 +25,7 @@ import type {
   QualificationTextSpan,
 } from "../payload/carrier.js";
 import type {
+  IntegratedCarrierQualificationOptions,
   IntegratedDocumentCarrier,
   IntegratedDocumentCarrierFactory,
   IntegratedDocumentChange,
@@ -56,6 +57,8 @@ import {
   encodeRestoreEffectEnvelope,
 } from "./effectEnvelope.js";
 
+import { isOrdinaryTextChange } from "./ordinaryEdit.js";
+
 const ROOT = "integrated";
 const ROOT_ID = "rootId";
 const LINEAGE_ID = "lineageId";
@@ -81,11 +84,15 @@ class YjsIntegratedDocumentCarrier<
   private readonly document = new Y.Doc({ gc: true });
   private readonly root = this.document.getMap<unknown>(ROOT);
   private payloadEffectHeads: readonly string[] = [];
+  // Only ordinary edits preserve this proof. Other successful transitions
+  // try to refresh it without moving legacy validation errors to that call.
+  private ordinaryProjectionValidated = false;
 
   public constructor(
     private readonly positionCodec: StructuralPositionCodec<Position>,
     rootId?: BlockId,
     encoded?: Uint8Array,
+    private readonly options: IntegratedCarrierQualificationOptions = {},
   ) {
     if (encoded !== undefined) {
       const decoded = decodeEnvelope(encoded);
@@ -123,11 +130,14 @@ class YjsIntegratedDocumentCarrier<
     this.payloadEffectHeads = payloadEffectFrontier(
       this.recordedPayloadEffects(),
     );
+    this.refreshOrdinaryProjectionValidation();
   }
 
   public applyChange(change: IntegratedDocumentChange<Position>): void {
     const rootId = this.requireRootId();
-    const snapshot = this.snapshot();
+    const targeted = this.ordinaryEditSnapshot(change);
+    this.ordinaryProjectionValidated = false;
+    const snapshot = targeted ?? this.snapshot();
     const placements = (change.placements ?? []).map((update) => {
       if (update.blockId === rootId)
         throw new TypeError("The integrated root cannot have a placement.");
@@ -147,12 +157,17 @@ class YjsIntegratedDocumentCarrier<
       change.payloads ?? [],
       snapshot.payloads,
     );
-    const inlineContents = prepareInlineContentCreations(
-      change,
-      snapshot,
-      new Set([...this.inlineContentOwners().keys()].map(parseInlineContentId)),
-      new Set([rootId, ...this.liveness().keys()]),
-    );
+    const inlineContents =
+      targeted === undefined
+        ? prepareInlineContentCreations(
+            change,
+            snapshot,
+            new Set(
+              [...this.inlineContentOwners().keys()].map(parseInlineContentId),
+            ),
+            new Set([rootId, ...this.liveness().keys()]),
+          )
+        : [];
     const context = this.prepareContext(change.context);
     const evidence =
       context === undefined || (change.payloads?.length ?? 0) === 0
@@ -200,6 +215,77 @@ class YjsIntegratedDocumentCarrier<
       evidence,
     );
     if (evidence !== undefined) this.payloadEffectHeads = [evidence.id];
+    this.ordinaryProjectionValidated =
+      this.options.ordinaryEditVariant !== "snapshot" &&
+      !this.requiresPlacementPreflight() &&
+      isOrdinaryTextChange(change) &&
+      (change.payloads ?? []).every(
+        (payload) =>
+          snapshot.payloads.get(payload.inlineContentId)?.kind === "text",
+      );
+    if (!this.ordinaryProjectionValidated)
+      this.refreshOrdinaryProjectionValidation();
+  }
+
+  private requiresPlacementPreflight(): boolean {
+    return !this.options.purePositionDecoder && this.blocks().size > 0;
+  }
+
+  private refreshOrdinaryProjectionValidation(): void {
+    this.ordinaryProjectionValidated = false;
+    if (this.options.ordinaryEditVariant === "snapshot") return;
+    try {
+      // Preserve observable decoder calls unless the fixture explicitly opts in
+      // to a pure, deterministic and stable decoder.
+      if (this.requiresPlacementPreflight()) return;
+      this.snapshot();
+      // Ordinary full preflight parses retained IDs too, including identities
+      // hidden from the visible snapshot. Both checks must succeed.
+      for (const id of this.inlineContentOwners().keys())
+        parseInlineContentId(id);
+      this.ordinaryProjectionValidated = true;
+    } catch {
+      // This is speculative read-only work, not a new acceptance boundary.
+      // Retry the original preflight on the next edit to preserve error order.
+      return;
+    }
+  }
+
+  private ordinaryEditSnapshot(
+    change: IntegratedDocumentChange<Position>,
+  ): IntegratedDocumentSnapshot<Position> | undefined {
+    if (
+      this.options.ordinaryEditVariant === "snapshot" ||
+      !this.ordinaryProjectionValidated ||
+      this.requiresPlacementPreflight() ||
+      !isOrdinaryTextChange(change)
+    )
+      return undefined;
+    const rootId = this.requireRootId();
+    const payloads = new Map<InlineContentId, QualificationPayloadSnapshot>();
+    const inlineContentOwners = new Map<InlineContentId, BlockId>();
+    for (const update of change.payloads ?? []) {
+      const id = update.inlineContentId;
+      if (payloads.has(id)) continue;
+      const rawOwner = this.inlineContentOwners().get(id);
+      if (rawOwner === undefined) return undefined;
+      const owner = parseBlockId(rawOwner);
+      if (!isLive(this.inlineContentLiveness(), id)) return undefined;
+      if (owner !== rootId && !isLive(this.liveness(), owner)) return undefined;
+      const payload = this.payloads().get(id);
+      if (payload === undefined) return undefined;
+      const projected = projectPayload(payload);
+      if (projected.kind !== "text") return undefined;
+      payloads.set(id, projected);
+      inlineContentOwners.set(id, owner);
+    }
+    return {
+      rootId,
+      payloads,
+      inlineContentOwners,
+      placements: new Map(),
+      blockLiveness: new Map([[rootId, true]]),
+    };
   }
 
   public snapshot(): IntegratedDocumentSnapshot<Position> {
@@ -267,6 +353,7 @@ class YjsIntegratedDocumentCarrier<
     token: string,
     context?: QualificationEffectContext,
   ): void {
+    this.ordinaryProjectionValidated = false;
     const target = this.materializeHistoricalState(token);
     const effect = this.prepareContext(context);
     const envelope =
@@ -332,6 +419,7 @@ class YjsIntegratedDocumentCarrier<
       if (envelope !== undefined)
         this.effectEnvelopes().set(envelope.id, envelope.encoded);
     });
+    this.refreshOrdinaryProjectionValidation();
   }
 
   public recordedPayloadEffects(): readonly RecordedPayloadEffect[] {
@@ -411,6 +499,7 @@ class YjsIntegratedDocumentCarrier<
   }
 
   public mergeEncoded(encoded: Uint8Array): void {
+    this.ordinaryProjectionValidated = false;
     const decoded = decodeEnvelope(encoded);
     const currentRoot = this.requireRootId();
     if (decoded.rootId !== currentRoot)
@@ -455,6 +544,7 @@ class YjsIntegratedDocumentCarrier<
     );
     Y.applyUpdate(this.document, decoded.update);
     this.payloadEffectHeads = heads;
+    this.refreshOrdinaryProjectionValidation();
   }
 
   private requireRootId(): BlockId {
@@ -672,14 +762,26 @@ function applyPreparedChange(
 export function createYjsIntegratedDocumentCarrierFactory<Position>(
   positionCodec: StructuralPositionCodec<Position>,
   positionOrdering: StructuralPositionOrdering<Position>,
+  options: IntegratedCarrierQualificationOptions = {},
 ): IntegratedDocumentCarrierFactory<Position> {
   return {
     candidate: "yjs",
     positionCodec,
     positionOrdering,
-    create: (rootId) => new YjsIntegratedDocumentCarrier(positionCodec, rootId),
+    create: (rootId) =>
+      new YjsIntegratedDocumentCarrier(
+        positionCodec,
+        rootId,
+        undefined,
+        options,
+      ),
     load: (encoded) =>
-      new YjsIntegratedDocumentCarrier(positionCodec, undefined, encoded),
+      new YjsIntegratedDocumentCarrier(
+        positionCodec,
+        undefined,
+        encoded,
+        options,
+      ),
   };
 }
 

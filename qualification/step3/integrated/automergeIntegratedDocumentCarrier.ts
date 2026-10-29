@@ -25,6 +25,7 @@ import type {
   QualificationTextSpan,
 } from "../payload/carrier.js";
 import type {
+  IntegratedCarrierQualificationOptions,
   IntegratedDocumentCarrier,
   IntegratedDocumentCarrierFactory,
   IntegratedDocumentChange,
@@ -54,6 +55,8 @@ import {
   encodeAppliedEffectEnvelope,
   encodeRestoreEffectEnvelope,
 } from "./effectEnvelope.js";
+
+import { isOrdinaryTextChange } from "./ordinaryEdit.js";
 
 const ORIGIN_MARK = "__coedit_origin";
 
@@ -91,11 +94,15 @@ class AutomergeIntegratedDocumentCarrier<
   public readonly candidate = "automerge" as const;
   private document: Automerge.Doc<State>;
   private payloadEffectHeads: readonly string[] = [];
+  // Only ordinary edits preserve this proof. Other successful transitions
+  // try to refresh it without moving legacy validation errors to that call.
+  private ordinaryProjectionValidated = false;
 
   public constructor(
     private readonly positionCodec: StructuralPositionCodec<Position>,
     rootId?: BlockId,
     encoded?: Uint8Array,
+    private readonly options: IntegratedCarrierQualificationOptions = {},
   ) {
     if (encoded !== undefined) this.document = Automerge.load<State>(encoded);
     else if (rootId !== undefined)
@@ -121,25 +128,36 @@ class AutomergeIntegratedDocumentCarrier<
     this.payloadEffectHeads = payloadEffectFrontier(
       this.recordedPayloadEffects(),
     );
+    this.refreshOrdinaryProjectionValidation();
   }
 
   public applyChange(change: IntegratedDocumentChange<Position>): void {
-    const snapshot = this.snapshot();
+    const targeted = this.ordinaryEditSnapshot(change);
+    this.ordinaryProjectionValidated = false;
+    const snapshot = targeted ?? this.snapshot();
     validateChange(
       change,
       snapshot,
-      new Set(Object.keys(this.document.inlineContentOwners)),
+      targeted === undefined
+        ? new Set(Object.keys(this.document.inlineContentOwners))
+        : new Set<string>(),
     );
-    const inlineContents = prepareInlineContentCreations(
-      change,
-      snapshot,
-      new Set(
-        Object.keys(this.document.inlineContentOwners).map(
-          parseInlineContentId,
-        ),
-      ),
-      new Set([this.document.rootId, ...Object.keys(this.document.liveness)]),
-    );
+    const inlineContents =
+      targeted === undefined
+        ? prepareInlineContentCreations(
+            change,
+            snapshot,
+            new Set(
+              Object.keys(this.document.inlineContentOwners).map(
+                parseInlineContentId,
+              ),
+            ),
+            new Set([
+              this.document.rootId,
+              ...Object.keys(this.document.liveness),
+            ]),
+          )
+        : [];
     const context = this.prepareContext(change.context);
     const evidence =
       context === undefined || (change.payloads?.length ?? 0) === 0
@@ -286,6 +304,81 @@ class AutomergeIntegratedDocumentCarrier<
       }
     });
     if (evidence !== undefined) this.payloadEffectHeads = [evidence.id];
+    this.ordinaryProjectionValidated =
+      this.options.ordinaryEditVariant !== "snapshot" &&
+      !this.requiresPlacementPreflight() &&
+      isOrdinaryTextChange(change) &&
+      (change.payloads ?? []).every(
+        (payload) =>
+          snapshot.payloads.get(payload.inlineContentId)?.kind === "text",
+      );
+    if (!this.ordinaryProjectionValidated)
+      this.refreshOrdinaryProjectionValidation();
+  }
+
+  private requiresPlacementPreflight(): boolean {
+    return (
+      !this.options.purePositionDecoder &&
+      Object.keys(this.document.blocks).length > 0
+    );
+  }
+
+  private refreshOrdinaryProjectionValidation(): void {
+    this.ordinaryProjectionValidated = false;
+    if (this.options.ordinaryEditVariant === "snapshot") return;
+    try {
+      // Preserve observable decoder calls unless the fixture explicitly opts in
+      // to a pure, deterministic and stable decoder.
+      if (this.requiresPlacementPreflight()) return;
+      this.snapshot();
+      // Ordinary full preflight parses retained IDs too, including identities
+      // hidden from the visible snapshot. Both checks must succeed.
+      for (const id of Object.keys(this.document.inlineContentOwners))
+        parseInlineContentId(id);
+      this.ordinaryProjectionValidated = true;
+    } catch {
+      // This is speculative read-only work, not a new acceptance boundary.
+      // Retry the original preflight on the next edit to preserve error order.
+      return;
+    }
+  }
+
+  private ordinaryEditSnapshot(
+    change: IntegratedDocumentChange<Position>,
+  ): IntegratedDocumentSnapshot<Position> | undefined {
+    if (
+      this.options.ordinaryEditVariant === "snapshot" ||
+      !this.ordinaryProjectionValidated ||
+      this.requiresPlacementPreflight() ||
+      !isOrdinaryTextChange(change)
+    )
+      return undefined;
+    const rootId = parseBlockId(this.document.rootId);
+    const payloads = new Map<InlineContentId, QualificationPayloadSnapshot>();
+    const inlineContentOwners = new Map<InlineContentId, BlockId>();
+    for (const update of change.payloads ?? []) {
+      const id = update.inlineContentId;
+      if (payloads.has(id)) continue;
+      const rawOwner = this.document.inlineContentOwners[id];
+      if (rawOwner === undefined) return undefined;
+      if (!isLive(this.document.inlineContentLiveness, id)) return undefined;
+      if (rawOwner !== rootId && !isLive(this.document.liveness, rawOwner))
+        return undefined;
+      const owner = parseBlockId(rawOwner);
+      const payload = this.document.payloads[id];
+      if (payload === undefined) return undefined;
+      const projected = projectPayload(this.document, id, payload);
+      if (projected.kind !== "text") return undefined;
+      payloads.set(id, projected);
+      inlineContentOwners.set(id, owner);
+    }
+    return {
+      rootId,
+      payloads,
+      inlineContentOwners,
+      placements: new Map(),
+      blockLiveness: new Map([[rootId, true]]),
+    };
   }
 
   public snapshot(): IntegratedDocumentSnapshot<Position> {
@@ -358,6 +451,7 @@ class AutomergeIntegratedDocumentCarrier<
     token: string,
     context?: QualificationEffectContext,
   ): void {
+    this.ordinaryProjectionValidated = false;
     const target = this.materializeHistoricalState(token);
     const effect = this.prepareContext(context);
     const envelope =
@@ -441,6 +535,7 @@ class AutomergeIntegratedDocumentCarrier<
         }
       }
     });
+    this.refreshOrdinaryProjectionValidation();
   }
 
   public recordedPayloadEffects(): readonly RecordedPayloadEffect[] {
@@ -512,6 +607,7 @@ class AutomergeIntegratedDocumentCarrier<
   }
 
   public mergeEncoded(encoded: Uint8Array): void {
+    this.ordinaryProjectionValidated = false;
     const remote = Automerge.load<State>(encoded);
     if (remote.rootId !== this.document.rootId)
       throw new TypeError("Integrated replicas must share one root identity.");
@@ -544,6 +640,7 @@ class AutomergeIntegratedDocumentCarrier<
     );
     this.document = Automerge.merge(this.document, remote);
     this.payloadEffectHeads = heads;
+    this.refreshOrdinaryProjectionValidation();
   }
 }
 
@@ -551,15 +648,26 @@ class AutomergeIntegratedDocumentCarrier<
 export function createAutomergeIntegratedDocumentCarrierFactory<Position>(
   positionCodec: StructuralPositionCodec<Position>,
   positionOrdering: StructuralPositionOrdering<Position>,
+  options: IntegratedCarrierQualificationOptions = {},
 ): IntegratedDocumentCarrierFactory<Position> {
   return {
     candidate: "automerge",
     positionCodec,
     positionOrdering,
     create: (rootId) =>
-      new AutomergeIntegratedDocumentCarrier(positionCodec, rootId),
+      new AutomergeIntegratedDocumentCarrier(
+        positionCodec,
+        rootId,
+        undefined,
+        options,
+      ),
     load: (encoded) =>
-      new AutomergeIntegratedDocumentCarrier(positionCodec, undefined, encoded),
+      new AutomergeIntegratedDocumentCarrier(
+        positionCodec,
+        undefined,
+        encoded,
+        options,
+      ),
   };
 }
 
