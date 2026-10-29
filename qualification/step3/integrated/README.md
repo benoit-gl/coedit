@@ -33,6 +33,11 @@ nonce plus its structural, payload, or restore semantics): distinct actors may s
 conflicting reuse of a pair is rejected before a merge can combine or discard evidence. Contexts also retain copy or
 restore source references without becoming Contributions, Versions, or History.
 
+The [compact payload causal evidence experiment](CAUSAL_PAYLOAD_HISTORY.md) replaces repeated all-observed-ID closures
+with retained parent links and a cached payload frontier, and replaces the envelope's duplicate payload record with a
+same-key reference. It preserves transitive replacement qualification without choosing product History or replacement
+policies. It changes the qualification-private evidence encoding; old payload-effect fixtures must be regenerated.
+
 Yjs uses its pinned native automatic garbage-collection setting during ordinary updates. The fixtures confirm that this
 does not destroy retained qualification state, Range evidence, or replacement evidence after reopen. Pinned Automerge
 does not expose a native garbage-collection or compaction operation; its save/load path is qualified as reload only and

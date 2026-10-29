@@ -42,6 +42,7 @@ import {
   decodePayloadEffect,
   derivePayloadEffectBases,
   encodePayloadEffect,
+  payloadEffectFrontier,
 } from "./replacementEvidence.js";
 import type { RecordedPayloadEffect } from "./replacementEvidence.js";
 import type { QualificationEffectContext } from "./effectContext.js";
@@ -89,6 +90,7 @@ class AutomergeIntegratedDocumentCarrier<
 > implements IntegratedDocumentCarrier<Position> {
   public readonly candidate = "automerge" as const;
   private document: Automerge.Doc<State>;
+  private payloadEffectHeads: readonly string[] = [];
 
   public constructor(
     private readonly positionCodec: StructuralPositionCodec<Position>,
@@ -116,6 +118,9 @@ class AutomergeIntegratedDocumentCarrier<
       );
     parseBlockId(this.document.rootId);
     requireLineageId(this.document.lineageId);
+    this.payloadEffectHeads = payloadEffectFrontier(
+      this.recordedPayloadEffects(),
+    );
   }
 
   public applyChange(change: IntegratedDocumentChange<Position>): void {
@@ -143,7 +148,7 @@ class AutomergeIntegratedDocumentCarrier<
             id: context.id,
             encoded: encodePayloadEffect(
               context.id,
-              Object.keys(this.document.payloadEffects),
+              this.payloadEffectHeads,
               change.payloads ?? [],
               derivePayloadEffectBases(
                 change.payloads ?? [],
@@ -170,7 +175,7 @@ class AutomergeIntegratedDocumentCarrier<
               })),
               inlineContents,
               deletes,
-              evidence?.encoded,
+              evidence?.id,
             ),
           };
     this.document = Automerge.change(this.document, (draft) => {
@@ -280,6 +285,7 @@ class AutomergeIntegratedDocumentCarrier<
         }
       }
     });
+    if (evidence !== undefined) this.payloadEffectHeads = [evidence.id];
   }
 
   public snapshot(): IntegratedDocumentSnapshot<Position> {
@@ -530,7 +536,14 @@ class AutomergeIntegratedDocumentCarrier<
       remote.payloadEffects,
       "payload effect",
     );
+    const heads = payloadEffectFrontier(
+      Object.values({
+        ...this.document.payloadEffects,
+        ...remote.payloadEffects,
+      }).map(decodePayloadEffect),
+    );
     this.document = Automerge.merge(this.document, remote);
+    this.payloadEffectHeads = heads;
   }
 }
 
