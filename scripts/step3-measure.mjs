@@ -14,12 +14,29 @@ const profile = JSON.parse(
     "utf8",
   ),
 );
+const versions = Object.fromEntries(
+  await Promise.all(
+    ["yjs", "@automerge/automerge", "fractional-indexing", "fugue", "vite"].map(
+      async (name) => {
+        const manifest = JSON.parse(
+          await readFile(
+            new URL(`../node_modules/${name}/package.json`, import.meta.url),
+            "utf8",
+          ),
+        );
+        return [name, manifest.version];
+      },
+    ),
+  ),
+);
 const rows = [];
+let sequence = 0;
+const pendingBenchmarks = [];
 let unknownHistoryFailure = false;
 const historyTimeoutMs = profile.history.timeoutMs ?? 300_000;
 if (!Number.isInteger(historyTimeoutMs) || historyTimeoutMs <= 0)
   throw new Error("history.timeoutMs must be a positive integer");
-function checkpoint(status) {
+function checkpoint(status, create = false) {
   const report = {
     schemaVersion: 1,
     status,
@@ -31,6 +48,7 @@ function checkpoint(status) {
       release: release(),
       arch: arch(),
       node: process.version,
+      packages: versions,
       cpu: cpus()[0]?.model,
       cpus: cpus().length,
       ramBytes: totalmem(),
@@ -41,9 +59,10 @@ function checkpoint(status) {
   writeFileSync(
     "step3-evidence/measurements.json",
     JSON.stringify(report, null, 2) + "\n",
+    create ? { flag: "wx" } : undefined,
   );
 }
-checkpoint("incomplete");
+checkpoint("incomplete", true);
 const server = await createServer({
   appType: "custom",
   server: { middlewareMode: true, hmr: false },
@@ -62,30 +81,70 @@ const percentile = (values, percent) =>
     Math.ceil((values.length * percent) / 100) - 1
   ];
 function bench(candidate, workload, size, setup) {
-  const samplesMs = [];
-  let details;
-  for (let i = 0; i < profile.method.warmupRuns + profile.method.samples; i++) {
-    const operation = setup();
-    const start = performance.now();
-    const outcome = operation();
-    const elapsed = performance.now() - start;
-    if (i >= profile.method.warmupRuns) {
-      samplesMs.push(elapsed);
-      details = outcome;
-    }
+  pendingBenchmarks.push({ candidate, workload, size, setup });
+}
+function runBenchmarks() {
+  const groups = new Map();
+  for (const benchmark of pendingBenchmarks) {
+    const key = JSON.stringify([benchmark.workload, benchmark.size]);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(benchmark);
   }
-  const row = {
-    candidate,
-    workload,
-    size,
-    samplesMs,
-    medianMs: percentile(samplesMs, 50),
-    p95Ms: percentile(samplesMs, 95),
-    details,
+  const intervals = {
+    "insert-and-project": "apply change, project and encode",
+    "opaque-replacement": "replace opaque value, project and encode",
+    "encode-reload-project": "encode, reload and project",
+    "replacement-alternative-retention":
+      "changes, merge, inspect effects and encode",
   };
-  rows.push(row);
-  checkpoint("incomplete");
-  console.log("STEP3_ROW " + JSON.stringify(row));
+  for (const group of groups.values()) {
+    const groupRows = group.map(({ candidate, workload, size }) => ({
+      candidate,
+      workload,
+      size,
+      samplesMs: [],
+      medianMs: null,
+      p95Ms: null,
+      details: {
+        interval:
+          intervals[workload] ?? "timed operation; see per-sample details",
+        samples: [],
+      },
+    }));
+    rows.push(...groupRows);
+    checkpoint("incomplete");
+    for (
+      let i = 0;
+      i < profile.method.warmupRuns + profile.method.samples;
+      i++
+    ) {
+      const order = group.map((_, index) => index);
+      if (i % 2) order.reverse();
+      for (const [orderIndex, index] of order.entries()) {
+        const operation = group[index].setup();
+        const start = performance.now();
+        const outcome = operation();
+        const elapsed = performance.now() - start;
+        const currentSequence = ++sequence;
+        if (i < profile.method.warmupRuns) continue;
+        const row = groupRows[index];
+        row.samplesMs.push(elapsed);
+        row.details.samples.push({
+          iteration: i - profile.method.warmupRuns,
+          sequence: currentSequence,
+          order: orderIndex + 1,
+          elapsedMs: elapsed,
+          details: outcome,
+        });
+        row.medianMs = percentile(row.samplesMs, 50);
+        if (row.samplesMs.length === profile.method.samples)
+          row.p95Ms = percentile(row.samplesMs, 95);
+        checkpoint("incomplete");
+      }
+    }
+    for (const row of groupRows)
+      console.log("STEP3_ROW " + JSON.stringify(row));
+  }
 }
 async function runHistoryCandidate(candidate, count) {
   const started = performance.now();
@@ -146,6 +205,7 @@ try {
     { buildRetainedRangeScalingFixture },
     { resolveProbeRange },
     { runExtendedMeasurements },
+    { clipboardMeasurementCases },
   ] = await Promise.all([
     load("src/domain/index.ts"),
     load("qualification/step3/structure/localDensePosition.ts"),
@@ -158,6 +218,7 @@ try {
     load("qualification/step3/integrated/rangeScaling.ts"),
     load("qualification/step3/integrated/rangeProbe.ts"),
     load("qualification/step3/comparison/extendedMeasurements.ts"),
+    load("qualification/step3/comparison/clipboardMeasurements.ts"),
   ]);
   await closeLoader();
   const root = parseBlockId(uuid(1)),
@@ -179,6 +240,23 @@ try {
     profile.ranges.sourceTextUtf16Units,
     bench,
   );
+  for (const fixture of clipboardMeasurementCases()) {
+    bench(
+      "carrier-neutral",
+      `clipboard-${fixture.name}`,
+      fixture.encodedLength,
+      () => {
+        const decode = fixture.setup();
+        return () => ({
+          encodedLength: fixture.encodedLength,
+          spanCount: fixture.spanCount,
+          textLength: fixture.textLength,
+          expectedPrivate: fixture.expectedPrivate,
+          result: decode(),
+        });
+      },
+    );
+  }
   function seeded(factory, text) {
     const carrier = factory.create(root);
     carrier.applyChange({
@@ -211,7 +289,7 @@ try {
           details: {
             samples: [],
             warmups: 0,
-            requestedSamples: profile.method.samples,
+            requestedSamples: profile.history.samples,
             timeoutMs: historyTimeoutMs,
             interval: "edit loop only",
             status: "incomplete",
@@ -221,9 +299,9 @@ try {
     );
     rows.push(...historyRows.values());
     checkpoint("incomplete");
-    for (let iteration = 0; iteration < profile.method.samples; iteration++) {
+    for (let iteration = 0; iteration < profile.history.samples; iteration++) {
       const order = iteration % 2 ? [...factories].reverse() : factories;
-      for (const { candidate } of order) {
+      for (const [orderIndex, { candidate }] of order.entries()) {
         const row = historyRows.get(candidate);
         // A timeout or explicit OOM makes further attempts at this size infeasible.
         if (
@@ -259,6 +337,8 @@ try {
               : "unknown-failure";
         const sample = {
           iteration,
+          sequence: ++sequence,
+          order: orderIndex + 1,
           outcome,
           wallMs: execution.wallMs,
           ...(outcome === "completed"
@@ -278,10 +358,10 @@ try {
         }
         if (row.samplesMs.length >= 3)
           row.medianMs = percentile(row.samplesMs, 50);
-        if (row.samplesMs.length >= 20)
+        if (row.samplesMs.length === profile.history.samples)
           row.p95Ms = percentile(row.samplesMs, 95);
         if (
-          row.details.samples.length === profile.method.samples &&
+          row.details.samples.length === profile.history.samples &&
           row.details.samples.every((s) => s.outcome === "completed")
         )
           row.details.status = "completed";
@@ -484,6 +564,7 @@ try {
       });
     }
   }
+  runBenchmarks();
   checkpoint(unknownHistoryFailure ? "incomplete" : "completed");
   if (unknownHistoryFailure) process.exitCode = 1;
 } finally {

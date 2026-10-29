@@ -7,11 +7,12 @@
     "warmupRuns": 1,
     "samples": 5,
     "tailPercentile": 95,
-    "comparison": "same job and host; report raw samples plus median and nearest-rank p95",
-    "interval": "Intervals vary by workload; see comparison README. History runs use separate fresh processes, five samples without warmup, and report edit loop and save separately."
+    "comparison": "same job and host; matching workload/size cases alternate candidate order per iteration; retain raw samples, median and nearest-rank p95",
+    "interval": "Intervals vary by workload; see comparison README. History runs use separate fresh processes, five samples without warmup, and report edit loop and save separately.",
+    "tailPercentileLimitation": "With five samples nearest-rank p95 is the maximum, a descriptive order statistic and not a reliable tail estimate."
   },
   "content": {
-    "distribution": "one text/plain and one application/example InlineContent under a live root",
+    "distribution": "text edit and reload cases use one text/plain InlineContent; opaque replacement and atomic multi-payload cases add one application/example InlineContent; unrelated-content cases vary the count as recorded per row",
     "text": "repeated ASCII a; UTF-16 length",
     "origin": "human benchmark-author",
     "textUtf16Units": [1024, 10000, 100000],
@@ -37,6 +38,7 @@
     "concurrentRunMembers": 4
   },
   "browser": "existing Chromium suite plus synthetic keyboard-to-DOM-check and nested synchronous applyChange intervals; no paint or asynchronous product feedback claim",
+  "clipboard": "carrier-neutral private text parser boundaries and malformed input with a constant-time retained-source stub; fixture guard values only",
   "loro": {
     "selectable": false,
     "purpose": "reference-only native cursor and movable-tree comparison",
