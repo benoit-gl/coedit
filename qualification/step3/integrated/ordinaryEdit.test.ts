@@ -41,20 +41,22 @@ function insertion(effectId: string, offset = 0): Change {
   };
 }
 
-function seed(carrier: Carrier): void {
+function seed(carrier: Carrier, withPlacement = true): void {
   carrier.applyChange({
-    placements: [
-      {
-        blockId: block,
-        placement: {
-          depth: 1,
-          position: { digits: [1], run: root, member: 1 },
-        },
-      },
-    ],
+    placements: withPlacement
+      ? [
+          {
+            blockId: block,
+            placement: {
+              depth: 1,
+              position: { digits: [1], run: root, member: 1 },
+            },
+          },
+        ]
+      : [],
     inlineContents: [text, other, opaque].map((inlineContentId) => ({
       inlineContentId,
-      blockId: block,
+      blockId: withPlacement ? block : root,
     })),
     payloads: [
       ...[text, other].map((inlineContentId) => ({
@@ -114,24 +116,71 @@ for (const createFactory of [
     localDensePositionAllocator,
     localDensePositionAllocator,
   );
-  function pair() {
+  function pair(withPlacement = false) {
     const initial = reference.create(root);
-    seed(initial);
+    seed(initial, withPlacement);
     const bytes = initial.encode();
     return [reference.load(bytes), targeted.load(bytes)] as const;
   }
 
   describe(`${reference.candidate} targeted ordinary-edit equivalence`, () => {
-    it("uses one full validation after load, then projects only touched payloads; defaults to targeted", () => {
+    it("uses targeted preflight with placements when a pure decoder is explicitly opted in", () => {
+      const initial = reference.create(root);
+      seed(initial);
+      const bytes = initial.encode();
+      const pure = createFactory(
+        localDensePositionAllocator,
+        localDensePositionAllocator,
+        {
+          ordinaryEditVariant: "targeted",
+          purePositionDecoder: true,
+        },
+      ).load(bytes);
+      const baseline = reference.load(bytes);
+      const snapshot = vi.spyOn(pure, "snapshot");
+      baseline.applyChange(insertion("placed"));
+      pure.applyChange(insertion("placed"));
+      expect(snapshot).not.toHaveBeenCalled();
+      expect(semanticState(pure)).toEqual(semanticState(baseline));
+    });
+
+    it("preserves stateful decoder calls when placements are retained", () => {
+      const initial = reference.create(root);
+      seed(initial);
+      const bytes = initial.encode();
+      const traces: [string[], string[]] = [[], []];
+      const carriers = (["snapshot", "targeted"] as const).map((variant, i) => {
+        const codec = {
+          ...localDensePositionAllocator,
+          decode(encoded: string) {
+            traces[i]!.push(encoded);
+            return localDensePositionAllocator.decode(encoded);
+          },
+        };
+        return createFactory(codec, localDensePositionAllocator, {
+          ordinaryEditVariant: variant,
+        }).load(bytes);
+      });
+      expect(traces[1]).toEqual(traces[0]);
+      for (const carrier of carriers) carrier.applyChange(insertion("first"));
+      expect(traces[0].length).toBeGreaterThan(0);
+      expect(traces[1]).toEqual(traces[0]);
+      for (const carrier of carriers) carrier.mergeEncoded(bytes);
+      expect(traces[1]).toEqual(traces[0]);
+      for (const carrier of carriers) carrier.applyChange(insertion("second"));
+      expect(traces[1]).toEqual(traces[0]);
+    });
+
+    it("validates at load and fallback transitions, then projects only touched payloads; defaults to targeted", () => {
       for (const factory of [targeted, defaults]) {
         const initial = reference.create(root);
-        seed(initial);
+        seed(initial, false);
         const carrier = factory.load(initial.encode());
         const snapshot = vi.spyOn(carrier, "snapshot");
         carrier.applyChange(insertion("first"));
-        expect(snapshot).toHaveBeenCalledTimes(1);
+        expect(snapshot).toHaveBeenCalledTimes(0);
         carrier.applyChange(insertion("second"));
-        expect(snapshot).toHaveBeenCalledTimes(1);
+        expect(snapshot).toHaveBeenCalledTimes(0);
         carrier.applyChange({
           payloads: [
             {
@@ -145,15 +194,162 @@ for (const createFactory of [
         });
         expect(snapshot).toHaveBeenCalledTimes(2);
         carrier.applyChange(insertion("third"));
-        expect(snapshot).toHaveBeenCalledTimes(3);
+        expect(snapshot).toHaveBeenCalledTimes(2);
         carrier.applyChange(insertion("fourth"));
-        expect(snapshot).toHaveBeenCalledTimes(3);
+        expect(snapshot).toHaveBeenCalledTimes(2);
       }
       const [carrier] = pair();
       const snapshot = vi.spyOn(carrier, "snapshot");
       carrier.applyChange(insertion("first"));
       carrier.applyChange(insertion("second"));
       expect(snapshot).toHaveBeenCalledTimes(2);
+    });
+
+    it("warms valid merge, restore and fallback transitions before the next ordinary edit", () => {
+      for (const transition of ["merge", "restore", "fallback"] as const) {
+        const initial = reference.create(root);
+        seed(initial, false);
+        const bytes = initial.encode();
+        const carrier = targeted.load(bytes);
+        const history = carrier.captureHistoricalState();
+        carrier.applyChange(insertion("before-transition"));
+        const snapshot = vi.spyOn(carrier, "snapshot");
+        if (transition === "merge") carrier.mergeEncoded(bytes);
+        else if (transition === "restore")
+          carrier.restoreHistoricalState(history);
+        else carrier.applyChange({});
+        expect(snapshot).toHaveBeenCalledTimes(
+          transition === "fallback" ? 2 : 1,
+        );
+        snapshot.mockClear();
+        carrier.applyChange(insertion("after-transition"));
+        expect(snapshot).not.toHaveBeenCalled();
+      }
+    });
+
+    it("keeps full preflight after rejected edits and failed transitions", () => {
+      for (const transition of ["merge", "restore", "edit"] as const) {
+        const [, carrier] = pair();
+        if (transition === "merge")
+          expect(() => carrier.mergeEncoded(Uint8Array.of(1))).toThrow();
+        else if (transition === "restore")
+          expect(() => carrier.restoreHistoricalState("unknown")).toThrow();
+        else
+          expect(() => carrier.applyChange(insertion("invalid", -1))).toThrow();
+        const snapshot = vi.spyOn(carrier, "snapshot");
+        carrier.applyChange(insertion("after-failure"));
+        expect(snapshot).toHaveBeenCalledTimes(1);
+      }
+    });
+
+    it("preserves hidden malformed-owner error ordering, including after a successful edit elsewhere", () => {
+      const initial = reference.create(root);
+      seed(initial, false);
+      const bytes = corruptOwnership(
+        reference.candidate,
+        initial.encode(),
+        other,
+        "malformed-owner",
+      );
+      const carriers = [reference.load(bytes), targeted.load(bytes)];
+      const warmErrors = carriers.map((carrier) =>
+        errorOf(() => carrier.applyChange(insertion("warm"))),
+      );
+      expect(warmErrors[1]).toEqual(warmErrors[0]);
+      const hiddenEdit: Change = {
+        payloads: [
+          {
+            kind: "insert-text",
+            inlineContentId: other,
+            offset: 0,
+            text: "x",
+            origin: human,
+          },
+        ],
+      };
+      const before = carriers.map((carrier) => carrier.encode());
+      const errors = carriers.map((carrier) =>
+        errorOf(() => carrier.applyChange(hiddenEdit)),
+      );
+      expect(errors[0]).toBeDefined();
+      expect(errors[1]).toEqual(errors[0]);
+      if (reference.candidate === "automerge") {
+        expect(warmErrors[0]).toBeUndefined();
+        expect(errors[0]?.message).toMatch(/existing text payload/u);
+      }
+      carriers.forEach((carrier, index) =>
+        expect(carrier.encode()).toEqual(before[index]),
+      );
+    });
+
+    it("defers malformed retained-ID errors after load, merge and restore in original preflight order", () => {
+      const initial = reference.create(root);
+      seed(initial, false);
+      const history = initial.captureHistoricalState();
+      const bytes = initial.encode();
+      const corrupt = corruptOwnership(
+        reference.candidate,
+        bytes,
+        "malformed-inline-id",
+        block,
+      );
+      for (const transition of ["load", "merge", "restore"] as const) {
+        const carriers = [reference, targeted].map((factory) => {
+          const carrier = factory.load(
+            transition === "merge" ? bytes : corrupt,
+          );
+          if (transition === "merge") carrier.mergeEncoded(corrupt);
+          if (transition === "restore") carrier.restoreHistoricalState(history);
+          return carrier;
+        });
+        const changes: Change[] = [
+          insertion("bad-offset", -1),
+          insertion("valid-offset"),
+          {
+            ...insertion("bad-context"),
+            context: { actorId: "", effectId: "invalid" },
+          },
+        ];
+        for (const change of changes) {
+          const before = carriers.map((carrier) => carrier.encode());
+          const errors = carriers.map((carrier) =>
+            errorOf(() => carrier.applyChange(change)),
+          );
+          expect(errors[0]).toBeDefined();
+          expect(errors[1]).toEqual(errors[0]);
+          carriers.forEach((carrier, index) =>
+            expect(carrier.encode()).toEqual(before[index]),
+          );
+        }
+      }
+    });
+
+    it("does not turn successful fallback publication into a late validation failure", () => {
+      const carriers = pair();
+      const invalidId = "malformed-created-id" as typeof text;
+      const creation: Change = {
+        inlineContents: [{ inlineContentId: invalidId, blockId: root }],
+        payloads: [
+          {
+            kind: "replace-text",
+            inlineContentId: invalidId,
+            mediaType: "text/plain",
+            text: "created",
+            origin: human,
+          },
+        ],
+      };
+      for (const carrier of carriers)
+        expect(() => carrier.applyChange(creation)).not.toThrow();
+      const before = carriers.map((carrier) => carrier.encode());
+      const errors = carriers.map((carrier) =>
+        errorOf(() => carrier.applyChange(insertion("rejected"))),
+      );
+      expect(errors[0]).toBeDefined();
+      expect(errors[1]).toEqual(errors[0]);
+      carriers.forEach((carrier, index) =>
+        expect(carrier.encode()).toEqual(before[index]),
+      );
     });
 
     it("preserves sequential multi-payload batches, Origins, no-op deletions, effects and causal bases across reload", () => {
@@ -315,7 +511,7 @@ for (const createFactory of [
     });
 
     it("falls back for mixed structure, preserves update-over-delete, restores history and revalidates", () => {
-      const carriers = pair();
+      const carriers = pair(true);
       for (const carrier of carriers) carrier.applyChange(insertion("warm"));
       const history = carriers.map((carrier) =>
         carrier.captureHistoricalState(),
@@ -379,7 +575,7 @@ for (const createFactory of [
 
     it("revalidates unrelated malformed Origins after load and after merge, without publishing an edit", () => {
       const initial = reference.create(root);
-      seed(initial);
+      seed(initial, false);
       const corrupt = corruptOpaqueOrigin(
         reference.candidate,
         initial.encode(),
@@ -420,6 +616,35 @@ function corruptOpaqueOrigin(candidate: string, bytes: Uint8Array): Uint8Array {
     Y.Map<unknown>
   >;
   payloads.get(opaque)!.set("origin", "false");
+  const update = Y.encodeStateAsUpdate(document);
+  const result = new Uint8Array(37 + update.length);
+  result.set(bytes.subarray(0, 37));
+  result.set(update, 37);
+  return result;
+}
+
+function corruptOwnership(
+  candidate: string,
+  bytes: Uint8Array,
+  id: string,
+  owner: string,
+): Uint8Array {
+  if (candidate === "automerge") {
+    const document = Automerge.load<{
+      inlineContentOwners: Record<string, string>;
+    }>(bytes);
+    return Automerge.save(
+      Automerge.change(document, (draft) => {
+        draft.inlineContentOwners[id] = owner;
+      }),
+    );
+  }
+  const document = new Y.Doc();
+  Y.applyUpdate(document, bytes.subarray(37));
+  const owners = document
+    .getMap("integrated")
+    .get("inlineContentOwners") as Y.Map<string>;
+  owners.set(id, owner);
   const update = Y.encodeStateAsUpdate(document);
   const result = new Uint8Array(37 + update.length);
   result.set(bytes.subarray(0, 37));

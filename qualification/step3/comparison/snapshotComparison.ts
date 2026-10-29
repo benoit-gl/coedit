@@ -23,6 +23,8 @@ export interface SnapshotComparisonProfile {
   opaqueCount: number;
   /** Size in bytes of each unrelated opaque payload. */
   opaqueLength: number;
+  /** Count of live non-root Block placements. */
+  blockCount: number;
   /** Approximate Origin span count in an unrelated payload. */
   spans: number;
 }
@@ -56,6 +58,7 @@ const profiles: Profile[] = [
     unrelatedLength: 256,
     opaqueCount: 0,
     opaqueLength: 0,
+    blockCount: 0,
     spans: 1,
   },
   {
@@ -65,6 +68,17 @@ const profiles: Profile[] = [
     unrelatedLength: 256,
     opaqueCount: 0,
     opaqueLength: 0,
+    blockCount: 0,
+    spans: 1,
+  },
+  {
+    name: "live-blocks-20",
+    targetLength: 256,
+    unrelatedCount: 20,
+    unrelatedLength: 256,
+    opaqueCount: 0,
+    opaqueLength: 0,
+    blockCount: 20,
     spans: 1,
   },
   {
@@ -74,6 +88,7 @@ const profiles: Profile[] = [
     unrelatedLength: 256,
     opaqueCount: 0,
     opaqueLength: 0,
+    blockCount: 0,
     spans: 1,
   },
   {
@@ -83,6 +98,7 @@ const profiles: Profile[] = [
     unrelatedLength: 4096,
     opaqueCount: 0,
     opaqueLength: 0,
+    blockCount: 0,
     spans: 1,
   },
   {
@@ -92,6 +108,7 @@ const profiles: Profile[] = [
     unrelatedLength: 256,
     opaqueCount: 0,
     opaqueLength: 0,
+    blockCount: 0,
     spans: 1,
   },
   {
@@ -101,6 +118,7 @@ const profiles: Profile[] = [
     unrelatedLength: 0,
     opaqueCount: 20,
     opaqueLength: 4096,
+    blockCount: 0,
     spans: 1,
   },
   {
@@ -110,6 +128,7 @@ const profiles: Profile[] = [
     unrelatedLength: 256,
     opaqueCount: 0,
     opaqueLength: 0,
+    blockCount: 0,
     spans: 32,
   },
 ];
@@ -124,6 +143,7 @@ function factory(
       : createAutomergeIntegratedDocumentCarrierFactory;
   return create(localDensePositionAllocator, localDensePositionAllocator, {
     ordinaryEditVariant: variant,
+    purePositionDecoder: true,
   });
 }
 function seed(
@@ -166,7 +186,26 @@ function seed(
       origin,
     });
   }
-  c.applyChange({ inlineContents, payloads });
+  const placements: NonNullable<
+    Parameters<typeof c.applyChange>[0]["placements"]
+  >[number][] = [];
+  if (p.blockCount > 0) {
+    const allocated = localDensePositionAllocator.allocateRun({
+      count: p.blockCount,
+      context: { runNonce: uuid(90000) },
+    });
+    if (!allocated.ok || allocated.value.length !== p.blockCount)
+      throw new Error("Block position allocation failed");
+    for (let i = 0; i < p.blockCount; i++) {
+      const position = allocated.value[i];
+      if (!position) throw new Error("Block position missing");
+      placements.push({
+        blockId: parseBlockId(uuid(20000 + i)),
+        placement: { position, depth: 1 },
+      });
+    }
+  }
+  c.applyChange({ placements, inlineContents, payloads });
   // Alternate provenance in one unrelated payload; text length increases by spans-1.
   if (p.unrelatedCount > 0)
     for (let i = 1; i < p.spans; i++)
@@ -232,6 +271,7 @@ export function runSnapshotComparison(
       >;
       const raw: Record<Variant, number[]> = { snapshot: [], targeted: [] };
       const cold: Record<Variant, number[]> = { snapshot: [], targeted: [] };
+      const loads: Record<Variant, number[]> = { snapshot: [], targeted: [] };
       const makeChange = (index: number) => ({
         context: { actorId: "benchmark", effectId: `edit-${index}` },
         payloads: [
@@ -260,7 +300,10 @@ export function runSnapshotComparison(
       for (let i = 0; i < samples; i++) {
         const projections: string[] = [];
         for (const variant of i % 2 ? [...variants].reverse() : variants) {
-          const c = factory(candidate, variant).load(encoded);
+          const loader = factory(candidate, variant);
+          const loadStart = performance.now();
+          const c = loader.load(encoded);
+          loads[variant].push(performance.now() - loadStart);
           const start = performance.now();
           c.applyChange(first);
           cold[variant].push(performance.now() - start);
@@ -280,6 +323,115 @@ export function runSnapshotComparison(
         if (projections[0] !== projections[1])
           throw new Error("Cold variant projections differ");
       }
+      const transitions = ["merge", "restore", "fallback-replace"] as const;
+      const transitionData = Object.fromEntries(
+        variants.map((variant) => [
+          variant,
+          Object.fromEntries(
+            transitions.map((name) => [
+              name,
+              { transitionMs: [] as number[], nextEditMs: [] as number[] },
+            ]),
+          ),
+        ]),
+      ) as Record<
+        Variant,
+        Record<
+          (typeof transitions)[number],
+          { transitionMs: number[]; nextEditMs: number[] }
+        >
+      >;
+      // The remote branch is identical for both variants, and prepared before timing.
+      const remote = factory(candidate, "snapshot").load(encoded);
+      remote.applyChange({
+        ...first,
+        context: { actorId: "benchmark", effectId: "remote" },
+      });
+      const remoteEncoded = remote.encode();
+      const transitionContext = {
+        actorId: "benchmark",
+        effectId: "transition",
+      };
+      for (const name of transitions)
+        for (let sample = 0; sample < samples; sample++) {
+          const checked: string[] = [];
+          for (const variant of sample % 2
+            ? [...variants].reverse()
+            : variants) {
+            const c = factory(candidate, variant).load(encoded);
+            let token = "";
+            if (name === "restore") {
+              token = c.captureHistoricalState();
+              c.applyChange({
+                ...first,
+                context: { actorId: "benchmark", effectId: "setup" },
+              });
+            }
+            const replacement = {
+              context: transitionContext,
+              payloads: [
+                {
+                  kind: "replace-text" as const,
+                  inlineContentId: target,
+                  mediaType: "text/plain",
+                  text: "a".repeat(p.targetLength),
+                  origin,
+                },
+              ],
+            };
+            const start = performance.now();
+            if (name === "merge") c.mergeEncoded(remoteEncoded);
+            else if (name === "restore")
+              c.restoreHistoricalState(token, transitionContext);
+            else c.applyChange(replacement);
+            transitionData[variant][name].transitionMs.push(
+              performance.now() - start,
+            );
+            const editStart = performance.now();
+            c.applyChange(first);
+            transitionData[variant][name].nextEditMs.push(
+              performance.now() - editStart,
+            );
+            const snapshot = c.snapshot();
+            const payload = snapshot.payloads.get(target);
+            const expected =
+              name === "merge"
+                ? "axx" + "a".repeat(p.targetLength - 1)
+                : "ax" + "a".repeat(p.targetLength - 1);
+            const expectedEffects =
+              name === "merge"
+                ? ["edit-0", "remote"]
+                : name === "restore"
+                  ? ["edit-0", "setup", "transition"]
+                  : ["edit-0", "transition"];
+            const effects = [...c.effects().values()];
+            if (
+              payload?.kind !== "text" ||
+              payload.text !== expected ||
+              effects.length !== expectedEffects.length ||
+              effects.some(
+                (effect) =>
+                  effect.actorId !== "benchmark" ||
+                  !expectedEffects.includes(effect.effectId),
+              )
+            )
+              throw new Error(
+                `${candidate} ${p.name} ${name}: transition semantics mismatch`,
+              );
+            checked.push(
+              canonical({
+                snapshot,
+                effects: effects.sort((a, b) =>
+                  a.effectId.localeCompare(b.effectId),
+                ),
+              }),
+            );
+          }
+          if (checked[0] !== checked[1])
+            throw new Error(
+              `${candidate} ${p.name} ${name}: variant results differ`,
+            );
+        }
       for (let i = 0; i < warmup; i++)
         for (const variant of i % 2 ? [...variants].reverse() : variants)
           carriers[variant].applyChange(changes[i]!);
@@ -293,6 +445,10 @@ export function runSnapshotComparison(
           raw[variant].push((performance.now() - start) / iterations);
         }
       const snapshots = variants.map((variant) => carriers[variant].snapshot());
+      if (
+        snapshots.some((snapshot) => snapshot.placements.size !== p.blockCount)
+      )
+        throw new Error("Fixture block placements differ");
       if (canonical(snapshots[0]) !== canonical(snapshots[1]))
         throw new Error(`${candidate} ${p.name}: variant snapshots differ`);
       for (const variant of variants) {
@@ -319,6 +475,21 @@ export function runSnapshotComparison(
           effectCount: carriers[variant].effects().size,
           seedEncodedBytes: encoded.length,
           finalEncodedBytes: carriers[variant].encode().length,
+          transitions: Object.fromEntries(
+            transitions.map((name) => {
+              const data = transitionData[variant][name];
+              return [
+                name,
+                {
+                  ...data,
+                  transitionSummary: summary(data.transitionMs),
+                  nextEditSummary: summary(data.nextEditMs),
+                },
+              ];
+            }),
+          ),
+          loadMs: loads[variant],
+          loadSummary: summary(loads[variant]),
           coldFirstEditMs: cold[variant],
           coldSummary: summary(cold[variant]),
           steadyBatchMeanMsPerEdit: raw[variant],
@@ -333,10 +504,12 @@ export function runSnapshotComparison(
     profiles,
     rows,
     limitations: [
-      "Headless local carrier applyChange only; no editor, network, encode or snapshot inside timed intervals.",
-      "Cold means first edit after load with load excluded; it is measured in a warmed process, not a cold process.",
+      "Headless local carrier intervals: load; first applyChange after load; steady applyChange batches; mergeEncoded, restoreHistoricalState, or fallback replace-text applyChange; and the following applyChange. No editor, network, encode or snapshot inside timed intervals.",
+      "Transition fixtures each start from a fresh load: merge one prebuilt same-lineage remote insertion; restore a captured seed after a setup insertion; or replace the target with identical text via the fallback path. The following attributed insertion is timed separately. Remote preparation, capture, setup, and checks are excluded.",
+      "Load timing includes the variant’s load-time validation. First edit is timed separately with load excluded; both are measured in a warmed process, not a cold process.",
+      "These carrier timings do not establish editor responsiveness or user-facing latency.",
       "Steady samples reuse a carrier and alternate insertion/deletion; liveness tokens and native history grow throughout warmup and measurements. This does not isolate history size.",
-      "Unrelated payloads share the root owner; unrelated block counts and dead identities are not varied. Target-length, spans and opaque cases do not establish all document shapes.",
+      "Unrelated payloads share the root owner. The live-blocks-20 profile adds 20 placements to the unrelated-count-20 shape; this fixture opts in to the pure local-dense decoder, so the targeted implementation can use its fast path with placements. Dead identities are not varied; these cases do not establish all document shapes.",
       "Intervals include native transaction, validation and allocation. GC, JIT, scheduling, cache state and ordered batch effects may affect results; repeat on the same idle host and compare distributions.",
       "With few samples p95 is effectively the maximum, not a reliable tail estimate; no product threshold is implied.",
     ],

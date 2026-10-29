@@ -52,9 +52,10 @@ encoding. The fixture uses one initial ASCII `a` and one attributed `a` insertio
 
 These are total loop times, not single-keystroke or visible-feedback latency. Five samples do not give a reliable p95.
 The synthetic browser fixture records its raw driver and synchronous-publication intervals in the artifact; it does not
-measure physical paint, independent asynchronous feedback, or slow persistence or replication. Both integrated adapters
-call `snapshot()` during ordinary changes. Their full-document projection work is not resolved by a successful timing.
-The normal-typing whole-document-work criterion in the verification plan therefore remains open.
+measure physical paint, independent asynchronous feedback, or slow persistence or replication. In this historical run,
+both integrated adapters called `snapshot()` during ordinary changes. The later targeted experiment can avoid this
+for eligible edits with no retained placements, or with an explicitly opted-in pure position decoder. Arbitrary decoders
+with retained placements still use full preflight. The normal-typing whole-document-work criterion remains open.
 
 **Remaining before an admissible comparative record:** expand same-profile
 history and opaque workloads, concurrent replacement and integrated structure

@@ -84,8 +84,8 @@ class YjsIntegratedDocumentCarrier<
   private readonly document = new Y.Doc({ gc: true });
   private readonly root = this.document.getMap<unknown>(ROOT);
   private payloadEffectHeads: readonly string[] = [];
-  // Only ordinary edits preserve this proof. External state and fallback
-  // changes require a new full projection before the next targeted preflight.
+  // Only ordinary edits preserve this proof. Other successful transitions
+  // try to refresh it without moving legacy validation errors to that call.
   private ordinaryProjectionValidated = false;
 
   public constructor(
@@ -130,6 +130,7 @@ class YjsIntegratedDocumentCarrier<
     this.payloadEffectHeads = payloadEffectFrontier(
       this.recordedPayloadEffects(),
     );
+    this.refreshOrdinaryProjectionValidation();
   }
 
   public applyChange(change: IntegratedDocumentChange<Position>): void {
@@ -216,11 +217,38 @@ class YjsIntegratedDocumentCarrier<
     if (evidence !== undefined) this.payloadEffectHeads = [evidence.id];
     this.ordinaryProjectionValidated =
       this.options.ordinaryEditVariant !== "snapshot" &&
+      !this.requiresPlacementPreflight() &&
       isOrdinaryTextChange(change) &&
       (change.payloads ?? []).every(
         (payload) =>
           snapshot.payloads.get(payload.inlineContentId)?.kind === "text",
       );
+    if (!this.ordinaryProjectionValidated)
+      this.refreshOrdinaryProjectionValidation();
+  }
+
+  private requiresPlacementPreflight(): boolean {
+    return !this.options.purePositionDecoder && this.blocks().size > 0;
+  }
+
+  private refreshOrdinaryProjectionValidation(): void {
+    this.ordinaryProjectionValidated = false;
+    if (this.options.ordinaryEditVariant === "snapshot") return;
+    try {
+      // Preserve observable decoder calls unless the fixture explicitly opts in
+      // to a pure, deterministic and stable decoder.
+      if (this.requiresPlacementPreflight()) return;
+      this.snapshot();
+      // Ordinary full preflight parses retained IDs too, including identities
+      // hidden from the visible snapshot. Both checks must succeed.
+      for (const id of this.inlineContentOwners().keys())
+        parseInlineContentId(id);
+      this.ordinaryProjectionValidated = true;
+    } catch {
+      // This is speculative read-only work, not a new acceptance boundary.
+      // Retry the original preflight on the next edit to preserve error order.
+      return;
+    }
   }
 
   private ordinaryEditSnapshot(
@@ -229,6 +257,7 @@ class YjsIntegratedDocumentCarrier<
     if (
       this.options.ordinaryEditVariant === "snapshot" ||
       !this.ordinaryProjectionValidated ||
+      this.requiresPlacementPreflight() ||
       !isOrdinaryTextChange(change)
     )
       return undefined;
@@ -390,6 +419,7 @@ class YjsIntegratedDocumentCarrier<
       if (envelope !== undefined)
         this.effectEnvelopes().set(envelope.id, envelope.encoded);
     });
+    this.refreshOrdinaryProjectionValidation();
   }
 
   public recordedPayloadEffects(): readonly RecordedPayloadEffect[] {
@@ -514,6 +544,7 @@ class YjsIntegratedDocumentCarrier<
     );
     Y.applyUpdate(this.document, decoded.update);
     this.payloadEffectHeads = heads;
+    this.refreshOrdinaryProjectionValidation();
   }
 
   private requireRootId(): BlockId {
