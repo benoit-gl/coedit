@@ -6,8 +6,8 @@ import { encodeQualificationOrigin } from "../payload/carrier.js";
 export interface RecordedPayloadEffect {
   /** Canonical actor/effect identity retained by the candidate. */
   readonly effectId: string;
-  /** All payload-effect identities observed at authoring time. */
-  readonly observed: readonly string[];
+  /** Immediate payload-effect frontier observed at authoring time. */
+  readonly parents: readonly string[];
   /** Detached payload changes, including otherwise losing replacements and edits. */
   readonly operations: readonly Record<
     string,
@@ -19,8 +19,8 @@ export interface RecordedPayloadEffect {
 export interface RecordedReplacementAlternative {
   /** Effect that carried the complete replacement. */
   readonly effectId: string;
-  /** Effects observed when this replacement was authored. */
-  readonly observed: readonly string[];
+  /** Immediate payload-effect parents; ancestry requires the retained DAG. */
+  readonly parents: readonly string[];
   /** Immutable complete replacement operation. */
   readonly operation: Readonly<
     Record<string, string | number | readonly number[]>
@@ -30,7 +30,7 @@ export interface RecordedReplacementAlternative {
 /** Encode validated payload evidence without retaining caller-owned buffers. */
 export function encodePayloadEffect(
   effectId: string,
-  observed: readonly string[],
+  parents: readonly string[],
   operations: readonly IntegratedPayloadChange[],
   replacementBases: readonly (string | undefined)[],
 ): string {
@@ -72,7 +72,7 @@ export function encodePayloadEffect(
   });
   return JSON.stringify({
     effectId,
-    observed: [...observed].sort(),
+    parents: [...parents].sort(),
     operations: detached,
   });
 }
@@ -82,11 +82,75 @@ export function decodePayloadEffect(encoded: string): RecordedPayloadEffect {
   const value = JSON.parse(encoded) as RecordedPayloadEffect;
   if (
     typeof value.effectId !== "string" ||
-    !Array.isArray(value.observed) ||
+    !Array.isArray(value.parents) ||
     !Array.isArray(value.operations)
   )
     throw new TypeError("Invalid replicated payload effect evidence.");
   return value;
+}
+
+/**
+ * Validate the retained payload DAG and derive its maximal observed frontier.
+ *
+ * @remarks
+ * Used on reload and staged merge, not on each local insertion. Missing
+ * dependencies, duplicate identities/edges, and cycles reject the candidate.
+ * Parent links retain causal reachability without storing transitive closures.
+ * This qualification encoding deliberately does not read the former observed
+ * closure format; it is not a frozen portable format or product History API.
+ */
+export function payloadEffectFrontier(
+  effects: readonly RecordedPayloadEffect[],
+): readonly string[] {
+  const remaining = new Map<string, number>();
+  const children = new Map<string, string[]>();
+  const heads = new Set<string>();
+  for (const effect of effects) {
+    if (
+      typeof effect.effectId !== "string" ||
+      effect.effectId.length === 0 ||
+      remaining.has(effect.effectId) ||
+      !Array.isArray(effect.parents) ||
+      effect.parents.some(
+        (parent) => typeof parent !== "string" || parent.length === 0,
+      ) ||
+      new Set(effect.parents).size !== effect.parents.length
+    )
+      throw new TypeError("Invalid qualification payload causal DAG.");
+    remaining.set(effect.effectId, effect.parents.length);
+    heads.add(effect.effectId);
+  }
+  for (const effect of effects) {
+    for (const parent of effect.parents) {
+      if (!remaining.has(parent))
+        throw new TypeError(
+          "Qualification payload causal dependency is missing.",
+        );
+      heads.delete(parent);
+      const dependents = children.get(parent) ?? [];
+      dependents.push(effect.effectId);
+      children.set(parent, dependents);
+    }
+  }
+  const ready = [...remaining]
+    .filter(([, count]) => count === 0)
+    .map(([id]) => id);
+  let visited = 0;
+  while (ready.length > 0) {
+    const id = ready.pop();
+    if (id === undefined) continue;
+    visited++;
+    for (const child of children.get(id) ?? []) {
+      const count = remaining.get(child);
+      if (count === undefined)
+        throw new TypeError("Invalid qualification payload causal DAG.");
+      remaining.set(child, count - 1);
+      if (count === 1) ready.push(child);
+    }
+  }
+  if (visited !== effects.length)
+    throw new TypeError("Qualification payload causal DAG contains a cycle.");
+  return [...heads].sort();
 }
 
 /** Competing deterministic whole-replacement precedence probes; Gate B selects. */
@@ -102,15 +166,20 @@ export function replacementFrontier(
           operation.kind === "replace-opaque"),
     ),
   );
+  // Traverse once from all replacement parents, including intermediate edits
+  // and effects on other payloads. Direct-parent checks alone lose causality.
+  payloadEffectFrontier(effects);
+  const byId = new Map(effects.map((effect) => [effect.effectId, effect]));
+  const observed = new Set<string>();
+  const pending = replacements.flatMap((effect) => effect.parents);
+  while (pending.length > 0) {
+    const id = pending.pop();
+    if (id === undefined || observed.has(id)) continue;
+    observed.add(id);
+    for (const parent of byId.get(id)?.parents ?? []) pending.push(parent);
+  }
   return replacements
-    .filter(
-      (effect) =>
-        !replacements.some(
-          (other) =>
-            other.effectId !== effect.effectId &&
-            other.observed.includes(effect.effectId),
-        ),
-    )
+    .filter((effect) => !observed.has(effect.effectId))
     .map((effect) => effect.effectId)
     .sort();
 }
@@ -143,7 +212,7 @@ export function replacementAlternatives(
         : [
             {
               effectId: effect.effectId,
-              observed: effect.observed,
+              parents: effect.parents,
               operation,
             },
           ];

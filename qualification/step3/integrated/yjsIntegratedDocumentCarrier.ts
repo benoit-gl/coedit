@@ -43,6 +43,7 @@ import {
   decodePayloadEffect,
   derivePayloadEffectBases,
   encodePayloadEffect,
+  payloadEffectFrontier,
 } from "./replacementEvidence.js";
 import type { RecordedPayloadEffect } from "./replacementEvidence.js";
 import type { QualificationEffectContext } from "./effectContext.js";
@@ -79,6 +80,7 @@ class YjsIntegratedDocumentCarrier<
   public readonly candidate = "yjs" as const;
   private readonly document = new Y.Doc({ gc: true });
   private readonly root = this.document.getMap<unknown>(ROOT);
+  private payloadEffectHeads: readonly string[] = [];
 
   public constructor(
     private readonly positionCodec: StructuralPositionCodec<Position>,
@@ -118,6 +120,9 @@ class YjsIntegratedDocumentCarrier<
     this.effectContexts();
     this.effectEnvelopes();
     this.payloadEffects();
+    this.payloadEffectHeads = payloadEffectFrontier(
+      this.recordedPayloadEffects(),
+    );
   }
 
   public applyChange(change: IntegratedDocumentChange<Position>): void {
@@ -156,7 +161,7 @@ class YjsIntegratedDocumentCarrier<
             id: context.id,
             encoded: encodePayloadEffect(
               context.id,
-              [...this.payloadEffects().keys()],
+              this.payloadEffectHeads,
               change.payloads ?? [],
               derivePayloadEffectBases(
                 change.payloads ?? [],
@@ -181,7 +186,7 @@ class YjsIntegratedDocumentCarrier<
               placements,
               inlineContents,
               deletes,
-              evidence?.encoded,
+              evidence?.id,
             ),
           };
     applyPreparedChange(
@@ -194,6 +199,7 @@ class YjsIntegratedDocumentCarrier<
       envelope,
       evidence,
     );
+    if (evidence !== undefined) this.payloadEffectHeads = [evidence.id];
   }
 
   public snapshot(): IntegratedDocumentSnapshot<Position> {
@@ -441,7 +447,14 @@ class YjsIntegratedDocumentCarrier<
     if (staged.getMap<unknown>(ROOT).get(ROOT_ID) !== currentRoot)
       throw new TypeError("Integrated carrier root identity is invalid.");
 
+    const stagedEffects = staged.getMap<unknown>(ROOT).get(PAYLOAD_EFFECTS);
+    if (!(stagedEffects instanceof Y.Map))
+      throw new TypeError("Integrated payload effects namespace is missing.");
+    const heads = payloadEffectFrontier(
+      [...(stagedEffects as Y.Map<string>).values()].map(decodePayloadEffect),
+    );
     Y.applyUpdate(this.document, decoded.update);
+    this.payloadEffectHeads = heads;
   }
 
   private requireRootId(): BlockId {

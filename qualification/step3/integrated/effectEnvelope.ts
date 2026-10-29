@@ -12,7 +12,9 @@ import type {
  * @remarks
  * This qualification-only record lets a replica reject reuse of an
  * actor/effect pair before a native merge combines distinct structural and
- * payload state under one attribution identity.
+ * payload state under one attribution identity. The payload is retained once
+ * in the same-key payload record, published atomically with this reference;
+ * merge checks compare that record independently as well as this envelope.
  */
 export function encodeAppliedEffectEnvelope(
   authoringNonce: string,
@@ -22,7 +24,7 @@ export function encodeAppliedEffectEnvelope(
   }[],
   inlineContents: readonly IntegratedInlineContentCreation[],
   deleteBlockIds: readonly BlockId[],
-  payloadEffect: string | undefined,
+  payloadEffectId: string | undefined,
 ): string {
   assertAuthoringNonce(authoringNonce);
   return JSON.stringify({
@@ -34,7 +36,7 @@ export function encodeAppliedEffectEnvelope(
       blockId,
     ]),
     deleteBlockIds: [...deleteBlockIds].sort(),
-    payloadEffect: payloadEffect ?? null,
+    payloadEffectId: payloadEffectId ?? null,
   });
 }
 

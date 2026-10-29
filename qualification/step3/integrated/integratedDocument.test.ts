@@ -897,6 +897,7 @@ describe("automerge integrated Origin validation", () => {
       Automerge.from({
         rootId,
         lineageId: "origin-validation-fixture",
+        payloadEffects: {},
         blocks: {},
         liveness: {},
         inlineContentOwners: { [textId]: rootId },
