@@ -64,6 +64,75 @@ for (const stage of stages) {
             2,
           ) + "\n",
         );
+        const workloadMatches = [
+          ...(execution.stdout ?? "").matchAll(
+            /STEP3_EDITOR_WORKLOADS_JSON=(\{[^\r\n]*\})/g,
+          ),
+        ];
+        if (workloadMatches.length !== 1)
+          throw new Error("Expected exactly one browser workload record.");
+        const workloads = JSON.parse(workloadMatches[0][1]);
+        if (
+          workloads.profile?.cases?.length !== 9 ||
+          !Array.isArray(workloads.samples) ||
+          workloads.samples.length !== 126 ||
+          !Array.isArray(workloads.summaries) ||
+          workloads.summaries.length !== 18
+        )
+          throw new Error("Browser workload samples are incomplete.");
+        await writeFile(
+          "step3-evidence/editor-workloads.json",
+          JSON.stringify(
+            {
+              revision: process.env.GITHUB_SHA ?? null,
+              environment: {
+                platform: platform(),
+                release: release(),
+                arch: arch(),
+                node: process.version,
+                cpu: cpus()[0]?.model,
+                cpus: cpus().length,
+                ramBytes: totalmem(),
+              },
+              ...workloads,
+            },
+            null,
+            2,
+          ) + "\n",
+        );
+        const isolationMatches = [
+          ...(execution.stdout ?? "").matchAll(
+            /STEP3_DOWNSTREAM_ISOLATION_JSON=(\{[^\r\n]*\})/g,
+          ),
+        ];
+        if (isolationMatches.length !== 1)
+          throw new Error("Expected exactly one downstream isolation record.");
+        const isolation = JSON.parse(isolationMatches[0][1]);
+        if (
+          !Array.isArray(isolation.samples) ||
+          isolation.samples.length !== 28
+        )
+          throw new Error("Downstream isolation samples are incomplete.");
+        await writeFile(
+          "step3-evidence/downstream-isolation.json",
+          JSON.stringify(
+            {
+              revision: process.env.GITHUB_SHA ?? null,
+              environment: {
+                platform: platform(),
+                release: release(),
+                arch: arch(),
+                node: process.version,
+                cpu: cpus()[0]?.model,
+                cpus: cpus().length,
+                ramBytes: totalmem(),
+              },
+              ...isolation,
+            },
+            null,
+            2,
+          ) + "\n",
+        );
       } catch (error) {
         stageError = `Browser evidence collection failed: ${error.message}`;
       }

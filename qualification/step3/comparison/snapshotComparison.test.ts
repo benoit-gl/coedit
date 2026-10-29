@@ -5,13 +5,48 @@ describe("snapshot comparison", () => {
   it("checks paired projections and attributed effects and returns sample metadata", () => {
     const result = runSnapshotComparison(1, 2, 2);
     expect(result).toMatchObject({ samples: 1, iterations: 2, warmup: 2 });
-    expect(result.profiles).toHaveLength(8);
+    expect(result.profiles).toHaveLength(12);
     expect(
       result.profiles.find((profile) => profile.name === "live-blocks-20")
         ?.blockCount,
     ).toBe(20);
+    for (const count of [20, 100]) {
+      expect(
+        result.profiles.find((p) => p.name === `blocks-only-${count}`),
+      ).toMatchObject({
+        blockCount: count,
+        unrelatedCount: 0,
+        historyEdits: 0,
+      });
+    }
+    for (const count of [100, 500]) {
+      expect(
+        result.profiles.find((p) => p.name === `target-history-${count}`),
+      ).toMatchObject({
+        blockCount: 0,
+        unrelatedCount: 0,
+        historyEdits: count,
+      });
+    }
     expect(result.rows).toHaveLength(result.profiles.length * 4);
     for (const candidate of ["yjs", "automerge"]) {
+      const seedSizes = new Map(
+        (
+          result.rows as Array<{
+            candidate: string;
+            variant: string;
+            profile: { name: string };
+            seedEncodedBytes: number;
+          }>
+        )
+          .filter(
+            (row) => row.candidate === candidate && row.variant === "snapshot",
+          )
+          .map((row) => [row.profile.name, row.seedEncodedBytes]),
+      );
+      expect(seedSizes.get("target-history-500")).toBeGreaterThan(
+        seedSizes.get("target-history-100")!,
+      );
       for (const profile of result.profiles) {
         const rows = (
           result.rows as Array<{
@@ -72,5 +107,5 @@ describe("snapshot comparison", () => {
         }
       }
     }
-  }, 30_000);
+  }, 60_000);
 });
