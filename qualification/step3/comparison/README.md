@@ -51,6 +51,15 @@ The adapter publishes synchronously; the driver interval includes publication
 and driver overhead. It is not physical paint, OS input/IME, independent
 asynchronous feedback, slow-persistence isolation, or a product latency claim.
 
+The snapshot comparison uses the same carrier fixture for the `snapshot` and
+`targeted` qualification variants. It measures the first edit after load and
+steady alternating insertion/deletion batches without projection or save in the
+timed interval. The artifact includes raw samples, fixture dimensions, outcome
+checks, and timing limitations. It varies unrelated text and opaque content,
+target length, and Origin fragmentation; it does not prove constant-time editing.
+Run it separately with `npm run step3:snapshot-comparison` only when its output
+path does not already exist.
+
 Run the existing headless and Chromium suites separately before comparing
 candidates. Candidate save/load counts as reload, **not** native compaction.
 Automerge has no exposed native compaction operation in the pinned adapter.

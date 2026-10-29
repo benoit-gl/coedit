@@ -30,20 +30,25 @@ const childTextId = parseInlineContentId(
 const human = { id: "human-a", kind: "human" as const };
 const imported = { id: "import-a", kind: "imported" as const };
 
-const factories: readonly IntegratedDocumentCarrierFactory<LocalDensePosition>[] =
+const factories: readonly (IntegratedDocumentCarrierFactory<LocalDensePosition> & {
+  readonly ordinaryEditVariant: "snapshot" | "targeted";
+})[] = (["snapshot", "targeted"] as const).flatMap((ordinaryEditVariant) =>
   [
     createYjsIntegratedDocumentCarrierFactory(
       localDensePositionAllocator,
       localDensePositionAllocator,
+      { ordinaryEditVariant },
     ),
     createAutomergeIntegratedDocumentCarrierFactory(
       localDensePositionAllocator,
       localDensePositionAllocator,
+      { ordinaryEditVariant },
     ),
-  ];
+  ].map((factory) => ({ ...factory, ordinaryEditVariant })),
+);
 
 for (const factory of factories) {
-  describe(`${factory.candidate} integrated foundation`, () => {
+  describe(`${factory.candidate} ${factory.ordinaryEditVariant} integrated foundation`, () => {
     it("publishes structure, text, and opaque payloads in one atomic change", () => {
       const carrier = factory.create(rootId);
       carrier.applyChange({
@@ -881,7 +886,8 @@ describe("cross-candidate update-over-delete projection", () => {
           ),
         };
       });
-      expect(snapshots[0]).toEqual(snapshots[1]);
+      for (const snapshot of snapshots.slice(1))
+        expect(snapshot).toEqual(snapshots[0]);
     }
   });
 });

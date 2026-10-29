@@ -6,6 +6,10 @@ const stages = [
   { name: "headless-common-suites", args: ["run", "test"] },
   { name: "chromium-editor-suites", args: ["run", "test:browser"] },
   { name: "paired-carriers-and-allocators", args: ["run", "step3:measure"] },
+  {
+    name: "snapshot-versus-targeted",
+    args: ["run", "step3:snapshot-comparison"],
+  },
   { name: "nonselectable-loro-reference", args: ["run", "step3:loro"] },
 ];
 await mkdir("step3-evidence", { recursive: true });

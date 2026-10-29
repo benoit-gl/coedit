@@ -25,6 +25,7 @@ import type {
   QualificationTextSpan,
 } from "../payload/carrier.js";
 import type {
+  IntegratedCarrierQualificationOptions,
   IntegratedDocumentCarrier,
   IntegratedDocumentCarrierFactory,
   IntegratedDocumentChange,
@@ -54,6 +55,8 @@ import {
   encodeAppliedEffectEnvelope,
   encodeRestoreEffectEnvelope,
 } from "./effectEnvelope.js";
+
+import { isOrdinaryTextChange } from "./ordinaryEdit.js";
 
 const ORIGIN_MARK = "__coedit_origin";
 
@@ -91,11 +94,15 @@ class AutomergeIntegratedDocumentCarrier<
   public readonly candidate = "automerge" as const;
   private document: Automerge.Doc<State>;
   private payloadEffectHeads: readonly string[] = [];
+  // Only ordinary edits preserve this proof. External state and fallback
+  // changes require a new full projection before the next targeted preflight.
+  private ordinaryProjectionValidated = false;
 
   public constructor(
     private readonly positionCodec: StructuralPositionCodec<Position>,
     rootId?: BlockId,
     encoded?: Uint8Array,
+    private readonly options: IntegratedCarrierQualificationOptions = {},
   ) {
     if (encoded !== undefined) this.document = Automerge.load<State>(encoded);
     else if (rootId !== undefined)
@@ -124,22 +131,32 @@ class AutomergeIntegratedDocumentCarrier<
   }
 
   public applyChange(change: IntegratedDocumentChange<Position>): void {
-    const snapshot = this.snapshot();
+    const targeted = this.ordinaryEditSnapshot(change);
+    this.ordinaryProjectionValidated = false;
+    const snapshot = targeted ?? this.snapshot();
     validateChange(
       change,
       snapshot,
-      new Set(Object.keys(this.document.inlineContentOwners)),
+      targeted === undefined
+        ? new Set(Object.keys(this.document.inlineContentOwners))
+        : new Set<string>(),
     );
-    const inlineContents = prepareInlineContentCreations(
-      change,
-      snapshot,
-      new Set(
-        Object.keys(this.document.inlineContentOwners).map(
-          parseInlineContentId,
-        ),
-      ),
-      new Set([this.document.rootId, ...Object.keys(this.document.liveness)]),
-    );
+    const inlineContents =
+      targeted === undefined
+        ? prepareInlineContentCreations(
+            change,
+            snapshot,
+            new Set(
+              Object.keys(this.document.inlineContentOwners).map(
+                parseInlineContentId,
+              ),
+            ),
+            new Set([
+              this.document.rootId,
+              ...Object.keys(this.document.liveness),
+            ]),
+          )
+        : [];
     const context = this.prepareContext(change.context);
     const evidence =
       context === undefined || (change.payloads?.length ?? 0) === 0
@@ -286,6 +303,50 @@ class AutomergeIntegratedDocumentCarrier<
       }
     });
     if (evidence !== undefined) this.payloadEffectHeads = [evidence.id];
+    this.ordinaryProjectionValidated =
+      this.options.ordinaryEditVariant !== "snapshot" &&
+      isOrdinaryTextChange(change) &&
+      (change.payloads ?? []).every(
+        (payload) =>
+          snapshot.payloads.get(payload.inlineContentId)?.kind === "text",
+      );
+  }
+
+  private ordinaryEditSnapshot(
+    change: IntegratedDocumentChange<Position>,
+  ): IntegratedDocumentSnapshot<Position> | undefined {
+    if (
+      this.options.ordinaryEditVariant === "snapshot" ||
+      !this.ordinaryProjectionValidated ||
+      !isOrdinaryTextChange(change)
+    )
+      return undefined;
+    const rootId = parseBlockId(this.document.rootId);
+    const payloads = new Map<InlineContentId, QualificationPayloadSnapshot>();
+    const inlineContentOwners = new Map<InlineContentId, BlockId>();
+    for (const update of change.payloads ?? []) {
+      const id = update.inlineContentId;
+      if (payloads.has(id)) continue;
+      const rawOwner = this.document.inlineContentOwners[id];
+      if (rawOwner === undefined) return undefined;
+      const owner = parseBlockId(rawOwner);
+      if (!isLive(this.document.inlineContentLiveness, id)) return undefined;
+      if (owner !== rootId && !isLive(this.document.liveness, owner))
+        return undefined;
+      const payload = this.document.payloads[id];
+      if (payload === undefined) return undefined;
+      const projected = projectPayload(this.document, id, payload);
+      if (projected.kind !== "text") return undefined;
+      payloads.set(id, projected);
+      inlineContentOwners.set(id, owner);
+    }
+    return {
+      rootId,
+      payloads,
+      inlineContentOwners,
+      placements: new Map(),
+      blockLiveness: new Map([[rootId, true]]),
+    };
   }
 
   public snapshot(): IntegratedDocumentSnapshot<Position> {
@@ -358,6 +419,7 @@ class AutomergeIntegratedDocumentCarrier<
     token: string,
     context?: QualificationEffectContext,
   ): void {
+    this.ordinaryProjectionValidated = false;
     const target = this.materializeHistoricalState(token);
     const effect = this.prepareContext(context);
     const envelope =
@@ -512,6 +574,7 @@ class AutomergeIntegratedDocumentCarrier<
   }
 
   public mergeEncoded(encoded: Uint8Array): void {
+    this.ordinaryProjectionValidated = false;
     const remote = Automerge.load<State>(encoded);
     if (remote.rootId !== this.document.rootId)
       throw new TypeError("Integrated replicas must share one root identity.");
@@ -551,15 +614,26 @@ class AutomergeIntegratedDocumentCarrier<
 export function createAutomergeIntegratedDocumentCarrierFactory<Position>(
   positionCodec: StructuralPositionCodec<Position>,
   positionOrdering: StructuralPositionOrdering<Position>,
+  options: IntegratedCarrierQualificationOptions = {},
 ): IntegratedDocumentCarrierFactory<Position> {
   return {
     candidate: "automerge",
     positionCodec,
     positionOrdering,
     create: (rootId) =>
-      new AutomergeIntegratedDocumentCarrier(positionCodec, rootId),
+      new AutomergeIntegratedDocumentCarrier(
+        positionCodec,
+        rootId,
+        undefined,
+        options,
+      ),
     load: (encoded) =>
-      new AutomergeIntegratedDocumentCarrier(positionCodec, undefined, encoded),
+      new AutomergeIntegratedDocumentCarrier(
+        positionCodec,
+        undefined,
+        encoded,
+        options,
+      ),
   };
 }
 

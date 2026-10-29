@@ -38,6 +38,11 @@ with retained parent links and a cached payload frontier, and replaces the envel
 same-key reference. It preserves transitive replacement qualification without choosing product History or replacement
 policies. It changes the qualification-private evidence encoding; old payload-effect fixtures must be regenerated.
 
+The [targeted ordinary-edit experiment](ORDINARY_EDIT_PREFLIGHT.md) keeps the previous snapshot preflight selectable for
+side-by-side measurements. Qualification factories now default to targeted preflight for eligible warm ordinary text
+batches, with full-snapshot fallback after load, merge, restore, or nonordinary changes. This changes no production
+carrier choice and does not establish document-size-independent editing.
+
 Yjs uses its pinned native automatic garbage-collection setting during ordinary updates. The fixtures confirm that this
 does not destroy retained qualification state, Range evidence, or replacement evidence after reopen. Pinned Automerge
 does not expose a native garbage-collection or compaction operation; its save/load path is qualified as reload only and
