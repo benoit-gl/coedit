@@ -117,6 +117,20 @@ const cases = [
   },
 ] as const;
 
+// The target holds one uniformly attributed text value; unrelated contents are
+// small. This varies content length independently of effect-history growth.
+const allCases = [
+  ...cases,
+  ...[1024, 10000, 100000].map((targetLength) => ({
+    name: `growth-${targetLength}`,
+    targetLength,
+    from: targetLength / 2,
+    to: targetLength / 2,
+    action: "keyboard" as const,
+    input: "X",
+  })),
+];
+
 describe("representative experimental browser edit workloads", () => {
   it("captures paired cases in a multi-Block multi-InlineContent fixture", async () => {
     const samples: {
@@ -129,7 +143,13 @@ describe("representative experimental browser edit workloads", () => {
       synchronousApplyMs: number;
     }[] = [];
     let sequence = 0;
-    for (const fixture of cases) {
+    for (const fixture of allCases) {
+      const target =
+        "targetLength" in fixture ? "a".repeat(fixture.targetLength) : initial;
+      const expected =
+        "targetLength" in fixture
+          ? target.slice(0, fixture.from) + "X" + target.slice(fixture.to)
+          : fixture.expected;
       for (let iteration = 0; iteration < 7; iteration++) {
         const order = iteration % 2 ? [...factories].reverse() : factories;
         for (const factory of order) {
@@ -151,7 +171,7 @@ describe("representative experimental browser edit workloads", () => {
               kind: "replace-text" as const,
               inlineContentId,
               mediaType: "text/plain",
-              text: inlineContentId === content ? initial : "unrelated text",
+              text: inlineContentId === content ? target : "unrelated text",
               origin: original,
             })),
             context: { actorId: "workload", effectId: "seed" },
@@ -209,9 +229,9 @@ describe("representative experimental browser edit workloads", () => {
             expect(
               nativeTextFromProseMirror(editor.view.state.doc),
               fixture.name,
-            ).toBe(fixture.expected);
+            ).toBe(expected);
             expect(readEditorText(carrier, content).text, fixture.name).toBe(
-              fixture.expected,
+              expected,
             );
             expect(readEditorText(carrier, other).text).toBe("unrelated text");
             expect(readEditorText(carrier, third).text).toBe("unrelated text");
@@ -233,7 +253,7 @@ describe("representative experimental browser edit workloads", () => {
         }
       }
     }
-    const summaries = cases.flatMap((fixture) =>
+    const summaries = allCases.flatMap((fixture) =>
       factories.map(({ candidate }) => {
         const selected = samples.filter(
           (sample) =>
@@ -260,7 +280,7 @@ describe("representative experimental browser edit workloads", () => {
         JSON.stringify({
           version: 1,
           profile: {
-            cases,
+            cases: allCases,
             warmups: 2,
             samplesPerCandidateAndCase: 5,
             freshFixturePerSample: true,
@@ -280,5 +300,5 @@ describe("representative experimental browser edit workloads", () => {
           summaries,
         }),
     );
-  }, 240000);
+  }, 600000);
 });

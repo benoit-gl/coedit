@@ -197,6 +197,33 @@ describe("experimental downstream isolation", () => {
         }
       }
     }
+    const summaries = factories.flatMap(({ candidate }) =>
+      [0, 1].map((edit) => {
+        const selected = samples.filter(
+          (sample) =>
+            sample.candidate === candidate &&
+            sample.edit === edit &&
+            !sample.warmup,
+        );
+        const stats = (values: number[]) => {
+          const sorted = [...values].sort((a, b) => a - b);
+          return { medianMs: sorted[2], p95Ms: sorted[4] };
+        };
+        return {
+          candidate,
+          edit,
+          driverToDomCheck: stats(
+            selected.map((sample) => sample.driverToDomCheckMs),
+          ),
+          synchronousApply: stats(
+            selected.map((sample) => sample.synchronousApplyMs),
+          ),
+          nextAnimationFrame: stats(
+            selected.map((sample) => sample.nextAnimationFrameMs),
+          ),
+        };
+      }),
+    );
     console.info(
       "STEP3_DOWNSTREAM_ISOLATION_JSON=" +
         JSON.stringify({
@@ -217,9 +244,10 @@ describe("experimental downstream isolation", () => {
               "From before synthetic keyboard until a requested animation-frame callback after driver resolution. Includes driver overhead and assertions; not physical paint.",
           },
           limitations:
-            "Gated in-memory callbacks simulate pending nonblocking downstream work. They do not model actual storage or network, durability, scheduler contention, asynchronous canonical publication, or physical paint. Local encoding occurs outside the timed edit. The view and carrier publish synchronously on the same browser thread.",
+            "Gated in-memory callbacks simulate pending nonblocking downstream work. They do not model actual storage or network, durability, scheduler contention, asynchronous canonical publication, or physical paint. Local encoding occurs outside the timed edit. The view and carrier publish synchronously on the same browser thread. With five samples p95 is the maximum, not a reliable tail estimate.",
           userAgent: navigator.userAgent,
           samples,
+          summaries,
         }),
     );
   }, 120000);

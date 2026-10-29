@@ -73,11 +73,11 @@ for (const stage of stages) {
           throw new Error("Expected exactly one browser workload record.");
         const workloads = JSON.parse(workloadMatches[0][1]);
         if (
-          workloads.profile?.cases?.length !== 9 ||
+          workloads.profile?.cases?.length !== 12 ||
           !Array.isArray(workloads.samples) ||
-          workloads.samples.length !== 126 ||
+          workloads.samples.length !== 168 ||
           !Array.isArray(workloads.summaries) ||
-          workloads.summaries.length !== 18
+          workloads.summaries.length !== 24
         )
           throw new Error("Browser workload samples are incomplete.");
         await writeFile(
@@ -110,7 +110,9 @@ for (const stage of stages) {
         const isolation = JSON.parse(isolationMatches[0][1]);
         if (
           !Array.isArray(isolation.samples) ||
-          isolation.samples.length !== 28
+          isolation.samples.length !== 28 ||
+          !Array.isArray(isolation.summaries) ||
+          isolation.summaries.length !== 4
         )
           throw new Error("Downstream isolation samples are incomplete.");
         await writeFile(

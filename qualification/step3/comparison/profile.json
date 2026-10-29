@@ -45,5 +45,5 @@
     "purpose": "reference-only native cursor and movable-tree comparison",
     "install": "external isolated package, not a production dependency"
   },
-  "browserWorkloads": "two Blocks, three InlineContents, short emoji-containing target; insertion, deletion, selection, Markdown, Unicode and line-feed probes with pure local-dense decoder opt-in; keyboard driver or direct ProseMirror transactions, not physical paint or independent feedback; two warmups and five samples per case and candidate"
+  "browserWorkloads": "two Blocks, three InlineContents; short emoji-containing target for insertion, deletion, selection, Markdown, Unicode and line-feed probes, plus uniformly attributed 1024, 10000, and 100000 UTF-16-unit targets with one middle insertion; content size and effect-history growth are separate. Pure local-dense decoder opt-in; keyboard driver or direct ProseMirror transactions, not physical paint or independent feedback; two warmups and five samples per case and candidate"
 }

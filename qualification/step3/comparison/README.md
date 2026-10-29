@@ -62,9 +62,13 @@ warm-ups per case and candidate in alternating order. The driver/dispatch
 interval includes synchronous publication and does not measure paint or
 independent feedback; the nested interval covers `applyChange` only. The p95
 is the maximum of five values and does not estimate tail latency reliably.
-The fixture is a small operation-level probe, not representative-size or
-slow-persistence/replica-delivery evidence. The qualification adapter edits one
-InlineContent at a time and does not present a multi-Block editor surface.
+Three additional cases insert one character at the middle of a uniformly
+attributed target of 1,024, 10,000 or 100,000 UTF-16 units, with the same
+unrelated contents and independent of effect-history growth. Seed, mounting,
+selection and assertions are excluded from the action interval. These are
+content-size probes, not slow-persistence/replica-delivery evidence. The
+qualification adapter edits one InlineContent at a time and does not present a
+multi-Block editor surface.
 
 `downstream-isolation.json` records synthetic local edits while gated in-memory
 persistence and inbound and outbound replica callbacks remain pending. After
