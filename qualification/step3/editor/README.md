@@ -1,4 +1,4 @@
-# Step 3 Merge 7 — application/editor qualification (in progress)
+# Step 3 Merge 7 — application/editor qualification (landed)
 
 This directory holds qualification-only application-intent and clipboard fixtures.
 No code here is a production editor adapter, History API, or selected private
@@ -81,6 +81,5 @@ synthetic DOM composition and clipboard events; it does not claim OS-level
 IME or clipboard automation. It intentionally keeps detailed carrier and
 transaction assertions in the lower-cost Node suite.
 
-**Still required for Merge 7:** Cross-platform full repository checks and an
-independent fresh review. No PR convergence or qualification is claimed by the
-files in this directory alone.
+Merge 7 landed on main. Comparative measurements and the Gate B selection
+remain separate Merge 8 and Merge 9 work.

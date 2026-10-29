@@ -2,8 +2,9 @@
 
 Coedit is a browser-first collaborative document engine. Steps 1 and 2 are complete. Step 3 carrier qualification is in
 progress: the payload, structural/allocator, integrated collaborative-document foundation, integrated
-structural/payload semantics, historical lifecycle, and retained-state/Range lifecycle merge units are complete;
-application/editor qualification and comparative evidence remain before Gate B selects the carrier. Step 3 qualifies
+structural/payload semantics, historical lifecycle, retained-state/Range lifecycle, and
+application/editor qualification merge units are complete;
+comparative evidence remains before Gate B selects the carrier. Step 3 qualifies
 Media-Type-labelled InlineContent payloads
 (`text/markdown`, `text/plain`, and representative opaque Media Types), universal whole-payload replacement,
 native-string fine-grained text, structure, and text Range feasibility against Yjs and Automerge. Step 4 implements the
@@ -19,14 +20,15 @@ Use Node.js `>=22.13.0 <25`. Node.js includes npm, which is the repository boots
 installation is required.
 
 The repository pins pnpm `11.24.0` in `package.json`. `npm run bootstrap` obtains that exact pnpm version through
-`npm exec` and uses it with the committed `pnpm-lock.yaml`. Do not use `npm install` for project dependencies.
+`npm exec`, uses it with the committed `pnpm-lock.yaml`, and installs the pinned Playwright Chromium browser. Do not use
+`npm install` for project dependencies.
 
 Windows and Linux are required native development platforms. macOS is an intended supported platform. The commands below
 use package scripts and do not require an OS-specific shell.
 
 ## Commands
 
-- `npm run bootstrap` installs project dependencies through the pinned pnpm version.
+- `npm run bootstrap` installs project dependencies and the pinned Chromium browser through the pinned pnpm version.
 - `npm run dev` starts the Vite development server.
 - `npm run build` type-checks and builds the production browser application.
 - `npm run preview` serves the production build locally over HTTP.

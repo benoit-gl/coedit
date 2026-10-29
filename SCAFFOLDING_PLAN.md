@@ -1,7 +1,7 @@
 # Coedit document-engine MVP scaffolding plan
 
-**Status:** Accepted implementation plan; Steps 0-2 and the first six Step 3 qualification merge units are complete;
-application and editor qualification is next.
+**Status:** Accepted implementation plan; Steps 0-2 and the first seven Step 3 qualification merge units are complete;
+comparative qualification evidence is next.
 
 **Target branch:** `main`
 
@@ -155,8 +155,8 @@ This documentation set establishes and revalidates the Step 0 authority baseline
 payloads, the durable text Range authority, and the revised Step 3-and-later sequence. Steps 1 and 2 subsequently
 established the browser scaffold and pure Block domain. Step 3 carrier qualification is in progress: the payload,
 structural/allocator, integrated collaborative-document foundation, integrated structural/payload semantics, and
-historical lifecycle, and retained-state/Range lifecycle merge units are complete; application/editor qualification is
-next. Gate B selects the carrier, the observable deterministic
+historical lifecycle, and retained-state/Range lifecycle and application/editor qualification merge units are complete;
+comparative qualification evidence is next. Gate B selects the carrier, the observable deterministic
 concurrent-replacement winner rule, the carrier-private implementation of that rule, mixed replacement/text-edit
 semantics, and payload/carrier resource-admission behavior. Step 4 selects and qualifies the production Media Type
 parser implementation and implements the first raw-media processor capability. Gate C later selects the text Range
@@ -308,7 +308,10 @@ Deliver Step 3 as nine reviewable merge units with one fork-and-join boundary:
    hostile-input and clipboard evidence used by Gate B; it does not select Step 11 semantic-group timing or queue
    thresholds.
 
-8. **Comparative qualification evidence.** Add the reproducible qualification runner that orchestrates the landed common
+8. **Comparative qualification evidence.** A preliminary runner and partial experimental evidence can land as a
+   baseline for further investigation. They do not complete this unit or satisfy Gate B. Continue the comparative
+   work on top of that baseline and retain the following acceptance criteria. Add the reproducible qualification runner
+   that orchestrates the landed common
    suites. Before the comparative run, record the shared run-specific fixture profile and measurement method. Run all
    selectable carrier and allocator candidates under that profile, including the landed Range lazy-resolution/scaling,
    replacement-policy, lifecycle, editor, clipboard, and resource-admission workloads. Run Loro only as the planned
