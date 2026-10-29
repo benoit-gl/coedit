@@ -1,5 +1,6 @@
 import { Buffer } from "node:buffer";
 import { spawn } from "node:child_process";
+import { setTimeout, clearTimeout } from "node:timers";
 import { URL } from "node:url";
 import { readFile } from "node:fs/promises";
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -13,19 +14,11 @@ const profile = JSON.parse(
     "utf8",
   ),
 );
-const server = await createServer({
-  appType: "custom",
-  server: { middlewareMode: true, hmr: false },
-  logLevel: "error",
-});
-let serverClosed = false;
-async function closeLoader() {
-  if (serverClosed) return;
-  await server.close();
-  serverClosed = true;
-}
-const load = (path) => server.ssrLoadModule("/" + path);
 const rows = [];
+let unknownHistoryFailure = false;
+const historyTimeoutMs = profile.history.timeoutMs ?? 300_000;
+if (!Number.isInteger(historyTimeoutMs) || historyTimeoutMs <= 0)
+  throw new Error("history.timeoutMs must be a positive integer");
 function checkpoint(status) {
   const report = {
     schemaVersion: 1,
@@ -50,6 +43,20 @@ function checkpoint(status) {
     JSON.stringify(report, null, 2) + "\n",
   );
 }
+checkpoint("incomplete");
+const server = await createServer({
+  appType: "custom",
+  server: { middlewareMode: true, hmr: false },
+  logLevel: "error",
+});
+let serverClosed = false;
+async function closeLoader() {
+  if (serverClosed) return;
+  await server.close();
+  serverClosed = true;
+}
+const load = (path) => server.ssrLoadModule("/" + path);
+
 const percentile = (values, percent) =>
   [...values].sort((a, b) => a - b)[
     Math.ceil((values.length * percent) / 100) - 1
@@ -81,6 +88,7 @@ function bench(candidate, workload, size, setup) {
   console.log("STEP3_ROW " + JSON.stringify(row));
 }
 async function runHistoryCandidate(candidate, count) {
+  const started = performance.now();
   const child = spawn(process.execPath, ["scripts/step3-history.mjs"], {
     stdio: ["ignore", "pipe", "pipe"],
     env: {
@@ -92,6 +100,11 @@ async function runHistoryCandidate(candidate, count) {
   let stdout = "";
   let stderrTail = "";
   let error;
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    child.kill("SIGKILL");
+  }, historyTimeoutMs);
   child.stdout.setEncoding("utf8").on("data", (chunk) => {
     stdout += chunk;
   });
@@ -107,7 +120,16 @@ async function runHistoryCandidate(candidate, count) {
       resolve({ exitCode: code, signal: exitSignal });
     });
   });
-  return { stdout, stderrTail, exitCode, signal, error };
+  clearTimeout(timer);
+  return {
+    stdout,
+    stderrTail,
+    exitCode,
+    signal,
+    error,
+    timedOut,
+    wallMs: performance.now() - started,
+  };
 }
 const uuid = (n) =>
   `70000000-0000-4000-8000-${n.toString(16).padStart(12, "0")}`;
@@ -123,6 +145,7 @@ try {
     { createAutomergeIntegratedDocumentCarrierFactory },
     { buildRetainedRangeScalingFixture },
     { resolveProbeRange },
+    { runExtendedMeasurements },
   ] = await Promise.all([
     load("src/domain/index.ts"),
     load("qualification/step3/structure/localDensePosition.ts"),
@@ -134,6 +157,7 @@ try {
     ),
     load("qualification/step3/integrated/rangeScaling.ts"),
     load("qualification/step3/integrated/rangeProbe.ts"),
+    load("qualification/step3/comparison/extendedMeasurements.ts"),
   ]);
   await closeLoader();
   const root = parseBlockId(uuid(1)),
@@ -149,6 +173,12 @@ try {
       localDensePositionAllocator,
     ),
   ];
+  runExtendedMeasurements(
+    factories,
+    profile.ranges.holders,
+    profile.ranges.sourceTextUtf16Units,
+    bench,
+  );
   function seeded(factory, text) {
     const carrier = factory.create(root);
     carrier.applyChange({
@@ -164,6 +194,104 @@ try {
       ],
     });
     return carrier;
+  }
+  // Alternate candidates for each sample and size on the same host. Every
+  // measured history has its own process and fresh fixture.
+  for (const count of profile.history.effects) {
+    const historyRows = new Map(
+      factories.map(({ candidate }) => [
+        candidate,
+        {
+          candidate,
+          workload: "attributed-effect-history",
+          size: count,
+          samplesMs: [],
+          medianMs: null,
+          p95Ms: null,
+          details: {
+            samples: [],
+            warmups: 0,
+            requestedSamples: profile.method.samples,
+            timeoutMs: historyTimeoutMs,
+            interval: "edit loop only",
+            status: "incomplete",
+          },
+        },
+      ]),
+    );
+    rows.push(...historyRows.values());
+    checkpoint("incomplete");
+    for (let iteration = 0; iteration < profile.method.samples; iteration++) {
+      const order = iteration % 2 ? [...factories].reverse() : factories;
+      for (const { candidate } of order) {
+        const row = historyRows.get(candidate);
+        // A timeout or explicit OOM makes further attempts at this size infeasible.
+        if (
+          row.details.status === "resource-exhaustion" ||
+          row.details.status === "timeout"
+        )
+          continue;
+        console.log(
+          "STEP3_HISTORY_START " +
+            JSON.stringify({
+              candidate,
+              count,
+              iteration,
+              timeoutMs: historyTimeoutMs,
+            }),
+        );
+        const execution = await runHistoryCandidate(candidate, count);
+        const match = execution.stdout.match(/^STEP3_HISTORY (.+)$/m);
+        let result = null;
+        try {
+          if (execution.exitCode === 0 && match) result = JSON.parse(match[1]);
+        } catch {
+          /* malformed output is an unknown failure */
+        }
+        const outcome = execution.timedOut
+          ? "timeout"
+          : result?.outcome === "completed"
+            ? "completed"
+            : /rust_oom|out of memory|allocation failed/i.test(
+                  execution.stderrTail,
+                )
+              ? "resource-exhaustion"
+              : "unknown-failure";
+        const sample = {
+          iteration,
+          outcome,
+          wallMs: execution.wallMs,
+          ...(outcome === "completed"
+            ? result
+            : {
+                exitCode: execution.exitCode,
+                signal: execution.signal,
+                error: execution.error?.message ?? null,
+                stderrTail: execution.stderrTail,
+              }),
+        };
+        row.details.samples.push(sample);
+        if (outcome === "completed") row.samplesMs.push(result.editLoopMs);
+        else {
+          row.details.status = outcome;
+          if (outcome === "unknown-failure") unknownHistoryFailure = true;
+        }
+        if (row.samplesMs.length >= 3)
+          row.medianMs = percentile(row.samplesMs, 50);
+        if (row.samplesMs.length >= 20)
+          row.p95Ms = percentile(row.samplesMs, 95);
+        if (
+          row.details.samples.length === profile.method.samples &&
+          row.details.samples.every((s) => s.outcome === "completed")
+        )
+          row.details.status = "completed";
+        checkpoint("incomplete");
+        console.log(
+          "STEP3_HISTORY_RESULT " +
+            JSON.stringify({ candidate, count, ...sample }),
+        );
+      }
+    }
   }
   for (const factory of factories) {
     for (const size of profile.content.textUtf16Units) {
@@ -228,104 +356,6 @@ try {
           return { holders: size, resolved: result.length };
         },
       );
-    }
-    // The retained effect history is independent of the large-content input.
-    for (const count of profile.history.effects) {
-      if (count >= 5000) {
-        const started = performance.now();
-        console.log(
-          "STEP3_HISTORY_START " +
-            JSON.stringify({ candidate: factory.candidate, count }),
-        );
-        const execution = await runHistoryCandidate(factory.candidate, count);
-        const elapsed = performance.now() - started;
-        const match = execution.stdout.match(/^STEP3_HISTORY (.+)$/m);
-        const result =
-          execution.exitCode === 0 && match ? JSON.parse(match[1]) : null;
-        if (result === null && !execution.stderrTail.includes("rust_oom")) {
-          throw new Error(
-            `History candidate ${factory.candidate} failed unexpectedly: ` +
-              `exit=${execution.exitCode}, signal=${execution.signal}, ` +
-              `error=${execution.error?.message ?? "none"}\n${execution.stderrTail}`,
-          );
-        }
-        const failureKind = execution.stderrTail.includes("rust_oom")
-          ? "resource-exhaustion"
-          : "runtime-failure";
-        console.log(
-          "STEP3_HISTORY_RESULT " +
-            JSON.stringify({
-              candidate: factory.candidate,
-              count,
-              elapsedMs: Math.round(elapsed),
-              outcome: result?.outcome ?? "candidate-process-failure",
-              ...(result ? {} : { failureKind }),
-            }),
-        );
-        rows.push({
-          candidate: factory.candidate,
-          workload: "attributed-effect-history",
-          size: count,
-          samplesMs: [elapsed],
-          medianMs: result ? elapsed : null,
-          p95Ms: null,
-          details: result
-            ? {
-                ...result,
-                samples: 1,
-                warmups: 0,
-                interval: "child-process-wall-time",
-              }
-            : {
-                outcome: "candidate-process-failure",
-                failureKind,
-                interval: "child-process-wall-time",
-                exitCode: execution.exitCode,
-                signal: execution.signal,
-                error: execution.error?.message ?? null,
-                samples: 1,
-                warmups: 0,
-              },
-        });
-        checkpoint("incomplete");
-        continue;
-      }
-      const original = seeded(factory, "a").encode();
-      const samples = profile.method.samples;
-      const durations = [];
-      const encodedSizes = [];
-      for (let iteration = 0; iteration < samples; iteration++) {
-        const carrier = factory.load(original);
-        const started = performance.now();
-        for (let index = 0; index < count; index++) {
-          carrier.applyChange({
-            payloads: [
-              {
-                kind: "insert-text",
-                inlineContentId: id,
-                offset: index + 1,
-                text: "a",
-                origin,
-              },
-            ],
-            context: { actorId: "bench-author", effectId: "effect-" + index },
-          });
-        }
-        durations.push(performance.now() - started);
-        if (carrier.effects().size !== count)
-          throw Error("Retained effect count differs");
-        encodedSizes.push(carrier.encode().length);
-      }
-      rows.push({
-        candidate: factory.candidate,
-        workload: "attributed-effect-history",
-        size: count,
-        samplesMs: durations,
-        medianMs: percentile(durations, 50),
-        p95Ms: percentile(durations, 95),
-        details: { encodedBytes: encodedSizes, samples, warmups: 0 },
-      });
-      checkpoint("incomplete");
     }
     for (const count of profile.content.opaqueBytes) {
       const opaqueId = parseInlineContentId(uuid(3));
@@ -454,7 +484,8 @@ try {
       });
     }
   }
-  checkpoint("completed");
+  checkpoint(unknownHistoryFailure ? "incomplete" : "completed");
+  if (unknownHistoryFailure) process.exitCode = 1;
 } finally {
   await closeLoader();
 }

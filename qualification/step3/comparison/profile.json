@@ -1,5 +1,5 @@
 {
-  "id": "step3-merge8-2026-10-20",
+  "id": "step3-comparative-2026-10-29",
   "maturity": "experimental",
   "selection": "none",
   "method": {
@@ -8,7 +8,7 @@
     "samples": 5,
     "tailPercentile": 95,
     "comparison": "same job and host; report raw samples plus median and nearest-rank p95",
-    "interval": "Timed operation and projection; some rows also encode state as part of the timed details (see RESULTS.md); fresh fixture construction excluded."
+    "interval": "Intervals vary by workload; see comparison README. History runs use separate fresh processes, five samples without warmup, and report edit loop and save separately."
   },
   "content": {
     "distribution": "one text/plain and one application/example InlineContent under a live root",
@@ -21,18 +21,22 @@
   "history": {
     "separate": true,
     "effects": [100, 1000, 5000],
-    "operation": "one new attributed text insertion with a unique actor/effect pair"
+    "operation": "one new attributed text insertion with a unique actor/effect pair",
+    "timeoutMs": 300000,
+    "samples": 5,
+    "warmupRuns": 0,
+    "memory": "process-lifetime maximum RSS, includes fixture setup and encoding"
   },
   "ranges": {
     "holders": [32, 256, 1024],
     "sourceTextUtf16Units": 1024,
-    "operation": "landed retained Range scaling fixture; resolve one holder lazily"
+    "operation": "landed retained Range fixture; separate construction, one lazy resolve, and edit with holders present"
   },
   "structure": {
     "narrowGapInsertions": [16, 128, 512],
     "concurrentRunMembers": 4
   },
-  "browser": "existing Chromium suite, separate from headless measurements",
+  "browser": "existing Chromium suite plus synthetic keyboard-to-DOM-check and nested synchronous applyChange intervals; no paint or asynchronous product feedback claim",
   "loro": {
     "selectable": false,
     "purpose": "reference-only native cursor and movable-tree comparison",

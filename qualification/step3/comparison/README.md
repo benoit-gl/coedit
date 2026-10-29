@@ -12,12 +12,30 @@ For local runs, set `GITHUB_SHA` to the checked-out commit and record any local
 modifications separately; otherwise the recorded revision is null.
 The measurement report is checkpointed after each completed row and is marked
 incomplete until all workloads finish.
-History rows below 5,000 effects time the edit loop over five samples without
-warm-ups. At 5,000, one isolated child-process wall-time sample includes startup,
-fixture creation and encoding. It has no p95; a failed child has no median.
-These intervals are not directly comparable.
+History measurements alternate candidates on the same host over five fresh
+process samples at each count, without warm-ups. The edit loop and final encode
+are timed separately; process wall time includes startup and setup. Per-process
+peak RSS includes setup and encoding. The per-sample timeout is in the profile;
+timeouts, explicit resource exhaustion, and unknown failures are distinct.
+Five samples support a median, not a meaningful p95; the raw samples remain in
+the artifact. Timeouts and resource exhaustion are observations, not correctness
+thresholds. A non-empty evidence directory prevents accidental mixing of runs.
 Both carriers use the same integrated carrier and Range abstraction.
 All timings are **experimental**, never correctness thresholds.
+
+The extended headless rows separately measure Range construction, one lazy
+resolution, edits with probe values present, atomic structure and two payloads,
+reload and retained-state materialization, and edit publication with unrelated
+InlineContents. Their details specify whether projection or encoding is included.
+The unrelated-content scaling measurement can expose scans but cannot prove
+that scans are absent. Retained probes are not registered product Range holders.
+
+The browser fixture records synthetic keyboard-driver completion and nested
+synchronous carrier publication separately in `editor-feedback.json`. Its
+fresh 1,024-character fixture uses two warm-ups and five samples per candidate.
+The adapter publishes synchronously; the driver interval includes publication
+and driver overhead. It is not physical paint, OS input/IME, independent
+asynchronous feedback, slow-persistence isolation, or a product latency claim.
 
 Run the existing headless and Chromium suites separately before comparing
 candidates. Candidate save/load counts as reload, **not** native compaction.
