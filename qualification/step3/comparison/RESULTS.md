@@ -57,6 +57,38 @@ both integrated adapters called `snapshot()` during ordinary changes. The later 
 for eligible edits with no retained placements, or with an explicitly opted-in pure position decoder. Arbitrary decoders
 with retained placements still use full preflight. The normal-typing whole-document-work criterion remains open.
 
+## Editor and ordinary-edit increment
+
+[Actions run 40925388226](https://github.com/benoit-gl/coedit/actions/runs/40925388226) measured PR head
+`127657a98a9bdce708154904f1c1133327fc3709` on test merge `d243f54574c9e6b570b09abad38b9698ffbad1bf`.
+The [raw artifact](https://github.com/benoit-gl/coedit/actions/runs/40925388226/artifacts/12920342128) contains all
+samples, profiles and environment details. It is supplementary and expires. The host reported Linux x64, Node 24.22.1,
+four Intel Xeon Platinum 8573C CPUs and 16,759,308,288 bytes RAM; Yjs was 13.6.32 and Automerge 3.4.1.
+
+In the browser growth fixture, five measured fresh samples per candidate followed two warm-ups. The target was a single
+ASCII text InlineContent in a two-Block, three-InlineContent document. The table shows median synthetic keyboard-driver
+duration and nested synchronous carrier apply, in milliseconds, for a middle insertion. The driver interval includes
+driver and adapter work; it is not physical paint or independent feedback. The p95 and raw samples are in the artifact;
+with five observations p95 is the maximum, not a reliable tail estimate.
+
+| UTF-16 units | Yjs driver | Yjs apply | Automerge driver | Automerge apply |
+| -----------: | ---------: | --------: | ---------------: | --------------: |
+|        1,024 |       15.4 |       0.2 |             10.3 |             1.2 |
+|       10,000 |       14.7 |       0.2 |             16.2 |             1.4 |
+|      100,000 |       26.4 |       0.6 |             27.2 |             1.8 |
+
+The snapshot comparison used eight samples of ten alternating edits after ten warm-ups, with a pure local-dense decoder.
+For 100 unrelated Block placements, median steady time per edit was 0.392 ms snapshot and 0.106 ms targeted for Yjs,
+and 1.704 ms snapshot and 1.472 ms targeted for Automerge. Median load was 0.476/0.932 ms for Yjs and 6.014/7.140 ms
+for Automerge, respectively. With 500 prior target edits, median steady time was 0.146/0.093 ms for Yjs and
+4.391/4.159 ms for Automerge. Those history cases combine liveness-token and native-history growth and cannot attribute
+the cost to either alone. They do not establish constant-time editing.
+
+The gated downstream fixture checked local updates while simulated persistence and inbound and outbound replica
+callbacks were pending, then checked reload and convergence after release. This demonstrates the fixture's scheduling,
+not real slow storage, network, durability, or feedback independent of slow synchronous local publication. Arbitrary
+stateful decoders with retained placements still use full preflight; the no-whole-document-work criterion remains open.
+
 **Remaining before an admissible comparative record:** expand same-profile
 history and opaque workloads, concurrent replacement and integrated structure
 tests, Chromium/editor/clipboard/resource characterization, and the
