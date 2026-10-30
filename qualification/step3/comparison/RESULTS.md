@@ -57,6 +57,76 @@ both integrated adapters called `snapshot()` during ordinary changes. The later 
 for eligible edits with no retained placements, or with an explicitly opted-in pure position decoder. Arbitrary decoders
 with retained placements still use full preflight. The normal-typing whole-document-work criterion remains open.
 
+## Editor and ordinary-edit increment
+
+[Actions run 40925388226](https://github.com/benoit-gl/coedit/actions/runs/40925388226) measured PR head
+`127657a98a9bdce708154904f1c1133327fc3709` on test merge `d243f54574c9e6b570b09abad38b9698ffbad1bf`.
+The [raw artifact](https://github.com/benoit-gl/coedit/actions/runs/40925388226/artifacts/12920342128) contains all
+samples, profiles and environment details. It is supplementary and expires.
+The host reported Linux 7.0.0-1017-azure x64, Node 24.22.1, four Intel Xeon Platinum 8573C CPUs, and
+16,759,308,288 bytes RAM; Yjs was 13.6.32 and Automerge 3.4.1.
+The browser user agent identified HeadlessChrome 156.0.8078.4.
+
+In the browser growth fixture, five measured fresh samples per candidate followed two warm-ups. The target was a single
+ASCII text InlineContent in a two-Block, three-InlineContent document. The table shows median / nearest-rank p95
+synthetic keyboard-driver duration and nested synchronous carrier apply, in milliseconds, for a middle insertion.
+The driver interval includes driver and adapter work; it is not physical paint or independent feedback.
+Raw samples are in the artifact;
+with five observations p95 is the maximum, not a reliable tail estimate.
+
+| UTF-16 units |  Yjs driver | Yjs apply | Automerge driver | Automerge apply |
+| ------------ | ----------: | --------: | ---------------: | --------------: |
+| 1,024        | 15.4 / 15.6 | 0.2 / 0.3 |      10.3 / 11.7 |       1.2 / 1.6 |
+| 10,000       | 14.7 / 15.0 | 0.2 / 0.3 |      16.2 / 16.9 |       1.4 / 1.9 |
+| 100,000      | 26.4 / 39.0 | 0.6 / 0.6 |      27.2 / 29.7 |       1.8 / 1.9 |
+
+The other short-text editor cases from the same run are summarized below.
+Each value is median / nearest-rank p95 in milliseconds for five measured
+samples. Unicode and line-feed cases use direct ProseMirror transactions;
+their driver intervals are not comparable with synthetic keyboard intervals.
+
+| Edit case             |  Yjs driver | Yjs apply | Automerge driver | Automerge apply |
+| --------------------- | ----------: | --------: | ---------------: | --------------: |
+| Insert at start       | 30.6 / 56.2 | 0.4 / 0.6 |      39.7 / 47.8 |       4.7 / 7.2 |
+| Insert in middle      | 21.1 / 31.1 | 0.4 / 0.9 |      24.7 / 39.2 |       2.3 / 4.4 |
+| Insert at end         | 18.7 / 28.9 | 0.2 / 0.2 |      22.0 / 33.2 |       2.2 / 3.3 |
+| Backspace             | 32.7 / 46.2 | 0.4 / 1.0 |      45.9 / 50.9 |       1.8 / 3.3 |
+| Forward delete        | 17.1 / 34.8 | 0.3 / 0.5 |      27.3 / 62.0 |       1.7 / 3.6 |
+| Selection replace     | 18.9 / 27.7 | 0.3 / 0.6 |      27.3 / 40.0 |       3.0 / 4.4 |
+| Markdown source       | 15.6 / 15.7 | 0.2 / 0.2 |      10.7 / 11.5 |       1.3 / 1.5 |
+| Unicode transaction   |   0.5 / 0.5 | 0.1 / 0.2 |        1.9 / 2.2 |       1.2 / 1.5 |
+| Line-feed transaction |   0.5 / 0.6 | 0.1 / 0.2 |        1.8 / 2.6 |       1.2 / 1.8 |
+
+The downstream-isolation fixture recorded two sequential keyboard edits per
+fresh fixture while persistence and inbound/outbound replica delivery were
+held behind in-memory gates. Each value is median / nearest-rank p95 in
+milliseconds from five measured samples.
+
+| Candidate / edit  | Driver-to-DOM check | Synchronous apply | Next animation-frame callback |
+| ----------------- | ------------------: | ----------------: | ----------------------------: |
+| Yjs, edit 1       |         23.4 / 32.4 |         0.2 / 0.7 |                   37.3 / 43.1 |
+| Yjs, edit 2       |         25.4 / 37.9 |         0.1 / 0.3 |                   32.8 / 38.3 |
+| Automerge, edit 1 |         26.4 / 29.1 |         2.0 / 3.5 |                   31.7 / 38.1 |
+| Automerge, edit 2 |         27.9 / 42.9 |         2.4 / 4.6 |                   31.0 / 56.2 |
+
+The animation-frame interval starts before keyboard dispatch and ends in a
+subsequent animation-frame callback. It includes driver and assertion overhead.
+It does not measure physical paint or feedback independent of slow synchronous
+publication. These results characterize gated callbacks, not real slow I/O
+or product responsiveness.
+
+The snapshot comparison used eight samples of ten alternating edits after ten warm-ups, with a pure local-dense decoder.
+For 100 unrelated Block placements, median steady time per edit was 0.392 ms snapshot and 0.106 ms targeted for Yjs,
+and 1.704 ms snapshot and 1.472 ms targeted for Automerge. Median load was 0.476/0.932 ms for Yjs and 6.014/7.140 ms
+for Automerge, respectively. With 500 prior target edits, median steady time was 0.146/0.093 ms for Yjs and
+4.391/4.159 ms for Automerge. Those history cases combine liveness-token and native-history growth and cannot attribute
+the cost to either alone. They do not establish constant-time editing.
+
+The gated downstream fixture checked local updates while simulated persistence and inbound and outbound replica
+callbacks were pending, then checked reload and convergence after release. This demonstrates the fixture's scheduling,
+not real slow storage, network, durability, or feedback independent of slow synchronous local publication. Arbitrary
+stateful decoders with retained placements still use full preflight; the no-whole-document-work criterion remains open.
+
 **Remaining before an admissible comparative record:** expand same-profile
 history and opaque workloads, concurrent replacement and integrated structure
 tests, Chromium/editor/clipboard/resource characterization, and the

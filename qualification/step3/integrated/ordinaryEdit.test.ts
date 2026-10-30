@@ -171,6 +171,62 @@ for (const createFactory of [
       expect(traces[1]).toEqual(traces[0]);
     });
 
+    it("preserves later decoder failures and atomicity after state transitions", () => {
+      for (const transition of ["none", "restore", "failed-merge"] as const) {
+        const initial = reference.create(root);
+        seed(initial);
+        const bytes = initial.encode();
+        const calls: [number, number] = [0, 0];
+        const reject: [boolean, boolean] = [false, false];
+        const carriers = (["snapshot", "targeted"] as const).map(
+          (variant, index) => {
+            const codec = {
+              ...localDensePositionAllocator,
+              decode(encoded: string) {
+                calls[index]!++;
+                if (reject[index]) throw new TypeError("decoder rejected");
+                return localDensePositionAllocator.decode(encoded);
+              },
+            };
+            return createFactory(codec, localDensePositionAllocator, {
+              ordinaryEditVariant: variant,
+            }).load(bytes);
+          },
+        );
+        for (const carrier of carriers)
+          carrier.applyChange(insertion("before"));
+        if (transition === "restore") {
+          const history = carriers.map((carrier) =>
+            carrier.captureHistoricalState(),
+          );
+          carriers.forEach((carrier, index) =>
+            carrier.restoreHistoricalState(history[index]!),
+          );
+        } else if (transition === "failed-merge") {
+          for (const carrier of carriers)
+            expect(() => carrier.mergeEncoded(Uint8Array.of(1))).toThrow();
+        }
+        expect(calls[0]).toBeGreaterThan(0);
+        expect(calls[1]).toBe(calls[0]);
+        const before = carriers.map((carrier) => carrier.encode());
+        const effectsBefore = carriers.map((carrier) => carrier.effects());
+        reject.fill(true);
+        const errors = carriers.map((carrier) =>
+          errorOf(() => carrier.applyChange(insertion("rejected"))),
+        );
+        expect(errors).toEqual([
+          { name: "TypeError", message: "decoder rejected" },
+          { name: "TypeError", message: "decoder rejected" },
+        ]);
+        expect(calls[1]).toBe(calls[0]);
+        reject.fill(false);
+        carriers.forEach((carrier, index) => {
+          expect(carrier.encode()).toEqual(before[index]);
+          expect(carrier.effects()).toEqual(effectsBefore[index]);
+        });
+      }
+    });
+
     it("validates at load and fallback transitions, then projects only touched payloads; defaults to targeted", () => {
       for (const factory of [targeted, defaults]) {
         const initial = reference.create(root);

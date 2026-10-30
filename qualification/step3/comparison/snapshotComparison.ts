@@ -25,6 +25,8 @@ export interface SnapshotComparisonProfile {
   opaqueLength: number;
   /** Count of live non-root Block placements. */
   blockCount: number;
+  /** Number of real alternating edits applied to the target before measurement. */
+  historyEdits: number;
   /** Approximate Origin span count in an unrelated payload. */
   spans: number;
 }
@@ -59,8 +61,31 @@ const profiles: Profile[] = [
     opaqueCount: 0,
     opaqueLength: 0,
     blockCount: 0,
+    historyEdits: 0,
     spans: 1,
   },
+  ...[20, 100].map((count) => ({
+    name: `blocks-only-${count}`,
+    targetLength: 256,
+    unrelatedCount: 0,
+    unrelatedLength: 256,
+    opaqueCount: 0,
+    opaqueLength: 0,
+    blockCount: count,
+    historyEdits: 0,
+    spans: 1,
+  })),
+  ...[100, 500].map((count) => ({
+    name: `target-history-${count}`,
+    targetLength: 256,
+    unrelatedCount: 0,
+    unrelatedLength: 256,
+    opaqueCount: 0,
+    opaqueLength: 0,
+    blockCount: 0,
+    historyEdits: count,
+    spans: 1,
+  })),
   {
     name: "unrelated-count-20",
     targetLength: 256,
@@ -69,6 +94,7 @@ const profiles: Profile[] = [
     opaqueCount: 0,
     opaqueLength: 0,
     blockCount: 0,
+    historyEdits: 0,
     spans: 1,
   },
   {
@@ -79,6 +105,7 @@ const profiles: Profile[] = [
     opaqueCount: 0,
     opaqueLength: 0,
     blockCount: 20,
+    historyEdits: 0,
     spans: 1,
   },
   {
@@ -89,6 +116,7 @@ const profiles: Profile[] = [
     opaqueCount: 0,
     opaqueLength: 0,
     blockCount: 0,
+    historyEdits: 0,
     spans: 1,
   },
   {
@@ -99,6 +127,7 @@ const profiles: Profile[] = [
     opaqueCount: 0,
     opaqueLength: 0,
     blockCount: 0,
+    historyEdits: 0,
     spans: 1,
   },
   {
@@ -109,6 +138,7 @@ const profiles: Profile[] = [
     opaqueCount: 0,
     opaqueLength: 0,
     blockCount: 0,
+    historyEdits: 0,
     spans: 1,
   },
   {
@@ -119,6 +149,7 @@ const profiles: Profile[] = [
     opaqueCount: 20,
     opaqueLength: 4096,
     blockCount: 0,
+    historyEdits: 0,
     spans: 1,
   },
   {
@@ -129,6 +160,7 @@ const profiles: Profile[] = [
     opaqueCount: 0,
     opaqueLength: 0,
     blockCount: 0,
+    historyEdits: 0,
     spans: 32,
   },
 ];
@@ -220,6 +252,22 @@ function seed(
           },
         ],
       });
+  // Real alternating edits retain liveness tokens while returning to the same text.
+  // Native carrier history grows too; the workload does not isolate token costs.
+  for (let i = 0; i < p.historyEdits; i++)
+    c.applyChange({
+      payloads: [
+        i % 2 === 0
+          ? {
+              kind: "insert-text",
+              inlineContentId: target,
+              offset: 1,
+              text: "x",
+              origin,
+            }
+          : { kind: "delete-text", inlineContentId: target, start: 1, end: 2 },
+      ],
+    });
   return c.encode();
 }
 function canonical(value: unknown): string {
@@ -509,7 +557,8 @@ export function runSnapshotComparison(
       "Load timing includes the variant’s load-time validation. First edit is timed separately with load excluded; both are measured in a warmed process, not a cold process.",
       "These carrier timings do not establish editor responsiveness or user-facing latency.",
       "Steady samples reuse a carrier and alternate insertion/deletion; liveness tokens and native history grow throughout warmup and measurements. This does not isolate history size.",
-      "Unrelated payloads share the root owner. The live-blocks-20 profile adds 20 placements to the unrelated-count-20 shape; this fixture opts in to the pure local-dense decoder, so the targeted implementation can use its fast path with placements. Dead identities are not varied; these cases do not establish all document shapes.",
+      "Blocks-only profiles vary unrelated live placements with all other fixture dimensions held at baseline. The live-blocks-20 profile adds 20 placements to the unrelated-count-20 shape. This fixture opts in to the pure local-dense decoder; arbitrary decoders retain full preflight for placements. Dead identities are not varied.",
+      "Target-history profiles seed alternating real edits of the touched content and return to the same text. They grow target and owner liveness tokens together with native carrier history; they do not isolate token enumeration from native history costs. Seed edits have no effect context and are excluded from measured attributed effect counts.",
       "Intervals include native transaction, validation and allocation. GC, JIT, scheduling, cache state and ordered batch effects may affect results; repeat on the same idle host and compare distributions.",
       "With few samples p95 is effectively the maximum, not a reliable tail estimate; no product threshold is implied.",
     ],

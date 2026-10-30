@@ -51,6 +51,33 @@ The adapter publishes synchronously; the driver interval includes publication
 and driver overhead. It is not physical paint, OS input/IME, independent
 asynchronous feedback, slow-persistence isolation, or a product latency claim.
 
+The additional `editor-workloads.json` contains paired browser samples for
+insertions at the start, middle and end, backspace, forward delete, selection
+replacement and a Markdown source character. Unicode and line-feed cases
+dispatch ProseMirror transactions directly; they are not physical keyboard or
+IME measurements. Each sample starts with two Blocks and three InlineContents;
+the target text is short and includes an emoji. The fixture explicitly opts in
+to the pure local-dense position decoder. It records five samples and two
+warm-ups per case and candidate in alternating order. The driver/dispatch
+interval includes synchronous publication and does not measure paint or
+independent feedback; the nested interval covers `applyChange` only. The p95
+is the maximum of five values and does not estimate tail latency reliably.
+Three additional cases insert one character at the middle of a uniformly
+attributed target of 1,024, 10,000 or 100,000 UTF-16 units, with the same
+unrelated contents and independent of effect-history growth. Seed, mounting,
+selection and assertions are excluded from the action interval. These are
+content-size probes, not slow-persistence/replica-delivery evidence. The
+qualification adapter edits one InlineContent at a time and does not present a
+multi-Block editor surface.
+
+`downstream-isolation.json` records synthetic local edits while gated in-memory
+persistence and inbound and outbound replica callbacks remain pending. After
+release, it checks reload and replica convergence. These gates model nonblocking
+downstream work, not real storage, network, scheduler contention or durability.
+The local editor and carrier still publish synchronously; animation-frame
+callbacks are not physical paint. The experiment cannot establish independent
+feedback while canonical publication itself is slow.
+
 The snapshot comparison uses the same carrier fixture for the `snapshot` and
 `targeted` qualification variants. It separately measures loading, the first edit
 after load, steady alternating insertion/deletion batches, and merge, restore,
