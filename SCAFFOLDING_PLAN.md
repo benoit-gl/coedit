@@ -322,6 +322,8 @@ Deliver Step 3 as nine reviewable merge units with one fork-and-join boundary:
    machine-readable raw results as Actions artifacts for review and debugging. The committed fixture profile, method,
    and summarized evidence are the durable qualification record; Actions artifacts are supplementary. This merge unit
    can identify candidate guard, admission, replacement-policy, and clipboard alternatives but does not select them.
+   The [comparative work plan](qualification/step3/comparison/WORK_PLAN.md) organizes the remaining investigations and
+   evidence for agents; the verification and focused specifications remain authoritative.
 
 9. **Gate B decision.** In a deliberately small decision change, record the selected carrier and allocator, observable
    concurrent-replacement winner rule, mixed replacement/edit semantics, selected carrier string domain, payload/carrier
