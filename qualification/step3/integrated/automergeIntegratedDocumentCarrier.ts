@@ -305,7 +305,8 @@ class AutomergeIntegratedDocumentCarrier<
     });
     if (evidence !== undefined) this.payloadEffectHeads = [evidence.id];
     this.ordinaryProjectionValidated =
-      this.options.ordinaryEditVariant !== "snapshot" &&
+      (this.options.ordinaryEditVariant !== "snapshot" ||
+        this.options.editorProjectionVariant === "targeted") &&
       !this.requiresPlacementPreflight() &&
       isOrdinaryTextChange(change) &&
       (change.payloads ?? []).every(
@@ -325,7 +326,11 @@ class AutomergeIntegratedDocumentCarrier<
 
   private refreshOrdinaryProjectionValidation(): void {
     this.ordinaryProjectionValidated = false;
-    if (this.options.ordinaryEditVariant === "snapshot") return;
+    if (
+      this.options.ordinaryEditVariant === "snapshot" &&
+      this.options.editorProjectionVariant !== "targeted"
+    )
+      return;
     try {
       // Preserve observable decoder calls unless the fixture explicitly opts in
       // to a pure, deterministic and stable decoder.
@@ -556,12 +561,43 @@ class AutomergeIntegratedDocumentCarrier<
     );
   }
 
+  public projectEditorPayload(
+    inlineContentId: InlineContentId,
+  ): QualificationPayloadSnapshot | undefined {
+    if (
+      this.options.editorProjectionVariant === "targeted" &&
+      this.ordinaryProjectionValidated &&
+      !this.requiresPlacementPreflight()
+    ) {
+      const value = this.targetedEditorPayload(inlineContentId);
+      if (value?.kind === "text") return value;
+    }
+    return this.snapshot().payloads.get(inlineContentId);
+  }
+
+  private targetedEditorPayload(
+    inlineContentId: InlineContentId,
+  ): QualificationPayloadSnapshot | undefined {
+    const rootId = parseBlockId(this.document.rootId);
+    const rawOwner = this.document.inlineContentOwners[inlineContentId];
+    if (rawOwner === undefined) return undefined;
+    if (!isLive(this.document.inlineContentLiveness, inlineContentId))
+      return undefined;
+    if (rawOwner !== rootId && !isLive(this.document.liveness, rawOwner))
+      return undefined;
+    parseBlockId(rawOwner);
+    const payload = this.document.payloads[inlineContentId];
+    return payload === undefined
+      ? undefined
+      : projectPayload(this.document, inlineContentId, payload);
+  }
+
   public createStableTextPosition(
     inlineContentId: InlineContentId,
     editorUtf16Offset: number,
     affinity: QualificationTextAffinity,
   ): QualificationStableTextPosition {
-    const payload = this.snapshot().payloads.get(inlineContentId);
+    const payload = this.projectEditorPayload(inlineContentId);
     if (payload?.kind !== "text")
       throw new TypeError("Stable positions require a live text payload.");
     assertTextOffset(editorUtf16Offset, payload.text);
@@ -582,7 +618,7 @@ class AutomergeIntegratedDocumentCarrier<
   ): number | undefined {
     if (position.candidate !== "automerge")
       throw new TypeError("Stable text position belongs to another candidate.");
-    const payload = this.snapshot().payloads.get(position.inlineContentId);
+    const payload = this.projectEditorPayload(position.inlineContentId);
     if (payload?.kind !== "text") return undefined;
     return Automerge.getCursorPosition(
       this.document,

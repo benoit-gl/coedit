@@ -105,7 +105,7 @@ export function readEditorText<Position>(
   carrier: IntegratedDocumentCarrier<Position>,
   inlineContentId: InlineContentId,
 ): EditorTextBuffer {
-  const value = carrier.snapshot().payloads.get(inlineContentId);
+  const value = carrier.projectEditorPayload(inlineContentId);
   if (value?.kind !== "text")
     throw new TypeError(
       "Editor target must be a live fine-grained text payload.",

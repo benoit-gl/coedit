@@ -6,15 +6,18 @@ import {
 
 const records = ["yjs", "automerge"].flatMap((candidate) =>
   ["snapshot", "targeted"].flatMap((variant) =>
-    [0, 4].map((count) => ({
-      candidate,
-      userAgent: "fixture browser",
-      variant,
-      unrelatedBlocks: count,
-      unrelatedPayloads: count,
-      decoderCalls: 0,
-      snapshots: [],
-    })),
+    ["snapshot", "targeted"].flatMap((editorProjectionVariant) =>
+      [0, 4].map((count) => ({
+        candidate,
+        userAgent: "fixture browser",
+        variant,
+        editorProjectionVariant,
+        unrelatedBlocks: count,
+        unrelatedPayloads: count,
+        decoderCalls: 0,
+        snapshots: [],
+      })),
+    ),
   ),
 );
 const output = (rows) =>
@@ -48,13 +51,15 @@ describe("browser traversal evidence collection", () => {
 });
 
 describe("Node editor and position evidence collection", () => {
-  const nodeRecords = records.map((record) => ({
-    candidate: record.candidate,
-    variant: record.variant,
-    unrelatedBlocks: record.unrelatedBlocks,
-    decoderCalls: record.decoderCalls,
-    snapshots: record.snapshots,
-  }));
+  const nodeRecords = records
+    .filter((record) => record.editorProjectionVariant === "snapshot")
+    .map((record) => ({
+      candidate: record.candidate,
+      variant: record.variant,
+      unrelatedBlocks: record.unrelatedBlocks,
+      decoderCalls: record.decoderCalls,
+      snapshots: record.snapshots,
+    }));
   const nodeOutput = (editor, resolution) =>
     [
       ...editor.map(

@@ -7,12 +7,14 @@ export function parseEditorTraversal(stdout) {
   const expected = new Set();
   for (const candidate of ["yjs", "automerge"])
     for (const variant of ["snapshot", "targeted"])
-      for (const count of [0, 4])
-        expected.add(JSON.stringify([candidate, variant, count]));
+      for (const editor of ["snapshot", "targeted"])
+        for (const count of [0, 4])
+          expected.add(JSON.stringify([candidate, variant, editor, count]));
   for (const row of rows) {
     const key = JSON.stringify([
       row.candidate,
       row.variant,
+      row.editorProjectionVariant,
       row.unrelatedBlocks,
     ]);
     if (

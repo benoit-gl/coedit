@@ -216,7 +216,8 @@ class YjsIntegratedDocumentCarrier<
     );
     if (evidence !== undefined) this.payloadEffectHeads = [evidence.id];
     this.ordinaryProjectionValidated =
-      this.options.ordinaryEditVariant !== "snapshot" &&
+      (this.options.ordinaryEditVariant !== "snapshot" ||
+        this.options.editorProjectionVariant === "targeted") &&
       !this.requiresPlacementPreflight() &&
       isOrdinaryTextChange(change) &&
       (change.payloads ?? []).every(
@@ -233,7 +234,11 @@ class YjsIntegratedDocumentCarrier<
 
   private refreshOrdinaryProjectionValidation(): void {
     this.ordinaryProjectionValidated = false;
-    if (this.options.ordinaryEditVariant === "snapshot") return;
+    if (
+      this.options.ordinaryEditVariant === "snapshot" &&
+      this.options.editorProjectionVariant !== "targeted"
+    )
+      return;
     try {
       // Preserve observable decoder calls unless the fixture explicitly opts in
       // to a pure, deterministic and stable decoder.
@@ -443,6 +448,34 @@ class YjsIntegratedDocumentCarrier<
     );
   }
 
+  public projectEditorPayload(
+    inlineContentId: InlineContentId,
+  ): QualificationPayloadSnapshot | undefined {
+    if (
+      this.options.editorProjectionVariant === "targeted" &&
+      this.ordinaryProjectionValidated &&
+      !this.requiresPlacementPreflight()
+    ) {
+      const value = this.targetedEditorPayload(inlineContentId);
+      if (value?.kind === "text") return value;
+    }
+    return this.snapshot().payloads.get(inlineContentId);
+  }
+
+  private targetedEditorPayload(
+    inlineContentId: InlineContentId,
+  ): QualificationPayloadSnapshot | undefined {
+    const rootId = this.requireRootId();
+    const rawOwner = this.inlineContentOwners().get(inlineContentId);
+    if (rawOwner === undefined) return undefined;
+    const owner = parseBlockId(rawOwner);
+    if (!isLive(this.inlineContentLiveness(), inlineContentId))
+      return undefined;
+    if (owner !== rootId && !isLive(this.liveness(), owner)) return undefined;
+    const payload = this.payloads().get(inlineContentId);
+    return payload === undefined ? undefined : projectPayload(payload);
+  }
+
   public createStableTextPosition(
     inlineContentId: InlineContentId,
     editorUtf16Offset: number,
@@ -468,7 +501,7 @@ class YjsIntegratedDocumentCarrier<
   ): number | undefined {
     if (position.candidate !== "yjs")
       throw new TypeError("Stable text position belongs to another candidate.");
-    const payload = this.snapshot().payloads.get(position.inlineContentId);
+    const payload = this.projectEditorPayload(position.inlineContentId);
     if (payload?.kind !== "text") return undefined;
     const text = this.payloads().get(position.inlineContentId)?.get("text");
     if (!(text instanceof Y.Text)) return undefined;
@@ -576,7 +609,7 @@ class YjsIntegratedDocumentCarrier<
     const text = payload?.get("text");
     if (!(text instanceof Y.Text))
       throw new TypeError("Stable positions require a live text payload.");
-    if (!this.snapshot().payloads.has(inlineContentId))
+    if (this.projectEditorPayload(inlineContentId) === undefined)
       throw new TypeError("Stable positions require a live text payload.");
     return text;
   }

@@ -15,6 +15,8 @@ import type {
 export interface IntegratedCarrierQualificationOptions {
   /** Targeted is the qualification default; snapshot retains the reference path. */
   readonly ordinaryEditVariant?: "snapshot" | "targeted";
+  /** Experimental editor target projection; snapshot is the reference and default. */
+  readonly editorProjectionVariant?: "snapshot" | "targeted";
   /** Opt in only if position decode is pure, deterministic and stable for the carrier lifetime. */
   readonly purePositionDecoder?: boolean;
 }
@@ -184,6 +186,10 @@ export interface IntegratedDocumentCarrier<Position> {
   nativeLifecycle(): IntegratedNativeLifecycleCapability;
   /** Projects detached carrier-neutral state. */
   snapshot(): IntegratedDocumentSnapshot<Position>;
+  /** Projects an editor target using the selected qualification-only read path. */
+  projectEditorPayload(
+    inlineContentId: InlineContentId,
+  ): QualificationPayloadSnapshot | undefined;
   /** Creates one carrier-native live text position from an editor UTF-16 offset. */
   createStableTextPosition(
     inlineContentId: InlineContentId,
