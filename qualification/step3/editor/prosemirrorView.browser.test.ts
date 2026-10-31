@@ -48,6 +48,15 @@ const carrierFactories: readonly IntegratedDocumentCarrierFactory<LocalDensePosi
       localDensePositionAllocator,
       localDensePositionAllocator,
     ),
+    ...[
+      createYjsIntegratedDocumentCarrierFactory,
+      createAutomergeIntegratedDocumentCarrierFactory,
+    ].map((create) =>
+      create(localDensePositionAllocator, localDensePositionAllocator, {
+        editorProjectionVariant: "targeted",
+        purePositionDecoder: true,
+      }),
+    ),
   ];
 
 function clipboardEvent(
@@ -280,6 +289,32 @@ function unmountCarrierEditor(fixture: {
 
 describe("direct ProseMirror browser qualification", () => {
   for (const factory of carrierFactories) {
+    it(`rejects stale text and Origin before ${factory.candidate} editor publication`, () => {
+      for (const text of ["changed", "alpha"]) {
+        const fixture = mountCarrierEditor(factory);
+        fixture.carrier.applyChange({
+          payloads: [
+            {
+              kind: "replace-text",
+              inlineContentId: contentId,
+              mediaType: "text/plain",
+              text,
+              origin: editing,
+            },
+          ],
+        });
+        const before = fixture.carrier.snapshot();
+        expect(() =>
+          fixture.editor.view.dispatch(
+            fixture.editor.view.state.tr.insertText("!", 2),
+          ),
+        ).toThrow(/stale canonical/u);
+        expect(fixture.carrier.snapshot()).toEqual(before);
+        expect(fixture.published).toHaveLength(0);
+        unmountCarrierEditor(fixture);
+      }
+    });
+
     it(`publishes Chromium keyboard input to ${factory.candidate}`, async () => {
       const fixture = mountCarrierEditor(factory);
       fixture.editor.view.dispatch(

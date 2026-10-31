@@ -103,3 +103,35 @@ new post-commit exception. Snapshot spies establish successful transition warmin
 `integratedDocument.test.ts` runs the common foundation suite against both explicit variants and compares
 cross-candidate update-over-delete projections. Existing causal-history and retained-Range suites exercise the targeted
 qualification default as well. These are semantic and routing tests, not performance thresholds.
+
+## Experimental editor target projection
+
+The factory option `editorProjectionVariant: "targeted"` enables a separate,
+qualification-only experiment. The default `"snapshot"` keeps the previous
+editor read and position behavior. Targeted reads reuse the validated-projection
+proof described above and project only a visible, live target text payload. The
+same opt-in also uses that projection for stable-position creation and resolution.
+When the proof is unavailable, a retained placement has an arbitrary decoder, or
+an eligible text target cannot be established, the original full snapshot path
+runs. The experiment does not change the general allocator codec contract. Reads
+are detached, and the editor still checks the current text and Origin before and
+immediately after publication.
+
+Validation and transition costs remain: successful load, merge, restore and
+fallback changes can perform full validation before later targeted reads. A
+rejected edit invalidates the proof and the next read uses the full path. This
+prototype reconstructs the whole target text and Origin spans and enumerates
+its and its owner's liveness tokens. Public snapshot spies and decoder counts do
+not instrument candidate-native internal traversal, payload copying, or Range
+holders. It does not establish the normal-typing no-whole-document-work criterion
+in general or make a production design choice.
+
+The paired Node fixture compares reads, edits, undo/redo, effects, reload,
+merge, restore, invalid targets and decoder fallback. Browser qualification
+runs the direct editor suite with both variants and checks stale text and
+Origin-only changes before publication. The traversal artifact varies preflight
+and editor projection independently, records observed snapshot routes for both
+candidates and two combined document shapes, and does not measure timing. It
+uses independently seeded but logically equivalent fixture states; independent
+scaling dimensions, comprehensive malformed-state/error-order equivalence,
+concurrent position semantics, and end-to-end cost measurements remain open.
