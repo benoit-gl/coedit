@@ -5,7 +5,12 @@ describe("snapshot comparison", () => {
   it("checks paired projections and attributed effects and returns sample metadata", () => {
     const result = runSnapshotComparison(1, 2, 2);
     expect(result).toMatchObject({ samples: 1, iterations: 2, warmup: 2 });
-    expect(result.profiles).toHaveLength(12);
+    expect(result.profiles).toHaveLength(13);
+    expect(
+      result.profiles.find(
+        (profile) => profile.name === "target-origin-spans-64",
+      ),
+    ).toMatchObject({ targetLength: 256, unrelatedCount: 0, targetSpans: 64 });
     expect(
       result.profiles.find((profile) => profile.name === "live-blocks-20")
         ?.blockCount,
