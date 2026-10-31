@@ -83,3 +83,39 @@ transaction assertions in the lower-cost Node suite.
 
 Merge 7 landed on main. Comparative measurements and the Gate B selection
 remain separate Merge 8 and Merge 9 work.
+
+### Ordinary-edit traversal observations
+
+The deterministic `ordinaryEditTraversal.test.ts` exercises a single insertion
+through `QualificationTextEditor` with both integrated carriers and both
+preflight variants. The fixture uses either zero or four unrelated live Blocks,
+with one payload per unrelated Block; the larger fixture includes both text and
+opaque payloads. It observes public `snapshot()` calls by editor reads,
+publication, and insertion-anchor creation, checks the size of each detached
+projection, and counts position-decoder calls. It separately checks position
+resolution. The qualification runner validates and retains both sets of Node
+observations in `node-editor-traversal.json`, with revision and environment.
+Setup and assertions outside the action are not counted.
+
+On the current implementation, editor reads and anchor creation each call `snapshot()` in
+both variants; resolution also calls it. The snapshot reference adds a call in
+publication, while the opted-in targeted preflight does not. With unrelated
+Blocks, the snapshots include all fixture placements and payloads and invoke the
+position decoder. Thus the exercised editor and position paths perform
+whole-document projection even when the targeted publication path does not. This
+is a failure of the normal-typing no-whole-document-work criterion for the
+exercised qualification path, not a production carrier or editor selection.
+
+The Chromium `editorTraversal.browser.test.ts` exercises a synthetic keyboard
+insertion through the mounted ProseMirror fixture, attributing public snapshots
+to its canonical reads, publication and position-creation callbacks. It checks
+the same combined unrelated-Block and mixed-payload shapes. The qualification
+runner validates all eight carrier, variant and shape combinations and persists
+these observations as `editor-traversal.json`. An empty snapshot list is valid
+for an improved path; the tests do not require document-wide work. It does not
+measure physical input or paint. The spies observe public snapshot calls and their
+projected sizes, not hidden traversal, copies, Range-holder scans, or costs
+inside candidate libraries. These shapes vary Blocks, placements and payloads
+together; independent scaling dimensions and a production-compatible remedy
+remain open. The `purePositionDecoder` fixture opt-in does not add a purity
+requirement to the production allocator interface.

@@ -1,6 +1,10 @@
 import { spawnSync } from "node:child_process";
 import { mkdir, readdir, writeFile } from "node:fs/promises";
 import { arch, cpus, platform, release, totalmem } from "node:os";
+import {
+  parseEditorTraversal,
+  parseNodeEditorTraversal,
+} from "./step3-editor-traversal.mjs";
 
 const stages = [
   { name: "headless-common-suites", args: ["run", "test"] },
@@ -22,16 +26,46 @@ const npm = process.platform === "win32" ? "npm.cmd" : "npm";
 for (const stage of stages) {
   const started = new Date().toISOString();
   const captureBrowser = stage.name === "chromium-editor-suites";
+  const captureNode = stage.name === "headless-common-suites";
   const execution = spawnSync(npm, stage.args, {
-    stdio: captureBrowser ? "pipe" : "inherit",
+    stdio: captureBrowser || captureNode ? "pipe" : "inherit",
     encoding: "utf8",
     maxBuffer: 32 * 1024 * 1024,
     shell: process.platform === "win32",
   });
   let stageError = execution.error?.message ?? null;
-  if (captureBrowser) {
+  if (captureBrowser || captureNode) {
     process.stdout.write(execution.stdout ?? "");
     process.stderr.write(execution.stderr ?? "");
+  }
+  if (captureNode && !stageError && execution.status === 0) {
+    try {
+      const observations = parseNodeEditorTraversal(execution.stdout ?? "");
+      await writeFile(
+        "step3-evidence/node-editor-traversal.json",
+        JSON.stringify(
+          {
+            revision: process.env.GITHUB_SHA ?? null,
+            environment: {
+              platform: platform(),
+              release: release(),
+              arch: arch(),
+              node: process.version,
+              cpu: cpus()[0]?.model,
+              cpus: cpus().length,
+              ramBytes: totalmem(),
+            },
+            ...observations,
+          },
+          null,
+          2,
+        ) + "\n",
+      );
+    } catch (error) {
+      stageError = `Node evidence collection failed: ${error.message}`;
+    }
+  }
+  if (captureBrowser) {
     if (!stageError && execution.status === 0) {
       const matches = [
         ...(execution.stdout ?? "").matchAll(
@@ -95,6 +129,27 @@ for (const stage of stages) {
                 ramBytes: totalmem(),
               },
               ...workloads,
+            },
+            null,
+            2,
+          ) + "\n",
+        );
+        const traversal = parseEditorTraversal(execution.stdout ?? "");
+        await writeFile(
+          "step3-evidence/editor-traversal.json",
+          JSON.stringify(
+            {
+              revision: process.env.GITHUB_SHA ?? null,
+              environment: {
+                platform: platform(),
+                release: release(),
+                arch: arch(),
+                node: process.version,
+                cpu: cpus()[0]?.model,
+                cpus: cpus().length,
+                ramBytes: totalmem(),
+              },
+              observations: traversal,
             },
             null,
             2,
