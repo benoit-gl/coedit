@@ -124,6 +124,36 @@ for (const createFactory of [
   }
 
   describe(`${reference.candidate} targeted ordinary-edit equivalence`, () => {
+    it("routes ordinary edits through the expected snapshot and decoder paths", () => {
+      const initial = reference.create(root);
+      seed(initial);
+      const bytes = initial.encode();
+      for (const [variant, pure, expectedSnapshots] of [
+        ["snapshot", true, 1],
+        ["targeted", true, 0],
+        ["targeted", false, 1],
+      ] as const) {
+        let decodes = 0;
+        const codec = {
+          ...localDensePositionAllocator,
+          decode(encoded: string) {
+            decodes++;
+            return localDensePositionAllocator.decode(encoded);
+          },
+        };
+        const carrier = createFactory(codec, localDensePositionAllocator, {
+          ordinaryEditVariant: variant,
+          purePositionDecoder: pure,
+        }).load(bytes);
+        decodes = 0;
+        const snapshot = vi.spyOn(carrier, "snapshot");
+        carrier.applyChange(insertion(`route-${variant}-${pure}`));
+        expect(snapshot).toHaveBeenCalledTimes(expectedSnapshots);
+        if (expectedSnapshots === 0) expect(decodes).toBe(0);
+        else expect(decodes).toBeGreaterThan(0);
+      }
+    });
+
     it("uses targeted preflight with placements when a pure decoder is explicitly opted in", () => {
       const initial = reference.create(root);
       seed(initial);

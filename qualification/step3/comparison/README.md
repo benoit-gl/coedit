@@ -91,6 +91,31 @@ target length, and Origin fragmentation; it does not prove constant-time editing
 Run it separately with `npm run step3:snapshot-comparison` only when its output
 path does not already exist.
 
+The snapshot comparison records its effective profile in each output row rather
+than taking its shapes from `profile.json`. The script defaults to eight samples,
+ten edits per steady sample, and ten warmup edits. It runs both variants on the
+same encoded candidate-native genesis in one Vite SSR process. Candidate order is
+fixed (Yjs, then Automerge); variant order alternates by sample. Each load and
+transition sample uses a fresh carrier. Steady samples reuse the carrier, so
+history grows during the run. Setup, fixture encoding and verification snapshots
+are outside the timed intervals. The output records revision, working-tree status,
+runtime, operating system, CPU, memory and installed package versions. A dirty
+working tree must be identified separately if the output is used as evidence.
+The current fixture uses ASCII target text and a human Origin; the fragmented
+target profile varies Origins while preserving text length, but also grows history.
+The profile does not yet cover the full device or browser envelope or all workload
+dimensions in the work plan. A complete output means this diagnostic finished,
+not that comparative qualification is complete. A failed run records an error,
+but does not preserve completed rows from this standalone comparison.
+
+The deterministic routing test observes calls to the public snapshot method and
+position decoder during a carrier `applyChange`. It checks both the opted-in fast
+path and the arbitrary-decoder fallback. It does not instrument every internal
+traversal, liveness token, payload copy or Range holder, and cannot prove the
+absence of all document-wide work. In particular, editor reads and position
+operations can separately call `snapshot()`. These carrier-only measurements do
+not establish that an end-to-end editor keystroke avoids whole-document work.
+
 Run the existing headless and Chromium suites separately before comparing
 candidates. Candidate save/load counts as reload, **not** native compaction.
 Automerge has no exposed native compaction operation in the pinned adapter.

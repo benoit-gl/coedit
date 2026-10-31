@@ -39,7 +39,7 @@
   },
   "browser": "existing Chromium suite plus synthetic keyboard-to-DOM-check and nested synchronous applyChange intervals; no paint or asynchronous product feedback claim",
   "clipboard": "carrier-neutral private text parser boundaries and malformed input with a constant-time retained-source stub; fixture guard values only",
-  "snapshotComparison": "same-host snapshot versus targeted ordinary-edit variants; eight samples of ten insert/delete operations after ten warmup edits, separate loading and first edit, plus merge/restore/replacement and following edit; fixture dimensions and raw samples in snapshot-comparison.json",
+  "snapshotComparison": "same-host snapshot versus targeted ordinary-edit variants; eight samples of ten insert/delete operations after ten warmup edits, separate loading and first edit, plus merge/restore/replacement and following edit; includes fragmented target Origin and unrelated-content profiles; fixture dimensions, defaults, timing boundaries and raw samples are described in the README and snapshot-comparison.json",
   "loro": {
     "selectable": false,
     "purpose": "reference-only native cursor and movable-tree comparison",

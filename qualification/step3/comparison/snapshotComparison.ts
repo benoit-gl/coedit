@@ -29,6 +29,8 @@ export interface SnapshotComparisonProfile {
   historyEdits: number;
   /** Approximate Origin span count in an unrelated payload. */
   spans: number;
+  /** Expected number of Origin spans in the target, if specified. */
+  targetSpans?: number;
 }
 type Profile = SnapshotComparisonProfile;
 
@@ -163,6 +165,18 @@ const profiles: Profile[] = [
     historyEdits: 0,
     spans: 32,
   },
+  {
+    name: "target-origin-spans-64",
+    targetLength: 256,
+    unrelatedCount: 0,
+    unrelatedLength: 256,
+    opaqueCount: 0,
+    opaqueLength: 0,
+    blockCount: 0,
+    historyEdits: 0,
+    spans: 1,
+    targetSpans: 64,
+  },
 ];
 
 function factory(
@@ -238,6 +252,35 @@ function seed(
     }
   }
   c.applyChange({ placements, inlineContents, payloads });
+  // Replace alternating target characters without changing its length or text.
+  // Each replacement leaves a distinct Origin between original spans.
+  for (let i = 0; i < (p.targetSpans ?? 0) / 2; i++)
+    c.applyChange({
+      payloads: [
+        {
+          kind: "delete-text",
+          inlineContentId: target,
+          start: i * 2,
+          end: i * 2 + 1,
+        },
+        {
+          kind: "insert-text",
+          inlineContentId: target,
+          offset: i * 2,
+          text: "a",
+          origin: { id: `target-author-${i}`, kind: "human" },
+        },
+      ],
+    });
+  if (p.targetSpans) {
+    const targetPayload = c.snapshot().payloads.get(target);
+    if (
+      targetPayload?.kind !== "text" ||
+      targetPayload.text !== "a".repeat(p.targetLength) ||
+      targetPayload.spans.length !== p.targetSpans
+    )
+      throw new Error("Target Origin fragmentation setup failed");
+  }
   // Alternate provenance in one unrelated payload; text length increases by spans-1.
   if (p.unrelatedCount > 0)
     for (let i = 1; i < p.spans; i++)
@@ -559,6 +602,7 @@ export function runSnapshotComparison(
       "Steady samples reuse a carrier and alternate insertion/deletion; liveness tokens and native history grow throughout warmup and measurements. This does not isolate history size.",
       "Blocks-only profiles vary unrelated live placements with all other fixture dimensions held at baseline. The live-blocks-20 profile adds 20 placements to the unrelated-count-20 shape. This fixture opts in to the pure local-dense decoder; arbitrary decoders retain full preflight for placements. Dead identities are not varied.",
       "Target-history profiles seed alternating real edits of the touched content and return to the same text. They grow target and owner liveness tokens together with native carrier history; they do not isolate token enumeration from native history costs. Seed edits have no effect context and are excluded from measured attributed effect counts.",
+      "The fragmented-target profile replaces alternating characters with distinct Origins before measurement. It also increases native history and liveness records, so it does not isolate fragmentation cost from history cost.",
       "Intervals include native transaction, validation and allocation. GC, JIT, scheduling, cache state and ordered batch effects may affect results; repeat on the same idle host and compare distributions.",
       "With few samples p95 is effectively the maximum, not a reliable tail estimate; no product threshold is implied.",
     ],
