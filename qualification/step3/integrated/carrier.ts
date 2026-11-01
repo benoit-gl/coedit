@@ -11,8 +11,30 @@ import type {
   QualificationPayloadSnapshot,
 } from "../payload/carrier.js";
 
+/** Optional counters for qualification-visible projection work. */
+export interface QualificationWorkCounters {
+  /** Full snapshot calls. */
+  snapshots: number;
+  /** Position placement decode calls. */
+  placementDecodes: number;
+  /** Projected payload calls by InlineContent ID. */
+  payloads: Record<string, number>;
+  /** UTF-16 text units in successfully projected payloads, by InlineContent ID. */
+  textUnits: Record<string, number>;
+  /** Origin spans in successfully projected payloads, by InlineContent ID. */
+  textSpans: Record<string, number>;
+  /** Copied opaque bytes by InlineContent ID. */
+  opaqueBytes: Record<string, number>;
+  /** UTF-16 input units for attempted Yjs temporary edit preflights, by InlineContent ID. */
+  temporaryTextUnits: Record<string, number>;
+  /** Materialized liveness token values by entity ID. */
+  livenessTokens: Record<string, number>;
+}
+
 /** Diagnostic-only ordinary-edit preflight variants; neither selects a carrier. */
 export interface IntegratedCarrierQualificationOptions {
+  /** Optional passive counters; native library internals are not observed. */
+  readonly workCounters?: QualificationWorkCounters;
   /** Targeted is the qualification default; snapshot retains the reference path. */
   readonly ordinaryEditVariant?: "snapshot" | "targeted";
   /** Experimental editor target projection; snapshot is the reference and default. */

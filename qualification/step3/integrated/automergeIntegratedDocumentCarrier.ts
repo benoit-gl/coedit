@@ -32,6 +32,7 @@ import type {
   IntegratedDocumentSnapshot,
   IntegratedInlineContentCreation,
   QualificationStableTextPosition,
+  QualificationWorkCounters,
   QualificationTextAffinity,
 } from "./carrier.js";
 import {
@@ -57,6 +58,7 @@ import {
 } from "./effectEnvelope.js";
 
 import { isOrdinaryTextChange } from "./ordinaryEdit.js";
+import { recordPayload, recordTokens } from "./workCounters.js";
 
 const ORIGIN_MARK = "__coedit_origin";
 
@@ -366,13 +368,27 @@ class AutomergeIntegratedDocumentCarrier<
       if (payloads.has(id)) continue;
       const rawOwner = this.document.inlineContentOwners[id];
       if (rawOwner === undefined) return undefined;
-      if (!isLive(this.document.inlineContentLiveness, id)) return undefined;
-      if (rawOwner !== rootId && !isLive(this.document.liveness, rawOwner))
+      if (
+        !isLive(
+          this.document.inlineContentLiveness,
+          id,
+          this.options.workCounters,
+        )
+      )
+        return undefined;
+      if (
+        rawOwner !== rootId &&
+        !isLive(this.document.liveness, rawOwner, this.options.workCounters)
+      )
         return undefined;
       const owner = parseBlockId(rawOwner);
       const payload = this.document.payloads[id];
       if (payload === undefined) return undefined;
-      const projected = projectPayload(this.document, id, payload);
+      const projected = recordPayload(
+        this.options.workCounters,
+        id,
+        projectPayload(this.document, id, payload),
+      );
       if (projected.kind !== "text") return undefined;
       payloads.set(id, projected);
       inlineContentOwners.set(id, owner);
@@ -387,19 +403,25 @@ class AutomergeIntegratedDocumentCarrier<
   }
 
   public snapshot(): IntegratedDocumentSnapshot<Position> {
+    if (this.options.workCounters) this.options.workCounters.snapshots++;
     const placements = new Map<BlockId, StructuralPlacement<Position>>();
-    const liveBlocks = liveBlockIds(this.document);
+    const liveBlocks = liveBlockIds(this.document, this.options.workCounters);
     const blockLiveness = new Map<BlockId, boolean>([
       [parseBlockId(this.document.rootId), true],
     ]);
-    for (const [rawId, tokens] of Object.entries(this.document.liveness))
+    for (const [rawId, tokens] of Object.entries(this.document.liveness)) {
+      const values = Object.values(tokens);
+      recordTokens(this.options.workCounters, rawId, values.length);
       blockLiveness.set(
         parseBlockId(rawId),
-        Object.values(tokens).some((value) => value === true),
+        values.some((value) => value === true),
       );
+    }
     blockLiveness.set(parseBlockId(this.document.rootId), true);
     for (const [rawId, encoded] of Object.entries(this.document.blocks)) {
       if (!liveBlocks.has(rawId)) continue;
+      if (this.options.workCounters)
+        this.options.workCounters.placementDecodes++;
       placements.set(
         parseBlockId(rawId),
         decodeStructuralPlacement(encoded, this.positionCodec),
@@ -410,7 +432,14 @@ class AutomergeIntegratedDocumentCarrier<
     for (const [rawId, rawOwnerId] of Object.entries(
       this.document.inlineContentOwners,
     )) {
-      if (!isLive(this.document.inlineContentLiveness, rawId)) continue;
+      if (
+        !isLive(
+          this.document.inlineContentLiveness,
+          rawId,
+          this.options.workCounters,
+        )
+      )
+        continue;
       if (!liveBlocks.has(rawOwnerId)) continue;
       const payload = this.document.payloads[rawId];
       if (payload === undefined)
@@ -419,7 +448,11 @@ class AutomergeIntegratedDocumentCarrier<
       inlineContentOwners.set(inlineContentId, parseBlockId(rawOwnerId));
       payloads.set(
         inlineContentId,
-        projectPayload(this.document, rawId, payload),
+        recordPayload(
+          this.options.workCounters,
+          rawId,
+          projectPayload(this.document, rawId, payload),
+        ),
       );
     }
     return {
@@ -581,15 +614,28 @@ class AutomergeIntegratedDocumentCarrier<
     const rootId = parseBlockId(this.document.rootId);
     const rawOwner = this.document.inlineContentOwners[inlineContentId];
     if (rawOwner === undefined) return undefined;
-    if (!isLive(this.document.inlineContentLiveness, inlineContentId))
+    if (
+      !isLive(
+        this.document.inlineContentLiveness,
+        inlineContentId,
+        this.options.workCounters,
+      )
+    )
       return undefined;
-    if (rawOwner !== rootId && !isLive(this.document.liveness, rawOwner))
+    if (
+      rawOwner !== rootId &&
+      !isLive(this.document.liveness, rawOwner, this.options.workCounters)
+    )
       return undefined;
     parseBlockId(rawOwner);
     const payload = this.document.payloads[inlineContentId];
     return payload === undefined
       ? undefined
-      : projectPayload(this.document, inlineContentId, payload);
+      : recordPayload(
+          this.options.workCounters,
+          inlineContentId,
+          projectPayload(this.document, inlineContentId, payload),
+        );
   }
 
   public createStableTextPosition(
@@ -868,16 +914,24 @@ function retireObservedTokens(
 function isLive(
   liveness: Record<string, Record<string, boolean>> | undefined,
   id: string,
+  counters?: QualificationWorkCounters,
 ): boolean {
   if (liveness === undefined) return true;
-  return Object.values(liveness[id] ?? {}).some((value) => value === true);
+  const values = Object.values(liveness[id] ?? {});
+  recordTokens(counters, id, values.length);
+  return values.some((value) => value === true);
 }
 
-function liveBlockIds(document: Automerge.Doc<State>): ReadonlySet<string> {
+function liveBlockIds(
+  document: Automerge.Doc<State>,
+  counters?: QualificationWorkCounters,
+): ReadonlySet<string> {
   const live = new Set<string>([document.rootId]);
-  for (const [blockId, tokens] of Object.entries(document.liveness ?? {}))
-    if (Object.values(tokens).some((value) => value === true))
-      live.add(blockId);
+  for (const [blockId, tokens] of Object.entries(document.liveness ?? {})) {
+    const values = Object.values(tokens);
+    recordTokens(counters, blockId, values.length);
+    if (values.some((value) => value === true)) live.add(blockId);
+  }
   return live;
 }
 

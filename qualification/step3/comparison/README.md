@@ -108,6 +108,30 @@ dimensions in the work plan. A complete output means this diagnostic finished,
 not that comparative qualification is complete. A failed run records an error,
 but does not preserve completed rows from this standalone comparison.
 
+The standalone comparison also runs a separate untimed editor diagnostic on a
+single candidate-native genesis per shape. It pairs snapshot preflight and editor
+projection with targeted preflight and editor projection. Optional passive
+counters record successful payload projections and projected text units/spans,
+opaque bytes copied by those projections, placement decodes, materialized liveness
+token values and Yjs temporary text-edit preflight attempted input units. Maps identify the
+entity, allowing target and unrelated work to be separated. Load, target read,
+position creation, edit and position resolution have separate counters. Fresh
+fixtures record merge, restore, replacement and their first and next edit in
+separate phases. For fixtures with placements, an additional targeted run without
+the pure-decoder opt-in observes fallback; this is one constructed case, not an
+estimate of fallback frequency in representative workflows. The editor and
+transition mutations use explicit attributed effect contexts. Paired final
+projections and effect contexts are compared. Each counter is a count at a selected qualification
+site, not a measurement of all allocation, full validation, retained-effect
+traversal, Range-holder work or work inside the candidate libraries. The counters
+are disabled during timings. A separate fresh-carrier editor sequence records up
+to three raw elapsed samples in fixed variant order, excluding load and checks;
+these diagnostic samples do not support a tail or user-perceived latency claim.
+The existing transition timing remains an applyChange/preflight comparison and
+does not time full editor operations. The opaque count and size dimensions now
+include 1 by 4096 bytes, 20 by 256 bytes and 20 by 4096 bytes; the other shapes
+and confounding history limits described above still apply.
+
 The deterministic routing test observes calls to the public snapshot method and
 position decoder during a carrier `applyChange`. It checks both the opted-in fast
 path and the arbitrary-decoder fallback. It does not instrument every internal

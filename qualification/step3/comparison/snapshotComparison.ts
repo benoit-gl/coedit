@@ -5,7 +5,11 @@ import {
 import { createAutomergeIntegratedDocumentCarrierFactory } from "../integrated/automergeIntegratedDocumentCarrier.js";
 import { createYjsIntegratedDocumentCarrierFactory } from "../integrated/yjsIntegratedDocumentCarrier.js";
 import { localDensePositionAllocator } from "../structure/localDensePosition.js";
-import type { IntegratedDocumentCarrierFactory } from "../integrated/carrier.js";
+import type {
+  IntegratedDocumentCarrierFactory,
+  QualificationWorkCounters,
+} from "../integrated/carrier.js";
+import { readEditorText } from "../editor/semanticText.js";
 import type { LocalDensePosition } from "../structure/localDensePosition.js";
 
 type Variant = "snapshot" | "targeted";
@@ -144,6 +148,28 @@ const profiles: Profile[] = [
     spans: 1,
   },
   {
+    name: "opaque-20x256",
+    targetLength: 256,
+    unrelatedCount: 0,
+    unrelatedLength: 0,
+    opaqueCount: 20,
+    opaqueLength: 256,
+    blockCount: 0,
+    historyEdits: 0,
+    spans: 1,
+  },
+  {
+    name: "opaque-1x4096",
+    targetLength: 256,
+    unrelatedCount: 0,
+    unrelatedLength: 0,
+    opaqueCount: 1,
+    opaqueLength: 4096,
+    blockCount: 0,
+    historyEdits: 0,
+    spans: 1,
+  },
+  {
     name: "opaque-20x4096",
     targetLength: 256,
     unrelatedCount: 0,
@@ -182,6 +208,9 @@ const profiles: Profile[] = [
 function factory(
   candidate: "yjs" | "automerge",
   variant: Variant,
+  counters?: QualificationWorkCounters,
+  editorVariant: Variant = "snapshot",
+  pureDecoder = true,
 ): IntegratedDocumentCarrierFactory<LocalDensePosition> {
   const create =
     candidate === "yjs"
@@ -189,7 +218,9 @@ function factory(
       : createAutomergeIntegratedDocumentCarrierFactory;
   return create(localDensePositionAllocator, localDensePositionAllocator, {
     ordinaryEditVariant: variant,
-    purePositionDecoder: true,
+    editorProjectionVariant: editorVariant,
+    ...(counters ? { workCounters: counters } : {}),
+    purePositionDecoder: pureDecoder,
   });
 }
 function seed(
@@ -360,6 +391,261 @@ export function runSnapshotComparison(
         Variant,
         ReturnType<IntegratedDocumentCarrierFactory<LocalDensePosition>["load"]>
       >;
+      // Counters are captured in an untimed pass on the same genesis. Timing
+      // uses separate uninstrumented instances so counter cost is excluded.
+      const editorWork = {} as Record<Variant, unknown>;
+      const diagnosticContext = (effectId: string) => ({
+        actorId: "editor-diagnostic",
+        effectId,
+      });
+      const editorProjections: string[] = [];
+      const transitionProjections: Record<string, string[]> = {
+        merge: [],
+        restore: [],
+        replace: [],
+      };
+      const remoteForWork = factory(candidate, "snapshot").load(encoded);
+      remoteForWork.applyChange({
+        context: diagnosticContext("remote"),
+        payloads: [
+          {
+            kind: "insert-text",
+            inlineContentId: target,
+            offset: 1,
+            text: "x",
+            origin,
+          },
+        ],
+      });
+      const remoteBytesForWork = remoteForWork.encode();
+      for (const variant of variants) {
+        const counters: QualificationWorkCounters = {
+          snapshots: 0,
+          placementDecodes: 0,
+          payloads: {},
+          textUnits: {},
+          textSpans: {},
+          opaqueBytes: {},
+          livenessTokens: {},
+          temporaryTextUnits: {},
+        };
+        const c = factory(candidate, variant, counters, variant).load(encoded);
+        const capture = () => {
+          const result = structuredClone(counters);
+          counters.snapshots = 0;
+          counters.placementDecodes = 0;
+          counters.payloads = {};
+          counters.textUnits = {};
+          counters.textSpans = {};
+          counters.opaqueBytes = {};
+          counters.livenessTokens = {};
+          counters.temporaryTextUnits = {};
+          return result;
+        };
+        const loadWork = capture();
+        const buffer = readEditorText(c, target);
+        const readWork = capture();
+        const anchor = c.createStableTextPosition(target, 1, "after");
+        const createWork = capture();
+        c.applyChange({
+          context: diagnosticContext("editor-insert"),
+          payloads: [
+            {
+              kind: "insert-text",
+              inlineContentId: target,
+              offset: 1,
+              text: "x",
+              origin,
+            },
+          ],
+        });
+        const editWork = capture();
+        const resolved = c.resolveStableTextPosition(anchor);
+        const resolveWork = capture();
+        const after = readEditorText(c, target);
+        if (
+          buffer.text !== "a".repeat(p.targetLength) ||
+          after.text !== "ax" + "a".repeat(p.targetLength - 1)
+        )
+          throw new Error("Editor diagnostic projection mismatch");
+        editorProjections.push(
+          canonical({
+            buffer,
+            after,
+            resolved,
+            snapshot: c.snapshot(),
+            effects: c.effects(),
+          }),
+        );
+        const transitionWork: Record<string, unknown> = {};
+        for (const transition of ["merge", "restore", "replace"] as const) {
+          const t = factory(candidate, variant, counters, variant).load(
+            encoded,
+          );
+          let token = "";
+          if (transition === "restore") {
+            token = t.captureHistoricalState();
+            t.applyChange({
+              context: diagnosticContext("setup"),
+              payloads: [
+                {
+                  kind: "insert-text",
+                  inlineContentId: target,
+                  offset: 1,
+                  text: "x",
+                  origin,
+                },
+              ],
+            });
+          }
+          capture(); // fixture preparation is outside the observed transition
+          if (transition === "merge") t.mergeEncoded(remoteBytesForWork);
+          else if (transition === "restore")
+            t.restoreHistoricalState(token, diagnosticContext("restore"));
+          else
+            t.applyChange({
+              context: diagnosticContext("replace"),
+              payloads: [
+                {
+                  kind: "replace-text",
+                  inlineContentId: target,
+                  mediaType: "text/plain",
+                  text: "a".repeat(p.targetLength),
+                  origin,
+                },
+              ],
+            });
+          const transitionCounts = capture();
+          t.applyChange({
+            context: diagnosticContext("first"),
+            payloads: [
+              {
+                kind: "insert-text",
+                inlineContentId: target,
+                offset: 1,
+                text: "x",
+                origin,
+              },
+            ],
+          });
+          const firstEdit = capture();
+          t.applyChange({
+            context: diagnosticContext("warm"),
+            payloads: [
+              {
+                kind: "delete-text",
+                inlineContentId: target,
+                start: 1,
+                end: 2,
+              },
+            ],
+          });
+          const warmEdit = capture();
+          const expectedEffects =
+            transition === "merge"
+              ? ["first", "remote", "warm"]
+              : transition === "restore"
+                ? ["first", "restore", "setup", "warm"]
+                : ["first", "replace", "warm"];
+          const effects = [...t.effects().values()].sort((a, b) =>
+            a.effectId.localeCompare(b.effectId),
+          );
+          if (
+            canonical(effects.map((e) => e.effectId)) !==
+            canonical(expectedEffects)
+          )
+            throw new Error(`${transition}: diagnostic effects differ`);
+          transitionProjections[transition]!.push(
+            canonical({ snapshot: t.snapshot(), effects }),
+          );
+          transitionWork[transition] = {
+            transitionCounts,
+            firstEdit,
+            warmEdit,
+          };
+        }
+        let untrustedDecoderFallback: unknown = null;
+        if (variant === "targeted" && p.blockCount > 0) {
+          const fallback = factory(
+            candidate,
+            variant,
+            counters,
+            variant,
+            false,
+          ).load(encoded);
+          capture();
+          readEditorText(fallback, target);
+          const read = capture();
+          fallback.applyChange({
+            context: diagnosticContext("fallback"),
+            payloads: [
+              {
+                kind: "insert-text",
+                inlineContentId: target,
+                offset: 1,
+                text: "x",
+                origin,
+              },
+            ],
+          });
+          const edit = capture();
+          untrustedDecoderFallback = { read, edit };
+        }
+        const elapsedMs: number[] = [];
+        for (let sample = 0; sample < Math.min(samples, 3); sample++) {
+          const timed = factory(candidate, variant, undefined, variant).load(
+            encoded,
+          );
+          const start = performance.now();
+          const timedBefore = readEditorText(timed, target);
+          const pos = timed.createStableTextPosition(target, 1, "after");
+          timed.applyChange({
+            context: diagnosticContext("editor-insert"),
+            payloads: [
+              {
+                kind: "insert-text",
+                inlineContentId: target,
+                offset: 1,
+                text: "x",
+                origin,
+              },
+            ],
+          });
+          const timedResolved = timed.resolveStableTextPosition(pos);
+          const timedAfter = readEditorText(timed, target);
+          elapsedMs.push(performance.now() - start);
+          if (
+            canonical({
+              buffer: timedBefore,
+              after: timedAfter,
+              resolved: timedResolved,
+              snapshot: timed.snapshot(),
+              effects: timed.effects(),
+            }) !== editorProjections[editorProjections.length - 1]
+          )
+            throw new Error(
+              "Instrumented and uninstrumented editor outcomes differ",
+            );
+        }
+        editorWork[variant] = {
+          loadWork,
+          readWork,
+          createWork,
+          editWork,
+          resolveWork,
+          transitionWork,
+          untrustedDecoderFallback,
+          elapsedMs,
+        };
+      }
+      if (
+        Object.values(transitionProjections).some((pair) => pair[0] !== pair[1])
+      )
+        throw new Error(
+          `${candidate} ${p.name}: transition diagnostic variants differ`,
+        );
+      if (editorProjections[0] !== editorProjections[1])
+        throw new Error(`${candidate} ${p.name}: editor variants differ`);
       const raw: Record<Variant, number[]> = { snapshot: [], targeted: [] };
       const cold: Record<Variant, number[]> = { snapshot: [], targeted: [] };
       const loads: Record<Variant, number[]> = { snapshot: [], targeted: [] };
@@ -563,6 +849,7 @@ export function runSnapshotComparison(
           candidate,
           variant,
           profile: p,
+          editorWork: editorWork[variant],
           effectCount: carriers[variant].effects().size,
           seedEncodedBytes: encoded.length,
           finalEncodedBytes: carriers[variant].encode().length,
@@ -595,6 +882,7 @@ export function runSnapshotComparison(
     profiles,
     rows,
     limitations: [
+      "Editor diagnostics explicitly pair snapshot/snapshot and targeted/targeted paths on one genesis. The untimed counters cover selected qualification projection, liveness, placement and Yjs temporary text-preflight sites, not native library internals, full validation, effect traversal or Range holders. Work on load, transitions, first and warm edits is counted separately; fallback is probed without the pure-decoder opt-in when placements exist, not estimated as a representative frequency. Timing uses fresh uninstrumented instances, at most three samples; no tail claim.",
       "Headless local carrier intervals: load; first applyChange after load; steady applyChange batches; mergeEncoded, restoreHistoricalState, or fallback replace-text applyChange; and the following applyChange. No editor, network, encode or snapshot inside timed intervals.",
       "Transition fixtures each start from a fresh load: merge one prebuilt same-lineage remote insertion; restore a captured seed after a setup insertion; or replace the target with identical text via the fallback path. The following attributed insertion is timed separately. Remote preparation, capture, setup, and checks are excluded.",
       "Load timing includes the variant’s load-time validation. First edit is timed separately with load excluded; both are measured in a warmed process, not a cold process.",
