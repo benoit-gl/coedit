@@ -2,9 +2,12 @@
 
 ## Disposition
 
-**Evidence status:** Native diagnostics and the headless comparison have run locally. The browser section describes
-its fixture and collection method; successful Chromium evidence for this PR is still pending Actions.
-The ordinary-edit work package is not complete until those measurements and required checks have been reviewed.
+**Evidence status:** The [complete Actions run](https://github.com/benoit-gl/coedit/actions/runs/41315529296)
+succeeded on PR head `f5837bae542619a9370d36c77209b19c9cf0fe52`, test merge
+`cbdb69de864eee0aee1c4032b0031425d42aac82`. All six stages succeeded. The
+[raw artifact](https://github.com/benoit-gl/coedit/actions/runs/41315529296/artifacts/13087597327) contains 84 headless
+candidate/profile/variant rows, 270 measured browser operation samples and 18 independent browser work diagnostics.
+The later scoped runner changes execution routing only; carrier, index, editor and measurement fixtures are unchanged.
 
 The current representations do **not** establish an unrestricted production-compatible ordinary-edit path under
 [`MVP_VERIFICATION_PLAN.md`, section 6.6](../../../docs/MVP_VERIFICATION_PLAN.md#66-performance-qualification).
@@ -146,3 +149,28 @@ calibration does not waive that finding.
 | Range-holder work                    | Existing retained-Range tests and localized editor/position paths                | No new holder registry or holder traversal introduced; final Range scaling remains point 3. |
 
 The result is evidence for an explicit representation decision, not permission to relax the mandatory invariant.
+
+## Measured ordinary-edit summary
+
+The run used Linux 7.0.0-1017-azure x64, AMD EPYC 7763, four logical CPUs and 16,760,344,576 bytes of reported RAM.
+Node.js was 24.22.1; Chromium 156.0.8078.4; Playwright 1.64.0; Yjs 13.6.32; Automerge 3.4.1;
+ProseMirror View 1.42.6 and State 1.4.4. Both candidates ran on this same host under the recorded profile.
+
+The table reports medians in milliseconds from five measured samples after two warm-ups at 100,000 UTF-16 units.
+The Node column is complete middle insertion through synchronous publication. The browser column is a keyboard-end
+edit's document-changing synchronous dispatch through publication and view update, excluding driver overhead.
+These different intervals must not be compared as equivalent measurements. Five samples do not establish tail latency.
+
+| Candidate | Variant     | Node middle insertion ms | Browser canonical dispatch ms |
+| --------- | ----------- | -----------------------: | ----------------------------: |
+| Yjs       | Snapshot    |                    2.499 |                           8.1 |
+| Yjs       | Targeted    |                    2.436 |                           6.9 |
+| Yjs       | Incremental |                    0.077 |                           2.3 |
+| Automerge | Snapshot    |                    3.886 |                           6.7 |
+| Automerge | Targeted    |                    3.972 |                           6.0 |
+| Automerge | Incremental |                    1.479 |                           3.3 |
+
+The incremental warm-path diagnostics observed no full snapshot, payload projection, opaque-byte copy, temporary-text
+preflight, liveness-token enumeration or index rebuild. Lifecycle records separately retain transition and recovery
+work. The native probes nevertheless observed Automerge copies containing unrelated keys and Yjs fragmented-prefix
+traversal. The favorable timings therefore do not establish production eligibility or waive the mandatory failure.

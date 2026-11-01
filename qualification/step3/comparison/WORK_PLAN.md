@@ -61,8 +61,7 @@ would change architecture, interfaces, or accepted behavior.
 
 ## Ordinary edits and feedback
 
-**Investigation disposition:** native outcome recorded in the [auditable result](ORDINARY_EDIT_RESULT.md);
-browser evidence and current-PR verification remain pending.
+**Investigation disposition:** closed with measured evidence in the [auditable result](ORDINARY_EDIT_RESULT.md).
 The checked items mean the questions were exercised and classified, not that the mandatory invariant passed.
 Both unrestricted current representations retain native work that prevents a no-whole-document-work pass.
 Gate B cannot treat the incremental experiment or green correctness checks as production eligibility.
@@ -85,7 +84,7 @@ Gate B cannot treat the incremental experiment or green correctness checks as pr
       including rejection and atomicity. Measure load, merge, restore, replacement,
       first following edit and warm edits; account for work moved to transitions.
       Characterize fallback paths and their occurrence in representative workflows.
-- [ ] Separate editor-local update, synchronous canonical publication,
+- [x] Separate editor-local update, synchronous canonical publication,
       projection and driver completion where observable. Measure the specified
       experimental calibration interval and investigate slow local publication.
       Animation-frame callbacks are not physical paint. Any decoupling design
