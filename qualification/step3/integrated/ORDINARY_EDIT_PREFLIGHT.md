@@ -135,3 +135,16 @@ candidates and two combined document shapes, and does not measure timing. It
 uses independently seeded but logically equivalent fixture states; independent
 scaling dimensions, comprehensive malformed-state/error-order equivalence,
 concurrent position semantics, and end-to-end cost measurements remain open.
+
+The paired editor-projection suite also compares stateful decoder call sequences
+and a decoder failure on the second retained placement during reads and position
+creation and resolution. It compares failures for one malformed unrelated opaque
+Origin after native load or merge, and checks that failed reads do not change
+encoded state. A shared native genesis and authored concurrent branches allow
+comparison of position outcomes across merge, reload, replacement, deletion and
+restore within each candidate. The restored-position checks compare returned
+values or errors; they do not select a cross-carrier position policy. In the
+current Automerge fixture, resolving a pre-replacement anchor after restoring the
+payload can throw a native cursor error. This is an observed limitation, not a
+qualified product behavior. Other malformed state and operation sequences remain
+uncovered.

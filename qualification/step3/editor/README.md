@@ -119,3 +119,12 @@ inside candidate libraries. These shapes vary Blocks, placements and payloads
 together; independent scaling dimensions and a production-compatible remedy
 remain open. The `purePositionDecoder` fixture opt-in does not add a purity
 requirement to the production allocator interface.
+
+The synchronous qualification adapter checks its base before it calls the
+caller-supplied `nextContext` and `publish` callbacks. If either callback changes
+the carrier before it applies the editor change, publication can use stale
+coordinates; the later projection check can detect a mismatch only after the
+change has committed. The fixture does not implement the production atomic
+expected-Version command boundary. A recheck before `publish` alone cannot
+protect against changes performed inside `publish`; the production-compatible
+boundary and its qualification remain open.
