@@ -159,6 +159,7 @@ class YjsIntegratedDocumentCarrier<
       change.payloads ?? [],
       snapshot.payloads,
       this.options.workCounters,
+      this.options.yjsTextPreflightVariant,
     );
     const inlineContents =
       targeted === undefined
@@ -1031,6 +1032,7 @@ function preparePayloadChanges(
   changes: readonly IntegratedPayloadChange[],
   current: ReadonlyMap<InlineContentId, QualificationPayloadSnapshot>,
   counters?: QualificationWorkCounters,
+  variant: "native" | "ascii" = "native",
 ): readonly PreparedPayloadChange[] {
   const working = new Map(current);
   const prepared: PreparedPayloadChange[] = [];
@@ -1079,11 +1081,16 @@ function preparePayloadChanges(
           payload.text.slice(0, change.offset) +
           change.text +
           payload.text.slice(change.offset);
-        if (counters)
+        const useNative =
+          variant !== "ascii" ||
+          !isAscii(payload.text) ||
+          !isAscii(change.text);
+        if (counters && useNative)
           counters.temporaryTextUnits[change.inlineContentId] =
             (counters.temporaryTextUnits[change.inlineContentId] ?? 0) +
             payload.text.length;
         if (
+          useNative &&
           requiresYjsTextRewrite(payload.text, text, (preflight) =>
             preflight.insert(change.offset, change.text),
           )
@@ -1098,11 +1105,13 @@ function preparePayloadChanges(
         assertTextRange(change.start, change.end, payload.text);
         const text =
           payload.text.slice(0, change.start) + payload.text.slice(change.end);
-        if (counters)
+        const useNative = variant !== "ascii" || !isAscii(payload.text);
+        if (counters && useNative)
           counters.temporaryTextUnits[change.inlineContentId] =
             (counters.temporaryTextUnits[change.inlineContentId] ?? 0) +
             payload.text.length;
         if (
+          useNative &&
           requiresYjsTextRewrite(payload.text, text, (preflight) =>
             preflight.delete(change.start, change.end - change.start),
           )
@@ -1116,6 +1125,14 @@ function preparePayloadChanges(
     }
   }
   return prepared;
+}
+
+// ASCII contains no surrogate code units. Restrict the shortcut to this subset;
+// all other strings retain the native reference check, including malformed input.
+function isAscii(text: string): boolean {
+  for (let i = 0; i < text.length; i++)
+    if (text.charCodeAt(i) > 0x7f) return false;
+  return true;
 }
 
 function assertYjsExactText(text: string): void {

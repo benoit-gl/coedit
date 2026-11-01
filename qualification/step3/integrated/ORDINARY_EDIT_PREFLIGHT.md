@@ -148,3 +148,33 @@ current Automerge fixture, resolving a pre-replacement anchor after restoring th
 payload can throw a native cursor error. This is an observed limitation, not a
 qualified product behavior. Other malformed state and operation sequences remain
 uncovered.
+
+## Yjs ASCII-only preflight experiment
+
+The Yjs factory also accepts `yjsTextPreflightVariant: "ascii"` as an opt-in
+qualification experiment. The default `"native"` retains the temporary Y.Doc
+check. The ASCII variant bypasses that check only when the complete current
+text and the inserted text, if any, contain exclusively ASCII code units. It
+still validates offsets, insertion content and Origin in the existing order.
+All non-ASCII text falls back to the unchanged native check, including surrogate
+boundaries and malformed input. This is not a production string-domain choice.
+
+The native check constructs one unformatted temporary Y.Text from the current
+string, applies the proposed edit and compares its projection with the expected
+string. It does not reproduce the live Y.Text item or Origin segmentation. The
+shortcut relies on the narrower property that ASCII contains no surrogate code
+units; differential tests compare semantic text, Origins, effects, errors and
+atomic rejection across the two variants. These tests do not prove behavior for
+all possible native history or library versions. The shortcut still scans and
+reconstructs the full touched target; it does not satisfy the ordinary-typing
+whole-document-work criterion on its own.
+
+The comparison output includes a separate `yjsTextPreflight` record. It uses
+matched native genesis and alternating variant order, records raw uninstrumented
+edit samples and separate temporary-preflight counts, and checks projections and
+effects. It includes target length, fragmented Origin, accumulated history and
+Unicode fallback profiles. Load, merge, restore and the first edits following
+those transitions have one ordered timing per variant; these are not a reliable
+distribution. Fragmentation also grows native history. Timings include full
+preparation and publication, not just the temporary preflight. Native internal
+work remains unobserved; no product performance threshold is selected.

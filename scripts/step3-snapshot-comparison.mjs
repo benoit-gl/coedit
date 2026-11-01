@@ -72,6 +72,12 @@ try {
   const { runSnapshotComparison } = await server.ssrLoadModule(
     "/qualification/step3/comparison/snapshotComparison.ts",
   );
+  const { runYjsTextPreflightComparison } = await server.ssrLoadModule(
+    "/qualification/step3/comparison/yjsTextPreflightComparison.ts",
+  );
+  const yjsTextPreflight = runYjsTextPreflightComparison(
+    Math.min(Number(sampleArg), 3),
+  );
   const comparison = runSnapshotComparison(
     Number(sampleArg),
     Number(iterationArg),
@@ -80,7 +86,7 @@ try {
   await writeFile(
     output,
     JSON.stringify(
-      { status: "complete", ...metadata, ...comparison },
+      { status: "complete", ...metadata, ...comparison, yjsTextPreflight },
       null,
       2,
     ) + "\n",
