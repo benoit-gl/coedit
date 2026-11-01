@@ -77,7 +77,10 @@ validation ordering for rejected batches.
 
 ## Reproducible method and outputs
 
-Run `npm run step3:qualification` for the complete comparison, or create an empty `step3-evidence` directory and run
+Run `npm run step3:qualification -- --ordinary-only` for the complete point 1 package, including all common suites
+and Chromium collection, without waiting for the other Merge 8 work packages. The runner records its scope explicitly.
+The separate `ordinary-edit-evidence` Actions job preserves this scoped artifact even while the broader campaign runs.
+Run `npm run step3:qualification` for the broader comparison, or create an empty `step3-evidence` directory and run
 `npm run step3:ordinary-edit` for this package. The latter refuses to replace an existing output. It checkpoints completed
 rows with a running status and preserves them in an error record if a later profile fails. The full runner uploads
 machine-readable evidence and logs through the existing Actions artifact mechanism.

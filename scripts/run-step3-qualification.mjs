@@ -8,7 +8,12 @@ import {
   parseNodeEditorTraversal,
 } from "./step3-editor-traversal.mjs";
 
-const stages = [
+const args = process.argv.slice(2);
+if (args.some((arg) => arg !== "--ordinary-only"))
+  throw new Error("Usage: npm run step3:qualification -- [--ordinary-only]");
+const ordinaryOnly = args.includes("--ordinary-only");
+const scope = ordinaryOnly ? "ordinary-edit" : "full-step3";
+const fullStages = [
   { name: "headless-common-suites", args: ["run", "test"] },
   { name: "chromium-editor-suites", args: ["run", "test:browser"] },
   { name: "paired-carriers-and-allocators", args: ["run", "step3:measure"] },
@@ -19,6 +24,15 @@ const stages = [
   { name: "ordinary-edit-comparison", args: ["run", "step3:ordinary-edit"] },
   { name: "nonselectable-loro-reference", args: ["run", "step3:loro"] },
 ];
+const stages = ordinaryOnly
+  ? fullStages.filter((stage) =>
+      [
+        "headless-common-suites",
+        "chromium-editor-suites",
+        "ordinary-edit-comparison",
+      ].includes(stage.name),
+    )
+  : fullStages;
 await mkdir("step3-evidence", { recursive: true });
 if ((await readdir("step3-evidence")).length !== 0)
   throw new Error(
@@ -237,7 +251,7 @@ for (const stage of stages) {
   await writeFile(
     "step3-evidence/runner.json",
     JSON.stringify(
-      { revision: process.env.GITHUB_SHA ?? null, stages: results },
+      { scope, revision: process.env.GITHUB_SHA ?? null, stages: results },
       null,
       2,
     ) + "\n",
