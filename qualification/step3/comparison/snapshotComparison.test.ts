@@ -5,7 +5,7 @@ describe("snapshot comparison", () => {
   it("checks paired projections and attributed effects and returns sample metadata", () => {
     const result = runSnapshotComparison(1, 2, 2);
     expect(result).toMatchObject({ samples: 1, iterations: 2, warmup: 2 });
-    expect(result.profiles).toHaveLength(13);
+    expect(result.profiles).toHaveLength(15);
     expect(
       result.profiles.find(
         (profile) => profile.name === "target-origin-spans-64",
@@ -59,6 +59,37 @@ describe("snapshot comparison", () => {
             variant: string;
             profile: { name: string };
             effectCount: number;
+            editorWork: {
+              readWork: {
+                snapshots: number;
+                placementDecodes: number;
+                payloads: Record<string, number>;
+                opaqueBytes: Record<string, number>;
+              };
+              editWork: { temporaryTextUnits: Record<string, number> };
+              elapsedMs: number[];
+              transitionWork: Record<
+                string,
+                {
+                  transitionCounts: {
+                    snapshots: number;
+                    opaqueBytes: Record<string, number>;
+                  };
+                  firstEdit: {
+                    snapshots: number;
+                    opaqueBytes: Record<string, number>;
+                  };
+                  warmEdit: {
+                    snapshots: number;
+                    opaqueBytes: Record<string, number>;
+                  };
+                }
+              >;
+              untrustedDecoderFallback: null | {
+                read: { snapshots: number; placementDecodes: number };
+                edit: { snapshots: number };
+              };
+            };
             transitions: Record<
               string,
               {
@@ -84,6 +115,72 @@ describe("snapshot comparison", () => {
         ]);
         for (const row of rows) {
           expect(row.effectCount).toBe(4);
+          expect(row.editorWork.elapsedMs).toHaveLength(1);
+          if (profile.name === "opaque-20x4096") {
+            if (row.variant === "snapshot") {
+              expect(row.editorWork.readWork.snapshots).toBeGreaterThan(0);
+              expect(
+                Object.values(row.editorWork.readWork.opaqueBytes).reduce(
+                  (a, b) => a + b,
+                  0,
+                ),
+              ).toBe(20 * 4096);
+              expect(
+                Object.keys(row.editorWork.readWork.payloads),
+              ).toHaveLength(21);
+            } else {
+              expect(row.editorWork.readWork.snapshots).toBe(0);
+              expect(
+                Object.keys(row.editorWork.readWork.payloads),
+              ).toHaveLength(1);
+              expect(
+                Object.values(row.editorWork.readWork.opaqueBytes),
+              ).toEqual([]);
+            }
+          }
+          expect(Object.keys(row.editorWork.transitionWork)).toEqual([
+            "merge",
+            "restore",
+            "replace",
+          ]);
+          if (profile.name === "opaque-20x4096" && row.variant === "snapshot") {
+            const replacement = row.editorWork.transitionWork.replace!;
+            expect(replacement.transitionCounts.snapshots).toBeGreaterThan(0);
+            expect(
+              Object.values(replacement.transitionCounts.opaqueBytes).reduce(
+                (a, b) => a + b,
+                0,
+              ),
+            ).toBeGreaterThanOrEqual(20 * 4096);
+            for (const item of Object.values(row.editorWork.transitionWork)) {
+              for (const edit of [item.firstEdit, item.warmEdit]) {
+                expect(edit.snapshots).toBeGreaterThan(0);
+                expect(
+                  Object.values(edit.opaqueBytes).reduce((a, b) => a + b, 0),
+                ).toBeGreaterThanOrEqual(20 * 4096);
+              }
+            }
+          }
+          if (profile.name === "blocks-only-20" && row.variant === "targeted") {
+            expect(
+              row.editorWork.untrustedDecoderFallback?.read.snapshots,
+            ).toBeGreaterThan(0);
+            expect(
+              row.editorWork.untrustedDecoderFallback?.read.placementDecodes,
+            ).toBe(20);
+            expect(
+              row.editorWork.untrustedDecoderFallback?.edit.snapshots,
+            ).toBeGreaterThan(0);
+          }
+          if (profile.name === "blocks-only-20") {
+            expect(row.editorWork.readWork.placementDecodes).toBe(
+              row.variant === "snapshot" ? 20 : 0,
+            );
+          }
+          if (candidate === "yjs")
+            expect(
+              Object.values(row.editorWork.editWork.temporaryTextUnits),
+            ).toEqual([profile.targetLength]);
           expect(Object.keys(row.transitions)).toEqual([
             "merge",
             "restore",

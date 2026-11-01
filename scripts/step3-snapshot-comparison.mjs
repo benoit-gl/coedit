@@ -8,7 +8,7 @@ import { URL } from "node:url";
 
 if (process.argv.includes("--help")) {
   console.log(
-    "Usage: node scripts/step3-snapshot-comparison.mjs [output.json] [samples=8] [iterations=10] [warmup=10]\nOutput is created exclusively; iterations and warmup must be positive even integers. Timings are local headless applyChange only.",
+    "Usage: node scripts/step3-snapshot-comparison.mjs [output.json] [samples=8] [iterations=10] [warmup=10]\nOutput is created exclusively; iterations and warmup must be positive even integers. Timings include headless applyChange and a separate editor-operation diagnostic.",
   );
   process.exit(0);
 }

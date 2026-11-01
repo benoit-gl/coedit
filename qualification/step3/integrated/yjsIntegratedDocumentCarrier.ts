@@ -33,6 +33,7 @@ import type {
   IntegratedInlineContentCreation,
   IntegratedPayloadChange,
   QualificationStableTextPosition,
+  QualificationWorkCounters,
   QualificationTextAffinity,
 } from "./carrier.js";
 import {
@@ -58,6 +59,7 @@ import {
 } from "./effectEnvelope.js";
 
 import { isOrdinaryTextChange } from "./ordinaryEdit.js";
+import { recordPayload, recordTokens } from "./workCounters.js";
 
 const ROOT = "integrated";
 const ROOT_ID = "rootId";
@@ -156,6 +158,7 @@ class YjsIntegratedDocumentCarrier<
     const payloads = preparePayloadChanges(
       change.payloads ?? [],
       snapshot.payloads,
+      this.options.workCounters,
     );
     const inlineContents =
       targeted === undefined
@@ -275,11 +278,20 @@ class YjsIntegratedDocumentCarrier<
       const rawOwner = this.inlineContentOwners().get(id);
       if (rawOwner === undefined) return undefined;
       const owner = parseBlockId(rawOwner);
-      if (!isLive(this.inlineContentLiveness(), id)) return undefined;
-      if (owner !== rootId && !isLive(this.liveness(), owner)) return undefined;
+      if (!isLive(this.inlineContentLiveness(), id, this.options.workCounters))
+        return undefined;
+      if (
+        owner !== rootId &&
+        !isLive(this.liveness(), owner, this.options.workCounters)
+      )
+        return undefined;
       const payload = this.payloads().get(id);
       if (payload === undefined) return undefined;
-      const projected = projectPayload(payload);
+      const projected = recordPayload(
+        this.options.workCounters,
+        id,
+        projectPayload(payload),
+      );
       if (projected.kind !== "text") return undefined;
       payloads.set(id, projected);
       inlineContentOwners.set(id, owner);
@@ -294,20 +306,26 @@ class YjsIntegratedDocumentCarrier<
   }
 
   public snapshot(): IntegratedDocumentSnapshot<Position> {
+    if (this.options.workCounters) this.options.workCounters.snapshots++;
     const placements = new Map<BlockId, StructuralPlacement<Position>>();
     const liveBlocks = this.liveBlockIds();
     const blockLiveness = new Map<BlockId, boolean>([
       [this.requireRootId(), true],
     ]);
-    for (const [rawId, tokens] of this.liveness())
+    for (const [rawId, tokens] of this.liveness()) {
+      const values = [...tokens.values()];
+      recordTokens(this.options.workCounters, rawId, values.length);
       blockLiveness.set(
         parseBlockId(rawId),
-        [...tokens.values()].some((value) => value === true),
+        values.some((value) => value === true),
       );
+    }
     blockLiveness.set(this.requireRootId(), true);
     for (const [rawId, encoded] of this.blocks()) {
       const blockId = parseBlockId(rawId);
       if (!liveBlocks.has(blockId)) continue;
+      if (this.options.workCounters)
+        this.options.workCounters.placementDecodes++;
       placements.set(
         blockId,
         decodeStructuralPlacement(encoded, this.positionCodec),
@@ -318,13 +336,27 @@ class YjsIntegratedDocumentCarrier<
     for (const [rawId, rawOwnerId] of this.inlineContentOwners()) {
       const inlineContentId = parseInlineContentId(rawId);
       const ownerId = parseBlockId(rawOwnerId);
-      if (!isLive(this.inlineContentLiveness(), inlineContentId)) continue;
+      if (
+        !isLive(
+          this.inlineContentLiveness(),
+          inlineContentId,
+          this.options.workCounters,
+        )
+      )
+        continue;
       if (!liveBlocks.has(ownerId)) continue;
       const payload = this.payloads().get(rawId);
       if (payload === undefined)
         throw new TypeError("Integrated InlineContent payload is missing.");
       inlineContentOwners.set(inlineContentId, ownerId);
-      payloads.set(inlineContentId, projectPayload(payload));
+      payloads.set(
+        inlineContentId,
+        recordPayload(
+          this.options.workCounters,
+          inlineContentId,
+          projectPayload(payload),
+        ),
+      );
     }
     return {
       rootId: this.requireRootId(),
@@ -469,11 +501,27 @@ class YjsIntegratedDocumentCarrier<
     const rawOwner = this.inlineContentOwners().get(inlineContentId);
     if (rawOwner === undefined) return undefined;
     const owner = parseBlockId(rawOwner);
-    if (!isLive(this.inlineContentLiveness(), inlineContentId))
+    if (
+      !isLive(
+        this.inlineContentLiveness(),
+        inlineContentId,
+        this.options.workCounters,
+      )
+    )
       return undefined;
-    if (owner !== rootId && !isLive(this.liveness(), owner)) return undefined;
+    if (
+      owner !== rootId &&
+      !isLive(this.liveness(), owner, this.options.workCounters)
+    )
+      return undefined;
     const payload = this.payloads().get(inlineContentId);
-    return payload === undefined ? undefined : projectPayload(payload);
+    return payload === undefined
+      ? undefined
+      : recordPayload(
+          this.options.workCounters,
+          inlineContentId,
+          projectPayload(payload),
+        );
   }
 
   public createStableTextPosition(
@@ -660,8 +708,9 @@ class YjsIntegratedDocumentCarrier<
   private liveBlockIds(): ReadonlySet<BlockId> {
     const live = new Set<BlockId>([this.requireRootId()]);
     for (const [rawId, tokens] of this.liveness()) {
-      if ([...tokens.values()].some((value) => value === true))
-        live.add(parseBlockId(rawId));
+      const values = [...tokens.values()];
+      recordTokens(this.options.workCounters, rawId, values.length);
+      if (values.some((value) => value === true)) live.add(parseBlockId(rawId));
     }
     return live;
   }
@@ -919,10 +968,14 @@ function retireObservedTokens(liveness: Y.Map<unknown>, id: string): void {
     if (live === true) tokens.set(token, false);
 }
 
-function isLive(liveness: Y.Map<Y.Map<boolean>>, id: string): boolean {
-  return [...(liveness.get(id)?.values() ?? [])].some(
-    (value) => value === true,
-  );
+function isLive(
+  liveness: Y.Map<Y.Map<boolean>>,
+  id: string,
+  counters?: QualificationWorkCounters,
+): boolean {
+  const values = [...(liveness.get(id)?.values() ?? [])];
+  recordTokens(counters, id, values.length);
+  return values.some((value) => value === true);
 }
 
 function replacementEffectId(
@@ -977,6 +1030,7 @@ function createRestoredPayload(
 function preparePayloadChanges(
   changes: readonly IntegratedPayloadChange[],
   current: ReadonlyMap<InlineContentId, QualificationPayloadSnapshot>,
+  counters?: QualificationWorkCounters,
 ): readonly PreparedPayloadChange[] {
   const working = new Map(current);
   const prepared: PreparedPayloadChange[] = [];
@@ -1025,6 +1079,10 @@ function preparePayloadChanges(
           payload.text.slice(0, change.offset) +
           change.text +
           payload.text.slice(change.offset);
+        if (counters)
+          counters.temporaryTextUnits[change.inlineContentId] =
+            (counters.temporaryTextUnits[change.inlineContentId] ?? 0) +
+            payload.text.length;
         if (
           requiresYjsTextRewrite(payload.text, text, (preflight) =>
             preflight.insert(change.offset, change.text),
@@ -1040,6 +1098,10 @@ function preparePayloadChanges(
         assertTextRange(change.start, change.end, payload.text);
         const text =
           payload.text.slice(0, change.start) + payload.text.slice(change.end);
+        if (counters)
+          counters.temporaryTextUnits[change.inlineContentId] =
+            (counters.temporaryTextUnits[change.inlineContentId] ?? 0) +
+            payload.text.length;
         if (
           requiresYjsTextRewrite(payload.text, text, (preflight) =>
             preflight.delete(change.start, change.end - change.start),
