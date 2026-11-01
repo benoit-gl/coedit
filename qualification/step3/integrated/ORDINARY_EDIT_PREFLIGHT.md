@@ -178,3 +178,17 @@ those transitions have one ordered timing per variant; these are not a reliable
 distribution. Fragmentation also grows native history. Timings include full
 preparation and publication, not just the temporary preflight. Native internal
 work remains unobserved; no product performance threshold is selected.
+
+## Incremental investigation and disposition
+
+The [ordinary-edit result](../comparison/ORDINARY_EDIT_RESULT.md) supersedes the open investigation status above.
+It retains these experiments as references and adds an explicit incremental variant, indexed text/range reads,
+revision-checked publication and a separate delta editor. Eligible warm adapter operations avoid full target and
+unrelated-document projection. The report also records native Automerge ancestor-map copying and Yjs fragmented
+prefix traversal; neither current unrestricted representation is declared production-eligible.
+The arbitrary-decoder path retains its original fallback behavior.
+
+Automerge native positions now carry their text-object identity. Positions from replaced/restored text return unresolved
+instead of invoking the native resolver against a different text object. Restore still creates fresh text identities.
+Yjs expected preparation failures are moved before live publication, and Automerge cross-surrogate deletion is rejected
+atomically, including after fallback. The result record states the exact scope and limitations of these fixes.

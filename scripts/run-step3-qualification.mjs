@@ -1,5 +1,7 @@
+import { chromium } from "playwright";
+import { URL } from "node:url";
 import { spawnSync } from "node:child_process";
-import { mkdir, readdir, writeFile } from "node:fs/promises";
+import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { arch, cpus, platform, release, totalmem } from "node:os";
 import {
   parseEditorTraversal,
@@ -14,6 +16,7 @@ const stages = [
     name: "snapshot-versus-targeted",
     args: ["run", "step3:snapshot-comparison"],
   },
+  { name: "ordinary-edit-comparison", args: ["run", "step3:ordinary-edit"] },
   { name: "nonselectable-loro-reference", args: ["run", "step3:loro"] },
 ];
 await mkdir("step3-evidence", { recursive: true });
@@ -73,6 +76,7 @@ for (const stage of stages) {
         ),
       ];
       try {
+        const ordinaryEnvironment = await captureOrdinaryBrowserEnvironment();
         if (matches.length !== 1)
           throw new Error("Expected exactly one browser measurement record.");
         const browser = JSON.parse(matches[0][1]);
@@ -155,6 +159,34 @@ for (const stage of stages) {
             2,
           ) + "\n",
         );
+        const ordinaryMatches = [
+          ...(execution.stdout ?? "").matchAll(
+            /STEP3_ORDINARY_BROWSER_JSON=(\{[^\r\n]*\})/g,
+          ),
+        ];
+        if (ordinaryMatches.length !== 1)
+          throw new Error(
+            "Expected exactly one ordinary editor browser record.",
+          );
+        const ordinary = JSON.parse(ordinaryMatches[0][1]);
+        if (
+          ordinary.status !== "complete" ||
+          ordinary.samples?.length !== 270 ||
+          ordinary.diagnostics?.length !== 18
+        )
+          throw new Error("Ordinary browser evidence is incomplete.");
+        await writeFile(
+          "step3-evidence/ordinary-browser.json",
+          JSON.stringify(
+            {
+              revision: process.env.GITHUB_SHA ?? null,
+              environment: ordinaryEnvironment,
+              ...ordinary,
+            },
+            null,
+            2,
+          ) + "\n",
+        );
         const isolationMatches = [
           ...(execution.stdout ?? "").matchAll(
             /STEP3_DOWNSTREAM_ISOLATION_JSON=(\{[^\r\n]*\})/g,
@@ -215,4 +247,51 @@ for (const stage of stages) {
       `Step 3 qualification stage ${stage.name} failed: ${stageError ?? execution.status}`,
     );
   }
+}
+
+// Capture the exact pinned executable used by the Chromium suite, rather than
+// guessing its full version from reduced User-Agent strings.
+async function captureOrdinaryBrowserEnvironment() {
+  const browser = await chromium.launch({ headless: true });
+  let browserVersion;
+  try {
+    browserVersion = browser.version();
+  } finally {
+    await browser.close();
+  }
+  const packages = Object.fromEntries(
+    await Promise.all(
+      [
+        "playwright",
+        "yjs",
+        "@automerge/automerge",
+        "prosemirror-view",
+        "prosemirror-state",
+      ].map(async (name) => [
+        name,
+        JSON.parse(
+          await readFile(
+            new URL(`../node_modules/${name}/package.json`, import.meta.url),
+            "utf8",
+          ),
+        ).version,
+      ]),
+    ),
+  );
+  return {
+    platform: platform(),
+    release: release(),
+    arch: arch(),
+    node: process.version,
+    cpu: cpus()[0]?.model,
+    logicalCpus: cpus().length,
+    ramBytes: totalmem(),
+    browser: {
+      name: "Chromium",
+      version: browserVersion,
+      method:
+        "same pinned Playwright executable, version captured in a separate launch after suite",
+    },
+    packages,
+  };
 }

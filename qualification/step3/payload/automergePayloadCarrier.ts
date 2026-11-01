@@ -113,6 +113,7 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
     const encodedOrigin = encodeQualificationOrigin(origin);
     if (text.length === 0)
       throw new TypeError("Text insertion requires nonempty text.");
+    assertAutomergeBoundary(snapshot.text, offset);
     assertAutomergeExactText(
       snapshot.text.slice(0, offset) + text + snapshot.text.slice(offset),
     );
@@ -140,6 +141,8 @@ export class AutomergePayloadCarrier implements PayloadCarrier {
     if (start === end) {
       return;
     }
+    assertAutomergeBoundary(snapshot.text, start);
+    assertAutomergeBoundary(snapshot.text, end);
     assertAutomergeExactText(
       snapshot.text.slice(0, start) + snapshot.text.slice(end),
     );
@@ -242,6 +245,24 @@ function parseOrigin(value: string): QualificationOrigin {
     throw new TypeError("Qualification Origin is invalid.");
   }
   return { id: parsed.id, kind: parsed.kind };
+}
+
+// Automerge indexes Unicode scalar values internally. Cutting a surrogate pair
+// can address a different native range even when the JavaScript result happens
+// to be well formed after the cut joins two different pairs.
+function assertAutomergeBoundary(text: string, offset: number): void {
+  if (offset <= 0 || offset >= text.length) return;
+  const before = text.charCodeAt(offset - 1);
+  const after = text.charCodeAt(offset);
+  if (
+    before >= 0xd800 &&
+    before <= 0xdbff &&
+    after >= 0xdc00 &&
+    after <= 0xdfff
+  )
+    throw new TypeError(
+      "Automerge cannot preserve this ECMAScript string exactly.",
+    );
 }
 
 function assertAutomergeExactText(text: string): void {

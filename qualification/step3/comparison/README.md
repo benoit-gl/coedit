@@ -4,6 +4,11 @@ This runner and its measurements establish an experimental baseline for
 continued investigation. They do not complete Step 3 comparative qualification
 or provide sufficient evidence for Gate B.
 
+The [ordinary-edit result](ORDINARY_EDIT_RESULT.md) records the point 1 investigation, incremental
+qualification experiment, correctness repairs and negative unrestricted native-work result.
+It does not establish production eligibility or close Gate B. `npm run step3:ordinary-edit` writes the matched
+headless, lifecycle and native diagnostics; the full runner also preserves the mounted browser observations.
+
 The exact run-specific method and input profile are in `profile.json`.
 The `npm run step3:measure` command records paired Yjs/Automerge and
 structural allocator samples, medians, nearest-rank p95, encoded growth, CPU and memory

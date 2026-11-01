@@ -59,6 +59,7 @@ import {
 } from "./effectEnvelope.js";
 
 import { isOrdinaryTextChange } from "./ordinaryEdit.js";
+import { IndexedOrdinary } from "./indexedOrdinary.js";
 import { recordPayload, recordTokens } from "./workCounters.js";
 
 const ROOT = "integrated";
@@ -89,6 +90,8 @@ class YjsIntegratedDocumentCarrier<
   // Only ordinary edits preserve this proof. Other successful transitions
   // try to refresh it without moving legacy validation errors to that call.
   private ordinaryProjectionValidated = false;
+  private indexedOrdinary: IndexedOrdinary | undefined;
+  private ordinaryRevision = Symbol("ordinary-edit");
 
   public constructor(
     private readonly positionCodec: StructuralPositionCodec<Position>,
@@ -137,7 +140,23 @@ class YjsIntegratedDocumentCarrier<
 
   public applyChange(change: IntegratedDocumentChange<Position>): void {
     const rootId = this.requireRootId();
-    const targeted = this.ordinaryEditSnapshot(change);
+    const cache = this.indexedOrdinary;
+    this.indexedOrdinary = undefined;
+    this.ordinaryRevision = Symbol("ordinary-edit");
+    const staged =
+      cache && isOrdinaryTextChange(change)
+        ? cache.stage(change.payloads ?? [], this.candidate)
+        : undefined;
+    const targeted: IntegratedDocumentSnapshot<Position> | undefined =
+      staged !== undefined
+        ? {
+            rootId: this.requireRootId(),
+            payloads: new Map(),
+            inlineContentOwners: new Map(),
+            placements: new Map(),
+            blockLiveness: new Map(),
+          }
+        : this.ordinaryEditSnapshot(change);
     this.ordinaryProjectionValidated = false;
     const snapshot = targeted ?? this.snapshot();
     const placements = (change.placements ?? []).map((update) => {
@@ -155,12 +174,20 @@ class YjsIntegratedDocumentCarrier<
         ),
       };
     });
-    const payloads = preparePayloadChanges(
-      change.payloads ?? [],
-      snapshot.payloads,
-      this.options.workCounters,
-      this.options.yjsTextPreflightVariant,
-    );
+    const payloads =
+      staged === undefined
+        ? preparePayloadChanges(
+            change.payloads ?? [],
+            snapshot.payloads,
+            this.options.workCounters,
+            this.options.yjsTextPreflightVariant,
+          )
+        : (change.payloads ?? []).map((update) => {
+            if (update.kind === "insert-text")
+              return { ...update, origin: encodeOrigin(update.origin) };
+            if (update.kind === "delete-text") return update;
+            throw new TypeError("Incremental batch is not ordinary text.");
+          });
     const inlineContents =
       targeted === undefined
         ? prepareInlineContentCreations(
@@ -219,6 +246,12 @@ class YjsIntegratedDocumentCarrier<
       evidence,
     );
     if (evidence !== undefined) this.payloadEffectHeads = [evidence.id];
+    if (staged !== undefined && cache !== undefined) {
+      cache.publish(staged);
+      this.indexedOrdinary = cache;
+      this.ordinaryProjectionValidated = true;
+      return;
+    }
     this.ordinaryProjectionValidated =
       (this.options.ordinaryEditVariant !== "snapshot" ||
         this.options.editorProjectionVariant === "targeted") &&
@@ -228,7 +261,10 @@ class YjsIntegratedDocumentCarrier<
         (payload) =>
           snapshot.payloads.get(payload.inlineContentId)?.kind === "text",
       );
-    if (!this.ordinaryProjectionValidated)
+    if (
+      !this.ordinaryProjectionValidated ||
+      this.options.ordinaryEditVariant === "incremental"
+    )
       this.refreshOrdinaryProjectionValidation();
   }
 
@@ -238,6 +274,7 @@ class YjsIntegratedDocumentCarrier<
 
   private refreshOrdinaryProjectionValidation(): void {
     this.ordinaryProjectionValidated = false;
+    this.indexedOrdinary = undefined;
     if (
       this.options.ordinaryEditVariant === "snapshot" &&
       this.options.editorProjectionVariant !== "targeted"
@@ -247,11 +284,17 @@ class YjsIntegratedDocumentCarrier<
       // Preserve observable decoder calls unless the fixture explicitly opts in
       // to a pure, deterministic and stable decoder.
       if (this.requiresPlacementPreflight()) return;
-      this.snapshot();
+      const validatedSnapshot = this.snapshot();
       // Ordinary full preflight parses retained IDs too, including identities
       // hidden from the visible snapshot. Both checks must succeed.
       for (const id of this.inlineContentOwners().keys())
         parseInlineContentId(id);
+      if (this.options.ordinaryEditVariant === "incremental")
+        this.indexedOrdinary = IndexedOrdinary.fromSnapshot(
+          validatedSnapshot,
+          this.candidate,
+          this.options.workCounters,
+        );
       this.ordinaryProjectionValidated = true;
     } catch {
       // This is speculative read-only work, not a new acceptance boundary.
@@ -392,6 +435,8 @@ class YjsIntegratedDocumentCarrier<
     context?: QualificationEffectContext,
   ): void {
     this.ordinaryProjectionValidated = false;
+    this.indexedOrdinary = undefined;
+    this.ordinaryRevision = Symbol("ordinary-edit");
     const target = this.materializeHistoricalState(token);
     const effect = this.prepareContext(context);
     const envelope =
@@ -407,6 +452,11 @@ class YjsIntegratedDocumentCarrier<
           };
     const rootId = this.requireRootId();
     const owners = this.inlineContentOwners();
+    const blocks = this.blocks();
+    const inlineLiveness = this.inlineContentLiveness();
+    const payloadMap = this.payloads();
+    const contexts = this.effectContexts();
+    const envelopes = this.effectEnvelopes();
     const liveness = this.root.get(LIVENESS);
     if (!(liveness instanceof Y.Map))
       throw new TypeError("Integrated liveness namespace is missing.");
@@ -434,28 +484,19 @@ class YjsIntegratedDocumentCarrier<
     this.document.transact(() => {
       for (const id of liveness.keys())
         if (id !== rootId) retireObservedTokens(liveness, id);
-      for (const id of this.inlineContentLiveness().keys())
-        retireObservedTokens(
-          this.inlineContentLiveness() as Y.Map<unknown>,
-          id,
-        );
+      for (const id of inlineLiveness.keys())
+        retireObservedTokens(inlineLiveness as Y.Map<unknown>, id);
       for (const { id, encoded, livenessToken } of placements) {
-        this.blocks().set(id, encoded);
+        blocks.set(id, encoded);
         addLiveToken(liveness, id, livenessToken);
       }
       for (const { id, livenessToken } of inlineContentLiveness)
-        addLiveToken(
-          this.inlineContentLiveness() as Y.Map<unknown>,
-          id,
-          livenessToken,
-        );
+        addLiveToken(inlineLiveness as Y.Map<unknown>, id, livenessToken);
       for (const { id, value } of payloads) {
-        this.payloads().set(id, value);
+        payloadMap.set(id, value);
       }
-      if (effect !== undefined)
-        this.effectContexts().set(effect.id, effect.encoded);
-      if (envelope !== undefined)
-        this.effectEnvelopes().set(envelope.id, envelope.encoded);
+      if (effect !== undefined) contexts.set(effect.id, effect.encoded);
+      if (envelope !== undefined) envelopes.set(envelope.id, envelope.encoded);
     });
     this.refreshOrdinaryProjectionValidation();
   }
@@ -479,6 +520,38 @@ class YjsIntegratedDocumentCarrier<
         .sort(([left], [right]) => left.localeCompare(right))
         .map(([id, encoded]) => [id, decodeEffectContext(encoded)]),
     );
+  }
+
+  public readOrdinaryTextRange(
+    inlineContentId: InlineContentId,
+    start: number,
+    end: number,
+  ) {
+    const result = this.indexedOrdinary?.read(inlineContentId, start, end);
+    return result === undefined
+      ? undefined
+      : { ...result, revision: this.ordinaryRevision };
+  }
+
+  public prepareOrdinaryText(): boolean {
+    this.ordinaryRevision = Symbol("ordinary-edit");
+    this.refreshOrdinaryProjectionValidation();
+    return this.indexedOrdinary !== undefined;
+  }
+
+  public applyOrdinaryChange(
+    change: IntegratedDocumentChange<Position>,
+    revision: symbol,
+  ): symbol {
+    if (
+      revision !== this.ordinaryRevision ||
+      this.indexedOrdinary === undefined
+    )
+      throw new Error("Stale ordinary edit revision.");
+    if (!isOrdinaryTextChange(change))
+      throw new TypeError("Expected an ordinary text change.");
+    this.applyChange(change);
+    return this.ordinaryRevision;
   }
 
   public projectEditorPayload(
@@ -530,8 +603,21 @@ class YjsIntegratedDocumentCarrier<
     editorUtf16Offset: number,
     affinity: QualificationTextAffinity,
   ): QualificationStableTextPosition {
-    const text = this.requireTextPayload(inlineContentId);
-    assertTextOffset(editorUtf16Offset, text.toJSON());
+    const indexed = this.indexedOrdinary?.read(inlineContentId, 0, 0);
+    const text =
+      indexed === undefined
+        ? this.requireTextPayload(inlineContentId)
+        : this.payloads().get(inlineContentId)?.get("text");
+    if (!(text instanceof Y.Text))
+      throw new TypeError("Stable positions require a live text payload.");
+    if (indexed === undefined)
+      assertTextOffset(editorUtf16Offset, text.toJSON());
+    else if (
+      !Number.isSafeInteger(editorUtf16Offset) ||
+      editorUtf16Offset < 0 ||
+      editorUtf16Offset > indexed.length
+    )
+      throw new RangeError("Text offset is outside the current native string.");
     return {
       candidate: "yjs",
       inlineContentId,
@@ -550,8 +636,11 @@ class YjsIntegratedDocumentCarrier<
   ): number | undefined {
     if (position.candidate !== "yjs")
       throw new TypeError("Stable text position belongs to another candidate.");
-    const payload = this.projectEditorPayload(position.inlineContentId);
-    if (payload?.kind !== "text") return undefined;
+    const indexed = this.indexedOrdinary?.read(position.inlineContentId, 0, 0);
+    if (indexed === undefined) {
+      const payload = this.projectEditorPayload(position.inlineContentId);
+      if (payload?.kind !== "text") return undefined;
+    }
     const text = this.payloads().get(position.inlineContentId)?.get("text");
     if (!(text instanceof Y.Text)) return undefined;
     const resolved = Y.createAbsolutePositionFromRelativePosition(
@@ -582,6 +671,8 @@ class YjsIntegratedDocumentCarrier<
 
   public mergeEncoded(encoded: Uint8Array): void {
     this.ordinaryProjectionValidated = false;
+    this.indexedOrdinary = undefined;
+    this.ordinaryRevision = Symbol("ordinary-edit");
     const decoded = decodeEnvelope(encoded);
     const currentRoot = this.requireRootId();
     if (decoded.rootId !== currentRoot)
@@ -751,15 +842,58 @@ function applyPreparedChange(
   )
     throw new TypeError("Integrated document is invalid.");
 
+  // Yjs transactions do not roll back when a callback throws. Allocate every
+  // token before touching the live document, including tokens for later updates.
+  const tokenCount =
+    placements.length +
+    inlineContents.length +
+    payloads.reduce(
+      (count, update) =>
+        count +
+        (update.kind === "delete-text" && update.start === update.end ? 0 : 2),
+      0,
+    );
+  const tokens = Array.from({ length: tokenCount }, () => crypto.randomUUID());
+  let tokenIndex = 0;
+  const addPreparedToken = (map: Y.Map<unknown>, id: string): void => {
+    const token = tokens[tokenIndex++];
+    if (token === undefined)
+      throw new Error("Prepared liveness token is missing.");
+    addLiveToken(map, id, token);
+  };
+  const knownOwners = new Map<string, string>();
+  for (const creation of inlineContents)
+    knownOwners.set(creation.inlineContentId, creation.blockId);
+  const textKinds = new Map<string, boolean>();
+  for (const update of payloads) {
+    const owner =
+      knownOwners.get(update.inlineContentId) ??
+      (owners as Y.Map<string>).get(update.inlineContentId);
+    if (owner === undefined)
+      throw new TypeError("Integrated InlineContent owner is missing.");
+    parseBlockId(owner);
+    if (update.kind === "replace-text" || update.kind === "replace-opaque") {
+      textKinds.set(update.inlineContentId, update.kind === "replace-text");
+    } else {
+      const isText =
+        textKinds.get(update.inlineContentId) ??
+        (payloadMap as Y.Map<Y.Map<unknown>>)
+          .get(update.inlineContentId)
+          ?.get("text") instanceof Y.Text;
+      if (!isText)
+        throw new TypeError("Fine-grained operations require a text payload.");
+    }
+  }
+
   document.transact(() => {
     for (const blockId of deletes) retireObservedTokens(liveness, blockId);
     for (const update of placements) {
       (blocks as Y.Map<string>).set(update.blockId, update.encoded);
-      addLiveToken(liveness, update.blockId);
+      addPreparedToken(liveness, update.blockId);
     }
     for (const creation of inlineContents) {
       (owners as Y.Map<string>).set(creation.inlineContentId, creation.blockId);
-      addLiveToken(
+      addPreparedToken(
         inlineContentLiveness as Y.Map<unknown>,
         creation.inlineContentId,
       );
@@ -769,8 +903,8 @@ function applyPreparedChange(
       if (ownerId === undefined)
         throw new TypeError("Integrated InlineContent owner is missing.");
       if (update.kind === "replace-text") {
-        addLiveToken(liveness, parseBlockId(ownerId));
-        addLiveToken(
+        addPreparedToken(liveness, parseBlockId(ownerId));
+        addPreparedToken(
           inlineContentLiveness as Y.Map<unknown>,
           update.inlineContentId,
         );
@@ -790,8 +924,8 @@ function applyPreparedChange(
         continue;
       }
       if (update.kind === "replace-opaque") {
-        addLiveToken(liveness, parseBlockId(ownerId));
-        addLiveToken(
+        addPreparedToken(liveness, parseBlockId(ownerId));
+        addPreparedToken(
           inlineContentLiveness as Y.Map<unknown>,
           update.inlineContentId,
         );
@@ -816,16 +950,16 @@ function applyPreparedChange(
         throw new TypeError("Fine-grained operations require a text payload.");
       if (update.kind === "insert-text") {
         if (update.text.length > 0) {
-          addLiveToken(liveness, parseBlockId(ownerId));
-          addLiveToken(
+          addPreparedToken(liveness, parseBlockId(ownerId));
+          addPreparedToken(
             inlineContentLiveness as Y.Map<unknown>,
             update.inlineContentId,
           );
           text.insert(update.offset, update.text, { [ORIGIN]: update.origin });
         }
       } else if (update.start !== update.end) {
-        addLiveToken(liveness, parseBlockId(ownerId));
-        addLiveToken(
+        addPreparedToken(liveness, parseBlockId(ownerId));
+        addPreparedToken(
           inlineContentLiveness as Y.Map<unknown>,
           update.inlineContentId,
         );

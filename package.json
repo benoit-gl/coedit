@@ -32,7 +32,8 @@
     "step3:measure": "node scripts/step3-measure.mjs",
     "step3:snapshot-comparison": "node scripts/step3-snapshot-comparison.mjs step3-evidence/snapshot-comparison.json",
     "step3:loro": "node scripts/step3-loro.mjs",
-    "step3:qualification": "node scripts/run-step3-qualification.mjs"
+    "step3:qualification": "node scripts/run-step3-qualification.mjs",
+    "step3:ordinary-edit": "node scripts/step3-ordinary-edit.mjs"
   },
   "dependencies": {
     "react": "19.2.8",

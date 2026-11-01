@@ -58,6 +58,7 @@ import {
 } from "./effectEnvelope.js";
 
 import { isOrdinaryTextChange } from "./ordinaryEdit.js";
+import { IndexedOrdinary } from "./indexedOrdinary.js";
 import { recordPayload, recordTokens } from "./workCounters.js";
 
 const ORIGIN_MARK = "__coedit_origin";
@@ -99,6 +100,8 @@ class AutomergeIntegratedDocumentCarrier<
   // Only ordinary edits preserve this proof. Other successful transitions
   // try to refresh it without moving legacy validation errors to that call.
   private ordinaryProjectionValidated = false;
+  private indexedOrdinary: IndexedOrdinary | undefined;
+  private ordinaryRevision = Symbol("ordinary-edit");
 
   public constructor(
     private readonly positionCodec: StructuralPositionCodec<Position>,
@@ -134,16 +137,33 @@ class AutomergeIntegratedDocumentCarrier<
   }
 
   public applyChange(change: IntegratedDocumentChange<Position>): void {
-    const targeted = this.ordinaryEditSnapshot(change);
+    const cache = this.indexedOrdinary;
+    this.indexedOrdinary = undefined;
+    this.ordinaryRevision = Symbol("ordinary-edit");
+    const staged =
+      cache && isOrdinaryTextChange(change)
+        ? cache.stage(change.payloads ?? [], this.candidate)
+        : undefined;
+    const targeted: IntegratedDocumentSnapshot<Position> | undefined =
+      staged !== undefined
+        ? {
+            rootId: parseBlockId(this.document.rootId),
+            payloads: new Map(),
+            inlineContentOwners: new Map(),
+            placements: new Map(),
+            blockLiveness: new Map(),
+          }
+        : this.ordinaryEditSnapshot(change);
     this.ordinaryProjectionValidated = false;
     const snapshot = targeted ?? this.snapshot();
-    validateChange(
-      change,
-      snapshot,
-      targeted === undefined
-        ? new Set(Object.keys(this.document.inlineContentOwners))
-        : new Set<string>(),
-    );
+    if (staged === undefined)
+      validateChange(
+        change,
+        snapshot,
+        targeted === undefined
+          ? new Set(Object.keys(this.document.inlineContentOwners))
+          : new Set<string>(),
+      );
     const inlineContents =
       targeted === undefined
         ? prepareInlineContentCreations(
@@ -306,6 +326,12 @@ class AutomergeIntegratedDocumentCarrier<
       }
     });
     if (evidence !== undefined) this.payloadEffectHeads = [evidence.id];
+    if (staged !== undefined && cache !== undefined) {
+      cache.publish(staged);
+      this.indexedOrdinary = cache;
+      this.ordinaryProjectionValidated = true;
+      return;
+    }
     this.ordinaryProjectionValidated =
       (this.options.ordinaryEditVariant !== "snapshot" ||
         this.options.editorProjectionVariant === "targeted") &&
@@ -315,7 +341,10 @@ class AutomergeIntegratedDocumentCarrier<
         (payload) =>
           snapshot.payloads.get(payload.inlineContentId)?.kind === "text",
       );
-    if (!this.ordinaryProjectionValidated)
+    if (
+      !this.ordinaryProjectionValidated ||
+      this.options.ordinaryEditVariant === "incremental"
+    )
       this.refreshOrdinaryProjectionValidation();
   }
 
@@ -328,6 +357,7 @@ class AutomergeIntegratedDocumentCarrier<
 
   private refreshOrdinaryProjectionValidation(): void {
     this.ordinaryProjectionValidated = false;
+    this.indexedOrdinary = undefined;
     if (
       this.options.ordinaryEditVariant === "snapshot" &&
       this.options.editorProjectionVariant !== "targeted"
@@ -337,11 +367,17 @@ class AutomergeIntegratedDocumentCarrier<
       // Preserve observable decoder calls unless the fixture explicitly opts in
       // to a pure, deterministic and stable decoder.
       if (this.requiresPlacementPreflight()) return;
-      this.snapshot();
+      const validatedSnapshot = this.snapshot();
       // Ordinary full preflight parses retained IDs too, including identities
       // hidden from the visible snapshot. Both checks must succeed.
       for (const id of Object.keys(this.document.inlineContentOwners))
         parseInlineContentId(id);
+      if (this.options.ordinaryEditVariant === "incremental")
+        this.indexedOrdinary = IndexedOrdinary.fromSnapshot(
+          validatedSnapshot,
+          this.candidate,
+          this.options.workCounters,
+        );
       this.ordinaryProjectionValidated = true;
     } catch {
       // This is speculative read-only work, not a new acceptance boundary.
@@ -490,6 +526,8 @@ class AutomergeIntegratedDocumentCarrier<
     context?: QualificationEffectContext,
   ): void {
     this.ordinaryProjectionValidated = false;
+    this.indexedOrdinary = undefined;
+    this.ordinaryRevision = Symbol("ordinary-edit");
     const target = this.materializeHistoricalState(token);
     const effect = this.prepareContext(context);
     const envelope =
@@ -594,6 +632,38 @@ class AutomergeIntegratedDocumentCarrier<
     );
   }
 
+  public readOrdinaryTextRange(
+    inlineContentId: InlineContentId,
+    start: number,
+    end: number,
+  ) {
+    const result = this.indexedOrdinary?.read(inlineContentId, start, end);
+    return result === undefined
+      ? undefined
+      : { ...result, revision: this.ordinaryRevision };
+  }
+
+  public prepareOrdinaryText(): boolean {
+    this.ordinaryRevision = Symbol("ordinary-edit");
+    this.refreshOrdinaryProjectionValidation();
+    return this.indexedOrdinary !== undefined;
+  }
+
+  public applyOrdinaryChange(
+    change: IntegratedDocumentChange<Position>,
+    revision: symbol,
+  ): symbol {
+    if (
+      revision !== this.ordinaryRevision ||
+      this.indexedOrdinary === undefined
+    )
+      throw new Error("Stale ordinary edit revision.");
+    if (!isOrdinaryTextChange(change))
+      throw new TypeError("Expected an ordinary text change.");
+    this.applyChange(change);
+    return this.ordinaryRevision;
+  }
+
   public projectEditorPayload(
     inlineContentId: InlineContentId,
   ): QualificationPayloadSnapshot | undefined {
@@ -643,13 +713,28 @@ class AutomergeIntegratedDocumentCarrier<
     editorUtf16Offset: number,
     affinity: QualificationTextAffinity,
   ): QualificationStableTextPosition {
-    const payload = this.projectEditorPayload(inlineContentId);
-    if (payload?.kind !== "text")
-      throw new TypeError("Stable positions require a live text payload.");
-    assertTextOffset(editorUtf16Offset, payload.text);
+    const indexed = this.indexedOrdinary?.read(inlineContentId, 0, 0);
+    if (indexed === undefined) {
+      const payload = this.projectEditorPayload(inlineContentId);
+      if (payload?.kind !== "text")
+        throw new TypeError("Stable positions require a live text payload.");
+      assertTextOffset(editorUtf16Offset, payload.text);
+    } else if (
+      !Number.isSafeInteger(editorUtf16Offset) ||
+      editorUtf16Offset < 0 ||
+      editorUtf16Offset > indexed.length
+    )
+      throw new RangeError("Text offset is outside the current native string.");
+    const textObjectId = Automerge.getObjectId(
+      this.document.payloads[inlineContentId],
+      "text",
+    );
+    if (textObjectId === null)
+      throw new TypeError("Stable positions require a native text object.");
     return {
       candidate: "automerge",
       inlineContentId,
+      textObjectId,
       cursor: Automerge.getCursor(
         this.document,
         ["payloads", inlineContentId, "text"],
@@ -664,8 +749,18 @@ class AutomergeIntegratedDocumentCarrier<
   ): number | undefined {
     if (position.candidate !== "automerge")
       throw new TypeError("Stable text position belongs to another candidate.");
-    const payload = this.projectEditorPayload(position.inlineContentId);
-    if (payload?.kind !== "text") return undefined;
+    const indexed = this.indexedOrdinary?.read(position.inlineContentId, 0, 0);
+    if (indexed === undefined) {
+      const payload = this.projectEditorPayload(position.inlineContentId);
+      if (payload?.kind !== "text") return undefined;
+    }
+    if (
+      Automerge.getObjectId(
+        this.document.payloads[position.inlineContentId],
+        "text",
+      ) !== position.textObjectId
+    )
+      return undefined;
     return Automerge.getCursorPosition(
       this.document,
       ["payloads", position.inlineContentId, "text"],
@@ -690,6 +785,8 @@ class AutomergeIntegratedDocumentCarrier<
 
   public mergeEncoded(encoded: Uint8Array): void {
     this.ordinaryProjectionValidated = false;
+    this.indexedOrdinary = undefined;
+    this.ordinaryRevision = Symbol("ordinary-edit");
     const remote = Automerge.load<State>(encoded);
     if (remote.rootId !== this.document.rootId)
       throw new TypeError("Integrated replicas must share one root identity.");
@@ -802,6 +899,7 @@ function validateChange<Position>(
         if (update.text.length === 0)
           throw new TypeError("Text insertion requires nonempty text.");
         assertAutomergeExactText(update.text);
+        assertAutomergeBoundary(payload.text, update.offset);
         const text =
           payload.text.slice(0, update.offset) +
           update.text +
@@ -813,6 +911,10 @@ function validateChange<Position>(
         });
       } else {
         assertTextRange(update.start, update.end, payload.text);
+        if (update.start !== update.end) {
+          assertAutomergeBoundary(payload.text, update.start);
+          assertAutomergeBoundary(payload.text, update.end);
+        }
         const text =
           payload.text.slice(0, update.start) + payload.text.slice(update.end);
         assertAutomergeExactText(text);
@@ -1029,6 +1131,24 @@ function encodeOrigin(origin: QualificationOrigin): string {
   const kind = origin.kind;
   assertOrigin({ id, kind });
   return JSON.stringify({ id, kind });
+}
+
+// Automerge indexes Unicode scalar values internally. Cutting a surrogate pair
+// can address a different native range even when the JavaScript result happens
+// to be well formed after the cut joins two different pairs.
+function assertAutomergeBoundary(text: string, offset: number): void {
+  if (offset <= 0 || offset >= text.length) return;
+  const before = text.charCodeAt(offset - 1);
+  const after = text.charCodeAt(offset);
+  if (
+    before >= 0xd800 &&
+    before <= 0xdbff &&
+    after >= 0xdc00 &&
+    after <= 0xdfff
+  )
+    throw new TypeError(
+      "Automerge cannot preserve this ECMAScript string exactly.",
+    );
 }
 
 function assertAutomergeExactText(text: string): void {

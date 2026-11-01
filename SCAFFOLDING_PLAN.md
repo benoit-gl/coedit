@@ -324,6 +324,10 @@ Deliver Step 3 as nine reviewable merge units with one fork-and-join boundary:
    can identify candidate guard, admission, replacement-policy, and clipboard alternatives but does not select them.
    The [comparative work plan](qualification/step3/comparison/WORK_PLAN.md) organizes the remaining investigations and
    evidence for agents; the verification and focused specifications remain authoritative.
+   The [ordinary-edit result](qualification/step3/comparison/ORDINARY_EDIT_RESULT.md) records that investigation with
+   adapter improvements, correctness repairs and a negative unrestricted native-work result. It does not qualify either
+   current representation for the mandatory no-whole-document-work criterion. Gate B must not select an ineligible
+   representation or introduce an unexercised redesign to conceal that failure.
 
 9. **Gate B decision.** In a deliberately small decision change, record the selected carrier and allocator, observable
    concurrent-replacement winner rule, mixed replacement/edit semantics, selected carrier string domain, payload/carrier

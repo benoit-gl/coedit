@@ -46,5 +46,16 @@
     "install": "external isolated package, not a production dependency"
   },
   "browserWorkloads": "two Blocks, three InlineContents; short emoji-containing target for insertion, deletion, selection, Markdown, Unicode and line-feed probes, plus uniformly attributed 1024, 10000, and 100000 UTF-16-unit targets with one middle insertion; content size and effect-history growth are separate. Pure local-dense decoder opt-in; keyboard driver or direct ProseMirror transactions, not physical paint or independent feedback; two warmups and five samples per case and candidate",
-  "downstreamIsolation": "two sequential synthetic keyboard insertions into one text/plain InlineContent, with separate replica and pending inbound merge; gated in-memory persistence and outbound replica callbacks release after both local edits, followed by inbound merge and convergence check. Two warmups and five measured fresh fixtures per candidate; record driver-to-DOM-check, synchronous applyChange and next-animation-frame callback median and nearest-rank p95. Not physical paint, real I/O or independent feedback under slow synchronous publication."
+  "downstreamIsolation": "two sequential synthetic keyboard insertions into one text/plain InlineContent, with separate replica and pending inbound merge; gated in-memory persistence and outbound replica callbacks release after both local edits, followed by inbound merge and convergence check. Two warmups and five measured fresh fixtures per candidate; record driver-to-DOM-check, synchronous applyChange and next-animation-frame callback median and nearest-rank p95. Not physical paint, real I/O or independent feedback under slow synchronous publication.",
+  "ordinaryEdit": {
+    "maturity": "experimental",
+    "selection": "none",
+    "profileOwner": "ordinaryEditComparison.ts",
+    "variants": ["snapshot", "targeted", "incremental"],
+    "samples": 5,
+    "warmups": 2,
+    "text": "Unicode/Markdown-like 1024, 10000, 100000 UTF-16 units",
+    "method": "Shared native genesis per candidate/profile, alternating variant order; independent placements, unrelated text, opaque, Origin runs and prior history profiles; raw uninstrumented samples and separate instrumented fresh instances. Native internals not inferred from counters.",
+    "browser": "ordinaryEdit.browser.test.ts; mounted reference/targeted/incremental, three sizes, synthetic keyboard and direct Unicode/selection transactions. 270 measured samples and 18 separate diagnostics. Nested intervals overlap; not physical paint or independent feedback."
+  }
 }

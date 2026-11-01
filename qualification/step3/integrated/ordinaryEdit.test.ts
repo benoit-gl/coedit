@@ -9,6 +9,7 @@ import {
 import type {
   IntegratedDocumentCarrier,
   IntegratedDocumentChange,
+  QualificationWorkCounters,
 } from "./carrier.js";
 import { createYjsIntegratedDocumentCarrierFactory } from "./yjsIntegratedDocumentCarrier.js";
 import { createAutomergeIntegratedDocumentCarrierFactory } from "./automergeIntegratedDocumentCarrier.js";
@@ -737,3 +738,388 @@ function corruptOwnership(
   result.set(update, 37);
   return result;
 }
+
+describe("Yjs prepared publication", () => {
+  it("does not publish when a later liveness token allocation fails", () => {
+    const factory = createYjsIntegratedDocumentCarrierFactory(
+      localDensePositionAllocator,
+      localDensePositionAllocator,
+      { purePositionDecoder: true },
+    );
+    const carrier = factory.create(root);
+    seed(carrier);
+    const before = carrier.encode();
+    const random = vi.spyOn(crypto, "randomUUID");
+    random.mockReturnValueOnce("00000000-0000-4000-8000-000000000010");
+    random.mockImplementationOnce(() => {
+      throw new Error("UUID unavailable");
+    });
+    try {
+      expect(() =>
+        carrier.applyChange({
+          payloads: [
+            {
+              kind: "insert-text",
+              inlineContentId: text,
+              offset: 0,
+              text: "x",
+              origin: human,
+            },
+          ],
+        }),
+      ).toThrow("UUID unavailable");
+      expect(carrier.encode()).toEqual(before);
+    } finally {
+      random.mockRestore();
+    }
+  });
+});
+
+describe("Automerge text identity", () => {
+  it("invalidates old anchors after replacement and restore across reload", () => {
+    const factory = createAutomergeIntegratedDocumentCarrierFactory(
+      localDensePositionAllocator,
+      localDensePositionAllocator,
+      { purePositionDecoder: true },
+    );
+    const carrier = factory.create(root);
+    seed(carrier);
+    const old = carrier.createStableTextPosition(text, 1, "after");
+    const saved = carrier.captureHistoricalState();
+    carrier.applyChange({
+      payloads: [
+        {
+          kind: "replace-text",
+          inlineContentId: text,
+          mediaType: "text/plain",
+          text: "a😀bc",
+          origin: imported,
+        },
+      ],
+    });
+    expect(carrier.resolveStableTextPosition(old)).toBeUndefined();
+    carrier.restoreHistoricalState(saved);
+    expect(carrier.resolveStableTextPosition(old)).toBeUndefined();
+    const fresh = carrier.createStableTextPosition(text, 1, "after");
+    const reloaded = factory.load(carrier.encode());
+    expect(reloaded.resolveStableTextPosition(old)).toBeUndefined();
+    expect(reloaded.resolveStableTextPosition(fresh)).toBe(1);
+  });
+});
+
+for (const createFactory of [
+  createYjsIntegratedDocumentCarrierFactory,
+  createAutomergeIntegratedDocumentCarrierFactory,
+]) {
+  describe(`${createFactory.name} incremental ordinary qualification`, () => {
+    it("matches the reference across batches, Unicode boundaries, reload and stale revisions", () => {
+      const options = { purePositionDecoder: true } as const;
+      const reference = createFactory(
+        localDensePositionAllocator,
+        localDensePositionAllocator,
+        { ...options, ordinaryEditVariant: "snapshot" },
+      );
+      const incremental = createFactory(
+        localDensePositionAllocator,
+        localDensePositionAllocator,
+        { ...options, ordinaryEditVariant: "incremental" },
+      );
+      const genesis = reference.create(root);
+      seed(genesis);
+      const a = reference.load(genesis.encode());
+      let b = incremental.load(genesis.encode());
+      for (const change of [
+        insertion("one", 1),
+        {
+          payloads: [
+            {
+              kind: "delete-text" as const,
+              inlineContentId: text,
+              start: 2,
+              end: 4,
+            },
+          ],
+        },
+        insertion("two", 0),
+      ]) {
+        const view = b.readOrdinaryTextRange(text, 0, 1)!;
+        a.applyChange(change);
+        b.applyOrdinaryChange(change, view.revision);
+        expect(semanticState(b)).toEqual(semanticState(a));
+        expect(() => b.applyOrdinaryChange(change, view.revision)).toThrow(
+          /Stale/u,
+        );
+      }
+      const invalid: Change = {
+        payloads: [
+          {
+            kind: "insert-text",
+            inlineContentId: other,
+            offset: 2,
+            text: "x",
+            origin: human,
+          },
+        ],
+      };
+      expect(errorOf(() => a.applyChange(invalid))).toEqual(
+        errorOf(() => b.applyChange(invalid)),
+      );
+      expect(semanticState(b)).toEqual(semanticState(a));
+      b = incremental.load(b.encode());
+      expect(
+        b
+          .readOrdinaryTextRange(text, 0, 2)
+          ?.spans.map((span) => span.text)
+          .join(""),
+      ).toBe("xa");
+    });
+  });
+}
+
+for (const createFactory of [
+  createYjsIntegratedDocumentCarrierFactory,
+  createAutomergeIntegratedDocumentCarrierFactory,
+]) {
+  it(`${createFactory.name} invalidates and rebuilds the indexed proof across transitions`, () => {
+    const counters: QualificationWorkCounters = {
+      snapshots: 0,
+      placementDecodes: 0,
+      payloads: {},
+      textUnits: {},
+      textSpans: {},
+      opaqueBytes: {},
+      temporaryTextUnits: {},
+      livenessTokens: {},
+    };
+    const factory = createFactory(
+      localDensePositionAllocator,
+      localDensePositionAllocator,
+      {
+        ordinaryEditVariant: "incremental",
+        purePositionDecoder: true,
+        workCounters: counters,
+      },
+    );
+    const c = factory.create(root);
+    seed(c);
+    const before = c.readOrdinaryTextRange(text, 0, 0)!;
+    const saved = c.captureHistoricalState();
+    const projectionCount = counters.snapshots;
+    const rebuilt = counters.indexed!.rebuildUnits;
+    const receipt = c.applyOrdinaryChange(
+      insertion("local", 0),
+      before.revision,
+    );
+    expect(receipt).not.toBe(before.revision);
+    expect(c.readOrdinaryTextRange(text, 0, 0)?.revision).toBe(receipt);
+    expect(counters.snapshots).toBe(projectionCount);
+    expect(counters.indexed!.rebuildUnits).toBe(rebuilt);
+    expect(counters.indexed!.cacheHits).toBeGreaterThan(0);
+    const anchor = c.createStableTextPosition(text, 1, "after");
+    expect(c.resolveStableTextPosition(anchor)).toBe(1);
+    expect(counters.snapshots).toBe(projectionCount);
+    const bad: Change = {
+      payloads: [
+        { kind: "delete-text", inlineContentId: text, start: 999, end: 1000 },
+      ],
+    };
+    expect(() => c.applyOrdinaryChange(bad, receipt)).toThrow(RangeError);
+    expect(c.readOrdinaryTextRange(text, 0, 0)).toBeUndefined();
+    expect(c.prepareOrdinaryText()).toBe(true);
+    const recovered = c.readOrdinaryTextRange(text, 0, 0)!;
+    expect(recovered.revision).not.toBe(receipt);
+    c.restoreHistoricalState(saved);
+    const restored = c.readOrdinaryTextRange(text, 0, 0)!;
+    expect(restored.revision).not.toBe(recovered.revision);
+    expect(() =>
+      c.applyOrdinaryChange(insertion("stale", 0), recovered.revision),
+    ).toThrow(/Stale/u);
+    expect(c.readOrdinaryTextRange(text, 0, 1)?.spans[0]?.text).toBe("a");
+  });
+}
+
+for (const createFactory of [
+  createYjsIntegratedDocumentCarrierFactory,
+  createAutomergeIntegratedDocumentCarrierFactory,
+]) {
+  it(`${createFactory.name} differential staged edits retain Origins and reject surrogate splits`, () => {
+    const reference = createFactory(
+      localDensePositionAllocator,
+      localDensePositionAllocator,
+      { ordinaryEditVariant: "snapshot", purePositionDecoder: true },
+    );
+    const fast = createFactory(
+      localDensePositionAllocator,
+      localDensePositionAllocator,
+      { ordinaryEditVariant: "incremental", purePositionDecoder: true },
+    );
+    const genesis = reference.create(root);
+    seed(genesis);
+    const a = reference.load(genesis.encode()),
+      b = fast.load(genesis.encode());
+    for (let i = 0; i < 60; i++) {
+      const current = a.snapshot().payloads.get(text)!;
+      if (current.kind !== "text") throw new Error("expected text");
+      const offset = (i * 13) % (current.text.length + 1);
+      const change: Change = {
+        payloads: [
+          {
+            kind: "insert-text",
+            inlineContentId: text,
+            offset,
+            text: i % 2 ? "😀" : "x",
+            origin: i % 2 ? imported : human,
+          },
+        ],
+      };
+      const errorA = errorOf(() => a.applyChange(change));
+      const errorB = errorOf(() => b.applyChange(change));
+      expect(errorB).toEqual(errorA);
+      expect(b.snapshot()).toEqual(a.snapshot());
+      if (errorB) expect(b.prepareOrdinaryText()).toBe(true);
+    }
+    const batch: Change = {
+      payloads: [
+        {
+          kind: "insert-text",
+          inlineContentId: text,
+          offset: 0,
+          text: "ok",
+          origin: human,
+        },
+        { kind: "delete-text", inlineContentId: other, start: 2, end: 3 },
+      ],
+    };
+    const before = b.encode();
+    expect(errorOf(() => b.applyChange(batch))).toEqual(
+      errorOf(() => a.applyChange(batch)),
+    );
+    expect(b.encode()).toEqual(before);
+  });
+}
+
+for (const createFactory of [
+  createYjsIntegratedDocumentCarrierFactory,
+  createAutomergeIntegratedDocumentCarrierFactory,
+]) {
+  it(`${createFactory.name} indexed Origin matches normalized native Origin`, () => {
+    const factory = createFactory(
+      localDensePositionAllocator,
+      localDensePositionAllocator,
+      { ordinaryEditVariant: "incremental", purePositionDecoder: true },
+    );
+    const carrier = factory.create(root);
+    seed(carrier);
+    const extraOrigin = { ...human, foo: "must not persist" };
+    const revision = carrier.readOrdinaryTextRange(text, 0, 0)!.revision;
+    carrier.applyOrdinaryChange(
+      {
+        payloads: [
+          {
+            kind: "insert-text",
+            inlineContentId: text,
+            offset: 0,
+            text: "x",
+            origin: extraOrigin,
+          },
+        ],
+      },
+      revision,
+    );
+    const indexed = carrier.readOrdinaryTextRange(text, 0, 1)!;
+    expect(indexed.spans).toEqual([{ text: "x", origin: human }]);
+    const snapshot = carrier.snapshot().payloads.get(text);
+    expect(snapshot?.kind === "text" && snapshot.spans[0]?.origin).toEqual(
+      human,
+    );
+  });
+}
+
+it("Automerge validates later text ranges before an earlier malformed Origin", () => {
+  const options = { purePositionDecoder: true } as const;
+  const reference = createAutomergeIntegratedDocumentCarrierFactory(
+    localDensePositionAllocator,
+    localDensePositionAllocator,
+    { ...options, ordinaryEditVariant: "snapshot" },
+  );
+  const incremental = createAutomergeIntegratedDocumentCarrierFactory(
+    localDensePositionAllocator,
+    localDensePositionAllocator,
+    { ...options, ordinaryEditVariant: "incremental" },
+  );
+  const genesis = reference.create(root);
+  seed(genesis);
+  const carriers = [
+    reference.load(genesis.encode()),
+    incremental.load(genesis.encode()),
+  ];
+  const invalidOrigin = { id: 4, kind: "human" } as unknown as typeof human;
+  const change: Change = {
+    payloads: [
+      {
+        kind: "insert-text",
+        inlineContentId: text,
+        offset: 0,
+        text: "x",
+        origin: invalidOrigin,
+      },
+      { kind: "delete-text", inlineContentId: text, start: 99, end: 100 },
+    ],
+  };
+  for (const [index, carrier] of carriers.entries()) {
+    const before = carrier.encode();
+    expect(errorOf(() => carrier.applyChange(change))).toEqual({
+      name: "RangeError",
+      message: "Text offset is outside the current native string.",
+    });
+    expect(carrier.encode()).toEqual(before);
+    if (index === 1) expect(carrier.prepareOrdinaryText()).toBe(true);
+    expect(
+      errorOf(() => carrier.applyChange({ payloads: [change.payloads![0]!] })),
+    ).toEqual({
+      name: "TypeError",
+      message: "Integrated payload Origin is invalid.",
+    });
+    expect(carrier.encode()).toEqual(before);
+  }
+});
+
+it("Automerge rejects cross-pair deletion on initial attempt and fallback retry", () => {
+  for (const variant of ["snapshot", "targeted", "incremental"] as const) {
+    const factory = createAutomergeIntegratedDocumentCarrierFactory(
+      localDensePositionAllocator,
+      localDensePositionAllocator,
+      { ordinaryEditVariant: variant, purePositionDecoder: true },
+    );
+    const carrier = factory.create(root);
+    carrier.applyChange({
+      inlineContents: [{ inlineContentId: text, blockId: root }],
+      payloads: [
+        {
+          kind: "replace-text",
+          inlineContentId: text,
+          mediaType: "text/plain",
+          text: "😀😁",
+          origin: human,
+        },
+      ],
+    });
+    const change: Change = {
+      payloads: [
+        { kind: "delete-text", inlineContentId: text, start: 1, end: 3 },
+      ],
+    };
+    const before = carrier.encode();
+    for (let i = 0; i < 2; i++) {
+      expect(errorOf(() => carrier.applyChange(change))).toEqual({
+        name: "TypeError",
+        message: "Automerge cannot preserve this ECMAScript string exactly.",
+      });
+      expect(carrier.encode()).toEqual(before);
+      expect(carrier.snapshot().payloads.get(text)).toMatchObject({
+        kind: "text",
+        text: "😀😁",
+      });
+    }
+  }
+});

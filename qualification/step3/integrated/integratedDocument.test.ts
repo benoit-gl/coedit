@@ -31,20 +31,31 @@ const human = { id: "human-a", kind: "human" as const };
 const imported = { id: "import-a", kind: "imported" as const };
 
 const factories: readonly (IntegratedDocumentCarrierFactory<LocalDensePosition> & {
-  readonly ordinaryEditVariant: "snapshot" | "targeted";
-})[] = (["snapshot", "targeted"] as const).flatMap((ordinaryEditVariant) =>
-  [
-    createYjsIntegratedDocumentCarrierFactory(
-      localDensePositionAllocator,
-      localDensePositionAllocator,
-      { ordinaryEditVariant },
-    ),
-    createAutomergeIntegratedDocumentCarrierFactory(
-      localDensePositionAllocator,
-      localDensePositionAllocator,
-      { ordinaryEditVariant },
-    ),
-  ].map((factory) => ({ ...factory, ordinaryEditVariant })),
+  readonly ordinaryEditVariant: "snapshot" | "targeted" | "incremental";
+})[] = (["snapshot", "targeted", "incremental"] as const).flatMap(
+  (ordinaryEditVariant) =>
+    [
+      createYjsIntegratedDocumentCarrierFactory(
+        localDensePositionAllocator,
+        localDensePositionAllocator,
+        {
+          ordinaryEditVariant,
+          ...(ordinaryEditVariant === "incremental"
+            ? { purePositionDecoder: true }
+            : {}),
+        },
+      ),
+      createAutomergeIntegratedDocumentCarrierFactory(
+        localDensePositionAllocator,
+        localDensePositionAllocator,
+        {
+          ordinaryEditVariant,
+          ...(ordinaryEditVariant === "incremental"
+            ? { purePositionDecoder: true }
+            : {}),
+        },
+      ),
+    ].map((factory) => ({ ...factory, ordinaryEditVariant })),
 );
 
 for (const factory of factories) {
