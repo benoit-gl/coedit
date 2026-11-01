@@ -133,3 +133,29 @@ tests, Chromium/editor/clipboard/resource characterization, and the
 non-selectable Loro reference. Investigate the history workload's resource
 growth and publish a current, complete summary with its raw artifacts.
 No current number selects a candidate, freezes a limit, or promotes a target.
+
+## Experimental Yjs ASCII preflight
+
+[Actions run 41277345506](https://github.com/benoit-gl/coedit/actions/runs/41277345506) measured PR head
+`f1758febef3ca395346601acf5ce9d815cc10796` on test merge `8cb00bd06029c12563e0576101ecc0f59f1fb95d`.
+The [raw artifact](https://github.com/benoit-gl/coedit/actions/runs/41277345506/artifacts/13071792527) includes
+`snapshot-comparison.json` and has finite retention. All five runner stages passed. This is partial qualification
+research, not a carrier or production text-domain selection.
+
+The host was Linux 7.0.0-1017-azure x64, AMD EPYC 7763, four reported logical CPUs, and 16,760,344,576 bytes of
+reported RAM; Node.js was 24.22.1, Yjs 13.6.32, Automerge 3.4.1, and Vite 7.3.6. Each variant used three
+uninstrumented fresh-load attributed insertion/deletion samples in alternating order, with no explicit warmup.
+The table shows the median complete operation time, including target projection and effect work, not isolated native
+preflight cost. Fragmentation is confounded with retained history. Transition timings are single ordered observations.
+
+| Fixture                       | Native median ms | ASCII experiment median ms | Native preflight units | Experiment preflight units |
+| ----------------------------- | ---------------: | -------------------------: | ---------------------: | -------------------------: |
+| ASCII, 256 units              |            1.117 |                      0.450 |                    513 |                          0 |
+| ASCII, 4,096 units            |            0.504 |                      0.266 |                  8,193 |                          0 |
+| ASCII, 32 Origin replacements |            0.574 |                      0.344 |                    513 |                          0 |
+| ASCII, 100 prior batches      |            0.469 |                      0.179 |                    513 |                          0 |
+| Unicode fallback              |            0.363 |                      0.370 |                    513 |                        513 |
+
+The paired fixtures compared complete projections, effects and evidence. These small samples do not support a tail
+latency or product-speed claim. The experimental guard still scans the full target; native internals and broader
+malformed-state and lifecycle cases remain unproven. The normal-typing whole-document-work criterion remains open.

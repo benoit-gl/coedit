@@ -39,6 +39,8 @@ export interface IntegratedCarrierQualificationOptions {
   readonly ordinaryEditVariant?: "snapshot" | "targeted";
   /** Experimental editor target projection; snapshot is the reference and default. */
   readonly editorProjectionVariant?: "snapshot" | "targeted";
+  /** Yjs-only qualification experiment; the native preflight is the default. */
+  readonly yjsTextPreflightVariant?: "native" | "ascii";
   /** Opt in only if position decode is pure, deterministic and stable for the carrier lifetime. */
   readonly purePositionDecoder?: boolean;
 }
