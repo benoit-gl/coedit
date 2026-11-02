@@ -1,0 +1,77 @@
+{
+  "candidate": "yjs",
+  "profile": {
+    "checkpoints": [20, 100, 200],
+    "snapshotEvery": 10,
+    "workload": "alternating insert/delete, encode and reload at each checkpoint"
+  },
+  "environment": {
+    "platform": "linux",
+    "release": "6.18.57",
+    "arch": "x64",
+    "node": "v24.19.0",
+    "cpu": "INTEL(R) XEON(R) PLATINUM 8573C",
+    "cpus": 3,
+    "ramBytes": 10452459520
+  },
+  "nativeLifecycle": {
+    "kind": "automatic-garbage-collection",
+    "availability": "supported"
+  },
+  "samples": [
+    {
+      "effects": 20,
+      "retainedStates": 2,
+      "visibleUtf16Units": 4,
+      "encodedBytes": 15269,
+      "editAndCaptureMs": 37.170146999999815,
+      "encodeMs": 10.228908000000047,
+      "loadMs": 24.368984000000182,
+      "materializeAllMs": 0.7841269999998985,
+      "memory": {
+        "rss": 130736128,
+        "heapTotal": 62844928,
+        "heapUsed": 43078488,
+        "external": 10491591,
+        "arrayBuffers": 1967370
+      },
+      "peakRssKiB": 127672
+    },
+    {
+      "effects": 100,
+      "retainedStates": 10,
+      "visibleUtf16Units": 4,
+      "encodedBytes": 72939,
+      "editAndCaptureMs": 62.73493300000018,
+      "encodeMs": 4.674671000000217,
+      "loadMs": 6.777309999999943,
+      "materializeAllMs": 0.3029900000001362,
+      "memory": {
+        "rss": 134012928,
+        "heapTotal": 64417792,
+        "heapUsed": 38225872,
+        "external": 9790816,
+        "arrayBuffers": 1367827
+      },
+      "peakRssKiB": 130872
+    },
+    {
+      "effects": 200,
+      "retainedStates": 20,
+      "visibleUtf16Units": 4,
+      "encodedBytes": 145728,
+      "editAndCaptureMs": 108.46030999999994,
+      "encodeMs": 9.6769690000001,
+      "loadMs": 19.39193400000022,
+      "materializeAllMs": 0.36503399999992325,
+      "memory": {
+        "rss": 137682944,
+        "heapTotal": 99807232,
+        "heapUsed": 37596920,
+        "external": 10091856,
+        "arrayBuffers": 1668867
+      },
+      "peakRssKiB": 134456
+    }
+  ]
+}

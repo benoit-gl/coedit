@@ -1,0 +1,77 @@
+{
+  "candidate": "automerge",
+  "profile": {
+    "checkpoints": [20, 100, 200],
+    "snapshotEvery": 10,
+    "workload": "alternating insert/delete, encode and reload at each checkpoint"
+  },
+  "environment": {
+    "platform": "linux",
+    "release": "6.18.57",
+    "arch": "x64",
+    "node": "v24.19.0",
+    "cpu": "INTEL(R) XEON(R) PLATINUM 8573C",
+    "cpus": 3,
+    "ramBytes": 10452459520
+  },
+  "nativeLifecycle": {
+    "kind": "none",
+    "availability": "unavailable"
+  },
+  "samples": [
+    {
+      "effects": 20,
+      "retainedStates": 2,
+      "visibleUtf16Units": 4,
+      "encodedBytes": 4081,
+      "editAndCaptureMs": 220.9114880000002,
+      "encodeMs": 6.206217999999808,
+      "loadMs": 92.63006600000017,
+      "materializeAllMs": 1.0452209999998558,
+      "memory": {
+        "rss": 144646144,
+        "heapTotal": 63369216,
+        "heapUsed": 37108832,
+        "external": 11086412,
+        "arrayBuffers": 1192107
+      },
+      "peakRssKiB": 141256
+    },
+    {
+      "effects": 100,
+      "retainedStates": 10,
+      "visibleUtf16Units": 4,
+      "encodedBytes": 14400,
+      "editAndCaptureMs": 777.1367689999997,
+      "encodeMs": 9.560891000000083,
+      "loadMs": 124.34198500000002,
+      "materializeAllMs": 0.9250349999997525,
+      "memory": {
+        "rss": 158261248,
+        "heapTotal": 64942080,
+        "heapUsed": 37694968,
+        "external": 16419023,
+        "arrayBuffers": 1050274
+      },
+      "peakRssKiB": 154552
+    },
+    {
+      "effects": 200,
+      "retainedStates": 20,
+      "visibleUtf16Units": 4,
+      "encodedBytes": 26228,
+      "editAndCaptureMs": 1073.0611520000002,
+      "encodeMs": 4.631579999999303,
+      "loadMs": 191.62172199999986,
+      "materializeAllMs": 0.1300840000003518,
+      "memory": {
+        "rss": 170188800,
+        "heapTotal": 65990656,
+        "heapUsed": 35614920,
+        "external": 23650130,
+        "arrayBuffers": 1072421
+      },
+      "peakRssKiB": 166200
+    }
+  ]
+}
