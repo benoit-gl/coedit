@@ -162,3 +162,6 @@ Further comparative work must complete the coverage and durable evidence in
 the scaffolding plan before Gate B. The workflow artifact stores raw samples;
 it supplements the committed evidence. Gate B owns candidate selection,
 replacement rules and guard values.
+
+History, replacement and lifecycle probes and their limits are recorded in
+[HISTORY_REPLACEMENT_LIFECYCLE.md](HISTORY_REPLACEMENT_LIFECYCLE.md).

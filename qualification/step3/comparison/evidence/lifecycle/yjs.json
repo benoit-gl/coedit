@@ -1,0 +1,83 @@
+{
+  "candidate": "yjs",
+  "revision": {
+    "githubSha": null,
+    "githubHeadSha": null,
+    "head": "77dd049c6897078bf5ebd3415e10c21013b37f0d",
+    "dirty": true
+  },
+  "profile": {
+    "checkpoints": [20, 100, 200],
+    "snapshotEvery": 10,
+    "workload": "alternating four-unit insert/delete, encode and reload at each checkpoint"
+  },
+  "environment": {
+    "platform": "linux",
+    "release": "6.18.57",
+    "arch": "x64",
+    "node": "v24.19.0",
+    "cpu": "INTEL(R) XEON(R) PLATINUM 8573C",
+    "cpus": 3,
+    "ramBytes": 10452459520
+  },
+  "nativeLifecycle": {
+    "kind": "automatic-garbage-collection",
+    "availability": "supported"
+  },
+  "samples": [
+    {
+      "effects": 20,
+      "retainedStates": 2,
+      "visibleUtf16Units": 4,
+      "encodedBytes": 15302,
+      "editAndCaptureMs": 55.37177499999984,
+      "encodeMs": 4.837066999999934,
+      "loadMs": 5.215860000000021,
+      "materializeAllMs": 0.4156909999999243,
+      "memory": {
+        "rss": 136904704,
+        "heapTotal": 67198976,
+        "heapUsed": 48313616,
+        "external": 10838713,
+        "arrayBuffers": 2193469
+      },
+      "peakRssKiB": 133696
+    },
+    {
+      "effects": 100,
+      "retainedStates": 10,
+      "visibleUtf16Units": 4,
+      "encodedBytes": 73098,
+      "editAndCaptureMs": 48.0810469999999,
+      "encodeMs": 4.199404999999842,
+      "loadMs": 7.9916769999999815,
+      "materializeAllMs": 1.1431800000000294,
+      "memory": {
+        "rss": 141230080,
+        "heapTotal": 102690816,
+        "heapUsed": 43963712,
+        "external": 9778371,
+        "arrayBuffers": 1298791
+      },
+      "peakRssKiB": 137920
+    },
+    {
+      "effects": 200,
+      "retainedStates": 20,
+      "visibleUtf16Units": 4,
+      "encodedBytes": 146043,
+      "editAndCaptureMs": 46.15642700000012,
+      "encodeMs": 5.9785269999999855,
+      "loadMs": 9.76258800000005,
+      "materializeAllMs": 0.772811000000047,
+      "memory": {
+        "rss": 150667264,
+        "heapTotal": 102952960,
+        "heapUsed": 59483928,
+        "external": 10288048,
+        "arrayBuffers": 1808468
+      },
+      "peakRssKiB": 147136
+    }
+  ]
+}
