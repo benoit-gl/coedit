@@ -141,8 +141,6 @@ class YjsIntegratedDocumentCarrier<
   public applyChange(change: IntegratedDocumentChange<Position>): void {
     const rootId = this.requireRootId();
     const cache = this.indexedOrdinary;
-    this.indexedOrdinary = undefined;
-    this.ordinaryRevision = Symbol("ordinary-edit");
     const staged =
       cache && isOrdinaryTextChange(change)
         ? cache.stage(change.payloads ?? [], this.candidate)
@@ -235,6 +233,9 @@ class YjsIntegratedDocumentCarrier<
               evidence?.id,
             ),
           };
+    // Preserve the receipt for rejected preparation; invalidate before native mutation.
+    this.indexedOrdinary = undefined;
+    this.ordinaryRevision = Symbol("ordinary-edit");
     applyPreparedChange(
       this.document,
       placements,

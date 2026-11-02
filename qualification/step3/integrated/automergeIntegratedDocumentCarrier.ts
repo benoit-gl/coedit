@@ -138,8 +138,6 @@ class AutomergeIntegratedDocumentCarrier<
 
   public applyChange(change: IntegratedDocumentChange<Position>): void {
     const cache = this.indexedOrdinary;
-    this.indexedOrdinary = undefined;
-    this.ordinaryRevision = Symbol("ordinary-edit");
     const staged =
       cache && isOrdinaryTextChange(change)
         ? cache.stage(change.payloads ?? [], this.candidate)
@@ -218,6 +216,9 @@ class AutomergeIntegratedDocumentCarrier<
               evidence?.id,
             ),
           };
+    // Preserve the receipt for rejected preparation; invalidate before native mutation.
+    this.indexedOrdinary = undefined;
+    this.ordinaryRevision = Symbol("ordinary-edit");
     this.document = Automerge.change(this.document, (draft) => {
       if (context !== undefined)
         draft.effectContexts[context.id] = context.encoded;

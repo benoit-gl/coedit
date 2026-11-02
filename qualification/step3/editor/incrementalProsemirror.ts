@@ -96,9 +96,11 @@ export function mountIncrementalProseMirrorEditor<Position>(
       } catch (error) {
         // Rejection recovery is explicit document/target-wide transition work,
         // never counted as a successful ordinary dispatch.
-        editor.refresh();
-        state = initialState();
-        view.updateState(state);
+        if (!editor.isCurrent()) {
+          editor.refresh();
+          state = initialState();
+          view.updateState(state);
+        }
         throw error;
       }
       timing.publicationMs = performance.now() - publishing;

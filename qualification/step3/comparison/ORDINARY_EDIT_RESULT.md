@@ -43,16 +43,17 @@ Liveness tokens, native history and qualification effect records are still retai
 
 `readOrdinaryTextRange` returns a detached attributed slice and an opaque instance-local revision receipt.
 `applyOrdinaryChange` checks
-that revision and returns a publication receipt. Every change, merge and restore attempt invalidates old revision
-receipts, including failed attempts. Reload creates a new carrier instance. A binding cannot transfer receipts between
-instances. `prepareOrdinaryText` is explicit read-only activation/recovery; it does full validation and index work.
+that revision and returns a publication receipt. Successful changes and attempted native mutations, merges and restores
+invalidate old revision receipts. A rejection during ordinary-edit preparation preserves the prior receipt and editor
+history. Reload creates a new carrier instance. A binding cannot transfer receipts between instances.
+`prepareOrdinaryText` is explicit read-only activation/recovery; it does full validation and index work.
 
 The separate `QualificationIncrementalEditor` stages ordered edits and inverse slices before publication. It uses the
 receipt instead of a post-publication full-buffer assertion. Semantic undo/redo use fresh effects and refuse a stale
 session. This experiment does not replace the retained editor's concurrent anchored-insertion policy. The separate
-mounted ProseMirror binding projects inserted step slices only. Initial mount and explicit lifecycle/rejection recovery
-materialize the target; ordinary transaction dispatch does not. The existing adapter still owns the broader IME and
-clipboard suites. Neither adapter is the final production editor binding.
+mounted ProseMirror binding projects inserted step slices only. Initial mount and explicit lifecycle or stale-session
+recovery materialize the target; ordinary transaction dispatch does not. The existing adapter still owns the broader
+IME and clipboard suites. Neither adapter is the final production editor binding.
 
 All concrete allocator candidates are still governed by their existing codec interface. The experiment opts into the
 already available pure, deterministic, lifetime-stable decoder condition using local-dense. It does not narrow the

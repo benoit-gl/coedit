@@ -924,10 +924,8 @@ for (const createFactory of [
       ],
     };
     expect(() => c.applyOrdinaryChange(bad, receipt)).toThrow(RangeError);
-    expect(c.readOrdinaryTextRange(text, 0, 0)).toBeUndefined();
-    expect(c.prepareOrdinaryText()).toBe(true);
     const recovered = c.readOrdinaryTextRange(text, 0, 0)!;
-    expect(recovered.revision).not.toBe(receipt);
+    expect(recovered.revision).toBe(receipt);
     c.restoreHistoricalState(saved);
     const restored = c.readOrdinaryTextRange(text, 0, 0)!;
     expect(restored.revision).not.toBe(recovered.revision);

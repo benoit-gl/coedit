@@ -53,7 +53,8 @@ deterministic and stable for the carrier lifetime. The comparison opts in using 
 does not change the general codec contract. The speculative check does not mutate the native document.
 The explicit snapshot reference performs no speculative validation and retains its previous cost placement.
 
-Merge and restore attempts and rejected prepared edits invalidate the proof. A failed transition does not refresh it,
+Merge and restore attempts and rejected prepared edits invalidate the targeted preflight proof. A failed transition does
+not refresh it,
 so the next ordinary edit conservatively performs full preflight. Successful transitions whose speculative checks fail
 also keep that fallback. Capturing or materializing historical state does not alter the projected tip. Public snapshot
 reads neither populate nor invalidate the proof. Unknown, dead or opaque targeted lookups fall back to original
@@ -119,7 +120,7 @@ immediately after publication.
 
 Validation and transition costs remain: successful load, merge, restore and
 fallback changes can perform full validation before later targeted reads. A
-rejected edit invalidates the proof and the next read uses the full path. This
+rejected edit invalidates the targeted preflight proof and the next read uses the full path. This
 prototype reconstructs the whole target text and Origin spans and enumerates
 its and its owner's liveness tokens. Public snapshot spies and decoder counts do
 not instrument candidate-native internal traversal, payload copying, or Range

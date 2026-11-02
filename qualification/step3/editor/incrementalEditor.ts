@@ -77,6 +77,14 @@ export class QualificationIncrementalEditor<Position> {
     this.redos.length = 0;
   }
 
+  /** Whether this session still represents the current canonical revision. */
+  public isCurrent(): boolean {
+    return (
+      this.carrier.readOrdinaryTextRange(this.inlineContentId, 0, 0)
+        ?.revision === this.revision
+    );
+  }
+
   /** Read only a selected attributed slice from the detached editor index. */
   public read(start: number, end: number): readonly QualificationTextSpan[] {
     this.requireCurrent();
@@ -143,12 +151,7 @@ export class QualificationIncrementalEditor<Position> {
   }
 
   private requireCurrent(): void {
-    const current = this.carrier.readOrdinaryTextRange(
-      this.inlineContentId,
-      0,
-      0,
-    );
-    if (current?.revision !== this.revision)
+    if (!this.isCurrent())
       throw new TypeError(
         "Incremental editor has a stale canonical revision; refresh explicitly.",
       );

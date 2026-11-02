@@ -68,6 +68,40 @@ for (const create of [
       };
     }
 
+    it("preserves undo and redo after an atomically rejected edit", () => {
+      const { carrier, editor, context } = fixture();
+      editor.apply(
+        [{ start: 0, end: 0, insertion: [{ text: "x", origin: edited }] }],
+        context(),
+      );
+      const before = carrier.encode();
+      expect(() =>
+        editor.apply([{ start: 2, end: 3, insertion: [] }], context()),
+      ).toThrow(/exactly/u);
+      expect(carrier.encode()).toEqual(before);
+      expect(() =>
+        editor.apply(
+          [{ start: 0, end: 0, insertion: [{ text: "!", origin: edited }] }],
+          { actorId: "incremental-editor", effectId: "0" },
+        ),
+      ).toThrow();
+      expect(carrier.encode()).toEqual(before);
+      editor.undo(context());
+      expect(
+        editor
+          .read(0, editor.length)
+          .map((span) => span.text)
+          .join(""),
+      ).toBe("a😀bc");
+      editor.redo(context());
+      expect(
+        editor
+          .read(0, editor.length)
+          .map((span) => span.text)
+          .join(""),
+      ).toBe("xa😀bc");
+    });
+
     it("rejects an equally advanced receipt from a different carrier instance", () => {
       const a = fixture("abc");
       const b = fixture("xyz");
