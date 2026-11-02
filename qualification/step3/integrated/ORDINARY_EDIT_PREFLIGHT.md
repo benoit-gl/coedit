@@ -53,7 +53,8 @@ deterministic and stable for the carrier lifetime. The comparison opts in using 
 does not change the general codec contract. The speculative check does not mutate the native document.
 The explicit snapshot reference performs no speculative validation and retains its previous cost placement.
 
-Merge and restore attempts and rejected prepared edits invalidate the proof. A failed transition does not refresh it,
+Merge and restore attempts and rejected prepared edits invalidate the targeted preflight proof. A failed transition does
+not refresh it,
 so the next ordinary edit conservatively performs full preflight. Successful transitions whose speculative checks fail
 also keep that fallback. Capturing or materializing historical state does not alter the projected tip. Public snapshot
 reads neither populate nor invalidate the proof. Unknown, dead or opaque targeted lookups fall back to original
@@ -119,7 +120,7 @@ immediately after publication.
 
 Validation and transition costs remain: successful load, merge, restore and
 fallback changes can perform full validation before later targeted reads. A
-rejected edit invalidates the proof and the next read uses the full path. This
+rejected edit invalidates the targeted preflight proof and the next read uses the full path. This
 prototype reconstructs the whole target text and Origin spans and enumerates
 its and its owner's liveness tokens. Public snapshot spies and decoder counts do
 not instrument candidate-native internal traversal, payload copying, or Range
@@ -178,3 +179,17 @@ those transitions have one ordered timing per variant; these are not a reliable
 distribution. Fragmentation also grows native history. Timings include full
 preparation and publication, not just the temporary preflight. Native internal
 work remains unobserved; no product performance threshold is selected.
+
+## Incremental investigation and disposition
+
+The [ordinary-edit result](../comparison/ORDINARY_EDIT_RESULT.md) supersedes the open investigation status above.
+It retains these experiments as references and adds an explicit incremental variant, indexed text/range reads,
+revision-checked publication and a separate delta editor. Eligible warm adapter operations avoid full target and
+unrelated-document projection. The report also records native Automerge ancestor-map copying and Yjs fragmented
+prefix traversal; neither current unrestricted representation is declared production-eligible.
+The arbitrary-decoder path retains its original fallback behavior.
+
+Automerge native positions now carry their text-object identity. Positions from replaced/restored text return unresolved
+instead of invoking the native resolver against a different text object. Restore still creates fresh text identities.
+Yjs expected preparation failures are moved before live publication, and Automerge cross-surrogate deletion is rejected
+atomically, including after fallback. The result record states the exact scope and limitations of these fixes.

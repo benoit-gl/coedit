@@ -9,10 +9,37 @@ import type { RecordedPayloadEffect } from "./replacementEvidence.js";
 import type {
   QualificationOrigin,
   QualificationPayloadSnapshot,
+  QualificationTextSpan,
 } from "../payload/carrier.js";
+
+/** Work visible in the private indexed text cache. */
+export interface QualificationIndexedWork {
+  /** UTF-16 units processed while building or rebuilding indexes. */
+  rebuildUnits: number;
+  /** UTF-16 units returned by localized reads. */
+  readUnits: number;
+  /** Indexed pieces visited to return localized text. */
+  readPieces: number;
+  /** Tree nodes visited by indexed reads and edits. */
+  pathVisits: number;
+  /** Existing live target proofs used for ordinary batches. */
+  cacheHits: number;
+}
+
+/** Detached localized text and the carrier revision that it describes. */
+export interface QualificationOrdinaryRange {
+  /** Opaque instance-local receipt; never serialized or shared between carriers. */
+  readonly revision: symbol;
+  /** Current target length in UTF-16 units. */
+  readonly length: number;
+  /** Detached attributed contents of the requested range. */
+  readonly spans: readonly QualificationTextSpan[];
+}
 
 /** Optional counters for qualification-visible projection work. */
 export interface QualificationWorkCounters {
+  /** Optional incremental cache work, initialized on first cache build. */
+  indexed?: QualificationIndexedWork;
   /** Full snapshot calls. */
   snapshots: number;
   /** Position placement decode calls. */
@@ -36,7 +63,7 @@ export interface IntegratedCarrierQualificationOptions {
   /** Optional passive counters; native library internals are not observed. */
   readonly workCounters?: QualificationWorkCounters;
   /** Targeted is the qualification default; snapshot retains the reference path. */
-  readonly ordinaryEditVariant?: "snapshot" | "targeted";
+  readonly ordinaryEditVariant?: "snapshot" | "targeted" | "incremental";
   /** Experimental editor target projection; snapshot is the reference and default. */
   readonly editorProjectionVariant?: "snapshot" | "targeted";
   /** Yjs-only qualification experiment; the native preflight is the default. */
@@ -68,6 +95,8 @@ export type QualificationStableTextPosition =
       readonly inlineContentId: InlineContentId;
       /** Automerge cursor token; never a portable document value. */
       readonly cursor: string;
+      /** Native text object identity at capture, to reject replacement lineages. */
+      readonly textObjectId: string;
     };
 
 /** Candidate-defined insertion affinity at an editor text boundary. */
@@ -214,6 +243,19 @@ export interface IntegratedDocumentCarrier<Position> {
   projectEditorPayload(
     inlineContentId: InlineContentId,
   ): QualificationPayloadSnapshot | undefined;
+  /** Read a local indexed range when the incremental proof is available. */
+  readOrdinaryTextRange(
+    inlineContentId: InlineContentId,
+    start: number,
+    end: number,
+  ): QualificationOrdinaryRange | undefined;
+  /** Revalidate and rebuild the local indexed proof without a native mutation. */
+  prepareOrdinaryText(): boolean;
+  /** Apply an ordinary change against exactly the read revision and return its new revision. */
+  applyOrdinaryChange(
+    change: IntegratedDocumentChange<Position>,
+    revision: symbol,
+  ): symbol;
   /** Creates one carrier-native live text position from an editor UTF-16 offset. */
   createStableTextPosition(
     inlineContentId: InlineContentId,

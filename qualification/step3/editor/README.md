@@ -128,3 +128,12 @@ change has committed. The fixture does not implement the production atomic
 expected-Version command boundary. A recheck before `publish` alone cannot
 protect against changes performed inside `publish`; the production-compatible
 boundary and its qualification remain open.
+
+### Incremental ordinary-edit experiment
+
+`incrementalEditor.ts` and `incrementalProsemirror.ts` add a separate qualification-only delta path.
+It stages indexed edits, checks carrier revisions and consumes a publication receipt without a full-buffer post-check.
+Mount and explicit lifecycle/rejection recovery materialize the target once. Undo/redo use semantic operations and refuse
+a stale session; the retained adapter still qualifies concurrent anchored insertion, IME and clipboard behavior.
+The [ordinary-edit result](../comparison/ORDINARY_EDIT_RESULT.md) records measurements, fixed correctness gaps and the
+negative unrestricted native-work outcome. This experiment does not select or implement the final production binding.

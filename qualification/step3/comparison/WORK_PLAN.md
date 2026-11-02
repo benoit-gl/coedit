@@ -61,25 +61,30 @@ would change architecture, interfaces, or accepted behavior.
 
 ## Ordinary edits and feedback
 
-- [ ] Investigate retained placements with arbitrary stateful position decoders,
+**Investigation disposition:** closed with measured evidence in the [auditable result](ORDINARY_EDIT_RESULT.md).
+The checked items mean the questions were exercised and classified, not that the mandatory invariant passed.
+Both unrestricted current representations retain native work that prevents a no-whole-document-work pass.
+Gate B cannot treat the incremental experiment or green correctness checks as production eligibility.
+
+- [x] Investigate retained placements with arbitrary stateful position decoders,
       which currently fall back to full preflight, and determine which decoder
       semantics the production-compatible path requires. Resolve the normal-typing
       whole-document-work criterion without silently narrowing the allocator
       interface. Escalate any material design choice.
-- [ ] Instrument snapshots, unrelated payload and placement traversal, position
+- [x] Instrument snapshots, unrelated payload and placement traversal, position
       decoding, opaque copying, full validation and Range-holder enumeration as
       relevant. Test that qualified ordinary edits do not perform prohibited
       document-wide work; timing alone cannot establish its absence.
-- [ ] Vary unrelated Blocks, placements, text and opaque contents independently
+- [x] Vary unrelated Blocks, placements, text and opaque contents independently
       of target size. Compare target length and Origin fragmentation, including
       boundaries. Investigate full target reconstruction and temporary validation
       costs. Separate liveness-token, carrier-history and payload-effect-history
       growth where feasible.
-- [ ] Compare snapshot and targeted variants on matched fixtures and outcomes,
+- [x] Compare snapshot and targeted variants on matched fixtures and outcomes,
       including rejection and atomicity. Measure load, merge, restore, replacement,
       first following edit and warm edits; account for work moved to transitions.
       Characterize fallback paths and their occurrence in representative workflows.
-- [ ] Separate editor-local update, synchronous canonical publication,
+- [x] Separate editor-local update, synchronous canonical publication,
       projection and driver completion where observable. Measure the specified
       experimental calibration interval and investigate slow local publication.
       Animation-frame callbacks are not physical paint. Any decoupling design

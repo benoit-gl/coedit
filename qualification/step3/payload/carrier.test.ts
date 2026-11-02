@@ -526,3 +526,21 @@ for (const factory of factories) {
     });
   });
 }
+
+it("Automerge payload rejects cross-pair deletion without changing encoded state", () => {
+  const carrier = automergePayloadCarrierFactory.createText(
+    "text/plain",
+    human,
+  );
+  carrier.replaceText("text/plain", "😀😁", human);
+  const before = carrier.encode();
+  for (let i = 0; i < 2; i++) {
+    expect(() => carrier.deleteText(1, 3)).toThrow(
+      "Automerge cannot preserve this ECMAScript string exactly.",
+    );
+    expect(carrier.encode()).toEqual(before);
+    expect(carrier.snapshot()).toMatchObject({ kind: "text", text: "😀😁" });
+  }
+  carrier.deleteText(1, 1);
+  expect(carrier.encode()).toEqual(before);
+});

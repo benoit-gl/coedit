@@ -32,3 +32,26 @@ jobs:
           path: step3-evidence/
           if-no-files-found: warn
           retention-days: 90
+
+  ordinary-edit:
+    name: ordinary-edit-evidence
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm run bootstrap
+      - name: Install Chromium
+        run: npm exec --yes --package=pnpm@11.24.0 -- pnpm exec playwright install --with-deps chromium
+      - name: Run scoped ordinary-edit qualification
+        run: npm run step3:qualification -- --ordinary-only
+      - name: Persist ordinary-edit evidence
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: ordinary-edit-qualification-evidence
+          path: step3-evidence/
+          if-no-files-found: error
+          retention-days: 90

@@ -44,6 +44,10 @@ batches. Successful load, merge, restore, and nonordinary changes now attempt fu
 next edit; validation failures retain the original next-edit fallback and error timing. This shifts document-wide
 work to transitions, changes no production carrier choice, and does not establish document-size-independent editing.
 
+The later [incremental ordinary-edit result](../comparison/ORDINARY_EDIT_RESULT.md) adds indexed slices and
+revision-checked publication while preserving both older variants. It removes the identified warm adapter scans but
+records native-work failures for both unrestricted representations; it is not production eligibility or Gate B closure.
+
 Yjs uses its pinned native automatic garbage-collection setting during ordinary updates. The fixtures confirm that this
 does not destroy retained qualification state, Range evidence, or replacement evidence after reopen. Pinned Automerge
 does not expose a native garbage-collection or compaction operation; its save/load path is qualified as reload only and
