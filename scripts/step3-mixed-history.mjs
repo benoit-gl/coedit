@@ -59,6 +59,7 @@ try {
         status: "completed",
         generatedAt: new Date().toISOString(),
         revision: process.env.GITHUB_SHA ?? null,
+        githubHeadSha: process.env.GITHUB_HEAD_SHA ?? null,
         counts,
         samples,
         warmups: 0,

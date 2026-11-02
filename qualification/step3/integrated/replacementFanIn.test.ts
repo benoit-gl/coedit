@@ -162,6 +162,14 @@ for (const factory of factories) {
           context: { actorId: "owner", effectId: "base" },
         });
         const genesis = base.encode();
+        const baseId = qualificationEffectIdentity({
+          actorId: "owner",
+          effectId: "base",
+        });
+        const encodedOrigin = JSON.stringify({
+          id: origin.id,
+          kind: origin.kind,
+        });
         const branches = Array.from({ length: count }, (_, i) => {
           const branch = factory.load(genesis);
           const actorId = `actor-${i}`;
@@ -198,9 +206,60 @@ for (const factory of factories) {
               ],
               context: { actorId, effectId: "edit" },
             });
-          const expected = branch.snapshot();
+          const replacementId = qualificationEffectIdentity({
+            actorId,
+            effectId: "replace",
+          });
+          const replacement =
+            i % 2 === 0
+              ? {
+                  kind: "replace-text",
+                  inlineContentId: content,
+                  mediaType: "text/plain",
+                  text: `branch-${i}`,
+                  origin: encodedOrigin,
+                }
+              : {
+                  kind: "replace-opaque",
+                  inlineContentId: content,
+                  mediaType: "application/example",
+                  bytes: [i, 255 - i],
+                  origin: encodedOrigin,
+                };
+          const text = `branch-${i}!`;
+          const expected = {
+            rootId: root,
+            blockLiveness: new Map([[root, true]]),
+            placements: new Map(),
+            inlineContentOwners: new Map([[content, root]]),
+            payloads: new Map([
+              [
+                content,
+                i % 2 === 0
+                  ? {
+                      kind: "text",
+                      mediaType: "text/plain",
+                      text,
+                      spans: [{ text, origin }],
+                    }
+                  : {
+                      kind: "opaque",
+                      mediaType: "application/example",
+                      bytes: Uint8Array.of(i, 255 - i),
+                      origin,
+                    },
+              ],
+            ]),
+          };
           const token = branch.captureHistoricalState();
-          return { encoded: branch.encode(), expected, token, actorId };
+          return {
+            encoded: branch.encode(),
+            expected,
+            token,
+            actorId,
+            replacementId,
+            replacement,
+          };
         });
         const forward = factory.load(genesis);
         const reverse = factory.load(genesis);
@@ -209,7 +268,64 @@ for (const factory of factories) {
           reverse.mergeEncoded(branch.encoded);
         expect(forward.snapshot()).toEqual(reverse.snapshot());
         const effects = forward.recordedPayloadEffects();
-        expect(effects).toEqual(reverse.recordedPayloadEffects());
+        const expectedAlternatives = branches
+          .map(({ replacementId, replacement }) => ({
+            effectId: replacementId,
+            parents: [baseId],
+            operation: replacement,
+          }))
+          .sort((a, b) => a.effectId.localeCompare(b.effectId));
+        const expectedEffects = [
+          {
+            effectId: baseId,
+            parents: [],
+            operations: [
+              {
+                kind: "replace-text",
+                inlineContentId: content,
+                mediaType: "text/plain",
+                text: "base",
+                origin: encodedOrigin,
+              },
+            ],
+          },
+          ...branches.flatMap(({ actorId, replacementId, replacement }, i) => [
+            {
+              effectId: replacementId,
+              parents: [baseId],
+              operations: [replacement],
+            },
+            ...(i % 2 === 0
+              ? [
+                  {
+                    effectId: qualificationEffectIdentity({
+                      actorId,
+                      effectId: "edit",
+                    }),
+                    parents: [replacementId],
+                    operations: [
+                      {
+                        kind: "insert-text",
+                        inlineContentId: content,
+                        offset: 8,
+                        text: "!",
+                        origin: encodedOrigin,
+                        baseReplacementEffectId: replacementId,
+                      },
+                    ],
+                  },
+                ]
+              : []),
+          ]),
+        ].sort((a, b) => a.effectId.localeCompare(b.effectId));
+        expect(effects).toEqual(expectedEffects);
+        expect(reverse.recordedPayloadEffects()).toEqual(expectedEffects);
+        expect(replacementAlternatives(effects, content)).toEqual(
+          expectedAlternatives,
+        );
+        expect(
+          replacementAlternatives(reverse.recordedPayloadEffects(), content),
+        ).toEqual(expectedAlternatives);
         const ids = branches
           .map(({ actorId }) =>
             qualificationEffectIdentity({ actorId, effectId: "replace" }),
@@ -237,9 +353,10 @@ for (const factory of factories) {
           expect(reopened.materializeHistoricalState(branch.token)).toEqual(
             branch.expected,
           );
+        expect(reopened.recordedPayloadEffects()).toEqual(expectedEffects);
         expect(
           replacementAlternatives(reopened.recordedPayloadEffects(), content),
-        ).toEqual(replacementAlternatives(effects, content));
+        ).toEqual(expectedAlternatives);
         // Even if either stable winner is chosen later, edits on other text branches remain attributable.
         expect(
           editsNotBasedOnWinner(effects, content, ids[1] as string),

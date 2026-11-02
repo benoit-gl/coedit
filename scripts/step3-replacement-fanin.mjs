@@ -31,6 +31,49 @@ const content = domain.parseInlineContentId(
   "72000000-0000-4000-8000-000000000002",
 );
 const origin = { kind: "human", id: "author" };
+const identity = (actor, effect) => JSON.stringify([actor, effect]);
+const baseId = identity("owner", "base");
+const encodedOrigin = JSON.stringify({ id: origin.id, kind: origin.kind });
+const replacement = (i) =>
+  i % 2 === 0
+    ? {
+        kind: "replace-text",
+        inlineContentId: content,
+        mediaType: "text/plain",
+        text: `branch-${i}`,
+        origin: encodedOrigin,
+      }
+    : {
+        kind: "replace-opaque",
+        inlineContentId: content,
+        mediaType: "application/example",
+        bytes: [i, 255 - i],
+        origin: encodedOrigin,
+      };
+const expectedBranch = (i) => ({
+  rootId: root,
+  blockLiveness: new Map([[root, true]]),
+  placements: new Map(),
+  inlineContentOwners: new Map([[content, root]]),
+  payloads: new Map([
+    [
+      content,
+      i % 2 === 0
+        ? {
+            kind: "text",
+            mediaType: "text/plain",
+            text: `branch-${i}`,
+            spans: [{ text: `branch-${i}`, origin }],
+          }
+        : {
+            kind: "opaque",
+            mediaType: "application/example",
+            bytes: Uint8Array.of(i, 255 - i),
+            origin,
+          },
+    ],
+  ]),
+});
 const timed = (fn) => {
   const start = performance.now();
   const value = fn();
@@ -78,7 +121,7 @@ for (const factory of factories)
           context: { actorId: `actor-${i}`, effectId: "replace" },
         });
         const token = branch.captureHistoricalState();
-        return { encoded: branch.encode(), token, expected: branch.snapshot() };
+        return { encoded: branch.encode(), token, expected: expectedBranch(i) };
       });
       const joined = factory.load(genesis);
       const merges = branches.map(
@@ -89,8 +132,44 @@ for (const factory of factories)
       const alternatives = timed(() =>
         evidence.replacementAlternatives(records.value, content),
       );
-      if (alternatives.value.length !== count)
-        throw Error("Replacement frontier mismatch");
+      const expectedAlternatives = branches
+        .map((_, i) => ({
+          effectId: identity(`actor-${i}`, "replace"),
+          parents: [baseId],
+          operation: replacement(i),
+        }))
+        .sort((a, b) => a.effectId.localeCompare(b.effectId));
+      const expectedRecords = [
+        {
+          effectId: baseId,
+          parents: [],
+          operations: [
+            {
+              kind: "replace-text",
+              inlineContentId: content,
+              mediaType: "text/plain",
+              text: "base",
+              origin: encodedOrigin,
+            },
+          ],
+        },
+        ...expectedAlternatives.map(({ effectId, parents, operation }) => ({
+          effectId,
+          parents,
+          operations: [operation],
+        })),
+      ].sort((a, b) => a.effectId.localeCompare(b.effectId));
+      if (
+        !isDeepStrictEqual(alternatives.value, expectedAlternatives) ||
+        !isDeepStrictEqual(records.value, expectedRecords)
+      )
+        throw Error("Replacement evidence mismatch");
+      if (
+        !branches.some(({ expected }) =>
+          isDeepStrictEqual(projection.value, expected),
+        )
+      )
+        throw Error("Projected winner differs from fixture branches");
       const materialize = timed(() =>
         branches.map(({ token }) => joined.materializeHistoricalState(token)),
       );
@@ -109,7 +188,9 @@ for (const factory of factories)
           throw Error("Converged projection mismatch");
         if (!isDeepStrictEqual(replica.effects(), joined.effects()))
           throw Error("Converged effect contexts mismatch");
-        if (!isDeepStrictEqual(replica.recordedPayloadEffects(), records.value))
+        if (
+          !isDeepStrictEqual(replica.recordedPayloadEffects(), expectedRecords)
+        )
           throw Error("Converged payload effects mismatch");
         for (const branch of branches) {
           if (
@@ -126,7 +207,7 @@ for (const factory of factories)
               replica.recordedPayloadEffects(),
               content,
             ),
-            alternatives.value,
+            expectedAlternatives,
           )
         )
           throw Error("Converged replacement alternatives mismatch");
@@ -158,6 +239,7 @@ console.log(
       description:
         "Mixed text/opaque concurrent replacement fan-in; three sequential samples, no warmup; complete encoded branch merges include candidate staging and validation; process max RSS is cumulative, not per sample.",
       revision: process.env.STEP3_REVISION ?? "unspecified",
+      githubHeadSha: process.env.GITHUB_HEAD_SHA ?? null,
       dirty: process.env.STEP3_DIRTY ?? "unspecified",
       node: process.version,
       platform: process.platform,

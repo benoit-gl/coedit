@@ -24,3 +24,41 @@ test.each([
     );
   },
 );
+
+test("rejects a same-length corrupt post-restore edit", () => {
+  const factory = createYjsIntegratedDocumentCarrierFactory(
+    localDensePositionAllocator,
+    localDensePositionAllocator,
+  );
+  const corruptingFactory: typeof factory = {
+    ...factory,
+    load(encoded) {
+      const carrier = factory.load(encoded);
+      return new Proxy(carrier, {
+        get(target, property) {
+          if (property === "applyChange") {
+            return (change: Parameters<typeof target.applyChange>[0]) => {
+              if (change.context?.effectId === "post-restore") {
+                target.applyChange({
+                  ...change,
+                  payloads: (change.payloads ?? []).map((payload) =>
+                    payload.kind === "insert-text"
+                      ? { ...payload, text: "?" }
+                      : payload,
+                  ),
+                });
+              } else target.applyChange(change);
+            };
+          }
+          const value = Reflect.get(target, property, target) as unknown;
+          return typeof value === "function"
+            ? (value.bind(target) as unknown)
+            : value;
+        },
+      });
+    },
+  };
+  expect(() =>
+    measureMixedHistoryLifecycle(corruptingFactory, 12, () => 0),
+  ).toThrow("Post-restore edit or retained history differs");
+});

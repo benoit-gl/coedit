@@ -52,6 +52,25 @@ try {
     "70000000-0000-4000-8000-000000000002",
   );
   const origin = { id: "lifecycle-author", kind: "human" };
+  // A completed insert/delete pair replaces all four visible units. Derive
+  // every checkpoint from the fixture, never from the carrier under test.
+  const expectedState = (text) => ({
+    rootId: root,
+    blockLiveness: new Map([[root, true]]),
+    placements: new Map(),
+    inlineContentOwners: new Map([[id, root]]),
+    payloads: new Map([
+      [
+        id,
+        {
+          kind: "text",
+          mediaType: "text/plain",
+          text,
+          spans: [{ text, origin }],
+        },
+      ],
+    ]),
+  });
   let carrier = factory.create(root);
   carrier.applyChange({
     inlineContents: [{ inlineContentId: id, blockId: root }],
@@ -90,15 +109,14 @@ try {
         expectedText = ((completed - 1) / 2).toString(36).padStart(4, "0");
       completed++;
       if (completed % 10 === 0) {
-        const expected = carrier.snapshot();
-        const payload = expected.payloads.get(id);
-        if (payload?.kind !== "text" || payload.text !== expectedText)
-          throw new Error("Capture state mismatch");
+        const expected = expectedState(expectedText);
+        deepStrictEqual(carrier.snapshot(), expected, "Capture state mismatch");
         tokens.push({ token: carrier.captureHistoricalState(), expected });
       }
     }
     const editAndCaptureMs = performance.now() - editStart;
-    const expectedLive = carrier.snapshot();
+    const expectedLive = expectedState(expectedText);
+    deepStrictEqual(carrier.snapshot(), expectedLive, "Live state mismatch");
     const encodeStart = performance.now();
     const encoded = carrier.encode();
     const encodeMs = performance.now() - encodeStart;
@@ -146,6 +164,7 @@ try {
         candidate,
         revision: {
           githubSha: process.env.GITHUB_SHA ?? null,
+          githubHeadSha: process.env.GITHUB_HEAD_SHA ?? null,
           head: git("rev-parse", "HEAD"),
           dirty: status === null ? null : status.length > 0,
         },

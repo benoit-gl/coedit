@@ -2,11 +2,14 @@
 
 This is bounded comparative evidence for Merge 8, not a Gate B policy or a product History implementation. The
 fixtures and observations below supplement the existing [causal payload history](../integrated/CAUSAL_PAYLOAD_HISTORY.md)
-and [replacement fan-in](REPLACEMENT_FANIN.md) evidence. The shared baseline was PR 47's merged tree
-`2cb55db9bfa46fee39a9c39f0c2c0842d85cf425` (commit `0d86e4c7381a10a2815908a8f85d2bf67b2de96b`), with these
-qualification files applied as uncommitted changes. The mixed runner's null revision records that it was not a CI run;
-it must not be interpreted as a clean commit. Raw samples are committed alongside this record. The Actions job reruns
-these probes and uploads its own revision-bound raw evidence, including partial output on failure.
+and [replacement fan-in](REPLACEMENT_FANIN.md) evidence. The local measurements used PR 48 head
+`6f7b86baefade1bf26a12817d99e1cf65ade63c4` (tree
+`e0e614a012d16061057125d932b6da7272426324`) plus the exact [source patch](evidence/history-source.patch), SHA-256
+`39b2dc1f338f6f1f12925fb2e1e8963ab7df62d4cb06d418b216b1e61a9fa3a9`. Apply that patch to the stated head to
+reproduce the source used for the runs; changes to raw evidence and prose do not affect the runners. The local Git HEAD
+`77dd049c6897078bf5ebd3415e10c21013b37f0d` was a synthetic commit of the same head tree. The null GitHub revision in
+the mixed runner denotes a local run. Raw samples are committed alongside this record. The Actions job reruns these
+probes and uploads its own revision-bound raw evidence, including partial output on failure.
 
 The probes ran sequentially on a shared Linux x64 cloud host with Node 24.19.0, Yjs 13.6.32 and Automerge 3.4.1.
 They are experimental observations, not limits or tail-latency claims. Three samples without warmup support a
@@ -21,10 +24,10 @@ four bytes; insertion briefly raises the text length to nine. A midpoint capture
 materialization, encoding/reopen, restore, a further edit and another reopen.
 The snapshots are detached qualification values; they do not prove a product Version or indefinite retention.
 
-At 100 effects the three-sample median for Yjs / Automerge was respectively 21.6 / 217.1 ms for the first 48 edits,
-27.6 / 275.3 ms for the remaining 52, 0.18 / 1.52 ms for capture, 0.033 / 0.088 ms for materialization,
-1.13 / 2.74 ms for encoding, 1.95 / 71.06 ms for reopening, 0.84 / 32.78 ms for restore, and 0.48 / 5.82 ms for
-the subsequent edit. Encoded sizes before restore were 84,419 / 18,815 bytes. These phases have different boundaries;
+At 100 effects the three-sample median for Yjs / Automerge was respectively 16.72 / 172.96 ms for the first 48 edits,
+15.12 / 192.37 ms for the remaining 52, 0.29 / 2.40 ms for capture, 0.034 / 0.057 ms for materialization,
+1.06 / 2.81 ms for encoding, 3.48 / 63.96 ms for reopening, 0.38 / 31.05 ms for restore, and 0.62 / 3.03 ms for
+the subsequent edit. Encoded sizes before restore were 84,419 / 18,807 bytes. These phases have different boundaries;
 materialization reads the captured snapshot, so its timing is not a general history reconstruction cost. In particular,
 the measurement cannot attribute carrier history, liveness tokens and replacement metadata individually.
 

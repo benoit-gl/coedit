@@ -1,8 +1,9 @@
 {
   "schemaVersion": 1,
   "status": "completed",
-  "generatedAt": "2026-11-02T14:48:43.790Z",
+  "generatedAt": "2026-11-02T20:04:32.867Z",
   "revision": null,
+  "githubHeadSha": null,
   "counts": [12, 40, 100],
   "samples": 3,
   "warmups": 0,
@@ -33,14 +34,14 @@
           "kind": "automatic-garbage-collection",
           "availability": "supported"
         },
-        "firstEditsMs": 15.579968999999892,
-        "laterEditsMs": 8.348292000000129,
-        "captureMs": 1.7678300000000036,
-        "materializeMs": 0.544399999999996,
-        "encodeMs": 4.5288020000000415,
-        "reopenMs": 6.0429260000000795,
-        "restoreMs": 1.841305999999804,
-        "postRestoreEditMs": 0.5253079999999954
+        "firstEditsMs": 16.115741999999955,
+        "laterEditsMs": 32.68208699999991,
+        "captureMs": 0.34264200000006895,
+        "materializeMs": 0.3557789999999841,
+        "encodeMs": 21.301265000000058,
+        "reopenMs": 27.48687599999994,
+        "restoreMs": 1.5827530000001389,
+        "postRestoreEditMs": 1.7208180000000084
       }
     },
     {
@@ -53,21 +54,21 @@
         "midpoint": 4,
         "visibleTextUnits": 8,
         "opaqueBytes": 4,
-        "initialEncodedBytes": 4303,
-        "finalEncodedBytes": 5432,
+        "initialEncodedBytes": 4308,
+        "finalEncodedBytes": 5429,
         "effectCountBeforeRestore": 12,
         "nativeLifecycle": {
           "kind": "none",
           "availability": "unavailable"
         },
-        "firstEditsMs": 42.53188799999998,
-        "laterEditsMs": 71.70864200000005,
-        "captureMs": 4.3696319999999105,
-        "materializeMs": 0.1770000000001346,
-        "encodeMs": 14.003558999999996,
-        "reopenMs": 88.27018599999997,
-        "restoreMs": 46.06410099999994,
-        "postRestoreEditMs": 6.581376999999975
+        "firstEditsMs": 67.43067399999973,
+        "laterEditsMs": 178.7173499999999,
+        "captureMs": 10.900895000000219,
+        "materializeMs": 0.18027900000015507,
+        "encodeMs": 20.20279900000014,
+        "reopenMs": 97.79790700000012,
+        "restoreMs": 100.06741899999997,
+        "postRestoreEditMs": 13.146457000000282
       }
     },
     {
@@ -75,107 +76,107 @@
       "count": 12,
       "iteration": 1,
       "order": 1,
+      "details": {
+        "effects": 12,
+        "midpoint": 4,
+        "visibleTextUnits": 8,
+        "opaqueBytes": 4,
+        "initialEncodedBytes": 4313,
+        "finalEncodedBytes": 5428,
+        "effectCountBeforeRestore": 12,
+        "nativeLifecycle": {
+          "kind": "none",
+          "availability": "unavailable"
+        },
+        "firstEditsMs": 32.19263600000022,
+        "laterEditsMs": 96.08781200000021,
+        "captureMs": 4.272617000000082,
+        "materializeMs": 0.04441899999983434,
+        "encodeMs": 5.304685000000063,
+        "reopenMs": 19.449661000000106,
+        "restoreMs": 8.495344000000387,
+        "postRestoreEditMs": 4.519386999999824
+      }
+    },
+    {
+      "candidate": "yjs",
+      "count": 12,
+      "iteration": 1,
+      "order": 2,
+      "details": {
+        "effects": 12,
+        "midpoint": 4,
+        "visibleTextUnits": 8,
+        "opaqueBytes": 4,
+        "initialEncodedBytes": 12345,
+        "finalEncodedBytes": 14624,
+        "effectCountBeforeRestore": 12,
+        "nativeLifecycle": {
+          "kind": "automatic-garbage-collection",
+          "availability": "supported"
+        },
+        "firstEditsMs": 3.4700219999999717,
+        "laterEditsMs": 3.9408180000000357,
+        "captureMs": 1.8667350000000624,
+        "materializeMs": 0.03031799999962459,
+        "encodeMs": 0.8638780000001134,
+        "reopenMs": 1.1328279999997903,
+        "restoreMs": 0.49774600000000646,
+        "postRestoreEditMs": 0.7699980000002142
+      }
+    },
+    {
+      "candidate": "yjs",
+      "count": 12,
+      "iteration": 2,
+      "order": 1,
+      "details": {
+        "effects": 12,
+        "midpoint": 4,
+        "visibleTextUnits": 8,
+        "opaqueBytes": 4,
+        "initialEncodedBytes": 12345,
+        "finalEncodedBytes": 14624,
+        "effectCountBeforeRestore": 12,
+        "nativeLifecycle": {
+          "kind": "automatic-garbage-collection",
+          "availability": "supported"
+        },
+        "firstEditsMs": 1.380888000000141,
+        "laterEditsMs": 2.8026530000001912,
+        "captureMs": 0.16748099999995247,
+        "materializeMs": 0.0633269999998447,
+        "encodeMs": 0.43382199999996374,
+        "reopenMs": 1.0406840000000557,
+        "restoreMs": 0.4226929999999811,
+        "postRestoreEditMs": 0.4132150000000365
+      }
+    },
+    {
+      "candidate": "automerge",
+      "count": 12,
+      "iteration": 2,
+      "order": 2,
       "details": {
         "effects": 12,
         "midpoint": 4,
         "visibleTextUnits": 8,
         "opaqueBytes": 4,
         "initialEncodedBytes": 4312,
-        "finalEncodedBytes": 5426,
+        "finalEncodedBytes": 5431,
         "effectCountBeforeRestore": 12,
         "nativeLifecycle": {
           "kind": "none",
           "availability": "unavailable"
         },
-        "firstEditsMs": 34.41978400000016,
-        "laterEditsMs": 65.286834,
-        "captureMs": 3.7045289999996385,
-        "materializeMs": 0.047105999999985215,
-        "encodeMs": 1.3098230000000513,
-        "reopenMs": 18.720882999999958,
-        "restoreMs": 14.766432999999779,
-        "postRestoreEditMs": 4.6975329999995665
-      }
-    },
-    {
-      "candidate": "yjs",
-      "count": 12,
-      "iteration": 1,
-      "order": 2,
-      "details": {
-        "effects": 12,
-        "midpoint": 4,
-        "visibleTextUnits": 8,
-        "opaqueBytes": 4,
-        "initialEncodedBytes": 12345,
-        "finalEncodedBytes": 14624,
-        "effectCountBeforeRestore": 12,
-        "nativeLifecycle": {
-          "kind": "automatic-garbage-collection",
-          "availability": "supported"
-        },
-        "firstEditsMs": 3.681510000000344,
-        "laterEditsMs": 6.928551999999854,
-        "captureMs": 0.19610400000010486,
-        "materializeMs": 0.04131700000016281,
-        "encodeMs": 13.810599999999795,
-        "reopenMs": 1.7528149999998277,
-        "restoreMs": 0.9139079999999922,
-        "postRestoreEditMs": 0.45881099999996877
-      }
-    },
-    {
-      "candidate": "yjs",
-      "count": 12,
-      "iteration": 2,
-      "order": 1,
-      "details": {
-        "effects": 12,
-        "midpoint": 4,
-        "visibleTextUnits": 8,
-        "opaqueBytes": 4,
-        "initialEncodedBytes": 12345,
-        "finalEncodedBytes": 14624,
-        "effectCountBeforeRestore": 12,
-        "nativeLifecycle": {
-          "kind": "automatic-garbage-collection",
-          "availability": "supported"
-        },
-        "firstEditsMs": 1.4064870000001974,
-        "laterEditsMs": 2.491653999999926,
-        "captureMs": 0.2446540000000823,
-        "materializeMs": 0.026605999999901542,
-        "encodeMs": 0.5934480000000804,
-        "reopenMs": 0.8549480000001495,
-        "restoreMs": 0.9051840000001903,
-        "postRestoreEditMs": 0.5275550000001203
-      }
-    },
-    {
-      "candidate": "automerge",
-      "count": 12,
-      "iteration": 2,
-      "order": 2,
-      "details": {
-        "effects": 12,
-        "midpoint": 4,
-        "visibleTextUnits": 8,
-        "opaqueBytes": 4,
-        "initialEncodedBytes": 4304,
-        "finalEncodedBytes": 5420,
-        "effectCountBeforeRestore": 12,
-        "nativeLifecycle": {
-          "kind": "none",
-          "availability": "unavailable"
-        },
-        "firstEditsMs": 12.457948000000215,
-        "laterEditsMs": 47.553773999999976,
-        "captureMs": 3.937053999999989,
-        "materializeMs": 0.06106899999986126,
-        "encodeMs": 1.34967800000004,
-        "reopenMs": 13.34118699999999,
-        "restoreMs": 10.191012000000228,
-        "postRestoreEditMs": 4.317173000000366
+        "firstEditsMs": 22.290911999999935,
+        "laterEditsMs": 35.13078899999982,
+        "captureMs": 3.574756999999863,
+        "materializeMs": 0.044835000000148284,
+        "encodeMs": 1.7624220000002424,
+        "reopenMs": 11.766583999999966,
+        "restoreMs": 12.70031999999992,
+        "postRestoreEditMs": 4.597790000000259
       }
     },
     {
@@ -195,14 +196,14 @@
           "kind": "automatic-garbage-collection",
           "availability": "supported"
         },
-        "firstEditsMs": 40.618676999999934,
-        "laterEditsMs": 23.000346000000263,
-        "captureMs": 1.3526480000000447,
-        "materializeMs": 0.03300099999978556,
-        "encodeMs": 0.9839879999999539,
-        "reopenMs": 3.8516069999996034,
-        "restoreMs": 0.9468500000002678,
-        "postRestoreEditMs": 0.6276889999999185
+        "firstEditsMs": 15.903839999999946,
+        "laterEditsMs": 11.648507000000336,
+        "captureMs": 0.10947600000008606,
+        "materializeMs": 0.03845699999965291,
+        "encodeMs": 1.1157309999998688,
+        "reopenMs": 1.4632739999997284,
+        "restoreMs": 6.412035000000287,
+        "postRestoreEditMs": 0.39564300000029107
       }
     },
     {
@@ -215,48 +216,48 @@
         "midpoint": 20,
         "visibleTextUnits": 8,
         "opaqueBytes": 4,
-        "initialEncodedBytes": 8926,
+        "initialEncodedBytes": 8919,
+        "finalEncodedBytes": 10261,
+        "effectCountBeforeRestore": 40,
+        "nativeLifecycle": {
+          "kind": "none",
+          "availability": "unavailable"
+        },
+        "firstEditsMs": 92.00989699999991,
+        "laterEditsMs": 90.12262400000009,
+        "captureMs": 2.1588299999998526,
+        "materializeMs": 0.03433600000016668,
+        "encodeMs": 1.1883380000003854,
+        "reopenMs": 60.09176200000002,
+        "restoreMs": 22.515155999999934,
+        "postRestoreEditMs": 5.903541000000132
+      }
+    },
+    {
+      "candidate": "automerge",
+      "count": 40,
+      "iteration": 1,
+      "order": 1,
+      "details": {
+        "effects": 40,
+        "midpoint": 20,
+        "visibleTextUnits": 8,
+        "opaqueBytes": 4,
+        "initialEncodedBytes": 8935,
         "finalEncodedBytes": 10273,
         "effectCountBeforeRestore": 40,
         "nativeLifecycle": {
           "kind": "none",
           "availability": "unavailable"
         },
-        "firstEditsMs": 83.20410700000002,
-        "laterEditsMs": 162.94709599999987,
-        "captureMs": 3.007072999999764,
-        "materializeMs": 0.03468800000018746,
-        "encodeMs": 2.767398999999841,
-        "reopenMs": 28.66768600000023,
-        "restoreMs": 30.17321899999979,
-        "postRestoreEditMs": 11.770148999999947
-      }
-    },
-    {
-      "candidate": "automerge",
-      "count": 40,
-      "iteration": 1,
-      "order": 1,
-      "details": {
-        "effects": 40,
-        "midpoint": 20,
-        "visibleTextUnits": 8,
-        "opaqueBytes": 4,
-        "initialEncodedBytes": 8932,
-        "finalEncodedBytes": 10268,
-        "effectCountBeforeRestore": 40,
-        "nativeLifecycle": {
-          "kind": "none",
-          "availability": "unavailable"
-        },
-        "firstEditsMs": 104.82749100000001,
-        "laterEditsMs": 87.15395499999977,
-        "captureMs": 1.2122259999996459,
-        "materializeMs": 0.042079999999714346,
-        "encodeMs": 2.614459999999781,
-        "reopenMs": 41.17569299999968,
-        "restoreMs": 35.226022999999714,
-        "postRestoreEditMs": 3.51500599999963
+        "firstEditsMs": 70.39053299999978,
+        "laterEditsMs": 79.52447299999994,
+        "captureMs": 4.029929999999695,
+        "materializeMs": 0.04701599999998507,
+        "encodeMs": 4.0286730000002535,
+        "reopenMs": 27.489336999999978,
+        "restoreMs": 19.498426999999992,
+        "postRestoreEditMs": 5.162967000000208
       }
     },
     {
@@ -270,20 +271,20 @@
         "visibleTextUnits": 8,
         "opaqueBytes": 4,
         "initialEncodedBytes": 35279,
-        "finalEncodedBytes": 37923,
+        "finalEncodedBytes": 37937,
         "effectCountBeforeRestore": 40,
         "nativeLifecycle": {
           "kind": "automatic-garbage-collection",
           "availability": "supported"
         },
-        "firstEditsMs": 9.293139999999767,
-        "laterEditsMs": 8.061519000000317,
-        "captureMs": 0.13867599999957747,
-        "materializeMs": 0.055213999999978114,
-        "encodeMs": 0.8230820000003405,
-        "reopenMs": 2.245673999999781,
-        "restoreMs": 0.5853180000003704,
-        "postRestoreEditMs": 0.8581979999999021
+        "firstEditsMs": 8.540222999999969,
+        "laterEditsMs": 8.210614000000078,
+        "captureMs": 0.1214509999999791,
+        "materializeMs": 0.044047999999747844,
+        "encodeMs": 0.5399680000000444,
+        "reopenMs": 1.6467609999999695,
+        "restoreMs": 0.5046520000000783,
+        "postRestoreEditMs": 0.42261599999983446
       }
     },
     {
@@ -303,14 +304,14 @@
           "kind": "automatic-garbage-collection",
           "availability": "supported"
         },
-        "firstEditsMs": 11.88075200000003,
-        "laterEditsMs": 8.047831000000315,
-        "captureMs": 0.067250999999942,
-        "materializeMs": 0.028557000000091648,
-        "encodeMs": 4.22663700000021,
-        "reopenMs": 2.4605870000000323,
-        "restoreMs": 0.7395129999999881,
-        "postRestoreEditMs": 0.5113010000000031
+        "firstEditsMs": 10.229366000000027,
+        "laterEditsMs": 11.472393999999895,
+        "captureMs": 0.07013300000016898,
+        "materializeMs": 0.03490600000031918,
+        "encodeMs": 0.6487990000000536,
+        "reopenMs": 1.1853909999999814,
+        "restoreMs": 0.5072100000002138,
+        "postRestoreEditMs": 0.3685970000001362
       }
     },
     {
@@ -323,21 +324,21 @@
         "midpoint": 20,
         "visibleTextUnits": 8,
         "opaqueBytes": 4,
-        "initialEncodedBytes": 8926,
-        "finalEncodedBytes": 10266,
+        "initialEncodedBytes": 8929,
+        "finalEncodedBytes": 10273,
         "effectCountBeforeRestore": 40,
         "nativeLifecycle": {
           "kind": "none",
           "availability": "unavailable"
         },
-        "firstEditsMs": 94.23760200000015,
-        "laterEditsMs": 134.2349610000001,
-        "captureMs": 3.265834000000268,
-        "materializeMs": 0.04505199999994147,
-        "encodeMs": 2.1261319999998705,
-        "reopenMs": 36.97683800000004,
-        "restoreMs": 22.340620999999828,
-        "postRestoreEditMs": 9.624549000000115
+        "firstEditsMs": 84.20620999999983,
+        "laterEditsMs": 96.23253000000022,
+        "captureMs": 2.0022479999997813,
+        "materializeMs": 0.051392000000305416,
+        "encodeMs": 2.5947919999998703,
+        "reopenMs": 33.15902199999982,
+        "restoreMs": 14.93478099999993,
+        "postRestoreEditMs": 3.867993000000297
       }
     },
     {
@@ -357,14 +358,14 @@
           "kind": "automatic-garbage-collection",
           "availability": "supported"
         },
-        "firstEditsMs": 45.19412599999987,
-        "laterEditsMs": 27.606826000000183,
-        "captureMs": 0.2585260000000744,
-        "materializeMs": 0.043452000000343105,
-        "encodeMs": 1.6304449999997814,
-        "reopenMs": 1.9529480000001058,
-        "restoreMs": 1.2304910000002565,
-        "postRestoreEditMs": 0.7694219999998495
+        "firstEditsMs": 16.72417600000017,
+        "laterEditsMs": 40.572769999999764,
+        "captureMs": 0.29124000000001615,
+        "materializeMs": 0.03403100000014092,
+        "encodeMs": 0.9546919999997954,
+        "reopenMs": 3.4833380000000034,
+        "restoreMs": 0.577310000000125,
+        "postRestoreEditMs": 0.6204429999997956
       }
     },
     {
@@ -377,21 +378,21 @@
         "midpoint": 48,
         "visibleTextUnits": 8,
         "opaqueBytes": 4,
-        "initialEncodedBytes": 18769,
-        "finalEncodedBytes": 20126,
+        "initialEncodedBytes": 18798,
+        "finalEncodedBytes": 20163,
         "effectCountBeforeRestore": 100,
         "nativeLifecycle": {
           "kind": "none",
           "availability": "unavailable"
         },
-        "firstEditsMs": 209.720734,
-        "laterEditsMs": 251.2054449999996,
-        "captureMs": 1.524887999999919,
-        "materializeMs": 0.03537099999994098,
-        "encodeMs": 3.8127319999994143,
-        "reopenMs": 68.33766600000035,
-        "restoreMs": 42.04630199999974,
-        "postRestoreEditMs": 5.822078999999576
+        "firstEditsMs": 191.98569700000007,
+        "laterEditsMs": 219.02109000000019,
+        "captureMs": 2.402183999999579,
+        "materializeMs": 0.05662999999913154,
+        "encodeMs": 2.9007910000000265,
+        "reopenMs": 68.2669390000001,
+        "restoreMs": 36.11618199999975,
+        "postRestoreEditMs": 3.9284190000007584
       }
     },
     {
@@ -404,21 +405,21 @@
         "midpoint": 48,
         "visibleTextUnits": 8,
         "opaqueBytes": 4,
-        "initialEncodedBytes": 18815,
-        "finalEncodedBytes": 20184,
+        "initialEncodedBytes": 18807,
+        "finalEncodedBytes": 20169,
         "effectCountBeforeRestore": 100,
         "nativeLifecycle": {
           "kind": "none",
           "availability": "unavailable"
         },
-        "firstEditsMs": 224.37436100000014,
-        "laterEditsMs": 275.3068489999996,
-        "captureMs": 1.4888359999995373,
-        "materializeMs": 0.08820599999944534,
-        "encodeMs": 2.7144029999999475,
-        "reopenMs": 71.06362900000022,
-        "restoreMs": 28.562604000000647,
-        "postRestoreEditMs": 7.033278999999311
+        "firstEditsMs": 172.96414000000004,
+        "laterEditsMs": 192.36779000000024,
+        "captureMs": 1.2525770000002012,
+        "materializeMs": 0.13374000000021624,
+        "encodeMs": 2.812963999999738,
+        "reopenMs": 63.95818599999984,
+        "restoreMs": 28.919033000000127,
+        "postRestoreEditMs": 3.0303920000005746
       }
     },
     {
@@ -438,14 +439,14 @@
           "kind": "automatic-garbage-collection",
           "availability": "supported"
         },
-        "firstEditsMs": 21.608797000000777,
-        "laterEditsMs": 38.03712900000028,
-        "captureMs": 0.08985200000006444,
-        "materializeMs": 0.03163200000017241,
-        "encodeMs": 1.1324939999994967,
-        "reopenMs": 3.664784999999938,
-        "restoreMs": 0.841284000000087,
-        "postRestoreEditMs": 0.47700499999973545
+        "firstEditsMs": 15.613736999999674,
+        "laterEditsMs": 15.12350399999923,
+        "captureMs": 0.36070700000072975,
+        "materializeMs": 0.030204000000594533,
+        "encodeMs": 1.3807729999998628,
+        "reopenMs": 2.467407000000094,
+        "restoreMs": 0.37253599999985454,
+        "postRestoreEditMs": 0.4159749999998894
       }
     },
     {
@@ -458,21 +459,21 @@
         "midpoint": 48,
         "visibleTextUnits": 8,
         "opaqueBytes": 4,
-        "initialEncodedBytes": 84419,
-        "finalEncodedBytes": 87901,
+        "initialEncodedBytes": 83788,
+        "finalEncodedBytes": 87113,
         "effectCountBeforeRestore": 100,
         "nativeLifecycle": {
           "kind": "automatic-garbage-collection",
           "availability": "supported"
         },
-        "firstEditsMs": 14.66646800000035,
-        "laterEditsMs": 18.28022300000066,
-        "captureMs": 0.1847619999998642,
-        "materializeMs": 0.03300099999978556,
-        "encodeMs": 1.0456500000000233,
-        "reopenMs": 1.4211489999997866,
-        "restoreMs": 0.3713050000005751,
-        "postRestoreEditMs": 0.27102799999920535
+        "firstEditsMs": 17.752424999999675,
+        "laterEditsMs": 13.741697999999815,
+        "captureMs": 0.07301400000051217,
+        "materializeMs": 0.11922599999979866,
+        "encodeMs": 1.0571380000001227,
+        "reopenMs": 6.485353000000032,
+        "restoreMs": 0.38306199999988166,
+        "postRestoreEditMs": 0.6408029999993232
       }
     },
     {
@@ -485,21 +486,21 @@
         "midpoint": 48,
         "visibleTextUnits": 8,
         "opaqueBytes": 4,
-        "initialEncodedBytes": 18815,
-        "finalEncodedBytes": 20197,
+        "initialEncodedBytes": 18813,
+        "finalEncodedBytes": 20201,
         "effectCountBeforeRestore": 100,
         "nativeLifecycle": {
           "kind": "none",
           "availability": "unavailable"
         },
-        "firstEditsMs": 217.08961400000044,
-        "laterEditsMs": 519.9935520000008,
-        "captureMs": 2.286753999999746,
-        "materializeMs": 0.2087810000002719,
-        "encodeMs": 2.74311200000011,
-        "reopenMs": 81.23660800000016,
-        "restoreMs": 32.776660999999876,
-        "postRestoreEditMs": 2.701901999999791
+        "firstEditsMs": 160.46831099999963,
+        "laterEditsMs": 186.86765699999978,
+        "captureMs": 2.6113909999994576,
+        "materializeMs": 0.033325999999760825,
+        "encodeMs": 2.388688000000002,
+        "reopenMs": 58.06138100000044,
+        "restoreMs": 31.050804000000426,
+        "postRestoreEditMs": 2.862503999999717
       }
     }
   ]

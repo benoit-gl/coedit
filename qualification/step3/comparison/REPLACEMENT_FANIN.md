@@ -57,7 +57,7 @@ influence results. Timings include unrelated system load, and cannot separate
 native merge cost from adapter validation or claim production performance.
 
 The recorded run executed after the other local probes finished. At 32 branches, the median of three samples was
-73.7 ms for Yjs and 298.5 ms for Automerge for the sum of complete-state merges; median encoded sizes were 39,301
-and 10,181 bytes respectively. These are descriptive measurements on one cloud host; correctness does not depend
+43.3 ms for Yjs and 228.7 ms for Automerge for the sum of complete-state merges; median encoded sizes were 39,299
+and 10,162 bytes respectively. These are descriptive measurements on one cloud host; correctness does not depend
 on a timing threshold. Neither pinned Automerge save/load nor Yjs
 automatic collection constitutes a shared production compaction policy.

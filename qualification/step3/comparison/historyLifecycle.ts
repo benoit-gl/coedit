@@ -27,6 +27,10 @@ function canonical(
         String(a).localeCompare(String(b)),
       );
     if (value instanceof Uint8Array) return [...value];
+    if (value && typeof value === "object" && !Array.isArray(value))
+      return Object.fromEntries(
+        Object.entries(value).sort(([a], [b]) => a.localeCompare(b)),
+      );
     return value;
   });
 }
@@ -51,6 +55,47 @@ export function measureMixedHistoryLifecycle(
   });
   if (!positions.ok || !positions.value[0] || !positions.value[1])
     throw new Error("Position allocation failed");
+  // Construct the logical result from the fixture operations, independently of
+  // the carrier's projections. Each completed cycle ends with replacement i.
+  const expectedState = (completed: number, postRestore = false) => {
+    const last = completed - 1;
+    const baseText = (completed - 2) % 8 === 2 ? "abcdefgh" : "ABCDEFGH";
+    const text = postRestore ? `${baseText[0]}!${baseText.slice(1)}` : baseText;
+    return canonical({
+      rootId: root,
+      blockLiveness: new Map([
+        [root, true],
+        [block, true],
+      ]),
+      placements: new Map([
+        [block, { position: positions.value[(last >> 2) % 2]!, depth: 1 }],
+      ]),
+      inlineContentOwners: new Map([
+        [textId, root],
+        [opaqueId, block],
+      ]),
+      payloads: new Map([
+        [
+          textId,
+          {
+            kind: "text",
+            mediaType: "text/plain",
+            text,
+            spans: [{ text, origin }],
+          },
+        ],
+        [
+          opaqueId,
+          {
+            kind: "opaque",
+            mediaType: "application/example",
+            bytes: new Uint8Array([last % 256, 1, 2, 3]),
+            origin,
+          },
+        ],
+      ]),
+    });
+  };
   const carrier = factory.create(root);
   carrier.applyChange({
     placements: [
@@ -147,12 +192,16 @@ export function measureMixedHistoryLifecycle(
   const [, firstEditsMs] = phase(() => {
     for (let i = 0; i < midpoint; i++) edit(i);
   });
-  const expected = canonical(carrier.snapshot());
+  const expected = expectedState(midpoint);
+  if (canonical(carrier.snapshot()) !== expected)
+    throw new Error("Midpoint differs from fixture");
   const [token, captureMs] = phase(() => carrier.captureHistoricalState());
   const [, laterEditsMs] = phase(() => {
     for (let i = midpoint; i < effects; i++) edit(i);
   });
-  const tip = canonical(carrier.snapshot());
+  const tip = expectedState(effects);
+  if (canonical(carrier.snapshot()) !== tip)
+    throw new Error("Tip differs from fixture");
   const [historical, materializeMs] = phase(() =>
     carrier.materializeHistoricalState(token),
   );
@@ -193,18 +242,14 @@ export function measureMixedHistoryLifecycle(
       context: { actorId: "mixed-history", effectId: "post-restore" },
     }),
   );
-  const post = reopened.snapshot().payloads.get(textId);
+  const post = expectedState(midpoint, true);
   if (
-    post?.kind !== "text" ||
-    post.text.length !== 9 ||
+    canonical(reopened.snapshot()) !== post ||
     canonical(reopened.materializeHistoricalState(token)) !== expected
   )
     throw new Error("Post-restore edit or retained history differs");
   const finalEncoded = reopened.encode();
-  if (
-    canonical(factory.load(finalEncoded).snapshot()) !==
-    canonical(reopened.snapshot())
-  )
+  if (canonical(factory.load(finalEncoded).snapshot()) !== post)
     throw new Error("Post-restore reopen differs");
   return {
     effects,
