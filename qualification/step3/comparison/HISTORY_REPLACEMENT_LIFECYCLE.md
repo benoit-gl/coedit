@@ -16,8 +16,9 @@ median only; they do not establish p95, independent-process variability, or perf
 
 `node scripts/step3-mixed-history.mjs` emits [raw samples](mixed-history-raw.json). Each fresh carrier executes
 12, 40 or 100 attributed operations: text insert and delete, whole-text replacement, and opaque replacement combined
-with a Block placement change. Visible text remains eight UTF-16 units and opaque content four bytes. A midpoint capture
-is checked after subsequent changes, materialization, encoding/reopen, restore, a further edit and another reopen.
+with a Block placement change. At complete operation cycles visible text is eight UTF-16 units and opaque content is
+four bytes; insertion briefly raises the text length to nine. A midpoint capture is checked after subsequent changes,
+materialization, encoding/reopen, restore, a further edit and another reopen.
 The snapshots are detached qualification values; they do not prove a product Version or indefinite retention.
 
 At 100 effects the three-sample median for Yjs / Automerge was respectively 21.6 / 217.1 ms for the first 48 edits,

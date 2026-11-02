@@ -1,9 +1,14 @@
 {
   "candidate": "automerge",
+  "revision": {
+    "githubSha": null,
+    "head": "20a3d1e71b73eaa9e9305cdaeaa8e5f45fba032f",
+    "dirty": true
+  },
   "profile": {
     "checkpoints": [20, 100, 200],
     "snapshotEvery": 10,
-    "workload": "alternating insert/delete, encode and reload at each checkpoint"
+    "workload": "alternating four-unit insert/delete, encode and reload at each checkpoint"
   },
   "environment": {
     "platform": "linux",
@@ -23,55 +28,55 @@
       "effects": 20,
       "retainedStates": 2,
       "visibleUtf16Units": 4,
-      "encodedBytes": 4081,
-      "editAndCaptureMs": 220.9114880000002,
-      "encodeMs": 6.206217999999808,
-      "loadMs": 92.63006600000017,
-      "materializeAllMs": 1.0452209999998558,
+      "encodedBytes": 4204,
+      "editAndCaptureMs": 109.48302399999989,
+      "encodeMs": 6.120383000000174,
+      "loadMs": 89.64366999999993,
+      "materializeAllMs": 1.4768400000000383,
       "memory": {
-        "rss": 144646144,
-        "heapTotal": 63369216,
-        "heapUsed": 37108832,
-        "external": 11086412,
-        "arrayBuffers": 1192107
+        "rss": 146792448,
+        "heapTotal": 64942080,
+        "heapUsed": 44302384,
+        "external": 11125251,
+        "arrayBuffers": 1236851
       },
-      "peakRssKiB": 141256
+      "peakRssKiB": 143352
     },
     {
       "effects": 100,
       "retainedStates": 10,
       "visibleUtf16Units": 4,
-      "encodedBytes": 14400,
-      "editAndCaptureMs": 777.1367689999997,
-      "encodeMs": 9.560891000000083,
-      "loadMs": 124.34198500000002,
-      "materializeAllMs": 0.9250349999997525,
+      "encodedBytes": 14994,
+      "editAndCaptureMs": 514.5261229999999,
+      "encodeMs": 2.263449000000037,
+      "loadMs": 50.13851899999963,
+      "materializeAllMs": 0.6718540000001667,
       "memory": {
-        "rss": 158261248,
-        "heapTotal": 64942080,
-        "heapUsed": 37694968,
-        "external": 16419023,
-        "arrayBuffers": 1050274
+        "rss": 161718272,
+        "heapTotal": 66514944,
+        "heapUsed": 45010288,
+        "external": 15770083,
+        "arrayBuffers": 476787
       },
-      "peakRssKiB": 154552
+      "peakRssKiB": 157928
     },
     {
       "effects": 200,
       "retainedStates": 20,
       "visibleUtf16Units": 4,
-      "encodedBytes": 26228,
-      "editAndCaptureMs": 1073.0611520000002,
-      "encodeMs": 4.631579999999303,
-      "loadMs": 191.62172199999986,
-      "materializeAllMs": 0.1300840000003518,
+      "encodedBytes": 27096,
+      "editAndCaptureMs": 548.8522069999999,
+      "encodeMs": 4.158533000000261,
+      "loadMs": 111.15198099999998,
+      "materializeAllMs": 0.8417439999998351,
       "memory": {
-        "rss": 170188800,
-        "heapTotal": 65990656,
-        "heapUsed": 35614920,
-        "external": 23650130,
-        "arrayBuffers": 1072421
+        "rss": 172072960,
+        "heapTotal": 67563520,
+        "heapUsed": 43243840,
+        "external": 23001935,
+        "arrayBuffers": 499679
       },
-      "peakRssKiB": 166200
+      "peakRssKiB": 168040
     }
   ]
 }

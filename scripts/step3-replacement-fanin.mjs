@@ -2,6 +2,7 @@
 import { createServer } from "vite";
 import { performance } from "node:perf_hooks";
 import os from "node:os";
+import { isDeepStrictEqual } from "node:util";
 
 const server = await createServer({
   appType: "custom",
@@ -94,28 +95,43 @@ for (const factory of factories)
         branches.map(({ token }) => joined.materializeHistoricalState(token)),
       );
       for (let i = 0; i < count; i++) {
-        // Snapshots contain Maps; compare exact detached values in a stable representation.
-        const normalize = (s) =>
-          JSON.stringify({
-            ...s,
-            blockLiveness: [...s.blockLiveness],
-            placements: [...s.placements],
-            inlineContentOwners: [...s.inlineContentOwners],
-            payloads: [...s.payloads],
-          });
-        if (normalize(materialize.value[i]) !== normalize(branches[i].expected))
+        if (!isDeepStrictEqual(materialize.value[i], branches[i].expected))
           throw Error("Historical branch mismatch");
       }
       const encoded = timed(() => joined.encode());
       const reopened = timed(() => factory.load(encoded.value));
-      if (
-        evidence.replacementAlternatives(
-          reopened.value.recordedPayloadEffects(),
-          content,
-        ).length !== count
-      )
-        throw Error("Reload frontier mismatch");
-      rows.push({
+      // Convergence and reload verification are deliberately outside timing intervals.
+      const reverse = factory.load(genesis);
+      for (const branch of [...branches].reverse())
+        reverse.mergeEncoded(branch.encoded);
+      for (const replica of [reverse, reopened.value]) {
+        if (!isDeepStrictEqual(replica.snapshot(), projection.value))
+          throw Error("Converged projection mismatch");
+        if (!isDeepStrictEqual(replica.effects(), joined.effects()))
+          throw Error("Converged effect contexts mismatch");
+        if (!isDeepStrictEqual(replica.recordedPayloadEffects(), records.value))
+          throw Error("Converged payload effects mismatch");
+        for (const branch of branches) {
+          if (
+            !isDeepStrictEqual(
+              replica.materializeHistoricalState(branch.token),
+              branch.expected,
+            )
+          )
+            throw Error("Converged historical branch mismatch");
+        }
+        if (
+          !isDeepStrictEqual(
+            evidence.replacementAlternatives(
+              replica.recordedPayloadEffects(),
+              content,
+            ),
+            alternatives.value,
+          )
+        )
+          throw Error("Converged replacement alternatives mismatch");
+      }
+      const row = {
         candidate: factory.candidate,
         count,
         sample,
@@ -130,7 +146,10 @@ for (const factory of factories)
         encodedBytes: encoded.value.length,
         retainedEffects: records.value.length,
         processMaxRssKiB: process.resourceUsage().maxRSS,
-      });
+      };
+      rows.push(row);
+      // Preserve completed samples if a later sample fails.
+      console.error(JSON.stringify(row));
     }
 console.log(
   JSON.stringify(

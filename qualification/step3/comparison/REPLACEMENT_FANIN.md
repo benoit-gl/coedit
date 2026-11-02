@@ -10,7 +10,8 @@ fan-in converge, and each explicitly captured branch state materializes exactly
 on both merged replicas and after reload. A later replacement observes and
 supersedes all alternatives in the frontier, while captured states still
 materialize; restoring a captured state preserves those other captures across a
-further reload. A separate case checks transitive precedence through an effect
+further reload. Restore is exercised at 2, 4 and 8 branches, not at 16 or 32.
+A separate case checks transitive precedence through an effect
 on another InlineContent, concurrent alternatives and duplicate delivery.
 
 The focused payload suite covers text/text, opaque/opaque and text/opaque
@@ -42,14 +43,21 @@ from the repository root. The script creates fresh replicas at 2, 4, 8, 16 and
 and size. It measures complete-state merges individually (including adapter
 staging and validation), current projection, evidence retrieval, frontier and
 alternative reconstruction, materialization of all explicitly captured
-branches, encoding, reopen and encoded size. It checks every captured snapshot
-and the reopened frontier. The raw file retains every sample and individual
-merge time. The process maximum RSS is cumulative across the whole run and
+branches, encoding, reopen and encoded size. Outside timed intervals, every row
+checks each captured snapshot on forward, reverse and reopened replicas, and compares the forward-merged current projection,
+effect contexts, payload effects and alternatives with reverse-order fan-in and
+with reload. These full-state deliveries cover two orders, not arbitrary network
+schedules. Verification work contributes to cumulative process RSS. The raw
+file retains every completed sample and individual merge time. The process maximum RSS is cumulative across the
+whole run and
 cannot be assigned to an individual row. There are no warmups or tail-latency
 claims; snapshots and tiny payloads here do not represent realistic large
 payloads. Candidate runs are sequential, so order and runtime warming may
 influence results. Timings include unrelated system load, and cannot separate
 native merge cost from adapter validation or claim production performance.
 
-The recorded run executed after the other local probes finished. At 32 branches, the median of three samples was 72.7 ms for Yjs and 281.9 ms for Automerge for the sum of complete-state merges; median encoded sizes were 39,256 and 10,190 bytes respectively. These are descriptive measurements on one cloud host; correctness does not depend on a timing threshold. Neither pinned Automerge save/load nor Yjs
+The recorded run executed after the other local probes finished. At 32 branches, the median of three samples was
+73.7 ms for Yjs and 298.5 ms for Automerge for the sum of complete-state merges; median encoded sizes were 39,301
+and 10,181 bytes respectively. These are descriptive measurements on one cloud host; correctness does not depend
+on a timing threshold. Neither pinned Automerge save/load nor Yjs
 automatic collection constitutes a shared production compaction policy.

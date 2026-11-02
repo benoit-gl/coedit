@@ -24,9 +24,9 @@ jobs:
         run: |
           mkdir -p step3-history-evidence
           node scripts/step3-mixed-history.mjs > step3-history-evidence/mixed.json 2> step3-history-evidence/mixed.log
-          STEP3_LIFECYCLE_CANDIDATE=yjs node scripts/step3-lifecycle-growth.mjs > step3-history-evidence/yjs.json
-          STEP3_LIFECYCLE_CANDIDATE=automerge node scripts/step3-lifecycle-growth.mjs > step3-history-evidence/automerge.json
-          STEP3_REVISION="$GITHUB_SHA" STEP3_DIRTY=false node scripts/step3-replacement-fanin.mjs > step3-history-evidence/replacement.json
+          STEP3_LIFECYCLE_CANDIDATE=yjs node scripts/step3-lifecycle-growth.mjs > step3-history-evidence/yjs.json 2> step3-history-evidence/yjs.log
+          STEP3_LIFECYCLE_CANDIDATE=automerge node scripts/step3-lifecycle-growth.mjs > step3-history-evidence/automerge.json 2> step3-history-evidence/automerge.log
+          STEP3_REVISION="$GITHUB_SHA" STEP3_DIRTY=false node scripts/step3-replacement-fanin.mjs > step3-history-evidence/replacement.json 2> step3-history-evidence/replacement.log
       - name: Persist raw history evidence
         if: always()
         uses: actions/upload-artifact@v5

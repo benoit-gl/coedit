@@ -1,4 +1,6 @@
 import { createServer } from "vite";
+import { deepStrictEqual } from "node:assert";
+import { spawnSync } from "node:child_process";
 import { performance } from "node:perf_hooks";
 import { arch, cpus, platform, release, totalmem } from "node:os";
 
@@ -15,6 +17,7 @@ if (
       !Number.isSafeInteger(n) ||
       n < 2 ||
       n % 2 ||
+      n > 2 * 36 ** 4 ||
       (i > 0 && n <= checkpoints[i - 1]),
   )
 )
@@ -63,6 +66,7 @@ try {
     ],
   });
   const tokens = [];
+  let expectedText = "base";
   const samples = [];
   let completed = 0;
   for (const target of checkpoints) {
@@ -74,18 +78,27 @@ try {
               kind: "insert-text",
               inlineContentId: id,
               offset: 4,
-              text: "x",
+              text: (completed / 2).toString(36).padStart(4, "0"),
               origin,
             }
-          : { kind: "delete-text", inlineContentId: id, start: 4, end: 5 };
+          : { kind: "delete-text", inlineContentId: id, start: 0, end: 4 };
       carrier.applyChange({
         payloads: [payload],
         context: { actorId: "lifecycle", effectId: `effect-${completed}` },
       });
+      if (completed % 2 === 1)
+        expectedText = ((completed - 1) / 2).toString(36).padStart(4, "0");
       completed++;
-      if (completed % 10 === 0) tokens.push(carrier.captureHistoricalState());
+      if (completed % 10 === 0) {
+        const expected = carrier.snapshot();
+        const payload = expected.payloads.get(id);
+        if (payload?.kind !== "text" || payload.text !== expectedText)
+          throw new Error("Capture state mismatch");
+        tokens.push({ token: carrier.captureHistoricalState(), expected });
+      }
     }
     const editAndCaptureMs = performance.now() - editStart;
+    const expectedLive = carrier.snapshot();
     const encodeStart = performance.now();
     const encoded = carrier.encode();
     const encodeMs = performance.now() - encodeStart;
@@ -93,22 +106,20 @@ try {
     const reloaded = factory.load(encoded);
     const loadMs = performance.now() - loadStart;
     const materializeStart = performance.now();
-    for (const token of tokens) {
-      const historical = reloaded
-        .materializeHistoricalState(token)
-        .payloads.get(id);
-      if (historical?.kind !== "text" || historical.text !== "base")
-        throw new Error("Historical reload mismatch");
+    for (const { token, expected } of tokens) {
+      deepStrictEqual(reloaded.materializeHistoricalState(token), expected);
     }
     const materializeAllMs = performance.now() - materializeStart;
-    const live = reloaded.snapshot().payloads.get(id);
+    const liveSnapshot = reloaded.snapshot();
+    deepStrictEqual(liveSnapshot, expectedLive);
+    const live = liveSnapshot.payloads.get(id);
     if (
       live?.kind !== "text" ||
-      live.text !== "base" ||
+      live.text !== expectedText ||
       reloaded.effects().size !== target
     )
       throw new Error("Reload mismatch");
-    samples.push({
+    const sample = {
       effects: target,
       retainedStates: tokens.length,
       visibleUtf16Units: live.text.length,
@@ -119,18 +130,30 @@ try {
       materializeAllMs,
       memory: process.memoryUsage(),
       peakRssKiB: process.resourceUsage().maxRSS,
-    });
+    };
+    samples.push(sample);
+    console.error(JSON.stringify({ candidate, sample }));
     carrier = reloaded;
   }
+  const git = (...args) => {
+    const result = spawnSync("git", args, { encoding: "utf8" });
+    return result.status === 0 ? result.stdout.trim() : null;
+  };
+  const status = git("status", "--porcelain");
   console.log(
     JSON.stringify(
       {
         candidate,
+        revision: {
+          githubSha: process.env.GITHUB_SHA ?? null,
+          head: git("rev-parse", "HEAD"),
+          dirty: status === null ? null : status.length > 0,
+        },
         profile: {
           checkpoints,
           snapshotEvery: 10,
           workload:
-            "alternating insert/delete, encode and reload at each checkpoint",
+            "alternating four-unit insert/delete, encode and reload at each checkpoint",
         },
         environment: {
           platform: platform(),
