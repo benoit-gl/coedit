@@ -1,0 +1,651 @@
+diff --git a/.github/workflows/step3-comparison.yml b/.github/workflows/step3-comparison.yml
+index 725caf5..9a55269 100644
+--- a/.github/workflows/step3-comparison.yml
++++ b/.github/workflows/step3-comparison.yml
+@@ -19 +18,0 @@ jobs:
+-      STEP3_DIRTY: "false"
+@@ -28,4 +27,4 @@ jobs:
+-          mkdir -p step3-structure-evidence
+-          node scripts/step3-structural-stress.mjs step3-structure-evidence/structure.json
+-          node scripts/step3-allocator-stress.mjs step3-structure-evidence/allocators.json
+-          node scripts/step3-range-qualification.mjs > step3-structure-evidence/range.json 2> step3-structure-evidence/range.log
++          mkdir -p "$RUNNER_TEMP/step3-structure-evidence"
++          node scripts/step3-structural-stress.mjs "$RUNNER_TEMP/step3-structure-evidence/structure.json"
++          node scripts/step3-allocator-stress.mjs "$RUNNER_TEMP/step3-structure-evidence/allocators.json"
++          node scripts/step3-range-qualification.mjs > "$RUNNER_TEMP/step3-structure-evidence/range.json" 2> "$RUNNER_TEMP/step3-structure-evidence/range.log"
+@@ -37 +36 @@ jobs:
+-          path: step3-structure-evidence/
++          path: ${{ runner.temp }}/step3-structure-evidence/
+diff --git a/qualification/step3/comparison/STRUCTURE_ALLOCATOR_RANGE_PROFILE.md b/qualification/step3/comparison/STRUCTURE_ALLOCATOR_RANGE_PROFILE.md
+index 8b843a7..3ffd870 100644
+--- a/qualification/step3/comparison/STRUCTURE_ALLOCATOR_RANGE_PROFILE.md
++++ b/qualification/step3/comparison/STRUCTURE_ALLOCATOR_RANGE_PROFILE.md
+@@ -24,2 +24,3 @@ encoded sizes, not RSS. No Linux runner result is a device-wide bound.
+-   normalization. A separate 4,096-member practical run and explicit failures characterize observed behavior, not a
+-   maximum. Length, collision, interleaving and parentage observations are retained per sample.
++   normalization. Actual concurrent collision groups are also normalized and their resulting parentage checked.
++   A separate 4,096-member practical run and explicit failures characterize observed behavior, not a maximum.
++   Length, collision, interleaving and parentage observations are retained per sample.
+@@ -27,3 +28,4 @@ encoded sizes, not RSS. No Linux runner result is a device-wide bound.
+-   count 1/4, unrelated Block count 0/8 and prior moves 0/12 independently. It measures creation, lazy resolution,
+-   edits and moves, split/merge/replacement lineage and lifecycle transitions. Fixture-supplied lineage and external,
+-   unregistered holders are qualification probes, not a production Range service or permanent Version contract.
++   count 1/4, unrelated Block count 0/8, prior moves 0/12 and additional retained lineage edges 0/8/32 independently.
++   It measures creation, lazy resolution, edits, moves, deletion, split/merge/replacement and retained lineage growth.
++   Fixture-supplied lineage and external, unregistered holders are probes, not a production Range service or permanent
++   Version contract.
+diff --git a/qualification/step3/comparison/allocatorStress.test.ts b/qualification/step3/comparison/allocatorStress.test.ts
+index 36bb8eb..7972e2a 100644
+--- a/qualification/step3/comparison/allocatorStress.test.ts
++++ b/qualification/step3/comparison/allocatorStress.test.ts
+@@ -39,0 +40,19 @@ for (const allocator of [
++    if (allocator.candidate === "fractional-indexing-v4") {
++      expect(result.observedNormalization).toEqual({
++        outcome: "completed",
++        groups: 2,
++        rewrites: 14,
++        elapsedMs: 0,
++        parentageBefore: 7,
++        parentageAfter: 7,
++      });
++    } else {
++      expect(result.observedNormalization).toEqual({
++        outcome: "not-applicable",
++        groups: 0,
++        rewrites: 0,
++        elapsedMs: null,
++        parentageBefore: 0,
++        parentageAfter: 0,
++      });
++    }
+diff --git a/qualification/step3/comparison/allocatorStress.ts b/qualification/step3/comparison/allocatorStress.ts
+index 2230a04..d214b32 100644
+--- a/qualification/step3/comparison/allocatorStress.ts
++++ b/qualification/step3/comparison/allocatorStress.ts
+@@ -201,0 +202,98 @@ function concurrentEvidence(
++  // Normalize the primary collision groups produced by these actual runs. The
++  // planner keeps the existing order; it is not a parentage repair.
++  const groups: { start: number; end: number }[] = [];
++  for (let start = 0; start < ordered.length;) {
++    let end = start + 1;
++    while (
++      end < ordered.length &&
++      allocator.comparePrimary(
++        ordered[start]!.position,
++        ordered[end]!.position,
++      ) === 0
++    )
++      end++;
++    if (end - start > 1) groups.push({ start, end });
++    start = end;
++  }
++  const observedPositions = [...ordered.map(({ position }) => position), upper];
++  const openedIntervals: { lower: unknown; upper: unknown }[] = [];
++  const [observedNormalization, observedNormalizationMs] = time(() => {
++    let rewrites = 0;
++    for (const [groupIndex, group] of groups.entries()) {
++      const result = planPositionCollisionNormalization(
++        allocator,
++        observedPositions,
++        group.start + 1,
++        { runNonce: nonce(21_000 + groupIndex) },
++      );
++      if (!result.ok)
++        return {
++          outcome: "explicit-refusal",
++          error: result.error.kind,
++          rewrites,
++        };
++      if (result.value.updates.length !== group.end - group.start - 1)
++        throw new Error(
++          "Observed collision normalization changed the wrong suffix.",
++        );
++      for (const update of result.value.updates)
++        observedPositions[update.index] = update.position;
++      rewrites += result.value.updates.length;
++      openedIntervals.push({
++        lower: result.value.insertionLower,
++        upper: result.value.insertionUpper,
++      });
++    }
++    return {
++      outcome: groups.length ? "completed" : "not-applicable",
++      rewrites,
++    };
++  });
++  let parentageAfterNormalization: number | null = null;
++  if (observedNormalization.outcome !== "explicit-refusal") {
++    for (let i = 1; i < observedPositions.length; i++) {
++      if (
++        allocator.compare(observedPositions[i - 1], observedPositions[i]) >= 0
++      )
++        throw new Error(
++          "Observed normalization did not preserve strict order.",
++        );
++      if (
++        allocator.comparePrimary(
++          observedPositions[i - 1],
++          observedPositions[i],
++        ) >= 0
++      )
++        throw new Error("Observed normalization retained a primary collision.");
++    }
++    for (const [i, interval] of openedIntervals.entries()) {
++      const inserted = allocate(
++        1,
++        22_000 + i,
++        interval.lower,
++        interval.upper,
++      )[0];
++      if (
++        allocator.compare(interval.lower, inserted) >= 0 ||
++        allocator.compare(inserted, interval.upper) >= 0
++      )
++        throw new Error(
++          "Observed normalized interval cannot accept insertion.",
++        );
++    }
++    // Associate each normalized position with its original Block/run, sort the
++    // resulting placements, and derive the parent of every nested child again.
++    const after = ordered
++      .map((item, index) => ({ ...item, position: observedPositions[index] }))
++      .sort((a, b) => allocator.compare(a.position, b.position));
++    parentageAfterNormalization = 0;
++    let afterParent = -1;
++    for (const item of after) {
++      if (item.member === 0) afterParent = item.run;
++      else if (afterParent !== item.run) parentageAfterNormalization++;
++    }
++    if (parentageAfterNormalization !== parentageMismatches)
++      throw new Error(
++        "Normalization unexpectedly changed projected parentage.",
++      );
++  }
+@@ -240,0 +339,7 @@ function concurrentEvidence(
++    observedNormalization: {
++      ...observedNormalization,
++      groups: groups.length,
++      elapsedMs: groups.length ? observedNormalizationMs : null,
++      parentageBefore: parentageMismatches,
++      parentageAfter: parentageAfterNormalization,
++    },
+diff --git a/qualification/step3/comparison/rangeQualification.test.ts b/qualification/step3/comparison/rangeQualification.test.ts
+index 3f17d42..f3e2d55 100644
+--- a/qualification/step3/comparison/rangeQualification.test.ts
++++ b/qualification/step3/comparison/rangeQualification.test.ts
+@@ -5 +5,14 @@ import { localDensePositionAllocator } from "../structure/localDensePosition.js"
+-import { measureRangeQualification } from "./rangeQualification.js";
++import {
++  measureRangeQualification,
++  runRangeDriverWithoutHolderScan,
++} from "./rangeQualification.js";
++
++test("the driver guard rejects a deliberately scanning driver", () => {
++  const unrelatedHolders = [{ id: "unrelated" }];
++  expect(runRangeDriverWithoutHolderScan(unrelatedHolders, () => 7)).toBe(7);
++  expect(() =>
++    runRangeDriverWithoutHolderScan(unrelatedHolders, (holders) => {
++      for (const holder of holders) void holder;
++    }),
++  ).toThrow("Edit or move accessed external holders.");
++});
+@@ -29 +42,3 @@ test.each([
+-      retainedTokens: 6,
++      capturedStatesBeforeEncode: 6,
++      capturedStatesTotal: 8,
++      crossingSplitSpanCount: 2,
+@@ -40,0 +56,37 @@ test.each([
++
++test.each([
++  createYjsIntegratedDocumentCarrierFactory,
++  createAutomergeIntegratedDocumentCarrierFactory,
++])(
++  "tracks extra retained move lineage and split descendants",
++  (makeFactory) => {
++    const factory = makeFactory(
++      localDensePositionAllocator,
++      localDensePositionAllocator,
++    );
++    const result = measureRangeQualification(
++      factory,
++      {
++        holders: 3,
++        members: 2,
++        unrelatedBlocks: 0,
++        priorMoves: 0,
++        extraLineageEdges: 8,
++      },
++      () => 0,
++    );
++    expect(result).toMatchObject({
++      extraLineageEdges: 8,
++      capturedStatesBeforeEncode: 14,
++      capturedStatesTotal: 16,
++      crossingSplitSpanCount: 2,
++      retainedMovesAndCaptureMs: 0,
++      retainedLineageResolveMs: 0,
++      deleteResolveMs: 0,
++      replacementResolveMs: 0,
++    });
++    expect(result.retainedBaselineBytes).toBeGreaterThan(0);
++    expect(result.retainedAfterMovesBytes).toBeGreaterThan(0);
++    expect(result.externalLineageJsonBytes).toBeGreaterThan(0);
++  },
++);
+diff --git a/qualification/step3/comparison/rangeQualification.ts b/qualification/step3/comparison/rangeQualification.ts
+index 41d0492..a6ac317 100644
+--- a/qualification/step3/comparison/rangeQualification.ts
++++ b/qualification/step3/comparison/rangeQualification.ts
+@@ -26,0 +27,56 @@ const origin = { kind: "human", id: "range-author" } as const;
++// Compare fixture values independently of object property order.
++function equivalent(left: unknown, right: unknown): boolean {
++  const canonical = (value: unknown) =>
++    JSON.stringify(value, (_key, item: unknown) => {
++      if (item instanceof Map)
++        return [...item.entries()].sort(([a], [b]) =>
++          String(a).localeCompare(String(b)),
++        );
++      if (item instanceof Uint8Array) return [...item];
++      if (item && typeof item === "object" && !Array.isArray(item))
++        return Object.fromEntries(
++          Object.entries(item).sort(([a], [b]) => a.localeCompare(b)),
++        );
++      return item;
++    });
++  return canonical(left) === canonical(right);
++}
++
++function observeHolderAccess<T>(
++  holders: readonly unknown[],
++  driver: (holders: readonly unknown[]) => T,
++): { readonly value: T; readonly reads: number } {
++  let reads = 0;
++  const guarded = new Proxy(holders, {
++    get(target, property, receiver) {
++      reads++;
++      return Reflect.get(target, property, receiver) as unknown;
++    },
++    has(target, property) {
++      reads++;
++      return Reflect.has(target, property);
++    },
++    ownKeys(target) {
++      reads++;
++      return Reflect.ownKeys(target);
++    },
++    getOwnPropertyDescriptor(target, property) {
++      reads++;
++      return Reflect.getOwnPropertyDescriptor(target, property);
++    },
++  });
++  const value = driver(guarded);
++  return { value, reads };
++}
++
++/** Run a fixture driver with an available external store and reject store access. */
++export function runRangeDriverWithoutHolderScan<T>(
++  holders: readonly unknown[],
++  driver: (holders: readonly unknown[]) => T,
++): T {
++  const observed = observeHolderAccess(holders, driver);
++  if (observed.reads !== 0)
++    throw new Error("Edit or move accessed external holders.");
++  return observed.value;
++}
++
+@@ -36,0 +93,2 @@ export interface RangeQualificationShape {
++  /** Additional captured move transitions after Range creation. */
++  readonly extraLineageEdges?: number;
+@@ -47,0 +106,14 @@ export const rangeQualificationShapes: readonly RangeQualificationShape[] = [
++  {
++    holders: 64,
++    members: 1,
++    unrelatedBlocks: 0,
++    priorMoves: 0,
++    extraLineageEdges: 8,
++  },
++  {
++    holders: 64,
++    members: 1,
++    unrelatedBlocks: 0,
++    priorMoves: 0,
++    extraLineageEdges: 32,
++  },
+@@ -63,0 +136 @@ export function measureRangeQualification(
++  const extraLineageEdges = shape.extraLineageEdges ?? 0;
+@@ -69,0 +143 @@ export function measureRangeQualification(
++      extraLineageEdges,
+@@ -77 +151,3 @@ export function measureRangeQualification(
+-    shape.priorMoves > 100
++    shape.priorMoves > 100 ||
++    extraLineageEdges < 0 ||
++    extraLineageEdges > 32
+@@ -95,0 +172,5 @@ export function measureRangeQualification(
++  let captureCount = 0;
++  const capture = (): string => {
++    captureCount++;
++    return carrier.captureHistoricalState();
++  };
+@@ -132 +213 @@ export function measureRangeQualification(
+-  const created = carrier.captureHistoricalState();
++  const created = capture();
+@@ -147,7 +227,0 @@ export function measureRangeQualification(
+-  let reads = 0;
+-  const guarded = new Proxy(ranges, {
+-    get(target, property, receiver) {
+-      reads++;
+-      return Reflect.get(target, property, receiver) as unknown;
+-    },
+-  });
+@@ -154,0 +229,3 @@ export function measureRangeQualification(
++  const crossing = createProbeRange(carrier, created, "span", [
++    { blockId: block, inlineContentId: content, start: 1, end: 3 },
++  ]);
+@@ -184,13 +261,5 @@ export function measureRangeQualification(
+-  reads = 0;
+-  const [, editMs] = timed(() =>
+-    carrier.applyChange({
+-      payloads: [
+-        {
+-          kind: "insert-text",
+-          inlineContentId: content,
+-          offset: 2,
+-          text: "X",
+-          origin,
+-        },
+-      ],
+-    }),
++  expectSpans(
++    resolveProbeRange(carrier, crossing, created, []),
++    ["bc"],
++    [content],
++    [1],
+@@ -198,6 +267,61 @@ export function measureRangeQualification(
+-  const inserted = carrier.captureHistoricalState();
+-  const movedPlacement = placement(1 - (shape.priorMoves % 2));
+-  const [, moveMs] = timed(() =>
+-    carrier.applyChange({
+-      placements: [{ blockId: block, placement: movedPlacement }],
+-    }),
++
++  // Vary retained snapshots and the supplied lineage path independently of
++  // holder count. Each edge is a real move, not an invented native lifecycle.
++  const retainedBaselineBytes = carrier.encode().length;
++  const historyEdges: ProbeTransition[] = [];
++  const retainedMoves: {
++    token: string;
++    placement: ReturnType<typeof placement>;
++  }[] = [];
++  let historyTip = created;
++  const [, retainedMovesAndCaptureMs] = timed(() => {
++    for (let i = 0; i < extraLineageEdges; i++) {
++      const nextPlacement = placement((shape.priorMoves + i + 1) % 2);
++      carrier.applyChange({
++        placements: [{ blockId: block, placement: nextPlacement }],
++      });
++      const next = capture();
++      historyEdges.push({ from: historyTip, to: next });
++      retainedMoves.push({ token: next, placement: nextPlacement });
++      historyTip = next;
++    }
++  });
++  const retainedAfterMovesBytes = carrier.encode().length;
++  const [historySpans, retainedLineageResolveMs] = timed(() =>
++    resolveProbeRange(carrier, selected, historyTip, historyEdges),
++  );
++  expectSpans(
++    historySpans,
++    texts("b", "c"),
++    ids(content, content),
++    starts(1, 2),
++  );
++  const movedPlacement = placement(
++    1 - ((shape.priorMoves + extraLineageEdges) % 2),
++  );
++  const { editMs, inserted, moveMs, moved } = runRangeDriverWithoutHolderScan(
++    ranges,
++    (externalHolders) => {
++      // The driver can access this store, but publishing either change needs no holder.
++      void externalHolders;
++      const [, editMs] = timed(() =>
++        carrier.applyChange({
++          payloads: [
++            {
++              kind: "insert-text",
++              inlineContentId: content,
++              offset: 2,
++              text: "X",
++              origin,
++            },
++          ],
++        }),
++      );
++      const inserted = capture();
++      const [, moveMs] = timed(() =>
++        carrier.applyChange({
++          placements: [{ blockId: block, placement: movedPlacement }],
++        }),
++      );
++      return { editMs, inserted, moveMs, moved: capture() };
++    },
+@@ -205 +328,0 @@ export function measureRangeQualification(
+-  const moved = carrier.captureHistoricalState();
+@@ -211,5 +334,7 @@ export function measureRangeQualification(
+-  const holderReadsDuringChanges = reads;
+-  if (holderReadsDuringChanges !== 0)
+-    throw new Error("Edit or move accessed external holders.");
+-  void guarded[0];
+-  const positiveControlReads = reads;
++  const holderReadsDuringChanges = 0;
++  const positiveControlReads = observeHolderAccess(
++    ranges,
++    (externalHolders) => {
++      void externalHolders[0];
++    },
++  ).reads;
+@@ -218,0 +344 @@ export function measureRangeQualification(
++    ...historyEdges,
+@@ -220 +346 @@ export function measureRangeQualification(
+-      from: created,
++      from: historyTip,
+@@ -236,0 +363,6 @@ export function measureRangeQualification(
++  expectSpans(
++    resolveProbeRange(carrier, crossing, moved, edges),
++    ["bXc"],
++    [content],
++    [1],
++  );
+@@ -242 +374 @@ export function measureRangeQualification(
+-  const deleted = carrier.captureHistoricalState();
++  const deleted = capture();
+@@ -248 +380 @@ export function measureRangeQualification(
+-  expectSpans(
++  const [deletedSpans, deleteResolveMs] = timed(() =>
+@@ -249,0 +382,3 @@ export function measureRangeQualification(
++  );
++  expectSpans(
++    deletedSpans,
+@@ -253,0 +389,6 @@ export function measureRangeQualification(
++  expectSpans(
++    resolveProbeRange(carrier, crossing, deleted, edges),
++    ["bc"],
++    [content],
++    [1],
++  );
+@@ -274 +415 @@ export function measureRangeQualification(
+-  const split = carrier.captureHistoricalState();
++  const split = capture();
+@@ -305,0 +447,4 @@ export function measureRangeQualification(
++  const [crossSplitSpans, crossingSplitResolveMs] = timed(() =>
++    resolveProbeRange(carrier, crossing, split, edges),
++  );
++  expectSpans(crossSplitSpans, ["b", "c"], [content, splitContent], [1, 0]);
+@@ -318 +463 @@ export function measureRangeQualification(
+-  const merged = carrier.captureHistoricalState();
++  const merged = capture();
+@@ -349,0 +495,7 @@ export function measureRangeQualification(
++  expectSpans(
++    resolveProbeRange(carrier, crossing, merged, edges),
++    ["b", "c"],
++    [content, content],
++    [1, 2],
++  );
++  const capturedStatesBeforeEncode = captureCount;
+@@ -363,0 +516,20 @@ export function measureRangeQualification(
++  expectSpans(
++    resolveProbeRange(reloaded, crossing, merged, edges),
++    ["b", "c"],
++    [content, content],
++    [1, 2],
++  );
++  for (const retained of retainedMoves) {
++    const historical = reloaded.materializeHistoricalState(retained.token);
++    const payload = historical.payloads.get(content);
++    if (
++      !equivalent(historical.placements.get(block), retained.placement) ||
++      historical.inlineContentOwners.get(content) !== block ||
++      payload?.kind !== "text" ||
++      payload.text !== "abcd" ||
++      !equivalent(payload.spans, [{ text: "abcd", origin }])
++    )
++      throw new Error(
++        "Retained move snapshot differs from fixture expectation.",
++      );
++  }
+@@ -374,0 +547 @@ export function measureRangeQualification(
++  // Continue counting captures on the reopened carrier as well.
+@@ -375,0 +549 @@ export function measureRangeQualification(
++  captureCount++;
+@@ -380 +554,7 @@ export function measureRangeQualification(
+-  if (resolveProbeRange(reloaded, selected, replaced, invalidated).length !== 0)
++  const [replacedSpans, replacementResolveMs] = timed(() =>
++    resolveProbeRange(reloaded, selected, replaced, invalidated),
++  );
++  if (
++    replacedSpans.length !== 0 ||
++    resolveProbeRange(reloaded, crossing, replaced, invalidated).length !== 0
++  )
+@@ -386,0 +567 @@ export function measureRangeQualification(
++  captureCount++;
+@@ -401,0 +583,7 @@ export function measureRangeQualification(
++  if (
++    resolveProbeRange(reloaded, crossing, restored, [
++      ...invalidated,
++      { from: replaced, to: restored },
++    ]).length !== 0
++  )
++    throw new Error("Restore reattached invalidated crossing member.");
+@@ -409,0 +598 @@ export function measureRangeQualification(
++    deleteResolveMs,
+@@ -410,0 +600 @@ export function measureRangeQualification(
++    crossingSplitResolveMs,
+@@ -411,0 +602,10 @@ export function measureRangeQualification(
++    replacementResolveMs,
++    retainedMovesAndCaptureMs,
++    retainedLineageResolveMs,
++    extraLineageEdges,
++    crossingSplitSpanCount: crossSplitSpans.length,
++    externalLineageJsonBytes: new TextEncoder().encode(
++      JSON.stringify(historyEdges),
++    ).length,
++    retainedBaselineBytes,
++    retainedAfterMovesBytes,
+@@ -418 +618,2 @@ export function measureRangeQualification(
+-    retainedTokens: 6,
++    capturedStatesBeforeEncode,
++    capturedStatesTotal: captureCount,
+diff --git a/scripts/step3-range-qualification.mjs b/scripts/step3-range-qualification.mjs
+index b30eef9..f704bcb 100644
+--- a/scripts/step3-range-qualification.mjs
++++ b/scripts/step3-range-qualification.mjs
+@@ -3,0 +4 @@ import { spawnSync } from "node:child_process";
++import { readFileSync } from "node:fs";
+@@ -12 +13,5 @@ const git = (...args) => {
+-  return result.status === 0 ? result.stdout.trim() : null;
++  if (result.error)
++    return { value: null, error: result.error.code ?? "spawn failed" };
++  if (result.status !== 0)
++    return { value: null, error: `git exited ${result.status}` };
++  return { value: result.stdout.trim(), error: null };
+@@ -14,0 +20,22 @@ const status = git("status", "--porcelain");
++const head = git("rev-parse", "HEAD");
++const packages = {};
++const packageErrors = {};
++for (const name of [
++  "yjs",
++  "@automerge/automerge",
++  "fractional-indexing",
++  "fugue",
++  "vite",
++]) {
++  try {
++    const version = JSON.parse(
++      readFileSync(`node_modules/${name}/package.json`, "utf8"),
++    ).version;
++    if (typeof version !== "string") throw new Error("version unavailable");
++    packages[name] = version;
++  } catch (error) {
++    packages[name] = null;
++    packageErrors[name] =
++      error instanceof Error ? error.message : String(error);
++  }
++}
+@@ -19,2 +46,4 @@ const metadata = {
+-    head: git("rev-parse", "HEAD"),
+-    dirty: status === null ? null : status.length > 0,
++    head: head.value,
++    workingTree: status.value,
++    dirty: status.value === null ? null : status.value.length > 0,
++    gitErrors: { head: head.error, workingTree: status.error },
+@@ -29,0 +59,2 @@ const metadata = {
++    packages,
++    packageErrors,
+diff --git a/scripts/step3-structural-stress.mjs b/scripts/step3-structural-stress.mjs
+index 391e598..a937869 100644
+--- a/scripts/step3-structural-stress.mjs
++++ b/scripts/step3-structural-stress.mjs
+@@ -2 +2,2 @@
+-import { writeFileSync } from "node:fs";
++import { readFileSync, writeFileSync } from "node:fs";
++import { spawnSync } from "node:child_process";
+@@ -24,0 +26,31 @@ const warmups = smoke ? 0 : 1,
++const git = (...args) => {
++  const result = spawnSync("git", args, { encoding: "utf8" });
++  if (result.error)
++    return { value: null, error: result.error.code ?? "spawn failed" };
++  if (result.status !== 0)
++    return { value: null, error: `git exited ${result.status}` };
++  return { value: result.stdout.trim(), error: null };
++};
++const head = git("rev-parse", "HEAD");
++const workingTree = git("status", "--porcelain");
++const packages = {};
++const packageErrors = {};
++for (const name of [
++  "yjs",
++  "@automerge/automerge",
++  "fractional-indexing",
++  "fugue",
++  "vite",
++]) {
++  try {
++    const version = JSON.parse(
++      readFileSync(`node_modules/${name}/package.json`, "utf8"),
++    ).version;
++    if (typeof version !== "string") throw new Error("version unavailable");
++    packages[name] = version;
++  } catch (error) {
++    packages[name] = null;
++    packageErrors[name] =
++      error instanceof Error ? error.message : String(error);
++  }
++}
+@@ -29 +61,4 @@ const metadata = {
+-  dirty: process.env.STEP3_DIRTY ?? "unspecified",
++  localHead: head.value,
++  workingTree: workingTree.value,
++  dirty: workingTree.value === null ? null : workingTree.value.length > 0,
++  gitErrors: { head: head.error, workingTree: workingTree.error },
+@@ -45,0 +81,2 @@ const metadata = {
++    packages,
++    packageErrors,

@@ -1,5 +1,6 @@
 // Paired qualification-only structural measurements; no production threshold.
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { performance } from "node:perf_hooks";
 import { arch, cpus, platform, release, totalmem } from "node:os";
 import { createServer } from "vite";
@@ -22,11 +23,45 @@ const smoke = process.env.STEP3_STRUCTURAL_SMOKE === "1";
 const profiles = smoke ? allProfiles.slice(0, 1) : allProfiles;
 const warmups = smoke ? 0 : 1,
   samples = smoke ? 1 : 3;
+const git = (...args) => {
+  const result = spawnSync("git", args, { encoding: "utf8" });
+  if (result.error)
+    return { value: null, error: result.error.code ?? "spawn failed" };
+  if (result.status !== 0)
+    return { value: null, error: `git exited ${result.status}` };
+  return { value: result.stdout.trim(), error: null };
+};
+const head = git("rev-parse", "HEAD");
+const workingTree = git("status", "--porcelain");
+const packages = {};
+const packageErrors = {};
+for (const name of [
+  "yjs",
+  "@automerge/automerge",
+  "fractional-indexing",
+  "fugue",
+  "vite",
+]) {
+  try {
+    const version = JSON.parse(
+      readFileSync(`node_modules/${name}/package.json`, "utf8"),
+    ).version;
+    if (typeof version !== "string") throw new Error("version unavailable");
+    packages[name] = version;
+  } catch (error) {
+    packages[name] = null;
+    packageErrors[name] =
+      error instanceof Error ? error.message : String(error);
+  }
+}
 const metadata = {
   schemaVersion: 1,
   revision: process.env.GITHUB_SHA ?? null,
   githubHeadSha: process.env.GITHUB_HEAD_SHA ?? null,
-  dirty: process.env.STEP3_DIRTY ?? "unspecified",
+  localHead: head.value,
+  workingTree: workingTree.value,
+  dirty: workingTree.value === null ? null : workingTree.value.length > 0,
+  gitErrors: { head: head.error, workingTree: workingTree.error },
   profile: {
     smoke,
     profiles,
@@ -43,6 +78,8 @@ const metadata = {
     cpu: cpus()[0]?.model,
     logicalCpus: cpus().length,
     totalMemoryBytes: totalmem(),
+    packages,
+    packageErrors,
   },
   boundaries:
     "Mutation timers cover applyChange only. Snapshot, projection, encoding, load and merge are timed separately; verification, setup and fixture construction are excluded except initMs includes initial applyChange.",

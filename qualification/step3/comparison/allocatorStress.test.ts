@@ -37,6 +37,25 @@ for (const allocator of [
     expect(result.parentageMismatches).toBe(
       allocator.candidate === "fractional-indexing-v4" ? 7 : 0,
     );
+    if (allocator.candidate === "fractional-indexing-v4") {
+      expect(result.observedNormalization).toEqual({
+        outcome: "completed",
+        groups: 2,
+        rewrites: 14,
+        elapsedMs: 0,
+        parentageBefore: 7,
+        parentageAfter: 7,
+      });
+    } else {
+      expect(result.observedNormalization).toEqual({
+        outcome: "not-applicable",
+        groups: 0,
+        rewrites: 0,
+        elapsedMs: null,
+        parentageBefore: 0,
+        parentageAfter: 0,
+      });
+    }
     expect(() => measureAllocatorStress(allocator, 1, () => 0)).toThrow(
       RangeError,
     );

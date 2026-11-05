@@ -21,12 +21,14 @@ encoded sizes, not RSS. No Linux runner result is a device-wide bound.
    fixture expectations and atomic-refusal checks. Candidate and operation intervals are specified in the output.
 2. `node scripts/step3-allocator-stress.mjs OUTPUT.json` measures 16/128/512 allocations, ordered runs, comparison,
    sorting, encoding/decoding, narrow gaps and eight concurrent two-member runs with eight-holder collision
-   normalization. A separate 4,096-member practical run and explicit failures characterize observed behavior, not a
-   maximum. Length, collision, interleaving and parentage observations are retained per sample.
+   normalization. Actual concurrent collision groups are also normalized and their resulting parentage checked.
+   A separate 4,096-member practical run and explicit failures characterize observed behavior, not a maximum.
+   Length, collision, interleaving and parentage observations are retained per sample.
 3. `node scripts/step3-range-qualification.mjs > OUTPUT.json 2> OUTPUT.log` varies holder count 1/64/256/1,024, member
-   count 1/4, unrelated Block count 0/8 and prior moves 0/12 independently. It measures creation, lazy resolution,
-   edits and moves, split/merge/replacement lineage and lifecycle transitions. Fixture-supplied lineage and external,
-   unregistered holders are qualification probes, not a production Range service or permanent Version contract.
+   count 1/4, unrelated Block count 0/8, prior moves 0/12 and additional retained lineage edges 0/8/32 independently.
+   It measures creation, lazy resolution, edits, moves, deletion, split/merge/replacement and retained lineage growth.
+   Fixture-supplied lineage and external, unregistered holders are probes, not a production Range service or permanent
+   Version contract.
 
 Each output records completion or error and preserves completed rows. The Actions job uses the checked-out test merge
 and identifies the PR head separately, then uploads all raw outputs and logs. Local measurements must identify the

@@ -168,3 +168,5 @@ History, replacement and lifecycle probes and their limits are recorded in
 
 The [structure, allocator and Range profile](STRUCTURE_ALLOCATOR_RANGE_PROFILE.md)
 describes the bounded comparison and its independent dimensions.
+The [structure, allocator and Range results](STRUCTURE_ALLOCATOR_RANGE_RESULTS.md) record the paired observations,
+source identity, raw samples and limits.

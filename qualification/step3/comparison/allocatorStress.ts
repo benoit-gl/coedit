@@ -199,6 +199,104 @@ function concurrentEvidence(
     if (item.member === 0) currentParent = item.run;
     else if (currentParent !== item.run) parentageMismatches++;
   }
+  // Normalize the primary collision groups produced by these actual runs. The
+  // planner keeps the existing order; it is not a parentage repair.
+  const groups: { start: number; end: number }[] = [];
+  for (let start = 0; start < ordered.length;) {
+    let end = start + 1;
+    while (
+      end < ordered.length &&
+      allocator.comparePrimary(
+        ordered[start]!.position,
+        ordered[end]!.position,
+      ) === 0
+    )
+      end++;
+    if (end - start > 1) groups.push({ start, end });
+    start = end;
+  }
+  const observedPositions = [...ordered.map(({ position }) => position), upper];
+  const openedIntervals: { lower: unknown; upper: unknown }[] = [];
+  const [observedNormalization, observedNormalizationMs] = time(() => {
+    let rewrites = 0;
+    for (const [groupIndex, group] of groups.entries()) {
+      const result = planPositionCollisionNormalization(
+        allocator,
+        observedPositions,
+        group.start + 1,
+        { runNonce: nonce(21_000 + groupIndex) },
+      );
+      if (!result.ok)
+        return {
+          outcome: "explicit-refusal",
+          error: result.error.kind,
+          rewrites,
+        };
+      if (result.value.updates.length !== group.end - group.start - 1)
+        throw new Error(
+          "Observed collision normalization changed the wrong suffix.",
+        );
+      for (const update of result.value.updates)
+        observedPositions[update.index] = update.position;
+      rewrites += result.value.updates.length;
+      openedIntervals.push({
+        lower: result.value.insertionLower,
+        upper: result.value.insertionUpper,
+      });
+    }
+    return {
+      outcome: groups.length ? "completed" : "not-applicable",
+      rewrites,
+    };
+  });
+  let parentageAfterNormalization: number | null = null;
+  if (observedNormalization.outcome !== "explicit-refusal") {
+    for (let i = 1; i < observedPositions.length; i++) {
+      if (
+        allocator.compare(observedPositions[i - 1], observedPositions[i]) >= 0
+      )
+        throw new Error(
+          "Observed normalization did not preserve strict order.",
+        );
+      if (
+        allocator.comparePrimary(
+          observedPositions[i - 1],
+          observedPositions[i],
+        ) >= 0
+      )
+        throw new Error("Observed normalization retained a primary collision.");
+    }
+    for (const [i, interval] of openedIntervals.entries()) {
+      const inserted = allocate(
+        1,
+        22_000 + i,
+        interval.lower,
+        interval.upper,
+      )[0];
+      if (
+        allocator.compare(interval.lower, inserted) >= 0 ||
+        allocator.compare(inserted, interval.upper) >= 0
+      )
+        throw new Error(
+          "Observed normalized interval cannot accept insertion.",
+        );
+    }
+    // Associate each normalized position with its original Block/run, sort the
+    // resulting placements, and derive the parent of every nested child again.
+    const after = ordered
+      .map((item, index) => ({ ...item, position: observedPositions[index] }))
+      .sort((a, b) => allocator.compare(a.position, b.position));
+    parentageAfterNormalization = 0;
+    let afterParent = -1;
+    for (const item of after) {
+      if (item.member === 0) afterParent = item.run;
+      else if (afterParent !== item.run) parentageAfterNormalization++;
+    }
+    if (parentageAfterNormalization !== parentageMismatches)
+      throw new Error(
+        "Normalization unexpectedly changed projected parentage.",
+      );
+  }
   // Synthetic exact collision exercises normalization even for candidates that
   // do not collide in this finite sample. Duplicates model distinct holders.
   const duplicates = Array.from({ length: 8 }, () => lower);
@@ -238,6 +336,13 @@ function concurrentEvidence(
     completeCollisions: 0,
     runTransitions: transitions,
     parentageMismatches,
+    observedNormalization: {
+      ...observedNormalization,
+      groups: groups.length,
+      elapsedMs: groups.length ? observedNormalizationMs : null,
+      parentageBefore: parentageMismatches,
+      parentageAfter: parentageAfterNormalization,
+    },
     normalizationRunLength: duplicates.length,
     normalizationRewrites: normalization.value.updates.length,
     normalizationMs,

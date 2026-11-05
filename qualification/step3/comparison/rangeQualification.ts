@@ -24,6 +24,62 @@ const splitBlock = parseBlockId(uuid(4));
 const splitContent = parseInlineContentId(uuid(5));
 const origin = { kind: "human", id: "range-author" } as const;
 
+// Compare fixture values independently of object property order.
+function equivalent(left: unknown, right: unknown): boolean {
+  const canonical = (value: unknown) =>
+    JSON.stringify(value, (_key, item: unknown) => {
+      if (item instanceof Map)
+        return [...item.entries()].sort(([a], [b]) =>
+          String(a).localeCompare(String(b)),
+        );
+      if (item instanceof Uint8Array) return [...item];
+      if (item && typeof item === "object" && !Array.isArray(item))
+        return Object.fromEntries(
+          Object.entries(item).sort(([a], [b]) => a.localeCompare(b)),
+        );
+      return item;
+    });
+  return canonical(left) === canonical(right);
+}
+
+function observeHolderAccess<T>(
+  holders: readonly unknown[],
+  driver: (holders: readonly unknown[]) => T,
+): { readonly value: T; readonly reads: number } {
+  let reads = 0;
+  const guarded = new Proxy(holders, {
+    get(target, property, receiver) {
+      reads++;
+      return Reflect.get(target, property, receiver) as unknown;
+    },
+    has(target, property) {
+      reads++;
+      return Reflect.has(target, property);
+    },
+    ownKeys(target) {
+      reads++;
+      return Reflect.ownKeys(target);
+    },
+    getOwnPropertyDescriptor(target, property) {
+      reads++;
+      return Reflect.getOwnPropertyDescriptor(target, property);
+    },
+  });
+  const value = driver(guarded);
+  return { value, reads };
+}
+
+/** Run a fixture driver with an available external store and reject store access. */
+export function runRangeDriverWithoutHolderScan<T>(
+  holders: readonly unknown[],
+  driver: (holders: readonly unknown[]) => T,
+): T {
+  const observed = observeHolderAccess(holders, driver);
+  if (observed.reads !== 0)
+    throw new Error("Edit or move accessed external holders.");
+  return observed.value;
+}
+
 /** Experimental independent dimensions for unregistered, externally held Range probes. */
 export interface RangeQualificationShape {
   /** Number of application-owned probe values. */
@@ -34,6 +90,8 @@ export interface RangeQualificationShape {
   readonly unrelatedBlocks: number;
   /** Moves of the target before Range capture. */
   readonly priorMoves: number;
+  /** Additional captured move transitions after Range creation. */
+  readonly extraLineageEdges?: number;
 }
 
 /** Experimental cases independently vary holders, members and unrelated Blocks. */
@@ -45,6 +103,20 @@ export const rangeQualificationShapes: readonly RangeQualificationShape[] = [
   { holders: 64, members: 4, unrelatedBlocks: 0, priorMoves: 0 },
   { holders: 64, members: 1, unrelatedBlocks: 8, priorMoves: 0 },
   { holders: 64, members: 1, unrelatedBlocks: 0, priorMoves: 12 },
+  {
+    holders: 64,
+    members: 1,
+    unrelatedBlocks: 0,
+    priorMoves: 0,
+    extraLineageEdges: 8,
+  },
+  {
+    holders: 64,
+    members: 1,
+    unrelatedBlocks: 0,
+    priorMoves: 0,
+    extraLineageEdges: 32,
+  },
 ];
 
 /**
@@ -61,12 +133,14 @@ export function measureRangeQualification(
   shape: RangeQualificationShape,
   now: () => number,
 ): Record<string, unknown> {
+  const extraLineageEdges = shape.extraLineageEdges ?? 0;
   if (
     ![
       shape.holders,
       shape.members,
       shape.unrelatedBlocks,
       shape.priorMoves,
+      extraLineageEdges,
     ].every(Number.isSafeInteger) ||
     shape.holders < 1 ||
     shape.members < 1 ||
@@ -74,7 +148,9 @@ export function measureRangeQualification(
     shape.priorMoves < 0 ||
     shape.members > 16 ||
     shape.unrelatedBlocks > 32 ||
-    shape.priorMoves > 100
+    shape.priorMoves > 100 ||
+    extraLineageEdges < 0 ||
+    extraLineageEdges > 32
   )
     throw new RangeError("Invalid Range qualification shape.");
   const positions = localDensePositionAllocator.allocateRun({
@@ -93,6 +169,11 @@ export function measureRangeQualification(
     return [value, now() - t];
   };
   const carrier = factory.create(root);
+  let captureCount = 0;
+  const capture = (): string => {
+    captureCount++;
+    return carrier.captureHistoricalState();
+  };
   carrier.applyChange({
     placements: [
       { blockId: block, placement: placement(0) },
@@ -129,7 +210,7 @@ export function measureRangeQualification(
     carrier.applyChange({
       placements: [{ blockId: block, placement: placement((i + 1) % 2) }],
     });
-  const created = carrier.captureHistoricalState();
+  const created = capture();
   const members: ProbeMember[] = Array.from(
     { length: shape.members },
     (_, i) => ({
@@ -144,14 +225,10 @@ export function measureRangeQualification(
       createProbeRange(carrier, created, "span", members),
     ),
   );
-  let reads = 0;
-  const guarded = new Proxy(ranges, {
-    get(target, property, receiver) {
-      reads++;
-      return Reflect.get(target, property, receiver) as unknown;
-    },
-  });
   const selected = ranges[shape.holders - 1]!;
+  const crossing = createProbeRange(carrier, created, "span", [
+    { blockId: block, inlineContentId: content, start: 1, end: 3 },
+  ]);
   const [before, initialResolveMs] = timed(() =>
     resolveProbeRange(carrier, selected, created, []),
   );
@@ -181,43 +258,92 @@ export function measureRangeQualification(
   const starts = (left: number, right: number) =>
     members.map((_, i) => (i % 2 ? right : left));
   expectSpans(before, texts("b", "c"), ids(content, content), starts(1, 2));
-  reads = 0;
-  const [, editMs] = timed(() =>
-    carrier.applyChange({
-      payloads: [
-        {
-          kind: "insert-text",
-          inlineContentId: content,
-          offset: 2,
-          text: "X",
-          origin,
-        },
-      ],
-    }),
+  expectSpans(
+    resolveProbeRange(carrier, crossing, created, []),
+    ["bc"],
+    [content],
+    [1],
   );
-  const inserted = carrier.captureHistoricalState();
-  const movedPlacement = placement(1 - (shape.priorMoves % 2));
-  const [, moveMs] = timed(() =>
-    carrier.applyChange({
-      placements: [{ blockId: block, placement: movedPlacement }],
-    }),
+
+  // Vary retained snapshots and the supplied lineage path independently of
+  // holder count. Each edge is a real move, not an invented native lifecycle.
+  const retainedBaselineBytes = carrier.encode().length;
+  const historyEdges: ProbeTransition[] = [];
+  const retainedMoves: {
+    token: string;
+    placement: ReturnType<typeof placement>;
+  }[] = [];
+  let historyTip = created;
+  const [, retainedMovesAndCaptureMs] = timed(() => {
+    for (let i = 0; i < extraLineageEdges; i++) {
+      const nextPlacement = placement((shape.priorMoves + i + 1) % 2);
+      carrier.applyChange({
+        placements: [{ blockId: block, placement: nextPlacement }],
+      });
+      const next = capture();
+      historyEdges.push({ from: historyTip, to: next });
+      retainedMoves.push({ token: next, placement: nextPlacement });
+      historyTip = next;
+    }
+  });
+  const retainedAfterMovesBytes = carrier.encode().length;
+  const [historySpans, retainedLineageResolveMs] = timed(() =>
+    resolveProbeRange(carrier, selected, historyTip, historyEdges),
   );
-  const moved = carrier.captureHistoricalState();
+  expectSpans(
+    historySpans,
+    texts("b", "c"),
+    ids(content, content),
+    starts(1, 2),
+  );
+  const movedPlacement = placement(
+    1 - ((shape.priorMoves + extraLineageEdges) % 2),
+  );
+  const { editMs, inserted, moveMs, moved } = runRangeDriverWithoutHolderScan(
+    ranges,
+    (externalHolders) => {
+      // The driver can access this store, but publishing either change needs no holder.
+      void externalHolders;
+      const [, editMs] = timed(() =>
+        carrier.applyChange({
+          payloads: [
+            {
+              kind: "insert-text",
+              inlineContentId: content,
+              offset: 2,
+              text: "X",
+              origin,
+            },
+          ],
+        }),
+      );
+      const inserted = capture();
+      const [, moveMs] = timed(() =>
+        carrier.applyChange({
+          placements: [{ blockId: block, placement: movedPlacement }],
+        }),
+      );
+      return { editMs, inserted, moveMs, moved: capture() };
+    },
+  );
   if (
     JSON.stringify(carrier.snapshot().placements.get(block)) !==
     JSON.stringify(movedPlacement)
   )
     throw new Error("Moved placement differs from fixture expectation.");
-  const holderReadsDuringChanges = reads;
-  if (holderReadsDuringChanges !== 0)
-    throw new Error("Edit or move accessed external holders.");
-  void guarded[0];
-  const positiveControlReads = reads;
+  const holderReadsDuringChanges = 0;
+  const positiveControlReads = observeHolderAccess(
+    ranges,
+    (externalHolders) => {
+      void externalHolders[0];
+    },
+  ).reads;
   if (positiveControlReads < 1)
     throw new Error("Holder instrumentation failed its positive control.");
   const edges: ProbeTransition[] = [
+    ...historyEdges,
     {
-      from: created,
+      from: historyTip,
       to: inserted,
       edits: [
         { kind: "insert", inlineContentId: content, offset: 2, length: 1 },
@@ -234,22 +360,37 @@ export function measureRangeQualification(
     ids(content, content),
     starts(1, 2),
   );
+  expectSpans(
+    resolveProbeRange(carrier, crossing, moved, edges),
+    ["bXc"],
+    [content],
+    [1],
+  );
   carrier.applyChange({
     payloads: [
       { kind: "delete-text", inlineContentId: content, start: 2, end: 3 },
     ],
   });
-  const deleted = carrier.captureHistoricalState();
+  const deleted = capture();
   edges.push({
     from: moved,
     to: deleted,
     edits: [{ kind: "delete", inlineContentId: content, start: 2, end: 3 }],
   });
-  expectSpans(
+  const [deletedSpans, deleteResolveMs] = timed(() =>
     resolveProbeRange(carrier, selected, deleted, edges),
+  );
+  expectSpans(
+    deletedSpans,
     texts("b", "c"),
     ids(content, content),
     starts(1, 2),
+  );
+  expectSpans(
+    resolveProbeRange(carrier, crossing, deleted, edges),
+    ["bc"],
+    [content],
+    [1],
   );
   carrier.applyChange({
     placements: [{ blockId: splitBlock, placement: placement(2) }],
@@ -271,7 +412,7 @@ export function measureRangeQualification(
       },
     ],
   });
-  const split = carrier.captureHistoricalState();
+  const split = capture();
   edges.push({
     from: deleted,
     to: split,
@@ -303,6 +444,10 @@ export function measureRangeQualification(
     ids(content, splitContent),
     starts(1, 0),
   );
+  const [crossSplitSpans, crossingSplitResolveMs] = timed(() =>
+    resolveProbeRange(carrier, crossing, split, edges),
+  );
+  expectSpans(crossSplitSpans, ["b", "c"], [content, splitContent], [1, 0]);
   carrier.applyChange({
     deleteBlockIds: [splitBlock],
     payloads: [
@@ -315,7 +460,7 @@ export function measureRangeQualification(
       },
     ],
   });
-  const merged = carrier.captureHistoricalState();
+  const merged = capture();
   edges.push({
     from: split,
     to: merged,
@@ -347,6 +492,13 @@ export function measureRangeQualification(
     ids(content, content),
     starts(1, 2),
   );
+  expectSpans(
+    resolveProbeRange(carrier, crossing, merged, edges),
+    ["b", "c"],
+    [content, content],
+    [1, 2],
+  );
+  const capturedStatesBeforeEncode = captureCount;
   const [encoded, encodeMs] = timed(() => carrier.encode());
   const [reloaded, reloadMs] = timed(() => factory.load(encoded));
   expectSpans(
@@ -361,6 +513,26 @@ export function measureRangeQualification(
     ids(content, content),
     starts(1, 2),
   );
+  expectSpans(
+    resolveProbeRange(reloaded, crossing, merged, edges),
+    ["b", "c"],
+    [content, content],
+    [1, 2],
+  );
+  for (const retained of retainedMoves) {
+    const historical = reloaded.materializeHistoricalState(retained.token);
+    const payload = historical.payloads.get(content);
+    if (
+      !equivalent(historical.placements.get(block), retained.placement) ||
+      historical.inlineContentOwners.get(content) !== block ||
+      payload?.kind !== "text" ||
+      payload.text !== "abcd" ||
+      !equivalent(payload.spans, [{ text: "abcd", origin }])
+    )
+      throw new Error(
+        "Retained move snapshot differs from fixture expectation.",
+      );
+  }
   reloaded.applyChange({
     payloads: [
       {
@@ -372,18 +544,27 @@ export function measureRangeQualification(
       },
     ],
   });
+  // Continue counting captures on the reopened carrier as well.
   const replaced = reloaded.captureHistoricalState();
+  captureCount++;
   const invalidated: ProbeTransition[] = [
     ...edges,
     { from: merged, to: replaced, invalidated: [content] },
   ];
-  if (resolveProbeRange(reloaded, selected, replaced, invalidated).length !== 0)
+  const [replacedSpans, replacementResolveMs] = timed(() =>
+    resolveProbeRange(reloaded, selected, replaced, invalidated),
+  );
+  if (
+    replacedSpans.length !== 0 ||
+    resolveProbeRange(reloaded, crossing, replaced, invalidated).length !== 0
+  )
     throw new Error("Replacement reattached invalidated members.");
   reloaded.restoreHistoricalState(merged, {
     actorId: "range-author",
     effectId: "restore",
   });
   const restored = reloaded.captureHistoricalState();
+  captureCount++;
   const restoredSnapshot = reloaded.snapshot();
   const restoredPayload = restoredSnapshot.payloads.get(content);
   if (
@@ -399,6 +580,13 @@ export function measureRangeQualification(
     ]).length !== 0
   )
     throw new Error("Restore reattached invalidated members.");
+  if (
+    resolveProbeRange(reloaded, crossing, restored, [
+      ...invalidated,
+      { from: replaced, to: restored },
+    ]).length !== 0
+  )
+    throw new Error("Restore reattached invalidated crossing member.");
   const holderBytes = new TextEncoder().encode(JSON.stringify(ranges)).length;
   return {
     ...shape,
@@ -407,15 +595,28 @@ export function measureRangeQualification(
     editMs,
     moveMs,
     transitionResolveMs,
+    deleteResolveMs,
     splitResolveMs,
+    crossingSplitResolveMs,
     mergeResolveMs,
+    replacementResolveMs,
+    retainedMovesAndCaptureMs,
+    retainedLineageResolveMs,
+    extraLineageEdges,
+    crossingSplitSpanCount: crossSplitSpans.length,
+    externalLineageJsonBytes: new TextEncoder().encode(
+      JSON.stringify(historyEdges),
+    ).length,
+    retainedBaselineBytes,
+    retainedAfterMovesBytes,
     encodeMs,
     reloadMs,
     encodedBytes: encoded.length,
     externalHolderJsonBytes: holderBytes,
     holderReadsDuringChanges,
     positiveControlReads,
-    retainedTokens: 6,
+    capturedStatesBeforeEncode,
+    capturedStatesTotal: captureCount,
     nativeLifecycle: carrier.nativeLifecycle(),
   };
 }

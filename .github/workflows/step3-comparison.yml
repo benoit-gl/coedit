@@ -16,7 +16,6 @@ jobs:
     timeout-minutes: 30
     env:
       GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      STEP3_DIRTY: "false"
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -25,16 +24,16 @@ jobs:
       - run: npm run bootstrap
       - name: Run bounded structural, allocator and Range probes sequentially
         run: |
-          mkdir -p step3-structure-evidence
-          node scripts/step3-structural-stress.mjs step3-structure-evidence/structure.json
-          node scripts/step3-allocator-stress.mjs step3-structure-evidence/allocators.json
-          node scripts/step3-range-qualification.mjs > step3-structure-evidence/range.json 2> step3-structure-evidence/range.log
+          mkdir -p "$RUNNER_TEMP/step3-structure-evidence"
+          node scripts/step3-structural-stress.mjs "$RUNNER_TEMP/step3-structure-evidence/structure.json"
+          node scripts/step3-allocator-stress.mjs "$RUNNER_TEMP/step3-structure-evidence/allocators.json"
+          node scripts/step3-range-qualification.mjs > "$RUNNER_TEMP/step3-structure-evidence/range.json" 2> "$RUNNER_TEMP/step3-structure-evidence/range.log"
       - name: Persist raw evidence
         if: always()
         uses: actions/upload-artifact@v5
         with:
           name: step3-structure-allocator-range
-          path: step3-structure-evidence/
+          path: ${{ runner.temp }}/step3-structure-evidence/
           if-no-files-found: error
           retention-days: 90
 

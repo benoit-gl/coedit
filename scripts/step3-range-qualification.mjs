@@ -1,6 +1,7 @@
 import { performance } from "node:perf_hooks";
 import { cpus, platform, release, arch, totalmem } from "node:os";
 import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import { createServer } from "vite";
 
 // Run from repository root; each completed row is logged even if a later case fails.
@@ -9,15 +10,43 @@ const warmups = 1;
 const samples = 3;
 const git = (...args) => {
   const result = spawnSync("git", args, { encoding: "utf8" });
-  return result.status === 0 ? result.stdout.trim() : null;
+  if (result.error)
+    return { value: null, error: result.error.code ?? "spawn failed" };
+  if (result.status !== 0)
+    return { value: null, error: `git exited ${result.status}` };
+  return { value: result.stdout.trim(), error: null };
 };
 const status = git("status", "--porcelain");
+const head = git("rev-parse", "HEAD");
+const packages = {};
+const packageErrors = {};
+for (const name of [
+  "yjs",
+  "@automerge/automerge",
+  "fractional-indexing",
+  "fugue",
+  "vite",
+]) {
+  try {
+    const version = JSON.parse(
+      readFileSync(`node_modules/${name}/package.json`, "utf8"),
+    ).version;
+    if (typeof version !== "string") throw new Error("version unavailable");
+    packages[name] = version;
+  } catch (error) {
+    packages[name] = null;
+    packageErrors[name] =
+      error instanceof Error ? error.message : String(error);
+  }
+}
 const metadata = {
   revision: {
     githubSha: process.env.GITHUB_SHA ?? null,
     githubHeadSha: process.env.GITHUB_HEAD_SHA ?? null,
-    head: git("rev-parse", "HEAD"),
-    dirty: status === null ? null : status.length > 0,
+    head: head.value,
+    workingTree: status.value,
+    dirty: status.value === null ? null : status.value.length > 0,
+    gitErrors: { head: head.error, workingTree: status.error },
   },
   environment: {
     node: process.version,
@@ -27,6 +56,8 @@ const metadata = {
     cpu: cpus()[0]?.model,
     cpus: cpus().length,
     ramBytes: totalmem(),
+    packages,
+    packageErrors,
   },
   warmups,
   samples,
