@@ -44,3 +44,25 @@ describe("clipboard measurement fixture", () => {
     }
   });
 });
+
+it("preserves unknown fallback Origin for malformed private data", async () => {
+  const { parseDocumentId } = await import("../../../src/domain/index.js");
+  const { decodePrivateClipboard } = await import("../editor/clipboard.js");
+  const origin = { id: "unknown-source", kind: "unknown" } as const;
+  const result = decodePrivateClipboard(
+    "{",
+    "plain text",
+    parseDocumentId("83000000-0000-4000-8000-000000000003"),
+    new Map(),
+    origin,
+    clipboardMeasurementLimits,
+    () => {
+      throw new Error("malformed private input must not resolve a source");
+    },
+  );
+  expect(result).toEqual({
+    text: "plain text",
+    spans: [{ text: "plain text", origin }],
+    privateOriginPreserved: false,
+  });
+});
