@@ -13,16 +13,23 @@ either text or opaque bytes of the corresponding size. It reports copying, a UTF
 text (an additional byte copy for opaque), integrated publication, and state encoding separately. Input construction,
 setup, snapshot verification and reload are outside the reported intervals. String `slice` need not copy its backing
 storage. Repeated operations are in one transaction; these results are not equivalent to independent transactions.
-Three samples are descriptive, not tail estimates or resource limits.
+A second workload inserts and deletes Unicode and Markdown-like text in one or eight operations into the same starting
+sizes and Origin distributions; it separately times input encoding and decoding, insertion, deletion and final state
+encoding. It checks the independently constructed visible string and reload. Three samples are descriptive, not tail
+estimates or resource limits.
 
 Fixed, adaptive and operation-specific guards are small deterministic fixture functions evaluated before publication;
-they refuse one deliberately oversized request with explicit errors and check snapshot, effect records and encoded
-state. The normal-runtime fixture admits that request but does not deliberately exhaust memory. Consequently it does
+they refuse deliberately oversized text and opaque requests with explicit errors and check snapshot, effect records
+and encoded state. The normal-runtime fixture publishes each four-operation request to a fresh carrier and checks its
+result, but
+does not deliberately exhaust memory. Consequently it does
 not establish safe allocation failure or a practical limit. The separate concurrent case exchanges one text and one
 opaque replacement from the same genesis, checks convergence and reload, and is not a concurrency stress test.
 
 Clipboard experiments use the actual historical materializer and search for a matching attributed fragment, including
-unresolved and reloaded history. Reloaded cases also vary retained text size and Origin runs, with three observations
+unresolved, nonmatching and reloaded history. A matching fragment establishes only existence in the selected content,
+not an authenticated copy source; a separate equal-content, different-content-identity case demonstrates the ambiguity.
+Reloaded cases also vary retained text size and Origin runs, with three observations
 per shape. They include JSON decode, guard checking, materialization and attributed search; they are not OS clipboard
 measurements. Missing or invalid private metadata and each independent guard fall back to plain text with imported
 Origin. A valid private fragment with an unresolved source keeps its validated Origin but omits the derivation. The

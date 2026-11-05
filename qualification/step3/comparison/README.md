@@ -4,6 +4,10 @@ This runner and its measurements establish an experimental baseline for
 continued investigation. They do not complete Step 3 comparative qualification
 or provide sufficient evidence for Gate B.
 
+The [admission and boundary results](ADMISSION_BOUNDARY_RESULTS.md) record bounded carrier, guard, clipboard and
+raw-media probes under their [profile](ADMISSION_BOUNDARY_PROFILE.md). These experiments select no production policy
+and do not close Gate B.
+
 The [ordinary-edit result](ORDINARY_EDIT_RESULT.md) records the point 1 investigation, incremental
 qualification experiment, correctness repairs and negative unrestricted native-work result.
 It does not establish production eligibility or close Gate B. `npm run step3:ordinary-edit` writes the matched

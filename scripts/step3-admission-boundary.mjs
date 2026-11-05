@@ -41,7 +41,7 @@ const result = {
     profile: {
       smoke,
       sizes: smoke ? [1024] : [1024, 16384, 65536],
-      fragments: smoke ? [1] : [1, 8],
+      fragments: [1, 8],
       operations: smoke ? [1] : [1, 8],
       warmups: smoke ? 0 : 1,
       samples: smoke ? 1 : 3,
@@ -247,62 +247,178 @@ try {
       }
     }
   }
+  // Independently exercise fine-grained Unicode/Markdown-like insertions and
+  // deletions, rather than inferring their cost from replacement transactions.
+  for (const size of result.metadata.profile.sizes) {
+    for (const fragments of result.metadata.profile.fragments) {
+      for (const operations of result.metadata.profile.operations) {
+        for (
+          let iteration = -result.metadata.profile.warmups;
+          iteration < result.metadata.profile.samples;
+          iteration++
+        ) {
+          for (const factory of iteration % 2 === 0
+            ? factories
+            : [...factories].reverse()) {
+            const c = make(factory, size, fragments);
+            const unit = "# Hé😀\n";
+            const text = unit.repeat(
+              Math.max(1, Math.floor(size / operations / unit.length)),
+            );
+            const offset = Math.floor(size / 2);
+            const insertions = Array.from({ length: operations }, () => ({
+              kind: "insert-text",
+              inlineContentId: id,
+              offset,
+              text,
+              origin: origins[0],
+            }));
+            const [bytes, encodeInputMs] = time(() =>
+              new TextEncoder().encode(text),
+            );
+            const [decoded, decodeMs] = time(() =>
+              new TextDecoder("utf-8", { fatal: true }).decode(bytes),
+            );
+            equal(decoded, text, "Unicode fixture round trip");
+            const [, insertMs] = time(() =>
+              c.applyChange({ payloads: insertions }),
+            );
+            const inserted = c.snapshot().payloads.get(id);
+            assert(
+              inserted?.kind === "text" &&
+                inserted.text ===
+                  "x".repeat(offset) +
+                    text.repeat(operations) +
+                    "x".repeat(size - offset),
+              "fine-grained insertion mismatch",
+            );
+            const deletions = Array.from({ length: operations }, () => ({
+              kind: "delete-text",
+              inlineContentId: id,
+              start: offset,
+              end: offset + text.length,
+            }));
+            const [, deleteMs] = time(() =>
+              c.applyChange({ payloads: deletions }),
+            );
+            const [encoded, encodeMs] = time(() => c.encode());
+            const final = c.snapshot().payloads.get(id);
+            assert(
+              final?.kind === "text" && final.text === "x".repeat(size),
+              "fine-grained deletion mismatch",
+            );
+            equal(
+              factory.load(encoded).snapshot(),
+              c.snapshot(),
+              "fine-grained reload mismatch",
+            );
+            if (iteration >= 0)
+              result.rows.push({
+                candidate: factory.candidate,
+                kind: "text-edit",
+                distribution: "Unicode Markdown-like",
+                size,
+                fragments,
+                operations,
+                insertedUnitsPerOperation: text.length,
+                iteration,
+                encodeInputMs,
+                decodeMs,
+                insertMs,
+                deleteMs,
+                encodeMs,
+                encodedBytes: encoded.length,
+              });
+            save();
+          }
+        }
+      }
+    }
+  }
   // Policies are candidate fixtures, not proposals. Evaluation precedes mutation.
   for (const factory of factories) {
     const c = make(factory, 128, 2);
     const before = c.encode(),
       snapshot = c.snapshot(),
       effects = c.recordedPayloadEffects();
-    const request = { bytes: 2048, operations: 4, kind: "text" };
-    const policies = {
-      fixed: () => request.bytes <= 1024,
-      adaptive: () =>
-        request.bytes <= Math.floor(4096 / (request.operations + 1)),
-      operationSpecific: () => request.bytes * request.operations <= 4096,
-      normalRuntime: () => true,
-    };
-    for (const [policy, admit] of Object.entries(policies)) {
-      const accepted = admit();
-      if (!accepted) {
-        unchangedOnError(
-          c,
-          () => {
-            if (!admit())
-              throw new RangeError(`Fixture ${policy} refused admission`);
-            c.applyChange({
-              payloads: [
-                {
-                  kind: "insert-text",
-                  inlineContentId: id,
-                  offset: 0,
-                  text: "z".repeat(request.bytes),
-                  origin: origins[0],
-                },
-              ],
-            });
-          },
-          `${policy} guard`,
-        );
-        equal(c.snapshot(), snapshot, `${policy}: state changed on refusal`);
-        equal(
-          c.encode(),
-          before,
-          `${policy}: encoded state changed on refusal`,
-        );
-        equal(
-          c.recordedPayloadEffects(),
-          effects,
-          `${policy}: effects changed on refusal`,
-        );
+    for (const kind of ["text", "opaque"]) {
+      const request = { bytes: 2048, operations: 4, kind };
+      const policies = {
+        fixed: () => request.bytes <= 1024,
+        adaptive: () =>
+          request.bytes <= Math.floor(4096 / (request.operations + 1)),
+        operationSpecific: () => request.bytes * request.operations <= 4096,
+        normalRuntime: () => true,
+      };
+      const requestChange = {
+        payloads: Array.from({ length: request.operations }, () =>
+          kind === "text"
+            ? {
+                kind: "insert-text",
+                inlineContentId: id,
+                offset: 0,
+                text: "z".repeat(request.bytes),
+                origin: origins[0],
+              }
+            : {
+                kind: "replace-opaque",
+                inlineContentId: id,
+                mediaType: "application/example",
+                bytes: new Uint8Array(request.bytes).fill(123),
+                origin: origins[0],
+              },
+        ),
+      };
+      for (const [policy, admit] of Object.entries(policies)) {
+        const accepted = admit();
+        if (!accepted) {
+          unchangedOnError(
+            c,
+            () => {
+              if (!admit())
+                throw new RangeError(`Fixture ${policy} refused admission`);
+              c.applyChange(requestChange);
+            },
+            `${policy} guard`,
+          );
+          equal(c.snapshot(), snapshot, `${policy}: state changed on refusal`);
+          equal(
+            c.encode(),
+            before,
+            `${policy}: encoded state changed on refusal`,
+          );
+          equal(
+            c.recordedPayloadEffects(),
+            effects,
+            `${policy}: effects changed on refusal`,
+          );
+        } else {
+          const admitted = factory.load(before);
+          admitted.applyChange(requestChange);
+          const actual = admitted.snapshot().payloads.get(id);
+          assert(
+            kind === "text"
+              ? actual?.kind === "text" &&
+                  actual.text ===
+                    "z".repeat(request.bytes * request.operations) +
+                      "x".repeat(128)
+              : actual?.kind === "opaque" &&
+                  isDeepStrictEqual(
+                    actual.bytes,
+                    new Uint8Array(request.bytes).fill(123),
+                  ),
+            `${policy}: admitted result differs`,
+          );
+        }
+        result.boundaries.push({
+          candidate: factory.candidate,
+          policy,
+          request,
+          outcome: accepted
+            ? "admitted to runtime (no safe-allocation guarantee)"
+            : "controlled refusal before publication",
+        });
       }
-      result.boundaries.push({
-        candidate: factory.candidate,
-        policy,
-        request,
-        outcome: accepted
-          ? "admitted to runtime (no safe-allocation guarantee)"
-          : "controlled refusal before publication",
-      });
     }
     unchangedOnError(
       c,
@@ -356,6 +472,8 @@ try {
         },
       ],
     });
+    const leftAlternative = left.snapshot().payloads.get(id);
+    const rightAlternative = right.snapshot().payloads.get(id);
     const l = left.encode(),
       r = right.encode();
     left.mergeEncoded(r);
@@ -370,9 +488,15 @@ try {
       left.snapshot(),
       "concurrent reload mismatch",
     );
+    const winner = left.snapshot().payloads.get(id);
+    assert(
+      isDeepStrictEqual(winner, leftAlternative) ||
+        isDeepStrictEqual(winner, rightAlternative),
+      "concurrent winner is not an intact branch",
+    );
     result.boundaries.push({
       candidate: factory.candidate,
-      concurrentAlternatives: "converged and reloaded",
+      concurrentAlternatives: "converged to intact branch and reloaded",
       winner: left.snapshot().payloads.get(id).kind,
     });
     // Resolve source by actual retained materialization and attributed substring.
@@ -405,7 +529,21 @@ try {
       }
       return false;
     };
+    const changed = factory.load(c.encode());
+    changed.applyChange({
+      payloads: [
+        {
+          kind: "replace-text",
+          inlineContentId: id,
+          mediaType: "text/plain",
+          text: "different",
+          origin: origins[0],
+        },
+      ],
+    });
+    const wrongReference = changed.captureHistoricalState();
     for (const [name, carrier, reference, expectedSource] of [
+      ["wrong-retained-content", changed, wrongReference, false],
       ["retained", c, token, true],
       ["reload", factory.load(c.encode()), token, true],
       ["unresolved", c, "missing", false],
@@ -439,10 +577,56 @@ try {
           : "valid origin; no derivation",
       });
     }
+    // Equal attributed content in another InlineContent cannot authenticate a
+    // copy's actual source: the callback identifies only the searched content.
+    const otherId = domain.parseInlineContentId(
+      "92000000-0000-4000-8000-000000000004",
+    );
+    const ambiguous = factory.load(c.encode());
+    ambiguous.applyChange({
+      inlineContents: [{ inlineContentId: otherId, blockId: root }],
+      payloads: [
+        {
+          kind: "replace-text",
+          inlineContentId: otherId,
+          mediaType: "text/plain",
+          text: "x".repeat(32),
+          origin: origins[0],
+        },
+      ],
+    });
+    const ambiguousToken = ambiguous.captureHistoricalState();
+    const other = ambiguous.snapshot().payloads.get(otherId);
+    const otherCopy = clip.encodePrivateClipboard(
+      other,
+      0,
+      32,
+      doc,
+      ambiguousToken,
+    );
+    const ambiguity = clip.decodePrivateClipboard(
+      otherCopy.privateText,
+      otherCopy.plainText,
+      doc,
+      catalog,
+      imported,
+      limits,
+      resolve(ambiguous),
+    );
+    assert(
+      ambiguity.source?.reference === ambiguousToken,
+      "equal-content ambiguity fixture did not match",
+    );
+    result.clipboard.push({
+      candidate: factory.candidate,
+      name: "equal-content-other-inline",
+      outcome:
+        "matching fragment cannot authenticate which InlineContent was copied",
+    });
     // Additional retained-source cases vary retained text and attributed runs.
     // The matched fragment crosses an Origin boundary when fragmentation is 8.
     for (const size of smoke ? [1024] : [1024, 16384, 65536]) {
-      for (const fragments of smoke ? [1] : [1, 8]) {
+      for (const fragments of [1, 8]) {
         const source = make(factory, size, fragments);
         const reference = source.captureHistoricalState();
         const sourcePayload = source.snapshot().payloads.get(id);
@@ -456,6 +640,48 @@ try {
           reference,
         );
         const reloaded = factory.load(source.encode());
+        if (fragments === 8) {
+          const parts = JSON.parse(copy.privateText).spans;
+          assert(
+            parts.length === 2,
+            "expected a fragment spanning two Origins",
+          );
+          for (const [name, guard] of Object.entries({
+            encoded: {
+              ...limits,
+              maxEncodedLength: copy.privateText.length - 1,
+            },
+            spans: { ...limits, maxSpans: 1 },
+            text: { ...limits, maxTextLength: 31 },
+          })) {
+            let calls = 0;
+            const value = clip.decodePrivateClipboard(
+              copy.privateText,
+              copy.plainText,
+              doc,
+              catalog,
+              imported,
+              guard,
+              (ref, spans) => {
+                calls++;
+                return resolve(reloaded)(ref, spans);
+              },
+            );
+            assert(
+              !value.privateOriginPreserved &&
+                value.text === copy.plainText &&
+                value.spans[0].origin.id === imported.id &&
+                calls === 0,
+              `fragmented ${name} guard failed`,
+            );
+            result.clipboard.push({
+              candidate: factory.candidate,
+              name: `fragmented-${name}-guard`,
+              size,
+              outcome: "fallback before retained lookup",
+            });
+          }
+        }
         for (let i = 0; i < (smoke ? 1 : 3); i++) {
           const [value, ms] = time(() =>
             clip.decodePrivateClipboard(
