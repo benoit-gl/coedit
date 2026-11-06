@@ -34,4 +34,4 @@ Each output records completion or error and preserves completed rows. The Action
 and identifies the PR head separately, then uploads all raw outputs and logs. Local measurements must identify the
 exact source revision, clean/dirty status, profile and installed dependencies; run-specific raw data and summaries
 must say what was actually exercised and identify unsupported or unmeasured cases. Later final comparison work must
-reconcile this evidence with the other Merge 8 dimensions under its final profile.
+reconcile this evidence with the other qualification dimensions under the merge unit 11 final profile.

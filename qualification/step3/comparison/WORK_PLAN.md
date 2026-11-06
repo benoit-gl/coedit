@@ -1,6 +1,6 @@
 # Step 3 comparative qualification work plan
 
-This is an execution aid for the remaining Step 3, merge unit 8 work. The
+This is an execution aid for the remaining Step 3 qualification work in merge units 8-12. The
 [scaffolding plan](../../../SCAFFOLDING_PLAN.md) owns work order and exit gates;
 the [verification plan](../../../docs/MVP_VERIFICATION_PLAN.md) and focused
 specifications own the requirements. This checklist does not change their
@@ -20,23 +20,21 @@ dimension requires a separate benchmark or that an unmeasured case passed.
 
 ## Execution order
 
-1. Record the shared fixture profile, timing boundaries, execution method and
-   environment before running comparable measurements. Keep exploratory runs
-   separate from final same-profile evidence.
-2. Resolve ordinary-edit whole-document work and its applicability to the
-   intended production path. Retain the snapshot implementation as a reference
-   until matched semantic and cost comparisons are complete.
-3. Extend carrier history, replacement, and Range evidence, then structural,
-   allocator, and resource evidence. Independent fixtures can proceed in
-   parallel when their shared profile and interfaces are coordinated.
-4. Complete browser and Loro characterization using the recorded methodology.
-5. Run and reconcile the final comparison; prepare the evidence for Gate B.
+1. Finish the unit 8 evidence foundation, including the admission, clipboard and media boundary. Prior partial PRs
+   remain bounded evidence; verify that their required coverage is landed rather than treating them as final results.
+2. Complete the unit 9 representative browser and Loro workloads with a recorded methodology. This can proceed in
+   parallel with unit 10 when the fixtures and dependencies permit.
+3. Assess the unit 10 ordinary-edit eligibility design and obtain any required design decision before implementation.
+   The investigation below is closed with a negative result for the current unrestricted representations; it does not
+   pass the mandatory criterion. Qualify an exercised production-compatible path before the final comparison.
+4. After units 8-10 land, run and reconcile the unit 11 final comparison under one recorded profile, preserving raw
+   evidence and a durable requirement-by-requirement record.
+5. Record carrier, allocator and policy selections separately in unit 12, Gate B, using already exercised mechanisms.
 
-These are work packages, not a fixed number of pull requests. Split them into
-coherent reviewable changes as evidence and dependencies require. AI agents
-should use existing fixtures and specifications, preserve findings and exact
-revisions in durable records, and ask for a decision when a material choice
-would change architecture, interfaces, or accepted behavior.
+The checklist below organizes evidence, not an authorization to combine or split the merge units. The scaffolding plan
+owns the units, their prerequisites and closure criteria. Intermediate PRs and exploratory profiles do not close unit 11
+or Gate B. Preserve findings and exact revisions, and obtain a decision before a material architecture, interface or
+accepted-behavior choice.
 
 ## Reproducibility and measurement
 
@@ -90,7 +88,7 @@ Gate B cannot treat the incremental experiment or green correctness checks as pr
       Animation-frame callbacks are not physical paint. Any decoupling design
       requires a decision; a fixture must not disguise synchronous work.
 
-## Carrier history, replacement and lifecycle
+## Carrier history, replacement and lifecycle (unit 8 evidence)
 
 - [ ] Extend history-size and shape coverage beyond sequential single-character
       appends: consider deletes, replacements, multiple contents, structural and
@@ -116,7 +114,7 @@ Gate B cannot treat the incremental experiment or green correctness checks as pr
       Capture resource observations and collection limitations for relevant
       workloads beyond the isolated history loop.
 
-## Structure, allocators and Ranges
+## Structure, allocators and Ranges (unit 8 evidence)
 
 - [ ] Measure Block create, move, subtree move, delete and repeated moves,
       including mixed structure and multiple text/opaque payload transactions.
@@ -136,7 +134,7 @@ Gate B cannot treat the incremental experiment or green correctness checks as pr
       content. Instrument edits and moves to detect scans of unrelated holders.
       This is feasibility evidence, not the final Range representation.
 
-## Admission, clipboard and media boundary
+## Admission, clipboard and media boundary (unit 8)
 
 - [ ] Characterize fine-grained text and opaque admission over relevant sizes,
       operation counts, Origin fragmentation, payload distributions and concurrent
@@ -158,7 +156,7 @@ Gate B cannot treat the incremental experiment or green correctness checks as pr
       state, retained metadata and position or codec failures for explicit,
       atomic outcomes. Do not select the Step 4 production parser or processor.
 
-## Browser and reference workloads
+## Browser and reference workloads (unit 9)
 
 - [ ] Extend representative editor operations across target sizes, Origin
       distributions, realistic Markdown-like and Unicode content, and larger
@@ -177,7 +175,7 @@ Gate B cannot treat the incremental experiment or green correctness checks as pr
       outside the selectable candidates, common correctness gate and production
       dependencies.
 
-## Final comparative record
+## Final comparative record (unit 11)
 
 - [ ] Run the common verification and comparative qualification on the final
       implementation revision under the recorded profile. Preserve machine-readable
