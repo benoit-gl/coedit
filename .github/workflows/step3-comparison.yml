@@ -11,6 +11,30 @@ on:
 permissions:
   contents: read
 jobs:
+  admission-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm run bootstrap
+      - name: Run bounded admission and boundary probes
+        run: |
+          mkdir -p "$RUNNER_TEMP/step3-admission-evidence"
+          node scripts/step3-admission-boundary.mjs "$RUNNER_TEMP/step3-admission-evidence/raw.json"
+      - name: Persist raw evidence
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: step3-admission-boundary
+          path: ${{ runner.temp }}/step3-admission-evidence/
+          if-no-files-found: error
+          retention-days: 90
+
   structure-allocator-range:
     runs-on: ubuntu-latest
     timeout-minutes: 30
