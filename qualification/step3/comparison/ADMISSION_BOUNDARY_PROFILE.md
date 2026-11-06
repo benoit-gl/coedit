@@ -15,7 +15,9 @@ setup, snapshot verification and reload are outside the reported intervals. Stri
 storage. Repeated operations are in one transaction; these results are not equivalent to independent transactions.
 A second workload inserts and deletes Unicode and Markdown-like text in one or eight operations into the same starting
 sizes and Origin distributions; it separately times input encoding and decoding, insertion, deletion and final state
-encoding. It checks the independently constructed visible string and reload. Three samples are descriptive, not tail
+encoding. It checks independently constructed text and Origin runs, including after reload. Replacement checks
+also verify the
+expected final Origin, Media Type and contents. Three samples are descriptive, not tail
 estimates or resource limits.
 
 Fixed, adaptive and operation-specific guards are small deterministic fixture functions evaluated before publication;

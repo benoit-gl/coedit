@@ -149,6 +149,43 @@ try {
     }
     return c;
   };
+  // Build the expected attributed text from fixture coordinates, independent
+  // of either candidate's projected spans and their harmless segmentation.
+  const expectedText = (size, fragments, offset = size, insertion = "") => {
+    const spans = [];
+    const add = (text, origin) => {
+      if (text.length) spans.push({ text, origin });
+    };
+    for (let i = 0; i < fragments; i++) {
+      const start = Math.floor((size * i) / fragments);
+      const end = Math.floor((size * (i + 1)) / fragments);
+      add("x".repeat(Math.max(0, Math.min(end, offset) - start)), origins[i]);
+      if (offset >= start && offset < end) add(insertion, origins[0]);
+      add("x".repeat(Math.max(0, end - Math.max(start, offset))), origins[i]);
+    }
+    if (offset === size) add(insertion, origins[0]);
+    return {
+      text: "x".repeat(offset) + insertion + "x".repeat(size - offset),
+      spans,
+    };
+  };
+  const checkText = (actual, expected, label) => {
+    assert(
+      actual?.kind === "text" && actual.mediaType === "text/plain",
+      `${label}: text metadata`,
+    );
+    assert(
+      semantic.sameAttributedRange(
+        actual,
+        0,
+        actual.text.length,
+        expected,
+        0,
+        expected.text.length,
+      ),
+      `${label}: text or Origin mismatch`,
+    );
+  };
   // Independent test oracle for unchanged state, bytes and effect records.
   const unchangedOnError = (carrier, fn, label) => {
     const before = carrier.encode();
@@ -221,17 +258,34 @@ try {
         const [, publishMs] = time(() => c.applyChange(change));
         const [encoded, encodeMs] = time(() => c.encode());
         const projected = c.snapshot().payloads.get(id);
-        assert(projected?.kind === shape.kind, "wrong payload kind");
-        equal(
-          shape.kind === "text" ? projected.text : projected.bytes,
-          decoded,
-          "wrong payload contents",
-        );
-        equal(
-          factory.load(encoded).snapshot(),
-          c.snapshot(),
-          "reload mismatch",
-        );
+        const expectedOrigin =
+          origins[(shape.operations - 1) % shape.fragments];
+        const checkPayload = (actual) => {
+          if (shape.kind === "text")
+            checkText(
+              actual,
+              {
+                text: decoded,
+                spans: [{ text: decoded, origin: expectedOrigin }],
+              },
+              "replacement",
+            );
+          else
+            equal(
+              actual,
+              {
+                kind: "opaque",
+                mediaType: "application/example",
+                bytes: decoded,
+                origin: expectedOrigin,
+              },
+              "opaque replacement payload",
+            );
+        };
+        checkPayload(projected);
+        const reloaded = factory.load(encoded).snapshot();
+        checkPayload(reloaded.payloads.get(id));
+        equal(reloaded, c.snapshot(), "reload mismatch");
         if (iteration >= 0)
           result.rows.push({
             candidate: factory.candidate,
@@ -284,13 +338,10 @@ try {
               c.applyChange({ payloads: insertions }),
             );
             const inserted = c.snapshot().payloads.get(id);
-            assert(
-              inserted?.kind === "text" &&
-                inserted.text ===
-                  "x".repeat(offset) +
-                    text.repeat(operations) +
-                    "x".repeat(size - offset),
-              "fine-grained insertion mismatch",
+            checkText(
+              inserted,
+              expectedText(size, fragments, offset, text.repeat(operations)),
+              "fine-grained insertion",
             );
             const deletions = Array.from({ length: operations }, () => ({
               kind: "delete-text",
@@ -303,15 +354,15 @@ try {
             );
             const [encoded, encodeMs] = time(() => c.encode());
             const final = c.snapshot().payloads.get(id);
-            assert(
-              final?.kind === "text" && final.text === "x".repeat(size),
-              "fine-grained deletion mismatch",
+            const expectedFinal = expectedText(size, fragments);
+            checkText(final, expectedFinal, "fine-grained deletion");
+            const reopened = factory.load(encoded).snapshot();
+            checkText(
+              reopened.payloads.get(id),
+              expectedFinal,
+              "fine-grained reload",
             );
-            equal(
-              factory.load(encoded).snapshot(),
-              c.snapshot(),
-              "fine-grained reload mismatch",
-            );
+            equal(reopened, c.snapshot(), "fine-grained reload mismatch");
             if (iteration >= 0)
               result.rows.push({
                 candidate: factory.candidate,
@@ -396,19 +447,29 @@ try {
           const admitted = factory.load(before);
           admitted.applyChange(requestChange);
           const actual = admitted.snapshot().payloads.get(id);
-          assert(
-            kind === "text"
-              ? actual?.kind === "text" &&
-                  actual.text ===
-                    "z".repeat(request.bytes * request.operations) +
-                      "x".repeat(128)
-              : actual?.kind === "opaque" &&
-                  isDeepStrictEqual(
-                    actual.bytes,
-                    new Uint8Array(request.bytes).fill(123),
-                  ),
-            `${policy}: admitted result differs`,
-          );
+          if (kind === "text") {
+            checkText(
+              actual,
+              expectedText(
+                128,
+                2,
+                0,
+                "z".repeat(request.bytes * request.operations),
+              ),
+              `${policy}: admitted text`,
+            );
+          } else {
+            equal(
+              actual,
+              {
+                kind: "opaque",
+                mediaType: "application/example",
+                bytes: new Uint8Array(request.bytes).fill(123),
+                origin: origins[0],
+              },
+              `${policy}: admitted opaque payload`,
+            );
+          }
         }
         result.boundaries.push({
           candidate: factory.candidate,
@@ -472,8 +533,26 @@ try {
         },
       ],
     });
-    const leftAlternative = left.snapshot().payloads.get(id);
-    const rightAlternative = right.snapshot().payloads.get(id);
+    const expectedLeft = {
+      text: "left",
+      spans: [{ text: "left", origin: origins[0] }],
+    };
+    const expectedRight = {
+      kind: "opaque",
+      mediaType: "application/example",
+      bytes: Uint8Array.of(1, 2),
+      origin: origins[1],
+    };
+    checkText(
+      left.snapshot().payloads.get(id),
+      expectedLeft,
+      "concurrent text branch",
+    );
+    equal(
+      right.snapshot().payloads.get(id),
+      expectedRight,
+      "concurrent opaque branch",
+    );
     const l = left.encode(),
       r = right.encode();
     left.mergeEncoded(r);
@@ -489,11 +568,9 @@ try {
       "concurrent reload mismatch",
     );
     const winner = left.snapshot().payloads.get(id);
-    assert(
-      isDeepStrictEqual(winner, leftAlternative) ||
-        isDeepStrictEqual(winner, rightAlternative),
-      "concurrent winner is not an intact branch",
-    );
+    if (winner?.kind === "text")
+      checkText(winner, expectedLeft, "concurrent winner");
+    else equal(winner, expectedRight, "concurrent winner");
     result.boundaries.push({
       candidate: factory.candidate,
       concurrentAlternatives: "converged to intact branch and reloaded",
@@ -565,8 +642,24 @@ try {
       );
       assert(
         value.privateOriginPreserved &&
-          Boolean(value.source) === expectedSource,
+          (expectedSource
+            ? value.source?.reference === reference
+            : value.source === undefined),
         `${name}: source outcome`,
+      );
+      assert(
+        semantic.sameAttributedRange(
+          value,
+          0,
+          value.text.length,
+          {
+            text: "x".repeat(32),
+            spans: [{ text: "x".repeat(32), origin: origins[0] }],
+          },
+          0,
+          32,
+        ),
+        `${name}: attributed fragment differs from fixture`,
       );
       result.clipboard.push({
         candidate: factory.candidate,
@@ -695,8 +788,21 @@ try {
             ),
           );
           assert(
-            value.source?.reference === reference,
+            value.privateOriginPreserved &&
+              value.source?.reference === reference,
             "scaled retained-source resolution failed",
+          );
+          const expectedSource = expectedText(size, fragments);
+          assert(
+            semantic.sameAttributedRange(
+              value,
+              0,
+              value.text.length,
+              expectedSource,
+              start,
+              start + 32,
+            ),
+            "scaled clipboard text or Origin mismatch",
           );
           result.clipboard.push({
             candidate: factory.candidate,

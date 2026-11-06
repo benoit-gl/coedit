@@ -1,9 +1,9 @@
 {
   "metadata": {
-    "revision": "1634a4f2b73c2468b3b3e8ff259fbf99ab691968",
+    "revision": "c1844bd7c7b65dabce135b35477bf05fc567d49b",
     "githubSha": null,
     "githubHeadSha": null,
-    "workingTree": "",
+    "workingTree": "M scripts/step3-admission-boundary.mjs",
     "environment": {
       "node": "v24.19.0",
       "platform": "linux",
@@ -43,10 +43,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.003627000000051339,
-      "decodeMs": 0.05818300000009913,
-      "publishMs": 1.4631819999999607,
-      "encodeMs": 0.5791099999999005,
+      "copyMs": 0.0020520000000487926,
+      "decodeMs": 0.026325000000042564,
+      "publishMs": 0.4234069999999974,
+      "encodeMs": 1.2229899999999816,
       "encodedBytes": 2193
     },
     {
@@ -56,10 +56,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.0022719999999480933,
-      "decodeMs": 0.01957599999991544,
-      "publishMs": 5.615002000000004,
-      "encodeMs": 0.5051120000000537,
+      "copyMs": 0.0019099999999525608,
+      "decodeMs": 0.022118000000091342,
+      "publishMs": 7.566715000000158,
+      "encodeMs": 0.2051040000001194,
       "encodedBytes": 960
     },
     {
@@ -69,49 +69,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.0023759999999128922,
-      "decodeMs": 0.03375200000004952,
-      "publishMs": 5.785334000000148,
-      "encodeMs": 0.8877720000000409,
-      "encodedBytes": 961
-    },
-    {
-      "candidate": "yjs",
-      "size": 1024,
-      "fragments": 1,
-      "operations": 1,
-      "kind": "text",
-      "iteration": 1,
-      "copyMs": 0.0030629999998836865,
-      "decodeMs": 0.144992000000002,
-      "publishMs": 0.9738740000000234,
-      "encodeMs": 0.6855949999999211,
-      "encodedBytes": 2193
-    },
-    {
-      "candidate": "yjs",
-      "size": 1024,
-      "fragments": 1,
-      "operations": 1,
-      "kind": "text",
-      "iteration": 2,
-      "copyMs": 0.0012950000000273576,
-      "decodeMs": 0.017789999999877182,
-      "publishMs": 0.287159999999858,
-      "encodeMs": 0.9096230000000105,
-      "encodedBytes": 2193
-    },
-    {
-      "candidate": "automerge",
-      "size": 1024,
-      "fragments": 1,
-      "operations": 1,
-      "kind": "text",
-      "iteration": 2,
-      "copyMs": 0.002096000000165077,
-      "decodeMs": 0.019463999999970838,
-      "publishMs": 5.280660000000125,
-      "encodeMs": 0.4571809999999914,
+      "copyMs": 0.001966000000038548,
+      "decodeMs": 0.024625000000014552,
+      "publishMs": 21.50882999999999,
+      "encodeMs": 1.351711000000023,
       "encodedBytes": 959
     },
     {
@@ -119,12 +80,51 @@
       "size": 1024,
       "fragments": 1,
       "operations": 1,
+      "kind": "text",
+      "iteration": 1,
+      "copyMs": 0.0015699999999014835,
+      "decodeMs": 0.0261449999998149,
+      "publishMs": 0.29276899999990746,
+      "encodeMs": 0.9708559999999125,
+      "encodedBytes": 2193
+    },
+    {
+      "candidate": "yjs",
+      "size": 1024,
+      "fragments": 1,
+      "operations": 1,
+      "kind": "text",
+      "iteration": 2,
+      "copyMs": 0.0015330000001085864,
+      "decodeMs": 0.020445999999992637,
+      "publishMs": 0.3557670000000144,
+      "encodeMs": 0.6840440000000854,
+      "encodedBytes": 2193
+    },
+    {
+      "candidate": "automerge",
+      "size": 1024,
+      "fragments": 1,
+      "operations": 1,
+      "kind": "text",
+      "iteration": 2,
+      "copyMs": 0.001686000000063359,
+      "decodeMs": 0.48317999999994754,
+      "publishMs": 6.541523999999981,
+      "encodeMs": 0.9294820000000072,
+      "encodedBytes": 961
+    },
+    {
+      "candidate": "yjs",
+      "size": 1024,
+      "fragments": 1,
+      "operations": 1,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.003132999999934327,
-      "decodeMs": 0.0017299999999522697,
-      "publishMs": 0.3292780000001585,
-      "encodeMs": 0.2550579999999627,
+      "copyMs": 0.0025840000000698637,
+      "decodeMs": 0.0013989999999921565,
+      "publishMs": 0.17422499999997854,
+      "encodeMs": 0.12672900000006848,
       "encodedBytes": 2154
     },
     {
@@ -134,36 +134,36 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.003329000000121596,
-      "decodeMs": 0.0018680000000586006,
-      "publishMs": 11.082869999999957,
-      "encodeMs": 0.5813590000000204,
+      "copyMs": 0.0034949999999298598,
+      "decodeMs": 0.0009690000001683075,
+      "publishMs": 6.143857000000025,
+      "encodeMs": 0.1874359999999342,
+      "encodedBytes": 978
+    },
+    {
+      "candidate": "automerge",
+      "size": 1024,
+      "fragments": 1,
+      "operations": 1,
+      "kind": "opaque",
+      "iteration": 1,
+      "copyMs": 0.003337999999985186,
+      "decodeMs": 0.0012859999999363936,
+      "publishMs": 4.8751810000001115,
+      "encodeMs": 0.18308200000001307,
       "encodedBytes": 980
     },
     {
-      "candidate": "automerge",
-      "size": 1024,
-      "fragments": 1,
-      "operations": 1,
-      "kind": "opaque",
-      "iteration": 1,
-      "copyMs": 0.004312999999910971,
-      "decodeMs": 0.0019310000000132277,
-      "publishMs": 5.56259799999998,
-      "encodeMs": 0.17871100000002116,
-      "encodedBytes": 980
-    },
-    {
       "candidate": "yjs",
       "size": 1024,
       "fragments": 1,
       "operations": 1,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.003225000000156797,
-      "decodeMs": 0.0017949999999018473,
-      "publishMs": 0.7977450000000772,
-      "encodeMs": 0.21096300000021984,
+      "copyMs": 0.002709999999979118,
+      "decodeMs": 0.0019839999999931024,
+      "publishMs": 0.19809699999996155,
+      "encodeMs": 0.133925999999974,
       "encodedBytes": 2154
     },
     {
@@ -173,10 +173,10 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.002797999999984313,
-      "decodeMs": 0.0022360000000389846,
-      "publishMs": 0.44164200000000164,
-      "encodeMs": 0.2722000000001117,
+      "copyMs": 0.00260300000013558,
+      "decodeMs": 0.0023810000000139553,
+      "publishMs": 0.19156900000007226,
+      "encodeMs": 0.11084900000014386,
       "encodedBytes": 2154
     },
     {
@@ -186,11 +186,11 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.002545999999938431,
-      "decodeMs": 0.0012530000001333974,
-      "publishMs": 7.520469000000048,
-      "encodeMs": 0.2993189999999686,
-      "encodedBytes": 979
+      "copyMs": 0.002960999999913838,
+      "decodeMs": 0.0013120000000981236,
+      "publishMs": 7.393163999999842,
+      "encodeMs": 0.2975460000000112,
+      "encodedBytes": 981
     },
     {
       "candidate": "yjs",
@@ -199,10 +199,10 @@
       "operations": 8,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.0011769999998705316,
-      "decodeMs": 0.014798000000155298,
-      "publishMs": 1.0663999999999305,
-      "encodeMs": 0.1731919999999718,
+      "copyMs": 0.0012080000001333246,
+      "decodeMs": 0.7627999999999702,
+      "publishMs": 0.655172999999877,
+      "encodeMs": 0.29035799999996925,
       "encodedBytes": 2963
     },
     {
@@ -212,11 +212,11 @@
       "operations": 8,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.0017159999999876163,
-      "decodeMs": 0.017927000000099724,
-      "publishMs": 22.053666999999905,
-      "encodeMs": 0.23491600000011204,
-      "encodedBytes": 2094
+      "copyMs": 0.0013329999999314168,
+      "decodeMs": 0.01576500000010128,
+      "publishMs": 18.540555999999924,
+      "encodeMs": 0.3672020000001339,
+      "encodedBytes": 2097
     },
     {
       "candidate": "automerge",
@@ -225,11 +225,11 @@
       "operations": 8,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.0012850000000526052,
-      "decodeMs": 0.01829900000007001,
-      "publishMs": 22.144444999999905,
-      "encodeMs": 0.6098379999998542,
-      "encodedBytes": 2095
+      "copyMs": 0.0012449999999262218,
+      "decodeMs": 0.017203999999992448,
+      "publishMs": 14.140642999999955,
+      "encodeMs": 0.34677899999996953,
+      "encodedBytes": 2096
     },
     {
       "candidate": "yjs",
@@ -238,10 +238,10 @@
       "operations": 8,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.0019299999999020656,
-      "decodeMs": 0.016889999999875727,
-      "publishMs": 0.721145000000206,
-      "encodeMs": 0.33906600000000253,
+      "copyMs": 0.0010380000003351597,
+      "decodeMs": 0.015181000000211498,
+      "publishMs": 0.616664000000128,
+      "encodeMs": 0.16623900000013236,
       "encodedBytes": 2963
     },
     {
@@ -251,10 +251,10 @@
       "operations": 8,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.0013689999998405256,
-      "decodeMs": 0.0146389999999883,
-      "publishMs": 0.5219150000000354,
-      "encodeMs": 0.2337510000002112,
+      "copyMs": 0.0011990000002697343,
+      "decodeMs": 0.016459999999824504,
+      "publishMs": 1.1511319999999614,
+      "encodeMs": 0.12828200000012657,
       "encodedBytes": 2963
     },
     {
@@ -264,11 +264,11 @@
       "operations": 8,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.0013210000001890876,
-      "decodeMs": 0.01367900000013833,
-      "publishMs": 17.46405700000014,
-      "encodeMs": 0.22745899999995345,
-      "encodedBytes": 2092
+      "copyMs": 0.0011190000000169675,
+      "decodeMs": 0.01604300000008152,
+      "publishMs": 17.988049000000046,
+      "encodeMs": 0.2796920000000682,
+      "encodedBytes": 2093
     },
     {
       "candidate": "yjs",
@@ -277,10 +277,10 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.004329999999981737,
-      "decodeMs": 0.002415000000155487,
-      "publishMs": 1.8883269999998902,
-      "encodeMs": 0.17845000000011169,
+      "copyMs": 0.0027050000003328023,
+      "decodeMs": 0.0014510000000882428,
+      "publishMs": 0.3929960000000392,
+      "encodeMs": 0.10148399999980029,
       "encodedBytes": 2910
     },
     {
@@ -290,36 +290,36 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.0029259999998885178,
-      "decodeMs": 0.0017350000000533328,
-      "publishMs": 39.395217999999886,
-      "encodeMs": 0.532041000000163,
-      "encodedBytes": 1965
-    },
-    {
-      "candidate": "automerge",
-      "size": 1024,
-      "fragments": 1,
-      "operations": 8,
-      "kind": "opaque",
-      "iteration": 1,
-      "copyMs": 0.005379999999831853,
-      "decodeMs": 0.001935999999886917,
-      "publishMs": 40.72675099999992,
-      "encodeMs": 1.9430049999998573,
+      "copyMs": 0.0024210000001403387,
+      "decodeMs": 0.001390999999784981,
+      "publishMs": 38.60864399999991,
+      "encodeMs": 0.6284740000000966,
       "encodedBytes": 1966
     },
     {
+      "candidate": "automerge",
+      "size": 1024,
+      "fragments": 1,
+      "operations": 8,
+      "kind": "opaque",
+      "iteration": 1,
+      "copyMs": 0.003268999999818334,
+      "decodeMs": 0.004668000000037864,
+      "publishMs": 33.99295600000005,
+      "encodeMs": 0.36380400000007285,
+      "encodedBytes": 1965
+    },
+    {
       "candidate": "yjs",
       "size": 1024,
       "fragments": 1,
       "operations": 8,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.045237999999926615,
-      "decodeMs": 0.003080999999838241,
-      "publishMs": 0.5196149999999307,
-      "encodeMs": 0.23693899999989299,
+      "copyMs": 0.0031749999998282874,
+      "decodeMs": 0.001667999999881431,
+      "publishMs": 0.47179000000005544,
+      "encodeMs": 0.24606100000028164,
       "encodedBytes": 2910
     },
     {
@@ -329,10 +329,10 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.003806000000167842,
-      "decodeMs": 0.0022639999999682914,
-      "publishMs": 0.7660310000001118,
-      "encodeMs": 0.1937080000000151,
+      "copyMs": 0.002632000000176049,
+      "decodeMs": 0.0015659999999115826,
+      "publishMs": 0.6026199999996606,
+      "encodeMs": 0.11845099999982267,
       "encodedBytes": 2910
     },
     {
@@ -342,11 +342,11 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.002690000000029613,
-      "decodeMs": 0.0012860000001637673,
-      "publishMs": 34.01122499999997,
-      "encodeMs": 0.5734689999999318,
-      "encodedBytes": 1963
+      "copyMs": 0.002563000000009197,
+      "decodeMs": 0.0014989999999670545,
+      "publishMs": 32.08823399999983,
+      "encodeMs": 0.47056000000020504,
+      "encodedBytes": 1966
     },
     {
       "candidate": "yjs",
@@ -355,10 +355,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.0012010000000373111,
-      "decodeMs": 0.019457999999985987,
-      "publishMs": 0.9686910000000353,
-      "encodeMs": 0.2201950000001034,
+      "copyMs": 0.0008939999997892301,
+      "decodeMs": 0.013678000000254542,
+      "publishMs": 0.16752899999983129,
+      "encodeMs": 0.12804899999991903,
       "encodedBytes": 2900
     },
     {
@@ -368,10 +368,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.0009169999998448475,
-      "decodeMs": 0.01840900000001966,
-      "publishMs": 3.2088240000000496,
-      "encodeMs": 0.18314599999985148,
+      "copyMs": 0.0009390000000166765,
+      "decodeMs": 0.01832700000022669,
+      "publishMs": 2.2481450000000223,
+      "encodeMs": 0.17777300000034302,
       "encodedBytes": 1649
     },
     {
@@ -381,11 +381,11 @@
       "operations": 1,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.001006999999844993,
-      "decodeMs": 0.018433999999842854,
-      "publishMs": 2.164355999999998,
-      "encodeMs": 0.2415169999999307,
-      "encodedBytes": 1650
+      "copyMs": 0.0010299999999006104,
+      "decodeMs": 0.017581999999947584,
+      "publishMs": 2.5929230000001553,
+      "encodeMs": 0.28470800000013696,
+      "encodedBytes": 1651
     },
     {
       "candidate": "yjs",
@@ -394,10 +394,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.0010689999999158317,
-      "decodeMs": 0.01707799999985582,
-      "publishMs": 0.32483400000000984,
-      "encodeMs": 0.10830099999975573,
+      "copyMs": 0.0008939999997892301,
+      "decodeMs": 0.013489999999819702,
+      "publishMs": 1.0719429999999193,
+      "encodeMs": 0.13913700000011886,
       "encodedBytes": 2900
     },
     {
@@ -407,10 +407,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.0009359999999105639,
-      "decodeMs": 0.014335000000301079,
-      "publishMs": 0.1512640000000829,
-      "encodeMs": 0.353020000000015,
+      "copyMs": 0.0008960000000115542,
+      "decodeMs": 0.014472999999725289,
+      "publishMs": 0.24528000000009342,
+      "encodeMs": 0.13841400000001158,
       "encodedBytes": 2900
     },
     {
@@ -420,10 +420,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.001389000000017404,
-      "decodeMs": 0.021635999999944033,
-      "publishMs": 2.4578959999998915,
-      "encodeMs": 0.19523000000026514,
+      "copyMs": 0.0012040000001434237,
+      "decodeMs": 0.06375400000024456,
+      "publishMs": 2.9305069999995794,
+      "encodeMs": 0.16346500000008746,
       "encodedBytes": 1652
     },
     {
@@ -433,10 +433,10 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.0022850000000289583,
-      "decodeMs": 0.001055000000178552,
-      "publishMs": 0.445524000000205,
-      "encodeMs": 0.1811979999997675,
+      "copyMs": 0.002553999999690859,
+      "decodeMs": 0.0010959999999613501,
+      "publishMs": 0.168091000000004,
+      "encodeMs": 0.09263400000008915,
       "encodedBytes": 2861
     },
     {
@@ -446,11 +446,11 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.00421100000039587,
-      "decodeMs": 0.0015839999996387633,
-      "publishMs": 6.8036689999999,
-      "encodeMs": 0.31440799999973024,
-      "encodedBytes": 1668
+      "copyMs": 0.0027930000001106237,
+      "decodeMs": 0.0014809999997851264,
+      "publishMs": 10.253722999999809,
+      "encodeMs": 0.19035000000030777,
+      "encodedBytes": 1667
     },
     {
       "candidate": "automerge",
@@ -459,11 +459,11 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.0029970000000503205,
-      "decodeMs": 0.002152999999907479,
-      "publishMs": 4.454780999999912,
-      "encodeMs": 0.39246700000012424,
-      "encodedBytes": 1668
+      "copyMs": 0.0037130000000615837,
+      "decodeMs": 0.0023030000002108864,
+      "publishMs": 4.199557000000368,
+      "encodeMs": 0.26202199999988807,
+      "encodedBytes": 1669
     },
     {
       "candidate": "yjs",
@@ -472,10 +472,10 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.017867000000023836,
-      "decodeMs": 0.0014840000003459863,
-      "publishMs": 0.3239730000000236,
-      "encodeMs": 0.45904900000005,
+      "copyMs": 0.002680999999938649,
+      "decodeMs": 0.002092999999604217,
+      "publishMs": 0.19684099999994942,
+      "encodeMs": 0.09377300000005562,
       "encodedBytes": 2861
     },
     {
@@ -485,10 +485,10 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.0032719999999244465,
-      "decodeMs": 0.0018789999999171414,
-      "publishMs": 0.42986199999995733,
-      "encodeMs": 0.16122800000039206,
+      "copyMs": 0.002678999999716325,
+      "decodeMs": 0.0019800000000032014,
+      "publishMs": 0.13732600000003004,
+      "encodeMs": 0.07841300000018236,
       "encodedBytes": 2861
     },
     {
@@ -498,10 +498,10 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.0032430000001113513,
-      "decodeMs": 0.0021669999996447586,
-      "publishMs": 3.965100999999777,
-      "encodeMs": 0.3966890000001513,
+      "copyMs": 0.0029059999997116392,
+      "decodeMs": 0.0025399999999535794,
+      "publishMs": 4.954631999999947,
+      "encodeMs": 0.4192600000001221,
       "encodedBytes": 1670
     },
     {
@@ -511,10 +511,10 @@
       "operations": 8,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.0015950000001794251,
-      "decodeMs": 0.018563999999969383,
-      "publishMs": 1.1902799999998024,
-      "encodeMs": 0.2768030000002,
+      "copyMs": 0.0013049999997747364,
+      "decodeMs": 0.17410199999994802,
+      "publishMs": 0.5244040000002315,
+      "encodeMs": 0.2541250000003856,
       "encodedBytes": 3670
     },
     {
@@ -524,11 +524,11 @@
       "operations": 8,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.000875000000178261,
-      "decodeMs": 0.019193000000086613,
-      "publishMs": 20.185923999999886,
-      "encodeMs": 0.5106700000001183,
-      "encodedBytes": 2316
+      "copyMs": 0.0012049999995724647,
+      "decodeMs": 0.02473500000041895,
+      "publishMs": 23.02375200000006,
+      "encodeMs": 2.570188000000144,
+      "encodedBytes": 2311
     },
     {
       "candidate": "automerge",
@@ -537,11 +537,11 @@
       "operations": 8,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.0009799999997994746,
-      "decodeMs": 0.023698999999851367,
-      "publishMs": 22.655956999999944,
-      "encodeMs": 0.3552839999997559,
-      "encodedBytes": 2316
+      "copyMs": 0.00099499999987529,
+      "decodeMs": 0.6149000000000342,
+      "publishMs": 23.414268999999877,
+      "encodeMs": 1.289571000000251,
+      "encodedBytes": 2306
     },
     {
       "candidate": "yjs",
@@ -550,10 +550,10 @@
       "operations": 8,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.0018140000001949375,
-      "decodeMs": 0.023339999999734573,
-      "publishMs": 0.6018039999999019,
-      "encodeMs": 0.13510299999961717,
+      "copyMs": 0.001099999999951251,
+      "decodeMs": 0.02388299999984156,
+      "publishMs": 0.9817299999999705,
+      "encodeMs": 0.26662700000042605,
       "encodedBytes": 3670
     },
     {
@@ -563,10 +563,10 @@
       "operations": 8,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.0008560000001125445,
-      "decodeMs": 0.10004400000025271,
-      "publishMs": 0.8181389999999737,
-      "encodeMs": 0.36885099999972226,
+      "copyMs": 0.0012440000000424334,
+      "decodeMs": 0.021865000000161672,
+      "publishMs": 0.28512799999998606,
+      "encodeMs": 0.5783620000001974,
       "encodedBytes": 3670
     },
     {
@@ -576,11 +576,11 @@
       "operations": 8,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.0009190000000671716,
-      "decodeMs": 0.024803999999676307,
-      "publishMs": 19.10290699999996,
-      "encodeMs": 0.4646319999997104,
-      "encodedBytes": 2318
+      "copyMs": 0.0009770000001481094,
+      "decodeMs": 0.017661999999745603,
+      "publishMs": 20.322743000000173,
+      "encodeMs": 0.42751300000008996,
+      "encodedBytes": 2312
     },
     {
       "candidate": "yjs",
@@ -589,10 +589,10 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.001983000000109314,
-      "decodeMs": 0.0012970000002496818,
-      "publishMs": 0.4693600000000515,
-      "encodeMs": 0.15663400000039474,
+      "copyMs": 0.002498999999716034,
+      "decodeMs": 0.0015300000000024738,
+      "publishMs": 0.3675509999998212,
+      "encodeMs": 0.11261700000022756,
       "encodedBytes": 3617
     },
     {
@@ -602,11 +602,11 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.003004000000146334,
-      "decodeMs": 0.002405000000180735,
-      "publishMs": 28.820866999999907,
-      "encodeMs": 0.31890599999996994,
-      "encodedBytes": 2632
+      "copyMs": 0.002644000000145752,
+      "decodeMs": 0.0011129999998047424,
+      "publishMs": 25.36716699999988,
+      "encodeMs": 0.3905830000003334,
+      "encodedBytes": 2634
     },
     {
       "candidate": "automerge",
@@ -615,10 +615,10 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.002567999999882886,
-      "decodeMs": 0.001344000000244705,
-      "publishMs": 34.69817699999976,
-      "encodeMs": 0.3128350000001774,
+      "copyMs": 0.00383300000021336,
+      "decodeMs": 0.0014599999999518332,
+      "publishMs": 30.87840799999958,
+      "encodeMs": 0.33663099999967017,
       "encodedBytes": 2631
     },
     {
@@ -628,10 +628,10 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.0035360000001674052,
-      "decodeMs": 0.00169000000005326,
-      "publishMs": 0.26030500000024404,
-      "encodeMs": 0.104783000000225,
+      "copyMs": 0.005137000000104308,
+      "decodeMs": 0.001599000000169326,
+      "publishMs": 0.21941999999990003,
+      "encodeMs": 0.0993109999999433,
       "encodedBytes": 3617
     },
     {
@@ -641,10 +641,10 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.002774000000044907,
-      "decodeMs": 0.0012019999999210995,
-      "publishMs": 0.34444299999995565,
-      "encodeMs": 0.16807699999981196,
+      "copyMs": 0.002621999999973923,
+      "decodeMs": 0.0013189999999667634,
+      "publishMs": 0.21924200000012206,
+      "encodeMs": 0.09054000000014639,
       "encodedBytes": 3617
     },
     {
@@ -654,11 +654,11 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.007096000000274216,
-      "decodeMs": 0.0025700000001052103,
-      "publishMs": 39.18426200000022,
-      "encodeMs": 0.4586559999997917,
-      "encodedBytes": 2632
+      "copyMs": 0.003068999999868538,
+      "decodeMs": 0.0016989999999168504,
+      "publishMs": 29.194570999999996,
+      "encodeMs": 0.5975779999998849,
+      "encodedBytes": 2629
     },
     {
       "candidate": "yjs",
@@ -667,10 +667,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.0009930000001077133,
-      "decodeMs": 0.02308400000038091,
-      "publishMs": 0.13097900000002483,
-      "encodeMs": 0.10061600000017279,
+      "copyMs": 0.0010110000002896413,
+      "decodeMs": 0.02514999999993961,
+      "publishMs": 0.32979999999997744,
+      "encodeMs": 0.10999199999969278,
       "encodedBytes": 17562
     },
     {
@@ -680,11 +680,11 @@
       "operations": 1,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.0009289999998145504,
-      "decodeMs": 0.02382099999977072,
-      "publishMs": 18.907177000000047,
-      "encodeMs": 0.3732869999998911,
-      "encodedBytes": 1049
+      "copyMs": 0.0014970000001994777,
+      "decodeMs": 0.03326100000003862,
+      "publishMs": 65.01744700000017,
+      "encodeMs": 1.5182660000000396,
+      "encodedBytes": 1043
     },
     {
       "candidate": "automerge",
@@ -693,11 +693,11 @@
       "operations": 1,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.0009580000000823929,
-      "decodeMs": 0.03789499999993495,
-      "publishMs": 25.208564000000024,
-      "encodeMs": 0.5579849999999169,
-      "encodedBytes": 1044
+      "copyMs": 0.001922000000377011,
+      "decodeMs": 0.08994099999972605,
+      "publishMs": 23.508851999999933,
+      "encodeMs": 0.5241930000001958,
+      "encodedBytes": 1046
     },
     {
       "candidate": "yjs",
@@ -706,11 +706,11 @@
       "operations": 1,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.0016660000001138542,
-      "decodeMs": 0.030590000000302098,
-      "publishMs": 0.15968299999985902,
-      "encodeMs": 0.1261610000001383,
-      "encodedBytes": 17562
+      "copyMs": 0.0010970000002998859,
+      "decodeMs": 0.032404999999926076,
+      "publishMs": 0.1528470000002926,
+      "encodeMs": 0.3672719999999572,
+      "encodedBytes": 17542
     },
     {
       "candidate": "yjs",
@@ -719,10 +719,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.0011580000000321888,
-      "decodeMs": 0.12387200000011944,
-      "publishMs": 0.5113160000000789,
-      "encodeMs": 0.23553399999991598,
+      "copyMs": 0.0012489999999161228,
+      "decodeMs": 0.023533000000043103,
+      "publishMs": 0.18323499999996784,
+      "encodeMs": 0.18781200000012177,
       "encodedBytes": 17562
     },
     {
@@ -732,11 +732,11 @@
       "operations": 1,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.0011279999998805579,
-      "decodeMs": 0.02912000000014814,
-      "publishMs": 13.639140000000225,
-      "encodeMs": 0.35417299999971874,
-      "encodedBytes": 1047
+      "copyMs": 0.0010459999998602143,
+      "decodeMs": 0.17091500000015003,
+      "publishMs": 20.751177000000098,
+      "encodeMs": 0.29299900000023626,
+      "encodedBytes": 1046
     },
     {
       "candidate": "yjs",
@@ -745,10 +745,10 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.0041150000001835,
-      "decodeMs": 0.0034860000000662694,
-      "publishMs": 0.24438499999996566,
-      "encodeMs": 0.11928100000022823,
+      "copyMs": 0.004313000000365719,
+      "decodeMs": 0.0028900000002067827,
+      "publishMs": 0.19657600000027742,
+      "encodeMs": 0.26036199999998644,
       "encodedBytes": 17521
     },
     {
@@ -758,36 +758,36 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.0036830000003647,
-      "decodeMs": 0.006702000000132102,
-      "publishMs": 114.99170499999991,
-      "encodeMs": 0.4718990000001213,
-      "encodedBytes": 1211
-    },
-    {
-      "candidate": "automerge",
-      "size": 16384,
-      "fragments": 1,
-      "operations": 1,
-      "kind": "opaque",
-      "iteration": 1,
-      "copyMs": 0.009337999999843305,
-      "decodeMs": 0.0053820000002815505,
-      "publishMs": 73.27861799999982,
-      "encodeMs": 0.44537899999977526,
+      "copyMs": 0.004498000000239699,
+      "decodeMs": 0.002934999999979482,
+      "publishMs": 82.55507000000034,
+      "encodeMs": 0.5335959999997613,
       "encodedBytes": 1212
     },
     {
+      "candidate": "automerge",
+      "size": 16384,
+      "fragments": 1,
+      "operations": 1,
+      "kind": "opaque",
+      "iteration": 1,
+      "copyMs": 0.004644999999982247,
+      "decodeMs": 0.0034500000001571607,
+      "publishMs": 88.54498199999989,
+      "encodeMs": 1.9342419999998128,
+      "encodedBytes": 1215
+    },
+    {
       "candidate": "yjs",
       "size": 16384,
       "fragments": 1,
       "operations": 1,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.005638999999973748,
-      "decodeMs": 0.004573000000164029,
-      "publishMs": 1.959487000000081,
-      "encodeMs": 0.11731600000030085,
+      "copyMs": 0.004937000000154512,
+      "decodeMs": 0.0033120000002782035,
+      "publishMs": 0.12992499999973006,
+      "encodeMs": 0.1398479999998017,
       "encodedBytes": 17521
     },
     {
@@ -797,10 +797,10 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.004707000000053085,
-      "decodeMs": 0.0037050000000817818,
-      "publishMs": 0.1689259999998285,
-      "encodeMs": 0.09012600000005477,
+      "copyMs": 0.003448999999818625,
+      "decodeMs": 0.0032310000001416483,
+      "publishMs": 0.1892280000001847,
+      "encodeMs": 0.18859900000006746,
       "encodedBytes": 17521
     },
     {
@@ -810,10 +810,10 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.037418999999772495,
-      "decodeMs": 0.0029549999999289867,
-      "publishMs": 81.14522400000033,
-      "encodeMs": 0.6981770000002143,
+      "copyMs": 0.0037509999997382693,
+      "decodeMs": 0.0025749999999788997,
+      "publishMs": 63.46475399999963,
+      "encodeMs": 0.5674730000000636,
       "encodedBytes": 1211
     },
     {
@@ -823,10 +823,10 @@
       "operations": 8,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.0012040000001434237,
-      "decodeMs": 0.026367999999820313,
-      "publishMs": 1.0288080000000264,
-      "encodeMs": 0.30368700000008175,
+      "copyMs": 0.0010179999999309075,
+      "decodeMs": 0.024493999999322114,
+      "publishMs": 0.8560349999997925,
+      "encodeMs": 0.13326899999992747,
       "encodedBytes": 18360
     },
     {
@@ -836,10 +836,10 @@
       "operations": 8,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.0010750000001280569,
-      "decodeMs": 0.03197300000010728,
-      "publishMs": 129.16273,
-      "encodeMs": 1.5655339999998432,
+      "copyMs": 0.0011660000000119908,
+      "decodeMs": 0.03584199999932025,
+      "publishMs": 236.05876499999977,
+      "encodeMs": 2.041855000000396,
       "encodedBytes": 2365
     },
     {
@@ -849,10 +849,10 @@
       "operations": 8,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.0011210000002392917,
-      "decodeMs": 0.04591900000013993,
-      "publishMs": 130.3145829999994,
-      "encodeMs": 1.0551550000000134,
+      "copyMs": 0.001103000000512111,
+      "decodeMs": 0.04190500000004249,
+      "publishMs": 113.70308599999953,
+      "encodeMs": 2.019293000000289,
       "encodedBytes": 2359
     },
     {
@@ -862,11 +862,11 @@
       "operations": 8,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.0017330000000583823,
-      "decodeMs": 0.13366099999984726,
-      "publishMs": 0.6370420000002923,
-      "encodeMs": 0.23315399999955844,
-      "encodedBytes": 18319
+      "copyMs": 0.001404999999977008,
+      "decodeMs": 0.03418899999996938,
+      "publishMs": 0.6527009999999791,
+      "encodeMs": 0.1987090000002354,
+      "encodedBytes": 18360
     },
     {
       "candidate": "yjs",
@@ -875,11 +875,11 @@
       "operations": 8,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.003590000000258442,
-      "decodeMs": 0.037330000000110886,
-      "publishMs": 1.3890999999994165,
-      "encodeMs": 0.6013779999993858,
-      "encodedBytes": 18360
+      "copyMs": 0.0009799999997994746,
+      "decodeMs": 0.024725000000216824,
+      "publishMs": 0.8767209999996339,
+      "encodeMs": 0.11148900000080175,
+      "encodedBytes": 18319
     },
     {
       "candidate": "automerge",
@@ -888,11 +888,11 @@
       "operations": 8,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.0011130000002594898,
-      "decodeMs": 0.029491000000234635,
-      "publishMs": 111.25320200000078,
-      "encodeMs": 1.2633690000002389,
-      "encodedBytes": 2364
+      "copyMs": 0.0014660000006188056,
+      "decodeMs": 0.0385470000001078,
+      "publishMs": 125.18354499999987,
+      "encodeMs": 1.444217999999637,
+      "encodedBytes": 2363
     },
     {
       "candidate": "yjs",
@@ -901,10 +901,10 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.00330500000018219,
-      "decodeMs": 0.0026560000005702022,
-      "publishMs": 0.267229000000043,
-      "encodeMs": 0.4419660000003205,
+      "copyMs": 0.003701000000546628,
+      "decodeMs": 0.002856999999494292,
+      "publishMs": 0.21224199999960547,
+      "encodeMs": 0.094492000000173,
       "encodedBytes": 18291
     },
     {
@@ -914,11 +914,11 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.011379000000488304,
-      "decodeMs": 0.0027380000001357985,
-      "publishMs": 471.5799340000003,
-      "encodeMs": 1.8413470000004963,
-      "encodedBytes": 3488
+      "copyMs": 0.004477000000406406,
+      "decodeMs": 0.0017800000005081529,
+      "publishMs": 590.2888599999997,
+      "encodeMs": 3.3812779999998384,
+      "encodedBytes": 3485
     },
     {
       "candidate": "automerge",
@@ -927,10 +927,10 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.008166999999957625,
-      "decodeMs": 0.0034219999997731065,
-      "publishMs": 442.79727300000013,
-      "encodeMs": 2.01624400000037,
+      "copyMs": 0.009095000000343134,
+      "decodeMs": 0.004287000000658736,
+      "publishMs": 374.01996699999927,
+      "encodeMs": 2.049221999999645,
       "encodedBytes": 3486
     },
     {
@@ -940,11 +940,11 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.005506999999852269,
-      "decodeMs": 0.003424000000450178,
-      "publishMs": 0.24257200000010926,
-      "encodeMs": 0.17416400000001886,
-      "encodedBytes": 18252
+      "copyMs": 0.005764999999883003,
+      "decodeMs": 0.0037210000000413856,
+      "publishMs": 0.25362999999924796,
+      "encodeMs": 0.1826439999995273,
+      "encodedBytes": 18291
     },
     {
       "candidate": "yjs",
@@ -953,10 +953,10 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.004574999999931606,
-      "decodeMs": 0.13054300000021613,
-      "publishMs": 0.5223100000002887,
-      "encodeMs": 0.09748399999989488,
+      "copyMs": 0.004795999999259948,
+      "decodeMs": 0.0032320000000254367,
+      "publishMs": 0.21655100000043603,
+      "encodeMs": 0.08858799999961775,
       "encodedBytes": 18291
     },
     {
@@ -966,11 +966,11 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.003992999999354652,
-      "decodeMs": 0.03470800000013696,
-      "publishMs": 422.635499,
-      "encodeMs": 10.084453999999823,
-      "encodedBytes": 3485
+      "copyMs": 0.0036199999995005783,
+      "decodeMs": 0.0026539999998931307,
+      "publishMs": 378.3181219999997,
+      "encodeMs": 3.140129999999772,
+      "encodedBytes": 3486
     },
     {
       "candidate": "yjs",
@@ -979,10 +979,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.001217999999425956,
-      "decodeMs": 0.159072999998898,
-      "publishMs": 0.2016990000010992,
-      "encodeMs": 0.17308699999921373,
+      "copyMs": 0.0011739999999917927,
+      "decodeMs": 0.028435999999601336,
+      "publishMs": 0.23540500000035536,
+      "encodeMs": 0.10446899999988091,
       "encodedBytes": 18267
     },
     {
@@ -992,11 +992,11 @@
       "operations": 1,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.0008560000005672919,
-      "decodeMs": 0.029937000001154956,
-      "publishMs": 26.683304000000135,
-      "encodeMs": 0.4849639999993087,
-      "encodedBytes": 1746
+      "copyMs": 0.0010199999996984843,
+      "decodeMs": 0.046666000000186614,
+      "publishMs": 14.654819000000316,
+      "encodeMs": 0.31604500000048574,
+      "encodedBytes": 1745
     },
     {
       "candidate": "automerge",
@@ -1005,11 +1005,11 @@
       "operations": 1,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.11038900000130525,
-      "decodeMs": 0.04065200000150071,
-      "publishMs": 13.023231999999552,
-      "encodeMs": 0.48997400000007474,
-      "encodedBytes": 1749
+      "copyMs": 0.0013639999997394625,
+      "decodeMs": 0.03643000000010943,
+      "publishMs": 14.699787999999899,
+      "encodeMs": 0.3563530000001265,
+      "encodedBytes": 1744
     },
     {
       "candidate": "yjs",
@@ -1018,10 +1018,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.001065000000380678,
-      "decodeMs": 0.030011999999260297,
-      "publishMs": 0.37796200000047975,
-      "encodeMs": 0.130976999998893,
+      "copyMs": 0.0016990000003715977,
+      "decodeMs": 0.0319469999994908,
+      "publishMs": 0.2856629999996585,
+      "encodeMs": 0.12306600000010803,
       "encodedBytes": 18267
     },
     {
@@ -1031,10 +1031,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.0008630000011180528,
-      "decodeMs": 0.02482400000008056,
-      "publishMs": 0.45276299999932235,
-      "encodeMs": 0.13009000000056403,
+      "copyMs": 0.0009559999998600688,
+      "decodeMs": 0.02589799999987008,
+      "publishMs": 0.2159620000002178,
+      "encodeMs": 0.11246600000049511,
       "encodedBytes": 18267
     },
     {
@@ -1044,11 +1044,11 @@
       "operations": 1,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.0009509999999863794,
-      "decodeMs": 0.029400000001260196,
-      "publishMs": 20.320534000000407,
-      "encodeMs": 0.549790999999459,
-      "encodedBytes": 1746
+      "copyMs": 0.0009810000001380104,
+      "decodeMs": 0.030807000000095286,
+      "publishMs": 23.365139999999883,
+      "encodeMs": 0.31124799999997776,
+      "encodedBytes": 1750
     },
     {
       "candidate": "yjs",
@@ -1057,10 +1057,10 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.004552000000330736,
-      "decodeMs": 0.002959999999802676,
-      "publishMs": 0.1360160000003816,
-      "encodeMs": 0.0902540000006411,
+      "copyMs": 0.003965000001699082,
+      "decodeMs": 0.0034190000005764887,
+      "publishMs": 0.14502399999946647,
+      "encodeMs": 0.0880669999987731,
       "encodedBytes": 18226
     },
     {
@@ -1070,11 +1070,11 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.006824999998571002,
-      "decodeMs": 0.0036680000011983793,
-      "publishMs": 50.39129099999991,
-      "encodeMs": 0.43906299999980547,
-      "encodedBytes": 1910
+      "copyMs": 0.005379000000175438,
+      "decodeMs": 0.003034999999727006,
+      "publishMs": 56.328512000000046,
+      "encodeMs": 0.5827179999996588,
+      "encodedBytes": 1913
     },
     {
       "candidate": "automerge",
@@ -1083,11 +1083,11 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.006165000000692089,
-      "decodeMs": 0.004327999999077292,
-      "publishMs": 75.72902700000122,
-      "encodeMs": 1.222701999999117,
-      "encodedBytes": 1914
+      "copyMs": 0.0057059999999182764,
+      "decodeMs": 0.0032550000014452962,
+      "publishMs": 59.25908299999901,
+      "encodeMs": 0.7014369999997143,
+      "encodedBytes": 1912
     },
     {
       "candidate": "yjs",
@@ -1096,10 +1096,10 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.004484999999476713,
-      "decodeMs": 0.0024539999994885875,
-      "publishMs": 0.1983410000011645,
-      "encodeMs": 0.13734300000032817,
+      "copyMs": 0.0048920000008365605,
+      "decodeMs": 0.0028199999997013947,
+      "publishMs": 0.22165700000005018,
+      "encodeMs": 0.11043500000050699,
       "encodedBytes": 18226
     },
     {
@@ -1109,10 +1109,10 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.004829999999856227,
-      "decodeMs": 0.003701999999975669,
-      "publishMs": 0.5548319999998057,
-      "encodeMs": 0.13169599999855564,
+      "copyMs": 0.005358000000342145,
+      "decodeMs": 0.0035879999995813705,
+      "publishMs": 0.43324700000084704,
+      "encodeMs": 0.09474500000033004,
       "encodedBytes": 18226
     },
     {
@@ -1122,11 +1122,11 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.003882000000885455,
-      "decodeMs": 0.003133000000161701,
-      "publishMs": 51.483227000000625,
-      "encodeMs": 0.6333709999998973,
-      "encodedBytes": 1910
+      "copyMs": 0.0045939999999973224,
+      "decodeMs": 0.002882000000681728,
+      "publishMs": 45.70093800000177,
+      "encodeMs": 1.2217009999985748,
+      "encodedBytes": 1908
     },
     {
       "candidate": "yjs",
@@ -1135,10 +1135,10 @@
       "operations": 8,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.001313000000664033,
-      "decodeMs": 2.2065459999994346,
-      "publishMs": 1.4451740000004065,
-      "encodeMs": 0.19269400000121095,
+      "copyMs": 0.0008330000000569271,
+      "decodeMs": 0.027255999999397318,
+      "publishMs": 2.24265799999921,
+      "encodeMs": 0.16633700000056706,
       "encodedBytes": 19065
     },
     {
@@ -1148,11 +1148,11 @@
       "operations": 8,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.0016430000014224788,
-      "decodeMs": 0.036220999998477055,
-      "publishMs": 132.1005669999995,
-      "encodeMs": 1.2052510000012262,
-      "encodedBytes": 2588
+      "copyMs": 0.0011969999995926628,
+      "decodeMs": 0.03999900000053458,
+      "publishMs": 116.79898700000012,
+      "encodeMs": 1.3634269999984099,
+      "encodedBytes": 2590
     },
     {
       "candidate": "automerge",
@@ -1161,11 +1161,11 @@
       "operations": 8,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.0011539999995875405,
-      "decodeMs": 0.04037699999935285,
-      "publishMs": 121.10028799999964,
-      "encodeMs": 1.5016269999996439,
-      "encodedBytes": 2594
+      "copyMs": 0.0008749999997235136,
+      "decodeMs": 0.03810400000111258,
+      "publishMs": 116.667875000001,
+      "encodeMs": 1.1280540000007022,
+      "encodedBytes": 2586
     },
     {
       "candidate": "yjs",
@@ -1174,10 +1174,10 @@
       "operations": 8,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.001772999999957392,
-      "decodeMs": 0.03370100000029197,
-      "publishMs": 0.4992290000009234,
-      "encodeMs": 0.3094710000004852,
+      "copyMs": 0.0017650000008870848,
+      "decodeMs": 0.039109999999709544,
+      "publishMs": 0.5470239999995101,
+      "encodeMs": 0.13824000000022352,
       "encodedBytes": 19065
     },
     {
@@ -1187,10 +1187,10 @@
       "operations": 8,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.0013870000002498273,
-      "decodeMs": 0.029539999999542488,
-      "publishMs": 1.4559010000011767,
-      "encodeMs": 0.3980179999998654,
+      "copyMs": 0.0016149999992194353,
+      "decodeMs": 0.03221300000041083,
+      "publishMs": 1.6243610000001354,
+      "encodeMs": 0.2517310000002908,
       "encodedBytes": 19065
     },
     {
@@ -1200,10 +1200,10 @@
       "operations": 8,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.0008769999985815957,
-      "decodeMs": 0.04682099999990896,
-      "publishMs": 136.0427039999995,
-      "encodeMs": 1.1732339999998658,
+      "copyMs": 0.0008870000001479639,
+      "decodeMs": 0.029794000000038068,
+      "publishMs": 111.22522000000026,
+      "encodeMs": 1.2325679999994463,
       "encodedBytes": 2596
     },
     {
@@ -1213,10 +1213,10 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.00390999999945052,
-      "decodeMs": 0.002633999998579384,
-      "publishMs": 0.2415369999998802,
-      "encodeMs": 0.10241599999972095,
+      "copyMs": 0.004607999999279855,
+      "decodeMs": 0.0033119999989139615,
+      "publishMs": 0.24283400000058464,
+      "encodeMs": 0.10081700000046112,
       "encodedBytes": 18996
     },
     {
@@ -1226,11 +1226,11 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.0049719999988155905,
-      "decodeMs": 0.003897000000506523,
-      "publishMs": 550.1346830000002,
-      "encodeMs": 2.308748999999807,
-      "encodedBytes": 4142
+      "copyMs": 0.005234000000200467,
+      "decodeMs": 0.002712999999857857,
+      "publishMs": 411.9797060000001,
+      "encodeMs": 2.6067020000009506,
+      "encodedBytes": 4054
     },
     {
       "candidate": "automerge",
@@ -1239,11 +1239,11 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.10835799999949813,
-      "decodeMs": 0.003097999999226886,
-      "publishMs": 710.8337660000016,
-      "encodeMs": 2.099824000000808,
-      "encodedBytes": 4140
+      "copyMs": 0.008199000001695822,
+      "decodeMs": 0.00350099999923259,
+      "publishMs": 413.6189720000002,
+      "encodeMs": 4.682722999999896,
+      "encodedBytes": 4137
     },
     {
       "candidate": "yjs",
@@ -1252,10 +1252,10 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.004291000001103384,
-      "decodeMs": 0.0022449999996752013,
-      "publishMs": 0.8142549999993207,
-      "encodeMs": 0.1734679999990476,
+      "copyMs": 0.0062409999991359655,
+      "decodeMs": 0.002980000001116423,
+      "publishMs": 0.6186870000001363,
+      "encodeMs": 0.2937230000006821,
       "encodedBytes": 18996
     },
     {
@@ -1265,10 +1265,10 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.0037839999986317707,
-      "decodeMs": 0.0026900000011664815,
-      "publishMs": 0.28978300000017043,
-      "encodeMs": 0.44216599999890605,
+      "copyMs": 0.003944999998566345,
+      "decodeMs": 0.0034190000005764887,
+      "publishMs": 0.6274880000000849,
+      "encodeMs": 0.1121129999992263,
       "encodedBytes": 18996
     },
     {
@@ -1278,11 +1278,11 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.004166999999142718,
-      "decodeMs": 0.0034319999995204853,
-      "publishMs": 425.2964540000012,
-      "encodeMs": 2.3102319999998144,
-      "encodedBytes": 4140
+      "copyMs": 0.005311000000801869,
+      "decodeMs": 0.0033679999996820698,
+      "publishMs": 747.2786370000013,
+      "encodeMs": 3.23047299999962,
+      "encodedBytes": 4137
     },
     {
       "candidate": "yjs",
@@ -1291,10 +1291,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.0008379999999306165,
-      "decodeMs": 0.09797699999944598,
-      "publishMs": 0.2470659999999043,
-      "encodeMs": 0.14991399999962596,
+      "copyMs": 0.0009069999996427214,
+      "decodeMs": 0.07695299999977578,
+      "publishMs": 0.26196100000015576,
+      "encodeMs": 0.6038650000009511,
       "encodedBytes": 66714
     },
     {
@@ -1304,11 +1304,11 @@
       "operations": 1,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.00269299999854411,
-      "decodeMs": 0.10874900000089838,
-      "publishMs": 90.5962240000008,
-      "encodeMs": 1.8584649999993417,
-      "encodedBytes": 1164
+      "copyMs": 0.0019059999995079124,
+      "decodeMs": 0.20412199999918812,
+      "publishMs": 66.86919400000079,
+      "encodeMs": 1.254439000000275,
+      "encodedBytes": 1169
     },
     {
       "candidate": "automerge",
@@ -1317,10 +1317,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.0022689999987051124,
-      "decodeMs": 0.09876699999949778,
-      "publishMs": 68.20256100000006,
-      "encodeMs": 1.785531000001356,
+      "copyMs": 0.0016219999997701962,
+      "decodeMs": 0.15355000000090513,
+      "publishMs": 64.37482900000032,
+      "encodeMs": 1.1444730000002892,
       "encodedBytes": 1167
     },
     {
@@ -1330,10 +1330,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.0016880000002856832,
-      "decodeMs": 0.1181429999996908,
-      "publishMs": 0.30999900000097114,
-      "encodeMs": 0.6579059999985475,
+      "copyMs": 0.0017160000006697373,
+      "decodeMs": 0.09028800000123738,
+      "publishMs": 1.2571800000005169,
+      "encodeMs": 0.4042440000011993,
       "encodedBytes": 66714
     },
     {
@@ -1343,10 +1343,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.0013429999999061693,
-      "decodeMs": 0.0816499999982625,
-      "publishMs": 0.4318299999995361,
-      "encodeMs": 0.2684209999988525,
+      "copyMs": 0.0010490000004210742,
+      "decodeMs": 0.08172199999899021,
+      "publishMs": 0.4795300000005227,
+      "encodeMs": 1.909287000000404,
       "encodedBytes": 66714
     },
     {
@@ -1356,11 +1356,11 @@
       "operations": 1,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.0015469999998458661,
-      "decodeMs": 0.21063499999945634,
-      "publishMs": 71.43273100000079,
-      "encodeMs": 1.423174999999901,
-      "encodedBytes": 1166
+      "copyMs": 0.0018980000004376052,
+      "decodeMs": 0.09670699999878707,
+      "publishMs": 78.58339399999932,
+      "encodeMs": 2.981493999999657,
+      "encodedBytes": 1168
     },
     {
       "candidate": "yjs",
@@ -1369,10 +1369,10 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.011137999999846215,
-      "decodeMs": 0.010559000000284868,
-      "publishMs": 0.12166099999922153,
-      "encodeMs": 0.13768199999867647,
+      "copyMs": 0.011794000000008964,
+      "decodeMs": 0.032155999999304186,
+      "publishMs": 0.11807699999917531,
+      "encodeMs": 0.09877699999924516,
       "encodedBytes": 66673
     },
     {
@@ -1382,11 +1382,11 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.03855399999883957,
-      "decodeMs": 0.049983000000793254,
-      "publishMs": 268.12067000000025,
-      "encodeMs": 1.791691999998875,
-      "encodedBytes": 1713
+      "copyMs": 0.031815000000278815,
+      "decodeMs": 0.038408000000345055,
+      "publishMs": 796.2608149999996,
+      "encodeMs": 1.4969689999998081,
+      "encodedBytes": 1708
     },
     {
       "candidate": "automerge",
@@ -1395,62 +1395,62 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.010989000000336091,
-      "decodeMs": 0.00862799999958952,
-      "publishMs": 271.84908800000085,
-      "encodeMs": 2.6532219999990048,
+      "copyMs": 0.01647199999933946,
+      "decodeMs": 0.016444000000774395,
+      "publishMs": 294.70809999999983,
+      "encodeMs": 2.203107999999702,
+      "encodedBytes": 1712
+    },
+    {
+      "candidate": "yjs",
+      "size": 65536,
+      "fragments": 1,
+      "operations": 1,
+      "kind": "opaque",
+      "iteration": 1,
+      "copyMs": 0.011599999999816646,
+      "decodeMs": 0.010581000000456697,
+      "publishMs": 0.473959000000832,
+      "encodeMs": 0.19653099999959522,
+      "encodedBytes": 66673
+    },
+    {
+      "candidate": "yjs",
+      "size": 65536,
+      "fragments": 1,
+      "operations": 1,
+      "kind": "opaque",
+      "iteration": 2,
+      "copyMs": 0.01132799999868439,
+      "decodeMs": 0.010770000000775326,
+      "publishMs": 0.33254200000010314,
+      "encodeMs": 0.10070099999938975,
+      "encodedBytes": 66673
+    },
+    {
+      "candidate": "automerge",
+      "size": 65536,
+      "fragments": 1,
+      "operations": 1,
+      "kind": "opaque",
+      "iteration": 2,
+      "copyMs": 0.012921999999889522,
+      "decodeMs": 0.011523000001034234,
+      "publishMs": 275.2228360000008,
+      "encodeMs": 2.4529920000022685,
       "encodedBytes": 1711
     },
     {
       "candidate": "yjs",
       "size": 65536,
       "fragments": 1,
-      "operations": 1,
-      "kind": "opaque",
-      "iteration": 1,
-      "copyMs": 0.008927000000767293,
-      "decodeMs": 0.007358999999269145,
-      "publishMs": 0.14758600000095612,
-      "encodeMs": 0.11924399999952584,
-      "encodedBytes": 66673
-    },
-    {
-      "candidate": "yjs",
-      "size": 65536,
-      "fragments": 1,
-      "operations": 1,
-      "kind": "opaque",
-      "iteration": 2,
-      "copyMs": 0.012072000001353445,
-      "decodeMs": 0.010782999999719323,
-      "publishMs": 0.1255990000008751,
-      "encodeMs": 0.09577699999863398,
-      "encodedBytes": 66673
-    },
-    {
-      "candidate": "automerge",
-      "size": 65536,
-      "fragments": 1,
-      "operations": 1,
-      "kind": "opaque",
-      "iteration": 2,
-      "copyMs": 0.04710200000045006,
-      "decodeMs": 0.04547400000046764,
-      "publishMs": 317.49130999999943,
-      "encodeMs": 3.77705799999967,
-      "encodedBytes": 1713
-    },
-    {
-      "candidate": "yjs",
-      "size": 65536,
-      "fragments": 1,
       "operations": 8,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.0009219999992637895,
-      "decodeMs": 0.053200999998807674,
-      "publishMs": 1.4168879999997444,
-      "encodeMs": 0.13784300000043004,
+      "copyMs": 0.0009500000014668331,
+      "decodeMs": 0.07041000000026543,
+      "publishMs": 1.7047320000019681,
+      "encodeMs": 0.1940180000019609,
       "encodedBytes": 67512
     },
     {
@@ -1460,75 +1460,75 @@
       "operations": 8,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.001207999997859588,
-      "decodeMs": 0.07859200000166311,
-      "publishMs": 529.2810009999994,
-      "encodeMs": 5.389070000001084,
+      "copyMs": 0.0020839999997406267,
+      "decodeMs": 0.08899899999960326,
+      "publishMs": 596.1789649999992,
+      "encodeMs": 7.782274999997753,
+      "encodedBytes": 3036
+    },
+    {
+      "candidate": "automerge",
+      "size": 65536,
+      "fragments": 1,
+      "operations": 8,
+      "kind": "text",
+      "iteration": 1,
+      "copyMs": 0.002992000001540873,
+      "decodeMs": 0.08081099999981234,
+      "publishMs": 663.780956999999,
+      "encodeMs": 6.850934999998572,
+      "encodedBytes": 3036
+    },
+    {
+      "candidate": "yjs",
+      "size": 65536,
+      "fragments": 1,
+      "operations": 8,
+      "kind": "text",
+      "iteration": 1,
+      "copyMs": 0.0014950000004319008,
+      "decodeMs": 0.06213500000012573,
+      "publishMs": 5.760419999998703,
+      "encodeMs": 0.18872600000031525,
+      "encodedBytes": 67512
+    },
+    {
+      "candidate": "yjs",
+      "size": 65536,
+      "fragments": 1,
+      "operations": 8,
+      "kind": "text",
+      "iteration": 2,
+      "copyMs": 0.0013810000018565916,
+      "decodeMs": 0.06154399999650195,
+      "publishMs": 5.558580000000802,
+      "encodeMs": 0.19712199999776203,
+      "encodedBytes": 67512
+    },
+    {
+      "candidate": "automerge",
+      "size": 65536,
+      "fragments": 1,
+      "operations": 8,
+      "kind": "text",
+      "iteration": 2,
+      "copyMs": 0.0021240000023681205,
+      "decodeMs": 0.08347700000012992,
+      "publishMs": 654.0175850000014,
+      "encodeMs": 11.624356000000262,
       "encodedBytes": 3030
     },
     {
-      "candidate": "automerge",
-      "size": 65536,
-      "fragments": 1,
-      "operations": 8,
-      "kind": "text",
-      "iteration": 1,
-      "copyMs": 0.001768999998603249,
-      "decodeMs": 0.316793999998481,
-      "publishMs": 968.7189450000005,
-      "encodeMs": 6.830441999998584,
-      "encodedBytes": 3033
-    },
-    {
-      "candidate": "yjs",
-      "size": 65536,
-      "fragments": 1,
-      "operations": 8,
-      "kind": "text",
-      "iteration": 1,
-      "copyMs": 0.0083520000007411,
-      "decodeMs": 0.3040270000019518,
-      "publishMs": 11.76204399999915,
-      "encodeMs": 0.720047999999224,
-      "encodedBytes": 67512
-    },
-    {
-      "candidate": "yjs",
-      "size": 65536,
-      "fragments": 1,
-      "operations": 8,
-      "kind": "text",
-      "iteration": 2,
-      "copyMs": 0.0012989999995625112,
-      "decodeMs": 0.17351399999824935,
-      "publishMs": 8.303115000002435,
-      "encodeMs": 1.1150439999983064,
-      "encodedBytes": 67471
-    },
-    {
-      "candidate": "automerge",
-      "size": 65536,
-      "fragments": 1,
-      "operations": 8,
-      "kind": "text",
-      "iteration": 2,
-      "copyMs": 0.0025709999972605146,
-      "decodeMs": 0.15621000000101048,
-      "publishMs": 1054.2457189999986,
-      "encodeMs": 4.926030999999057,
-      "encodedBytes": 3035
-    },
-    {
       "candidate": "yjs",
       "size": 65536,
       "fragments": 1,
       "operations": 8,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.010622000001603737,
-      "decodeMs": 0.03485000000000582,
-      "publishMs": 2.238492000000406,
-      "encodeMs": 1.0506940000013856,
+      "copyMs": 0.010388999999122461,
+      "decodeMs": 0.009215000001859153,
+      "publishMs": 1.080394000000524,
+      "encodeMs": 0.19917100000020582,
       "encodedBytes": 67443
     },
     {
@@ -1538,10 +1538,10 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.034117999999580206,
-      "decodeMs": 0.9306530000030762,
-      "publishMs": 2136.315096999999,
-      "encodeMs": 8.447965999999724,
+      "copyMs": 0.9485940000013215,
+      "decodeMs": 0.039388000001054024,
+      "publishMs": 1845.3000919999977,
+      "encodeMs": 9.939914999999019,
       "encodedBytes": 6998
     },
     {
@@ -1551,11 +1551,11 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.011614999999437714,
-      "decodeMs": 0.008757000003242865,
-      "publishMs": 2517.0093089999973,
-      "encodeMs": 9.820526999999856,
-      "encodedBytes": 6997
+      "copyMs": 0.014205999999830965,
+      "decodeMs": 0.00977700000294135,
+      "publishMs": 4378.75705,
+      "encodeMs": 15.825049999999464,
+      "encodedBytes": 6994
     },
     {
       "candidate": "yjs",
@@ -1564,10 +1564,10 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.00894299999345094,
-      "decodeMs": 0.00756800000090152,
-      "publishMs": 0.7892260000007809,
-      "encodeMs": 0.1902470000059111,
+      "copyMs": 0.00968299999658484,
+      "decodeMs": 0.007128999997803476,
+      "publishMs": 0.3379290000011679,
+      "encodeMs": 0.13891399999556597,
       "encodedBytes": 67443
     },
     {
@@ -1577,10 +1577,10 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.010995999997248873,
-      "decodeMs": 0.010766999999759719,
-      "publishMs": 1.0572309999988647,
-      "encodeMs": 0.15149400000518654,
+      "copyMs": 0.010525000005145557,
+      "decodeMs": 0.0097650000025169,
+      "publishMs": 0.27941099999588914,
+      "encodeMs": 0.11278499999752967,
       "encodedBytes": 67443
     },
     {
@@ -1590,11 +1590,11 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.011366999999154359,
-      "decodeMs": 0.008651000003737863,
-      "publishMs": 2479.216526999997,
-      "encodeMs": 7.5729970000029425,
-      "encodedBytes": 7002
+      "copyMs": 0.017114999995101243,
+      "decodeMs": 0.01365300000179559,
+      "publishMs": 1704.9835440000024,
+      "encodeMs": 9.744922000005317,
+      "encodedBytes": 6999
     },
     {
       "candidate": "yjs",
@@ -1603,10 +1603,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.0011950000043725595,
-      "decodeMs": 0.0515640000012354,
-      "publishMs": 0.2651229999974021,
-      "encodeMs": 0.13408200000412762,
+      "copyMs": 0.0009669999999459833,
+      "decodeMs": 0.14908999999897787,
+      "publishMs": 0.375478000001749,
+      "encodeMs": 0.30275199999596225,
       "encodedBytes": 67425
     },
     {
@@ -1616,11 +1616,11 @@
       "operations": 1,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.0010450000045238994,
-      "decodeMs": 0.0657019999998738,
-      "publishMs": 60.95277199999691,
-      "encodeMs": 1.3896410000015749,
-      "encodedBytes": 1897
+      "copyMs": 0.0009659999996074475,
+      "decodeMs": 0.1106149999977788,
+      "publishMs": 89.11250899999868,
+      "encodeMs": 2.3900720000019646,
+      "encodedBytes": 1896
     },
     {
       "candidate": "automerge",
@@ -1629,11 +1629,11 @@
       "operations": 1,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.0011749999976018444,
-      "decodeMs": 0.15001399999891873,
-      "publishMs": 62.61977299999853,
-      "encodeMs": 1.033752999996068,
-      "encodedBytes": 1897
+      "copyMs": 0.0015019999991636723,
+      "decodeMs": 0.09887599999638041,
+      "publishMs": 75.02563999999984,
+      "encodeMs": 1.3926399999982095,
+      "encodedBytes": 1896
     },
     {
       "candidate": "yjs",
@@ -1642,10 +1642,10 @@
       "operations": 1,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.001347000004898291,
-      "decodeMs": 0.06423399999766843,
-      "publishMs": 0.37581499999942025,
-      "encodeMs": 0.15916599999764003,
+      "copyMs": 0.0010600000023259781,
+      "decodeMs": 0.12179000000469387,
+      "publishMs": 2.138846999994712,
+      "encodeMs": 0.24612299999716925,
       "encodedBytes": 67425
     },
     {
@@ -1655,11 +1655,11 @@
       "operations": 1,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.001237000004039146,
-      "decodeMs": 0.1177430000025197,
-      "publishMs": 0.3509970000013709,
-      "encodeMs": 0.17702800000552088,
-      "encodedBytes": 67425
+      "copyMs": 0.0007530000002589077,
+      "decodeMs": 0.057843999995384365,
+      "publishMs": 0.41741999999794643,
+      "encodeMs": 2.2519130000000587,
+      "encodedBytes": 67391
     },
     {
       "candidate": "automerge",
@@ -1668,11 +1668,11 @@
       "operations": 1,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.0010949999996228144,
-      "decodeMs": 0.06466199999704259,
-      "publishMs": 76.90554100000008,
-      "encodeMs": 1.8057209999969928,
-      "encodedBytes": 1895
+      "copyMs": 0.0011190000004717149,
+      "decodeMs": 0.06632900000113295,
+      "publishMs": 120.11090399999375,
+      "encodeMs": 2.1567310000027646,
+      "encodedBytes": 1894
     },
     {
       "candidate": "yjs",
@@ -1681,10 +1681,10 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.010763999998744112,
-      "decodeMs": 0.009777999999641906,
-      "publishMs": 0.19142999999894528,
-      "encodeMs": 0.11620599999878323,
+      "copyMs": 0.011141000002680812,
+      "decodeMs": 0.010330000004614703,
+      "publishMs": 0.20857799999794224,
+      "encodeMs": 1.0202780000036,
       "encodedBytes": 67384
     },
     {
@@ -1694,11 +1694,11 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.012589999998454005,
-      "decodeMs": 0.008740999997826293,
-      "publishMs": 214.60779699999694,
-      "encodeMs": 1.367868000001181,
-      "encodedBytes": 2455
+      "copyMs": 0.01696299999457551,
+      "decodeMs": 0.01413699999829987,
+      "publishMs": 278.247460999999,
+      "encodeMs": 1.8015320000049542,
+      "encodedBytes": 2461
     },
     {
       "candidate": "automerge",
@@ -1707,10 +1707,10 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.01655699999537319,
-      "decodeMs": 0.014311000006273389,
-      "publishMs": 231.84638899999845,
-      "encodeMs": 1.7280319999990752,
+      "copyMs": 0.014064000002690591,
+      "decodeMs": 0.009970999999495689,
+      "publishMs": 252.62131400000362,
+      "encodeMs": 1.3961060000001453,
       "encodedBytes": 2453
     },
     {
@@ -1720,10 +1720,10 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.009536999998090323,
-      "decodeMs": 0.007184000001871027,
-      "publishMs": 0.33426699999836273,
-      "encodeMs": 0.13178599999810103,
+      "copyMs": 0.009471999997913372,
+      "decodeMs": 0.0077129999990575016,
+      "publishMs": 0.1790130000008503,
+      "encodeMs": 0.1642649999994319,
       "encodedBytes": 67384
     },
     {
@@ -1733,10 +1733,10 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.010431000002427027,
-      "decodeMs": 0.00991000000067288,
-      "publishMs": 0.19141900000249734,
-      "encodeMs": 0.1882640000039828,
+      "copyMs": 0.010886000003665686,
+      "decodeMs": 0.009748999997100327,
+      "publishMs": 0.1574239999972633,
+      "encodeMs": 0.13819800000055693,
       "encodedBytes": 67384
     },
     {
@@ -1746,11 +1746,11 @@
       "operations": 1,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.01117800000065472,
-      "decodeMs": 0.009086000005481765,
-      "publishMs": 233.15840099999332,
-      "encodeMs": 1.9769979999982752,
-      "encodedBytes": 2456
+      "copyMs": 0.177190000002156,
+      "decodeMs": 0.031824999998207204,
+      "publishMs": 388.35857199999737,
+      "encodeMs": 1.7668540000013309,
+      "encodedBytes": 2453
     },
     {
       "candidate": "yjs",
@@ -1759,10 +1759,10 @@
       "operations": 8,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.0009629999985918403,
-      "decodeMs": 0.05137200000172015,
-      "publishMs": 1.4595750000007683,
-      "encodeMs": 0.15742300000420073,
+      "copyMs": 0.00079600000026403,
+      "decodeMs": 0.051635000003443565,
+      "publishMs": 1.4551270000010845,
+      "encodeMs": 0.1485430000029737,
       "encodedBytes": 68223
     },
     {
@@ -1772,11 +1772,11 @@
       "operations": 8,
       "kind": "text",
       "iteration": 0,
-      "copyMs": 0.001352999999653548,
-      "decodeMs": 0.06783400000131223,
-      "publishMs": 463.2975839999999,
-      "encodeMs": 4.013721999996051,
-      "encodedBytes": 3261
+      "copyMs": 0.0012059999935445376,
+      "decodeMs": 0.0673259999966831,
+      "publishMs": 507.2806469999996,
+      "encodeMs": 11.801705000005313,
+      "encodedBytes": 3257
     },
     {
       "candidate": "automerge",
@@ -1785,11 +1785,11 @@
       "operations": 8,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.001087999997253064,
-      "decodeMs": 0.06702900000527734,
-      "publishMs": 483.7621579999977,
-      "encodeMs": 4.621566999994684,
-      "encodedBytes": 3262
+      "copyMs": 0.0014819999996689148,
+      "decodeMs": 0.10101900000154274,
+      "publishMs": 617.8152930000069,
+      "encodeMs": 4.914712999998301,
+      "encodedBytes": 3252
     },
     {
       "candidate": "yjs",
@@ -1798,10 +1798,10 @@
       "operations": 8,
       "kind": "text",
       "iteration": 1,
-      "copyMs": 0.0016990000003715977,
-      "decodeMs": 0.07322299999941606,
-      "publishMs": 1.7686069999981555,
-      "encodeMs": 0.2275969999973313,
+      "copyMs": 0.0012129999959142879,
+      "decodeMs": 0.05969199999526609,
+      "publishMs": 1.912519000004977,
+      "encodeMs": 0.4806230000031064,
       "encodedBytes": 68223
     },
     {
@@ -1811,10 +1811,10 @@
       "operations": 8,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.0010420000035082921,
-      "decodeMs": 0.06788899999810383,
-      "publishMs": 1.5443860000013956,
-      "encodeMs": 1.6767590000017663,
+      "copyMs": 0.0009620000055292621,
+      "decodeMs": 0.06257499999628635,
+      "publishMs": 1.7876810000016121,
+      "encodeMs": 0.39111099999718135,
       "encodedBytes": 68223
     },
     {
@@ -1824,11 +1824,11 @@
       "operations": 8,
       "kind": "text",
       "iteration": 2,
-      "copyMs": 0.0050429999973857775,
-      "decodeMs": 0.21981300000334159,
-      "publishMs": 850.128045999998,
-      "encodeMs": 4.262218000003486,
-      "encodedBytes": 3258
+      "copyMs": 0.0018679999993764795,
+      "decodeMs": 0.08213999999861699,
+      "publishMs": 888.3126970000012,
+      "encodeMs": 5.7231489999976475,
+      "encodedBytes": 3255
     },
     {
       "candidate": "yjs",
@@ -1837,10 +1837,10 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.07920700000249781,
-      "decodeMs": 0.00938999999925727,
-      "publishMs": 0.40994099999807077,
-      "encodeMs": 0.4310509999995702,
+      "copyMs": 0.010350999997172039,
+      "decodeMs": 0.009257999998226296,
+      "publishMs": 0.4756409999972675,
+      "encodeMs": 0.18052799999713898,
       "encodedBytes": 68154
     },
     {
@@ -1850,11 +1850,11 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 0,
-      "copyMs": 0.012625000003026798,
-      "decodeMs": 0.008750000000873115,
-      "publishMs": 1883.5172820000007,
-      "encodeMs": 11.761061999997764,
-      "encodedBytes": 7598
+      "copyMs": 0.01607299999886891,
+      "decodeMs": 0.014225999999325722,
+      "publishMs": 1556.0408410000018,
+      "encodeMs": 7.668782000000647,
+      "encodedBytes": 7601
     },
     {
       "candidate": "automerge",
@@ -1863,11 +1863,11 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.016550999993341975,
-      "decodeMs": 0.008998999997857027,
-      "publishMs": 2294.990521000007,
-      "encodeMs": 7.407182999995712,
-      "encodedBytes": 7608
+      "copyMs": 0.09639299999980722,
+      "decodeMs": 0.014578000002074987,
+      "publishMs": 2186.8212209999983,
+      "encodeMs": 11.000524999995832,
+      "encodedBytes": 7602
     },
     {
       "candidate": "yjs",
@@ -1876,10 +1876,10 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 1,
-      "copyMs": 0.008666000001539942,
-      "decodeMs": 0.007166000003053341,
-      "publishMs": 0.8492960000003222,
-      "encodeMs": 0.16570199999841861,
+      "copyMs": 0.044802999997045845,
+      "decodeMs": 0.00885299999936251,
+      "publishMs": 0.4657420000003185,
+      "encodeMs": 0.15484599999763304,
       "encodedBytes": 68154
     },
     {
@@ -1889,10 +1889,10 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.010581000002275687,
-      "decodeMs": 0.0098569999972824,
-      "publishMs": 0.30192299999907846,
-      "encodeMs": 0.6724680000043008,
+      "copyMs": 0.011299999998300336,
+      "decodeMs": 0.010142999999516178,
+      "publishMs": 0.2983840000015334,
+      "encodeMs": 0.13157199999841396,
       "encodedBytes": 68154
     },
     {
@@ -1902,11 +1902,11 @@
       "operations": 8,
       "kind": "opaque",
       "iteration": 2,
-      "copyMs": 0.011208999996597413,
-      "decodeMs": 0.009068999999726657,
-      "publishMs": 1807.6153330000016,
-      "encodeMs": 9.009844000000157,
-      "encodedBytes": 7590
+      "copyMs": 0.01228100000298582,
+      "decodeMs": 0.009346999999252148,
+      "publishMs": 1828.6353279999967,
+      "encodeMs": 8.412668000004487,
+      "encodedBytes": 7603
     },
     {
       "candidate": "yjs",
@@ -1917,11 +1917,11 @@
       "operations": 1,
       "insertedUnitsPerOperation": 1022,
       "iteration": 0,
-      "encodeInputMs": 0.01533900000504218,
-      "decodeMs": 0.01717099999950733,
-      "insertMs": 0.2061519999988377,
-      "deleteMs": 0.1554580000010901,
-      "encodeMs": 0.11717800000042189,
+      "encodeInputMs": 0.03398200000083307,
+      "decodeMs": 0.018366999996942468,
+      "insertMs": 0.21991300000081537,
+      "deleteMs": 0.3185139999986859,
+      "encodeMs": 0.11064600000099745,
       "encodedBytes": 2295
     },
     {
@@ -1933,11 +1933,11 @@
       "operations": 1,
       "insertedUnitsPerOperation": 1022,
       "iteration": 0,
-      "encodeInputMs": 0.015657999996619765,
-      "decodeMs": 0.014267999998992309,
-      "insertMs": 1.478491000001668,
-      "deleteMs": 20.424692000000505,
-      "encodeMs": 0.26416499999322696,
+      "encodeInputMs": 0.017708999999740627,
+      "decodeMs": 0.01763599999685539,
+      "insertMs": 3.5636759999979404,
+      "deleteMs": 23.45772500000021,
+      "encodeMs": 0.21319000000221422,
       "encodedBytes": 1002
     },
     {
@@ -1949,12 +1949,12 @@
       "operations": 1,
       "insertedUnitsPerOperation": 1022,
       "iteration": 1,
-      "encodeInputMs": 0.01610899999650428,
-      "decodeMs": 0.013241000000562053,
-      "insertMs": 2.2416190000003553,
-      "deleteMs": 20.293454999999085,
-      "encodeMs": 0.23083000000042375,
-      "encodedBytes": 1004
+      "encodeInputMs": 0.08720200000243494,
+      "decodeMs": 0.020222999999532476,
+      "insertMs": 3.3181449999974575,
+      "deleteMs": 21.474482999998145,
+      "encodeMs": 0.2971879999968223,
+      "encodedBytes": 1003
     },
     {
       "candidate": "yjs",
@@ -1965,11 +1965,11 @@
       "operations": 1,
       "insertedUnitsPerOperation": 1022,
       "iteration": 1,
-      "encodeInputMs": 0.011613000002398621,
-      "decodeMs": 0.01517500000045402,
-      "insertMs": 0.5833090000014636,
-      "deleteMs": 0.6179579999952693,
-      "encodeMs": 0.23363100000278791,
+      "encodeInputMs": 0.0181799999991199,
+      "decodeMs": 0.021007000003010035,
+      "insertMs": 0.23174899999867193,
+      "deleteMs": 1.170564000000013,
+      "encodeMs": 0.35541899999952875,
       "encodedBytes": 2295
     },
     {
@@ -1981,11 +1981,11 @@
       "operations": 1,
       "insertedUnitsPerOperation": 1022,
       "iteration": 2,
-      "encodeInputMs": 0.015377000003354624,
-      "decodeMs": 0.015234000005875714,
-      "insertMs": 0.6286069999987376,
-      "deleteMs": 0.2752939999991213,
-      "encodeMs": 0.10412999999971362,
+      "encodeInputMs": 0.0159399999974994,
+      "decodeMs": 0.018679999993764795,
+      "insertMs": 0.37074700000084704,
+      "deleteMs": 0.30937100000301143,
+      "encodeMs": 0.42085900000529364,
       "encodedBytes": 2295
     },
     {
@@ -1997,12 +1997,12 @@
       "operations": 1,
       "insertedUnitsPerOperation": 1022,
       "iteration": 2,
-      "encodeInputMs": 0.01559599999745842,
-      "decodeMs": 0.012176999996881932,
-      "insertMs": 1.8046939999985625,
-      "deleteMs": 14.674697000002197,
-      "encodeMs": 0.18533799999568146,
-      "encodedBytes": 1004
+      "encodeInputMs": 0.019291000004159287,
+      "decodeMs": 0.018103000002156477,
+      "insertMs": 3.656672000004619,
+      "deleteMs": 27.7933819999962,
+      "encodeMs": 0.4913079999969341,
+      "encodedBytes": 1003
     },
     {
       "candidate": "yjs",
@@ -2013,11 +2013,11 @@
       "operations": 8,
       "insertedUnitsPerOperation": 126,
       "iteration": 0,
-      "encodeInputMs": 0.00633899999957066,
-      "decodeMs": 0.011539999999513384,
-      "insertMs": 1.0812260000020615,
-      "deleteMs": 0.9241110000002664,
-      "encodeMs": 0.09651899999880698,
+      "encodeInputMs": 0.007387999998172745,
+      "decodeMs": 0.015444000004208647,
+      "insertMs": 1.445769999998447,
+      "deleteMs": 1.2883040000015171,
+      "encodeMs": 0.10657499999797437,
       "encodedBytes": 3742
     },
     {
@@ -2029,12 +2029,12 @@
       "operations": 8,
       "insertedUnitsPerOperation": 126,
       "iteration": 0,
-      "encodeInputMs": 0.009947999998985324,
-      "decodeMs": 0.007333000001381151,
-      "insertMs": 5.293258999998216,
-      "deleteMs": 21.15891499999998,
-      "encodeMs": 0.22177799999917625,
-      "encodedBytes": 2010
+      "encodeInputMs": 0.010190000000875443,
+      "decodeMs": 0.00903699999616947,
+      "insertMs": 6.547270000002754,
+      "deleteMs": 30.215336000001116,
+      "encodeMs": 0.24292699999932665,
+      "encodedBytes": 2009
     },
     {
       "candidate": "automerge",
@@ -2045,12 +2045,12 @@
       "operations": 8,
       "insertedUnitsPerOperation": 126,
       "iteration": 1,
-      "encodeInputMs": 0.011109999999462161,
-      "decodeMs": 0.00749799999903189,
-      "insertMs": 9.148692000002484,
-      "deleteMs": 20.8813319999972,
-      "encodeMs": 0.24800999999570195,
-      "encodedBytes": 2010
+      "encodeInputMs": 0.014188999994075857,
+      "decodeMs": 0.014465000000200234,
+      "insertMs": 7.222827999998117,
+      "deleteMs": 26.25441800000408,
+      "encodeMs": 0.27903800000058254,
+      "encodedBytes": 2008
     },
     {
       "candidate": "yjs",
@@ -2061,11 +2061,11 @@
       "operations": 8,
       "insertedUnitsPerOperation": 126,
       "iteration": 1,
-      "encodeInputMs": 0.010271999999531545,
-      "decodeMs": 0.013015000004088506,
-      "insertMs": 1.5624959999986459,
-      "deleteMs": 0.7952829999994719,
-      "encodeMs": 0.11838800000259653,
+      "encodeInputMs": 0.009814999997615814,
+      "decodeMs": 0.014483999999356456,
+      "insertMs": 2.998319000005722,
+      "deleteMs": 0.8943730000028154,
+      "encodeMs": 0.11653099999966798,
       "encodedBytes": 3742
     },
     {
@@ -2077,11 +2077,11 @@
       "operations": 8,
       "insertedUnitsPerOperation": 126,
       "iteration": 2,
-      "encodeInputMs": 0.00696800000150688,
-      "decodeMs": 0.009801000000152271,
-      "insertMs": 1.1851449999958277,
-      "deleteMs": 1.1514969999989262,
-      "encodeMs": 0.10684899999614572,
+      "encodeInputMs": 0.007528000001912005,
+      "decodeMs": 0.010547999998379964,
+      "insertMs": 1.1670860000012908,
+      "deleteMs": 1.1332129999937024,
+      "encodeMs": 0.20855199999641627,
       "encodedBytes": 3742
     },
     {
@@ -2093,12 +2093,12 @@
       "operations": 8,
       "insertedUnitsPerOperation": 126,
       "iteration": 2,
-      "encodeInputMs": 0.009863999999652151,
-      "decodeMs": 0.008561000002373476,
-      "insertMs": 5.747935999999754,
-      "deleteMs": 23.691431999999622,
-      "encodeMs": 0.22768099999666447,
-      "encodedBytes": 2007
+      "encodeInputMs": 0.01048300000547897,
+      "decodeMs": 0.008813000000372995,
+      "insertMs": 5.364149000000907,
+      "deleteMs": 52.74253399999725,
+      "encodeMs": 0.23846700000285637,
+      "encodedBytes": 2009
     },
     {
       "candidate": "yjs",
@@ -2109,11 +2109,11 @@
       "operations": 1,
       "insertedUnitsPerOperation": 1022,
       "iteration": 0,
-      "encodeInputMs": 0.016576999994867947,
-      "decodeMs": 0.014990000003308523,
-      "insertMs": 0.5967079999973066,
-      "deleteMs": 0.415114999996149,
-      "encodeMs": 0.11846499999955995,
+      "encodeInputMs": 0.011488000003737397,
+      "decodeMs": 0.013600999998743646,
+      "insertMs": 0.28659699999843724,
+      "deleteMs": 0.356564999994589,
+      "encodeMs": 0.972593999998935,
       "encodedBytes": 4070
     },
     {
@@ -2125,12 +2125,12 @@
       "operations": 1,
       "insertedUnitsPerOperation": 1022,
       "iteration": 0,
-      "encodeInputMs": 0.013880999998946209,
-      "decodeMs": 0.010146000000531785,
-      "insertMs": 2.0572570000003907,
-      "deleteMs": 28.85134800000378,
-      "encodeMs": 0.4075809999994817,
-      "encodedBytes": 1627
+      "encodeInputMs": 0.01701100000354927,
+      "decodeMs": 0.012439999998605344,
+      "insertMs": 2.022796000004746,
+      "deleteMs": 17.28913700000703,
+      "encodeMs": 1.4398699999946984,
+      "encodedBytes": 1630
     },
     {
       "candidate": "automerge",
@@ -2141,12 +2141,12 @@
       "operations": 1,
       "insertedUnitsPerOperation": 1022,
       "iteration": 1,
-      "encodeInputMs": 0.01492599999619415,
-      "decodeMs": 0.011204000002180692,
-      "insertMs": 1.6657199999972363,
-      "deleteMs": 17.415985999999975,
-      "encodeMs": 0.27054900000075577,
-      "encodedBytes": 1628
+      "encodeInputMs": 0.020087999997485895,
+      "decodeMs": 0.017003000000840984,
+      "insertMs": 2.1590960000030464,
+      "deleteMs": 16.92372299999988,
+      "encodeMs": 0.26596499999868684,
+      "encodedBytes": 1629
     },
     {
       "candidate": "yjs",
@@ -2157,11 +2157,11 @@
       "operations": 1,
       "insertedUnitsPerOperation": 1022,
       "iteration": 1,
-      "encodeInputMs": 0.011275999997451436,
-      "decodeMs": 0.011959000003116671,
-      "insertMs": 0.18519100000412436,
-      "deleteMs": 0.14907099999982165,
-      "encodeMs": 0.2053760000053444,
+      "encodeInputMs": 0.013840999999956694,
+      "decodeMs": 0.01592299999902025,
+      "insertMs": 0.1453650000039488,
+      "deleteMs": 0.16066699999646517,
+      "encodeMs": 0.18755000000237487,
       "encodedBytes": 4070
     },
     {
@@ -2173,12 +2173,12 @@
       "operations": 1,
       "insertedUnitsPerOperation": 1022,
       "iteration": 2,
-      "encodeInputMs": 0.07364000000234228,
-      "decodeMs": 0.013639000004332047,
-      "insertMs": 0.3864409999951022,
-      "deleteMs": 0.1724869999961811,
-      "encodeMs": 0.1899589999957243,
-      "encodedBytes": 3991
+      "encodeInputMs": 0.013210999997681938,
+      "decodeMs": 0.01396999999997206,
+      "insertMs": 0.8781559999988531,
+      "deleteMs": 0.4280399999988731,
+      "encodeMs": 0.10277599999972153,
+      "encodedBytes": 4070
     },
     {
       "candidate": "automerge",
@@ -2189,11 +2189,11 @@
       "operations": 1,
       "insertedUnitsPerOperation": 1022,
       "iteration": 2,
-      "encodeInputMs": 0.013782000001810957,
-      "decodeMs": 0.010429999994812533,
-      "insertMs": 2.0360490000020945,
-      "deleteMs": 14.361002999998163,
-      "encodeMs": 0.35404200000630226,
+      "encodeInputMs": 0.01723899999342393,
+      "decodeMs": 0.012884000003396068,
+      "insertMs": 3.988638999995601,
+      "deleteMs": 20.539441000000807,
+      "encodeMs": 0.21440599999914411,
       "encodedBytes": 1627
     },
     {
@@ -2205,11 +2205,11 @@
       "operations": 8,
       "insertedUnitsPerOperation": 126,
       "iteration": 0,
-      "encodeInputMs": 0.006860000001324806,
-      "decodeMs": 0.008528999998816289,
-      "insertMs": 0.8636810000025434,
-      "deleteMs": 1.3903960000025108,
-      "encodeMs": 0.1160429999945336,
+      "encodeInputMs": 0.011836999998195097,
+      "decodeMs": 0.012367000002996065,
+      "insertMs": 1.9147119999979623,
+      "deleteMs": 1.27994100000069,
+      "encodeMs": 0.5895850000015344,
       "encodedBytes": 5534
     },
     {
@@ -2221,12 +2221,12 @@
       "operations": 8,
       "insertedUnitsPerOperation": 126,
       "iteration": 0,
-      "encodeInputMs": 0.010496000002603978,
-      "decodeMs": 0.2757839999976568,
-      "insertMs": 7.428048999994644,
-      "deleteMs": 22.6062230000025,
-      "encodeMs": 0.28031199999531964,
-      "encodedBytes": 2225
+      "encodeInputMs": 0.010216999995463993,
+      "decodeMs": 0.008747000007133465,
+      "insertMs": 6.771220000002359,
+      "deleteMs": 23.26391600000352,
+      "encodeMs": 0.3155110000006971,
+      "encodedBytes": 2222
     },
     {
       "candidate": "automerge",
@@ -2237,11 +2237,11 @@
       "operations": 8,
       "insertedUnitsPerOperation": 126,
       "iteration": 1,
-      "encodeInputMs": 0.014181999998982064,
-      "decodeMs": 0.023502000003645662,
-      "insertMs": 6.523799000002327,
-      "deleteMs": 18.963538999996672,
-      "encodeMs": 0.3018090000041411,
+      "encodeInputMs": 0.01600700000562938,
+      "decodeMs": 0.01389700000436278,
+      "insertMs": 8.679271000000881,
+      "deleteMs": 27.113202000000456,
+      "encodeMs": 0.30545700000220677,
       "encodedBytes": 2221
     },
     {
@@ -2253,11 +2253,11 @@
       "operations": 8,
       "insertedUnitsPerOperation": 126,
       "iteration": 1,
-      "encodeInputMs": 0.008222999997087754,
-      "decodeMs": 0.010854000000108499,
-      "insertMs": 2.6814400000002934,
-      "deleteMs": 1.7455679999984568,
-      "encodeMs": 0.13818800000444753,
+      "encodeInputMs": 0.009820999999647029,
+      "decodeMs": 0.014180999998643529,
+      "insertMs": 0.9111029999985476,
+      "deleteMs": 1.5588340000031167,
+      "encodeMs": 0.1424470000056317,
       "encodedBytes": 5411
     },
     {
@@ -2269,11 +2269,11 @@
       "operations": 8,
       "insertedUnitsPerOperation": 126,
       "iteration": 2,
-      "encodeInputMs": 0.00740800000494346,
-      "decodeMs": 0.010178000004088972,
-      "insertMs": 1.5640510000012,
-      "deleteMs": 1.530629000000772,
-      "encodeMs": 0.3441640000019106,
+      "encodeInputMs": 0.009766999995918013,
+      "decodeMs": 0.013919999997597188,
+      "insertMs": 1.6808210000017425,
+      "deleteMs": 1.7922529999996186,
+      "encodeMs": 0.6269299999985378,
       "encodedBytes": 5534
     },
     {
@@ -2285,12 +2285,12 @@
       "operations": 8,
       "insertedUnitsPerOperation": 126,
       "iteration": 2,
-      "encodeInputMs": 0.011531999996805098,
-      "decodeMs": 0.00998000000254251,
-      "insertMs": 6.556863999998313,
-      "deleteMs": 21.03552800000034,
-      "encodeMs": 0.468287000003329,
-      "encodedBytes": 2223
+      "encodeInputMs": 0.012326000003668014,
+      "decodeMs": 0.011144999996758997,
+      "insertMs": 8.692641999994521,
+      "deleteMs": 29.76675200000318,
+      "encodeMs": 0.459471999995003,
+      "encodedBytes": 2229
     },
     {
       "candidate": "yjs",
@@ -2301,11 +2301,11 @@
       "operations": 1,
       "insertedUnitsPerOperation": 16380,
       "iteration": 0,
-      "encodeInputMs": 0.0695659999983036,
-      "decodeMs": 0.02992199999425793,
-      "insertMs": 0.3554299999959767,
-      "deleteMs": 0.368637999999919,
-      "encodeMs": 0.29140400000324007,
+      "encodeInputMs": 0.06789999999455176,
+      "decodeMs": 0.03050900000380352,
+      "insertMs": 0.3878889999978128,
+      "deleteMs": 0.24170299999968847,
+      "encodeMs": 0.14138000000093598,
       "encodedBytes": 17657
     },
     {
@@ -2317,12 +2317,12 @@
       "operations": 1,
       "insertedUnitsPerOperation": 16380,
       "iteration": 0,
-      "encodeInputMs": 0.07690100000036182,
-      "decodeMs": 0.10257699999783654,
-      "insertMs": 16.861323999997694,
-      "deleteMs": 209.06007200000022,
-      "encodeMs": 0.6103129999974044,
-      "encodedBytes": 1283
+      "encodeInputMs": 0.07442499999888241,
+      "decodeMs": 0.028638999996474013,
+      "insertMs": 17.4487999999983,
+      "deleteMs": 250.8987849999976,
+      "encodeMs": 0.7197789999991073,
+      "encodedBytes": 1280
     },
     {
       "candidate": "automerge",
@@ -2333,12 +2333,12 @@
       "operations": 1,
       "insertedUnitsPerOperation": 16380,
       "iteration": 1,
-      "encodeInputMs": 0.08217799999692943,
-      "decodeMs": 0.036247000003641006,
-      "insertMs": 15.29056799999671,
-      "deleteMs": 216.05010200000106,
-      "encodeMs": 0.4536470000020927,
-      "encodedBytes": 1282
+      "encodeInputMs": 0.08391300000221236,
+      "decodeMs": 0.03558600000542356,
+      "insertMs": 20.290632000003825,
+      "deleteMs": 218.60710599999584,
+      "encodeMs": 0.47467499999766005,
+      "encodedBytes": 1280
     },
     {
       "candidate": "yjs",
@@ -2349,30 +2349,30 @@
       "operations": 1,
       "insertedUnitsPerOperation": 16380,
       "iteration": 1,
-      "encodeInputMs": 0.15037099999608472,
-      "decodeMs": 0.0408949999982724,
-      "insertMs": 0.6455109999951674,
-      "deleteMs": 0.37582499999552965,
-      "encodeMs": 0.578603000001749,
+      "encodeInputMs": 0.07349499999691034,
+      "decodeMs": 0.03615200000058394,
+      "insertMs": 0.7085939999960829,
+      "deleteMs": 0.5115529999966384,
+      "encodeMs": 0.31547499999578577,
+      "encodedBytes": 17657
+    },
+    {
+      "candidate": "yjs",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 16384,
+      "fragments": 1,
+      "operations": 1,
+      "insertedUnitsPerOperation": 16380,
+      "iteration": 2,
+      "encodeInputMs": 0.06774600000062492,
+      "decodeMs": 0.03064299999823561,
+      "insertMs": 0.6466880000007222,
+      "deleteMs": 0.26448099999834085,
+      "encodeMs": 0.3973790000018198,
       "encodedBytes": 17633
     },
     {
-      "candidate": "yjs",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 16384,
-      "fragments": 1,
-      "operations": 1,
-      "insertedUnitsPerOperation": 16380,
-      "iteration": 2,
-      "encodeInputMs": 0.14356600000610342,
-      "decodeMs": 0.03053600000566803,
-      "insertMs": 0.3942479999968782,
-      "deleteMs": 0.3814669999992475,
-      "encodeMs": 0.13729899999452755,
-      "encodedBytes": 17657
-    },
-    {
       "candidate": "automerge",
       "kind": "text-edit",
       "distribution": "Unicode Markdown-like",
@@ -2381,12 +2381,12 @@
       "operations": 1,
       "insertedUnitsPerOperation": 16380,
       "iteration": 2,
-      "encodeInputMs": 0.07644900000013877,
-      "decodeMs": 0.03230900000198744,
-      "insertMs": 15.545096999994712,
-      "deleteMs": 222.10170199999993,
-      "encodeMs": 0.46544300000095973,
-      "encodedBytes": 1279
+      "encodeInputMs": 0.07205999999860069,
+      "decodeMs": 0.029890999998315237,
+      "insertMs": 18.320285000001604,
+      "deleteMs": 460.28640100000484,
+      "encodeMs": 2.288408000000345,
+      "encodedBytes": 1288
     },
     {
       "candidate": "yjs",
@@ -2397,11 +2397,11 @@
       "operations": 8,
       "insertedUnitsPerOperation": 2044,
       "iteration": 0,
-      "encodeInputMs": 0.01622499999939464,
-      "decodeMs": 0.015131000000110362,
-      "insertMs": 2.408664000002318,
-      "deleteMs": 1.8714340000005905,
-      "encodeMs": 0.17998999999690568,
+      "encodeInputMs": 0.017008000002533663,
+      "decodeMs": 0.015958000003593042,
+      "insertMs": 5.603590999999142,
+      "deleteMs": 5.857080000001588,
+      "encodeMs": 0.1757930000021588,
       "encodedBytes": 19134
     },
     {
@@ -2413,12 +2413,12 @@
       "operations": 8,
       "insertedUnitsPerOperation": 2044,
       "iteration": 0,
-      "encodeInputMs": 0.023174999994807877,
-      "decodeMs": 0.014463999999861699,
-      "insertMs": 22.013969999999972,
-      "deleteMs": 299.25494099999923,
-      "encodeMs": 0.6468460000032792,
-      "encodedBytes": 2379
+      "encodeInputMs": 0.3753100000030827,
+      "decodeMs": 0.10151300000143237,
+      "insertMs": 74.61203599999862,
+      "deleteMs": 759.2108850000004,
+      "encodeMs": 5.106729999999516,
+      "encodedBytes": 2369
     },
     {
       "candidate": "automerge",
@@ -2429,12 +2429,12 @@
       "operations": 8,
       "insertedUnitsPerOperation": 2044,
       "iteration": 1,
-      "encodeInputMs": 0.035449000002699904,
-      "decodeMs": 0.019843999994918704,
-      "insertMs": 22.317591999999422,
-      "deleteMs": 297.55289099999936,
-      "encodeMs": 0.9553240000022925,
-      "encodedBytes": 2372
+      "encodeInputMs": 0.03588099999615224,
+      "decodeMs": 0.023080999999365304,
+      "insertMs": 62.6813570000013,
+      "deleteMs": 672.0178579999993,
+      "encodeMs": 0.5219629999992321,
+      "encodedBytes": 2370
     },
     {
       "candidate": "yjs",
@@ -2445,11 +2445,11 @@
       "operations": 8,
       "insertedUnitsPerOperation": 2044,
       "iteration": 1,
-      "encodeInputMs": 0.02282299999933457,
-      "decodeMs": 0.029402000000118278,
-      "insertMs": 3.3293290000001434,
-      "deleteMs": 3.606669000000693,
-      "encodeMs": 0.4103419999955804,
+      "encodeInputMs": 0.021581000000878703,
+      "decodeMs": 0.020854999995208345,
+      "insertMs": 5.679254000002402,
+      "deleteMs": 3.6575469999952475,
+      "encodeMs": 0.270567999999912,
       "encodedBytes": 19134
     },
     {
@@ -2461,11 +2461,11 @@
       "operations": 8,
       "insertedUnitsPerOperation": 2044,
       "iteration": 2,
-      "encodeInputMs": 0.02106600000115577,
-      "decodeMs": 0.10774899999523768,
-      "insertMs": 2.5170539999962784,
-      "deleteMs": 2.057013999998162,
-      "encodeMs": 0.17859299999690847,
+      "encodeInputMs": 0.018672999998671003,
+      "decodeMs": 0.019262000001617707,
+      "insertMs": 7.110442999997758,
+      "deleteMs": 5.722286000003805,
+      "encodeMs": 0.2527570000020205,
       "encodedBytes": 19134
     },
     {
@@ -2477,12 +2477,12 @@
       "operations": 8,
       "insertedUnitsPerOperation": 2044,
       "iteration": 2,
-      "encodeInputMs": 0.02377600000181701,
-      "decodeMs": 0.015773999999510124,
-      "insertMs": 30.35481399999844,
-      "deleteMs": 735.9634749999968,
-      "encodeMs": 0.6518029999933788,
-      "encodedBytes": 2379
+      "encodeInputMs": 0.06391199999779928,
+      "decodeMs": 0.01970199999777833,
+      "insertMs": 32.57625800000096,
+      "deleteMs": 521.5894129999942,
+      "encodeMs": 0.5891140000021551,
+      "encodedBytes": 2374
     },
     {
       "candidate": "yjs",
@@ -2493,11 +2493,11 @@
       "operations": 1,
       "insertedUnitsPerOperation": 16380,
       "iteration": 0,
-      "encodeInputMs": 0.06774099999893224,
-      "decodeMs": 0.03115099999558879,
-      "insertMs": 0.43641000000206986,
-      "deleteMs": 0.2275560000052792,
-      "encodeMs": 0.15556700000161072,
+      "encodeInputMs": 0.06892100000550272,
+      "decodeMs": 0.032724999997299165,
+      "insertMs": 0.7715000000025611,
+      "deleteMs": 1.8379690000001574,
+      "encodeMs": 0.19905999999900814,
       "encodedBytes": 19432
     },
     {
@@ -2509,222 +2509,222 @@
       "operations": 1,
       "insertedUnitsPerOperation": 16380,
       "iteration": 0,
-      "encodeInputMs": 0.08009100000344915,
-      "decodeMs": 0.032402999997430015,
-      "insertMs": 13.42928799999936,
-      "deleteMs": 515.639602999996,
-      "encodeMs": 0.648603000001458,
-      "encodedBytes": 1921
-    },
-    {
-      "candidate": "automerge",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 16384,
-      "fragments": 8,
-      "operations": 1,
-      "insertedUnitsPerOperation": 16380,
-      "iteration": 1,
-      "encodeInputMs": 0.13711899999907473,
-      "decodeMs": 0.17884999999660067,
-      "insertMs": 121.714598999999,
-      "deleteMs": 221.96219700000074,
-      "encodeMs": 0.4655239999992773,
-      "encodedBytes": 1912
-    },
-    {
-      "candidate": "yjs",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 16384,
-      "fragments": 8,
-      "operations": 1,
-      "insertedUnitsPerOperation": 16380,
-      "iteration": 1,
-      "encodeInputMs": 0.10980199999903562,
-      "decodeMs": 0.038587000002735294,
-      "insertMs": 0.5443199999936041,
-      "deleteMs": 0.3888860000006389,
-      "encodeMs": 0.2332719999976689,
-      "encodedBytes": 19432
-    },
-    {
-      "candidate": "yjs",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 16384,
-      "fragments": 8,
-      "operations": 1,
-      "insertedUnitsPerOperation": 16380,
-      "iteration": 2,
-      "encodeInputMs": 0.06777900000452064,
-      "decodeMs": 0.02891700000327546,
-      "insertMs": 0.5108729999992647,
-      "deleteMs": 0.24365199999738252,
-      "encodeMs": 0.1554379999943194,
-      "encodedBytes": 19432
-    },
-    {
-      "candidate": "automerge",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 16384,
-      "fragments": 8,
-      "operations": 1,
-      "insertedUnitsPerOperation": 16380,
-      "iteration": 2,
-      "encodeInputMs": 0.07670499999949243,
-      "decodeMs": 0.0301949999993667,
-      "insertMs": 16.28912699999637,
-      "deleteMs": 390.19532700000127,
-      "encodeMs": 0.9462410000051023,
-      "encodedBytes": 1914
-    },
-    {
-      "candidate": "yjs",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 16384,
-      "fragments": 8,
-      "operations": 8,
-      "insertedUnitsPerOperation": 2044,
-      "iteration": 0,
-      "encodeInputMs": 0.017549000003782567,
-      "decodeMs": 0.016214999996009283,
-      "insertMs": 2.6403060000011465,
-      "deleteMs": 2.991134999996575,
-      "encodeMs": 0.3216020000036224,
-      "encodedBytes": 20933
-    },
-    {
-      "candidate": "automerge",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 16384,
-      "fragments": 8,
-      "operations": 8,
-      "insertedUnitsPerOperation": 2044,
-      "iteration": 0,
-      "encodeInputMs": 0.02816299999540206,
-      "decodeMs": 0.017977999996219296,
-      "insertMs": 18.16822499999398,
-      "deleteMs": 370.2610610000047,
-      "encodeMs": 0.7271890000047279,
-      "encodedBytes": 2605
-    },
-    {
-      "candidate": "automerge",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 16384,
-      "fragments": 8,
-      "operations": 8,
-      "insertedUnitsPerOperation": 2044,
-      "iteration": 1,
-      "encodeInputMs": 0.025073999997403007,
-      "decodeMs": 0.015392000001156703,
-      "insertMs": 20.605289999999513,
-      "deleteMs": 298.6982019999996,
-      "encodeMs": 0.9679980000000796,
-      "encodedBytes": 2608
-    },
-    {
-      "candidate": "yjs",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 16384,
-      "fragments": 8,
-      "operations": 8,
-      "insertedUnitsPerOperation": 2044,
-      "iteration": 1,
-      "encodeInputMs": 0.019983999998657964,
-      "decodeMs": 0.021670000001904555,
-      "insertMs": 3.598132999999507,
-      "deleteMs": 3.953865000003134,
-      "encodeMs": 0.33787799999845447,
-      "encodedBytes": 20933
-    },
-    {
-      "candidate": "yjs",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 16384,
-      "fragments": 8,
-      "operations": 8,
-      "insertedUnitsPerOperation": 2044,
-      "iteration": 2,
-      "encodeInputMs": 0.029637999999977183,
-      "decodeMs": 0.021311000004061498,
-      "insertMs": 3.816787000003387,
-      "deleteMs": 3.385879000001296,
-      "encodeMs": 0.43807899999956135,
-      "encodedBytes": 20933
-    },
-    {
-      "candidate": "automerge",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 16384,
-      "fragments": 8,
-      "operations": 8,
-      "insertedUnitsPerOperation": 2044,
-      "iteration": 2,
-      "encodeInputMs": 0.024217000005592126,
-      "decodeMs": 0.018577000002551358,
-      "insertMs": 23.805561000001035,
-      "deleteMs": 425.11009999999806,
-      "encodeMs": 1.2760999999954947,
-      "encodedBytes": 2601
-    },
-    {
-      "candidate": "yjs",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 65536,
-      "fragments": 1,
-      "operations": 1,
-      "insertedUnitsPerOperation": 65534,
-      "iteration": 0,
-      "encodeInputMs": 0.38113500000326894,
-      "decodeMs": 0.14534400000411551,
-      "insertMs": 1.560046999991755,
-      "deleteMs": 1.0799429999897256,
-      "encodeMs": 0.24869599999510683,
-      "encodedBytes": 66816
-    },
-    {
-      "candidate": "automerge",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 65536,
-      "fragments": 1,
-      "operations": 1,
-      "insertedUnitsPerOperation": 65534,
-      "iteration": 0,
-      "encodeInputMs": 0.3585339999990538,
-      "decodeMs": 0.2396349999908125,
-      "insertMs": 65.06644999999844,
-      "deleteMs": 860.5730999999942,
-      "encodeMs": 1.5986050000065006,
-      "encodedBytes": 1912
-    },
-    {
-      "candidate": "automerge",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 65536,
-      "fragments": 1,
-      "operations": 1,
-      "insertedUnitsPerOperation": 65534,
-      "iteration": 1,
-      "encodeInputMs": 0.8230230000044685,
-      "decodeMs": 0.2940059999964433,
-      "insertMs": 79.87249899999006,
-      "deleteMs": 992.635242999997,
-      "encodeMs": 2.329295000003185,
+      "encodeInputMs": 0.0864170000058948,
+      "decodeMs": 0.034556000005977694,
+      "insertMs": 31.679143999994267,
+      "deleteMs": 418.5208960000018,
+      "encodeMs": 0.4631139999983134,
       "encodedBytes": 1910
     },
     {
+      "candidate": "automerge",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 16384,
+      "fragments": 8,
+      "operations": 1,
+      "insertedUnitsPerOperation": 16380,
+      "iteration": 1,
+      "encodeInputMs": 0.10886899999604793,
+      "decodeMs": 0.0790740000011283,
+      "insertMs": 22.952713999999105,
+      "deleteMs": 338.92131200000586,
+      "encodeMs": 0.7873910000053002,
+      "encodedBytes": 1916
+    },
+    {
+      "candidate": "yjs",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 16384,
+      "fragments": 8,
+      "operations": 1,
+      "insertedUnitsPerOperation": 16380,
+      "iteration": 1,
+      "encodeInputMs": 0.0733200000031502,
+      "decodeMs": 0.045693000000028405,
+      "insertMs": 0.33209500000521075,
+      "deleteMs": 0.5473060000003898,
+      "encodeMs": 0.2565820000017993,
+      "encodedBytes": 19432
+    },
+    {
+      "candidate": "yjs",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 16384,
+      "fragments": 8,
+      "operations": 1,
+      "insertedUnitsPerOperation": 16380,
+      "iteration": 2,
+      "encodeInputMs": 0.07365399999980582,
+      "decodeMs": 0.03177300000243122,
+      "insertMs": 0.36104299999715295,
+      "deleteMs": 0.39450700000452343,
+      "encodeMs": 0.21154900000692578,
+      "encodedBytes": 19432
+    },
+    {
+      "candidate": "automerge",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 16384,
+      "fragments": 8,
+      "operations": 1,
+      "insertedUnitsPerOperation": 16380,
+      "iteration": 2,
+      "encodeInputMs": 0.08800099999643862,
+      "decodeMs": 0.038376000004063826,
+      "insertMs": 27.429459000006318,
+      "deleteMs": 334.957147000001,
+      "encodeMs": 2.2130699999979697,
+      "encodedBytes": 1909
+    },
+    {
+      "candidate": "yjs",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 16384,
+      "fragments": 8,
+      "operations": 8,
+      "insertedUnitsPerOperation": 2044,
+      "iteration": 0,
+      "encodeInputMs": 0.01825500000268221,
+      "decodeMs": 0.02056099999754224,
+      "insertMs": 5.7331039999990026,
+      "deleteMs": 6.201193000000785,
+      "encodeMs": 0.3413399999990361,
+      "encodedBytes": 20933
+    },
+    {
+      "candidate": "automerge",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 16384,
+      "fragments": 8,
+      "operations": 8,
+      "insertedUnitsPerOperation": 2044,
+      "iteration": 0,
+      "encodeInputMs": 0.030183999995642807,
+      "decodeMs": 0.019729999999981374,
+      "insertMs": 41.92667500000243,
+      "deleteMs": 621.2650670000003,
+      "encodeMs": 2.45044699999562,
+      "encodedBytes": 2610
+    },
+    {
+      "candidate": "automerge",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 16384,
+      "fragments": 8,
+      "operations": 8,
+      "insertedUnitsPerOperation": 2044,
+      "iteration": 1,
+      "encodeInputMs": 0.03132999999797903,
+      "decodeMs": 0.0200189999959548,
+      "insertMs": 34.43797900000209,
+      "deleteMs": 880.3958520000015,
+      "encodeMs": 3.001101000001654,
+      "encodedBytes": 2604
+    },
+    {
+      "candidate": "yjs",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 16384,
+      "fragments": 8,
+      "operations": 8,
+      "insertedUnitsPerOperation": 2044,
+      "iteration": 1,
+      "encodeInputMs": 0.02012500000273576,
+      "decodeMs": 0.020678000000771135,
+      "insertMs": 7.1903479999964475,
+      "deleteMs": 6.259313000002294,
+      "encodeMs": 0.3047149999983958,
+      "encodedBytes": 20933
+    },
+    {
+      "candidate": "yjs",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 16384,
+      "fragments": 8,
+      "operations": 8,
+      "insertedUnitsPerOperation": 2044,
+      "iteration": 2,
+      "encodeInputMs": 0.01684699999896111,
+      "decodeMs": 0.019499999994877726,
+      "insertMs": 6.435886999999639,
+      "deleteMs": 4.852594999996654,
+      "encodeMs": 0.21523599999636644,
+      "encodedBytes": 20933
+    },
+    {
+      "candidate": "automerge",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 16384,
+      "fragments": 8,
+      "operations": 8,
+      "insertedUnitsPerOperation": 2044,
+      "iteration": 2,
+      "encodeInputMs": 1.6730329999991227,
+      "decodeMs": 0.02804199999809498,
+      "insertMs": 45.43637999999919,
+      "deleteMs": 559.0458730000028,
+      "encodeMs": 1.0345149999920977,
+      "encodedBytes": 2600
+    },
+    {
+      "candidate": "yjs",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 65536,
+      "fragments": 1,
+      "operations": 1,
+      "insertedUnitsPerOperation": 65534,
+      "iteration": 0,
+      "encodeInputMs": 0.3216239999892423,
+      "decodeMs": 0.19840100000146776,
+      "insertMs": 4.099165999999968,
+      "deleteMs": 1.1124800000106916,
+      "encodeMs": 0.1848770000069635,
+      "encodedBytes": 66816
+    },
+    {
+      "candidate": "automerge",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 65536,
+      "fragments": 1,
+      "operations": 1,
+      "insertedUnitsPerOperation": 65534,
+      "iteration": 0,
+      "encodeInputMs": 0.5390359999873908,
+      "decodeMs": 0.7126619999908144,
+      "insertMs": 69.40827600000193,
+      "deleteMs": 1011.296285999997,
+      "encodeMs": 2.4576369999995222,
+      "encodedBytes": 1910
+    },
+    {
+      "candidate": "automerge",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 65536,
+      "fragments": 1,
+      "operations": 1,
+      "insertedUnitsPerOperation": 65534,
+      "iteration": 1,
+      "encodeInputMs": 0.7669750000059139,
+      "decodeMs": 0.5225539999955799,
+      "insertMs": 68.909421999997,
+      "deleteMs": 1510.4558700000052,
+      "encodeMs": 1.88794699999562,
+      "encodedBytes": 1912
+    },
+    {
       "candidate": "yjs",
       "kind": "text-edit",
       "distribution": "Unicode Markdown-like",
@@ -2733,11 +2733,11 @@
       "operations": 1,
       "insertedUnitsPerOperation": 65534,
       "iteration": 1,
-      "encodeInputMs": 0.5304250000044703,
-      "decodeMs": 0.21757999999681488,
-      "insertMs": 5.519518999994034,
-      "deleteMs": 1.1246659999887925,
-      "encodeMs": 0.3313670000061393,
+      "encodeInputMs": 0.3964360000099987,
+      "decodeMs": 0.15717700000095647,
+      "insertMs": 2.020529000001261,
+      "deleteMs": 2.1420539999962784,
+      "encodeMs": 0.23966500000096858,
       "encodedBytes": 66816
     },
     {
@@ -2749,11 +2749,11 @@
       "operations": 1,
       "insertedUnitsPerOperation": 65534,
       "iteration": 2,
-      "encodeInputMs": 1.5985649999929592,
-      "decodeMs": 0.35225299999001436,
-      "insertMs": 2.993584000010742,
-      "deleteMs": 1.5797849999944447,
-      "encodeMs": 0.3026920000120299,
+      "encodeInputMs": 0.710084000005736,
+      "decodeMs": 0.17179799999576062,
+      "insertMs": 2.079970000006142,
+      "deleteMs": 1.1606460000039078,
+      "encodeMs": 0.3208569999987958,
       "encodedBytes": 66816
     },
     {
@@ -2765,12 +2765,12 @@
       "operations": 1,
       "insertedUnitsPerOperation": 65534,
       "iteration": 2,
-      "encodeInputMs": 0.39101900000241585,
-      "decodeMs": 0.1597230000043055,
-      "insertMs": 52.359562999990885,
-      "deleteMs": 892.3049319999991,
-      "encodeMs": 2.544138999990537,
-      "encodedBytes": 1911
+      "encodeInputMs": 0.37020799999299925,
+      "decodeMs": 0.1981729999970412,
+      "insertMs": 79.11591100000078,
+      "deleteMs": 1190.408012999993,
+      "encodeMs": 1.8651480000116862,
+      "encodedBytes": 1912
     },
     {
       "candidate": "yjs",
@@ -2781,11 +2781,11 @@
       "operations": 8,
       "insertedUnitsPerOperation": 8190,
       "iteration": 0,
-      "encodeInputMs": 0.07919399999082088,
-      "decodeMs": 0.0330790000007255,
-      "insertMs": 8.857442000007723,
-      "deleteMs": 8.2149400000053,
-      "encodeMs": 0.5086999999912223,
+      "encodeInputMs": 0.041679000001749955,
+      "decodeMs": 0.09416399999463465,
+      "insertMs": 10.576207000005525,
+      "deleteMs": 17.189087999999174,
+      "encodeMs": 0.3660660000023199,
       "encodedBytes": 68298
     },
     {
@@ -2797,11 +2797,11 @@
       "operations": 8,
       "insertedUnitsPerOperation": 8190,
       "iteration": 0,
-      "encodeInputMs": 0.06294699999853037,
-      "decodeMs": 0.03312599999480881,
-      "insertMs": 86.9228390000062,
-      "deleteMs": 1220.6832209999993,
-      "encodeMs": 1.816529999996419,
+      "encodeInputMs": 0.06275200001255143,
+      "decodeMs": 0.03290299999935087,
+      "insertMs": 104.19237999999314,
+      "deleteMs": 1157.0481209999998,
+      "encodeMs": 2.0048659999883967,
       "encodedBytes": 3021
     },
     {
@@ -2813,12 +2813,12 @@
       "operations": 8,
       "insertedUnitsPerOperation": 8190,
       "iteration": 1,
-      "encodeInputMs": 0.05766399999265559,
-      "decodeMs": 0.029959000006783754,
-      "insertMs": 84.35504199999559,
-      "deleteMs": 1107.9097900000052,
-      "encodeMs": 2.154712000003201,
-      "encodedBytes": 3016
+      "encodeInputMs": 1.7937729999976,
+      "decodeMs": 0.13278500000888016,
+      "insertMs": 245.71718500000134,
+      "deleteMs": 1146.0151979999937,
+      "encodeMs": 1.7476859999878798,
+      "encodedBytes": 3017
     },
     {
       "candidate": "yjs",
@@ -2829,30 +2829,30 @@
       "operations": 8,
       "insertedUnitsPerOperation": 8190,
       "iteration": 1,
-      "encodeInputMs": 0.04424099999596365,
-      "decodeMs": 0.027859999987413175,
-      "insertMs": 9.591402999998536,
-      "deleteMs": 7.944860999996308,
-      "encodeMs": 0.25505199999315664,
+      "encodeInputMs": 0.04320699999516364,
+      "decodeMs": 0.02606000000378117,
+      "insertMs": 12.277579999994487,
+      "deleteMs": 9.691630000001169,
+      "encodeMs": 0.8681870000000345,
+      "encodedBytes": 68232
+    },
+    {
+      "candidate": "yjs",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 65536,
+      "fragments": 1,
+      "operations": 8,
+      "insertedUnitsPerOperation": 8190,
+      "iteration": 2,
+      "encodeInputMs": 0.04133900000306312,
+      "decodeMs": 0.027290999991237186,
+      "insertMs": 9.079891000001226,
+      "deleteMs": 13.740932000000612,
+      "encodeMs": 0.2009879999968689,
       "encodedBytes": 68298
     },
     {
-      "candidate": "yjs",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 65536,
-      "fragments": 1,
-      "operations": 8,
-      "insertedUnitsPerOperation": 8190,
-      "iteration": 2,
-      "encodeInputMs": 0.06174699999974109,
-      "decodeMs": 0.0721590000030119,
-      "insertMs": 14.495512000008603,
-      "deleteMs": 10.378487000009045,
-      "encodeMs": 0.2986160000000382,
-      "encodedBytes": 68298
-    },
-    {
       "candidate": "automerge",
       "kind": "text-edit",
       "distribution": "Unicode Markdown-like",
@@ -2861,12 +2861,12 @@
       "operations": 8,
       "insertedUnitsPerOperation": 8190,
       "iteration": 2,
-      "encodeInputMs": 0.054669000004651025,
-      "decodeMs": 0.024944000004325062,
-      "insertMs": 80.89268999999331,
-      "deleteMs": 2752.8596779999934,
-      "encodeMs": 1.6054330000042683,
-      "encodedBytes": 3020
+      "encodeInputMs": 0.14043499999388587,
+      "decodeMs": 0.028711000006296672,
+      "insertMs": 87.6363149999961,
+      "deleteMs": 1475.6550390000048,
+      "encodeMs": 2.7565929999982473,
+      "encodedBytes": 3014
     },
     {
       "candidate": "yjs",
@@ -2877,12 +2877,12 @@
       "operations": 1,
       "insertedUnitsPerOperation": 65534,
       "iteration": 0,
-      "encodeInputMs": 0.365499000006821,
-      "decodeMs": 0.17036199998983648,
-      "insertMs": 1.2858160000032512,
-      "deleteMs": 0.9613919999974314,
-      "encodeMs": 0.43353700000443496,
-      "encodedBytes": 68624
+      "encodeInputMs": 1.6627999999909662,
+      "decodeMs": 0.17675800000142772,
+      "insertMs": 1.6931269999913638,
+      "deleteMs": 0.9485439999989467,
+      "encodeMs": 2.232685999988462,
+      "encodedBytes": 68545
     },
     {
       "candidate": "automerge",
@@ -2893,12 +2893,12 @@
       "operations": 1,
       "insertedUnitsPerOperation": 65534,
       "iteration": 0,
-      "encodeInputMs": 0.3919460000033723,
-      "decodeMs": 0.2616319999942789,
-      "insertMs": 62.94885200000135,
-      "deleteMs": 1007.3044580000133,
-      "encodeMs": 3.7379840000066906,
-      "encodedBytes": 2581
+      "encodeInputMs": 0.6728200000070501,
+      "decodeMs": 0.2135439999983646,
+      "insertMs": 92.05117900000187,
+      "deleteMs": 1003.1379240000097,
+      "encodeMs": 1.8133229999948526,
+      "encodedBytes": 2583
     },
     {
       "candidate": "automerge",
@@ -2909,12 +2909,12 @@
       "operations": 1,
       "insertedUnitsPerOperation": 65534,
       "iteration": 1,
-      "encodeInputMs": 0.6154939999978524,
-      "decodeMs": 0.16287200000078883,
-      "insertMs": 92.23053300000902,
-      "deleteMs": 997.9645610000007,
-      "encodeMs": 3.065018000008422,
-      "encodedBytes": 2584
+      "encodeInputMs": 0.4057450000109384,
+      "decodeMs": 0.15970699999888893,
+      "insertMs": 58.781844999990426,
+      "deleteMs": 1537.6960469999904,
+      "encodeMs": 1.6491139999998268,
+      "encodedBytes": 2580
     },
     {
       "candidate": "yjs",
@@ -2925,11 +2925,11 @@
       "operations": 1,
       "insertedUnitsPerOperation": 65534,
       "iteration": 1,
-      "encodeInputMs": 0.41087700000207406,
-      "decodeMs": 0.15720299999520648,
-      "insertMs": 1.522448000003351,
-      "deleteMs": 0.7985269999917364,
-      "encodeMs": 0.39746400000876747,
+      "encodeInputMs": 0.6556419999978971,
+      "decodeMs": 0.15841099999670405,
+      "insertMs": 1.3920949999883305,
+      "deleteMs": 0.9484280000033323,
+      "encodeMs": 0.44370999999227934,
       "encodedBytes": 68624
     },
     {
@@ -2941,11 +2941,11 @@
       "operations": 1,
       "insertedUnitsPerOperation": 65534,
       "iteration": 2,
-      "encodeInputMs": 0.3964080000005197,
-      "decodeMs": 0.24654199999349657,
-      "insertMs": 2.042559000008623,
-      "deleteMs": 0.7454760000109673,
-      "encodeMs": 0.37561899999855086,
+      "encodeInputMs": 0.531143999993219,
+      "decodeMs": 0.1814240000094287,
+      "insertMs": 1.2715800000005402,
+      "deleteMs": 0.8611700000037672,
+      "encodeMs": 0.37256999999226537,
       "encodedBytes": 68624
     },
     {
@@ -2957,12 +2957,12 @@
       "operations": 1,
       "insertedUnitsPerOperation": 65534,
       "iteration": 2,
-      "encodeInputMs": 0.3679319999937434,
-      "decodeMs": 0.2154560000053607,
-      "insertMs": 65.23377600000822,
-      "deleteMs": 1458.8415930000047,
-      "encodeMs": 13.109863999998197,
-      "encodedBytes": 2582
+      "encodeInputMs": 0.44727199999033473,
+      "decodeMs": 0.23916800000006333,
+      "insertMs": 90.24654000000737,
+      "deleteMs": 1098.6950149999902,
+      "encodeMs": 1.6448870000021998,
+      "encodedBytes": 2583
     },
     {
       "candidate": "yjs",
@@ -2973,11 +2973,11 @@
       "operations": 8,
       "insertedUnitsPerOperation": 8190,
       "iteration": 0,
-      "encodeInputMs": 0.041437000007135794,
-      "decodeMs": 0.026477999999769963,
-      "insertMs": 9.405087999999523,
-      "deleteMs": 13.258732999995118,
-      "encodeMs": 1.9272370000107912,
+      "encodeInputMs": 0.04083199999877252,
+      "decodeMs": 0.024406999989878386,
+      "insertMs": 10.899913999994169,
+      "deleteMs": 6.705340999993496,
+      "encodeMs": 0.5886690000043018,
       "encodedBytes": 70124
     },
     {
@@ -2989,76 +2989,76 @@
       "operations": 8,
       "insertedUnitsPerOperation": 8190,
       "iteration": 0,
-      "encodeInputMs": 0.05179300000600051,
-      "decodeMs": 0.02743699999700766,
-      "insertMs": 158.42413999998826,
-      "deleteMs": 1084.8312770000048,
-      "encodeMs": 2.0422840000101132,
+      "encodeInputMs": 0.055632000003242865,
+      "decodeMs": 0.026291000001947396,
+      "insertMs": 91.7539989999932,
+      "deleteMs": 1377.859454000005,
+      "encodeMs": 3.050147999994806,
+      "encodedBytes": 3269
+    },
+    {
+      "candidate": "automerge",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 65536,
+      "fragments": 8,
+      "operations": 8,
+      "insertedUnitsPerOperation": 8190,
+      "iteration": 1,
+      "encodeInputMs": 0.05604500000481494,
+      "decodeMs": 0.026750000004540198,
+      "insertMs": 98.24567400000524,
+      "deleteMs": 1007.626734000005,
+      "encodeMs": 2.722693999996409,
+      "encodedBytes": 3269
+    },
+    {
+      "candidate": "yjs",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 65536,
+      "fragments": 8,
+      "operations": 8,
+      "insertedUnitsPerOperation": 8190,
+      "iteration": 1,
+      "encodeInputMs": 0.04394400000455789,
+      "decodeMs": 0.028765000010025688,
+      "insertMs": 7.726210000007995,
+      "deleteMs": 8.449992000008933,
+      "encodeMs": 1.0589000000036322,
+      "encodedBytes": 70124
+    },
+    {
+      "candidate": "yjs",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 65536,
+      "fragments": 8,
+      "operations": 8,
+      "insertedUnitsPerOperation": 8190,
+      "iteration": 2,
+      "encodeInputMs": 0.04185499998857267,
+      "decodeMs": 0.02461699998821132,
+      "insertMs": 16.434986999985995,
+      "deleteMs": 6.457377999991877,
+      "encodeMs": 0.40197099999932107,
+      "encodedBytes": 70124
+    },
+    {
+      "candidate": "automerge",
+      "kind": "text-edit",
+      "distribution": "Unicode Markdown-like",
+      "size": 65536,
+      "fragments": 8,
+      "operations": 8,
+      "insertedUnitsPerOperation": 8190,
+      "iteration": 2,
+      "encodeInputMs": 0.05344099999638274,
+      "decodeMs": 0.026043999998364598,
+      "insertMs": 82.72796299999754,
+      "deleteMs": 1175.0395209999988,
+      "encodeMs": 3.2476739999983693,
       "encodedBytes": 3267
-    },
-    {
-      "candidate": "automerge",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 65536,
-      "fragments": 8,
-      "operations": 8,
-      "insertedUnitsPerOperation": 8190,
-      "iteration": 1,
-      "encodeInputMs": 0.052232999994885176,
-      "decodeMs": 0.026245999993989244,
-      "insertMs": 92.76671399999759,
-      "deleteMs": 1135.740936000002,
-      "encodeMs": 1.690948000003118,
-      "encodedBytes": 3266
-    },
-    {
-      "candidate": "yjs",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 65536,
-      "fragments": 8,
-      "operations": 8,
-      "insertedUnitsPerOperation": 8190,
-      "iteration": 1,
-      "encodeInputMs": 0.04222699999809265,
-      "decodeMs": 0.030416000008699484,
-      "insertMs": 9.751514999996289,
-      "deleteMs": 8.982168999995338,
-      "encodeMs": 0.7254739999916637,
-      "encodedBytes": 70124
-    },
-    {
-      "candidate": "yjs",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 65536,
-      "fragments": 8,
-      "operations": 8,
-      "insertedUnitsPerOperation": 8190,
-      "iteration": 2,
-      "encodeInputMs": 0.041677000001072884,
-      "decodeMs": 0.025018000000272878,
-      "insertMs": 8.67593399999896,
-      "deleteMs": 7.7023559999943245,
-      "encodeMs": 0.4238610000029439,
-      "encodedBytes": 70124
-    },
-    {
-      "candidate": "automerge",
-      "kind": "text-edit",
-      "distribution": "Unicode Markdown-like",
-      "size": 65536,
-      "fragments": 8,
-      "operations": 8,
-      "insertedUnitsPerOperation": 8190,
-      "iteration": 2,
-      "encodeInputMs": 0.050617000000784174,
-      "decodeMs": 0.025566999989678152,
-      "insertMs": 76.4403500000044,
-      "deleteMs": 1156.785051999992,
-      "encodeMs": 2.3067040000023553,
-      "encodedBytes": 3266
     }
   ],
   "boundaries": [
@@ -3150,7 +3150,7 @@
     {
       "candidate": "yjs",
       "concurrentAlternatives": "converged to intact branch and reloaded",
-      "winner": "text"
+      "winner": "opaque"
     },
     {
       "candidate": "automerge",
@@ -3287,25 +3287,25 @@
     {
       "candidate": "yjs",
       "name": "wrong-retained-content",
-      "ms": 0.5141140000050655,
+      "ms": 0.6803360000048997,
       "outcome": "valid origin; no derivation"
     },
     {
       "candidate": "yjs",
       "name": "retained",
-      "ms": 0.06208699999842793,
+      "ms": 0.0665420000004815,
       "outcome": "validated derivation"
     },
     {
       "candidate": "yjs",
       "name": "reload",
-      "ms": 0.27512200000637677,
+      "ms": 0.09850700000242796,
       "outcome": "validated derivation"
     },
     {
       "candidate": "yjs",
       "name": "unresolved",
-      "ms": 0.15601900000183377,
+      "ms": 0.18633899999258574,
       "outcome": "valid origin; no derivation"
     },
     {
@@ -3319,7 +3319,7 @@
       "size": 1024,
       "fragments": 1,
       "iteration": 0,
-      "ms": 0.1387059999979101,
+      "ms": 0.2992639999865787,
       "outcome": "validated derivation"
     },
     {
@@ -3328,7 +3328,7 @@
       "size": 1024,
       "fragments": 1,
       "iteration": 1,
-      "ms": 0.07655900000827387,
+      "ms": 0.07094799999322277,
       "outcome": "validated derivation"
     },
     {
@@ -3337,7 +3337,7 @@
       "size": 1024,
       "fragments": 1,
       "iteration": 2,
-      "ms": 0.05777200000011362,
+      "ms": 0.03682699998898897,
       "outcome": "validated derivation"
     },
     {
@@ -3364,7 +3364,7 @@
       "size": 1024,
       "fragments": 8,
       "iteration": 0,
-      "ms": 0.5612469999905443,
+      "ms": 0.5013869999966118,
       "outcome": "validated derivation"
     },
     {
@@ -3373,7 +3373,7 @@
       "size": 1024,
       "fragments": 8,
       "iteration": 1,
-      "ms": 0.3966999999975087,
+      "ms": 0.37369399999442976,
       "outcome": "validated derivation"
     },
     {
@@ -3382,7 +3382,7 @@
       "size": 1024,
       "fragments": 8,
       "iteration": 2,
-      "ms": 0.19643599999835715,
+      "ms": 0.24164399999426678,
       "outcome": "validated derivation"
     },
     {
@@ -3391,7 +3391,7 @@
       "size": 16384,
       "fragments": 1,
       "iteration": 0,
-      "ms": 0.05731200000445824,
+      "ms": 0.06689299999561626,
       "outcome": "validated derivation"
     },
     {
@@ -3400,7 +3400,7 @@
       "size": 16384,
       "fragments": 1,
       "iteration": 1,
-      "ms": 0.027770000000600703,
+      "ms": 0.027599000008194707,
       "outcome": "validated derivation"
     },
     {
@@ -3409,7 +3409,7 @@
       "size": 16384,
       "fragments": 1,
       "iteration": 2,
-      "ms": 0.024317000003065914,
+      "ms": 0.023939000006066635,
       "outcome": "validated derivation"
     },
     {
@@ -3436,7 +3436,7 @@
       "size": 16384,
       "fragments": 8,
       "iteration": 0,
-      "ms": 2.606232000005548,
+      "ms": 9.62499700000626,
       "outcome": "validated derivation"
     },
     {
@@ -3445,7 +3445,7 @@
       "size": 16384,
       "fragments": 8,
       "iteration": 1,
-      "ms": 2.829277999990154,
+      "ms": 4.844377000001259,
       "outcome": "validated derivation"
     },
     {
@@ -3454,7 +3454,7 @@
       "size": 16384,
       "fragments": 8,
       "iteration": 2,
-      "ms": 2.312808999995468,
+      "ms": 3.3968470000108937,
       "outcome": "validated derivation"
     },
     {
@@ -3463,7 +3463,7 @@
       "size": 65536,
       "fragments": 1,
       "iteration": 0,
-      "ms": 0.6481349999958184,
+      "ms": 0.10479900000791531,
       "outcome": "validated derivation"
     },
     {
@@ -3472,7 +3472,7 @@
       "size": 65536,
       "fragments": 1,
       "iteration": 1,
-      "ms": 0.18349900000612251,
+      "ms": 0.06607099999382626,
       "outcome": "validated derivation"
     },
     {
@@ -3481,7 +3481,7 @@
       "size": 65536,
       "fragments": 1,
       "iteration": 2,
-      "ms": 0.06306299999414477,
+      "ms": 0.057173000008333474,
       "outcome": "validated derivation"
     },
     {
@@ -3508,7 +3508,7 @@
       "size": 65536,
       "fragments": 8,
       "iteration": 0,
-      "ms": 2.7177930000034394,
+      "ms": 2.927174999989802,
       "outcome": "validated derivation"
     },
     {
@@ -3517,7 +3517,7 @@
       "size": 65536,
       "fragments": 8,
       "iteration": 1,
-      "ms": 2.1145250000117812,
+      "ms": 1.6426500000088708,
       "outcome": "validated derivation"
     },
     {
@@ -3526,7 +3526,7 @@
       "size": 65536,
       "fragments": 8,
       "iteration": 2,
-      "ms": 2.8281069999939064,
+      "ms": 2.274425000010524,
       "outcome": "validated derivation"
     },
     {
@@ -3587,25 +3587,25 @@
     {
       "candidate": "automerge",
       "name": "wrong-retained-content",
-      "ms": 0.13109999999869615,
+      "ms": 0.13469099999929313,
       "outcome": "valid origin; no derivation"
     },
     {
       "candidate": "automerge",
       "name": "retained",
-      "ms": 0.02815099999133963,
+      "ms": 0.02883000001020264,
       "outcome": "validated derivation"
     },
     {
       "candidate": "automerge",
       "name": "reload",
-      "ms": 0.011650000000372529,
+      "ms": 0.011975000001257285,
       "outcome": "validated derivation"
     },
     {
       "candidate": "automerge",
       "name": "unresolved",
-      "ms": 0.06162399999448098,
+      "ms": 0.06097200000658631,
       "outcome": "valid origin; no derivation"
     },
     {
@@ -3619,7 +3619,7 @@
       "size": 1024,
       "fragments": 1,
       "iteration": 0,
-      "ms": 0.04734400000597816,
+      "ms": 0.05771100000129081,
       "outcome": "validated derivation"
     },
     {
@@ -3628,7 +3628,7 @@
       "size": 1024,
       "fragments": 1,
       "iteration": 1,
-      "ms": 0.014240999997127801,
+      "ms": 0.014465999993262812,
       "outcome": "validated derivation"
     },
     {
@@ -3637,7 +3637,7 @@
       "size": 1024,
       "fragments": 1,
       "iteration": 2,
-      "ms": 0.01092400000197813,
+      "ms": 0.010863000003155321,
       "outcome": "validated derivation"
     },
     {
@@ -3664,7 +3664,7 @@
       "size": 1024,
       "fragments": 8,
       "iteration": 0,
-      "ms": 0.07150399999227375,
+      "ms": 0.07996200000343379,
       "outcome": "validated derivation"
     },
     {
@@ -3673,7 +3673,7 @@
       "size": 1024,
       "fragments": 8,
       "iteration": 1,
-      "ms": 0.049419000002671964,
+      "ms": 0.05294999999750871,
       "outcome": "validated derivation"
     },
     {
@@ -3682,7 +3682,7 @@
       "size": 1024,
       "fragments": 8,
       "iteration": 2,
-      "ms": 0.05201400000078138,
+      "ms": 0.05210699999588542,
       "outcome": "validated derivation"
     },
     {
@@ -3691,7 +3691,7 @@
       "size": 16384,
       "fragments": 1,
       "iteration": 0,
-      "ms": 1.6646449999971082,
+      "ms": 0.2032770000078017,
       "outcome": "validated derivation"
     },
     {
@@ -3700,7 +3700,7 @@
       "size": 16384,
       "fragments": 1,
       "iteration": 1,
-      "ms": 0.0734750000119675,
+      "ms": 0.027428999994299375,
       "outcome": "validated derivation"
     },
     {
@@ -3709,7 +3709,7 @@
       "size": 16384,
       "fragments": 1,
       "iteration": 2,
-      "ms": 0.027525999990757555,
+      "ms": 0.021421999990707263,
       "outcome": "validated derivation"
     },
     {
@@ -3736,7 +3736,7 @@
       "size": 16384,
       "fragments": 8,
       "iteration": 0,
-      "ms": 0.43437500001164153,
+      "ms": 0.5363879999931669,
       "outcome": "validated derivation"
     },
     {
@@ -3745,7 +3745,7 @@
       "size": 16384,
       "fragments": 8,
       "iteration": 1,
-      "ms": 0.8927479999983916,
+      "ms": 0.35759200000029523,
       "outcome": "validated derivation"
     },
     {
@@ -3754,7 +3754,7 @@
       "size": 16384,
       "fragments": 8,
       "iteration": 2,
-      "ms": 1.0845419999968726,
+      "ms": 0.39626599999610335,
       "outcome": "validated derivation"
     },
     {
@@ -3763,7 +3763,7 @@
       "size": 65536,
       "fragments": 1,
       "iteration": 0,
-      "ms": 0.19038100000761915,
+      "ms": 0.15971300000092015,
       "outcome": "validated derivation"
     },
     {
@@ -3772,7 +3772,7 @@
       "size": 65536,
       "fragments": 1,
       "iteration": 1,
-      "ms": 0.06561600000713952,
+      "ms": 0.05937999999150634,
       "outcome": "validated derivation"
     },
     {
@@ -3781,7 +3781,7 @@
       "size": 65536,
       "fragments": 1,
       "iteration": 2,
-      "ms": 0.05455000000074506,
+      "ms": 0.10580999999365304,
       "outcome": "validated derivation"
     },
     {
@@ -3808,7 +3808,7 @@
       "size": 65536,
       "fragments": 8,
       "iteration": 0,
-      "ms": 2.438087999995332,
+      "ms": 1.6919590000034077,
       "outcome": "validated derivation"
     },
     {
@@ -3817,7 +3817,7 @@
       "size": 65536,
       "fragments": 8,
       "iteration": 1,
-      "ms": 4.021720999997342,
+      "ms": 4.714303000000655,
       "outcome": "validated derivation"
     },
     {
@@ -3826,7 +3826,7 @@
       "size": 65536,
       "fragments": 8,
       "iteration": 2,
-      "ms": 4.175333000006503,
+      "ms": 1.4740719999972498,
       "outcome": "validated derivation"
     },
     {

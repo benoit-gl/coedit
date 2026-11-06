@@ -3,23 +3,26 @@
 The [profile](ADMISSION_BOUNDARY_PROFILE.md) defines these qualification-only probes and their limits. The
 [raw samples](evidence/admission-boundary/raw.json) record a complete run on Node 24.19.0, Linux x64 and the pinned
 Yjs 13.6.32 and Automerge 3.4.1 dependencies. The source was local commit
-`1634a4f2b73c2468b3b3e8ff259fbf99ab691968`, clean tree
-`55417202de2913071b355505469d95658c049853`, identical to the tree of PR source commit
-`acce7d425d8eb3c52bd6e7b9875229c1bb44fc16`. The result files were added after this run. This is one shared host and
-three measured samples per shape, not a product limit or estimate of tail behavior.
+`c1844bd7c7b65dabce135b35477bf05fc567d49b`, with the same tree as PR 50 head
+`af9b6c2f1da1c942d49050d656057444eae86cdf`, plus this exact
+[Origin-oracle patch](evidence/admission-boundary/origin-oracle.patch), SHA-256
+`06ba3271afea6cc831f6624b6c4a34d79697b903f5129114bd83c3b67649ef0b`. The result files were added after this run.
+Apply the patch to that head to reproduce the measured source. This is one shared host and three measured samples per
+shape, not a product limit or estimate of tail behavior.
 
 ## Admission and refusal
 
-Both candidates completed the 216 measured samples with exact payload checks and successful reload. In the
-65,536-unit, eight-Origin, eight-replacement transaction, median publication was 1.54 ms for Yjs text and 0.41 ms
-for Yjs opaque, versus 483.76 ms for Automerge text and 1,883.52 ms for Automerge opaque. Median encoding was
-0.23 / 0.43 ms for Yjs text / opaque and 4.26 / 9.01 ms for Automerge. These measurements use one repeated-byte
+Both candidates completed the 216 measured samples with fixture-derived Origin and payload checks and successful
+reload. In the
+65,536-unit, eight-Origin, eight-replacement transaction, median publication was 1.79 ms for Yjs text and 0.47 ms
+for Yjs opaque, versus 617.82 ms for Automerge text and 1,828.64 ms for Automerge opaque. Median encoding was
+0.39 / 0.15 ms for Yjs text / opaque and 5.72 / 8.41 ms for Automerge. These measurements use one repeated-byte
 pattern and repeated replacements in a single transaction; they neither isolate native allocations nor measure peak
 memory. Raw samples include every other tested size and fragmentation level, with separately timed copying and
 decode. Actual maximum support is not established.
 
 A second paired workload inserts and deletes Unicode and Markdown-like text. For the largest, eight-Origin,
-eight-operation shape, median insertion / deletion was 9.41 / 8.98 ms for Yjs and 92.77 / 1,135.74 ms for Automerge.
+eight-operation shape, median insertion / deletion was 10.90 / 6.71 ms for Yjs and 91.75 / 1,175.04 ms for Automerge.
 Each interval applies all eight operations in one transaction; the sizes, inputs and timing boundaries are in the
 profile and raw samples.
 
@@ -48,7 +51,7 @@ probe does not measure an OS clipboard or publication
 of a paste.
 
 For a 32-unit fragment crossing one of eight Origin runs in reloaded history, the median decode and source lookup was
-0.40 / 2.72 ms for Yjs and 0.05 / 4.02 ms for Automerge at 1,024 / 65,536 retained text units respectively. The
+0.37 / 2.27 ms for Yjs and 0.05 / 1.69 ms for Automerge at 1,024 / 65,536 retained text units respectively. The
 fixture searches repeated text and may inspect multiple matching offsets before matching Origins. It does not prove an
 indexed lookup or an upper bound. Other dimensions and individual timings are in the raw record.
 
