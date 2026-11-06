@@ -69,5 +69,5 @@ qualification fixtures, not a selected production media parser.
 
 No out-of-memory failure was induced. More payload distributions, malformed representations, realistic OS clipboard
 and device-level resource limits remain unmeasured; they must not be inferred from these bounded observations. Gate B
-owns policy and carrier selection, and the final Merge 8 comparison must integrate this evidence with the other
-profiles.
+owns policy and carrier selection, and the final comparison in merge unit 11 must integrate this evidence with the
+other profiles.

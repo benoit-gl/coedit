@@ -1,7 +1,7 @@
 # Coedit document-engine MVP scaffolding plan
 
-**Status:** Accepted implementation plan; Steps 0-2 and the first seven Step 3 qualification merge units are complete;
-comparative qualification evidence is next.
+**Status:** Accepted implementation plan; Steps 0-2 and the first seven Step 3 qualification merge units are complete.
+Step 3 comparative evidence is in progress; the current carrier representations do not yet pass the ordinary-edit gate.
 
 **Target branch:** `main`
 
@@ -156,7 +156,7 @@ payloads, the durable text Range authority, and the revised Step 3-and-later seq
 established the browser scaffold and pure Block domain. Step 3 carrier qualification is in progress: the payload,
 structural/allocator, integrated collaborative-document foundation, integrated structural/payload semantics, and
 historical lifecycle, and retained-state/Range lifecycle and application/editor qualification merge units are complete;
-comparative qualification evidence is next. Gate B selects the carrier, the observable deterministic
+comparative qualification evidence is in progress. Gate B selects the carrier, the observable deterministic
 concurrent-replacement winner rule, the carrier-private implementation of that rule, mixed replacement/text-edit
 semantics, and payload/carrier resource-admission behavior. Step 4 selects and qualifies the production Media Type
 parser implementation and implements the first raw-media processor capability. Gate C later selects the text Range
@@ -221,7 +221,7 @@ carrier-private implementation, mixed replacement/text-edit semantics, payload/c
 the selection rationale. Exercise the raw/coarse media boundary with representative test codec fixtures, but do not
 select the production processor or supported representation profiles in this step.
 
-Deliver Step 3 as nine reviewable merge units with one fork-and-join boundary:
+Deliver Step 3 as twelve reviewable merge units with one initial fork-and-join boundary:
 
 1. **Payload/carrier qualification implementation.** Add the carrier-neutral Media-Type-labelled payload qualification
    boundary and its common semantic suite for Yjs and Automerge. Cover allowlisted native-string text, protected Origin,
@@ -291,7 +291,7 @@ Deliver Step 3 as nine reviewable merge units with one fork-and-join boundary:
    operation as unsuitable when it destroys required retained historical state, replacement evidence, or Range evidence.
    A portable-format surrogate can round-trip only the qualification state needed by these fixtures; it must not define
    `.coedit` grammar, version markers, or frozen bytes. Build the lazy-resolution/scaling fixtures here, but defer their
-   comparative measurements to merge unit 8.
+   comparative measurements to the later evidence and final-comparison units.
 
 7. **Application and editor qualification.** Build on integrated retained-state and Range lifecycle qualification and
    its qualification-only command/effect context. Qualify stable carrier-position behavior, Tiptap/ProseMirror
@@ -308,32 +308,51 @@ Deliver Step 3 as nine reviewable merge units with one fork-and-join boundary:
    hostile-input and clipboard evidence used by Gate B; it does not select Step 11 semantic-group timing or queue
    thresholds.
 
-8. **Comparative qualification evidence.** A preliminary runner and partial experimental evidence can land as a
-   baseline for further investigation. They do not complete this unit or satisfy Gate B. Continue the comparative
-   work on top of that baseline and retain the following acceptance criteria. Add the reproducible qualification runner
-   that orchestrates the landed common
-   suites. Before the comparative run, record the shared run-specific fixture profile and measurement method. Run all
-   selectable carrier and allocator candidates under that profile, including the landed Range lazy-resolution/scaling,
-   replacement-policy, lifecycle, editor, clipboard, and resource-admission workloads. Run Loro only as the planned
-   non-selectable reference benchmark for comparable cursor/movable-tree workloads; it does not enter the common
-   correctness gate or become a production dependency merely because it is measured. Do not invent a synthetic
-   lifecycle operation for a candidate that lacks one. Commit summarized measurements, resource characterization,
-   environment capture, representative-growth results, and other selection evidence in the repository. Also upload
-   machine-readable raw results as Actions artifacts for review and debugging. The committed fixture profile, method,
-   and summarized evidence are the durable qualification record; Actions artifacts are supplementary. This merge unit
-   can identify candidate guard, admission, replacement-policy, and clipboard alternatives but does not select them.
-   The [comparative work plan](qualification/step3/comparison/WORK_PLAN.md) organizes the remaining investigations and
-   evidence for agents; the verification and focused specifications remain authoritative.
-   The [ordinary-edit result](qualification/step3/comparison/ORDINARY_EDIT_RESULT.md) records that investigation with
-   adapter improvements, correctness repairs and a negative unrestricted native-work result. It does not qualify either
-   current representation for the mandatory no-whole-document-work criterion. Gate B must not select an ineligible
-   representation or introduce an unexercised redesign to conceal that failure.
+8. **Comparative evidence foundation and admission boundaries.** Retain the preliminary runner and the landed
+   ordinary-edit, history, replacement, lifecycle, structural, allocator and Range investigations as bounded evidence,
+   not completion of the comparison. PR 50 landed admission, clipboard and raw/coarse boundary evidence, including
+   explicit refusal, fallback and retained-source cases. Reconcile the landed evidence against this unit's applicable
+   requirements and record any remaining gaps without treating it as the final comparison. Record reproducible
+   profiles and durable summaries; upload machine-readable results as supplementary Actions artifacts. Identify guard,
+   admission and replacement alternatives without selecting them. The [comparative work plan](qualification/step3/comparison/WORK_PLAN.md)
+   maps the evidence and remaining work to these units.
 
-9. **Gate B decision.** In a deliberately small decision change, record the selected carrier and allocator, observable
-   concurrent-replacement winner rule, mixed replacement/edit semantics, selected carrier string domain, payload/carrier
-   resource-admission behavior, private-clipboard guards, rejected candidates, and rationale. Every selected behavior
-   must refer to a mechanism and fixture already exercised by the landed qualification suites and comparative run; the
-   Gate B change does not first introduce a new carrier behavior.
+9. **Representative browser and reference workloads.** Complete browser characterization with realistic Unicode and
+   Markdown-like edits, Origin distributions, larger unrelated state, inbound changes, lifecycle transitions and
+   asynchronous downstream scenarios. Record exact-preservation or atomic-refusal behavior, methods, and the limits of
+   synthetic input, IME, clipboard, network, storage and paint observations. Run the pinned Loro cursor/movable-tree
+   reference and explain workload and interval differences. Loro remains non-selectable, outside the common correctness
+   gate and production dependencies. Close this unit with reproducible observations and explicit limitations, not a
+   carrier selection. It builds on the landed qualification fixtures and may proceed alongside unit 10 when independent.
+
+10. **Production-compatible ordinary-edit eligibility.** The [ordinary-edit investigation](qualification/step3/comparison/ORDINARY_EDIT_RESULT.md)
+    found that neither current unrestricted representation passes the mandatory no-whole-document-work criterion.
+    Establish a production-compatible path and qualify its native and adapter work, semantics, atomicity, fallback and
+    representative lifecycle behavior against that criterion. First assess whether a material design or interface choice
+    needs a separate planning decision; do not implement through an unsettled choice. If the design requires a separate
+    design merge or a revised unit split, update this plan through the normal planning process before implementation.
+    Retain the existing negative results as evidence. Close this unit only when an exercised path meets the mandatory
+    criterion or a separately approved plan records a different authorized disposition; an inconclusive result or green
+    timing alone is not a pass. This unit does not select the carrier or relax the criterion.
+
+11. **Final comparative qualification record.** After units 8-10 and their prerequisites land, run the common suites and
+    all selectable carrier and allocator candidates against the final implementation revision under one recorded
+    run-specific profile and method. Include Range, replacement policy, lifecycle, editor, clipboard, resource admission,
+    structure and allocator workloads; use Loro only as the reference described in unit 9. Preserve partial failures,
+    raw machine-readable results and logs as Actions artifacts, and commit the profile, environment, method and durable
+    summarized evidence. Map mandatory requirements to pass, fail, unsupported or inconclusive results; reconcile prior
+    partial runs and non-comparable intervals. Record candidate and allocator capabilities, resource growth, safe failure,
+    lifecycle support, dependency versions and licenses, adapter complexity and integration risks. Identify eligible and
+    ineligible alternatives and exercised mechanisms for the decisions in unit 12. Do not select policies or invent a
+    synthetic lifecycle operation. Complete this unit only when requirements and selection questions are auditable;
+    mandatory failures remain failures, not waived limitations.
+
+12. **Gate B decision.** After unit 11, in a deliberately small decision change, record the selected carrier and allocator,
+    observable concurrent-replacement winner rule, mixed replacement/edit semantics, selected carrier string domain,
+    payload/carrier resource-admission behavior, private-clipboard guards, rejected candidates, and rationale. Every
+    selected behavior must refer to a mechanism and fixture already exercised by the landed qualification suites and
+    comparative run; the Gate B change does not first introduce a new carrier behavior. Gate B must not select an
+    ineligible representation or introduce an unexercised redesign to conceal a failure.
 
 The first two merge units are semantically independent and normally target `main`; whichever merges second is brought
 current with `main` without taking an implementation dependency on the first. The third unit establishes the shared
@@ -341,9 +360,9 @@ native-document seam. Units four through seven qualify the semantic join, histor
 Range lifecycle, replacement-policy feasibility, qualification-only attribution/derivation context, and
 application/editor behavior. The qualification-only context proves atomicity and attribution without implementing
 first-class History early. Those first seven units build and exercise the mandatory suites, but their development runs
-are not the final comparative evidence. The eighth unit runs the complete comparison against those implementations after
-they land on `main`, under one recorded profile and method. Do not create a deep stack merely to keep candidate files
-adjacent.
+are not the final comparative evidence. Unit 8 completes the current evidence foundation; units 9 and 10 address the
+remaining browser/reference and eligibility work. Unit 11 runs the final comparison after units 8-10 land on `main`;
+unit 12 records Gate B. Do not create a deep stack merely to keep candidate files adjacent.
 
 Qualification-only candidate implementations can live side-by-side on `main` while Gate B is open. `CODING_STYLE.md`
 owns their source placement, qualification-helper privacy, production dependency boundary, and source verification

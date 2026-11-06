@@ -81,8 +81,8 @@ synthetic DOM composition and clipboard events; it does not claim OS-level
 IME or clipboard automation. It intentionally keeps detailed carrier and
 transaction assertions in the lower-cost Node suite.
 
-Merge 7 landed on main. Comparative measurements and the Gate B selection
-remain separate Merge 8 and Merge 9 work.
+Merge 7 landed on main. The remaining evidence, ordinary-edit eligibility, final comparison and Gate B selection
+are separate Step 3 merge units 8 through 12.
 
 ### Ordinary-edit traversal observations
 

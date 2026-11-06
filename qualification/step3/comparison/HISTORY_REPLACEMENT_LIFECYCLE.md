@@ -53,4 +53,5 @@ mixed-operation policy; no alternative here is selected or silently treated as a
 
 The workloads are intentionally bounded and tiny. They do not characterize unbounded frontiers, large payloads,
 compaction after long histories, or application-level historical retention. The resource and final comparative work
-still owned by Merge 8 must use its final consistent profile and reconcile these observations with the other workloads.
+for the final comparison in merge unit 11 must use its consistent profile and reconcile these observations with the
+other workloads.

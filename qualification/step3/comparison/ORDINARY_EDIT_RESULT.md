@@ -26,7 +26,7 @@ ordinary edits. Native work still prevents an unrestricted no-whole-document-wor
 These are qualification outcomes, not a carrier or allocator selection. Green correctness checks do not make a failed
 representation eligible for Gate B. This closes the investigation with a negative result for the current unrestricted
 representations. A production-compatible representation change requires a separately assessed implementation/design
-unit; it must not be smuggled into Gate B as a policy exemption. The other Merge 8 work packages remain separate.
+unit; it must not be smuggled into Gate B as a policy exemption. The other Step 3 evidence work remains separate.
 
 ## Implemented experiment
 
@@ -66,7 +66,7 @@ IDs and checks required owners and native text kinds before entering its live ed
 namespaces, IDs and restored payloads before live mutation. The regression throws during later token allocation and
 checks encoded state, including hidden liveness data, rather than checking visible text alone. The claim covers admitted
 operations and expected preparation failures; it is not a universal rollback promise for runtime termination or an
-unexpected native-library defect. Resource/admission selection remains in its own Merge 8 work package.
+unexpected native-library defect. Resource/admission qualification remains separate from Gate B policy selection.
 
 Automerge stable positions retain the native text-object identity at capture. A cursor from a replaced or restored text
 object returns unresolved before calling the native resolver. Equal text cannot reattach it. Reload preserves a current
@@ -82,7 +82,7 @@ validation ordering for rejected batches.
 ## Reproducible method and outputs
 
 Run `npm run step3:qualification -- --ordinary-only` for the complete point 1 package, including all common suites
-and Chromium collection, without waiting for the other Merge 8 work packages. The runner records its scope explicitly.
+and Chromium collection, without waiting for the other Step 3 evidence work. The runner records its scope explicitly.
 The separate `ordinary-edit-evidence` Actions job preserves this scoped artifact even while the broader campaign runs.
 Run `npm run step3:qualification` for the broader comparison, or create an empty `step3-evidence` directory and run
 `npm run step3:ordinary-edit` for this package. The latter refuses to replace an existing output. It checkpoints completed
