@@ -156,7 +156,7 @@ payloads, the durable text Range authority, and the revised Step 3-and-later seq
 established the browser scaffold and pure Block domain. Step 3 carrier qualification is in progress: the payload,
 structural/allocator, integrated collaborative-document foundation, integrated structural/payload semantics, and
 historical lifecycle, and retained-state/Range lifecycle and application/editor qualification merge units are complete;
-comparative qualification evidence is next. Gate B selects the carrier, the observable deterministic
+comparative qualification evidence is in progress. Gate B selects the carrier, the observable deterministic
 concurrent-replacement winner rule, the carrier-private implementation of that rule, mixed replacement/text-edit
 semantics, and payload/carrier resource-admission behavior. Step 4 selects and qualifies the production Media Type
 parser implementation and implements the first raw-media processor capability. Gate C later selects the text Range
@@ -310,9 +310,9 @@ Deliver Step 3 as twelve reviewable merge units with one initial fork-and-join b
 
 8. **Comparative evidence foundation and admission boundaries.** Retain the preliminary runner and the landed
    ordinary-edit, history, replacement, lifecycle, structural, allocator and Range investigations as bounded evidence,
-   not completion of the comparison. Finish the admission, clipboard and raw/coarse boundary qualification, including
-   explicit refusal, fallback and retained-source cases. PR 50 contains that work and is open at this plan revision;
-   this unit remains open until its accepted equivalent lands and its evidence is reconciled. Record reproducible
+   not completion of the comparison. PR 50 landed admission, clipboard and raw/coarse boundary evidence, including
+   explicit refusal, fallback and retained-source cases. Reconcile the landed evidence against this unit's applicable
+   requirements and record any remaining gaps without treating it as the final comparison. Record reproducible
    profiles and durable summaries; upload machine-readable results as supplementary Actions artifacts. Identify guard,
    admission and replacement alternatives without selecting them. The [comparative work plan](qualification/step3/comparison/WORK_PLAN.md)
    maps the evidence and remaining work to these units.

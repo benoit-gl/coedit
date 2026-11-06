@@ -20,8 +20,8 @@ dimension requires a separate benchmark or that an unmeasured case passed.
 
 ## Execution order
 
-1. Finish the unit 8 evidence foundation, including the admission, clipboard and media boundary. Prior partial PRs
-   remain bounded evidence; verify that their required coverage is landed rather than treating them as final results.
+1. Reconcile the unit 8 evidence foundation, including the landed admission, clipboard and media boundary evidence.
+   Prior partial PRs remain bounded evidence; verify their required coverage rather than treating them as final results.
 2. Complete the unit 9 representative browser and Loro workloads with a recorded methodology. This can proceed in
    parallel with unit 10 when the fixtures and dependencies permit.
 3. Assess the unit 10 ordinary-edit eligibility design and obtain any required design decision before implementation.
