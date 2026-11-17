@@ -22,12 +22,13 @@ dimension requires a separate benchmark or that an unmeasured case passed.
 
 The [Merge 8 evidence account](MERGE_8_EVIDENCE_ACCOUNT.md) maps the unit 8 checklist items below to landed
 profiles, tests, raw completion records and bounded dispositions. Its H1-H5, S1-S3 and A1-A4 identifiers follow the
-item order within the three unit 8 sections. Read that account before repeating an experiment or treating an
-unchecked box as absent evidence. The broader experiments and final qualification obligations remain open;
-acceptance of the account does not turn failed or inconclusive outcomes into passes.
+item order within the three unit 8 sections. Checked unit 8 items below mean the evidence, limitations and remaining
+owner have been accounted for, not that every suggested experiment ran or a mandatory invariant passed. The broader
+experiments and final qualification obligations remain open; failures and inconclusive outcomes retain their status.
 
 1. Reconcile the unit 8 evidence foundation, including the landed admission, clipboard and media boundary evidence.
-   Prior partial PRs remain bounded evidence; verify their required coverage rather than treating them as final results.
+   This accounting is recorded in the evidence account; required checks and normal PR review/merge remain its closure
+   steps. Prior partial PRs remain bounded evidence, not final comparative qualification.
 2. Complete the unit 9 representative browser and Loro workloads with a recorded methodology. This can proceed in
    parallel with unit 10 when the fixtures and dependencies permit.
 3. Assess the unit 10 ordinary-edit eligibility design and obtain any required design decision before implementation.
@@ -96,24 +97,28 @@ Gate B cannot treat the incremental experiment or green correctness checks as pr
 
 ## Carrier history, replacement and lifecycle (unit 8 evidence)
 
-- [ ] Extend history-size and shape coverage beyond sequential single-character
+H1-H5 are accounted for in the [history matrix](MERGE_8_EVIDENCE_ACCOUNT.md#history-replacement-and-lifecycle).
+Larger combined profiles, cost attribution and the final comparative record remain unit 11 work; any new mechanism
+needed for an eventual policy must be exercised before selection.
+
+- [x] Extend history-size and shape coverage beyond sequential single-character
       appends: consider deletes, replacements, multiple contents, structural and
       mixed opaque/text effects. Separate visible content size from history length,
       and record larger practical points or explicit resource/time outcomes.
-- [ ] Characterize wide causal frontiers, merge fan-in and ancestry lookup;
+- [x] Characterize wide causal frontiers, merge fan-in and ancestry lookup;
       repeated Block and InlineContent activity and liveness-token growth; and
       retained replacement alternatives, losing-branch edits and ancestry chains.
       Attribute costs where feasible rather than assuming one cause.
-- [ ] Compare text/text, opaque/opaque and mixed-type replacements, including
+- [x] Compare text/text, opaque/opaque and mixed-type replacements, including
       two and more concurrent alternatives and concurrent insert, delete and
       fine-grained replacement. Exercise causal precedence across unrelated effects,
       delivery faults and reload; verify convergence, attribution, identities and
       retained evidence. Measure merge, validation, projection, reconstruction and
       encoded growth where selection-relevant.
-- [ ] Compare already exercised winner and mixed-operation alternatives by
+- [x] Compare already exercised winner and mixed-operation alternatives by
       metadata, reconstructibility, complexity and contract compatibility.
       Record evidence without selecting the Gate B policy.
-- [ ] Separate capture, historical materialization, restore, serialization and
+- [x] Separate capture, historical materialization, restore, serialization and
       reopen costs across relevant sizes and repeat representative edits after
       lifecycle transitions. Record supported native garbage collection or
       compaction and unsupported operations; do not invent an equivalent operation.
@@ -122,17 +127,21 @@ Gate B cannot treat the incremental experiment or green correctness checks as pr
 
 ## Structure, allocators and Ranges (unit 8 evidence)
 
-- [ ] Measure Block create, move, subtree move, delete and repeated moves,
+S1-S3 are accounted for in the [structure matrix](MERGE_8_EVIDENCE_ACCOUNT.md#structure-allocators-and-ranges).
+Fractional parentage fails; holder-scan evidence is limited to the fixture boundary. Unit 11 retains these outcomes
+and limits, and Step 6/Gate C owns production Range representation obligations.
+
+- [x] Measure Block create, move, subtree move, delete and repeated moves,
       including mixed structure and multiple text/opaque payload transactions.
       Vary relevant Block and sibling counts, depth, subtree size and placement
       history; check atomic publication and equivalent projection. Measure
       convergence and serialized carrier growth under structural stress.
-- [ ] Compare allocator allocation, ordered runs, comparison, sorting,
+- [x] Compare allocator allocation, ordered runs, comparison, sorting,
       encoding/decoding and narrow-gap growth. Record position-length distributions,
       collisions, collision runs, normalization, concurrent-run interleaving,
       parentage and practical exhaustion behavior. Identify invariant failures,
       explicit failure behavior, repair needs and cost for each candidate.
-- [ ] Extend Range construction and lazy-resolution scaling across holder
+- [x] Extend Range construction and lazy-resolution scaling across holder
       counts and document shapes. Measure representative move, deletion, split,
       merge and replacement lineage, multiple members, and retained-state growth.
       Check behavior after edits, reload, historical materialization and supported
@@ -142,27 +151,35 @@ Gate B cannot treat the incremental experiment or green correctness checks as pr
 
 ## Admission, clipboard and media boundary (unit 8)
 
-- [ ] Characterize fine-grained text and opaque admission over relevant sizes,
+A1-A4 are accounted for in the [boundary matrix](MERGE_8_EVIDENCE_ACCOUNT.md#admission-clipboard-and-media-boundaries).
+Normal-runtime exhaustion safety remains inconclusive, and source matching is not authenticated provenance. Unit 9
+owns broader browser characterization; unit 11 owns final evidence, with only exercised policies selectable in unit 12.
+
+- [x] Characterize fine-grained text and opaque admission over relevant sizes,
       operation counts, Origin fragmentation, payload distributions and concurrent
       alternatives. Measure decoding, copying, publication and encoding as useful.
       Record practical completed points and failures as observations, not semantic
       maxima.
-- [ ] Exercise candidate admission and guard mechanisms, including controlled
+- [x] Exercise candidate admission and guard mechanisms, including controlled
       failure, and verify explicit rejection and unchanged committed state. Compare
       fixed, adaptive, operation-specific and normal-runtime safe-failure options
       where applicable. An uncontrolled out-of-memory crash does not prove atomic
       refusal. Gate B selects the behavior and any values.
-- [ ] Expand private clipboard guard and malformed-input cases across independent
+- [x] Expand private clipboard guard and malformed-input cases across independent
       dimensions and realistic fragments. Measure actual retained-source resolution
       where applicable, including unresolved and post-reload cases. Verify atomic
       failure and plain-text fallback with imported/unknown Origin. Preserve
       self-contained clipboard data; fixture limits are not production selections.
-- [ ] Summarize supported, unsupported, invalid and non-exact raw/coarse
+- [x] Summarize supported, unsupported, invalid and non-exact raw/coarse
       conversion outcomes and carrier independence. Exercise malformed carrier
       state, retained metadata and position or codec failures for explicit,
       atomic outcomes. Do not select the Step 4 production parser or processor.
 
 ## Browser and reference workloads (unit 9)
+
+The [recorded PR 52 execution](MERGE_8_EVIDENCE_ACCOUNT.md#supplementary-pr-52-executions) includes the pinned Loro
+reference. Its execution is established; the methodology assessment, comparative interpretation and broader browser
+characterization below remain open. Do not treat the reference as wholly unrun or this execution as unit 9 closure.
 
 - [ ] Extend representative editor operations across target sizes, Origin
       distributions, realistic Markdown-like and Unicode content, and larger
@@ -176,7 +193,8 @@ Gate B cannot treat the incremental experiment or green correctness checks as pr
       methods and the limits of OS input, IME, storage, network and paint evidence.
       Do not require a full product editor or OS automation unless an unresolved
       requirement needs it.
-- [ ] Run and summarize the pinned Loro cursor/movable-tree reference. Describe
+- [ ] Assess and summarize the recorded pinned Loro cursor/movable-tree reference; obtain additional observations
+      only where the unit 9 requirements need them. Describe
       operation and interval differences before comparing numbers. Keep Loro
       outside the selectable candidates, common correctness gate and production
       dependencies.
