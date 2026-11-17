@@ -113,6 +113,23 @@ their own evidence. Historical Actions links in [preliminary results](RESULTS.md
 supplementary; artifact availability and current-revision execution must be checked independently. This audit did
 not download or verify historical Actions artifacts.
 
+### Supplementary PR 52 execution
+
+[Actions run 44161002104](https://github.com/benoit-gl/coedit/actions/runs/44161002104) successfully completed the
+three focused unit 8 jobs for PR head `ea95ba1fa50d56551ab94d96eb8742c382c6cfbd`, whose test-merge revision was
+`183e948d32179dd05b97a9ba5e2a552dd91e6e97`. That head changes documentation only relative to the audited
+implementation baseline. The successful jobs published these supplementary artifacts:
+
+- [History/replacement/lifecycle](https://github.com/benoit-gl/coedit/actions/runs/44161002104/artifacts/14363172536).
+- [Structure/allocator/Range](https://github.com/benoit-gl/coedit/actions/runs/44161002104/artifacts/14362414045).
+- [Admission/boundaries](https://github.com/benoit-gl/coedit/actions/runs/44161002104/artifacts/14362029251).
+
+Job conclusions and artifact metadata were inspected. Workspace downloads were denied by the network proxy, so
+archive contents and new numeric observations were not independently inspected or incorporated into the matrices.
+These job results establish successful focused execution, not final comparative qualification. Their source revision
+must remain distinct from later account revisions and the unit 11 final run; other jobs in the same workflow have
+separate outcomes. Artifact retention is finite, so the committed historical profiles and summaries remain necessary.
+
 ### Reproducibility checklist disposition
 
 The four work-plan reproducibility items apply to the final record as well as this foundation:
