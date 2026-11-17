@@ -20,6 +20,12 @@ dimension requires a separate benchmark or that an unmeasured case passed.
 
 ## Execution order
 
+The [Merge 8 evidence account](MERGE_8_EVIDENCE_ACCOUNT.md) maps the unit 8 checklist items below to landed
+profiles, tests, raw completion records and bounded dispositions. Its H1-H5, S1-S3 and A1-A4 identifiers follow the
+item order within the three unit 8 sections. Read that account before repeating an experiment or treating an
+unchecked box as absent evidence. The broader experiments and final qualification obligations remain open;
+acceptance of the account does not turn failed or inconclusive outcomes into passes.
+
 1. Reconcile the unit 8 evidence foundation, including the landed admission, clipboard and media boundary evidence.
    Prior partial PRs remain bounded evidence; verify their required coverage rather than treating them as final results.
 2. Complete the unit 9 representative browser and Loro workloads with a recorded methodology. This can proceed in
