@@ -3,7 +3,8 @@
 **Status:** Partial, experimental baseline. Not sufficient for comparative qualification or Gate B selection.
 
 This file preserves observations and remaining-work statements at the time of each historical run. For current
-status, use the [Merge 8 evidence account](MERGE_8_EVIDENCE_ACCOUNT.md) and [work plan](WORK_PLAN.md): later work added
+status, use the [Merge 8 evidence account](MERGE_8_EVIDENCE_ACCOUNT.md),
+[unit 9 browser/reference results](BROWSER_REFERENCE_RESULTS.md) and [work plan](WORK_PLAN.md): later work added
 history/replacement, structure/allocator/Range and admission/clipboard/media evidence. The PR 52 workflow also
 completed the existing full runner, including Loro. Those executions do not close the broader units 9-11 obligations
 or the ordinary-edit eligibility failure; carrier and policy selection remain unit 12.
@@ -141,7 +142,8 @@ growth and publish a current, complete summary with its raw artifacts.
 No current number selects a candidate, freezes a limit, or promotes a target.
 
 The list above is historical, not the current backlog. The [evidence account](MERGE_8_EVIDENCE_ACCOUNT.md) records
-which investigations subsequently landed, their limitations and the remaining unit 9-12 work.
+which investigations subsequently landed; the [browser/reference record](BROWSER_REFERENCE_RESULTS.md) adds unit 9
+observations and limits. The work plan identifies the remaining eligibility, final-comparison and selection work.
 
 ## Experimental Yjs ASCII preflight
 

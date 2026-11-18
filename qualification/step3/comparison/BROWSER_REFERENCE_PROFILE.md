@@ -60,6 +60,12 @@ and CRLF/LF. Fixture generation avoids cutting a surrogate pair at the requested
 text and attribution are constructed independently of the resulting carrier projection. Unrelated structure, payloads
 and Origins must remain unchanged by target-only editing.
 
+The repeated source pattern is `"# café\r\n漢字 e\u0301 👩‍💻️ **markdown** [link](x)\n"`, truncated to the requested
+UTF-16 length with a final incomplete surrogate replaced by `x`. Unrelated `text/plain` is repeated `u`; each
+`application/octet-stream` buffer is filled with its zero-based Block index. Target and unrelated runs have distinct
+human Origin identities. Editing replaces `[0,1)` with `##`, inserts `e\u0301👩‍💻️\r\n` at a scalar-safe middle
+offset, then types `!` at the end. The exact source and boundary construction are also bound to the fixture revision.
+
 Each candidate uses the same logical shape and operation sequence through the existing mounted ProseMirror adapter,
 targeted qualification preflight/projection and an explicitly pure local-dense decoder. This opts into an existing
 qualification path; it is not a production interface restriction or an eligibility claim. Initial Origin construction
@@ -72,8 +78,9 @@ by iteration. Shapes run in a fixed sequence in one browser environment; runtime
 influence observations. Three observations support descriptive medians, not a reliable tail estimate.
 
 Each measured editing row contains all three ordered operations. `driverOrDispatchMs` covers the synthetic keyboard
-driver or synchronous ProseMirror dispatch through completion; `publicationMs` is nested synchronous carrier
-publication. These intervals overlap and must not be added. Setup, verification and later encoding are excluded.
+driver or transaction construction and synchronous ProseMirror dispatch through completion; `publicationMs` is nested
+synchronous carrier publication. These intervals overlap and must not be added. Setup, verification and later encoding
+are excluded.
 Neither interval measures physical paint or proves feedback independent of slow synchronous publication. No finite
 timing candidate drives correctness failure.
 
@@ -98,6 +105,11 @@ Expected states and Origin effects are checked outside timings. Rejected stale a
 state and effect records unchanged. Selection observations describe the existing reset/remount and explicit
 reselection path; they do not promise automatic caret continuity or introduce a production selection policy.
 Qualification captures are detached retained states, not permanent product Versions.
+
+The fixed lifecycle sequence appends `x` and `y`, receives a remote `R` prefix, appends `z` after stale-view recovery,
+reopens and appends `q`, restores the original capture and appends `r`, then replaces with `replacement\n😀` and
+appends `!`. Reload and final replica checks compare exact attributed states. Reset/remount selection observations
+precede an explicit end reselection; no hidden editor state is assumed to survive those transitions.
 
 The task boundary establishes asynchronous scheduling of pending work, not real slow I/O. Persistence is a byte buffer,
 replication exchanges in-memory encoded state, and callbacks run on the same browser thread. No real IndexedDB,

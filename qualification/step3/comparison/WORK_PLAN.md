@@ -30,7 +30,9 @@ experiments and final qualification obligations remain open; failures and inconc
    This accounting is recorded in the evidence account; required checks and normal PR review/merge remain its closure
    steps. Prior partial PRs remain bounded evidence, not final comparative qualification.
 2. Complete the unit 9 representative browser and Loro workloads with a recorded methodology. This can proceed in
-   parallel with unit 10 when the fixtures and dependencies permit.
+   parallel with unit 10 when the fixtures and dependencies permit. The bounded observations and method are now
+   recorded in the [browser/reference results](BROWSER_REFERENCE_RESULTS.md); eligibility and final comparison remain
+   separate obligations.
 3. Assess the unit 10 ordinary-edit eligibility design and obtain any required design decision before implementation.
    The investigation below is closed with a negative result for the current unrestricted representations; it does not
    pass the mandatory criterion. Qualify an exercised production-compatible path before the final comparison.
@@ -177,23 +179,24 @@ owns broader browser characterization; unit 11 owns final evidence, with only ex
 
 ## Browser and reference workloads (unit 9)
 
-The [recorded PR 52 execution](MERGE_8_EVIDENCE_ACCOUNT.md#supplementary-pr-52-executions) includes the pinned Loro
-reference. Its execution is established; the methodology assessment, comparative interpretation and broader browser
-characterization below remain open. Do not treat the reference as wholly unrun or this execution as unit 9 closure.
+The [unit 9 results](BROWSER_REFERENCE_RESULTS.md) and [method](BROWSER_REFERENCE_PROFILE.md) record the four workload
+questions below with explicit bounded observations and limitations. Checked items mean those experiments and their
+methodology are recorded, not that production eligibility or final comparative qualification passed. The earlier
+[PR 52 execution](MERGE_8_EVIDENCE_ACCOUNT.md#supplementary-pr-52-executions) remains supplementary historical evidence.
 
-- [ ] Extend representative editor operations across target sizes, Origin
+- [x] Extend representative editor operations across target sizes, Origin
       distributions, realistic Markdown-like and Unicode content, and larger
       unrelated multi-Block state. Record exact-preservation or atomic-rejection
       behavior for relevant native-string edge cases, including surrogate boundaries.
-- [ ] Exercise delayed downstream work across an asynchronous scheduling
+- [x] Exercise delayed downstream work across an asynchronous scheduling
       boundary and verify local editing and eventual reload/convergence. Record
       what is simulated. Observe editing after inbound changes, reload, restore and
       replacement, including selection and position behavior.
-- [ ] Document synthetic keyboard, transaction, composition and clipboard
+- [x] Document synthetic keyboard, transaction, composition and clipboard
       methods and the limits of OS input, IME, storage, network and paint evidence.
       Do not require a full product editor or OS automation unless an unresolved
       requirement needs it.
-- [ ] Assess and summarize the recorded pinned Loro cursor/movable-tree reference; obtain additional observations
+- [x] Assess and summarize the recorded pinned Loro cursor/movable-tree reference; obtain additional observations
       only where the unit 9 requirements need them. Describe
       operation and interval differences before comparing numbers. Keep Loro
       outside the selectable candidates, common correctness gate and production

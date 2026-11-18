@@ -9,6 +9,10 @@ policy, production limit, allocator selection or qualification waiver. The
 [verification plan](../../../docs/MVP_VERIFICATION_PLAN.md), particularly sections 6.1 and 6.5-6.7, and the focused
 specifications linked from the scaffolding plan retain requirement authority.
 
+Subsequent unit 9 progress is recorded in the [browser/reference results](BROWSER_REFERENCE_RESULTS.md) and
+[current work plan](WORK_PLAN.md). That later record updates the unit 9 work listed below; the historical measurements
+and dispositions in this account remain tied to the Merge 8 baseline.
+
 **Assessment:** the landed work supplies a bounded foundation for each unit 8 evidence area. This reconciliation
 records what was exercised and the remaining questions. No additional mandatory implementation or full comparative
 run has been identified as necessary solely to complete this reconciliation. Required repository checks and normal
