@@ -1,0 +1,207 @@
+# Merge 8 evidence account
+
+## Scope and disposition
+
+This account reconciles the evidence foundation and admission boundaries required by Step 3 merge unit 8 in the
+[scaffolding plan](../../../SCAFFOLDING_PLAN.md). The audited implementation baseline is
+`983b051fe31b9b59f161bda7966dd3727b11d371`, after PRs 47-51. This account introduces no carrier behavior, admission
+policy, production limit, allocator selection or qualification waiver. The
+[verification plan](../../../docs/MVP_VERIFICATION_PLAN.md), particularly sections 6.1 and 6.5-6.7, and the focused
+specifications linked from the scaffolding plan retain requirement authority.
+
+**Assessment:** the landed work supplies a bounded foundation for each unit 8 evidence area. This reconciliation
+records what was exercised and the remaining questions. No additional mandatory implementation or full comparative
+run has been identified as necessary solely to complete this reconciliation. Required repository checks and normal
+pull-request review and merge remain the closure steps. No separate policy decision or acceptance of an unspecified
+limitation is required. This account does not declare that Step 3 or Gate B passes.
+
+Two negative findings must remain visible: unrestricted ordinary-edit representations fail the mandatory
+no-whole-document-work criterion, and fractional indexing has a projected-parentage failure. Normal-runtime safe
+allocation failure is inconclusive. None becomes a pass because the evidence foundation is accounted for.
+
+The [work plan](WORK_PLAN.md) separates completed unit 8 accounting from broader experiments and qualification work.
+Its checked unit 8 items mean their evidence and limitations have been reconciled here; they do not assert completion
+of every suggested experiment. Assigning a later owner does not waive a mandatory requirement.
+
+## Status and requirement mapping
+
+- **Accounted:** the existing evidence, its limits and the remaining work have been identified for the foundation
+  question. This is a reconciliation status, not a qualification pass or a claim that all proposed experiments ran.
+- **Fail:** an exercised mandatory invariant failed for the named representation or candidate.
+- **Inconclusive:** the available evidence does not establish the stated behavior.
+- **Unsupported:** the pinned adapter exposes no such operation; an invented equivalent cannot substitute for it.
+
+Accounting and technical outcome are separate. In particular, H4 accounts for exercised frontier probes without
+proving every replacement policy implementable; A2 accounts for pre-publication refusal while exhaustion safety is
+inconclusive; S3 accounts for fixture-level holder access while broader scan avoidance is inconclusive. Known failures
+remain failures even when the investigation and its accounting are complete. No mandatory invariant is reclassified
+as a discretionary limitation.
+
+Rows H1-H5, S1-S3 and A1-A4 correspond, in order, to the items under the three unit 8 headings in the work plan.
+Detailed numeric observations remain in the linked result documents. The remaining-work column identifies subsequent
+obligations rather than requiring every suggested workload before unit 8 can close.
+
+## History, replacement and lifecycle
+
+The governing questions are exact retained evidence, causal replacement precedence, mixed-operation feasibility,
+atomicity, lifecycle behavior and growth under verification-plan sections 6.1, 6.5 and 6.6.
+
+| ID  | Requirement or question                                                                                           | Evidence and observed result                                                                                                                                                                                                                                                                                                                                             | Disposition and remaining work                                                                                                                                                                                                                                                                                                |
+| --- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| H1  | Extend history shapes beyond appends; separate visible size from history length.                                  | [History results](HISTORY_REPLACEMENT_LIFECYCLE.md) and [lifecycle profile](evidence/lifecycle/README.md): mixed insert/delete/text replacement/opaque replacement/placement histories at 12, 40 and 100 effects; separate alternating insert/delete reloads at 20, 100 and 200 effects while checkpoint text size stays constant.                                       | **Accounted** for the foundation. Larger combined content/history and resource workloads belong to unit 11; the small mixed fixture does not replace the earlier 5,000-effect characterization.                                                                                                                               |
+| H2  | Characterize frontier width, ancestry, fan-in, retained alternatives and activity growth.                         | [Fan-in record](REPLACEMENT_FANIN.md): two through 32 branches and separate merge/frontier/materialization/encode/reopen intervals. [Causal-history tests](../integrated/causalPayloadHistory.test.ts) exercise ancestry through unrelated effects and invalid DAG rejection. Structural/lifecycle records show aggregate retained growth.                               | **Accounted**, with attribution limits. Native history, liveness and snapshot bytes are not isolated. Unit 11 must retain that limitation or obtain distinguishing measurements when needed for selection.                                                                                                                    |
+| H3  | Exercise same-type and mixed replacements, concurrent edits, precedence, delivery faults, reload and attribution. | [Payload tests](../payload/carrier.test.ts), [retained Range/effect tests](../integrated/retainedRange.test.ts) and [fan-in tests](../integrated/replacementFanIn.test.ts) cover replacement pairs, three-way mixed cases, losing-branch edits, duplicate/reordered delivery and reload. Captured fan-in branches are checked on forward, reverse and reopened replicas. | **Accounted** for bounded schedules. Fan-in measurements use complete-state delivery in two orders, not network-schedule enumeration. Unit 11 reconciles common-suite and measurement evidence.                                                                                                                               |
+| H4  | Compare exercised winner/mixed-operation alternatives without selecting policy.                                   | The [alternative table](REPLACEMENT_FANIN.md) compares lowest/highest effect-frontier choices, retained nonwinning edits and captured-branch materialization by metadata, ancestry cost, reconstructibility and contract implications.                                                                                                                                   | **Accounted** as feasibility evidence. Frontier probes do not install either choice as the integrated winner. Arbitrary branch replay is unimplemented. Units 11-12 may only propose/select already exercised mechanisms; a missing mechanism requires implementation before selection.                                       |
+| H5  | Separate lifecycle costs, edit after transitions, and identify native collection support.                         | [Mixed-history results](HISTORY_REPLACEMENT_LIFECYCLE.md) separate capture, materialization, restore, encode, reopen and following edit. The [lifecycle probe](evidence/lifecycle/README.md) checks retained captures and editing after repeated reload.                                                                                                                 | **Accounted** with limits: materialization reads detached snapshots, not general product History reconstruction. Yjs reports automatic collection; Automerge native compaction is **unsupported** by the pinned adapter. Unit 11 qualifies relevant supported lifecycle paths; Steps 5-6 own permanent History/final lineage. |
+
+## Structure, allocators and Ranges
+
+The governing questions are structure and mixed-payload atomicity, ordering/parentage, allocation growth/failure and
+carrier-neutral Range feasibility under verification-plan sections 6.5-6.7 and the focused
+[structural](../../../docs/STRUCTURAL_CARRIER_MODEL.md),
+[allocator](../../../docs/STRUCTURAL_POSITION_ALLOCATOR.md) and [Range](../../../docs/RANGE_MODEL.md) contracts.
+
+| ID  | Requirement or question                                                                                           | Evidence and observed result                                                                                                                                                                                                                                                                                                                                                                                | Disposition and remaining work                                                                                                                                                                                                                                                                                                                                                                                 |
+| --- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| S1  | Measure create/move/subtree move/delete/repeated moves, mixed transactions, convergence and growth.               | [Profile](STRUCTURE_ALLOCATOR_RANGE_PROFILE.md) and [results](STRUCTURE_ALLOCATOR_RANGE_RESULTS.md): independent/combined sibling, subtree, depth and move-history shapes; equivalent projection, invalid-transaction atomic refusal, paired merge and reload. [Tests](structuralStress.test.ts) exercise independent expectations on both carriers.                                                        | **Accounted** for the foundation. The workload uses local dense positions and two concurrent moves; final candidate reconciliation and representative resource characterization belong to unit 11.                                                                                                                                                                                                             |
+| S2  | Compare allocation, codecs, sorting, narrow gaps, collisions, normalization, interleaving, parentage and failure. | [Allocator results](STRUCTURE_ALLOCATOR_RANGE_RESULTS.md) and [tests](allocatorStress.test.ts): all three candidates complete 4,096-member runs and bounded narrow-gap cases. Local dense refuses the tested 65,536-member request; that request is unexercised for the other two.                                                                                                                          | Investigation **accounted for**, including a **fail**: fractional indexing has seven parentage mismatches in the concurrent-run fixture, unchanged by collision normalization. The planner is not a replicated parentage repair. Unit 11 retains ineligibility unless exercised repair/protection changes the result; unit 12 selects eligible alternatives. Unmeasured exhaustion is not a supported maximum. |
+| S3  | Scale lazy Range resolution and exercise lineage/lifecycle without equal-content reattachment or holder scans.    | [Range results](STRUCTURE_ALLOCATOR_RANGE_RESULTS.md), [probe](rangeQualification.ts) and [tests](rangeQualification.test.ts): 1/64/256/1,024 holders, multiple members, unrelated Blocks, prior moves and retained lineage; deletion, crossing split, merge, equal-text replacement, reload, materialization and restore. Invalidated members are omitted; a deliberately scanning driver trips the guard. | **Accounted** for feasibility. Zero accesses prove only the instrumented driver boundary with external, unregistered holders; native internals and a future registered-holder service remain **inconclusive**. Unit 11 carries the limit; Step 6/Gate C owns final representation and production obligations.                                                                                                  |
+
+## Admission, clipboard and media boundaries
+
+The governing questions are resource characterization, explicit unchanged-state refusal, hostile private-input
+fallback, protected Origin and exact carrier-independent raw/coarse conversion under verification-plan sections 6.1,
+6.5 and 6.6, the [payload contract](../../../docs/INLINE_CONTENT_PAYLOADS.md) and
+[text/Origin contract](../../../docs/FINE_GRAINED_TEXT_AND_ORIGIN.md).
+
+| ID  | Requirement or question                                                                                                 | Evidence and observed result                                                                                                                                                                                                                                                                                                                                                                                                                     | Disposition and remaining work                                                                                                                                                                                                                                                                                                                                                                                |
+| --- | ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A1  | Vary text/opaque sizes, operation counts, Origin distributions and concurrent alternatives; measure relevant phases.    | [Profile](ADMISSION_BOUNDARY_PROFILE.md), [results](ADMISSION_BOUNDARY_RESULTS.md) and [runner](../../../scripts/step3-admission-boundary.mjs): 1,024/16,384/65,536 starting units, one/eight Origin runs, one/eight operations, text/opaque replacements and Unicode/Markdown-like insertion/deletion; copying, conversion, publication and encoding intervals. One text/opaque concurrent pair converges and reloads.                          | **Accounted** for bounded characterization. Repeated-byte replacements and batched operations do not establish general payload costs, independent-transaction latency, maximum capacity or peak allocation. Unit 11 expands/reconciles selection-relevant distributions/resources.                                                                                                                            |
+| A2  | Compare admission alternatives and controlled refusal with unchanged state.                                             | Fixed, adaptive and operation-specific fixture functions refuse before publication; the runner compares snapshots, encoded bytes and effect records. Normal-runtime requests succeed on fresh carriers.                                                                                                                                                                                                                                          | Refusal seam **accounted for**; exhaustion safety **inconclusive**. Guards are illustrative functions outside publication, not calibrated production admission. No allocation failure was induced. Units 11-12 must qualify the actual proposed safe-failure mechanism; successful requests cannot justify normal-runtime-only admission. Unit 8 selects no threshold and requires no uncontrolled OOM crash. |
+| A3  | Exercise independent clipboard guards, malformed input, retained-source lookup, unresolved/reloaded cases and fallback. | [Admission results](ADMISSION_BOUNDARY_RESULTS.md): actual historical materialization, matching/nonmatching/unresolved sources, reloaded size/Origin variation, independent guards and malformed-input fallback. [Clipboard tests](clipboardMeasurements.test.ts) cover boundaries and imported/unknown Origin. Existing [mounted browser cases](../editor/prosemirrorView.browser.test.ts) exercise publication and unresolved-source behavior. | **Accounted** with a source-evidence limit: matching attributed content establishes existence, not authenticated provenance; equal content under another identity can satisfy the callback. Headless fallback timing measures parsing, not published paste or OS clipboard. Unit 9 owns broader browser characterization; unit 11 reconciles it before unit 12 selects guards.                                |
+| A4  | Summarize exact, unsupported, invalid and non-exact media outcomes; reject malformed state atomically.                  | [Admission results](ADMISSION_BOUNDARY_RESULTS.md): exact UTF-8/opaque round trips, invalid UTF-8, unsupported profiles, invalid Media Types, positions and carrier bytes. [Payload tests](../payload/carrier.test.ts) cover exact-or-atomic-reject surrogates and non-exact encoding; [ordinary-edit tests](../integrated/ordinaryEdit.test.ts) cover malformed retained ownership/Origin and later decoder failure.                            | **Accounted** for representative fixtures, not every malformed encoding or a production parser/profile decision. Unit 11 maps actual evidence without generalizing; Step 4 owns production processor selection.                                                                                                                                                                                               |
+
+## Evidence provenance and reproducibility
+
+Historical results remain tied to their measured sources, not this account or its audited baseline. This register
+indexes committed raw evidence; linked profiles/results supply environment, timing boundaries, candidate order and
+statistical limits. No historical benchmark was rerun to produce this account.
+
+| Evidence family                                                                               | Recorded source and method                                                                                                                                                                                                                                                | Completion observed in committed raw evidence                                                                                                      |
+| --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Mixed history](mixed-history-raw.json)                                                       | PR 48 head `6f7b86baefade1bf26a12817d99e1cf65ade63c4` plus [history patch](evidence/history-source.patch); three samples, no warmup, alternating candidates. Raw GitHub revision is null; the [summary](HISTORY_REPLACEMENT_LIFECYCLE.md) supplies local-source identity. | `completed`; 18 rows = three counts × two candidates × three samples.                                                                              |
+| [Lifecycle Yjs](evidence/lifecycle/yjs.json) / [Automerge](evidence/lifecycle/automerge.json) | Same reconstructed history source; raw synthetic local HEAD `77dd049c6897078bf5ebd3415e10c21013b37f0d`, dirty. One execution per candidate in sequential order; [profile](evidence/lifecycle/README.md).                                                                  | All three checkpoints, 20/100/200 effects, occur for each candidate. Checkpoints are not independent timing samples.                               |
+| [Fan-in](replacement-fanin-raw.json)                                                          | Same PR 48 head plus patch; three samples per candidate/width, no warmup, fixed candidate order; [method](REPLACEMENT_FANIN.md).                                                                                                                                          | 30 rows = five widths × two candidates × three samples. The schema has no global completion flag; expected row coverage is not a runner-wide flag. |
+| [Structure](evidence/structure-allocator-range/structure.json)                                | PR 49 head `f81d5a53a59d100f4efec5a79de25bdeca3c6a41` plus [source patch](evidence/structure-allocator-range/source.patch); one warmup, three samples, alternating candidates.                                                                                            | `complete`; 36 rows = six shapes × two candidates × three samples.                                                                                 |
+| [Allocators](evidence/structure-allocator-range/allocators.json)                              | Same reconstructed PR 49 source; rotating three-candidate order, one warmup, three samples; [profile](STRUCTURE_ALLOCATOR_RANGE_PROFILE.md).                                                                                                                              | `completed`; 27 measured rows plus three practical-run records.                                                                                    |
+| [Ranges](evidence/structure-allocator-range/range.json)                                       | Same reconstructed PR 49 source; one warmup, three samples, alternating candidates, nine shapes.                                                                                                                                                                          | `completed`; 54 rows = nine shapes × two candidates × three samples.                                                                               |
+| [Admission/boundaries](evidence/admission-boundary/raw.json)                                  | PR 50 head `af9b6c2f1da1c942d49050d656057444eae86cdf` plus [Origin-oracle patch](evidence/admission-boundary/origin-oracle.patch). Raw local HEAD `c1844bd7c7b65dabce135b35477bf05fc567d49b`, dirty; [profile](ADMISSION_BOUNDARY_PROFILE.md).                            | `complete`, zero errors; 216 workload rows, 28 boundary records and 86 clipboard records.                                                          |
+
+The three patch SHA-256 values were checked against the recorded summaries:
+
+- History: `39b2dc1f338f6f1f12925fb2e1e8963ab7df62d4cb06d418b216b1e61a9fa3a9`.
+- Structure/allocator/Range: `7b4d24a62a37d1029869a66433f875d8ab77fba46c92c1a220f1836e39ea6bbb`.
+- Admission: `06ba3271afea6cc831f6624b6c4a34d79697b903f5129114bd83c3b67649ef0b`.
+
+To reconstruct source, fetch the stated head, extract it with `git archive`, then apply the corresponding committed
+patch with `git apply --unidiff-zero` in the extracted tree. Do not apply historical patches to the working branch.
+All three patches applied during this audit. The PR 48 base tree matches recorded tree
+`e0e614a012d16061057125d932b6da7272426324`. Comparing reconstructed existing `scripts/step3-*.mjs` files and
+qualification `.ts` files with respective landed commits (`3dc654c`, `5781ef2`, `20e9277`) found identical files except
+formatting and an erased TypeScript `as unknown` assertion in `historyLifecycle.test.ts`. Comparing those same files
+with the audited baseline adds only later clipboard-test changes for the older sources. This supports traceability;
+it does not reproduce historical host conditions or generate new timings. Synthetic local commit identities remain
+documented by the original summaries, not independently recovered from those hosts.
+
+The [comparison workflow](../../../.github/workflows/step3-comparison.yml) has admission, structure/allocator/Range
+and history/lifecycle jobs that upload raw outputs with `if: always()`. The full runner and ordinary-edit job preserve
+their own evidence. Historical Actions links in [preliminary results](RESULTS.md) and focused summaries are
+supplementary; artifact availability and current-revision execution must be checked independently. This audit did
+not download or verify historical Actions artifacts.
+
+### Supplementary PR 52 executions
+
+[Actions run 44161002104](https://github.com/benoit-gl/coedit/actions/runs/44161002104) successfully completed the
+three focused unit 8 jobs for PR head `ea95ba1fa50d56551ab94d96eb8742c382c6cfbd`, whose test-merge revision was
+`183e948d32179dd05b97a9ba5e2a552dd91e6e97`. That head changes documentation only relative to the audited
+implementation baseline. The successful jobs published these supplementary artifacts:
+
+- [History/replacement/lifecycle](https://github.com/benoit-gl/coedit/actions/runs/44161002104/artifacts/14363172536).
+- [Structure/allocator/Range](https://github.com/benoit-gl/coedit/actions/runs/44161002104/artifacts/14362414045).
+- [Admission/boundaries](https://github.com/benoit-gl/coedit/actions/runs/44161002104/artifacts/14362029251).
+
+Job conclusions and artifact metadata were inspected. Workspace downloads were denied by the network proxy, so
+archive contents and new numeric observations were not independently inspected or incorporated into the matrices.
+These job results establish successful focused execution, not final comparative qualification. Their source revision
+must remain distinct from later account revisions and the unit 11 final run; other jobs in the same workflow have
+separate outcomes. Artifact retention is finite, so the committed historical profiles and summaries remain necessary.
+
+The later [run 44161499714](https://github.com/benoit-gl/coedit/actions/runs/44161499714) completed all five jobs
+successfully: history/replacement/lifecycle, structure/allocator/Range, admission/boundaries, scoped ordinary-edit
+evidence and the existing full comparison runner. Its PR head was `a57b176b753df26ac360e77185f78c7ccbee76d0`;
+the comparison job checkout log records test-merge `75242935b9e76b0d3b80226e19d8097104bc80b9`. This is another
+documentation-only head relative to the audited implementation baseline. The run published:
+
+- [Full comparison](https://github.com/benoit-gl/coedit/actions/runs/44161499714/artifacts/14363323261).
+- [Scoped ordinary edits](https://github.com/benoit-gl/coedit/actions/runs/44161499714/artifacts/14364125761).
+- [History/replacement/lifecycle](https://github.com/benoit-gl/coedit/actions/runs/44161499714/artifacts/14362713954).
+- [Structure/allocator/Range](https://github.com/benoit-gl/coedit/actions/runs/44161499714/artifacts/14363357358).
+- [Admission/boundaries](https://github.com/benoit-gl/coedit/actions/runs/44161499714/artifacts/14363098244).
+
+Job outcomes, artifact metadata and the comparison job log were inspected. The log confirms execution of pinned
+`loro-crdt@1.16.4`: a native text/cursor insertion at 1,024 units and native movable-tree cases at 16 and 128 moves,
+each reporting five samples. Loro is therefore executed, not wholly missing. Unit 9 still owns assessment and durable
+interpretation of the reference method, workload differences and measured intervals alongside representative browser
+characterization. Native reference intervals cannot be compared directly with integrated editor/carrier intervals.
+
+The raw archives remain uninspected because workspace downloads were blocked. No new archive-derived performance
+claims are made here. These PR 52 runs supplement the historical measurements; they neither supersede nor pool them.
+Successful execution of the current runner does not establish unit 11's final record after units 9-10, resolve known
+eligibility failures, or make any Gate B selection. Later documentation executions need not replace this fixed
+execution record; required checks must still pass on the actual final PR revision.
+
+### Reproducibility checklist disposition
+
+The four work-plan reproducibility items apply to the final record as well as this foundation:
+
+1. **Profiles:** covered per experiment by linked profiles and raw dimensions. A single reconciled final profile
+   combining content/history/structure/Origin/resource dimensions remains unit 11 work.
+2. **Equivalence and sampling:** paired logical workloads and independent assertions exist. Order, warming and process
+   policies differ; three-sample medians and single lifecycle executions do not establish reliable tails. Unit 11 must
+   record its common method and retain these limits when importing earlier observations.
+3. **Timing and environment:** profiles distinguish setup, mutation, projection, encode, reload and verification and
+   record host/runtime/dependencies where available. Browser runs are separate. Different hosts/intervals must not be
+   pooled or relabelled as final-revision measurements.
+4. **Completion and partial failure:** the register states observed completion without inventing absent schema flags.
+   Scripts checkpoint files or emit completed rows to stderr; Actions uploads on failure. Later unstarted cases after
+   sequential-stage failure are unrun. Final completeness, timeout/resource classification and device/browser envelope
+   remain unit 11 obligations. Single-host Linux evidence does not establish all-device behavior.
+
+## Remaining work and closure criteria
+
+### To close the unit 8 reconciliation
+
+1. Obtain required repository checks on the final account revision. Source-verification results do not replace
+   historical measurements or establish candidate eligibility.
+2. Complete normal pull-request review and merge the reconciliation and its status/index links. Broader unit 9-12
+   qualification items remain open.
+
+No separately identified missing unit 8 benchmark or production-code change remains in this account. A newly found
+gap must name the governing requirement, missing observation and bounded action, and reopen the affected accounting
+item. Green timing cannot dispose of an invariant failure. Closing unit 8 does not imply that the following mandatory
+Step 3 questions passed, and introduces no additional approval step beyond ordinary review.
+
+### Outstanding qualification work owned elsewhere
+
+| Owner                              | Still missing                                                                                  | Required evidence or disposition                                                                                                                                                                                                                                                                                                                     |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit 9                             | Representative browser characterization and reference-methodology assessment.                  | Pinned Loro execution is recorded above; assess and summarize its native cursor/tree workloads and timing boundaries. Complete realistic Unicode/Markdown/Origin distributions, larger unrelated state, inbound/lifecycle and asynchronous scenarios, with explicit synthetic-input/clipboard/IME/paint limits.                                      |
+| Unit 10                            | A production-compatible ordinary-edit path meeting the mandatory work criterion.               | [Ordinary-edit results](ORDINARY_EDIT_RESULT.md) record **fail** for unrestricted current representations. Assess material design choices first; exercise adapter/native work, fallback, semantics, atomicity and lifecycle. Timing or a policy exemption cannot repair failure.                                                                     |
+| Unit 11                            | Final common-revision comparison and resource characterization.                                | Run common suites and selectable candidates under one profile, reconcile earlier evidence, preserve raw/partial results and map mandatory requirements to outcomes. Include eligibility, dependencies/licenses, complexity, growth and supported lifecycle behavior.                                                                                 |
+| Unit 11 evidence; unit 12 decision | An exercised admission strategy supporting selection.                                          | Fixture refusal exists; normal-runtime exhaustion safety remains **inconclusive**. Implement and exercise any missing proposed safe-failure mechanism before the final comparative record. Unit 12 records an already exercised choice; it cannot introduce the mechanism. This account requires neither a fixed maximum nor deliberate process OOM. |
+| Unit 11 evidence; unit 12 decision | Exercised mechanisms for selected winner/mixed-edit behavior and eligible allocators.          | Preserve fractional parentage **fail** unless exercised repair/protection changes it. Frontier probes/captures do not implement arbitrary replay. Implement and exercise any new proposed mechanism before final comparison; unit 12 only records the choice among qualified mechanisms.                                                             |
+| Unit 12                            | Carrier, allocator, winner, mixed-operation, string-domain, admission and clipboard decisions. | Select only eligible, already exercised behavior after unit 11. This account makes none of these decisions.                                                                                                                                                                                                                                          |
+
+Steps 4-6 retain production processor/core, permanent History and final Range-service ownership. Those implementations
+are not missing deliverables of this account; their ownership cannot substitute for mandatory feasibility and
+eligibility evidence required before Gate B.

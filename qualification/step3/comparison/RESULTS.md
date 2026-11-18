@@ -2,6 +2,12 @@
 
 **Status:** Partial, experimental baseline. Not sufficient for comparative qualification or Gate B selection.
 
+This file preserves observations and remaining-work statements at the time of each historical run. For current
+status, use the [Merge 8 evidence account](MERGE_8_EVIDENCE_ACCOUNT.md) and [work plan](WORK_PLAN.md): later work added
+history/replacement, structure/allocator/Range and admission/clipboard/media evidence. The PR 52 workflow also
+completed the existing full runner, including Loro. Those executions do not close the broader units 9-11 obligations
+or the ordinary-edit eligibility failure; carrier and policy selection remain unit 12.
+
 The measurements below are from [Actions run 39483013858](https://github.com/benoit-gl/coedit/actions/runs/39483013858),
 on PR head `df9fbbab8a86df5c1de51498e6b662c12461432b`. The run recorded the
 GitHub pull-request test-merge SHA `c02dc54f146ff9466e69a059e924a6cfa46ce38f`.
@@ -127,12 +133,15 @@ callbacks were pending, then checked reload and convergence after release. This 
 not real slow storage, network, durability, or feedback independent of slow synchronous local publication. Arbitrary
 stateful decoders with retained placements still use full preflight; the no-whole-document-work criterion remains open.
 
-**Remaining before an admissible comparative record:** expand same-profile
+**Remaining at the time of this run, before an admissible comparative record:** expand same-profile
 history and opaque workloads, concurrent replacement and integrated structure
 tests, Chromium/editor/clipboard/resource characterization, and the
 non-selectable Loro reference. Investigate the history workload's resource
 growth and publish a current, complete summary with its raw artifacts.
 No current number selects a candidate, freezes a limit, or promotes a target.
+
+The list above is historical, not the current backlog. The [evidence account](MERGE_8_EVIDENCE_ACCOUNT.md) records
+which investigations subsequently landed, their limitations and the remaining unit 9-12 work.
 
 ## Experimental Yjs ASCII preflight
 

@@ -4,6 +4,13 @@ This runner and its measurements establish an experimental baseline for
 continued investigation. They do not complete Step 3 comparative qualification
 or provide sufficient evidence for Gate B.
 
+The [Merge 8 evidence account](MERGE_8_EVIDENCE_ACCOUNT.md) reconciles the landed foundation against unit 8,
+indexes source provenance and completion, and separates its closure criteria from outstanding units 9-12.
+It preserves failed and inconclusive outcomes rather than treating the foundation as final qualification.
+
+The account also records the successful PR 52 full-runner execution and pinned Loro reference. Execution evidence
+does not close the representative-methodology, eligibility and final-record obligations in the work plan.
+
 The [admission and boundary results](ADMISSION_BOUNDARY_RESULTS.md) record bounded carrier, guard, clipboard and
 raw-media probes under their [profile](ADMISSION_BOUNDARY_PROFILE.md). These experiments select no production policy
 and do not close Gate B.
