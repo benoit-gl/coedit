@@ -11,6 +11,30 @@ on:
 permissions:
   contents: read
 jobs:
+  browser-reference:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GITHUB_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: npm run bootstrap
+      - name: Install Chromium system dependencies
+        run: npm exec --yes --package=pnpm@11.24.0 -- pnpm exec playwright install --with-deps chromium
+      - name: Run representative browser and native reference workloads
+        run: npm run step3:browser-reference -- "$RUNNER_TEMP/step3-browser-reference"
+      - name: Persist browser and reference evidence
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: step3-browser-reference
+          path: ${{ runner.temp }}/step3-browser-reference/
+          if-no-files-found: error
+          retention-days: 90
+
   admission-boundary:
     runs-on: ubuntu-latest
     timeout-minutes: 30
