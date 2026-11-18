@@ -36,6 +36,7 @@ const profile = JSON.parse(
   ),
 );
 const report = {
+  schemaVersion: 1,
   status: "running",
   generatedAt: new Date().toISOString(),
   revision: {
@@ -167,6 +168,7 @@ try {
     const nativeReport = JSON.parse(
       await readFile(resolve(output, "loro-reference.json"), "utf8"),
     );
+    report.loro.report = nativeReport;
     if (
       nativeReport.status !== "complete" ||
       nativeReport.selectable !== false ||
@@ -184,5 +186,6 @@ try {
   report.errors.push(error instanceof Error ? error.stack : String(error));
   await checkpoint();
 }
+console.log("STEP3_BROWSER_REFERENCE_REPORT=" + JSON.stringify(report));
 console.log(`Browser/reference evidence ${report.status}: ${output}`);
 if (report.status !== "complete") process.exitCode = 1;
