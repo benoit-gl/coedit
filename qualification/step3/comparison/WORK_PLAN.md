@@ -36,8 +36,11 @@ experiments and final qualification obligations remain open; failures and inconc
 3. Assess the unit 10 ordinary-edit eligibility design and obtain any required design decision before implementation.
    The investigation below is closed with a negative result for the current unrestricted representations; it does not
    pass the mandatory criterion. Qualify an exercised production-compatible path before the final comparison.
-   The [Merge 10 design assessment](MERGE_10_DESIGN_ASSESSMENT.md) records the current native counterexamples,
-   material alternatives and proposed design work; it leaves the representation/dependency direction undecided.
+   The [assessment](MERGE_10_DESIGN_ASSESSMENT.md) preserves the native counterexamples and considered alternatives.
+   The [representation design](ORDINARY_EDIT_REPRESENTATION_DESIGN.md) develops the selected public-API direction
+   without native-library changes or forks. Land its design/planning change before the separate implementation PR;
+   first qualify its native record primitives and sequence/index model, then integrate surviving carrier/layout pairs.
+   These phases remain within unit 10; a design merge or a passing shared model does not establish native eligibility.
 4. After units 8-10 land, run and reconcile the unit 11 final comparison under one recorded profile, preserving raw
    evidence and a durable requirement-by-requirement record.
 5. Record carrier, allocator and policy selections separately in unit 12, Gate B, using already exercised mechanisms.

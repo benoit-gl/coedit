@@ -4,7 +4,10 @@
 
 This assessment prepares Step 3 merge unit 10 in the
 [scaffolding plan](../../../SCAFFOLDING_PLAN.md). It identifies the design question before implementation;
-it selects no representation, dependency strategy, carrier or allocator. Merge unit 10 remains incomplete.
+the subsequent user direction selects supported public APIs without native-library changes or fork maintenance.
+The [representation design](ORDINARY_EDIT_REPRESENTATION_DESIGN.md) defines the proposed qualification variant and
+its implementation sequence. No production carrier, structural allocator or Gate C representation is selected.
+Merge unit 10 remains incomplete.
 The [ordinary-edit result](ORDINARY_EDIT_RESULT.md) remains a failure for both current unrestricted representations.
 The [unit 9 browser record](BROWSER_REFERENCE_RESULTS.md) adds observations without changing that disposition.
 
@@ -13,7 +16,8 @@ The required outcome is an exercised production-compatible ordinary-edit path. T
 whole-document work on routine typing even when measured latency is small. A limitation, a cache-only improvement,
 an unmeasured proposed design, or a favorable timing does not pass that requirement.
 
-Readiness at main revision `c75fdefa2394211819c28f3f0aa354142432ceaa`, which includes PR 53:
+Initial readiness before that subsequent direction, at main revision
+`c75fdefa2394211819c28f3f0aa354142432ceaa`, which includes PR 53:
 
 | Criterion                       | Assessment                                                                                                                                                                    |
 | ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -24,9 +28,10 @@ Readiness at main revision `c75fdefa2394211819c28f3f0aa354142432ceaa`, which inc
 | Plan consistency                | Unit 10 explicitly anticipates this design assessment and requires a decision before implementation through an unsettled choice.                                              |
 | Coherent implementation scope   | Depends on the design. A physical multi-document coordinator or dependency fork would have different scope from a single-native-document representation change.               |
 
-This is a design assessment, not an approved plan split or a new exception to an acceptance gate. A separate design
-change should record the chosen direction and any necessary plan repair before implementation starts. Units 11 and 12
-retain final comparative qualification and Gate B selection respectively.
+The native observations below remain bound to that initial revision. The linked design and corresponding work-order
+update develop the selected direction; implementation follows their planning merge in a separate PR. This assessment
+creates no eligibility exception or additional numbered unit. Units 11 and 12 retain final comparative qualification
+and Gate B selection respectively.
 
 ## Current native failures
 
@@ -90,8 +95,10 @@ runs the broader measurements and lifecycle package described in the ordinary-ed
 
 ## Material alternatives
 
-The first two directions are design candidates requiring assessment, not demonstrated eligible implementations.
-The physical-partitioning direction is outside the established authority and scope described below:
+The following directions were considered during the initial assessment. Subsequent user direction chooses the
+supported-public-API strategy; native-library changes and forks are excluded from the current design. None of these
+initial alternatives establishes an eligible implementation. The physical-partitioning direction is outside the
+established authority and scope described below:
 
 | Direction                                                                                                                 | Potential benefit                                                                                                                          | Material cost and unresolved evidence                                                                                                                                                                                                                                                        |
 | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -113,30 +120,18 @@ cap, destructive rewrite, compaction requirement or changed admission rule would
 assessment; none is selected here. Changing editor publication scheduling also cannot conceal disqualifying canonical
 work or silently redefine the measured interval.
 
-## Proposed next design change
+## Current design direction
 
-The proposed first direction to assess is a carrier-private segmented representation using the pinned public APIs,
-retaining one native document per candidate. This avoids immediately taking on a native-library fork or a physical
-multi-document commit coordinator. That maintenance preference is a recommendation, not a consequence forced by the
-behavioral contracts and not an eligibility result. An approved design may instead choose a native extension.
+The [immutable-run representation design](ORDINARY_EDIT_REPRESENTATION_DESIGN.md) develops the selected public-API
+strategy while retaining one native document per candidate. It explicitly owns a carrier-private sequence protocol;
+simple chunking does not automatically inherit native text convergence or bounded-work behavior. The design specifies
+content-committed source/deletion records, closed command manifests and causal readiness roots, derived indexing,
+native publication and conflict-union rules, persisted qualification split/merge mappings, History/Range compatibility,
+separate implementation entry checks and rejection conditions.
 
-Before implementation, the design change should settle:
-
-1. The representation and supported API route for each candidate being redesigned, and how an unsuccessful candidate
-   remains explicitly ineligible without an early carrier selection.
-2. Indexed lookup, segment boundaries and attribution under concurrent insertion, deletion, split, replacement and
-   restore. Boundaries and history must not recreate an unbounded ordinary-edit scan or copy elsewhere.
-3. Atomic publication of structure, several payloads, Origin, liveness and qualification effect evidence. Native
-   transaction semantics and expected failure preparation must remain explicit.
-4. Stable positions, replacement/restore identity invalidation, serialization/reload and treatment of existing
-   qualification encodings. The `.coedit` format and production Range lineage remain with their later owners.
-5. Which work belongs to initial preparation, remote integration and explicit recovery, and which first/following/warm
-   edits must satisfy the ordinary-edit criterion. A routine fallback cannot quietly perform prohibited work.
-6. The evidence needed to reject a design, and whether the implementation remains one coherent unit or requires a
-   separately approved plan revision. The current unit numbering is unchanged by this assessment.
-
-The choice between dependency maintenance and a new internal representation requires explicit direction. Merging this
-assessment alone would not approve the proposed representation, pass eligibility or authorize a carrier selection.
+The design remains unimplemented and unqualified. Its planning merge approves that qualification work, not unit 10
+closure. If neither native route can satisfy the required invariants, implementation must return to planning rather
+than adopt a fork, fallback, resource cap or alternative sequence protocol without a new decision.
 
 ## Qualification obligations after a design is accepted
 
