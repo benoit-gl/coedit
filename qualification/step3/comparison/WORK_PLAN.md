@@ -36,6 +36,8 @@ experiments and final qualification obligations remain open; failures and inconc
 3. Assess the unit 10 ordinary-edit eligibility design and obtain any required design decision before implementation.
    The investigation below is closed with a negative result for the current unrestricted representations; it does not
    pass the mandatory criterion. Qualify an exercised production-compatible path before the final comparison.
+   The [Merge 10 design assessment](MERGE_10_DESIGN_ASSESSMENT.md) records the current native counterexamples,
+   material alternatives and proposed design work; it leaves the representation/dependency direction undecided.
 4. After units 8-10 land, run and reconcile the unit 11 final comparison under one recorded profile, preserving raw
    evidence and a durable requirement-by-requirement record.
 5. Record carrier, allocator and policy selections separately in unit 12, Gate B, using already exercised mechanisms.
