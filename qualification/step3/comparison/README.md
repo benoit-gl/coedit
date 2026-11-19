@@ -11,6 +11,12 @@ It preserves failed and inconclusive outcomes rather than treating the foundatio
 The account also records the successful PR 52 full-runner execution and pinned Loro reference. Execution evidence
 does not close the representative-methodology, eligibility and final-record obligations in the work plan.
 
+The later [unit 9 browser/reference results](BROWSER_REFERENCE_RESULTS.md),
+[method](BROWSER_REFERENCE_PROFILE.md) and [fixture profile](browser-reference-profile.json) record the expanded
+source/Origin/unrelated-state, lifecycle, asynchronous-task and native-string observations and the pinned native
+reference assessment. Run `npm run step3:browser-reference -- PATH_TO_EMPTY_EVIDENCE_DIRECTORY` for that focused
+package. These bounded findings do not resolve unit 10 eligibility or replace unit 11's final comparison.
+
 The [admission and boundary results](ADMISSION_BOUNDARY_RESULTS.md) record bounded carrier, guard, clipboard and
 raw-media probes under their [profile](ADMISSION_BOUNDARY_PROFILE.md). These experiments select no production policy
 and do not close Gate B.
@@ -20,7 +26,7 @@ qualification experiment, correctness repairs and negative unrestricted native-w
 It does not establish production eligibility or close Gate B. `npm run step3:ordinary-edit` writes the matched
 headless, lifecycle and native diagnostics; the full runner also preserves the mounted browser observations.
 
-The exact run-specific method and input profile are in `profile.json`.
+The preliminary paired measurement runner's method and input profile are in `profile.json`.
 The `npm run step3:measure` command records paired Yjs/Automerge and
 structural allocator samples, medians, nearest-rank p95, encoded growth, CPU and memory
 environment, exact installed package versions, and the `GITHUB_SHA` value in `step3-evidence/measurements.json`.

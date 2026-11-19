@@ -7,6 +7,10 @@ import {
   parseEditorTraversal,
   parseNodeEditorTraversal,
 } from "./step3-editor-traversal.mjs";
+import {
+  parseBrowserReference,
+  summarizeBrowserReference,
+} from "./step3-browser-reference-report.mjs";
 
 const args = process.argv.slice(2);
 if (args.some((arg) => arg !== "--ordinary-only"))
@@ -91,6 +95,38 @@ for (const stage of stages) {
       ];
       try {
         const ordinaryEnvironment = await captureOrdinaryBrowserEnvironment();
+        const referenceProfile = JSON.parse(
+          await readFile(
+            new URL(
+              "../qualification/step3/comparison/browser-reference-profile.json",
+              import.meta.url,
+            ),
+            "utf8",
+          ),
+        );
+        const reference = parseBrowserReference(
+          execution.stdout ?? "",
+          referenceProfile,
+        );
+        if (reference.errors.length)
+          throw Error(
+            `Browser/reference observations incomplete: ${reference.errors.join("; ")}`,
+          );
+        await writeFile(
+          "step3-evidence/browser-reference.json",
+          JSON.stringify(
+            {
+              status: "complete",
+              revision: process.env.GITHUB_SHA ?? null,
+              environment: ordinaryEnvironment,
+              profile: referenceProfile,
+              ...reference,
+              summaries: summarizeBrowserReference(reference.rows),
+            },
+            null,
+            2,
+          ) + "\n",
+        );
         if (matches.length !== 1)
           throw new Error("Expected exactly one browser measurement record.");
         const browser = JSON.parse(matches[0][1]);

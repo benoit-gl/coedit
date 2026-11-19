@@ -1,0 +1,83 @@
+{
+  "id": "step3-merge9-browser-reference-v1",
+  "maturity": "experimental",
+  "selection": "none",
+  "method": {
+    "warmups": 1,
+    "samples": 3,
+    "candidateOrder": "alternate Yjs/Automerge order by iteration, fresh fixture per sample",
+    "tailLimit": "Three measured observations support descriptive medians, not reliable tail latency.",
+    "editor": "existing mounted ProseMirror adapter; targeted qualification projection and pure local-dense decoder"
+  },
+  "shapes": [
+    {
+      "id": "baseline",
+      "targetUnits": 1024,
+      "originRuns": 1,
+      "unrelatedBlocks": 4,
+      "unrelatedTextUnits": 4096,
+      "opaqueBytes": 4096
+    },
+    {
+      "id": "target-10000",
+      "targetUnits": 10000,
+      "originRuns": 1,
+      "unrelatedBlocks": 4,
+      "unrelatedTextUnits": 4096,
+      "opaqueBytes": 4096
+    },
+    {
+      "id": "target-100000",
+      "targetUnits": 100000,
+      "originRuns": 1,
+      "unrelatedBlocks": 4,
+      "unrelatedTextUnits": 4096,
+      "opaqueBytes": 4096
+    },
+    {
+      "id": "origins-8",
+      "targetUnits": 1024,
+      "originRuns": 8,
+      "unrelatedBlocks": 4,
+      "unrelatedTextUnits": 4096,
+      "opaqueBytes": 4096
+    },
+    {
+      "id": "unrelated-16",
+      "targetUnits": 1024,
+      "originRuns": 1,
+      "unrelatedBlocks": 16,
+      "unrelatedTextUnits": 4096,
+      "opaqueBytes": 4096
+    },
+    {
+      "id": "combined",
+      "targetUnits": 10000,
+      "originRuns": 8,
+      "unrelatedBlocks": 16,
+      "unrelatedTextUnits": 4096,
+      "opaqueBytes": 4096
+    }
+  ],
+  "operations": ["selection-source", "unicode-insert", "keyboard-end"],
+  "lifecycle": {
+    "id": "lifecycle",
+    "targetUnits": 1024,
+    "originRuns": 4,
+    "unrelatedBlocks": 4,
+    "unrelatedTextUnits": 4096,
+    "opaqueBytes": 4096
+  },
+  "lifecyclePhases": [
+    "pending-downstream",
+    "inbound-recovery",
+    "reload",
+    "restore",
+    "replacement"
+  ],
+  "edgeCases": [
+    "isolated-high-surrogate",
+    "isolated-low-surrogate",
+    "cross-pair-deletion"
+  ]
+}
