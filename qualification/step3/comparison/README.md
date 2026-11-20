@@ -25,6 +25,10 @@ The [ordinary-edit result](ORDINARY_EDIT_RESULT.md) records the point 1 investig
 qualification experiment, correctness repairs and negative unrestricted native-work result.
 It does not establish production eligibility or close Gate B. `npm run step3:ordinary-edit` writes the matched
 headless, lifecycle and native diagnostics; the full runner also preserves the mounted browser observations.
+The [unit 10 assessment](MERGE_10_DESIGN_ASSESSMENT.md) preserves those counterexamples; the
+[representation design](ORDINARY_EDIT_REPRESENTATION_DESIGN.md) specifies the public-API immutable-run qualification
+path, its additional sequence/index responsibilities and required evidence. Its design and implementation are separate
+PRs; the design itself neither passes ordinary-edit eligibility nor selects a production carrier or Range service.
 
 The preliminary paired measurement runner's method and input profile are in `profile.json`.
 The `npm run step3:measure` command records paired Yjs/Automerge and

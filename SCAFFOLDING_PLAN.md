@@ -328,10 +328,15 @@ Deliver Step 3 as twelve reviewable merge units with one initial fork-and-join b
 10. **Production-compatible ordinary-edit eligibility.** The [ordinary-edit investigation](qualification/step3/comparison/ORDINARY_EDIT_RESULT.md)
     found that neither current unrestricted representation passes the mandatory no-whole-document-work criterion.
     Establish a production-compatible path and qualify its native and adapter work, semantics, atomicity, fallback and
-    representative lifecycle behavior against that criterion. First assess whether a material design or interface choice
-    needs a separate planning decision; do not implement through an unsettled choice. If the design requires a separate
-    design merge or a revised unit split, update this plan through the normal planning process before implementation.
-    Retain the existing negative results as evidence. Close this unit only when an exercised path meets the mandatory
+    representative lifecycle behavior against that criterion. Land the separate
+    [public-API representation design](qualification/step3/comparison/ORDINARY_EDIT_REPRESENTATION_DESIGN.md) before its
+    implementation PR. It defines a qualification-private immutable-run sequence and indexed native record storage
+    within one native document per candidate, without native-library changes or fork maintenance. First test the native
+    primitives and sequence/index model; integrate only surviving routes and qualify each carrier/layout pair. Retain
+    failed routes and the existing negative results. The design does not select a carrier, structural allocator, final
+    Range lineage or a production resource limit. If its scoped implementation requires another material choice or a
+    revised unit split, return to planning before implementing through that choice.
+    Close this unit only when an exercised path meets the mandatory
     criterion or a separately approved plan records a different authorized disposition; an inconclusive result or green
     timing alone is not a pass. This unit does not select the carrier or relax the criterion.
 
