@@ -433,6 +433,7 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
   readonly #rootMetadata = new Map<string, NativeMetadataSnapshot>();
   readonly #metadataByChange = new Map<string, NativeMetadataSnapshot>();
   readonly #dependencyMetadata = new Map<string, NativeMetadataSnapshot>();
+  readonly #rootVersions = new Map<string, readonly string[] | null>();
   readonly #commandChanges = new Map<string, A.DecodedChange>();
   readonly #authoredBases = new Map<string, RecordRef>();
   readonly #recordDepths: ReadonlyMap<string, number>;
@@ -823,9 +824,30 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
               A.diff(this.document, [change.deps[0]!], [...change.deps]),
             );
     }
-    const projected = applyMetadataPatches(
-      dependency,
-      A.diff(this.document, [...change.deps], [change.hash]),
+    const previousVersions =
+      change.deps.length === 0
+        ? []
+        : change.deps.length === 1
+          ? (this.#rootVersions.get(change.deps[0]!) ?? null)
+          : null;
+    const rootOnly =
+      previousVersions === null
+        ? undefined
+        : projectCompleteRootOverwrite(
+            change,
+            dependency,
+            previousVersions,
+            this.#recordDepths,
+          );
+    const projected =
+      rootOnly ??
+      applyMetadataPatches(
+        dependency,
+        A.diff(this.document, [...change.deps], [change.hash]),
+      );
+    this.#rootVersions.set(
+      change.hash,
+      nextRootVersions(change, previousVersions),
     );
     assertMetadataSnapshot(projected);
     this.#dependencyMetadata.set(change.hash, dependency);
@@ -1484,6 +1506,70 @@ function readCell(value: unknown, label: string): string {
   if (keys.length !== 1 || candidate[keys[0]!] !== true)
     throw new TypeError(`${label} cell is invalid.`);
   return keys[0]!;
+}
+
+/** Track register versions only where their complete causal input is known. */
+function nextRootVersions(
+  change: A.DecodedChange,
+  previous: readonly string[] | null,
+): readonly string[] | null {
+  if (previous === null) return null;
+  const versions = new Set(previous);
+  for (let index = 0; index < change.ops.length; index++) {
+    const operation = change.ops[index]!;
+    if (operation.obj !== "_root" || operation.key !== "semanticRoot") continue;
+    for (const predecessor of operation.pred) versions.delete(predecessor);
+    if (operation.action !== "del")
+      versions.add(`${change.startOp + index}@${change.actor}`);
+  }
+  return Object.freeze([...versions]);
+}
+
+/**
+ * A complete causal overwrite has no native winner choice to reproduce.
+ *
+ * Only the root cell and immutable record namespace may change here. Any other
+ * operation, incomplete predecessor coverage, or unknown multi-parent frontier
+ * uses the public native diff path instead. Decoded-operation and whole-command
+ * checks still validate the resulting projection before it can be accepted.
+ */
+function projectCompleteRootOverwrite(
+  change: A.DecodedChange,
+  dependency: NativeMetadataSnapshot,
+  versions: readonly string[],
+  recordDepths: ReadonlyMap<string, number>,
+): NativeMetadataSnapshot | undefined {
+  if (change.deps.length !== 1) return undefined;
+  const roots = change.ops
+    .map((operation, index) => ({ operation, index }))
+    .filter(
+      ({ operation }) =>
+        operation.obj === "_root" && operation.key === "semanticRoot",
+    );
+  if (roots.length !== 1) return undefined;
+  const { operation, index } = roots[0]!;
+  if (
+    operation.action !== "makeMap" ||
+    operation.pred.length !== versions.length ||
+    !versions.every((version) => operation.pred.includes(version))
+  )
+    return undefined;
+  const objectId = `${change.startOp + index}@${change.actor}`;
+  const leaves = change.ops.filter((candidate) => candidate.obj === objectId);
+  if (leaves.length !== 1) return undefined;
+  const leaf = leaves[0]!;
+  if (leaf.action !== "set" || leaf.value !== true || leaf.pred.length !== 0)
+    return undefined;
+  if (
+    change.ops.some(
+      (candidate, candidateIndex) =>
+        candidateIndex !== index &&
+        candidate !== leaf &&
+        !recordDepths.has(candidate.obj),
+    )
+  )
+    return undefined;
+  return Object.freeze({ ...dependency, semanticRoot: leaf.key });
 }
 
 function emptyMetadataSnapshot(): NativeMetadataSnapshot {
