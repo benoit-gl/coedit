@@ -303,6 +303,11 @@ export class ImmutableRunProtocolV1 {
     return new ImmutableRunProtocolV1(entries);
   }
 
+  /** Detached frozen snapshot of the protocol's decoded canonical entries. */
+  public get canonicalEntries(): readonly CanonicalRecordEntry[] {
+    return Object.freeze([...this.#entries.values()]);
+  }
+
   /** The unique trusted-lineage bootstrap manifest Ref. */
   public get genesisRoot(): RecordRef {
     return this.#genesis.ref;

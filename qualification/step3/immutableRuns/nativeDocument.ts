@@ -384,7 +384,7 @@ export class AutomergeImmutableRunDocument {
     );
     // Semantic outputs must be checked before a staged load/merge can become
     // the accepted native document, including writes hidden by later winners.
-    validateImmutableRunCommandsV1(entries, provider);
+    validateImmutableRunCommandsV1(protocol, provider);
     this.activation = Object.freeze({ root, entries, protocol, provider });
     this.activeRunSourceUnits = protocol.runSourceUnits;
     return this.activation;
@@ -936,6 +936,13 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
         for (const reference of references) retired.add(encodeRef(reference));
       }
     }
+    const hasUnretiredToken = (
+      kind: "block" | "inline",
+      id: BlockId | InlineContentId,
+    ): boolean =>
+      (lives.get(`${kind}:${id}`) ?? []).some(
+        (reference) => !retired.has(encodeRef(reference)),
+      );
     return Object.freeze({
       root,
       rootBlockId,
@@ -945,10 +952,10 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
         Object.freeze([...inlineIds].map((id) => parseInlineContentId(id))),
       hasBlockIdentity: (id: string): boolean => blockIds.has(id),
       isBlockLive: (id: BlockId): boolean =>
-        id === rootBlockId || this.protocol.isEntityLive(root, "block", id),
+        id === rootBlockId || hasUnretiredToken("block", id),
       hasInlineIdentity: (id: string): boolean => inlineIds.has(id),
       isInlineLive: (id: InlineContentId): boolean =>
-        this.protocol.isEntityLive(root, "inline", id),
+        hasUnretiredToken("inline", id),
       ownerOf: (id: InlineContentId) => {
         const owner = owners.get(id);
         return owner === undefined ? undefined : parseBlockId(owner);

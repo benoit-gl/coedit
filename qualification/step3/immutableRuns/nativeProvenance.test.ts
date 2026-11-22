@@ -76,6 +76,92 @@ function nativeCommand() {
 }
 
 describe("immutable-run native provenance", { timeout: 120_000 }, () => {
+  it("matches reference liveness at historical roots, concurrent joins and restore", () => {
+    const block = parseBlockId(uuid(3));
+    const carrier = factory.create(root);
+    const empty = carrier.captureHistoricalState();
+    carrier.applyChange({
+      context: { actorId: "author", effectId: "create" },
+      placements: [{ blockId: block, placement: { depth: 1, position: "a" } }],
+      inlineContents: [{ inlineContentId: inline, blockId: block }],
+      payloads: [
+        {
+          kind: "replace-text",
+          inlineContentId: inline,
+          mediaType: "text/plain",
+          text: "ab",
+          origin,
+        },
+      ],
+    });
+    const editing = factory.load(carrier.encode());
+    carrier.applyChange({
+      context: { actorId: "deleter", effectId: "retire" },
+      deleteBlockIds: [block],
+    });
+    const retired = AutomergeImmutableRunDocument.load(
+      carrier.encode(),
+    ).activate();
+    expect(retired.provider.view(retired.root).isBlockLive(block)).toBe(false);
+    editing.applyChange({
+      context: { actorId: "editor", effectId: "concurrent-live" },
+      payloads: [
+        {
+          kind: "insert-text",
+          inlineContentId: inline,
+          offset: 1,
+          text: "!",
+          origin,
+        },
+      ],
+    });
+    carrier.mergeEncoded(editing.encode());
+    const joined = AutomergeImmutableRunDocument.load(
+      carrier.encode(),
+    ).activate();
+    expect(joined.provider.view(joined.root).isBlockLive(block)).toBe(true);
+    carrier.restoreHistoricalState(empty, {
+      actorId: "author",
+      effectId: "restore-empty",
+    });
+    const restored = AutomergeImmutableRunDocument.load(
+      carrier.encode(),
+    ).activate();
+    expect(restored.provider.view(restored.root).isInlineLive(inline)).toBe(
+      false,
+    );
+    expect(restored.provider.view(restored.root).isBlockLive(block)).toBe(
+      false,
+    );
+
+    const { protocol, provider } = restored;
+    const blocks = [root, block, parseBlockId(inline), parseBlockId(uuid(99))];
+    const inlines = [
+      inline,
+      parseInlineContentId(block),
+      parseInlineContentId(root),
+      parseInlineContentId(uuid(99)),
+    ];
+    for (const entry of protocol.canonicalEntries) {
+      if (entry.record[3] !== "manifest" && entry.record[3] !== "join")
+        continue;
+      const view = provider.view(entry.ref);
+      for (const id of blocks)
+        expect(view.isBlockLive(id)).toBe(
+          id === root || protocol.isEntityLive(entry.ref, "block", id),
+        );
+      for (const id of inlines)
+        expect(view.isInlineLive(id)).toBe(
+          protocol.isEntityLive(entry.ref, "inline", id),
+        );
+    }
+    const bootstrap = provider.view(protocol.genesisRoot);
+    expect(protocol.isEntityLive(protocol.genesisRoot, "block", root)).toBe(
+      false,
+    );
+    expect(bootstrap.isBlockLive(root)).toBe(true);
+  });
+
   for (const positions of [
     ["a", "b"],
     ["a", "a"],

@@ -2330,12 +2330,19 @@ export interface ValidatedImmutableRunCommandsV1 {
  * native writes captured by the adapter. Restore/transition validation is
  * deliberately refused until its retained-capture materialization adapter is
  * supplied; it is never accepted as an apply command by omission.
+ * A validated protocol input reuses its source validation and owned canonical
+ * entries; complete command and native-output validation still runs.
  */
 export function validateImmutableRunCommandsV1(
-  entries: readonly CanonicalRecordEntry[],
+  input: readonly CanonicalRecordEntry[] | ImmutableRunProtocolV1,
   provider: ImmutableRunColdViewProviderV1,
 ): ValidatedImmutableRunCommandsV1 {
-  const protocol = ImmutableRunProtocolV1.validate(entries);
+  const protocol =
+    input instanceof ImmutableRunProtocolV1
+      ? input
+      : ImmutableRunProtocolV1.validate(input);
+  const entries =
+    input instanceof ImmutableRunProtocolV1 ? input.canonicalEntries : input;
   const byRef = new Map(entries.map((entry) => [refKey(entry.ref), entry]));
   const roots: RecordRef[] = [];
   for (const entry of entries) {

@@ -23,6 +23,7 @@ import {
   type PreparedImmutableRunCommandV1,
 } from "./commands.js";
 import type { ImmutableRunSourceIndex } from "./sourceIndex.js";
+import { ImmutableRunProtocolV1 } from "./protocol.js";
 
 const uuid = (value: number): string =>
   `d4000000-0000-4000-8000-${value.toString(16).padStart(12, "0")}`;
@@ -282,10 +283,20 @@ describe("immutable-run command preparation and cold validation", () => {
     const provider = new Provider();
     provider.views.set(refKey(bootstrap.ref), base);
     register(provider, command, base);
+    const entries = [bootstrap, ...command.entries];
+    const standalone = validateImmutableRunCommandsV1(entries, provider);
+    const protocol = ImmutableRunProtocolV1.validate(entries);
+    const reused = validateImmutableRunCommandsV1(protocol, provider);
+    expect(standalone.commandRoots).toEqual([command.manifest.ref]);
+    expect(reused.commandRoots).toEqual(standalone.commandRoots);
+    expect(reused.protocol).toBe(protocol);
+    expect(reused.protocol.canonicalEntries).toEqual(entries);
+    expect(reused.protocol.canonicalEntries[0]).not.toBe(entries[0]);
+    expect(Object.isFrozen(reused.protocol.canonicalEntries)).toBe(true);
+    entries.length = 0;
     expect(
-      validateImmutableRunCommandsV1([bootstrap, ...command.entries], provider)
-        .commandRoots,
-    ).toEqual([command.manifest.ref]);
+      validateImmutableRunCommandsV1(protocol, provider).commandRoots,
+    ).toEqual(reused.commandRoots);
   });
 
   it("stages sequential insert/delete/no-op operations without changing the accepted index", () => {
@@ -639,6 +650,9 @@ describe("immutable-run command preparation and cold validation", () => {
     expect(() =>
       validateForgery(bootstrap, base, command, sourceForgery),
     ).toThrow(/exact input text|concatenate/u);
+    expect(() =>
+      validateForgery(bootstrap, base, command, sourceForgery, "protocol"),
+    ).toThrow(/exact input text|concatenate/u);
 
     const wrongOwnerTuple: unknown[] = [...blockLive.record];
     wrongOwnerTuple[4] = ["block", uuid(999)];
@@ -766,6 +780,7 @@ function validateForgery(
   base: View,
   original: PreparedImmutableRunCommandV1,
   forged: ForgedCommand,
+  inputKind: "entries" | "protocol" = "entries",
 ): void {
   const provider = new Provider();
   provider.views.set(refKey(bootstrap.ref), base);
@@ -774,7 +789,13 @@ function validateForgery(
     structural: original.nativeDelta.structural,
     descriptors: original.nativeDelta.descriptors,
   });
-  validateImmutableRunCommandsV1([bootstrap, ...forged.entries], provider);
+  const entries = [bootstrap, ...forged.entries];
+  validateImmutableRunCommandsV1(
+    inputKind === "protocol"
+      ? ImmutableRunProtocolV1.validate(entries)
+      : entries,
+    provider,
+  );
 }
 
 function nonEnumerableMap(

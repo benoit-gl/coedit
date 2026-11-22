@@ -7,6 +7,7 @@ import {
 } from "../../../src/domain/index.js";
 import { createAutomergeImmutableRunCarrierFactory } from "./automergeCarrier.js";
 import { AutomergeImmutableRunDocument } from "./nativeDocument.js";
+import { ImmutableRunProtocolV1 } from "./protocol.js";
 
 vi.mock("@automerge/automerge", async (importOriginal) => {
   const actual = await importOriginal<typeof A>();
@@ -42,6 +43,23 @@ function expectNativeRoot(encoded: Uint8Array): void {
 }
 
 describe("immutable-run cold native metadata projection", () => {
+  it("validates the source protocol once per cold activation", () => {
+    const carrier = factory.create(root);
+    carrier.applyChange({
+      context: { actorId: "author", effectId: "command" },
+    });
+    const encoded = carrier.encode();
+    const validate = vi.spyOn(ImmutableRunProtocolV1, "validate");
+    try {
+      const native = AutomergeImmutableRunDocument.load(encoded);
+      const activation = native.activate();
+      expect(native.activate()).toBe(activation);
+      expect(validate).toHaveBeenCalledTimes(1);
+    } finally {
+      validate.mockRestore();
+    }
+  });
+
   it("uses complete causal root overwrites without replaying unrelated record patches", () => {
     const carrier = factory.create(root);
     for (let index = 0; index < 8; index++)
