@@ -6,6 +6,7 @@ import {
   parseInlineContentId,
 } from "../../../src/domain/index.js";
 import type { QualificationOrigin } from "../payload/carrier.js";
+import { QualificationIncrementalEditor } from "../editor/incrementalEditor.js";
 import {
   applyAutomergeImmutableRunFixtureTransitionV1,
   createAutomergeImmutableRunCarrierFactory,
@@ -202,6 +203,142 @@ describe("immutable-run Automerge carrier", () => {
       text: "Ax😀B",
     });
   });
+
+  it.each(["Block", "InlineContent"] as const)(
+    "hides text retained under a retired %s across reopen and merge, then restores fresh positions",
+    (retiredEntity) => {
+      const factory = createAutomergeImmutableRunCarrierFactory(
+        codec,
+        ordering,
+        {
+          purePositionDecoder: true,
+        },
+      );
+      const carrier = created();
+      const beforeAddition = carrier.captureHistoricalState();
+      const targetId =
+        retiredEntity === "Block"
+          ? inlineId
+          : parseInlineContentId("a1000000-0000-4000-8000-000000000008");
+      if (retiredEntity === "InlineContent")
+        carrier.applyChange({
+          context: { actorId: "alice", effectId: "add-inline" },
+          inlineContents: [{ inlineContentId: targetId, blockId }],
+          payloads: [
+            {
+              kind: "replace-text",
+              inlineContentId: targetId,
+              mediaType: "text/plain",
+              text: "A😀B",
+              origin,
+            },
+          ],
+        });
+      const liveToken = carrier.captureHistoricalState();
+      const liveBytes = carrier.encode();
+      const receipt = carrier.readOrdinaryTextRange(targetId, 0, 4)!;
+      const position = carrier.createStableTextPosition(targetId, 1, "before");
+      if (retiredEntity === "Block")
+        carrier.applyChange({
+          context: { actorId: "alice", effectId: "retire-block" },
+          deleteBlockIds: [blockId],
+        });
+      else
+        carrier.restoreHistoricalState(beforeAddition, {
+          actorId: "alice",
+          effectId: "retire-inline",
+        });
+      const reopened = factory.load(carrier.encode());
+      const merged = factory.load(liveBytes);
+      merged.mergeEncoded(carrier.encode());
+      for (const observed of [carrier, reopened, merged]) {
+        const bytes = observed.encode();
+        expect(observed.snapshot().payloads.has(targetId)).toBe(false);
+        expect(observed.projectEditorPayload(targetId)).toBeUndefined();
+        expect(observed.readOrdinaryTextRange(targetId, 0, 4)).toBeUndefined();
+        expect(() =>
+          observed.createStableTextPosition(targetId, 1, "before"),
+        ).toThrow(/live text payload/u);
+        expect(observed.resolveStableTextPosition(position)).toBeUndefined();
+        expect(() =>
+          observed.applyOrdinaryChange(
+            {
+              context: { actorId: "alice", effectId: "stale-edit" },
+              payloads: [
+                {
+                  kind: "insert-text",
+                  inlineContentId: targetId,
+                  offset: 0,
+                  text: "!",
+                  origin,
+                },
+              ],
+            },
+            receipt.revision,
+          ),
+        ).toThrow(/stale/u);
+        expect(
+          () => new QualificationIncrementalEditor(observed, targetId),
+        ).toThrow(/live text target/u);
+        expect(observed.encode()).toEqual(bytes);
+        expect(
+          textOf(
+            observed
+              .materializeHistoricalState(liveToken)
+              .payloads.get(targetId),
+          ),
+        ).toBe("A😀B");
+      }
+
+      const beforeDirectEdit = merged.encode();
+      expect(() =>
+        merged.applyChange({
+          context: { actorId: "alice", effectId: "direct-dead-edit" },
+          payloads: [
+            {
+              kind: "insert-text",
+              inlineContentId: targetId,
+              offset: 0,
+              text: "!",
+              origin,
+            },
+          ],
+        }),
+      ).toThrow(/live InlineContent and owner Block/u);
+      expect(merged.encode()).toEqual(beforeDirectEdit);
+
+      carrier.restoreHistoricalState(liveToken, {
+        actorId: "alice",
+        effectId: "reactivate",
+      });
+      expect(carrier.resolveStableTextPosition(position)).toBeUndefined();
+      const restoredPosition = carrier.createStableTextPosition(
+        targetId,
+        1,
+        "before",
+      );
+      expect(restoredPosition).not.toEqual(position);
+      expect(carrier.resolveStableTextPosition(restoredPosition)).toBe(1);
+      const restoredRead = carrier.readOrdinaryTextRange(targetId, 0, 4)!;
+      expect(restoredRead.spans).toEqual([{ text: "A😀B", origin }]);
+      carrier.applyOrdinaryChange(
+        {
+          context: { actorId: "alice", effectId: "restored-edit" },
+          payloads: [
+            {
+              kind: "insert-text",
+              inlineContentId: targetId,
+              offset: 0,
+              text: "!",
+              origin,
+            },
+          ],
+        },
+        restoredRead.revision,
+      );
+      expect(textOf(carrier.projectEditorPayload(targetId))).toBe("!A😀B");
+    },
+  );
 
   it("merges concurrent inserts and continues editing from one readiness root", () => {
     const base = created().encode();

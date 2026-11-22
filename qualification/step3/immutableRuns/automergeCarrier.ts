@@ -485,23 +485,21 @@ class AutomergeImmutableRunCarrier<
     inlineContentId: InlineContentId,
   ): QualificationPayloadSnapshot | undefined {
     this.assertDerivedState();
-    const owner = this.view.ownerOf(inlineContentId);
-    if (
-      owner === undefined ||
-      !this.view.isInlineLive(inlineContentId) ||
-      !this.view.isBlockLive(owner)
-    )
-      return undefined;
+    if (!this.isLivePayloadTarget(inlineContentId)) return undefined;
     return this.projectPayload(inlineContentId);
   }
 
-  /** Reads an indexed range only under the explicit pure-decoder opt in. */
+  /** Reads live text with a live owner under the explicit pure-decoder opt in. */
   public readOrdinaryTextRange(
     inlineContentId: InlineContentId,
     start: number,
     end: number,
   ): QualificationOrdinaryRange | undefined {
-    if (!this.derivedStateValid || this.options.purePositionDecoder !== true)
+    if (
+      !this.derivedStateValid ||
+      this.options.purePositionDecoder !== true ||
+      !this.isLivePayloadTarget(inlineContentId)
+    )
       return undefined;
     const descriptor = this.view.descriptorOf(inlineContentId);
     if (descriptor?.kind !== "text") return undefined;
@@ -545,13 +543,15 @@ class AutomergeImmutableRunCarrier<
     return this.ordinaryRevision;
   }
 
-  /** Captures source neighbours in a generation-qualified private cursor. */
+  /** Captures source neighbours for live text with a live owner in a private cursor. */
   public createStableTextPosition(
     inlineContentId: InlineContentId,
     editorUtf16Offset: number,
     affinity: QualificationTextAffinity,
   ): QualificationStableTextPosition {
     this.assertDerivedState();
+    if (!this.isLivePayloadTarget(inlineContentId))
+      throw new TypeError("Stable positions require a live text payload.");
     const descriptor = this.view.descriptorOf(inlineContentId);
     if (descriptor?.kind !== "text")
       throw new TypeError("Stable position target is not text.");
@@ -567,11 +567,15 @@ class AutomergeImmutableRunCarrier<
     });
   }
 
-  /** Resolves a private source cursor and refuses obsolete generations. */
+  /** Resolves a private source cursor only for live text, live owners, and the current generation. */
   public resolveStableTextPosition(
     position: QualificationStableTextPosition,
   ): number | undefined {
-    if (!this.derivedStateValid || position.candidate !== "automerge")
+    if (
+      !this.derivedStateValid ||
+      position.candidate !== "automerge" ||
+      !this.isLivePayloadTarget(position.inlineContentId)
+    )
       return undefined;
     const descriptor = this.view.descriptorOf(position.inlineContentId);
     if (
@@ -834,6 +838,15 @@ class AutomergeImmutableRunCarrier<
     this.view.adopt(command);
     for (const entry of command.entries)
       this.entries.set(encodeRefValue(entry.ref), entry);
+  }
+
+  private isLivePayloadTarget(inlineContentId: InlineContentId): boolean {
+    const owner = this.view.ownerOf(inlineContentId);
+    return (
+      owner !== undefined &&
+      this.view.isInlineLive(inlineContentId) &&
+      this.view.isBlockLive(owner)
+    );
   }
 
   private projectPayload(
