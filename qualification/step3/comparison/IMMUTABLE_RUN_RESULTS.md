@@ -75,3 +75,17 @@ The current profile uses ASCII source and does not measure browser paint, OS IME
 network delivery, device diversity or production History services.
 Current full repository checks, required review and remote CI must be reported separately.
 These gaps remain explicit evidence obligations rather than waived mandatory requirements.
+
+## Refresh after cold metadata optimization
+
+The [baseline refresh](evidence/immutable-runs/baseline-edbc.jsonl) and
+[100,000-unit refresh](evidence/immutable-runs/text-100k-edbc.jsonl) completed their semantic and lifecycle checks
+against the source manifest recorded in each file. Both ran while a separate 5,000-command characterization was active;
+CPU and memory contention affect their timings. They are not a controlled comparison with the earlier runs.
+The baseline and 100,000-unit initial loads were 190 ms and 1,498 ms; their bare-edit medians were 80.87 ms and
+36.19 ms, and their incremental-editor medians were 28.79 ms and 26.67 ms. Each median uses five samples.
+The 100,000-unit later load, restore and one-peer merge took 14.33 s, 2.58 s and 63.12 s respectively;
+process RSS after the lifecycle sequence was approximately 1.31 GB. These are single transition observations,
+not resource limits or guarantees. The source-index path counts were 168 and 169 for the observed bare and editor
+edits; selected activation, projection and position-decoder counters remained zero. Native work and the longer
+History reload remain separate evidence obligations.
