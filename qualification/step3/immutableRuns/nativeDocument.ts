@@ -610,7 +610,7 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
       throw new TypeError(
         "Command members and manifest were not authored in one native change.",
       );
-    const placementWrites = extractCellWrites(
+    const placementWrites = extractCellWriteSequence(
       change,
       this.document.placements,
       "placement",
@@ -626,6 +626,7 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
       "descriptor",
     );
     const structural: StructuralOutput[] = [];
+    let placementIndex = 0;
     for (const output of body[6]) {
       if (output[0] === "block-delete") {
         const hasRetire = authored.some(
@@ -638,19 +639,10 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
           throw new TypeError("Block deletion lacks native retire fact.");
         structural.push(Object.freeze(["block-delete", output[1]]));
       } else if (output[0] === "placement") {
-        requireCellWrite(
-          change,
-          this.document.placements,
-          output[1],
-          output[2],
-        );
-        structural.push(
-          Object.freeze([
-            "placement",
-            output[1],
-            placementWrites.get(output[1])!,
-          ]),
-        );
+        const write = placementWrites[placementIndex++];
+        if (write === undefined || write[0] !== output[1])
+          throw new TypeError("Native placement output order is not exact.");
+        structural.push(Object.freeze(["placement", write[0], write[1]]));
       } else {
         requireCellWrite(change, this.document.owners, output[1], output[2]);
         structural.push(
@@ -662,18 +654,17 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
         );
       }
     }
-    const expectedPlacements = new Map(
-      body[6]
-        .filter((output) => output[0] === "placement")
-        .map((output) => [output[1], output[2]]),
-    );
+    const expectedPlacements = body[6]
+      .filter((output) => output[0] === "placement")
+      .map((output) => [output[1], output[2]]);
+
     const expectedOwners = new Map(
       body[6]
         .filter((output) => output[0] === "inline-create")
         .map((output) => [output[1], output[2]]),
     );
     if (
-      !sameStringMaps(placementWrites, expectedPlacements) ||
+      JSON.stringify(placementWrites) !== JSON.stringify(expectedPlacements) ||
       !sameStringMaps(ownerWrites, expectedOwners)
     )
       throw new TypeError(
@@ -1121,6 +1112,43 @@ function sameEntries(
   );
 }
 
+/** Read the exact ordered writes; repeated replacements must observe their predecessor. */
+function extractCellWriteSequence(
+  change: A.DecodedChange,
+  registry: Registry,
+  label: string,
+): readonly (readonly [string, string])[] {
+  const registryId = A.getObjectId(registry);
+  if (registryId === null)
+    throw new TypeError(`Native ${label} registry lacks identity.`);
+  const result: (readonly [string, string])[] = [];
+  const previousByKey = new Map<string, string>();
+  for (let index = 0; index < change.ops.length; index++) {
+    const operation = change.ops[index]!;
+    if (operation.action !== "makeMap" || operation.obj !== registryId)
+      continue;
+    const previous = previousByKey.get(operation.key);
+    if (
+      previous !== undefined &&
+      (operation.pred.length !== 1 || operation.pred[0] !== previous)
+    )
+      throw new TypeError(
+        `Native ${label} replacement does not observe its preceding write.`,
+      );
+    const objectId = `${change.startOp + index}@${change.actor}`;
+    const values = change.ops.filter((candidate) => candidate.obj === objectId);
+    if (
+      values.length !== 1 ||
+      values[0]!.action !== "set" ||
+      values[0]!.value !== true
+    )
+      throw new TypeError(`Native ${label} cell is malformed.`);
+    result.push(Object.freeze([operation.key, values[0]!.key]));
+    previousByKey.set(operation.key, objectId);
+  }
+  return Object.freeze(result);
+}
+
 function extractCellWrites(
   change: A.DecodedChange,
   registry: Registry,
@@ -1236,7 +1264,13 @@ function validateCommandOps(
       for (let index = 0; index < change.ops.length; index++) {
         const operation = change.ops[index]!;
         if (operation.action === "makeMap" && operation.obj === objectId)
-          allowCellOps(change, objectId, operation.key, allowed);
+          allowCellOps(
+            change,
+            objectId,
+            operation.key,
+            allowed,
+            registry === document.placements,
+          );
       }
     }
   }
@@ -1272,6 +1306,7 @@ function allowCellOps(
   parentId: string,
   key: string,
   allowed: Set<number>,
+  repeated = false,
 ): void {
   const indexes = change.ops
     .map((operation, index) => ({ operation, index }))
@@ -1281,18 +1316,19 @@ function allowCellOps(
         operation.obj === parentId &&
         operation.key === key,
     );
-  if (indexes.length !== 1) return;
-  const index = indexes[0]!.index;
-  const childId = `${change.startOp + index}@${change.actor}`;
-  const children = change.ops
-    .map((operation, childIndex) => ({ operation, childIndex }))
-    .filter(
-      ({ operation }) =>
-        operation.action === "set" && operation.obj === childId,
-    );
-  if (children.length !== 1 || children[0]!.operation.value !== true) return;
-  allowed.add(index);
-  allowed.add(children[0]!.childIndex);
+  if (!repeated && indexes.length !== 1) return;
+  for (const { index } of indexes) {
+    const childId = `${change.startOp + index}@${change.actor}`;
+    const children = change.ops
+      .map((operation, childIndex) => ({ operation, childIndex }))
+      .filter(
+        ({ operation }) =>
+          operation.action === "set" && operation.obj === childId,
+      );
+    if (children.length !== 1 || children[0]!.operation.value !== true) return;
+    allowed.add(index);
+    allowed.add(children[0]!.childIndex);
+  }
 }
 
 function collectRecords(

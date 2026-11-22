@@ -76,6 +76,112 @@ function nativeCommand() {
 }
 
 describe("immutable-run native provenance", { timeout: 120_000 }, () => {
+  for (const positions of [
+    ["a", "b"],
+    ["a", "a"],
+    ["a", "b", "c"],
+  ]) {
+    it(`preserves ordered repeated placement replacements ${positions.join("/")} through reopen and merge`, () => {
+      const carrier = seed();
+      const baseline = carrier.encode();
+      const blockId = parseBlockId(uuid(3));
+      carrier.applyChange({
+        context: { actorId: "author", effectId: "repeated-placement" },
+        placements: positions.map((position) => ({
+          blockId,
+          placement: { position, depth: 1 },
+        })),
+      });
+      const expected = { position: positions.at(-1)!, depth: 1 };
+      expect(carrier.snapshot().placements.get(blockId)).toEqual(expected);
+      const reopened = factory.load(carrier.encode());
+      expect(reopened.snapshot().placements.get(blockId)).toEqual(expected);
+      const receiver = factory.load(baseline);
+      receiver.mergeEncoded(carrier.encode());
+      expect(receiver.snapshot().placements.get(blockId)).toEqual(expected);
+      expect(
+        factory.load(receiver.encode()).snapshot().placements.get(blockId),
+      ).toEqual(expected);
+    });
+  }
+
+  it("rejects changed, missing and extra repeated placement writes atomically", () => {
+    const carrier = seed();
+    const baseline = carrier.encode();
+    const blockId = parseBlockId(uuid(3));
+    carrier.applyChange({
+      context: { actorId: "author", effectId: "repeated-placement" },
+      placements: ["a", "b"].map((position) => ({
+        blockId,
+        placement: { position, depth: 1 },
+      })),
+    });
+    const before = A.load<Raw>(baseline);
+    const after = A.load<Raw>(carrier.encode());
+    const change = A.decodeChange(A.getChanges(before, after)[0]!);
+    const registryId = A.getObjectId(after.placements)!;
+    const writes = change.ops
+      .map((operation, index) => ({ operation, index }))
+      .filter(
+        ({ operation }) =>
+          operation.action === "makeMap" &&
+          operation.obj === registryId &&
+          operation.key === blockId,
+      );
+    expect(writes).toHaveLength(2);
+    const firstId = `${change.startOp + writes[0]!.index}@${change.actor}`;
+    const secondId = `${change.startOp + writes[1]!.index}@${change.actor}`;
+    const badValue = change.ops.map((operation) =>
+      operation.obj === firstId && operation.action === "set"
+        ? {
+            ...operation,
+            key: encodeStructuralPlacement(
+              { position: "forged", depth: 1 },
+              codec,
+            ),
+          }
+        : operation,
+    );
+    const noPredecessor = change.ops.map((operation, index) =>
+      index === writes[1]!.index ? { ...operation, pred: [] } : operation,
+    );
+    const missingValue = change.ops.map((operation) =>
+      operation.obj === secondId && operation.action === "set"
+        ? { ...operation, value: false }
+        : operation,
+    );
+    const extraIndex = change.startOp + change.ops.length;
+    const extra = [
+      ...change.ops,
+      {
+        action: "makeMap" as const,
+        obj: registryId,
+        key: blockId,
+        insert: false,
+        pred: [secondId],
+      },
+      {
+        action: "set" as const,
+        obj: `${extraIndex}@${change.actor}`,
+        key: encodeStructuralPlacement({ position: "extra", depth: 1 }, codec),
+        value: true,
+        insert: false,
+        pred: [],
+      },
+    ];
+    for (const ops of [badValue, noPredecessor, missingValue, extra]) {
+      const [altered] = A.applyChanges(A.clone(before), [
+        A.encodeChange({ ...change, ops }),
+      ]);
+      const encoded = A.save(altered);
+      expect(() => factory.load(encoded)).toThrow();
+      const receiver = factory.load(baseline);
+      const untouched = receiver.encode();
+      expect(() => receiver.mergeEncoded(encoded)).toThrow();
+      expect(receiver.encode()).toEqual(untouched);
+    }
+  });
+
   it("rejects surplus registry writes inside an otherwise valid command before adoption", () => {
     const fixture = nativeCommand();
     const nextObject = `${fixture.change.startOp + fixture.change.ops.length}@${fixture.change.actor}`;
