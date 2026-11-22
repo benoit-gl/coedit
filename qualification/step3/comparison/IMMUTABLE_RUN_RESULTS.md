@@ -89,3 +89,17 @@ process RSS after the lifecycle sequence was approximately 1.31 GB. These are si
 not resource limits or guarantees. The source-index path counts were 168 and 169 for the observed bare and editor
 edits; selected activation, projection and position-decoder counters remained zero. Native work and the longer
 History reload remain separate evidence obligations.
+
+## Interrupted 5,000-command lifecycle run
+
+The [partial record](evidence/immutable-runs/history-5000-edbc-partial.jsonl) preserves the completed setup,
+initial reload and warm-edit phases of a 5,000-command run against the recorded earlier source manifest.
+Setup took 218.88 seconds and produced 6,713,974 encoded bytes. Initial reload took 1,474.95 seconds
+(about 24.6 minutes), with process RSS of approximately 2.65 GB afterward. Subsequent bare and incremental-editor
+warm edit medians were 54.86 ms and 44.05 ms across five samples; the output records exact text and Origin checks.
+The run shared CPU and memory with other work, and RSS is process-wide rather than a measured peak.
+The lifecycle sequence after those phases was interrupted, so the record remains explicitly incomplete.
+
+The observation predates the later placement, failure-recovery, and cold-protocol changes in this PR.
+It exposes a substantial reload cost; it does not establish the current implementation's final performance or
+waive the remaining lifecycle and native-work evidence obligations.
