@@ -14,6 +14,7 @@ import type {
   QualificationStableTextPosition,
 } from "../integrated/carrier.js";
 import type { QualificationTextSpan } from "../payload/carrier.js";
+import { createAutomergeImmutableRunCarrierFactory } from "../immutableRuns/automergeCarrier.js";
 import { createAutomergeIntegratedDocumentCarrierFactory } from "../integrated/automergeIntegratedDocumentCarrier.js";
 import type { IntegratedDocumentCarrierFactory } from "../integrated/carrier.js";
 import { createYjsIntegratedDocumentCarrierFactory } from "../integrated/yjsIntegratedDocumentCarrier.js";
@@ -23,7 +24,7 @@ import { STEP3_PRIVATE_CLIPBOARD_TYPE } from "./clipboard.js";
 import {
   type EditorTextBuffer,
   readEditorText,
-  sliceAttributedText,
+  sameAttributedRange,
   spliceAttributedText,
 } from "./semanticText.js";
 import {
@@ -38,8 +39,14 @@ const original = { id: "human-original", kind: "human" as const };
 const editing = { id: "human-edit", kind: "human" as const };
 const imported = { id: "external-import", kind: "imported" as const };
 const rootId = parseBlockId("83000000-0000-4000-8000-000000000001");
+const immutableFactory = createAutomergeImmutableRunCarrierFactory(
+  localDensePositionAllocator,
+  localDensePositionAllocator,
+  { purePositionDecoder: true },
+);
 const carrierFactories: readonly IntegratedDocumentCarrierFactory<LocalDensePosition>[] =
   [
+    immutableFactory,
     createYjsIntegratedDocumentCarrierFactory(
       localDensePositionAllocator,
       localDensePositionAllocator,
@@ -188,19 +195,29 @@ function containsAttributedFragment(
     readonly spans: readonly QualificationTextSpan[];
   },
   fragment: readonly QualificationTextSpan[],
+  requireUnique = false,
 ): boolean {
   const text = fragment.map((span) => span.text).join("");
   if (text.length === 0) return true;
+  let matches = 0;
   for (let start = source.text.indexOf(text); start !== -1;) {
     if (
-      JSON.stringify(
-        sliceAttributedText(source, start, start + text.length),
-      ) === JSON.stringify(fragment)
-    )
-      return true;
+      sameAttributedRange(
+        source,
+        start,
+        start + text.length,
+        { text, spans: fragment },
+        0,
+        text.length,
+      )
+    ) {
+      if (!requireUnique) return true;
+      matches++;
+      if (matches > 1) return false;
+    }
     start = source.text.indexOf(text, start + 1);
   }
-  return false;
+  return matches === 1;
 }
 
 function mountCarrierEditor(
@@ -269,7 +286,24 @@ function mountCarrierEditor(
             .materializeHistoricalState(reference)
             .payloads.get(contentId);
           if (payload?.kind !== "text") return false;
-          return containsAttributedFragment(payload, spans);
+          return containsAttributedFragment(payload, spans, false);
+        } catch {
+          return false;
+        }
+      },
+      isRetainedSourceFragment: (reference, spans) => {
+        try {
+          const payload = carrier
+            .materializeHistoricalState(reference)
+            .payloads.get(contentId);
+          if (payload?.kind !== "text") return false;
+          // The immutable-run copy witness needs one exact source interval.
+          // Ambiguity omits derivation; catalog-validated Origin stays valid.
+          return containsAttributedFragment(
+            payload,
+            spans,
+            factory === immutableFactory,
+          );
         } catch {
           return false;
         }
@@ -289,7 +323,11 @@ function unmountCarrierEditor(fixture: {
 
 describe("direct ProseMirror browser qualification", () => {
   for (const factory of carrierFactories) {
-    it(`rejects stale text and Origin before ${factory.candidate} editor publication`, () => {
+    const layoutName =
+      factory === immutableFactory
+        ? "automerge immutable-runs"
+        : factory.candidate;
+    it(`rejects stale text and Origin before ${layoutName} editor publication`, () => {
       for (const text of ["changed", "alpha"]) {
         const fixture = mountCarrierEditor(factory);
         fixture.carrier.applyChange({
@@ -315,7 +353,7 @@ describe("direct ProseMirror browser qualification", () => {
       }
     });
 
-    it(`publishes Chromium keyboard input to ${factory.candidate}`, async () => {
+    it(`publishes Chromium keyboard input to ${layoutName}`, async () => {
       const fixture = mountCarrierEditor(factory);
       fixture.editor.view.dispatch(
         fixture.editor.view.state.tr.setSelection(
@@ -334,7 +372,7 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
-    it(`parses <br> and edits text on ${factory.candidate}`, async () => {
+    it(`parses <br> and edits text on ${layoutName}`, async () => {
       const fixture = mountCarrierEditor(factory, "a\nb");
       const { view } = fixture.editor;
       expect(view.dom.querySelector("br")).not.toBeNull();
@@ -362,7 +400,7 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
-    it(`ignores empty collapsed paste on ${factory.candidate}`, async () => {
+    it(`ignores empty collapsed paste on ${layoutName}`, async () => {
       const fixture = mountCarrierEditor(factory);
       fixture.editor.view.dispatch(
         fixture.editor.view.state.tr.setSelection(
@@ -394,7 +432,7 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
-    it(`represents multiline plain paste with hard breaks on ${factory.candidate}`, () => {
+    it(`represents multiline plain paste with hard breaks on ${layoutName}`, () => {
       const fixture = mountCarrierEditor(factory, "ab");
       const { view } = fixture.editor;
       view.dispatch(
@@ -421,7 +459,7 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
-    it(`publishes one IME action through ${factory.candidate}`, async () => {
+    it(`publishes one IME action through ${layoutName}`, async () => {
       const fixture = mountCarrierEditor(factory);
       fixture.editor.view.dom.dispatchEvent(
         new CompositionEvent("compositionstart"),
@@ -446,7 +484,7 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
-    it(`keeps deferred IME text after transient transactions on ${factory.candidate}`, async () => {
+    it(`keeps deferred IME text after transient transactions on ${layoutName}`, async () => {
       const fixture = mountCarrierEditor(factory);
       const { view } = fixture.editor;
       view.dom.dispatchEvent(new CompositionEvent("compositionstart"));
@@ -494,7 +532,7 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
-    it(`refuses copy and cut until IME publication on ${factory.candidate}`, async () => {
+    it(`refuses copy and cut until IME publication on ${layoutName}`, async () => {
       const fixture = mountCarrierEditor(factory);
       const view = fixture.editor.view;
       view.dom.dispatchEvent(new CompositionEvent("compositionstart"));
@@ -543,7 +581,7 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
-    it(`uses ${factory.candidate} anchors to reconcile browser undo`, async () => {
+    it(`uses ${layoutName} anchors to reconcile browser undo`, async () => {
       const fixture = mountCarrierEditor(factory);
       fixture.editor.view.dispatch(
         fixture.editor.view.state.tr.setSelection(
@@ -569,7 +607,7 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
-    it(`keeps browser undo anchors inside later ${factory.candidate} boundary edits`, async () => {
+    it(`keeps browser undo anchors inside later ${layoutName} boundary edits`, async () => {
       for (const [offset, placement] of [
         [5, "before"],
         [6, "after"],
@@ -603,7 +641,7 @@ describe("direct ProseMirror browser qualification", () => {
       }
     });
 
-    it(`removes matching restored text through ${factory.candidate} browser undo`, async () => {
+    it(`removes matching restored text through ${layoutName} browser undo`, async () => {
       const fixture = mountCarrierEditor(factory);
       fixture.editor.view.dispatch(
         fixture.editor.view.state.tr.setSelection(
@@ -635,7 +673,7 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
-    it(`preserves clipboard Origin through ${factory.candidate}`, () => {
+    it(`preserves clipboard Origin through ${layoutName}`, () => {
       const fixture = mountCarrierEditor(factory);
       fixture.editor.view.dispatch(
         fixture.editor.view.state.tr.setSelection(
@@ -691,7 +729,7 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
-    it(`pastes the same private fragment after restart on ${factory.candidate}`, () => {
+    it(`pastes the same private fragment after restart on ${layoutName}`, () => {
       const first = mountCarrierEditor(factory);
       first.editor.view.dispatch(
         first.editor.view.state.tr.setSelection(
@@ -724,7 +762,7 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(second);
     });
 
-    it(`omits unresolved source on ${factory.candidate}`, () => {
+    it(`omits unresolved source on ${layoutName}`, () => {
       const fixture = mountCarrierEditor(factory);
       fixture.editor.view.dispatch(
         fixture.editor.view.state.tr.setSelection(
@@ -779,7 +817,7 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
-    it(`keeps same-Origin paste at the selected offset on ${factory.candidate}`, () => {
+    it(`keeps same-Origin paste at the selected offset on ${layoutName}`, () => {
       const fixture = mountCarrierEditor(factory);
       fixture.editor.view.dispatch(
         fixture.editor.view.state.tr.setSelection(
@@ -803,6 +841,8 @@ describe("direct ProseMirror browser qualification", () => {
           origin: original,
         },
       ]);
+      if (factory === immutableFactory)
+        expect(fixture.published[0]?.context?.source).toBeUndefined();
       expect(readEditorText(fixture.carrier, contentId).text).toBe("aalpha");
       fixture.editor.undo();
       expect(fixture.published[1]?.payloads).toEqual([
@@ -812,7 +852,7 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
-    it(`refuses cut when the plain clipboard transport fails on ${factory.candidate}`, () => {
+    it(`refuses cut when the plain clipboard transport fails on ${layoutName}`, () => {
       const fixture = mountCarrierEditor(factory);
       fixture.editor.view.dispatch(
         fixture.editor.view.state.tr.setSelection(
@@ -835,7 +875,7 @@ describe("direct ProseMirror browser qualification", () => {
       unmountCarrierEditor(fixture);
     });
 
-    it(`publishes a browser cut through ${factory.candidate}`, () => {
+    it(`publishes a browser cut through ${layoutName}`, () => {
       const fixture = mountCarrierEditor(factory);
       fixture.editor.view.dispatch(
         fixture.editor.view.state.tr.setSelection(

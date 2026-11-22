@@ -56,13 +56,16 @@ export function captureHistoricalState<Position>(
               kind: "text",
               mediaType: value.mediaType,
               text: value.text,
-              spans: value.spans,
+              spans: value.spans.map((span) => ({
+                text: span.text,
+                origin: { id: span.origin.id, kind: span.origin.kind },
+              })),
             }
           : {
               kind: "opaque",
               mediaType: value.mediaType,
               bytes: [...value.bytes],
-              origin: value.origin,
+              origin: { id: value.origin.id, kind: value.origin.kind },
             },
     });
   return JSON.stringify({

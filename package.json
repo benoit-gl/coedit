@@ -34,7 +34,8 @@
     "step3:loro": "node scripts/step3-loro.mjs",
     "step3:browser-reference": "node scripts/step3-browser-reference.mjs",
     "step3:qualification": "node scripts/run-step3-qualification.mjs",
-    "step3:ordinary-edit": "node scripts/step3-ordinary-edit.mjs"
+    "step3:ordinary-edit": "node scripts/step3-ordinary-edit.mjs",
+    "step3:immutable-runs": "node scripts/step3-immutable-runs.mjs"
   },
   "dependencies": {
     "react": "19.2.8",
@@ -55,6 +56,7 @@
     "eslint-plugin-tsdoc": "0.5.2",
     "fractional-indexing": "4.0.0",
     "fugue": "3.0.0",
+    "lib0": "0.2.117",
     "markdownlint-cli2": "0.23.3",
     "mdast-util-from-markdown": "2.0.3",
     "prettier": "3.9.6",
