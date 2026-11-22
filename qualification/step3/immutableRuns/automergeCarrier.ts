@@ -47,6 +47,7 @@ import {
 } from "./commands.js";
 import {
   AutomergeImmutableRunDocument,
+  ImmutableRunNativePublicationError,
   type ImmutableRunNativeActivationV1,
 } from "./nativeDocument.js";
 import {
@@ -111,6 +112,7 @@ class AutomergeImmutableRunCarrier<
   private readonly entries = new Map<string, CanonicalRecordEntry>();
   private readonly replicaUuid: string;
   private ordinaryRevision = Symbol("immutable-run-ordinary");
+  private derivedStateValid = true;
 
   public constructor(
     private readonly native: AutomergeImmutableRunDocument,
@@ -128,6 +130,7 @@ class AutomergeImmutableRunCarrier<
 
   /** Applies one attributed or explicitly synthetic qualification command. */
   public applyChange(change: IntegratedDocumentChange<Position>): void {
+    this.assertDerivedState();
     // A general position decoder can change or throw between calls. Preserve
     // its full projection preflight; only an explicit lifetime-stable pure
     // decoder qualifies for the bounded ordinary path.
@@ -282,9 +285,7 @@ class AutomergeImmutableRunCarrier<
         })),
       },
     });
-    this.native.publish(command);
-    this.adopt(command);
-    this.ordinaryRevision = Symbol("immutable-run-ordinary");
+    this.publishPrepared(command);
   }
 
   /** Retains exact current material and native heads as observation metadata. */
@@ -293,10 +294,17 @@ class AutomergeImmutableRunCarrier<
     // source graph and exact native winner view observed by this token.
     this.coldRefresh();
     const token = crypto.randomUUID();
-    this.native.capture(
-      token,
-      captureHistoricalState(this.snapshot(), this.positionCodec),
+    const material = captureHistoricalState(
+      this.snapshot(),
+      this.positionCodec,
     );
+    try {
+      this.native.capture(token, material);
+    } catch (error) {
+      if (error instanceof ImmutableRunNativePublicationError)
+        this.invalidateDerivedState();
+      throw error;
+    }
     return token;
   }
 
@@ -315,6 +323,7 @@ class AutomergeImmutableRunCarrier<
     token: string,
     context?: QualificationEffectContext,
   ): void {
+    this.assertDerivedState();
     const capture = this.native.readCapture(token);
     if (capture === undefined)
       throw new TypeError("Unknown retained state token is unknown.");
@@ -347,13 +356,12 @@ class AutomergeImmutableRunCarrier<
       context: attributed,
       positionCodec: this.positionCodec,
     });
-    this.native.publish(command);
-    this.adopt(command);
-    this.ordinaryRevision = Symbol("immutable-run-ordinary");
+    this.publishPrepared(command);
   }
 
   /** Returns detached semantic effect contexts, excluding bootstrap metadata. */
   public effects(): ReadonlyMap<string, QualificationEffectContext> {
+    this.assertDerivedState();
     const result = new Map<string, QualificationEffectContext>();
     const byRef = this.entries;
     for (const entry of this.entries.values()) {
@@ -411,6 +419,7 @@ class AutomergeImmutableRunCarrier<
 
   /** Returns detached persisted transition tuples for fixture inspection. */
   public fixtureTransitions(): readonly TransitionBody[] {
+    this.assertDerivedState();
     return Object.freeze(
       [...this.entries.values()]
         .filter((entry) => entry.record[3] === "transition-v1")
@@ -428,6 +437,7 @@ class AutomergeImmutableRunCarrier<
 
   /** Projects detached current native winners and indexed text material. */
   public snapshot(): IntegratedDocumentSnapshot<Position> {
+    this.assertDerivedState();
     if (this.options.workCounters) this.options.workCounters.snapshots++;
     const placements = new Map<BlockId, StructuralPlacement<Position>>();
     const blockLiveness = new Map<BlockId, boolean>();
@@ -474,6 +484,7 @@ class AutomergeImmutableRunCarrier<
   public projectEditorPayload(
     inlineContentId: InlineContentId,
   ): QualificationPayloadSnapshot | undefined {
+    this.assertDerivedState();
     const owner = this.view.ownerOf(inlineContentId);
     if (
       owner === undefined ||
@@ -490,7 +501,8 @@ class AutomergeImmutableRunCarrier<
     start: number,
     end: number,
   ): QualificationOrdinaryRange | undefined {
-    if (this.options.purePositionDecoder !== true) return undefined;
+    if (!this.derivedStateValid || this.options.purePositionDecoder !== true)
+      return undefined;
     const descriptor = this.view.descriptorOf(inlineContentId);
     if (descriptor?.kind !== "text") return undefined;
     const index = this.sourceIndexes.get(descriptor.generation[0]);
@@ -506,11 +518,11 @@ class AutomergeImmutableRunCarrier<
     });
   }
 
-  /** Rebuilds the explicit ordinary proof at a controlled cold boundary. */
+  /** Recovers failed derived state and rebuilds eligible ordinary proof explicitly. */
   public prepareOrdinaryText(): boolean {
-    if (this.options.purePositionDecoder !== true) return false;
-    this.coldRefresh();
-    return true;
+    const eligible = this.options.purePositionDecoder === true;
+    if (eligible || !this.derivedStateValid) this.coldRefresh();
+    return eligible;
   }
 
   /** Applies a payload-only fine edit against the exact local receipt. */
@@ -518,6 +530,7 @@ class AutomergeImmutableRunCarrier<
     change: IntegratedDocumentChange<Position>,
     revision: symbol,
   ): symbol {
+    this.assertDerivedState();
     if (this.options.purePositionDecoder !== true)
       throw new TypeError(
         "Ordinary immutable-run editing requires a pure decoder opt in.",
@@ -538,6 +551,7 @@ class AutomergeImmutableRunCarrier<
     editorUtf16Offset: number,
     affinity: QualificationTextAffinity,
   ): QualificationStableTextPosition {
+    this.assertDerivedState();
     const descriptor = this.view.descriptorOf(inlineContentId);
     if (descriptor?.kind !== "text")
       throw new TypeError("Stable position target is not text.");
@@ -557,7 +571,8 @@ class AutomergeImmutableRunCarrier<
   public resolveStableTextPosition(
     position: QualificationStableTextPosition,
   ): number | undefined {
-    if (position.candidate !== "automerge") return undefined;
+    if (!this.derivedStateValid || position.candidate !== "automerge")
+      return undefined;
     const descriptor = this.view.descriptorOf(position.inlineContentId);
     if (
       descriptor?.kind !== "text" ||
@@ -596,9 +611,39 @@ class AutomergeImmutableRunCarrier<
       context,
       positionCodec: this.positionCodec,
     });
-    this.native.publish(command);
-    this.adopt(command);
+    this.publishPrepared(command);
+  }
+
+  private publishPrepared(command: PreparedImmutableRunCommandV1): void {
+    try {
+      this.native.publish(command);
+    } catch (error) {
+      if (error instanceof ImmutableRunNativePublicationError)
+        this.invalidateDerivedState();
+      throw error;
+    }
+    try {
+      this.adopt(command);
+      this.ordinaryRevision = Symbol("immutable-run-ordinary");
+    } catch (error) {
+      // Native state already committed; no partially adopted projection may be
+      // exposed. Explicit cold validation recovers the actual committed state.
+      this.invalidateDerivedState();
+      throw error;
+    }
+  }
+
+  private invalidateDerivedState(): void {
+    this.derivedStateValid = false;
+    this.sourceIndexes.clear();
     this.ordinaryRevision = Symbol("immutable-run-ordinary");
+  }
+
+  private assertDerivedState(): void {
+    if (!this.derivedStateValid)
+      throw new TypeError(
+        "Immutable-run derived state requires explicit recovery.",
+      );
   }
 
   private publishInferredCopy(
@@ -749,9 +794,7 @@ class AutomergeImmutableRunCarrier<
         ],
       },
     });
-    this.native.publish(command);
-    this.adopt(command);
-    this.ordinaryRevision = Symbol("immutable-run-ordinary");
+    this.publishPrepared(command);
   }
 
   private resolveCopyReferent(reference: string): Readonly<{
@@ -836,6 +879,8 @@ class AutomergeImmutableRunCarrier<
   }
 
   private coldRefresh(): void {
+    // Recovery remains unavailable if validation or any rebuild step fails.
+    this.invalidateDerivedState();
     this.activation = this.native.activate();
     this.view.reset(
       this.activation.provider.view(this.activation.root),
@@ -845,7 +890,7 @@ class AutomergeImmutableRunCarrier<
     for (const entry of this.activation.entries)
       this.entries.set(encodeRefValue(entry.ref), entry);
     this.rebuildSelectedIndexes();
-    this.ordinaryRevision = Symbol("immutable-run-ordinary");
+    this.derivedStateValid = true;
   }
 }
 

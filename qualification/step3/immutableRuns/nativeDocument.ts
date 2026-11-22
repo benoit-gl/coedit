@@ -98,6 +98,24 @@ export interface ImmutableRunNativeCaptureV1 {
   readonly heads: readonly string[];
 }
 
+/** Failure after native publication was attempted, requiring derived-state recovery. */
+export class ImmutableRunNativePublicationError extends Error {
+  /**
+   * Retains the original native or post-publication replay failure for diagnostics.
+   *
+   * @param cause - Failure raised after the native mutation boundary.
+   */
+  public constructor(cause: unknown) {
+    super(
+      "Immutable-run native publication failed; explicit recovery is required.",
+      {
+        cause,
+      },
+    );
+    this.name = "ImmutableRunNativePublicationError";
+  }
+}
+
 /**
  * One qualification-private Automerge document for immutable-run records.
  *
@@ -196,8 +214,11 @@ export class AutomergeImmutableRunDocument {
    * Publishes one prepared command atomically.
    *
    * @remarks The staged source-index replay is checked before native mutation
-   * and committed only after the native change succeeds. No caller callback or
-   * native proxy crosses this boundary.
+   * and committed only after the native change succeeds. Preparation errors
+   * preserve the accepted state. A native or replay failure throws
+   * {@link ImmutableRunNativePublicationError}; native state may already have
+   * committed, so the caller must recover its derived state by cold validation.
+   * No caller callback or native proxy crosses this boundary.
    */
   public publish(command: PreparedImmutableRunCommandV1): void {
     command.cacheReplay.assertCurrent();
@@ -218,30 +239,38 @@ export class AutomergeImmutableRunDocument {
       throw new TypeError("Command manifest body is invalid.");
     const replacementEffectId =
       commandBody[0] === "restore" ? undefined : JSON.stringify(effect);
-    const next = A.change(
-      this.document,
-      { message: `immutable-run:${encodeRef(command.manifest.ref)}` },
-      (draft) => {
-        for (const entry of command.entries)
-          appendNativeRecord(draft.records, entry);
-        for (const output of command.nativeDelta.structural) {
-          if (output[0] === "placement")
-            draft.placements[output[1]] = cell(output[2]);
-          else if (output[0] === "inline-create")
-            draft.owners[output[1]] = cell(output[2]);
-        }
-        for (const output of command.nativeDelta.descriptors)
-          draft.descriptors[output[1]] = cell(
-            encodeDescriptor(output, replacementEffectId),
-          );
-        draft.semanticRoot = cell(encodeRef(command.manifest.ref));
-      },
-    );
-    this.document = next;
-    this.activation = undefined;
-    for (const [id, canonical] of pending)
-      this.canonicalByUuid.set(id, canonical);
-    command.cacheReplay.commit();
+    try {
+      const next = A.change(
+        this.document,
+        { message: `immutable-run:${encodeRef(command.manifest.ref)}` },
+        (draft) => {
+          for (const entry of command.entries)
+            appendNativeRecord(draft.records, entry);
+          for (const output of command.nativeDelta.structural) {
+            if (output[0] === "placement")
+              draft.placements[output[1]] = cell(output[2]);
+            else if (output[0] === "inline-create")
+              draft.owners[output[1]] = cell(output[2]);
+          }
+          for (const output of command.nativeDelta.descriptors)
+            draft.descriptors[output[1]] = cell(
+              encodeDescriptor(output, replacementEffectId),
+            );
+          draft.semanticRoot = cell(encodeRef(command.manifest.ref));
+        },
+      );
+      this.document = next;
+      this.activation = undefined;
+      for (const [id, canonical] of pending)
+        this.canonicalByUuid.set(id, canonical);
+      command.cacheReplay.commit();
+    } catch (error) {
+      // Preparation failures above never reach this boundary. A native throw or
+      // failed replay below it leaves derived state untrusted, even if the
+      // immutable native document still denotes the previous accepted state.
+      this.activation = undefined;
+      throw new ImmutableRunNativePublicationError(error);
+    }
   }
 
   /** Retains an observation as metadata without advancing the semantic root. */
@@ -255,14 +284,19 @@ export class AutomergeImmutableRunDocument {
       material,
       [...A.getHeads(this.document)].sort(),
     ]);
-    this.document = A.change(
-      this.document,
-      { message: "immutable-run:capture" },
-      (draft) => {
-        draft.captures[token] = cell(observation);
-      },
-    );
-    this.activation = undefined;
+    try {
+      this.document = A.change(
+        this.document,
+        { message: "immutable-run:capture" },
+        (draft) => {
+          draft.captures[token] = cell(observation);
+        },
+      );
+      this.activation = undefined;
+    } catch (error) {
+      this.activation = undefined;
+      throw new ImmutableRunNativePublicationError(error);
+    }
   }
 
   /** Resolves a retained observation through its closed native metadata cell. */
