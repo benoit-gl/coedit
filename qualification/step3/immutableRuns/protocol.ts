@@ -46,6 +46,18 @@ class RootClosure implements SourceClosure {
   }
 }
 
+/**
+ * Disposable source facts for exactly one validated root. No historical view
+ * retains this mutable summary. Erased offsets are charged to hidden source
+ * units, never to repeated projections of all previously reached source.
+ */
+interface SourceSummary {
+  atRoot: string;
+  readonly maxima: Map<string, bigint>;
+  readonly generations: Set<string>;
+  readonly erased: Map<string, Set<number>>;
+}
+
 interface RunFact {
   readonly entry: CanonicalRecordEntry;
   readonly generationKey: string;
@@ -183,7 +195,10 @@ export class ImmutableRunProtocolV1 {
   readonly #runSourceUnits: number;
   readonly #maximalRoots: readonly RecordRef[];
 
-  private constructor(entries: readonly CanonicalRecordEntry[]) {
+  private constructor(
+    entries: readonly CanonicalRecordEntry[],
+    sourceValidation: "incremental" | "reference",
+  ) {
     const byRef = new Map<string, CanonicalRecordEntry>();
     const byUuid = new Map<string, CanonicalRecordEntry>();
     for (const supplied of entries) {
@@ -283,7 +298,7 @@ export class ImmutableRunProtocolV1 {
         fail("Command member Ref names a root record.");
 
     this.#validateRootGraph();
-    this.#validateCommandsInCausalOrder();
+    this.#validateCommandsInCausalOrder(sourceValidation);
 
     const parentKeys = new Set<string>();
     for (const root of roots.values())
@@ -300,7 +315,23 @@ export class ImmutableRunProtocolV1 {
   public static validate(
     entries: readonly CanonicalRecordEntry[],
   ): ImmutableRunProtocolV1 {
-    return new ImmutableRunProtocolV1(entries);
+    return new ImmutableRunProtocolV1(entries, "incremental");
+  }
+
+  /**
+   * Validate with the standalone closure/projection source algorithm.
+   *
+   * @remarks
+   * This qualification reference route performs the same graph and membership
+   * checks as {@link validate}, without its disposable linear-tail source cache.
+   * It remains available for differential validation of valid and hostile input;
+   * callers still need the separate native and command validation described
+   * by this class contract.
+   */
+  public static validateReference(
+    entries: readonly CanonicalRecordEntry[],
+  ): ImmutableRunProtocolV1 {
+    return new ImmutableRunProtocolV1(entries, "reference");
   }
 
   /** Detached frozen snapshot of the protocol's decoded canonical entries. */
@@ -503,15 +534,88 @@ export class ImmutableRunProtocolV1 {
     }
   }
 
-  #validateCommandsInCausalOrder(): void {
+  #validateCommandsInCausalOrder(
+    sourceValidation: "incremental" | "reference",
+  ): void {
+    let summary: SourceSummary | undefined;
     for (const root of this.#rootOrder) {
-      if (root.entry.record[3] !== "manifest") continue;
+      if (root.entry.record[3] !== "manifest") {
+        summary = undefined;
+        continue;
+      }
       const body = tuple(root.entry.record[10], undefined, "Manifest body");
-      if (body[0] !== "genesis") this.#validateCommandSources(root);
+      if (body[0] === "genesis") {
+        if (sourceValidation === "incremental")
+          summary = this.#summarizeSources(root.entry);
+        continue;
+      }
+      // Only a contiguous apply tail advances mutable source facts. A restore,
+      // transition, join or branch switch first takes the unchanged reference
+      // path. A supported fallback command seeds its own exact resulting root.
+      const supported =
+        sourceValidation === "incremental" &&
+        body[0] === "apply" &&
+        !tuple(body[5], undefined, "Command operation rows").some(
+          (row) => tuple(row, 3, "Command operation row")[0] === "transition",
+        ) &&
+        !root.members.some((member) => member.record[3] === "transition-v1");
+      const cached =
+        supported && summary?.atRoot === refKey(root.parents[0]!.ref)
+          ? summary
+          : undefined;
+      this.#validateCommandSources(root, cached);
+      if (!supported) summary = undefined;
+      else if (cached === undefined)
+        summary = this.#summarizeSources(root.entry);
+      else cached.atRoot = refKey(root.entry.ref);
     }
   }
 
-  #validateCommandSources(root: RootNode): void {
+  #summarizeSources(root: CanonicalRecordEntry): SourceSummary {
+    const summary: SourceSummary = {
+      atRoot: refKey(root.ref),
+      maxima: new Map(),
+      generations: new Set(),
+      erased: new Map(),
+    };
+    for (const key of this.#closureKeys(root))
+      this.#extendSourceSummary(summary, this.#entries.get(key)!);
+    return summary;
+  }
+
+  #extendSourceSummary(
+    summary: SourceSummary,
+    entry: CanonicalRecordEntry,
+  ): void {
+    const record = entry.record;
+    if (!(
+      record[3] === "generation" ||
+      record[3] === "run" ||
+      record[3] === "erase"
+    ))
+      return;
+    const key = sourceGenerationKey(record);
+    const counter = BigInt(record[5]![0]);
+    if (counter > (summary.maxima.get(key) ?? -1n))
+      summary.maxima.set(key, counter);
+    if (record[3] === "generation") summary.generations.add(key);
+    if (record[3] !== "erase") return;
+    const body = tuple(record[10], 1, "Erase body");
+    for (const candidate of tuple(body[0], undefined, "Observed intervals")) {
+      const interval = tuple(candidate, 3, "Observed interval");
+      const runKey = refKeyValue(interval[0]);
+      let erased = summary.erased.get(runKey);
+      if (erased === undefined) {
+        erased = new Set();
+        summary.erased.set(runKey, erased);
+      }
+      const start = integer(interval[1], "Observed interval start");
+      const end = integer(interval[2], "Observed interval end");
+      for (let offset = start; offset < end; offset++) erased.add(offset);
+    }
+  }
+
+  #validateCommandSources(root: RootNode, summary?: SourceSummary): void {
     const manifest = root.entry;
     const body = tuple(manifest.record[10], 8, "Command body");
     const baseRoot = root.parents[0]!;
@@ -550,7 +654,10 @@ export class ImmutableRunProtocolV1 {
         commandReplica = clock[1];
         let maximum = maxima.get(generationKey);
         if (maximum === undefined) {
-          maximum = this.#maximumCounter(baseClosure, generationKey);
+          maximum =
+            summary === undefined
+              ? this.#maximumCounter(baseClosure, generationKey)
+              : (summary.maxima.get(generationKey) ?? -1n);
         }
         const counter = BigInt(clock[0]);
         if (kind === "generation") {
@@ -570,7 +677,12 @@ export class ImmutableRunProtocolV1 {
             entry,
             baseClosure,
             priorByGeneration,
+            summary,
           );
+        // The summary is private to this entire validation attempt. A later
+        // failure discards it with the candidate; it can never contaminate an
+        // adopted protocol or a different exact-root fallback.
+        if (summary !== undefined) this.#extendSourceSummary(summary, entry);
         maxima.set(generationKey, counter);
         priorByGeneration.set(generationKey, entry);
       }
@@ -610,31 +722,42 @@ export class ImmutableRunProtocolV1 {
     entry: CanonicalRecordEntry,
     baseClosure: SourceClosure,
     priorByGeneration: ReadonlyMap<string, CanonicalRecordEntry>,
+    summary?: SourceSummary,
   ): void {
     const body = tuple(entry.record[10], 1, "Erase body");
-    const available = new Set(baseClosure);
-    let prior = priorByGeneration.get(sourceGenerationKey(entry.record));
-    while (prior !== undefined) {
-      available.add(refKey(prior.ref));
-      const previousRef = prior.record[6]?.[1];
-      if (previousRef === null || previousRef === undefined) break;
-      prior = this.#entries.get(refKey(previousRef));
-    }
-    const generation = [...available]
-      .map((key) => this.#entries.get(key)!)
-      .find(
-        (candidate) =>
-          candidate.record[3] === "generation" &&
-          sourceGenerationKey(candidate.record) ===
-            sourceGenerationKey(entry.record),
+    let visible: ReadonlySet<string> | undefined;
+    if (summary === undefined) {
+      const available = new Set(baseClosure);
+      let prior = priorByGeneration.get(sourceGenerationKey(entry.record));
+      while (prior !== undefined) {
+        available.add(refKey(prior.ref));
+        const previousRef = prior.record[6]?.[1];
+        if (previousRef === null || previousRef === undefined) break;
+        prior = this.#entries.get(refKey(previousRef));
+      }
+      const generation = [...available]
+        .map((key) => this.#entries.get(key)!)
+        .find(
+          (candidate) =>
+            candidate.record[3] === "generation" &&
+            sourceGenerationKey(candidate.record) ===
+              sourceGenerationKey(entry.record),
+        );
+      if (generation === undefined)
+        fail("Observed intervals lack their generation source.");
+      visible = new Set(
+        this.#project(available, generation).units.map((unit) =>
+          unitKey(refKey(unit.run), unit.offset),
+        ),
       );
-    if (generation === undefined)
+    } else if (!summary.generations.has(sourceGenerationKey(entry.record))) {
       fail("Observed intervals lack their generation source.");
-    const visible = new Set(
-      this.#project(available, generation).units.map((unit) =>
-        unitKey(refKey(unit.run), unit.offset),
-      ),
-    );
+    }
+    // Every run was checked nonempty and rooted at start or an already
+    // available same-generation run. Exact immutable identities and causal
+    // source availability prove this graph is acyclic and connected, including
+    // across joined closures. Ordering affects position, never visibility:
+    // a reached source unit is visible exactly when no reached erase hides it.
     for (const candidate of tuple(body[0], undefined, "Observed intervals")) {
       const interval = tuple(candidate, 3, "Observed interval");
       const run = this.#resolveExact(interval[0], this.#entries);
@@ -653,7 +776,11 @@ export class ImmutableRunProtocolV1 {
       if (start < 0 || start >= end || end > source.length)
         fail("Observed interval is outside its exact run source.");
       for (let offset = start; offset < end; offset++)
-        if (!visible.has(unitKey(refKey(run.ref), offset)))
+        if (
+          summary === undefined
+            ? !visible!.has(unitKey(refKey(run.ref), offset))
+            : summary.erased.get(refKey(run.ref))?.has(offset) === true
+        )
           fail(
             "Observed interval contains source not visible in its exact base.",
           );

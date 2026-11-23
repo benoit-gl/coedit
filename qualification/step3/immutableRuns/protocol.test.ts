@@ -55,6 +55,10 @@ function command(
   batchNumber: number,
   inputs: readonly MemberInput[],
   effectId = `effect-${batchNumber}`,
+  commandKind: "apply" | "restore" = "apply",
+  category: "payload" | "restore" | "transition" = commandKind === "restore"
+    ? "restore"
+    : "payload",
 ): FixtureCommand {
   const batch = uuid(batchNumber);
   const effect = ["actor", effectId] as const;
@@ -82,7 +86,22 @@ function command(
     effect,
     batch,
     ["envelope", 0, 0],
-    ["apply", encodeAppliedEffectEnvelope(batch, [], [], [], undefined)],
+    [
+      commandKind,
+      commandKind === "apply"
+        ? encodeAppliedEffectEnvelope(batch, [], [], [], undefined)
+        : JSON.stringify({
+            kind: "restore",
+            authoringNonce: batch,
+            target: JSON.stringify({
+              rootId: uuid(2),
+              blockLiveness: [],
+              placements: [],
+              inlineContentOwners: [],
+              payloads: [],
+            }),
+          }),
+    ],
   ]);
   const members = inputs.map((input, index) =>
     commitRecordV1([
@@ -95,7 +114,7 @@ function command(
       input.base,
       effect,
       batch,
-      ["payload", 0, index],
+      [category, 0, index],
       input.body,
     ]),
   );
@@ -111,12 +130,12 @@ function command(
     batch,
     null,
     [
-      "apply",
+      commandKind,
       acceptedBase,
       context.ref,
       envelope.ref,
       null,
-      [["payload", 0, members.map((entry) => entry.ref)]],
+      [[category, 0, members.map((entry) => entry.ref)]],
       [],
       [],
     ],
@@ -199,7 +218,464 @@ function baseTextFixture() {
   };
 }
 
+// Build exact same-generation predecessor refs while allowing interleaved
+// generations. Recommitting prefixes preserves each earlier member's ordinal.
+function sourceCommand(
+  root: RecordRef,
+  batch: number,
+  inputs: readonly MemberInput[],
+): FixtureCommand {
+  const preceding = new Map<string, RecordRef>();
+  const prepared: MemberInput[] = [];
+  for (const input of inputs) {
+    const key = JSON.stringify(input.scope);
+    prepared.push({ ...input, base: [root, preceding.get(key) ?? null] });
+    const prefix = command(root, batch, prepared);
+    preceding.set(key, prefix.members.at(-1)!.ref);
+  }
+  return command(root, batch, prepared);
+}
+
+function expectEquivalent(
+  entries: readonly CanonicalRecordEntry[],
+  roots: readonly RecordRef[],
+  generations: readonly RecordRef[],
+): void {
+  const cached = ImmutableRunProtocolV1.validate(entries);
+  const reference = ImmutableRunProtocolV1.validateReference(entries);
+  expect(cached.maximalRoots).toEqual(reference.maximalRoots);
+  for (const root of roots) {
+    expect(cached.closure(root)).toEqual(reference.closure(root));
+    const reached = reference.closure(root);
+    for (const generation of generations)
+      if (reached.some((entry) => compareRefs(entry.ref, generation) === 0))
+        expect(cached.projectGeneration(root, generation)).toEqual(
+          reference.projectGeneration(root, generation),
+        );
+  }
+}
+
+function expectSameRejection(
+  entries: readonly CanonicalRecordEntry[],
+  expected?: RegExp,
+): void {
+  const error = (validate: typeof ImmutableRunProtocolV1.validate): string => {
+    try {
+      validate(entries);
+    } catch (caught) {
+      expect(caught).toBeInstanceOf(TypeError);
+      return (caught as TypeError).message;
+    }
+    throw new Error("Expected malformed source fixture to reject.");
+  };
+  const cachedError = error((input) => ImmutableRunProtocolV1.validate(input));
+  expect(cachedError).toBe(
+    error((input) => ImmutableRunProtocolV1.validateReference(input)),
+  );
+  if (expected !== undefined) expect(cachedError).toMatch(expected);
+}
+
+function randomSequence(seed: number): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state = (Math.imul(state, 1_664_525) + 1_013_904_223) >>> 0;
+    return state / 2 ** 32;
+  };
+}
+
 describe("immutable-run cold reference protocol", () => {
+  it.each([7, 91, 2026])(
+    "matches reference validation and complete projections on mixed source history seed %i",
+    // Revalidating every hostile prefix with the deliberately unoptimized
+    // reference algorithm is qualification work, not a latency assertion.
+    { timeout: 30_000 },
+    (seed) => {
+      const random = randomSequence(seed);
+      const fixture = baseTextFixture();
+      const entries = [fixture.bootstrap, ...fixture.initial.entries];
+      const replacement = sourceCommand(fixture.initial.root, 50_000, [
+        {
+          id: 600_000,
+          kind: "generation",
+          scope: ["text", fixture.inline, uuid(600_000)],
+          clock: ["0", uuid(42)],
+          base: null,
+          body: ["text/plain"],
+        },
+      ]);
+      entries.push(...replacement.entries);
+      const generations = [fixture.generation, replacement.members[0]!.ref];
+      const roots = [replacement.root];
+      let root = replacement.root;
+      for (let index = 0; index < 32; index++) {
+        // Deliberately switch exact roots, not just source text or generation.
+        if (index % 7 === 6) root = roots[Math.floor(random() * roots.length)]!;
+        const reference = ImmutableRunProtocolV1.validateReference(entries);
+        const inputs: MemberInput[] = [];
+        for (const generation of generations) {
+          const projection = reference.projectGeneration(root, generation);
+          const counter = projection.maximumCounter + 1n;
+          const scope = ["text", fixture.inline, generation[0]];
+          const id = 700_000 + index * 10 + inputs.length;
+          if (projection.units.length > 0 && random() < 0.55) {
+            const unit =
+              projection.units[Math.floor(random() * projection.units.length)]!;
+            inputs.push({
+              id,
+              kind: "erase",
+              scope,
+              clock: [counter.toString(), uuid(42)],
+              base: null,
+              body: [[[unit.run, unit.offset, unit.offset + 1]]],
+            });
+          } else {
+            const anchor =
+              projection.sourceUnits.length === 0 || random() < 0.25
+                ? null
+                : (() => {
+                    const unit =
+                      projection.sourceUnits[
+                        Math.floor(random() * projection.sourceUnits.length)
+                      ]!;
+                    return [unit.run, unit.offset + 1];
+                  })();
+            inputs.push({
+              id,
+              kind: "run",
+              scope,
+              clock: [counter.toString(), uuid(42)],
+              base: null,
+              body: [
+                anchor,
+                ["x", "😀", "é", "\ud800"][Math.floor(random() * 4)],
+                ["human", `seed-${seed}`],
+              ],
+            });
+          }
+        }
+        const authored = sourceCommand(root, 51_000 + index, inputs);
+        entries.push(...authored.entries);
+        root = authored.root;
+        roots.push(root);
+        if (index % 8 === 7) {
+          const joined = join(90_000 + index, [root, roots[roots.length - 3]!]);
+          entries.push(joined);
+          root = joined.ref;
+          roots.push(root);
+        }
+        // Invalid exact counters include arbitrary precision values; never
+        // round clocks through Number, even when the valid fixture is small.
+        const malformed = command(root, 100_000 + index, [
+          {
+            id: 1_100_000 + index,
+            kind: "run",
+            scope: ["text", fixture.inline, fixture.generation[0]],
+            clock: [(2n ** 70n + BigInt(index)).toString(), uuid(42)],
+            base: [root, null],
+            body: [null, "bad", origin],
+          },
+        ]);
+        expectSameRejection(
+          [...entries, ...malformed.entries],
+          /maximum plus one/u,
+        );
+        const nextCounter =
+          ImmutableRunProtocolV1.validateReference(entries).projectGeneration(
+            root,
+            fixture.generation,
+          ).maximumCounter + 1n;
+        const invalidReference = command(root, 120_000 + index, [
+          {
+            id: 1_200_000 + index,
+            kind: index % 2 === 0 ? "run" : "erase",
+            scope: ["text", fixture.inline, fixture.generation[0]],
+            clock: [nextCounter.toString(), uuid(42)],
+            base: [root, null],
+            body:
+              index % 2 === 0
+                ? [[[fixture.initialRun[0], "0".repeat(64)], 1], "bad", origin]
+                : [[[fixture.initialRun, 0, 3]]],
+          },
+        ]);
+        for (const order of [entries, [...entries].reverse()])
+          expectSameRejection(
+            [...order, ...invalidReference.entries],
+            index % 2 === 0 ? /missing or mismatched/u : /outside/u,
+          );
+      }
+      for (const order of [entries, [...entries].reverse(), rotate(entries)])
+        expectEquivalent(order, roots, generations);
+    },
+  );
+
+  it("preserves missing-generation and unavailable or cross-generation reference rejection", () => {
+    const bootstrap = genesis();
+    const scope = ["text", uuid(40), uuid(41)];
+    const orphan = sourceCommand(bootstrap.ref, 240_000, [
+      {
+        id: 240_001,
+        kind: "run",
+        scope,
+        clock: ["1", uuid(42)],
+        base: null,
+        body: [null, "source", origin],
+      },
+    ]);
+    // With no generation zero, the first run cannot use a positive counter.
+    // Preserve that rejection rather than synthesizing a generation in cache.
+    expectSameRejection([bootstrap, ...orphan.entries], /maximum plus one/u);
+    const noGeneration = sourceCommand(orphan.root, 241_000, [
+      {
+        id: 241_001,
+        kind: "erase",
+        scope,
+        clock: ["2", uuid(42)],
+        base: null,
+        body: [[[orphan.members[0]!.ref, 0, 1]]],
+      },
+    ]);
+    expectSameRejection(
+      [bootstrap, ...orphan.entries, ...noGeneration.entries],
+      /maximum plus one/u,
+    );
+
+    const fixture = baseTextFixture();
+    const sibling = sourceCommand(fixture.initial.root, 242_000, [
+      {
+        id: 242_001,
+        kind: "run",
+        scope,
+        clock: ["2", uuid(42)],
+        base: null,
+        body: [null, "sibling", origin],
+      },
+    ]);
+    const foreign = sourceCommand(fixture.initial.root, 245_000, [
+      {
+        id: 245_001,
+        kind: "generation",
+        scope: ["text", fixture.inline, uuid(245_001)],
+        clock: ["0", uuid(42)],
+        base: null,
+        body: ["text/plain"],
+      },
+    ]);
+    const entries = [
+      fixture.bootstrap,
+      ...fixture.initial.entries,
+      ...sibling.entries,
+      ...foreign.entries,
+    ];
+    for (const kind of ["run", "erase"] as const) {
+      const unseen = sourceCommand(fixture.initial.root, 243_000, [
+        {
+          id: 243_001,
+          kind,
+          scope,
+          clock: ["2", uuid(42)],
+          base: null,
+          body:
+            kind === "run"
+              ? [[sibling.members[0]!.ref, 1], "x", origin]
+              : [[[sibling.members[0]!.ref, 0, 1]]],
+        },
+      ]);
+      expectSameRejection([...entries, ...unseen.entries], /not available/u);
+      const cross = sourceCommand(foreign.root, 244_000, [
+        {
+          id: 244_001,
+          kind,
+          scope: ["text", fixture.inline, uuid(245_001)],
+          clock: ["1", uuid(42)],
+          base: null,
+          body:
+            kind === "run"
+              ? [[fixture.initialRun, 1], "x", origin]
+              : [[[fixture.initialRun, 0, 1]]],
+        },
+      ]);
+      expectSameRejection(
+        [...entries, ...cross.entries],
+        /crosses text generations/u,
+      );
+    }
+  });
+
+  it("keeps same-batch visibility, per-generation predecessors and UTF-16 boundaries identical", () => {
+    const fixture = baseTextFixture();
+    const scope = ["text", fixture.inline, fixture.generation[0]];
+    const runInput: MemberInput = {
+      id: 210_001,
+      kind: "run",
+      scope,
+      clock: ["2", uuid(42)],
+      base: null,
+      body: [[fixture.initialRun, 1], "😀xyz", origin],
+    };
+    const first = sourceCommand(fixture.initial.root, 210_000, [runInput]);
+    const inputs: MemberInput[] = [
+      runInput,
+      {
+        id: 210_004,
+        kind: "generation",
+        scope: ["text", fixture.inline, uuid(210_004)],
+        clock: ["0", uuid(42)],
+        base: null,
+        body: ["text/plain"],
+      },
+      {
+        id: 210_002,
+        kind: "erase",
+        scope,
+        clock: ["3", uuid(42)],
+        base: null,
+        // Standalone protocol permits UTF-16 unit boundaries; command replay
+        // separately enforces allowed splice boundaries. Preserve that contract.
+        body: [
+          [
+            [first.members[0]!.ref, 1, 2],
+            [first.members[0]!.ref, 3, 4],
+          ],
+        ],
+      },
+    ];
+    const authored = sourceCommand(fixture.initial.root, 210_000, inputs);
+    const entries = [
+      fixture.bootstrap,
+      ...fixture.initial.entries,
+      ...authored.entries,
+    ];
+    expectEquivalent(
+      entries,
+      [authored.root],
+      [fixture.generation, authored.members[1]!.ref],
+    );
+    // A no-op deletion emits no source member, not an empty erase interval.
+    const noOp = command(authored.root, 211_000, []);
+    expectEquivalent(
+      [...entries, ...noOp.entries],
+      [noOp.root],
+      [fixture.generation],
+    );
+    const malformed = sourceCommand(fixture.initial.root, 210_000, [
+      ...inputs,
+      {
+        id: 210_003,
+        kind: "erase",
+        scope,
+        clock: ["4", uuid(42)],
+        base: null,
+        body: [[[first.members[0]!.ref, 0, 3]]],
+      },
+    ]);
+    expectSameRejection([
+      fixture.bootstrap,
+      ...fixture.initial.entries,
+      ...malformed.entries,
+    ]);
+  });
+
+  it("reseeds exact branch and join erasures and falls back across restore and transition roots", () => {
+    const fixture = baseTextFixture();
+    const scope = ["text", fixture.inline, fixture.generation[0]];
+    const left = sourceCommand(fixture.initial.root, 220_000, [
+      {
+        id: 220_001,
+        kind: "erase",
+        scope,
+        clock: ["2", uuid(42)],
+        base: null,
+        body: [[[fixture.initialRun, 0, 1]]],
+      },
+    ]);
+    const right = sourceCommand(fixture.initial.root, 221_000, [
+      {
+        id: 221_001,
+        kind: "erase",
+        scope,
+        clock: ["2", uuid(42)],
+        base: null,
+        body: [[[fixture.initialRun, 1, 2]]],
+      },
+    ]);
+    const joined = join(222_000, [left.root, right.root]);
+    const restored = command(joined.ref, 223_000, [], undefined, "restore");
+    const transition = command(
+      restored.root,
+      224_000,
+      [],
+      undefined,
+      "apply",
+      "transition",
+    );
+    const inserted = sourceCommand(transition.root, 225_000, [
+      {
+        id: 225_001,
+        kind: "run",
+        scope,
+        clock: ["3", uuid(42)],
+        base: null,
+        body: [[fixture.initialRun, 1], "tail", origin],
+      },
+    ]);
+    const erased = sourceCommand(inserted.root, 226_000, [
+      {
+        id: 226_001,
+        kind: "erase",
+        scope,
+        clock: ["4", uuid(42)],
+        base: null,
+        body: [[[inserted.members[0]!.ref, 0, 4]]],
+      },
+    ]);
+    const entries = [
+      fixture.bootstrap,
+      ...fixture.initial.entries,
+      ...left.entries,
+      ...right.entries,
+      joined,
+      ...restored.entries,
+      ...transition.entries,
+      ...inserted.entries,
+      ...erased.entries,
+    ];
+    for (const order of [entries, [...entries].reverse(), rotate(entries)])
+      expectEquivalent(
+        order,
+        [
+          left.root,
+          right.root,
+          joined.ref,
+          restored.root,
+          inserted.root,
+          erased.root,
+        ],
+        [fixture.generation],
+      );
+    for (const base of [
+      joined.ref,
+      restored.root,
+      transition.root,
+      inserted.root,
+      erased.root,
+    ]) {
+      const bad = sourceCommand(base, 227_000, [
+        {
+          id: 227_001,
+          kind: "erase",
+          scope,
+          clock: [
+            base === erased.root ? "5" : base === inserted.root ? "4" : "3",
+            uuid(42),
+          ],
+          base: null,
+          body: [[[fixture.initialRun, 0, 1]]],
+        },
+      ]);
+      expectSameRejection([...entries, ...bad.entries]);
+    }
+  });
+
   it("projects a deep 12,000-unit source chain without recursive stack growth", () => {
     const source = "a".repeat(12_000);
     const bootstrap = genesis(source.length);
