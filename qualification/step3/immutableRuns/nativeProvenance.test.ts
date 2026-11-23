@@ -9,6 +9,10 @@ import {
 import { encodeEffectContext } from "../integrated/effectContext.js";
 import { createAutomergeImmutableRunCarrierFactory } from "./automergeCarrier.js";
 import { AutomergeImmutableRunDocument } from "./nativeDocument.js";
+import {
+  validateImmutableRunCommandsV1,
+  validateImmutableRunCommandsReferenceV1,
+} from "./commands.js";
 import { commitRecordV1, decodeRecordKeyV1 } from "./record.js";
 
 type Cell = Record<string, boolean>;
@@ -76,6 +80,72 @@ function nativeCommand() {
 }
 
 describe("immutable-run native provenance", { timeout: 120_000 }, () => {
+  it("matches independent command replay across fork, join, restore and generation replacement", () => {
+    const carrier = seed();
+    const captured = carrier.captureHistoricalState();
+    let effect = 0;
+    const edit = (target: typeof carrier, actorId: string): void => {
+      target.applyChange({
+        context: { actorId, effectId: `cursor-${effect++}` },
+        payloads: [
+          {
+            kind: "insert-text",
+            inlineContentId: inline,
+            offset: 1,
+            text: "X",
+            origin,
+          },
+        ],
+      });
+    };
+    const check = (): void => {
+      const { protocol, provider } = AutomergeImmutableRunDocument.load(
+        carrier.encode(),
+      ).activate();
+      const reference = validateImmutableRunCommandsReferenceV1(
+        protocol,
+        provider,
+      );
+      expect(
+        validateImmutableRunCommandsV1(
+          [...protocol.canonicalEntries].reverse(),
+          provider,
+        ).commandRoots,
+      ).toEqual(reference.commandRoots);
+      expect(factory.load(carrier.encode()).snapshot()).toEqual(
+        carrier.snapshot(),
+      );
+    };
+    edit(carrier, "left");
+    const sibling = factory.load(carrier.encode());
+    edit(carrier, "left");
+    edit(sibling, "right");
+    carrier.mergeEncoded(sibling.encode());
+    edit(carrier, "joined");
+    check();
+    carrier.restoreHistoricalState(captured, {
+      actorId: "history",
+      effectId: "cursor-restore",
+    });
+    edit(carrier, "restored");
+    check();
+    carrier.applyChange({
+      context: { actorId: "replacement", effectId: "cursor-replace" },
+      payloads: [
+        {
+          kind: "replace-text",
+          inlineContentId: inline,
+          mediaType: "text/plain",
+          text: "new😀",
+          origin,
+        },
+      ],
+    });
+    edit(carrier, "replacement");
+    edit(carrier, "replacement");
+    check();
+  });
+
   it("matches reference liveness at historical roots, concurrent joins and restore", () => {
     const block = parseBlockId(uuid(3));
     const carrier = factory.create(root);

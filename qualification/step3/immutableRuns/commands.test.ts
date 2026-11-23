@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   parseBlockId,
@@ -15,6 +15,7 @@ import {
 import {
   prepareImmutableRunApplyCommandV1,
   validateImmutableRunCommandsV1,
+  validateImmutableRunCommandsReferenceV1,
   type ImmutableRunAuthoredOutputsV1,
   type ImmutableRunColdViewProviderV1,
   type ImmutableRunNativeDescriptorV1,
@@ -223,7 +224,123 @@ function applyView(prior: View, command: PreparedImmutableRunCommandV1): View {
   return next;
 }
 
+function ordinaryHistory() {
+  const bootstrap = genesis();
+  const provider = new Provider();
+  const entries = [bootstrap];
+  const commands: PreparedImmutableRunCommandV1[] = [];
+  const uuids = new Uuids(70_000);
+  let view = new View(bootstrap.ref);
+  let indexes: ReadonlyMap<string, ImmutableRunSourceIndex> = new Map();
+  function append(
+    change: Parameters<typeof prepareImmutableRunApplyCommandV1>[0]["change"],
+  ): void {
+    const command = prepareImmutableRunApplyCommandV1({
+      state: state(view, indexes),
+      context: { actorId: "history", effectId: `edit-${commands.length}` },
+      positionCodec,
+      uuids,
+      change,
+    });
+    register(provider, command, view);
+    provider.views.set(refKey(view.root), view);
+    command.cacheReplay.commit();
+    indexes = adoptIndexes(indexes, command);
+    view = applyView(view, command);
+    entries.push(...command.entries);
+    commands.push(command);
+  }
+  append({
+    inlineContents: [textId, opaqueId].map((inlineContentId) => ({
+      inlineContentId,
+      blockId: rootId,
+    })),
+    payloads: [textId, opaqueId].map((inlineContentId) => ({
+      kind: "replace-text",
+      inlineContentId,
+      mediaType: "text/plain",
+      text: "a😀b",
+      origin,
+    })),
+  });
+  for (let edit = 0; edit < 16; edit++)
+    append({
+      payloads: [textId, opaqueId].map((inlineContentId) =>
+        edit % 2 === 0
+          ? {
+              kind: "insert-text" as const,
+              inlineContentId,
+              offset: 0,
+              text: "X",
+              origin: automation,
+            }
+          : {
+              kind: "delete-text" as const,
+              inlineContentId,
+              start: 0,
+              end: 1,
+            },
+      ),
+    });
+  return { entries, commands, provider, indexes };
+}
+
 describe("immutable-run command preparation and cold validation", () => {
+  it("reuses exact-generation replay indexes and matches independent shuffled reference replay", () => {
+    const fixture = ordinaryHistory();
+    const protocol = ImmutableRunProtocolV1.validate(
+      [...fixture.entries].reverse(),
+    );
+    const projection = vi.spyOn(protocol, "projectGeneration");
+    const optimized = validateImmutableRunCommandsV1(
+      protocol,
+      fixture.provider,
+    );
+    expect(projection).toHaveBeenCalledTimes(2);
+    projection.mockClear();
+    const reference = validateImmutableRunCommandsReferenceV1(
+      protocol,
+      fixture.provider,
+    );
+    expect(reference.commandRoots).toEqual(optimized.commandRoots);
+    expect(projection).toHaveBeenCalledTimes(32);
+    expect(
+      [...fixture.indexes.values()].map((index) => index.read(0, index.length)),
+    ).toEqual([[{ text: "a😀b", origin }], [{ text: "a😀b", origin }]]);
+  });
+
+  it("discards private replay state after a late native-output failure", () => {
+    const fixture = ordinaryHistory();
+    const protocol = ImmutableRunProtocolV1.validate(fixture.entries);
+    const final = fixture.commands.at(-1)!;
+    const key = refKey(final.manifest.ref);
+    const correct = fixture.provider.outputs.get(key)!;
+    const before = [...fixture.indexes.values()].map((index) =>
+      index.read(0, index.length),
+    );
+    fixture.provider.outputs.set(
+      key,
+      fixture.provider.outputs.get(refKey(fixture.commands[0]!.manifest.ref))!,
+    );
+    for (const validate of [
+      validateImmutableRunCommandsV1,
+      validateImmutableRunCommandsReferenceV1,
+    ])
+      expect(() => validate(protocol, fixture.provider)).toThrow(
+        /Native authored outputs/u,
+      );
+    expect(
+      [...fixture.indexes.values()].map((index) => index.read(0, index.length)),
+    ).toEqual(before);
+    fixture.provider.outputs.set(key, correct);
+    expect(
+      validateImmutableRunCommandsV1(protocol, fixture.provider).commandRoots,
+    ).toEqual(
+      validateImmutableRunCommandsReferenceV1(protocol, fixture.provider)
+        .commandRoots,
+    );
+  });
+
   it("authors same-command ownership with chunked text and opaque initialization", () => {
     const bootstrap = genesis();
     const base = new View(bootstrap.ref);
@@ -790,12 +907,14 @@ function validateForgery(
     descriptors: original.nativeDelta.descriptors,
   });
   const entries = [bootstrap, ...forged.entries];
-  validateImmutableRunCommandsV1(
+  const input =
     inputKind === "protocol"
       ? ImmutableRunProtocolV1.validate(entries)
-      : entries,
-    provider,
-  );
+      : entries;
+  expect(() =>
+    validateImmutableRunCommandsReferenceV1(input, provider),
+  ).toThrow();
+  validateImmutableRunCommandsV1(input, provider);
 }
 
 function nonEnumerableMap(

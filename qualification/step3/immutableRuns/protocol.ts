@@ -339,6 +339,11 @@ export class ImmutableRunProtocolV1 {
     return Object.freeze([...this.#entries.values()]);
   }
 
+  /** Exact validated roots in parent-before-child causal order. */
+  public get causalRoots(): readonly RecordRef[] {
+    return Object.freeze(this.#rootOrder.map((node) => node.entry.ref));
+  }
+
   /** The unique trusted-lineage bootstrap manifest Ref. */
   public get genesisRoot(): RecordRef {
     return this.#genesis.ref;

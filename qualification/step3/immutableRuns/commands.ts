@@ -2320,6 +2320,11 @@ export interface ValidatedImmutableRunCommandsV1 {
   readonly commandRoots: readonly RecordRef[];
 }
 
+interface CommandReplayCursor {
+  atRoot: RecordRef;
+  readonly indexes: Map<string, ImmutableRunSourceIndex>;
+}
+
 /**
  * Validate closed apply-command semantics over a complete immutable record set.
  *
@@ -2331,11 +2336,35 @@ export interface ValidatedImmutableRunCommandsV1 {
  * deliberately refused until its retained-capture materialization adapter is
  * supplied; it is never accepted as an apply command by omission.
  * A validated protocol input reuses its source validation and owned canonical
- * entries; complete command and native-output validation still runs.
+ * entries; complete command and native-output validation still runs. Contiguous
+ * ordinary fine edits reuse invocation-private indexes at the exact accepted
+ * base. Branches, joins, structural edits, replacements, restores and transitions
+ * rebuild projections. Failed validation discards the private replay cursor.
  */
 export function validateImmutableRunCommandsV1(
   input: readonly CanonicalRecordEntry[] | ImmutableRunProtocolV1,
   provider: ImmutableRunColdViewProviderV1,
+): ValidatedImmutableRunCommandsV1 {
+  return validateCommands(input, provider, "incremental");
+}
+
+/**
+ * Validate every command with independent exact-base source projections.
+ *
+ * @remarks Qualification reference route for replay-cursor differential checks.
+ * All immutable command and native provenance checks still run.
+ */
+export function validateImmutableRunCommandsReferenceV1(
+  input: readonly CanonicalRecordEntry[] | ImmutableRunProtocolV1,
+  provider: ImmutableRunColdViewProviderV1,
+): ValidatedImmutableRunCommandsV1 {
+  return validateCommands(input, provider, "reference");
+}
+
+function validateCommands(
+  input: readonly CanonicalRecordEntry[] | ImmutableRunProtocolV1,
+  provider: ImmutableRunColdViewProviderV1,
+  replay: "incremental" | "reference",
 ): ValidatedImmutableRunCommandsV1 {
   const protocol =
     input instanceof ImmutableRunProtocolV1
@@ -2345,15 +2374,35 @@ export function validateImmutableRunCommandsV1(
     input instanceof ImmutableRunProtocolV1 ? input.canonicalEntries : input;
   const byRef = new Map(entries.map((entry) => [refKey(entry.ref), entry]));
   const roots: RecordRef[] = [];
-  for (const entry of entries) {
-    if (entry.record[3] !== "manifest") continue;
+  // Only this abort-on-error invocation owns these mutable indexes. They never
+  // escape to native views, accepted activation or the carrier's warm caches.
+  let cursor: CommandReplayCursor | undefined;
+  const ordered =
+    replay === "incremental"
+      ? protocol.causalRoots.map((ref) => byRef.get(refKey(ref))!)
+      : entries;
+  for (const entry of ordered) {
+    if (entry.record[3] !== "manifest") {
+      if (entry.record[3] === "join") cursor = undefined;
+      continue;
+    }
     const body = entry.record[10];
     if (body[0] === "genesis") continue;
     if (!isCommandBody(body))
       throw new TypeError("Manifest command body is invalid.");
     if (body[0] === "apply")
-      validateApplyManifest(entry, body, byRef, protocol, provider);
-    else validateRestoreManifest(entry, body, byRef, protocol, provider);
+      cursor = validateApplyManifest(
+        entry,
+        body,
+        byRef,
+        protocol,
+        provider,
+        replay === "incremental" ? { cursor } : undefined,
+      );
+    else {
+      cursor = undefined;
+      validateRestoreManifest(entry, body, byRef, protocol, provider);
+    }
     roots.push(entry.ref);
   }
   roots.sort(compareRefs);
@@ -2930,7 +2979,8 @@ function validateApplyManifest(
   entries: ReadonlyMap<string, CanonicalRecordEntry>,
   protocol: ImmutableRunProtocolV1,
   provider: ImmutableRunColdViewProviderV1,
-): void {
+  replay: Readonly<{ cursor: CommandReplayCursor | undefined }> | undefined,
+): CommandReplayCursor | undefined {
   const authoredBase = provider.authoredBase(manifest.ref);
   if (!sameRef(authoredBase.semanticRoot, body[1]))
     throw new TypeError(
@@ -2982,6 +3032,26 @@ function validateApplyManifest(
     throw new TypeError("Envelope payload evidence presence is incorrect.");
 
   const rows = rowMap(body[5]);
+  // This first cursor supports only ordinary fine edits. Every other form takes
+  // the unchanged projection path and ends the contiguous exact-root segment.
+  const eligible =
+    replay !== undefined &&
+    decodedEnvelope.deleteBlockIds.length === 0 &&
+    decodedEnvelope.placements.length === 0 &&
+    decodedEnvelope.inlineContents.length === 0 &&
+    body[6].length === 0 &&
+    body[7].length === 0 &&
+    !rows.has("transition:0") &&
+    !("source" in decodedContext) &&
+    operations.every(
+      ({ operation }) =>
+        operation.kind === "insert-text" || operation.kind === "delete-text",
+    );
+  const cursor = eligible
+    ? replay.cursor !== undefined && sameRef(replay.cursor.atRoot, body[1])
+      ? replay.cursor
+      : { atRoot: body[1], indexes: new Map<string, ImmutableRunSourceIndex>() }
+    : undefined;
   validateStructuralRows(
     decodedEnvelope,
     body,
@@ -2998,6 +3068,7 @@ function validateApplyManifest(
     accepted,
     protocol,
     identity,
+    cursor,
   );
   const transitionRow = rows.get("transition:0");
   if (transitionRow !== undefined)
@@ -3026,6 +3097,11 @@ function validateApplyManifest(
     JSON.stringify(actual.descriptors) !== JSON.stringify(body[7])
   )
     throw new TypeError("Native authored outputs differ from the manifest.");
+  // Helpers stage and commit individual operation patches into private indexes.
+  // A later failure aborts the entire invocation; never catch it and resume this
+  // cursor. Only complete command/native validation advances its exact root.
+  if (cursor !== undefined) cursor.atRoot = manifest.ref;
+  return cursor;
 }
 
 function validateApplyTransition(
@@ -3417,6 +3493,7 @@ function validatePayloadRows(
   accepted: ImmutableRunNativeViewV1,
   protocol: ImmutableRunProtocolV1,
   effectIdentity: string,
+  cursor: CommandReplayCursor | undefined,
 ): void {
   const created = new Map<InlineContentId, BlockId>();
   const placed = new Set<BlockId>();
@@ -3448,15 +3525,21 @@ function validatePayloadRows(
     let target = working.get(operation.inlineContentId);
     if (target === undefined) {
       const descriptor = accepted.descriptorOf(operation.inlineContentId);
-      target = {
-        descriptor,
-        index:
-          descriptor?.kind === "text"
-            ? new ImmutableRunSourceIndex(
-                protocol.projectGeneration(body[1], descriptor.generation),
-              )
-            : undefined,
-      };
+      let sourceIndex: ImmutableRunSourceIndex | undefined;
+      if (descriptor?.kind === "text") {
+        const key = JSON.stringify([
+          operation.inlineContentId,
+          descriptor.generation,
+        ]);
+        sourceIndex = cursor?.indexes.get(key);
+        if (sourceIndex === undefined) {
+          sourceIndex = new ImmutableRunSourceIndex(
+            protocol.projectGeneration(body[1], descriptor.generation),
+          );
+          cursor?.indexes.set(key, sourceIndex);
+        }
+      }
+      target = { descriptor, index: sourceIndex };
       working.set(operation.inlineContentId, target);
     }
     const members = rowMembers(rows, "payload", index, entries);
