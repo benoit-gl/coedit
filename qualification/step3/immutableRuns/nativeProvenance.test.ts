@@ -193,11 +193,12 @@ describe("immutable-run native provenance", { timeout: 120_000 }, () => {
         entry.record[3] === "manifest" &&
         entry.record[7]?.[1] === "observed-capture",
     )!;
-    const expected = {
+    const expected = accepted.provider.resolveReferent(observed, manifest.ref);
+    expect(expected).toMatchObject({
       kind: "capture",
       root: initial.root,
-      material: expect.any(String),
-    };
+    });
+    expect(typeof expected?.material).toBe("string");
     expect(accepted.provider.authoredBase(manifest.ref).semanticRoot).toEqual(
       initial.root,
     );
