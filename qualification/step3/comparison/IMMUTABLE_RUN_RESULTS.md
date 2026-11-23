@@ -211,10 +211,39 @@ A candidate design is to derive compact summaries from the actual native operati
 validated, retaining exact authored outputs, dependency metadata and semantic root. Only after preserving all
 current native and semantic validation obligations could decoded operations and validation-only indexes be
 released. Historical metadata and the native document remain necessary. Finalizing summaries after the full
-validator is a smaller alternative but retains decoded operations during cold validation and its peak. Neither
-approach has been implemented or measured, and changing validation ordering needs careful equivalence checks.
+validator is a smaller alternative but retains decoded operations during cold validation and its peak.
+This was a design proposal at the investigation checkpoint. Compact validated summaries have since been
+implemented and measured in the bounded checkpoint below; validation ordering requires equivalence checks.
 
 A separate trie-layout change could reduce native record maps and decoded map-creation operations, but requires
 an explicitly compatible layout and conflict/authorization tests. It is not established by these observations
 that either change will let the 5,000-command lifecycle complete. Focused tests of the existing implementation
 passed (4 files, 34 tests); they did not test a release implementation.
+
+## Compact validated provenance H500 checkpoint
+
+The [bounded comparison report](evidence/immutable-runs/compact-provenance/REPORT.md) and
+[artifact manifest](evidence/immutable-runs/compact-provenance/manifest.json) preserve before/after workers,
+source manifests, exact scratch scripts and phase-traced lifecycle journals with separate sidecars.
+The change validates actual native command writes before retaining compact authored-output, dependency-metadata
+and semantic-root summaries; constructor-only validation maps and decoded operations are then collectible.
+
+With identical worker bytes, source-bound H500 fixtures and the default heap limit, fresh-load post-GC heapUsed
+fell from 110,755,232 to 73,765,512 B (33.40%); after subtracting each worker's baseline, it fell from
+80,311,936 to 43,273,616 B (46.12%). Two-carrier overlap baseline-adjusted heapUsed fell from 153,739,432
+to 79,706,064 B (48.16%). All visible text/Origin checks and 3511-record counts match; after releasing all
+carriers, heapUsed is near 33.5 MB in both versions. Explicit GC and snapshots make these invasive diagnostics,
+not clean timing measurements or complete native/WASM memory attribution. Compact snapshot dominators are not
+established by this checkpoint.
+
+Before workers bind clean `7926007230e6a7244ad76596bf67bf5334bbaaeb`; compact workers bind
+`3bedabde9db40a73a8ead69148e4059997073a67`. Compact overlap records a dirty test file only;
+all 98 runtime source hashes match that revision. The separately completed compact lifecycle binds clean
+`175c0146a08b60e81ea7657621ad7aab50ded8c6`, with the identical compact runtime source manifest.
+Both lifecycle journals end with `complete: true` and verified semantics. Highest sampled sidecar heapUsed
+fell from 955,744,392 B at merge end to 727,063,552 B at the final checkpoint (23.93%); these are sampled
+maxima at different phases, without explicit GC, not continuous peaks or retained-size measurements.
+
+This bounded H500 improvement does not resolve the preserved 5000 failure, establish larger-history scaling,
+complete every qualification dimension or change mandatory eligibility/carrier selection. Shared CPU resources
+and diagnostic writes also prevent controlled before/after timing claims.

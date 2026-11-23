@@ -1,0 +1,320 @@
+{
+  "description": "Bounded H500 compact provenance checkpoint; no snapshots or binary fixtures included",
+  "artifacts": [
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution/build-500.jsonl",
+      "copied": "before/build-500.jsonl",
+      "originalBytes": 424,
+      "originalSha256": "fbfedbc348ebc0b3c5d3e110c89091547806c1887f0299beb78afd7f0bfba2dd",
+      "copiedBytes": 424,
+      "copiedSha256": "fbfedbc348ebc0b3c5d3e110c89091547806c1887f0299beb78afd7f0bfba2dd",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution/build-500.manifest.json",
+      "copied": "before/build-500.manifest.json",
+      "originalBytes": 18874,
+      "originalSha256": "28e992de0c7ebdee3ac0c9036e43bea66ed12045ca2794d856eea52b43c76f64",
+      "copiedBytes": 18867,
+      "copiedSha256": "f31d0c7148d46f8bf25a4372c5c0017da235b1762839b22e63064acb30c3f04f",
+      "copy": "JSON whitespace formatting only"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution/build-500.stdout.log",
+      "copied": "before/build-500.stdout.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copiedBytes": 0,
+      "copiedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution/build-500.stderr.log",
+      "copied": "before/build-500.stderr.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copiedBytes": 0,
+      "copiedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution/load-500.jsonl",
+      "copied": "before/load-500.jsonl",
+      "originalBytes": 1894,
+      "originalSha256": "325f2e1e1b015bea73f7c177b673c3499500fe8add32067796291d9ee0f75677",
+      "copiedBytes": 1894,
+      "copiedSha256": "325f2e1e1b015bea73f7c177b673c3499500fe8add32067796291d9ee0f75677",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution/load-500.manifest.json",
+      "copied": "before/load-500.manifest.json",
+      "originalBytes": 18872,
+      "originalSha256": "638c859ce7ad45ccb963b241e5dd67ab99e547e84dd1afd3902c90e77a96d838",
+      "copiedBytes": 18865,
+      "copiedSha256": "7b46d18556dd3b8f21eada88ca038ae6ad0402cbaf4688000daf6da46d619b83",
+      "copy": "JSON whitespace formatting only"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution/load-500.stdout.log",
+      "copied": "before/load-500.stdout.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copiedBytes": 0,
+      "copiedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution/load-500.stderr.log",
+      "copied": "before/load-500.stderr.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copiedBytes": 0,
+      "copiedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution/overlap-500.jsonl",
+      "copied": "before/overlap-500.jsonl",
+      "originalBytes": 4116,
+      "originalSha256": "979ca07063c16a886ddd8a6251f91f1564d9d37600c9993dab1083530a38a5d0",
+      "copiedBytes": 4116,
+      "copiedSha256": "979ca07063c16a886ddd8a6251f91f1564d9d37600c9993dab1083530a38a5d0",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution/overlap-500.manifest.json",
+      "copied": "before/overlap-500.manifest.json",
+      "originalBytes": 18878,
+      "originalSha256": "3f2ed4ebd4eec36da1e3c72d23d7238265f88ad0d13babf4b18f173d28cb7626",
+      "copiedBytes": 18871,
+      "copiedSha256": "47ada3f022ee1cb3da11b0c8df7e8a972359247837ba356f2d7f063c1198b9b3",
+      "copy": "JSON whitespace formatting only"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution/overlap-500.stdout.log",
+      "copied": "before/overlap-500.stdout.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copiedBytes": 0,
+      "copiedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution/overlap-500.stderr.log",
+      "copied": "before/overlap-500.stderr.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copiedBytes": 0,
+      "copiedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution/fixture-500.bin.json",
+      "copied": "before/fixture-500.bin.json",
+      "originalBytes": 21628,
+      "originalSha256": "c8cb399dfef0eed26001fe3d0584ec33b26235b4862c14f810402a1f7516de9e",
+      "copiedBytes": 21617,
+      "copiedSha256": "f8df04de800dc987d3cf8cefb3a68802da6fb7de80f2b8fe0ab37299475fa742",
+      "copy": "JSON whitespace formatting only"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution/fixture-worker.mjs",
+      "copied": "before/fixture-worker.mjs.txt",
+      "originalBytes": 6920,
+      "originalSha256": "cbc7fb89807881c43fcc7ac01355fd73435c721a9690ec6585fc773de7816bb4",
+      "copiedBytes": 6920,
+      "copiedSha256": "cbc7fb89807881c43fcc7ac01355fd73435c721a9690ec6585fc773de7816bb4",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution-compact/build-500.jsonl",
+      "copied": "after/build-500.jsonl",
+      "originalBytes": 438,
+      "originalSha256": "417d724b619565654c9fde5bbb4118161ee6856e871274cecd63670955993f75",
+      "copiedBytes": 438,
+      "copiedSha256": "417d724b619565654c9fde5bbb4118161ee6856e871274cecd63670955993f75",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution-compact/build-500.manifest.json",
+      "copied": "after/build-500.manifest.json",
+      "originalBytes": 18890,
+      "originalSha256": "8bc3e8394680bf05e14214ad6ad996a36c3c97327d0ef1df2acad51150111abd",
+      "copiedBytes": 18883,
+      "copiedSha256": "6b8452b7a9f429597365c0c74cdaf9bdd072a0a58c60c73b5187076fb2766632",
+      "copy": "JSON whitespace formatting only"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution-compact/build-500.stdout.log",
+      "copied": "after/build-500.stdout.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copiedBytes": 0,
+      "copiedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution-compact/build-500.stderr.log",
+      "copied": "after/build-500.stderr.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copiedBytes": 0,
+      "copiedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution-compact/load-500.jsonl",
+      "copied": "after/load-500.jsonl",
+      "originalBytes": 1911,
+      "originalSha256": "af687b5540ef674897be1f7a58a973a1d6dd25be981c89b7d108c375e69de2f2",
+      "copiedBytes": 1911,
+      "copiedSha256": "af687b5540ef674897be1f7a58a973a1d6dd25be981c89b7d108c375e69de2f2",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution-compact/load-500.manifest.json",
+      "copied": "after/load-500.manifest.json",
+      "originalBytes": 18888,
+      "originalSha256": "d08b23354eededb34164989fe4fcb4359db055a67a7b63f27ec2b6ebd497e298",
+      "copiedBytes": 18881,
+      "copiedSha256": "5d91f5940d8bec7f3f3fc39a75dd92d7f97cef730966448916222d85e29d457c",
+      "copy": "JSON whitespace formatting only"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution-compact/load-500.stdout.log",
+      "copied": "after/load-500.stdout.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copiedBytes": 0,
+      "copiedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution-compact/load-500.stderr.log",
+      "copied": "after/load-500.stderr.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copiedBytes": 0,
+      "copiedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution-compact/overlap-500.jsonl",
+      "copied": "after/overlap-500.jsonl",
+      "originalBytes": 4162,
+      "originalSha256": "02f4f9264db22b315a70efba688c9c0df45cfa219a4ba90cdea923eda958a9db",
+      "copiedBytes": 4162,
+      "copiedSha256": "02f4f9264db22b315a70efba688c9c0df45cfa219a4ba90cdea923eda958a9db",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution-compact/overlap-500.manifest.json",
+      "copied": "after/overlap-500.manifest.json",
+      "originalBytes": 18954,
+      "originalSha256": "99ac41140e98155f55b36c2b844d1722416005126807bb75a3c0bb90839a24d3",
+      "copiedBytes": 18947,
+      "copiedSha256": "8c64a2399a304217c7534f028c1ce1cbcffa3e7760341032f51caea463971afa",
+      "copy": "JSON whitespace formatting only"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution-compact/overlap-500.stdout.log",
+      "copied": "after/overlap-500.stdout.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copiedBytes": 0,
+      "copiedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution-compact/overlap-500.stderr.log",
+      "copied": "after/overlap-500.stderr.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copiedBytes": 0,
+      "copiedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution-compact/fixture-500.bin.json",
+      "copied": "after/fixture-500.bin.json",
+      "originalBytes": 21652,
+      "originalSha256": "3b4c25c042bf761ef33e098081b745fc23780a9eea431c3e35a1823e0abb27fb",
+      "copiedBytes": 21641,
+      "copiedSha256": "ec7dc1e976be5b932e5f8d9ed9fd0e95ad84fa54b54800e5ce9fb146165fe827",
+      "copy": "JSON whitespace formatting only"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/heap-attribution-compact/fixture-worker.mjs",
+      "copied": "after/fixture-worker.mjs.txt",
+      "originalBytes": 6920,
+      "originalSha256": "cbc7fb89807881c43fcc7ac01355fd73435c721a9690ec6585fc773de7816bb4",
+      "copiedBytes": 6920,
+      "copiedSha256": "cbc7fb89807881c43fcc7ac01355fd73435c721a9690ec6585fc773de7816bb4",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/phase-history500-main.jsonl",
+      "copied": "before/lifecycle-500-main.jsonl",
+      "originalBytes": 19997,
+      "originalSha256": "f2d60250b5c17dca3780ee4bc8cd84d57296a842f9a2a4d2c3c2b97ea13628b8",
+      "copiedBytes": 19997,
+      "copiedSha256": "f2d60250b5c17dca3780ee4bc8cd84d57296a842f9a2a4d2c3c2b97ea13628b8",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/phase-history500-trace.jsonl",
+      "copied": "before/lifecycle-500-trace.jsonl",
+      "originalBytes": 12664,
+      "originalSha256": "65c9cf087fd85b3874c1857ff29de208b89ecad25674bb1f761b42d7a8027821",
+      "copiedBytes": 12664,
+      "copiedSha256": "65c9cf087fd85b3874c1857ff29de208b89ecad25674bb1f761b42d7a8027821",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/phase-history500.log",
+      "copied": "before/lifecycle-500.log",
+      "originalBytes": 53,
+      "originalSha256": "1c216a692bb26c428243d38f73f199731e6dd6048af1aa65ae6b531ada71cc23",
+      "copiedBytes": 53,
+      "copiedSha256": "1c216a692bb26c428243d38f73f199731e6dd6048af1aa65ae6b531ada71cc23",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/phase-compact-history500-main.jsonl",
+      "copied": "after/lifecycle-500-main.jsonl",
+      "originalBytes": 20037,
+      "originalSha256": "67e0c91bd98ade31bd2ca054b86e869cbcf380f45e518e046ab671f563d80426",
+      "copiedBytes": 20037,
+      "copiedSha256": "67e0c91bd98ade31bd2ca054b86e869cbcf380f45e518e046ab671f563d80426",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/phase-compact-history500-trace.jsonl",
+      "copied": "after/lifecycle-500-trace.jsonl",
+      "originalBytes": 12631,
+      "originalSha256": "3ccfd3a22b0ef5cb74bd1a8a5fc909aa54709a42c4e652b0f4acfffe979b3f15",
+      "copiedBytes": 12631,
+      "copiedSha256": "3ccfd3a22b0ef5cb74bd1a8a5fc909aa54709a42c4e652b0f4acfffe979b3f15",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/phase-compact-history500.log",
+      "copied": "after/lifecycle-500.log",
+      "originalBytes": 0,
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copiedBytes": 0,
+      "copiedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/step3-immutable-runs-phase-trace.mjs",
+      "copied": "step3-immutable-runs-phase-trace.mjs.txt",
+      "originalBytes": 23075,
+      "originalSha256": "f2bdb3fb9494b19d1cd0f198dff6ba3339e348abf09b1a54405b124334db8d4c",
+      "copiedBytes": 23075,
+      "copiedSha256": "f2bdb3fb9494b19d1cd0f198dff6ba3339e348abf09b1a54405b124334db8d4c",
+      "copy": "byte-for-byte"
+    }
+  ]
+}
