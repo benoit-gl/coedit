@@ -247,3 +247,27 @@ maxima at different phases, without explicit GC, not continuous peaks or retaine
 This bounded H500 improvement does not resolve the preserved 5000 failure, establish larger-history scaling,
 complete every qualification dimension or change mandatory eligibility/carrier selection. Shared CPU resources
 and diagnostic writes also prevent controlled before/after timing claims.
+
+## Compact provenance H5000 diagnostic failure
+
+The compact-provenance [partial main journal](evidence/immutable-runs/compact-provenance/history-5000-main.jsonl),
+[phase sidecar](evidence/immutable-runs/compact-provenance/history-5000-trace.jsonl) and
+[fatal log](evidence/immutable-runs/compact-provenance/history-5000-heap-oom.log) preserve a failed H5000 diagnostic
+at clean source revision `175c0146a08b60e81ea7657621ad7aab50ded8c6`. Its 98 source hashes match the recorded
+revision and the compact H500 runtime manifest; its exact executed scratch script is preserved with the
+[comparison evidence](evidence/immutable-runs/compact-provenance/REPORT.md#compact-h5000-lifecycle-load-failure).
+The process exited with shell status 134 and a fatal JavaScript heap out-of-memory error.
+
+Setup, initial load and verified warm edits completed, followed by save. The last synchronous sidecar marker is
+`start lifecycle-load` (sequence 5), without an end marker. This localizes the fatal interval to the second load
+while the existing carrier is live, before subsequent lifecycle checks; it does not identify an internal load
+substage, exact retaining graph or allocation. There is no lifecycle result or final `complete: true`.
+Compact provenance did not make this H5000 lifecycle complete under the recorded conditions.
+
+Setup took 164.30 seconds and produced 6,714,004 encoded bytes; initial load took 388.26 seconds.
+The lifecycle-load start sample records heapUsed 1,424,972,304 B and RSS 2,203,488,256 B, before that operation.
+Sidecar samples record the default 2,348,810,240 B V8 heap limit; no explicit GC or heap snapshots were added.
+These diagnostic observations and shared-resource timings do not establish failure-time peaks, isolated native/WASM
+allocation or controlled performance comparisons. Main/sidecar bytes are preserved unchanged; only trailing line
+whitespace is removed from the copied fatal log. The source-bound failure remains separate from earlier failed runs
+and the successful H500 diagnostics, and does not by itself settle all mandatory eligibility or carrier selection.

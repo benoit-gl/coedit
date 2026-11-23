@@ -1,5 +1,5 @@
 {
-  "description": "Bounded H500 compact provenance checkpoint; no snapshots or binary fixtures included",
+  "description": "Bounded H500 comparison and failed compact H5000 phase-traced diagnostic; no snapshots or binary fixtures included",
   "artifacts": [
     {
       "original": "/workspace/work/merge10-implementation/heap-attribution/build-500.jsonl",
@@ -315,6 +315,33 @@
       "copiedBytes": 23075,
       "copiedSha256": "f2bdb3fb9494b19d1cd0f198dff6ba3339e348abf09b1a54405b124334db8d4c",
       "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/phase-compact-history5000-main.jsonl",
+      "copied": "history-5000-main.jsonl",
+      "originalBytes": 17752,
+      "originalSha256": "205e32024392baf416f6522d85952bb276d54202724f4c79174ffb9422d2d754",
+      "copiedBytes": 17752,
+      "copiedSha256": "205e32024392baf416f6522d85952bb276d54202724f4c79174ffb9422d2d754",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/phase-compact-history5000-trace.jsonl",
+      "copied": "history-5000-trace.jsonl",
+      "originalBytes": 1783,
+      "originalSha256": "54c987e513c1a432a347103e20e68371cfe468695147447e789bb3be86e659e4",
+      "copiedBytes": 1783,
+      "copiedSha256": "54c987e513c1a432a347103e20e68371cfe468695147447e789bb3be86e659e4",
+      "copy": "byte-for-byte"
+    },
+    {
+      "original": "/workspace/work/merge10-implementation/phase-compact-history5000.log",
+      "copied": "history-5000-heap-oom.log",
+      "originalBytes": 852,
+      "originalSha256": "7f179e3d16fdbbe6dad609a3a2d36078da326e0b497b716cc7f573224a3a8648",
+      "copiedBytes": 851,
+      "copiedSha256": "e8bd2cf01500d4f50e6dcb1816d731512eae34c9c81f2107079552c3134dbcef",
+      "copy": "trailing line whitespace removed only"
     }
   ]
 }

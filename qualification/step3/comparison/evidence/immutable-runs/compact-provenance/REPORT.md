@@ -86,3 +86,33 @@ Native/WASM allocation remains outside JS heap attribution. The first one-carrie
 later overlap/release samples and diagnostic RSS/timing are affected by snapshot allocations and pauses.
 There is one load and one overlap worker per revision, without repeated-trial uncertainty estimates.
 Do not extrapolate these H500 results to 5000 or characterize them as resolving its fatal phase/root cause.
+
+## Compact H5000 lifecycle-load failure
+
+A subsequent phase-traced H5000 diagnostic at clean source revision
+`175c0146a08b60e81ea7657621ad7aab50ded8c6` exited with shell status 134 and a fatal
+JavaScript heap out-of-memory error. The [main journal](history-5000-main.jsonl),
+[phase sidecar](history-5000-trace.jsonl) and [fatal log](history-5000-heap-oom.log) preserve this failed run.
+The journal has five rows and no lifecycle result or final `complete: true`; the warm row verifies semantics.
+
+Setup completed in 164.30 seconds with 6,714,004 encoded bytes; initial load completed in 388.26 seconds.
+After the verified warm checkpoint, save completed. The last sidecar row is sequence 5, `start lifecycle-load`,
+with no matching end row. This localizes the fatal interval to the second load, performed while the existing
+carrier is live, before the subsequent lifecycle checks. It does not identify an internal load substage,
+retaining structure or precise allocation that exhausted the heap. Compact provenance did not make this
+H5000 lifecycle complete under these diagnostic conditions.
+
+The header records Node v24.19.0, Automerge 3.4.1, a clean worktree and 98 source entries.
+All entries were independently checked against the recorded revision; the full runtime source manifest equals
+that of the compact H500 fixture workers. The exact phase-trace script is already preserved above;
+its bytes match the recorded SHA256 `f2bdb3fb9494b19d1cd0f198dff6ba3339e348abf09b1a54405b124334db8d4c`.
+All six sidecar rows record the default 2,348,810,240 B V8 heap limit. No explicit GC or snapshots were added.
+The main journal and sidecar are copied byte-for-byte; only trailing line whitespace is removed from the fatal log.
+Original and copied hashes are recorded in the manifest; originals remain in scratch.
+
+The lifecycle-load start sample records heapUsed 1,424,972,304 B and RSS 2,203,488,256 B.
+These are pre-operation samples, not failure-time live bytes or memory limits. The last recorded process peak RSS
+is 2,627,856 KiB; the fatal interval could have a higher unrecorded RSS peak. Native/WASM allocation is not
+isolated by these samples. Timings are diagnostic observations with shared resources, not controlled comparisons.
+This failed run is distinct from prior H5000 failures and the successful H500 cases; it leaves the H5000 lifecycle
+unfinished and does not by itself settle all mandatory eligibility or carrier-selection obligations.
