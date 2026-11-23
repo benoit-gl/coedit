@@ -198,3 +198,23 @@ and installed version 3.4.1 without rewriting the original manifests. Executed s
 This diagnostic identifies concrete memory contributors but omits the full warm/capture/restore/merge sequence.
 It does not identify the exact failing operation or root cause of the preserved 5000 failure, establish scaling to
 5000, complete the outstanding lifecycle characterization or change mandatory eligibility/carrier selection.
+
+## Validation data retention investigation
+
+Source inspection found that decoded command changes and the namespace-depth map are used during complete
+native provenance validation. The accepted carrier subsequently uses historical `view(root)` calls for
+editing, copy, restore and recovery; these historical views do not directly require either structure. The
+exposed qualification provider can also be passed to validators again, however, so simply clearing the maps
+would break existing repeat-validation behavior.
+
+A candidate design is to derive compact summaries from the actual native operations as each change is
+validated, retaining exact authored outputs, dependency metadata and semantic root. Only after preserving all
+current native and semantic validation obligations could decoded operations and validation-only indexes be
+released. Historical metadata and the native document remain necessary. Finalizing summaries after the full
+validator is a smaller alternative but retains decoded operations during cold validation and its peak. Neither
+approach has been implemented or measured, and changing validation ordering needs careful equivalence checks.
+
+A separate trie-layout change could reduce native record maps and decoded map-creation operations, but requires
+an explicitly compatible layout and conflict/authorization tests. It is not established by these observations
+that either change will let the 5,000-command lifecycle complete. Focused tests of the existing implementation
+passed (4 files, 34 tests); they did not test a release implementation.
