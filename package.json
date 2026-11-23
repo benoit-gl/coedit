@@ -35,7 +35,8 @@
     "step3:browser-reference": "node scripts/step3-browser-reference.mjs",
     "step3:qualification": "node scripts/run-step3-qualification.mjs",
     "step3:ordinary-edit": "node scripts/step3-ordinary-edit.mjs",
-    "step3:immutable-runs": "node scripts/step3-immutable-runs.mjs"
+    "step3:immutable-runs": "node scripts/step3-immutable-runs.mjs",
+    "step3:native-publication": "node scripts/step3-native-publication.mjs"
   },
   "dependencies": {
     "react": "19.2.8",

@@ -83,3 +83,52 @@ Counts cover the stated JavaScript paths, not every possible copy or native inst
 They must be combined with native publication diagnostics, source review and semantic qualification;
 zero selected counters and green timings alone do not prove eligibility.
 N-way fan-in is covered separately by semantic suites; this runner's lifecycle merge has one peer.
+
+## Native publication diagnostic
+
+The separate portable runner captures one actual ordinary insertion after unrelated genuine carrier commands:
+
+```text
+npm run step3:native-publication -- --smoke --out step3-evidence/native-smoke
+npm run step3:native-publication -- --mode calls --sizes 4,32 --out step3-evidence/native-calls
+npm run step3:native-publication -- --mode memory --sizes 4,32 --out step3-evidence/native-memory
+```
+
+Create the parent output directory first; each run refuses an existing output directory.
+The smoke mode defaults to zero/one unrelated commands and exercises capture, publication and verification without
+native tracing.
+The call and memory modes default to four/32 unrelated commands, using separate processes with V8's
+`--liftoff-only --trace-wasm` or `--liftoff-only --trace-wasm-memory` flags fixed at startup.
+Before loading the native module, the traced worker uses Node's private stdout-handle `setBlocking` hook
+so native V8 output and synchronous markers cannot lose bytes or fail when the output pipe fills.
+This diagnostic-only runtime dependency is checked explicitly; an unsupported runtime fails without a complete result.
+The counts are diagnostic instruction events; traced execution is unsuitable for latency measurement.
+Run native diagnostics separately from timed profiles to avoid contention.
+The numeric fixture points are experimental observations owned by this profile and require source-bound reruns
+when the implementation changes; they set no acceptance threshold or production resource limit.
+
+An untraced builder captures native baseline bytes, the canonical-record cache and the actual prepared command
+immediately before its real publication, then publishes it normally to establish an expected result.
+The traced worker uses public Automerge `load`, reconstructs the qualification-private document wrapper through
+reflection, restores the captured cache and invokes the actual `AutomergeImmutableRunDocument.publish` method.
+The observed native mutation therefore uses the candidate's real public Automerge `change` path.
+Reflection and a no-op source-index replay receipt belong only to this diagnostic harness.
+The interval excludes preparation, source-index replay, cold activation, native load/save and verification;
+it cannot establish the cost or correctness of those excluded operations.
+An untraced verifier then uses normal factory load and compares the target's exact text/Origin and the complete
+carrier snapshot, including root, Block liveness, placements, InlineContent ownership and payloads.
+The fixture uses ASCII text only.
+
+A streaming counter discards startup and post-publication events, retains aggregate calls or loads/stores by native
+function, and rejects missing, mismatched or repeated interval markers.
+No full raw trace is retained.
+The output directory contains fixtures, resulting native documents, child stderr logs and `results.jsonl`.
+Its initial row records runtime/environment, startup flags, pinned Automerge version, the actual Node-bound WASM
+binary hash, installed Automerge ESM JavaScript bindings/package metadata, and SHA-256 hashes of runtime sources,
+scripts, package metadata and lockfile.
+Sources are checked before/after measurement and after every phase.
+Phase checkpoints and error rows preserve partial results; only the final `complete: true` row certifies completion.
+A zero recognized event count fails a requested trace rather than silently claiming a native observation.
+These selected counters, even with exact post-publication verification, do not prove bounded publication work,
+carrier eligibility or a carrier-selection decision.
+Existing negative diagnostics remain applicable.
