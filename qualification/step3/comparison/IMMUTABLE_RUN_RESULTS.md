@@ -126,3 +126,23 @@ described in the [profile](IMMUTABLE_RUN_PROFILE.md#native-publication-diagnosti
 dimensions, conflicting prefixes and native memory work remain unmeasured by this pair. This checkpoint does
 not establish bounded publication work, mandatory eligibility or carrier selection. Existing negative
 diagnostics and outstanding evidence obligations remain applicable.
+
+## Historical 5,000-command JavaScript heap failure
+
+The [partial journal](evidence/immutable-runs/history-5000-2a25bed-heap-oom.jsonl) and
+[fatal-error log](evidence/immutable-runs/history-5000-2a25bed-heap-oom.log) preserve a separate historical
+5,000-command run at source revision `2a25bed70a0c423938b2701415a494388dc9dd67`, before the later optimizations.
+It completed setup, initial load and warm edits, then exited with status 134 and a fatal JavaScript heap
+out-of-memory error. The journal stops after the warm checkpoint, without a lifecycle result or final
+`complete: true`; it does not identify the precise failing lifecycle operation. This was a failed run.
+
+Setup took 442.27 seconds and produced 6,714,285 encoded bytes. Initial load took 1,487.12 seconds
+(about 24.8 minutes), with approximately 2.51 GB process RSS afterward. The five-sample bare and
+incremental-editor warm medians were 37.55 ms and 38.02 ms, and the warm checkpoint records verified semantics.
+The run shared CPU resources with other work; these timings are not controlled comparisons. RSS is process-wide
+and is not a measured peak or a JavaScript heap limit. The fatal log describes JavaScript heap exhaustion,
+not a measurement of native allocation or whole-machine memory exhaustion.
+
+These records characterize the identified historical source and retain its actual failure. They do not
+establish the later optimized implementation's behavior, satisfy the unfinished lifecycle characterization
+or change the remaining eligibility and carrier-selection obligations.
