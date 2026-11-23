@@ -1,0 +1,143 @@
+{
+  "schema": "merge10-load-substage-evidence-v1",
+  "sourceRevision": "4e0857f1619cd4b32e515a458455fb6434f147fb",
+  "sourceManifestEntries": 99,
+  "bindingVerification": "All 99 source hashes match isolated source; git base plus instrumentation.patch reconstructs both changed runtime files exactly; helper is copied byte-identically. H500 and H5000 header manifests are equal.",
+  "note": "Excludes manifest.json itself. Incomplete journals retain original bytes; copied fatal log and patch remove trailing line whitespace, with original hashes recorded. Exact executed harness/helper use .txt suffixes as evidence, not active source.",
+  "files": [
+    {
+      "path": "REPORT.md",
+      "bytes": 5630,
+      "sha256": "68de7e8e4d6af9aa781bb58bc25d35f20c54b1b8643f5b00ebbfd59b86b1bf27",
+      "provenance": "New packaging report; no executed measurement source."
+    },
+    {
+      "path": "history500-main.jsonl",
+      "bytes": 20388,
+      "sha256": "258df68535cbb9ce549a0c24fd4e5701ae45641cb098b8ebb0313b7fc58b3af1",
+      "originalPath": "/workspace/work/merge10-implementation/load-stages/history500-main.jsonl",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "history500-phase.jsonl",
+      "bytes": 12628,
+      "sha256": "12df672b756e7a6476cc23e4aa4c9a9ca114812d3c8fad6562fdcbd24d65bce3",
+      "originalPath": "/workspace/work/merge10-implementation/load-stages/history500-phase.jsonl",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "history500-stages.jsonl",
+      "bytes": 69389,
+      "sha256": "6ded19cf2b5dfa578421abb2482c4b3c287bf2363b751f9164a1a95832d13ee8",
+      "originalPath": "/workspace/work/merge10-implementation/load-stages/history500-stages.jsonl",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "history500.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalPath": "/workspace/work/merge10-implementation/load-stages/history500.log",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "history500-resource.txt",
+      "bytes": 34,
+      "sha256": "0f07678f1240c5b0648d58297c7137d6e9a58f2cd0e397d6187a435655180df1",
+      "originalPath": "/workspace/work/merge10-implementation/load-stages/history500-resource.txt",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "history5000-main.jsonl",
+      "bytes": 18135,
+      "sha256": "dce7c6bc6ea437a076f1a32c73958f8490cb1f21a665f97fabb4157cb648ee64",
+      "originalPath": "/workspace/work/merge10-implementation/load-stages/history5000-main.jsonl",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "history5000-phase.jsonl",
+      "bytes": 1779,
+      "sha256": "c236bd42b1dd9cd1cb14d1504af13b4e7261e91bd9d90c3a195555fdba8311a7",
+      "originalPath": "/workspace/work/merge10-implementation/load-stages/history5000-phase.jsonl",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "history5000-stages.jsonl",
+      "bytes": 80810,
+      "sha256": "940c13cfe0cbafc18535c666ae98c87cf1374c8b624deb5dc488dd0ed2c755f9",
+      "originalPath": "/workspace/work/merge10-implementation/load-stages/history5000-stages.jsonl",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "history5000.log",
+      "bytes": 837,
+      "sha256": "dc798652bbda32da57acdc80558d4391b40ad306d4341b7d3f3c3cd64106660c",
+      "originalPath": "/workspace/work/merge10-implementation/load-stages/history5000.log",
+      "normalization": "Trailing line spaces/tabs removed; other bytes unchanged.",
+      "originalSha256": "ea86dbb76334530a0851113298a127ba65eb9b250c5584186a9a9ccd1607fb69"
+    },
+    {
+      "path": "history5000-resource.txt",
+      "bytes": 702,
+      "sha256": "cbf961eb06a1a578e883dcdf05236f2aa4e8aeaabb654f9e52a710bed361cc4e",
+      "originalPath": "/workspace/work/merge10-implementation/load-stages/history5000-resource.txt",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "history5000-run-binding.json",
+      "bytes": 1102,
+      "sha256": "347aa313f5efb5f330b55f3349844779c78a1768833899a6bdd5c52b170be3ca",
+      "originalPath": "/workspace/work/merge10-implementation/load-stages/history5000-run-binding.json",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "instrument.py",
+      "bytes": 5272,
+      "sha256": "cdc41af20993fa38ec51ff68df4682c63af357b4f81dc576b3feff37ed2d78a5",
+      "originalPath": "/workspace/work/merge10-implementation/load-stages/instrument.py",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "instrumentation.patch",
+      "bytes": 6121,
+      "sha256": "c8690cc44e3333245441c22cce36a10e83b9ec7254da2980f0b80fed4fdf9f86",
+      "originalPath": "/workspace/work/merge10-implementation/load-stages/instrumentation.patch",
+      "normalization": "Trailing line spaces/tabs removed; other bytes unchanged.",
+      "originalSha256": "0c838596ee6d847bb1ecf2f35ab2154cbc4c6c9b0f23eccb57119cf6f25ff263"
+    },
+    {
+      "path": "source-comparison.json",
+      "bytes": 28240,
+      "sha256": "8d38739bc5bef4c816ce156e7b6c86d3c5b4653c39c1683694a858d6e1e9d0a9",
+      "originalPath": "/workspace/work/merge10-implementation/load-stages/source-comparison.json",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "runtime-binding.json",
+      "bytes": 732,
+      "sha256": "521732bf98ae8f3805b82277faf00ff5d0d88e43a6001b2a50924517bd618053",
+      "originalPath": "/workspace/work/merge10-implementation/load-stages/runtime-binding.json",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "installed-automerge-manifest.json",
+      "bytes": 7084,
+      "sha256": "f2c02d419bc2309a4f4db881143802722cb21d458061d0dfa55a2abe7f57e8d9",
+      "originalPath": "/workspace/work/merge10-implementation/load-stages/installed-automerge-manifest.json",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "stage-harness.mjs.txt",
+      "bytes": 23075,
+      "sha256": "f2bdb3fb9494b19d1cd0f198dff6ba3339e348abf09b1a54405b124334db8d4c",
+      "originalPath": "/workspace/work/merge10-implementation/load-stages/stage-harness.mjs",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "loadStageDiagnostic.ts.txt",
+      "bytes": 1134,
+      "sha256": "9abb6cd9347711a669da4f45c91b2cb13c66c5d060ec32c5770cb04f1b9d359a",
+      "originalPath": "/workspace/work/merge10-implementation/load-stages/source/qualification/step3/immutableRuns/loadStageDiagnostic.ts",
+      "normalization": "none; byte-identical"
+    }
+  ]
+}

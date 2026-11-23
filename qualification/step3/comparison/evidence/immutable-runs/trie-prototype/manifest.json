@@ -1,0 +1,403 @@
+{
+  "schema": "merge10-trie-prototype-evidence-package-v1",
+  "sourceRevision": "4e0857f1619cd4b32e515a458455fb6434f147fb",
+  "note": "Package manifest excludes itself. Raw artifact counts do not imply qualification or production readiness.",
+  "files": [
+    {
+      "path": "REPORT.md",
+      "bytes": 9773,
+      "sha256": "37b2ddfc8bade1ca0b61cd912cfcc9dc6860224bc812ee1f9da8d23fbd2c2e4d",
+      "provenance": "new packaging documentation/preparation wrapper; not executed measurement source"
+    },
+    {
+      "path": "chunk2-focused.log",
+      "bytes": 1717,
+      "sha256": "c53cd5d3df6cb871e6054d1bb8dfd93d71f4d8d111179ffec7ed528d40c795db",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/chunk2-focused.log",
+      "originalSha256": "174e6b082876500ccfb70df771eab1745e1a9890298e5e5bbd0755278abf604f",
+      "normalization": "final blank lines removed; other bytes unchanged"
+    },
+    {
+      "path": "chunk2-layout.log",
+      "bytes": 324,
+      "sha256": "b72059c5c8f2246ca520f70de3e7c5701a43a001fbc69ad7c22ed4d7889d9399",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/chunk2-layout.log",
+      "originalSha256": "f32dd2d177066602848e8cf87ee59bfa9c552f1c5a114bc62ce680bbef223158",
+      "normalization": "final blank lines removed; other bytes unchanged"
+    },
+    {
+      "path": "chunk2-manifest.json",
+      "bytes": 18494,
+      "sha256": "8fff3f255eb3e6c378f70451f26d80159379515f8859248211501f2e9f8b0fa1",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/chunk2-manifest.json",
+      "originalSha256": "8fff3f255eb3e6c378f70451f26d80159379515f8859248211501f2e9f8b0fa1",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "chunk2-typecheck-final.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/chunk2-typecheck-final.log",
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "compare-worker.mjs.txt",
+      "bytes": 5763,
+      "sha256": "070b84252a8e64ce323308f5a0555d222acb1b4741a4a63c92dc29e6f5c0b10b",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs",
+      "originalSha256": "070b84252a8e64ce323308f5a0555d222acb1b4741a4a63c92dc29e6f5c0b10b",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "comparisons-v1.jsonl",
+      "bytes": 38536,
+      "sha256": "dfc6dcfcbcdeb2892102a6d1a79f43ce4637bde74efc3e0de757a6fb9dc9bea6",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/comparisons-v1.jsonl",
+      "originalSha256": "dfc6dcfcbcdeb2892102a6d1a79f43ce4637bde74efc3e0de757a6fb9dc9bea6",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "comparisons-v1.log",
+      "bytes": 10728,
+      "sha256": "dd1f222cb1f49ca577987cd7a24875b7c9f9799619a90f082537f0eed1e885e3",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/comparisons-v1.log",
+      "originalSha256": "dd1f222cb1f49ca577987cd7a24875b7c9f9799619a90f082537f0eed1e885e3",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "experiment-harness-manifest.json",
+      "bytes": 1317,
+      "sha256": "5b2345a6b3c96acb3793856c8386acbc0895e823f97ed799aa7ae292b6fb4a04",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/experiment-harness-manifest.json",
+      "originalSha256": "5b2345a6b3c96acb3793856c8386acbc0895e823f97ed799aa7ae292b6fb4a04",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "full-publication-chunk2/4-build.stderr.log",
+      "bytes": 213,
+      "sha256": "808d2e48ee27287bbe68a6eda1b071d11975d838d1e78dacf20425232b9b797b",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/full-publication-chunk2-v1/4-build.stderr.log",
+      "originalSha256": "808d2e48ee27287bbe68a6eda1b071d11975d838d1e78dacf20425232b9b797b",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "full-publication-chunk2/4-fixture.json.txt",
+      "bytes": 87107,
+      "sha256": "bb1025cf7c50c2af3e57d6f4fb0c4d493fb7c7151667e78f3bcfbe104a73e004",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/full-publication-chunk2-v1/4-fixture.json",
+      "originalSha256": "bb1025cf7c50c2af3e57d6f4fb0c4d493fb7c7151667e78f3bcfbe104a73e004",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "full-publication-chunk2/4-measure.stderr.log",
+      "bytes": 209,
+      "sha256": "0fa35181a2643cd8056d9e0b0bc25f6c5519b6eba99d96e63d0baca2e86bb5eb",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/full-publication-chunk2-v1/4-measure.stderr.log",
+      "originalSha256": "0fa35181a2643cd8056d9e0b0bc25f6c5519b6eba99d96e63d0baca2e86bb5eb",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "full-publication-chunk2/4-verify.stderr.log",
+      "bytes": 205,
+      "sha256": "7a7a090bde0ab28fe9e0c4ccb6703f90d9ee60ecc26a8abc36286f8b16024a4e",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/full-publication-chunk2-v1/4-verify.stderr.log",
+      "originalSha256": "7a7a090bde0ab28fe9e0c4ccb6703f90d9ee60ecc26a8abc36286f8b16024a4e",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "full-publication-chunk2/results.jsonl",
+      "bytes": 25662,
+      "sha256": "cb17c404fa3bb2c1a0237122c31232e1d13a27a593f63f49b940a97ca0aa481a",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/full-publication-chunk2-v1/results.jsonl",
+      "originalSha256": "cb17c404fa3bb2c1a0237122c31232e1d13a27a593f63f49b940a97ca0aa481a",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "full-publication-old/4-build.stderr.log",
+      "bytes": 195,
+      "sha256": "121673c4ff6f9efbcbc853de117634794cc7e7aa7a09e655fd18133555e43c35",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/full-publication-old-v1/4-build.stderr.log",
+      "originalSha256": "121673c4ff6f9efbcbc853de117634794cc7e7aa7a09e655fd18133555e43c35",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "full-publication-old/4-fixture.json.txt",
+      "bytes": 89516,
+      "sha256": "6bff07d5a430b0c544b10801091d22739bc2c6435ba49bc8f610fa78e3d9c04f",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/full-publication-old-v1/4-fixture.json",
+      "originalSha256": "6bff07d5a430b0c544b10801091d22739bc2c6435ba49bc8f610fa78e3d9c04f",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "full-publication-old/4-measure.stderr.log",
+      "bytes": 206,
+      "sha256": "c7f62be8014be4805c4a0df0a430b5d945adf08101d4d411f844b26e99a65e12",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/full-publication-old-v1/4-measure.stderr.log",
+      "originalSha256": "c7f62be8014be4805c4a0df0a430b5d945adf08101d4d411f844b26e99a65e12",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "full-publication-old/4-verify.stderr.log",
+      "bytes": 205,
+      "sha256": "7a7a090bde0ab28fe9e0c4ccb6703f90d9ee60ecc26a8abc36286f8b16024a4e",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/full-publication-old-v1/4-verify.stderr.log",
+      "originalSha256": "7a7a090bde0ab28fe9e0c4ccb6703f90d9ee60ecc26a8abc36286f8b16024a4e",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "full-publication-old/results.jsonl",
+      "bytes": 25665,
+      "sha256": "2ff7acba0a6b9cc9507d406a36fd362afa9ff7eef0f4bb7bfd3dba3522462ca5",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/full-publication-old-v1/results.jsonl",
+      "originalSha256": "2ff7acba0a6b9cc9507d406a36fd362afa9ff7eef0f4bb7bfd3dba3522462ca5",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "native-calls-v1.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/native-calls-v1.jsonl",
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "native-calls-v1.log",
+      "bytes": 158,
+      "sha256": "edbab3d1f4f96a447b79e721335cab6f9cca197936455b59d468f0cfd37cae8e",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/native-calls-v1.log",
+      "originalSha256": "edbab3d1f4f96a447b79e721335cab6f9cca197936455b59d468f0cfd37cae8e",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "native-calls-v2.jsonl",
+      "bytes": 32390,
+      "sha256": "c0497c4a9c8014fb273691c72eb853cbd7de03985b65d8f469bb6b2eab8bea66",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/native-calls-v2.jsonl",
+      "originalSha256": "c0497c4a9c8014fb273691c72eb853cbd7de03985b65d8f469bb6b2eab8bea66",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "native-calls-v2.log",
+      "bytes": 1600,
+      "sha256": "80540291c465f02a5c04b6c12338de6a732a3c75c9fa6ddc538bca20556a958a",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/native-calls-v2.log",
+      "originalSha256": "80540291c465f02a5c04b6c12338de6a732a3c75c9fa6ddc538bca20556a958a",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "old-manifest.json",
+      "bytes": 18491,
+      "sha256": "08918f8169b4817cc3ff5cafd364153749cd93a6a5c238e1d81340b12b7bd60b",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/old-manifest.json",
+      "originalSha256": "08918f8169b4817cc3ff5cafd364153749cd93a6a5c238e1d81340b12b7bd60b",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "prototype.patch",
+      "bytes": 8670,
+      "sha256": "06c1895148f20141a7eb7401154cb8d7828d64853ef0718595df3a4083750f76",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/prototype.patch",
+      "originalSha256": "202b700c08477b7248571d054b974398b31d11656a189d9012c533dded0b84a6",
+      "normalization": "trailing line whitespace removed"
+    },
+    {
+      "path": "reproduce.mjs.txt",
+      "bytes": 3933,
+      "sha256": "56d887d4fa2247f0f4cd48243d22163225a331a470a1b9fa32017be308bc8a6a",
+      "provenance": "new packaging documentation/preparation wrapper; not executed measurement source"
+    },
+    {
+      "path": "run-comparisons.py.txt",
+      "bytes": 904,
+      "sha256": "e94c1fc9d0d6da09cc496ebda83d234831533dc07d9e815d4e87620f4e43ca52",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/run-comparisons.py",
+      "originalSha256": "e94c1fc9d0d6da09cc496ebda83d234831533dc07d9e815d4e87620f4e43ca52",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "run-traces-v2.py.txt",
+      "bytes": 1279,
+      "sha256": "a138bff8b729febebbe1e1a1b78f6bd89dd74e52c55fa645c62d1a920dc39576",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/run-traces-v2.py",
+      "originalSha256": "a138bff8b729febebbe1e1a1b78f6bd89dd74e52c55fa645c62d1a920dc39576",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "run-traces.py.txt",
+      "bytes": 1276,
+      "sha256": "b860023abb4d5007dbe91d84694d1036a2b9d7b0065dcb558bb1161dbcde19d1",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/run-traces.py",
+      "originalSha256": "b860023abb4d5007dbe91d84694d1036a2b9d7b0065dcb558bb1161dbcde19d1",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "source-binding.json",
+      "bytes": 29191,
+      "sha256": "215ffaac166ba724cd7bed78ae469f196e7783a40a729a6f71e08b29a8fc7f7c",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/source-binding.json",
+      "originalSha256": "215ffaac166ba724cd7bed78ae469f196e7783a40a729a6f71e08b29a8fc7f7c",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "step3-native-trace-counter.mjs.txt",
+      "bytes": 2678,
+      "sha256": "90c16ff115816bacc1b6af8fcf40b50e1646fe9bcafd1a12c4cfbda47eadbb67",
+      "originalPath": "/workspace/coedit/scripts/step3-native-trace-counter.mjs",
+      "originalSha256": "90c16ff115816bacc1b6af8fcf40b50e1646fe9bcafd1a12c4cfbda47eadbb67",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "trace-runner-v2.mjs.txt",
+      "bytes": 1103,
+      "sha256": "d994d172a19f3030e2d6aa0fdf231b52cd95e7a355d8cdd13d9f746f22d1eb41",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/trace-runner-v2.mjs",
+      "originalSha256": "d994d172a19f3030e2d6aa0fdf231b52cd95e7a355d8cdd13d9f746f22d1eb41",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "trace-runner.mjs.txt",
+      "bytes": 1110,
+      "sha256": "5b3561d38826e0f205202d529df0d88aa5be74da1a4b0813f93ec03efb215e10",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/trace-runner.mjs",
+      "originalSha256": "5b3561d38826e0f205202d529df0d88aa5be74da1a4b0813f93ec03efb215e10",
+      "normalization": "none; byte-identical"
+    },
+    {
+      "path": "trace-worker-v2.mjs.txt",
+      "bytes": 3064,
+      "sha256": "0e952f98944dd60e0ae5f09e4b4105f8af3cd5ed4552bdc4945d4f367d7a814f",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/trace-worker-v2.mjs",
+      "originalSha256": "0e952f98944dd60e0ae5f09e4b4105f8af3cd5ed4552bdc4945d4f367d7a814f",
+      "normalization": "none; byte-identical"
+    }
+  ],
+  "omittedBinaryFixtures": [
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/chunk2-same-byte-16-v1.am",
+      "bytes": 2400,
+      "sha256": "541c8e8dedc1d45b2ff251759c9ac1f01625a644707e3088f0dc17c36fa0af19",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/chunk2-same-byte-256-v1.am",
+      "bytes": 30863,
+      "sha256": "3c0b5bbe2e20483af59964c419a3fc8be2855304d65481b4c2de8a004d73ad7a",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/chunk2-same-byte-64-v1.am",
+      "bytes": 7830,
+      "sha256": "0f2719ba8b9866aab2f3531448309eafb3ce4e8fcf82bc57e2e635ce280efbf7",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/chunk2-tail-16-v1.am",
+      "bytes": 1220,
+      "sha256": "3a7e9b7811da3ee993633b03e9fee33d8708c952a7a470d32d5a160208cc1f0e",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/chunk2-tail-256-v1.am",
+      "bytes": 12678,
+      "sha256": "06e1f99b016a2bd666af888de9a2fc21e789e4ce5048de07c363f11841378e35",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/chunk2-tail-64-v1.am",
+      "bytes": 3492,
+      "sha256": "2cd5759cf32372bcc8ba043c6e0306f9aa46878affd31538a48c61860c5954f9",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/chunk2-uniform-16-v1.am",
+      "bytes": 2463,
+      "sha256": "4e9a417416f7b07ec57a9e3ff19b190b23d349a268b203e7dd12a07f88e7553b",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/chunk2-uniform-256-v1.am",
+      "bytes": 32054,
+      "sha256": "ed1bc7b4a8a8ec4060cb0ee45a2ecb760c98fb18efa8004507d755b6506cca84",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/chunk2-uniform-64-v1.am",
+      "bytes": 8083,
+      "sha256": "95502edc13b331eaa0b74471f2918726441f7474dc748b3556217ba3dc1ad74d",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/full-publication-chunk2-v1/4-after.am",
+      "bytes": 10547,
+      "sha256": "b8e39664e93d2f20fbae46ec0a111050dde9e45f5b4263d11a53de8a09ed686d",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/full-publication-old-v1/4-after.am",
+      "bytes": 12624,
+      "sha256": "8b5ad669ddb203bcc5d3a61a1e03473addb21ef395ed67960fabab05bc67ed45",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/old-same-byte-16-v1.am",
+      "bytes": 2880,
+      "sha256": "e3e96c0d7926f5e494f16974c2d8e235a48e9fe34d268cfad0c2ebbacbab6a9c",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/old-same-byte-256-v1.am",
+      "bytes": 39616,
+      "sha256": "5c20f425c43bf8859629a0f0d8cfdda18291b505a5767f5bf41132c8e5c851bb",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/old-same-byte-64-v1.am",
+      "bytes": 9967,
+      "sha256": "7f2aed235c45009af9fcb1487ddcd62bc883fcba6f7624562f0a5884121101dd",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/old-tail-16-v1.am",
+      "bytes": 1243,
+      "sha256": "5e6df433f72d97ef4cab6b9587984a4fd23a84ca8deb7cb8600ab718df3a3403",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/old-tail-256-v1.am",
+      "bytes": 12522,
+      "sha256": "441744a8caa0d32c4e80aa59136d0ed0c29c91ceee21036f1fff06576737cb66",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/old-tail-64-v1.am",
+      "bytes": 3485,
+      "sha256": "09dc79afb3787f8aaa2525adfd8aecb5c59a59acef38e28aa8c67c4316411d38",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/old-uniform-16-v1.am",
+      "bytes": 2974,
+      "sha256": "ba89cd82c86c294b63b30cb4c289fac02230423fbf917123a69ac3ae598a63e1",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/old-uniform-16.am",
+      "bytes": 2974,
+      "sha256": "fd76559e0dc58bc20e8b8fa8a21a5e4fd07a1b9cb639b269edbab5256288f92f",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/old-uniform-256-v1.am",
+      "bytes": 41487,
+      "sha256": "c92da68a9ef141480a39214184540721bbc94ba97d098f2d61589e9cf3c19818",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/old-uniform-64-v1.am",
+      "bytes": 10415,
+      "sha256": "22ad83eda480bfe7640014e36a142b7d81f0c946c5a1dc2fc72a3d89ab3a76b5",
+      "reason": "binary fixture omitted; rebuild using preserved source/harness"
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+import { openSync, writeSync } from "node:fs";
+import { getHeapStatistics } from "node:v8";
+import { performance } from "node:perf_hooks";
+const path = process.env.COEDIT_LOAD_STAGES;
+if (!path) throw Error("COEDIT_LOAD_STAGES required for instrumented source");
+const fd = openSync(path, "wx");
+let sequence = 0;
+export function loadMark(event: string, phase: string, extra: Record<string, unknown> = {}): void {
+  writeSync(fd, JSON.stringify({ kind: "load-substage", complete: false, sequence: sequence++, event, phase,
+    elapsedMs: performance.now(), memory: process.memoryUsage(), heapSizeLimitBytes: getHeapStatistics().heap_size_limit,
+    peakRssKiB: process.resourceUsage().maxRSS, ...extra }) + "\n");
+}
+export function loadStep<T>(phase: string, fn: () => T): T {
+  loadMark("start", phase);
+  const started = performance.now();
+  try {
+    const result = fn();
+    const operationMs = performance.now() - started;
+    loadMark("end", phase, { operationMs });
+    return result;
+  } catch (error) {
+    loadMark("error", phase, { message: error instanceof Error ? error.message : String(error) });
+    throw error;
+  }
+}

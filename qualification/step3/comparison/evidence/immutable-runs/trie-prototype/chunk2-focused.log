@@ -1,0 +1,24 @@
+
+ RUN  v4.0.18 /workspace/work/merge10-implementation/trie-prototype/chunk2
+
+ ✓ qualification/step3/immutableRuns/automergeCarrier.test.ts (18 tests) 3186ms
+     ✓ preserves general stateful decoder preflight and pure-decoder ordinary opt in  308ms
+     ✓ hides text retained under a retired Block across reopen and merge, then restores fresh positions  556ms
+     ✓ hides text retained under a retired InlineContent across reopen and merge, then restores fresh positions  534ms
+ ✓ qualification/step3/immutableRuns/publicationFailure.test.ts (12 tests) 1443ms
+     ✓ invalidates apply receipts after a native callback throw and recovers unchanged accepted state  319ms
+ ✓ qualification/step3/immutableRuns/nativeMetadata.test.ts (5 tests) 1591ms
+     ✓ preserves public native descriptor winners at a concurrent join  1146ms
+ ✓ qualification/step3/immutableRuns/nativeProvenance.test.ts (16 tests) 5726ms
+     ✓ keeps accepted native outputs immutable across repeated validation  705ms
+     ✓ retains exact capture frontiers and old provider views after new native work  908ms
+     ✓ matches independent command replay across fork, join, restore and generation replacement  1385ms
+     ✓ matches reference liveness at historical roots, concurrent joins and restore  389ms
+     ✓ rejects changed, missing and extra repeated placement writes atomically  619ms
+ ✓ qualification/step3/immutableRuns/nativeRecordStore.test.ts (4 tests) 198ms
+ ✓ qualification/step3/immutableRuns/nativeDocument.test.ts (3 tests) 153ms
+
+ Test Files  6 passed (6)
+      Tests  58 passed (58)
+   Start at  16:11:54
+   Duration  15.22s (transform 825ms, setup 0ms, import 1.64s, tests 12.30s, environment 1ms)

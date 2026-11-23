@@ -1,0 +1,200 @@
+--- /dev/null
++++ b/qualification/step3/immutableRuns/chunk2-prototype.test.ts
+@@ -0,0 +1,48 @@
++import * as A from "@automerge/automerge";
++import { describe, expect, it } from "vitest";
++import { parseBlockId } from "../../../src/domain/index.js";
++import { AutomergeImmutableRunDocument } from "./nativeDocument.js";
++import { AutomergeRecordPrimitive } from "./nativeRecordStore.js";
++import { commitRecordV1 } from "./record.js";
++
++const id = "c1000000-0000-4000-8000-000000000001";
++interface State { records: Record<string, unknown>; layout: Record<string, boolean> }
++describe("hex2 scratch layout rejects incompatible namespace encodings", () => {
++  it.each(["c", "C1", "c11", "gg"])("rejects prefix %s", (invalid) => {
++    const doc = AutomergeImmutableRunDocument.create(parseBlockId(id));
++    let raw = A.load<State>(doc.encode());
++    const key = Object.keys(raw.records)[0]!;
++    const subtree = A.toJS(raw).records[key];
++    raw = A.change(raw, (draft) => {
++      delete draft.records[key];
++      draft.records[invalid] = subtree;
++    });
++    expect(() => AutomergeImmutableRunDocument.load(A.save(raw))).toThrow(/prefix key/i);
++  });
++  it("requires exact UUID path even for valid two-digit prefixes", () => {
++    const doc = AutomergeImmutableRunDocument.create(parseBlockId(id));
++    let raw = A.load<State>(doc.encode());
++    const key = Object.keys(raw.records)[0]!;
++    const subtree = A.toJS(raw).records[key];
++    raw = A.change(raw, (draft) => {
++      delete draft.records[key];
++      draft.records[key === "00" ? "01" : "00"] = subtree;
++    });
++    expect(() => AutomergeImmutableRunDocument.load(A.save(raw))).toThrow(/UUID.*path/i);
++  });
++  it("rejects the original full-document layout explicitly", () => {
++    const doc = AutomergeImmutableRunDocument.create(parseBlockId(id));
++    const raw = A.change(A.load<State>(doc.encode()), (draft) => {
++      draft.layout = { "step3-immutable-runs-v1": true };
++    });
++    expect(() => AutomergeImmutableRunDocument.load(A.save(raw))).toThrow(/layout/i);
++  });
++  it("rejects the original primitive layout explicitly", () => {
++    const doc = AutomergeRecordPrimitive.create();
++    doc.append([commitRecordV1(["coedit-step3-record",1,id,"live",["block",id],null,null,["actor","effect"],id,["payload",0,1],[]])]);
++    const raw = A.change(A.load<{layout:string}>(doc.encode()), (draft) => {
++      draft.layout = "step3-immutable-runs-native-primitive-v1";
++    });
++    expect(() => AutomergeRecordPrimitive.load(A.save(raw))).toThrow(/layout/i);
++  });
++});
+--- a/qualification/step3/immutableRuns/nativeDocument.test.ts
++++ b/qualification/step3/immutableRuns/nativeDocument.test.ts
+@@ -39,7 +39,7 @@
+   path: string,
+ ): Record<string, unknown> {
+   let node = records;
+-  for (const digit of path) {
++  for (const digit of path.match(/../g)!) {
+     const next = node[digit];
+     if (next === null || typeof next !== "object" || Array.isArray(next))
+       throw new TypeError("Fixture record path is not a map.");
+@@ -76,7 +76,7 @@
+   it("rejects a malformed losing prefix even when the winning subtree is valid", () => {
+     const native = AutomergeImmutableRunDocument.create(parseBlockId(uuid(1)));
+     const entry = native.activate().entries[0]!;
+-    const digit = entry.record[2][0]!;
++    const digit = entry.record[2].slice(0, 2);
+     const base = A.load<NativeFixture>(native.encode());
+     const validSubtree = A.toJS(base).records[digit];
+     let left = A.clone(base);
+--- a/qualification/step3/immutableRuns/nativeDocument.ts
++++ b/qualification/step3/immutableRuns/nativeDocument.ts
+@@ -39,7 +39,10 @@
+   type StructuralOutput,
+ } from "./record.js";
+
+-const LAYOUT = "step3-immutable-runs-v1";
++const LAYOUT = "step3-immutable-runs-hex2-prototype-v1";
++const RECORD_CHUNK_HEX_DIGITS = 2;
++const RECORD_PATH_HEX_DIGITS = 32;
++const RECORD_PREFIX = /^[0-9a-f]{2}$/;
+ const RUN_SOURCE_UNITS = 512;
+ const STRING_POSITION_CODEC: StructuralPositionCodec<string> = Object.freeze({
+   encode(position: string): string {
+@@ -1321,15 +1324,15 @@
+     if (depth === undefined) continue;
+     if (
+       operation.action === "makeMap" &&
+-      depth < 32 &&
+-      /^[0-9a-f]$/.test(operation.key) &&
++      depth < RECORD_PATH_HEX_DIGITS &&
++      RECORD_PREFIX.test(operation.key) &&
+       recordDepths.get(`${change.startOp + index}@${change.actor}`) ===
+-        depth + 1
++        depth + RECORD_CHUNK_HEX_DIGITS
+     )
+       allowed.add(index);
+     else if (
+       operation.action === "set" &&
+-      depth === 32 &&
++      depth === RECORD_PATH_HEX_DIGITS &&
+       operation.value === true &&
+       expectedKeys.has(operation.key)
+     )
+@@ -1406,8 +1409,8 @@
+         const conflicts = A.getConflicts(node, key);
+         const alternatives =
+           conflicts === undefined ? [node[key]] : Object.values(conflicts);
+-        if (current.path.length < 32) {
+-          if (!/^[0-9a-f]$/.test(key))
++        if (current.path.length < RECORD_PATH_HEX_DIGITS) {
++          if (!RECORD_PREFIX.test(key))
+             throw new TypeError("Record prefix key is invalid.");
+           for (const alternative of alternatives)
+             pending.push({ value: alternative, path: current.path + key });
+@@ -1443,7 +1446,7 @@
+   entry: CanonicalRecordEntry,
+ ): void {
+   let node = root;
+-  for (const digit of digits(entry.record[2])) {
++  for (const digit of chunks(entry.record[2])) {
+     const child = node[digit];
+     if (child === undefined) node[digit] = {};
+     node = plainMap(node[digit]);
+@@ -1457,7 +1460,7 @@
+ ): void {
+   const entry = decodeRecordKeyV1(supplied.key, true);
+   let node = root;
+-  for (const digit of digits(entry.record[2])) {
++  for (const digit of chunks(entry.record[2])) {
+     if (node[digit] === undefined) node[digit] = {};
+     node = nativeMap(node[digit]);
+   }
+@@ -1978,6 +1981,14 @@
+   return Object.freeze([value[0], value[1]]);
+ }
+
++function chunks(id: string): readonly string[] {
++  const path = digits(id);
++  return Array.from(
++    { length: RECORD_PATH_HEX_DIGITS / RECORD_CHUNK_HEX_DIGITS },
++    (_, index) => path.slice(index * RECORD_CHUNK_HEX_DIGITS, (index + 1) * RECORD_CHUNK_HEX_DIGITS),
++  );
++}
++
+ function digits(id: string): string {
+   return id.replaceAll("-", "");
+ }
+--- a/qualification/step3/immutableRuns/nativeProvenance.test.ts
++++ b/qualification/step3/immutableRuns/nativeProvenance.test.ts
+@@ -593,7 +593,7 @@
+     const bad = A.change(A.clone(fixture.good), (draft) => {
+       for (const entry of entries) {
+         let node = draft.records;
+-        for (const digit of entry.record[2].replaceAll("-", "")) {
++        for (const digit of entry.record[2].replaceAll("-", "").match(/../g)!) {
+           if (node[digit] === undefined) node[digit] = {};
+           node = node[digit] as Record<string, unknown>;
+         }
+--- a/qualification/step3/immutableRuns/nativeRecordStore.test.ts
++++ b/qualification/step3/immutableRuns/nativeRecordStore.test.ts
+@@ -101,7 +101,7 @@
+       let raw = A.load<State>(before);
+       raw = A.change(raw, (draft) => {
+         let node: Record<string, unknown> = draft.records;
+-        for (const digit of uuid(100).replaceAll("-", "")) {
++        for (const digit of uuid(100).replaceAll("-", "").match(/../g)!) {
+           const value = node[digit];
+           if (
+             value === null ||
+--- a/qualification/step3/immutableRuns/nativeRecordStore.ts
++++ b/qualification/step3/immutableRuns/nativeRecordStore.ts
+@@ -7,7 +7,7 @@
+   lineage: string;
+   records: Record<string, unknown>;
+ }
+-const LAYOUT = "step3-immutable-runs-native-primitive-v1";
++const LAYOUT = "step3-immutable-runs-native-primitive-hex2-prototype-v1";
+
+ function map(value: unknown): Record<string, unknown> {
+   if (value === null || typeof value !== "object" || Array.isArray(value))
+@@ -53,7 +53,7 @@
+             ? [node[key]]
+             : Object.values(alternatives);
+         if (path.length < 32) {
+-          if (!/^[0-9a-f]$/.test(key))
++          if (!/^[0-9a-f]{2}$/.test(key))
+             throw new TypeError("Invalid record prefix key.");
+           for (const child of values)
+             pending.push({ value: child, path: path + key });
+@@ -149,7 +149,7 @@
+     const next = A.change(this.document, (draft) => {
+       for (const entry of added.values()) {
+         let node: Record<string, unknown> = draft.records;
+-        for (const digit of digits(entry.record[2])) {
++        for (const digit of digits(entry.record[2]).match(/../g)!) {
+           if (node[digit] === undefined) node[digit] = {};
+           // Assignment's RHS is a detached POJO; always re-read the native proxy.
+           node = map(node[digit]);

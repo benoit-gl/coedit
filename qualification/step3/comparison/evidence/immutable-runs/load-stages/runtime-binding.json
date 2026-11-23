@@ -1,0 +1,10 @@
+{
+  "node": "v24.19.0",
+  "execArgv": [
+    "-e",
+    "const fs=require(\"fs\"), crypto=require(\"crypto\"); const p=\"/workspace/coedit/node_modules/@automerge/automerge/package.json\";const real=fs.realpathSync(p), pkg=JSON.parse(fs.readFileSync(real));console.log(JSON.stringify({node:process.version,execArgv:process.execArgv,packagePath:real,automergeVersion:pkg.version,packageSha256:crypto.createHash(\"sha256\").update(fs.readFileSync(real)).digest(\"hex\")},null,2))"
+  ],
+  "packagePath": "/workspace/coedit/node_modules/.pnpm/@automerge+automerge@3.4.1/node_modules/@automerge/automerge/package.json",
+  "automergeVersion": "3.4.1",
+  "packageSha256": "d0019f8ca4995a0dc22563d4229b9f0dd3666921b363bc3e86a5e6d4839d1220"
+}

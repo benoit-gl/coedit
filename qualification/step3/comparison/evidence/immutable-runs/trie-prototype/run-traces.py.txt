@@ -1,0 +1,16 @@
+from pathlib import Path
+import subprocess,json,time
+b=Path('/workspace/work/merge10-implementation/trie-prototype')
+with (b/'native-calls-v1.jsonl').open('x') as out,(b/'native-calls-v1.log').open('x') as log:
+ for size in [16,256]:
+  for variant in ['old','chunk2']:
+   cmd=['node',str(b/'trace-runner.mjs'),variant,'uniform',str(size),'calls']
+   log.write(json.dumps({'start':time.time(),'command':cmd})+'\n');log.flush()
+   r=subprocess.run(cmd,capture_output=True,text=True);log.write(r.stderr);log.write(json.dumps({'exitCode':r.returncode,'end':time.time()})+'\n');log.flush()
+   if r.returncode:raise RuntimeError(r.stderr)
+   row=json.loads(r.stdout);row['command']=cmd;out.write(json.dumps(row)+'\n');out.flush()
+ for variant in ['old','chunk2']:
+  cmd=['node',str(b/variant/'scripts/step3-native-publication.mjs'),'--mode','calls','--sizes','4','--out',str(b/f'full-publication-{variant}-v1'),'--note','isolated hex2 prototype bounded source-bound diagnostic']
+  log.write(json.dumps({'start':time.time(),'command':cmd})+'\n');log.flush()
+  r=subprocess.run(cmd,capture_output=True,text=True);log.write(r.stdout);log.write(r.stderr);log.write(json.dumps({'exitCode':r.returncode,'end':time.time()})+'\n');log.flush()
+  if r.returncode:raise RuntimeError(r.stderr)

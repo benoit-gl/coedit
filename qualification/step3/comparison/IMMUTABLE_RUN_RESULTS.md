@@ -271,3 +271,51 @@ These diagnostic observations and shared-resource timings do not establish failu
 allocation or controlled performance comparisons. Main/sidecar bytes are preserved unchanged; only trailing line
 whitespace is removed from the copied fatal log. The source-bound failure remains separate from earlier failed runs
 and the successful H500 diagnostics, and does not by itself settle all mandatory eligibility or carrier selection.
+
+## Bounded scratch two-digit record trie
+
+The [prototype report](evidence/immutable-runs/trie-prototype/REPORT.md) and
+[package manifest](evidence/immutable-runs/trie-prototype/manifest.json) preserve isolated old/two-digit layouts
+at clean source revision `4e0857f1619cd4b32e515a458455fb6434f147fb`, with exact runtime/native manifests,
+36 deterministic canonical-record build/load workers, four primitive insertion traces and a real native-publication pair.
+The scratch patch has explicit new private layout markers and rejects old-format input; it is not applied to runtime source.
+Historical focused/layout checks passed 65 tests and typecheck.
+
+At uniform256, prefix maps after insertion fell from 7,872 to 4,010 and insertion native operations from 30 to 16.
+The concentrated-tail256 adverse case gains no insertion-op reduction (2 → 2), increases encoded bytes
+from 12,522 to 12,678, and increases fresh-load baseline-adjusted post-GC process heapUsed from 647,496 to 799,064 B.
+These single explicit-GC observations establish no general memory win or native allocation attribution.
+Primitive uniform16/256 call counts were 281,364/284,238 for old and 126,572/136,889 for two-digit;
+the candidate has greater relative growth over those two points, which establish no growth bound.
+
+The single real native-publication pair at four unrelated commands observed 2,270,697 → 994,614 native calls
+and independently verified exact full carrier snapshots and target text/Origin after publication.
+This diagnostic excludes preparation, source-index replay, cold activation, native load/save and verification,
+and uses diagnostic reconstruction with the existing replay stub. Record UUIDs/native author IDs differ across those
+real-command fixtures. Native memory events were not enabled, and trace times are not whole-edit latency evidence.
+Complete-carrier memory, concurrent prefix creation, cold merge and larger-history/lifecycle behavior remain unmeasured
+by this package. It does not resolve the H5000 failure, production readiness, mandatory eligibility or carrier selection.
+
+## Instrumented H5000 cold-load substage failure
+
+The [substage report](evidence/immutable-runs/load-stages/REPORT.md) and
+[package manifest](evidence/immutable-runs/load-stages/manifest.json) preserve an isolated instrumented diagnostic
+at clean base revision `4e0857f1619cd4b32e515a458455fb6434f147fb`, with exact patch/helper/harness and runtime binding.
+Its H500 comparison completes the full lifecycle; both headers bind the same 99 source files.
+H5000 setup, initial load and verified warm edits completed, but the process then aborted with fatal V8 heap OOM.
+There is no lifecycle result or final `complete: true`.
+
+The second `native-A.load` completed in 14,146.430 ms. The unended interval is
+`lifecycle-load → native activation → namespace collection`.
+The final stage marker records 690,000 distinct native objects, 23,894 semantic records and 8 pending traversal entries,
+with heapUsed 2,132,621,280 B and RSS 2,844,971,008 B under the default 2,348,810,240 B heap limit.
+These are last persisted progress/process samples, not an exact failing allocation, final count or retained-size attribution.
+Initial namespace collection completed at 1,011,161 native objects and 35,011 records;
+semantic validation dominated that completed initial-load timing.
+
+Synchronous logging, temporary allocations and callback frames may affect lifetime, GC and timing.
+This localizes the instrumented failure; the uninstrumented H5000 evidence establishes only the lifecycle-load interval.
+No explicit GC, heap override or snapshots were used.
+The existing setup/first-carrier state remains live during second load,
+so the samples cannot isolate individual carrier or namespace-map sizes.
+This diagnostic does not resolve H5000 completion, larger-history scaling, mandatory eligibility or carrier selection.

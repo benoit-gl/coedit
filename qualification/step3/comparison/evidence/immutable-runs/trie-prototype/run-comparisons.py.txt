@@ -1,0 +1,16 @@
+from pathlib import Path
+import subprocess,json,time
+base=Path('/workspace/work/merge10-implementation/trie-prototype')
+with (base/'comparisons-v1.jsonl').open('x') as out, (base/'comparisons-v1.log').open('x') as log:
+ for shape in ['uniform','same-byte','tail']:
+  for n in [16,64,256]:
+   for variant in ['old','chunk2']:
+    fixture=base/f'{variant}-{shape}-{n}-v1.am'
+    for mode in ['build','load']:
+     cmd=['node','--expose-gc',str(base/'compare-worker.mjs'),variant,shape,str(n),mode,str(fixture)]
+     log.write(json.dumps({'start':time.time(),'command':cmd})+'\n');log.flush()
+     r=subprocess.run(cmd,capture_output=True,text=True)
+     log.write(r.stderr);log.write(json.dumps({'exitCode':r.returncode,'end':time.time()})+'\n');log.flush()
+     if r.returncode:raise RuntimeError(r.stderr)
+     row=json.loads(r.stdout);row['command']=cmd
+     out.write(json.dumps(row)+'\n');out.flush()

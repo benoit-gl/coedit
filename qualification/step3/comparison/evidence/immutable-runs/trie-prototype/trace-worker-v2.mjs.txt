@@ -1,0 +1,24 @@
+// Diagnostic reconstruction only: canonical UUID cache from an already validated fixture.
+import fs from 'node:fs';
+import {createHash} from 'node:crypto';
+import {resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
+const [variant,shape,sizeText]=process.argv.slice(2),size=Number(sizeText);
+if(!['old','chunk2'].includes(variant)||!['uniform','tail'].includes(shape)||![16,256].includes(size))throw Error('bounded trace args');
+const handle=Reflect.get(process.stdout,'_handle');if(typeof handle?.setBlocking!=='function')throw Error('blocking stdout required');handle.setBlocking(true);
+const base='/workspace/work/merge10-implementation/trie-prototype',root=resolve(base,variant),sha=x=>createHash('sha256').update(x).digest('hex');
+const expected=fs.readFileSync(resolve(base,'comparisons-v1.jsonl'),'utf8').trim().split('\n').map(JSON.parse).find(r=>r.variant===variant&&r.shape===shape&&r.size===size&&r.mode==='build');
+const bytes=fs.readFileSync(resolve(base,`${variant}-${shape}-${size}-v1.am`));if(sha(bytes)!==expected.encodedSha256)throw Error('fixture bytes mismatch');
+const {createServer}=await import(pathToFileURL(resolve(root,'node_modules/vite/dist/node/index.js')));
+const server=await createServer({configFile:false,root,appType:'custom',optimizeDeps:{noDiscovery:true,include:[]},server:{middlewareMode:true,hmr:false},logLevel:'error'});
+try{
+const [{AutomergeRecordPrimitive:P},{commitRecordV1},A]=await Promise.all([server.ssrLoadModule('/qualification/step3/immutableRuns/nativeRecordStore.ts'),server.ssrLoadModule('/qualification/step3/immutableRuns/record.ts'),import(pathToFileURL(resolve(root,'node_modules/@automerge/automerge/dist/mjs/entrypoints/fullfat_node.js')))]);
+function uuid(n){let h=sha(`coedit-trie-prototype-v1:${n}`).slice(0,32);if(shape==='tail')h='c10000000000400080000000'+n.toString(16).padStart(8,'0');h=h.slice(0,12)+'4'+h.slice(13,16)+'8'+h.slice(17);return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;}
+const entry=n=>commitRecordV1(['coedit-step3-record',1,uuid(n),'live',['block','c1000000-0000-4000-8000-000000000001'],null,null,['actor','effect'],'c1000000-0000-4000-8000-000000000002',['payload',0,n],[]]);
+const records=Array.from({length:size},(_,i)=>entry(i+100));if(sha(records.map(e=>e.key).sort().join('\n'))!==expected.semanticKeySha256)throw Error('canonical cache fixture mismatch');
+const store=Reflect.construct(P,[A.load(bytes),new Map(records.map(e=>[e.record[2],e]))]);const target=entry(size+100);
+const label=`trie-${variant}-${shape}-${size}`;
+fs.writeSync(1,`TRACE_BEGIN ${label}\n`);store.append([target]);fs.writeSync(1,`TRACE_END ${label}\n`);
+if(store.size!==size+1||!store.entries().some(e=>e.key===target.key))throw Error('append cache verification failed');
+console.error(JSON.stringify({variant,shape,size,fixtureSha256:sha(bytes),workerSha256:sha(fs.readFileSync(new URL(import.meta.url))),measurement:'real primitive append after diagnostic cache reconstruction',cacheVerified:true}));
+}finally{await server.close();}

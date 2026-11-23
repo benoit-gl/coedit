@@ -1,0 +1,72 @@
+{"start": 1795468476.5071163, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "old", "uniform", "16", "build", "/workspace/work/merge10-implementation/trie-prototype/old-uniform-16-v1.am"]}
+{"exitCode": 0, "end": 1795468477.8778062}
+{"start": 1795468477.8780358, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "old", "uniform", "16", "load", "/workspace/work/merge10-implementation/trie-prototype/old-uniform-16-v1.am"]}
+{"exitCode": 0, "end": 1795468479.6513643}
+{"start": 1795468479.651566, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "chunk2", "uniform", "16", "build", "/workspace/work/merge10-implementation/trie-prototype/chunk2-uniform-16-v1.am"]}
+{"exitCode": 0, "end": 1795468481.4346645}
+{"start": 1795468481.4348469, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "chunk2", "uniform", "16", "load", "/workspace/work/merge10-implementation/trie-prototype/chunk2-uniform-16-v1.am"]}
+{"exitCode": 0, "end": 1795468483.1536126}
+{"start": 1795468483.1537893, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "old", "uniform", "64", "build", "/workspace/work/merge10-implementation/trie-prototype/old-uniform-64-v1.am"]}
+{"exitCode": 0, "end": 1795468485.917772}
+{"start": 1795468485.9179397, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "old", "uniform", "64", "load", "/workspace/work/merge10-implementation/trie-prototype/old-uniform-64-v1.am"]}
+{"exitCode": 0, "end": 1795468488.234593}
+{"start": 1795468488.2347665, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "chunk2", "uniform", "64", "build", "/workspace/work/merge10-implementation/trie-prototype/chunk2-uniform-64-v1.am"]}
+{"exitCode": 0, "end": 1795468490.6181552}
+{"start": 1795468490.618425, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "chunk2", "uniform", "64", "load", "/workspace/work/merge10-implementation/trie-prototype/chunk2-uniform-64-v1.am"]}
+{"exitCode": 0, "end": 1795468491.6589205}
+{"start": 1795468491.6592689, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "old", "uniform", "256", "build", "/workspace/work/merge10-implementation/trie-prototype/old-uniform-256-v1.am"]}
+{"exitCode": 0, "end": 1795468494.2009103}
+{"start": 1795468494.2010832, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "old", "uniform", "256", "load", "/workspace/work/merge10-implementation/trie-prototype/old-uniform-256-v1.am"]}
+{"exitCode": 0, "end": 1795468495.510875}
+{"start": 1795468495.5110643, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "chunk2", "uniform", "256", "build", "/workspace/work/merge10-implementation/trie-prototype/chunk2-uniform-256-v1.am"]}
+{"exitCode": 0, "end": 1795468497.2457182}
+{"start": 1795468497.2460277, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "chunk2", "uniform", "256", "load", "/workspace/work/merge10-implementation/trie-prototype/chunk2-uniform-256-v1.am"]}
+{"exitCode": 0, "end": 1795468498.3196707}
+{"start": 1795468498.321026, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "old", "same-byte", "16", "build", "/workspace/work/merge10-implementation/trie-prototype/old-same-byte-16-v1.am"]}
+{"exitCode": 0, "end": 1795468499.5236275}
+{"start": 1795468499.5239449, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "old", "same-byte", "16", "load", "/workspace/work/merge10-implementation/trie-prototype/old-same-byte-16-v1.am"]}
+{"exitCode": 0, "end": 1795468500.286123}
+{"start": 1795468500.2862928, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "chunk2", "same-byte", "16", "build", "/workspace/work/merge10-implementation/trie-prototype/chunk2-same-byte-16-v1.am"]}
+{"exitCode": 0, "end": 1795468501.258173}
+{"start": 1795468501.2587085, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "chunk2", "same-byte", "16", "load", "/workspace/work/merge10-implementation/trie-prototype/chunk2-same-byte-16-v1.am"]}
+{"exitCode": 0, "end": 1795468502.1338575}
+{"start": 1795468502.1343179, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "old", "same-byte", "64", "build", "/workspace/work/merge10-implementation/trie-prototype/old-same-byte-64-v1.am"]}
+{"exitCode": 0, "end": 1795468503.6302714}
+{"start": 1795468503.6315877, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "old", "same-byte", "64", "load", "/workspace/work/merge10-implementation/trie-prototype/old-same-byte-64-v1.am"]}
+{"exitCode": 0, "end": 1795468504.5267103}
+{"start": 1795468504.526879, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "chunk2", "same-byte", "64", "build", "/workspace/work/merge10-implementation/trie-prototype/chunk2-same-byte-64-v1.am"]}
+{"exitCode": 0, "end": 1795468505.6705394}
+{"start": 1795468505.67072, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "chunk2", "same-byte", "64", "load", "/workspace/work/merge10-implementation/trie-prototype/chunk2-same-byte-64-v1.am"]}
+{"exitCode": 0, "end": 1795468506.5215688}
+{"start": 1795468506.5217364, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "old", "same-byte", "256", "build", "/workspace/work/merge10-implementation/trie-prototype/old-same-byte-256-v1.am"]}
+{"exitCode": 0, "end": 1795468509.2911296}
+{"start": 1795468509.2913265, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "old", "same-byte", "256", "load", "/workspace/work/merge10-implementation/trie-prototype/old-same-byte-256-v1.am"]}
+{"exitCode": 0, "end": 1795468510.528373}
+{"start": 1795468510.5285738, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "chunk2", "same-byte", "256", "build", "/workspace/work/merge10-implementation/trie-prototype/chunk2-same-byte-256-v1.am"]}
+{"exitCode": 0, "end": 1795468512.2403867}
+{"start": 1795468512.240595, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "chunk2", "same-byte", "256", "load", "/workspace/work/merge10-implementation/trie-prototype/chunk2-same-byte-256-v1.am"]}
+{"exitCode": 0, "end": 1795468513.2995195}
+{"start": 1795468513.2997801, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "old", "tail", "16", "build", "/workspace/work/merge10-implementation/trie-prototype/old-tail-16-v1.am"]}
+{"exitCode": 0, "end": 1795468514.1726065}
+{"start": 1795468514.1728992, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "old", "tail", "16", "load", "/workspace/work/merge10-implementation/trie-prototype/old-tail-16-v1.am"]}
+{"exitCode": 0, "end": 1795468514.943651}
+{"start": 1795468514.9438205, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "chunk2", "tail", "16", "build", "/workspace/work/merge10-implementation/trie-prototype/chunk2-tail-16-v1.am"]}
+{"exitCode": 0, "end": 1795468515.6883454}
+{"start": 1795468515.6893125, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "chunk2", "tail", "16", "load", "/workspace/work/merge10-implementation/trie-prototype/chunk2-tail-16-v1.am"]}
+{"exitCode": 0, "end": 1795468516.3546755}
+{"start": 1795468516.354847, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "old", "tail", "64", "build", "/workspace/work/merge10-implementation/trie-prototype/old-tail-64-v1.am"]}
+{"exitCode": 0, "end": 1795468517.1928113}
+{"start": 1795468517.1930118, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "old", "tail", "64", "load", "/workspace/work/merge10-implementation/trie-prototype/old-tail-64-v1.am"]}
+{"exitCode": 0, "end": 1795468518.1029196}
+{"start": 1795468518.1030931, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "chunk2", "tail", "64", "build", "/workspace/work/merge10-implementation/trie-prototype/chunk2-tail-64-v1.am"]}
+{"exitCode": 0, "end": 1795468518.986596}
+{"start": 1795468518.9867935, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "chunk2", "tail", "64", "load", "/workspace/work/merge10-implementation/trie-prototype/chunk2-tail-64-v1.am"]}
+{"exitCode": 0, "end": 1795468519.7772334}
+{"start": 1795468519.7774138, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "old", "tail", "256", "build", "/workspace/work/merge10-implementation/trie-prototype/old-tail-256-v1.am"]}
+{"exitCode": 0, "end": 1795468520.810934}
+{"start": 1795468520.8111084, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "old", "tail", "256", "load", "/workspace/work/merge10-implementation/trie-prototype/old-tail-256-v1.am"]}
+{"exitCode": 0, "end": 1795468521.6265755}
+{"start": 1795468521.6267428, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "chunk2", "tail", "256", "build", "/workspace/work/merge10-implementation/trie-prototype/chunk2-tail-256-v1.am"]}
+{"exitCode": 0, "end": 1795468522.726844}
+{"start": 1795468522.7270253, "command": ["node", "--expose-gc", "/workspace/work/merge10-implementation/trie-prototype/compare-worker.mjs", "chunk2", "tail", "256", "load", "/workspace/work/merge10-implementation/trie-prototype/chunk2-tail-256-v1.am"]}
+{"exitCode": 0, "end": 1795468523.6050622}
