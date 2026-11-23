@@ -103,3 +103,26 @@ The lifecycle sequence after those phases was interrupted, so the record remains
 The observation predates the later placement, failure-recovery, and cold-protocol changes in this PR.
 It exposes a substantial reload cost; it does not establish the current implementation's final performance or
 waive the remaining lifecycle and native-work evidence obligations.
+
+## Source-bound native publication checkpoint
+
+The [four-command journal](evidence/immutable-runs/native-publication-calls-4.jsonl) and
+[32-command journal](evidence/immutable-runs/native-publication-calls-32.jsonl) record the new portable runner's
+same-source call diagnostic. Both preserve identical complete source manifests, including the installed
+Automerge JavaScript bindings and actual Node-bound WASM binary. Each completed build, real native publication,
+and normal factory-load verification of exact target text/Origin and the complete carrier snapshot.
+The selected publication intervals contained 2,248,842 and 2,039,179 WASM function entries respectively,
+with the same seven-record ASCII ordinary insertion shape after four and 32 genuine unrelated commands.
+
+These are only two points for one workload, with one observation per point. They do not show increasing call
+counts over this interval and do not establish a growth bound. The runs shared CPU resources with other work;
+CPU contention prevents interpreting their elapsed execution as controlled timing evidence. V8 function tracing
+is invasive and is unsuitable for latency measurement in any case. Call mode did not collect native memory
+operations; its zero load/store fields are not observations of zero memory work.
+
+The counted interval excludes command preparation, source-index replay, cold activation, native load/save
+and verification; the harness uses diagnostic reconstruction and a no-op source-index replay receipt as
+described in the [profile](IMMUTABLE_RUN_PROFILE.md#native-publication-diagnostic). Larger states, other workload
+dimensions, conflicting prefixes and native memory work remain unmeasured by this pair. This checkpoint does
+not establish bounded publication work, mandatory eligibility or carrier selection. Existing negative
+diagnostics and outstanding evidence obligations remain applicable.
