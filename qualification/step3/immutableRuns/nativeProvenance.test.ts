@@ -80,6 +80,173 @@ function nativeCommand() {
 }
 
 describe("immutable-run native provenance", { timeout: 120_000 }, () => {
+  it("keeps accepted native outputs immutable across repeated validation", () => {
+    const carrier = seed();
+    const block = parseBlockId(uuid(3));
+    const opaque = parseInlineContentId(uuid(4));
+    carrier.applyChange({
+      context: { actorId: "author", effectId: "outputs" },
+      placements: ["a", "b"].map((position) => ({
+        blockId: block,
+        placement: { depth: 1, position },
+      })),
+      inlineContents: [{ inlineContentId: opaque, blockId: block }],
+      payloads: [
+        {
+          kind: "replace-opaque",
+          inlineContentId: opaque,
+          mediaType: "application/octet-stream",
+          bytes: new Uint8Array([1, 2, 3]),
+          origin,
+        },
+      ],
+    });
+    const { provider, protocol } = AutomergeImmutableRunDocument.load(
+      carrier.encode(),
+    ).activate();
+    const manifests = protocol.canonicalEntries.filter(
+      (entry) => entry.record[3] === "manifest",
+    );
+    // A shared cached value must not let any caller alter later validation.
+    const checkFrozen = (value: unknown): void => {
+      if (!Array.isArray(value)) return;
+      expect(Object.isFrozen(value)).toBe(true);
+      expect(Reflect.set(value, "0", "forged")).toBe(false);
+      for (const item of value) checkFrozen(item);
+    };
+    const before = manifests.map((entry) => {
+      const outputs = provider.authoredOutputs(entry.ref);
+      expect(Object.isFrozen(outputs)).toBe(true);
+      expect(Reflect.set(outputs, "structural", [])).toBe(false);
+      checkFrozen(outputs.structural);
+      checkFrozen(outputs.descriptors);
+      return outputs;
+    });
+    const command = manifests.find(
+      (entry) => entry.record[7]?.[1] === "outputs",
+    )!;
+    const commandOutputs = provider.authoredOutputs(command.ref);
+    expect(commandOutputs.structural).toEqual([
+      [
+        "placement",
+        block,
+        encodeStructuralPlacement({ depth: 1, position: "a" }, codec),
+      ],
+      [
+        "placement",
+        block,
+        encodeStructuralPlacement({ depth: 1, position: "b" }, codec),
+      ],
+      ["inline-create", opaque, block],
+    ]);
+    expect(commandOutputs.descriptors[0]?.[0]).toBe("opaque");
+    const reference = validateImmutableRunCommandsReferenceV1(
+      protocol,
+      provider,
+    );
+    expect(
+      validateImmutableRunCommandsV1(protocol, provider).commandRoots,
+    ).toEqual(reference.commandRoots);
+    expect(
+      manifests.map((entry) => provider.authoredOutputs(entry.ref)),
+    ).toEqual(before);
+    expect(() => provider.authoredOutputs([uuid(99), "missing"])).toThrow();
+    expect(() => provider.authoredBase(protocol.genesisRoot)).toThrow();
+    expect(() =>
+      provider.resolveReferent("missing", protocol.genesisRoot),
+    ).toThrow();
+  });
+
+  it("retains exact capture frontiers and old provider views after new native work", () => {
+    const carrier = seed();
+    const native = Reflect.get(
+      carrier,
+      "native",
+    ) as AutomergeImmutableRunDocument;
+    const initial = native.activate();
+    const observed = carrier.captureHistoricalState();
+    const captureSibling = factory.load(carrier.encode());
+    carrier.applyChange({
+      context: {
+        actorId: "copy",
+        effectId: "observed-capture",
+        source: { kind: "copy", reference: observed },
+      },
+      payloads: [
+        {
+          kind: "insert-text",
+          inlineContentId: inline,
+          offset: 0,
+          text: "a",
+          origin,
+        },
+      ],
+    });
+    const future = carrier.captureHistoricalState();
+    // This later token has the same semantic root as the command's base but
+    // was never present at the command's actual native dependency frontier.
+    const sameRootFuture = captureSibling.captureHistoricalState();
+    carrier.mergeEncoded(captureSibling.encode());
+    const accepted = native.activate();
+    const manifest = accepted.protocol.canonicalEntries.find(
+      (entry) =>
+        entry.record[3] === "manifest" &&
+        entry.record[7]?.[1] === "observed-capture",
+    )!;
+    const expected = {
+      kind: "capture",
+      root: initial.root,
+      material: expect.any(String),
+    };
+    expect(accepted.provider.authoredBase(manifest.ref).semanticRoot).toEqual(
+      initial.root,
+    );
+    expect(accepted.provider.resolveReferent(observed, manifest.ref)).toEqual(
+      expected,
+    );
+    expect(
+      accepted.provider.resolveReferent(future, manifest.ref),
+    ).toBeUndefined();
+    expect(
+      accepted.provider.resolveReferent(sameRootFuture, manifest.ref),
+    ).toBeUndefined();
+    expect(accepted.provider.captureRoot(future)).toEqual(accepted.root);
+    expect(initial.provider.captureRoot(observed)).toBeUndefined();
+    const descriptor = initial.provider.view(initial.root).descriptorOf(inline);
+
+    carrier.restoreHistoricalState(observed, {
+      actorId: "history",
+      effectId: "restore",
+    });
+    const sibling = factory.load(carrier.encode());
+    sibling.applyChange({
+      context: { actorId: "fork", effectId: "after-restore" },
+    });
+    carrier.mergeEncoded(sibling.encode());
+    expect(native.activate()).not.toBe(accepted);
+    expect(initial.provider.view(initial.root).descriptorOf(inline)).toEqual(
+      descriptor,
+    );
+    expect(accepted.provider.resolveReferent(observed, manifest.ref)).toEqual(
+      expected,
+    );
+    expect(
+      accepted.provider.resolveReferent(future, manifest.ref),
+    ).toBeUndefined();
+    expect(
+      accepted.provider.resolveReferent(sameRootFuture, manifest.ref),
+    ).toBeUndefined();
+    for (const { protocol, provider } of [initial, accepted]) {
+      const reference = validateImmutableRunCommandsReferenceV1(
+        protocol,
+        provider,
+      );
+      expect(
+        validateImmutableRunCommandsV1(protocol, provider).commandRoots,
+      ).toEqual(reference.commandRoots);
+    }
+  });
+
   it("matches independent command replay across fork, join, restore and generation replacement", () => {
     const carrier = seed();
     const captured = carrier.captureHistoricalState();

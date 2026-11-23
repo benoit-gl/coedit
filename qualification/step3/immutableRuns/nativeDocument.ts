@@ -64,6 +64,12 @@ interface NativeMetadataSnapshot {
   readonly captures: ReadonlyMap<string, string>;
 }
 
+interface ValidatedCommandProvenance {
+  readonly semanticRoot: RecordRef;
+  readonly dependencyMetadata: NativeMetadataSnapshot;
+  readonly outputs: ImmutableRunAuthoredOutputsV1;
+}
+
 interface NativeState extends Record<string, unknown> {
   layout: Cell;
   lineage: Cell;
@@ -466,38 +472,33 @@ function validateIdentityFacts(
 class NativeProvider implements ImmutableRunColdViewProviderV1 {
   readonly #rootMetadata = new Map<string, NativeMetadataSnapshot>();
   readonly #metadataByChange = new Map<string, NativeMetadataSnapshot>();
-  readonly #dependencyMetadata = new Map<string, NativeMetadataSnapshot>();
-  readonly #rootVersions = new Map<string, readonly string[] | null>();
-  readonly #commandChanges = new Map<string, A.DecodedChange>();
-  readonly #authoredBases = new Map<string, RecordRef>();
-  readonly #recordDepths: ReadonlyMap<string, number>;
-  readonly #entryByKey: ReadonlyMap<string, CanonicalRecordEntry>;
-  readonly #entryByRef: ReadonlyMap<string, CanonicalRecordEntry>;
-  readonly #captureExpectedByRoot = new Map<
-    string,
-    IntegratedDocumentSnapshot<string>
-  >();
+  readonly #commandProvenance = new Map<string, ValidatedCommandProvenance>();
 
   public constructor(
     private readonly document: A.Doc<NativeState>,
-    private readonly entries: readonly CanonicalRecordEntry[],
+    entries: readonly CanonicalRecordEntry[],
     private readonly protocol: ImmutableRunProtocolV1,
     recordDepths: ReadonlyMap<string, number>,
   ) {
-    this.#recordDepths = recordDepths;
-    this.#entryByKey = new Map(entries.map((entry) => [entry.key, entry]));
-    this.#entryByRef = new Map(
+    const entryByKey = new Map(entries.map((entry) => [entry.key, entry]));
+    const entryByRef = new Map(
       entries.map((entry) => [encodeRef(entry.ref), entry]),
     );
+    const rootVersions = new Map<string, readonly string[] | null>();
+    const captureExpectedByRoot = new Map<
+      string,
+      IntegratedDocumentSnapshot<string>
+    >();
     const labels = new Map<string, readonly RecordRef[]>();
     const captureTokens = new Set<string>();
     for (const bytes of A.getAllChanges(document)) {
       const change = A.decodeChange(bytes);
       rejectHeaderMutation(change, labels.size === 0);
-      const metadata = this.projectMetadata(change);
-      const dependencyMetadata = this.#dependencyMetadata.get(change.hash);
-      if (dependencyMetadata === undefined)
-        throw new Error("Native dependency metadata projection is missing.");
+      const { metadata, dependencyMetadata } = this.projectMetadata(
+        change,
+        recordDepths,
+        rootVersions,
+      );
       const dependencyLabels = maximalLabels(
         change.deps.flatMap((dependency) => {
           const values = labels.get(dependency);
@@ -507,7 +508,9 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
         }),
         protocol,
       );
-      const manifests = this.entriesAuthoredBy(change);
+      const manifests = recordKeysAuthoredBy(change)
+        .map((key) => entryByKey.get(key))
+        .filter((entry): entry is CanonicalRecordEntry => entry !== undefined);
       const roots = manifests.filter(
         (entry) => entry.record[3] === "manifest" || entry.record[3] === "join",
       );
@@ -533,8 +536,25 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
               throw new TypeError(
                 "Command body rewinds its actual native dependency label.",
               );
-            this.#authoredBases.set(encodeRef(root.ref), dependencyLabels[0]!);
-            this.#commandChanges.set(encodeRef(root.ref), change);
+            // Validate the complete native transaction before releasing its
+            // decoded operations. Accepted providers retain only these facts,
+            // so later independent validation cannot bypass native checks.
+            const outputs = validateAuthoredOutputs(
+              change,
+              root,
+              manifests,
+              entryByRef,
+              document,
+              recordDepths,
+            );
+            this.#commandProvenance.set(
+              encodeRef(root.ref),
+              Object.freeze({
+                semanticRoot: dependencyLabels[0]!,
+                dependencyMetadata,
+                outputs,
+              }),
+            );
           }
         } else {
           const inputs = joinInputs(root);
@@ -542,13 +562,7 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
             throw new TypeError(
               "Join inputs differ from maximal native dependency labels.",
             );
-          validateCommandOps(
-            change,
-            document,
-            [root],
-            this.#recordDepths,
-            false,
-          );
+          validateCommandOps(change, document, [root], recordDepths, false);
         }
         nextLabels = Object.freeze([root.ref]);
       } else {
@@ -573,6 +587,7 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
             parsed[1],
             decodeRefValue(parsed[0]),
             dependencyMetadata,
+            captureExpectedByRoot,
           );
         }
       }
@@ -589,7 +604,7 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
       this.#rootMetadata.set(encodeRef(nextLabels[0]!), metadata);
     }
     const authored = new Set([
-      ...this.#commandChanges.keys(),
+      ...this.#commandProvenance.keys(),
       encodeRef(protocol.genesisRoot),
       ...protocol.maximalRoots.map(encodeRef),
     ]);
@@ -613,13 +628,8 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
     semanticRoot: RecordRef;
     view: ImmutableRunNativeViewV1;
   }> {
-    const change = this.requireChange(manifest);
-    const dependencyMetadata = this.#dependencyMetadata.get(change.hash);
-    if (dependencyMetadata === undefined)
-      throw new TypeError("Command native dependency metadata is absent.");
-    const semanticRoot = this.#authoredBases.get(encodeRef(manifest));
-    if (semanticRoot === undefined)
-      throw new TypeError("Command native base label is absent.");
+    const { semanticRoot, dependencyMetadata } =
+      this.requireProvenance(manifest);
     if (!sameRef(decodeRef(dependencyMetadata.semanticRoot), semanticRoot))
       throw new TypeError("Command dependency view has a different root cell.");
     return Object.freeze({
@@ -629,121 +639,12 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
   }
 
   public authoredOutputs(manifest: RecordRef): ImmutableRunAuthoredOutputsV1 {
-    const entry = this.#entryByRef.get(encodeRef(manifest));
-    if (entry === undefined || entry.record[3] !== "manifest")
-      throw new TypeError("Native provenance manifest is absent.");
-    const body = entry.record[10];
-    if (body[0] === "genesis")
-      return Object.freeze({ structural: [], descriptors: [] });
-    if (!isCommandBody(body))
-      throw new TypeError("Native command manifest body is invalid.");
-    const change = this.requireChange(manifest);
-    const authored = this.entriesAuthoredBy(change);
-    const expectedRecords = commandEntries(entry, this.#entryByRef);
-    if (!sameEntries(authored, expectedRecords))
-      throw new TypeError(
-        "Command members and manifest were not authored in one native change.",
-      );
-    const placementWrites = extractCellWriteSequence(
-      change,
-      this.document.placements,
-      "placement",
-    );
-    const ownerWrites = extractCellWrites(
-      change,
-      this.document.owners,
-      "owner",
-    );
-    const descriptorWrites = extractCellWrites(
-      change,
-      this.document.descriptors,
-      "descriptor",
-    );
-    const structural: StructuralOutput[] = [];
-    let placementIndex = 0;
-    for (const output of body[6]) {
-      if (output[0] === "block-delete") {
-        const hasRetire = authored.some(
-          (candidate) =>
-            candidate.record[3] === "retire" &&
-            candidate.record[4][0] === "block" &&
-            candidate.record[4][1] === output[1],
-        );
-        if (!hasRetire)
-          throw new TypeError("Block deletion lacks native retire fact.");
-        structural.push(Object.freeze(["block-delete", output[1]]));
-      } else if (output[0] === "placement") {
-        const write = placementWrites[placementIndex++];
-        if (write === undefined || write[0] !== output[1])
-          throw new TypeError("Native placement output order is not exact.");
-        structural.push(Object.freeze(["placement", write[0], write[1]]));
-      } else {
-        requireCellWrite(change, this.document.owners, output[1], output[2]);
-        structural.push(
-          Object.freeze([
-            "inline-create",
-            output[1],
-            ownerWrites.get(output[1])!,
-          ]),
-        );
-      }
-    }
-    const expectedPlacements = body[6]
-      .filter((output) => output[0] === "placement")
-      .map((output) => [output[1], output[2]]);
-
-    const expectedOwners = new Map(
-      body[6]
-        .filter((output) => output[0] === "inline-create")
-        .map((output) => [output[1], output[2]]),
-    );
-    if (
-      JSON.stringify(placementWrites) !== JSON.stringify(expectedPlacements) ||
-      !sameStringMaps(ownerWrites, expectedOwners)
-    )
-      throw new TypeError(
-        "Native structural writes contain an extra or missing field.",
-      );
-    const effect = entry.record[7];
-    if (effect === null) throw new TypeError("Command effect is missing.");
-    const replacementEffectId =
-      body[0] === "restore" ? undefined : JSON.stringify(effect);
-    for (const output of body[7])
-      requireCellWrite(
-        change,
-        this.document.descriptors,
-        output[1],
-        encodeDescriptor(output, replacementEffectId),
-      );
-    const expectedDescriptors = new Map(
-      body[7].map((output) => [
-        output[1],
-        encodeDescriptor(output, replacementEffectId),
-      ]),
-    );
-    if (!sameStringMaps(descriptorWrites, expectedDescriptors))
-      throw new TypeError(
-        "Native descriptor writes contain an extra or missing field.",
-      );
-    const descriptors = Object.freeze(
-      body[7].map((output) =>
-        descriptorOutputFromEncoded(
-          output[1],
-          descriptorWrites.get(output[1])!,
-        ),
-      ),
-    );
-    requireRootWrite(change, this.document, encodeRef(manifest));
-    validateCommandOps(
-      change,
-      this.document,
-      expectedRecords,
-      this.#recordDepths,
-    );
-    return Object.freeze({
-      structural: Object.freeze(structural),
-      descriptors,
-    });
+    if (sameRef(manifest, this.protocol.genesisRoot))
+      return Object.freeze({
+        structural: Object.freeze([]),
+        descriptors: Object.freeze([]),
+      });
+    return this.requireProvenance(manifest).outputs;
   }
 
   public captureRoot(token: string): RecordRef | undefined {
@@ -766,10 +667,7 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
         material?: string;
       }>
     | undefined {
-    const change = this.requireChange(manifest);
-    const dependencyMetadata = this.#dependencyMetadata.get(change.hash);
-    if (dependencyMetadata === undefined)
-      throw new TypeError("Command native dependency metadata is absent.");
+    const { dependencyMetadata } = this.requireProvenance(manifest);
     const matches: {
       kind: "effect" | "capture";
       root: RecordRef;
@@ -811,19 +709,11 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
     return match === undefined ? undefined : Object.freeze(match);
   }
 
-  private requireChange(manifest: RecordRef): A.DecodedChange {
-    const change = this.#commandChanges.get(encodeRef(manifest));
-    if (change === undefined)
+  private requireProvenance(manifest: RecordRef): ValidatedCommandProvenance {
+    const provenance = this.#commandProvenance.get(encodeRef(manifest));
+    if (provenance === undefined)
       throw new TypeError("Manifest is not authored by one native change.");
-    return change;
-  }
-
-  private entriesAuthoredBy(
-    change: A.DecodedChange,
-  ): readonly CanonicalRecordEntry[] {
-    return recordKeysAuthoredBy(change)
-      .map((key) => this.#entryByKey.get(key))
-      .filter((entry): entry is CanonicalRecordEntry => entry !== undefined);
+    return provenance;
   }
 
   /**
@@ -831,9 +721,14 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
    * subject to decoded-operation and record-graph validation, but are never
    * materialized into a historical native document view.
    */
-  private projectMetadata(change: A.DecodedChange): NativeMetadataSnapshot {
-    const existing = this.#metadataByChange.get(change.hash);
-    if (existing !== undefined) return existing;
+  private projectMetadata(
+    change: A.DecodedChange,
+    recordDepths: ReadonlyMap<string, number>,
+    rootVersions: Map<string, readonly string[] | null>,
+  ): Readonly<{
+    metadata: NativeMetadataSnapshot;
+    dependencyMetadata: NativeMetadataSnapshot;
+  }> {
     let dependency: NativeMetadataSnapshot;
     if (change.deps.length === 0) {
       dependency = emptyMetadataSnapshot();
@@ -853,7 +748,7 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
       change.deps.length === 0
         ? []
         : change.deps.length === 1
-          ? (this.#rootVersions.get(change.deps[0]!) ?? null)
+          ? (rootVersions.get(change.deps[0]!) ?? null)
           : null;
     const rootOnly =
       previousVersions === null
@@ -862,7 +757,7 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
             change,
             dependency,
             previousVersions,
-            this.#recordDepths,
+            recordDepths,
           );
     const projected =
       rootOnly ??
@@ -870,20 +765,17 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
         dependency,
         A.diff(this.document, [...change.deps], [change.hash]),
       );
-    this.#rootVersions.set(
-      change.hash,
-      nextRootVersions(change, previousVersions),
-    );
+    rootVersions.set(change.hash, nextRootVersions(change, previousVersions));
     assertMetadataSnapshot(projected);
-    this.#dependencyMetadata.set(change.hash, dependency);
     this.#metadataByChange.set(change.hash, projected);
-    return projected;
+    return { metadata: projected, dependencyMetadata: dependency };
   }
 
   private validateCaptureMaterial(
     material: unknown,
     root: RecordRef,
     metadata: NativeMetadataSnapshot,
+    captureExpectedByRoot: Map<string, IntegratedDocumentSnapshot<string>>,
   ): void {
     if (typeof material !== "string")
       throw new TypeError("Capture material is invalid.");
@@ -891,7 +783,7 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
     if (captureHistoricalState(actual, STRING_POSITION_CODEC) !== material)
       throw new TypeError("Capture material is not canonical.");
     const key = encodeRef(root);
-    let expected = this.#captureExpectedByRoot.get(key);
+    let expected = captureExpectedByRoot.get(key);
     if (expected === undefined) {
       expected = captureSnapshot(
         root,
@@ -899,7 +791,7 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
         this.protocol,
         this.viewAt(root, metadata),
       );
-      this.#captureExpectedByRoot.set(key, expected);
+      captureExpectedByRoot.set(key, expected);
     }
     if (!sameCaptureSnapshot(actual, expected))
       throw new TypeError("Capture material differs from its native root.");
@@ -1121,6 +1013,113 @@ function validateRootlessChange(
       );
   }
   return Object.freeze([...writes.keys()]);
+}
+
+/** Validates all actual native command writes before retaining a detached summary. */
+function validateAuthoredOutputs(
+  change: A.DecodedChange,
+  entry: CanonicalRecordEntry,
+  authored: readonly CanonicalRecordEntry[],
+  entryByRef: ReadonlyMap<string, CanonicalRecordEntry>,
+  document: A.Doc<NativeState>,
+  recordDepths: ReadonlyMap<string, number>,
+): ImmutableRunAuthoredOutputsV1 {
+  const body = entry.record[10];
+  if (!isCommandBody(body))
+    throw new TypeError("Native command manifest body is invalid.");
+  const expectedRecords = commandEntries(entry, entryByRef);
+  if (!sameEntries(authored, expectedRecords))
+    throw new TypeError(
+      "Command members and manifest were not authored in one native change.",
+    );
+  const placementWrites = extractCellWriteSequence(
+    change,
+    document.placements,
+    "placement",
+  );
+  const ownerWrites = extractCellWrites(change, document.owners, "owner");
+  const descriptorWrites = extractCellWrites(
+    change,
+    document.descriptors,
+    "descriptor",
+  );
+  const structural: StructuralOutput[] = [];
+  let placementIndex = 0;
+  for (const output of body[6]) {
+    if (output[0] === "block-delete") {
+      const hasRetire = authored.some(
+        (candidate) =>
+          candidate.record[3] === "retire" &&
+          candidate.record[4][0] === "block" &&
+          candidate.record[4][1] === output[1],
+      );
+      if (!hasRetire)
+        throw new TypeError("Block deletion lacks native retire fact.");
+      structural.push(Object.freeze(["block-delete", output[1]]));
+    } else if (output[0] === "placement") {
+      const write = placementWrites[placementIndex++];
+      if (write === undefined || write[0] !== output[1])
+        throw new TypeError("Native placement output order is not exact.");
+      structural.push(Object.freeze(["placement", write[0], write[1]]));
+    } else {
+      requireCellWrite(change, document.owners, output[1], output[2]);
+      structural.push(
+        Object.freeze([
+          "inline-create",
+          output[1],
+          ownerWrites.get(output[1])!,
+        ]),
+      );
+    }
+  }
+  const expectedPlacements = body[6]
+    .filter((output) => output[0] === "placement")
+    .map((output) => [output[1], output[2]]);
+
+  const expectedOwners = new Map(
+    body[6]
+      .filter((output) => output[0] === "inline-create")
+      .map((output) => [output[1], output[2]]),
+  );
+  if (
+    JSON.stringify(placementWrites) !== JSON.stringify(expectedPlacements) ||
+    !sameStringMaps(ownerWrites, expectedOwners)
+  )
+    throw new TypeError(
+      "Native structural writes contain an extra or missing field.",
+    );
+  const effect = entry.record[7];
+  if (effect === null) throw new TypeError("Command effect is missing.");
+  const replacementEffectId =
+    body[0] === "restore" ? undefined : JSON.stringify(effect);
+  for (const output of body[7])
+    requireCellWrite(
+      change,
+      document.descriptors,
+      output[1],
+      encodeDescriptor(output, replacementEffectId),
+    );
+  const expectedDescriptors = new Map(
+    body[7].map((output) => [
+      output[1],
+      encodeDescriptor(output, replacementEffectId),
+    ]),
+  );
+  if (!sameStringMaps(descriptorWrites, expectedDescriptors))
+    throw new TypeError(
+      "Native descriptor writes contain an extra or missing field.",
+    );
+  const descriptors = Object.freeze(
+    body[7].map((output) =>
+      descriptorOutputFromEncoded(output[1], descriptorWrites.get(output[1])!),
+    ),
+  );
+  requireRootWrite(change, document, encodeRef(entry.ref));
+  validateCommandOps(change, document, expectedRecords, recordDepths);
+  return Object.freeze({
+    structural: Object.freeze(structural),
+    descriptors,
+  });
 }
 
 function commandEntries(
