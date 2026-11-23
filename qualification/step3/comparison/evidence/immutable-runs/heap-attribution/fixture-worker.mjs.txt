@@ -1,0 +1,60 @@
+// Scratch diagnostic only. No qualification completion record is emitted.
+import { createHash } from 'node:crypto';
+import { readFileSync, writeFileSync, appendFileSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
+import { getHeapStatistics, writeHeapSnapshot } from 'node:v8';
+import { performance } from 'node:perf_hooks';
+const args = process.argv.slice(2), opt = (s,d) => args.includes(s) ? args[args.indexOf(s)+1] : d;
+const root = '/workspace/coedit', dir = fileURLToPath(new URL('.', import.meta.url));
+const mode = opt('--mode'), history = Number(opt('--history')), prefix = resolve(dir,opt('--prefix', `${mode}-${history}`));
+const fixture = resolve(dir,`fixture-${history}.bin`), metadata = `${fixture}.json`;
+const sha = x => createHash('sha256').update(x).digest('hex');
+const git = (...a) => execFileSync('git',['-C',root,...a],{encoding:'utf8'}).trim();
+const sourceFiles = git('ls-files','--cached','--others','--exclude-standard').split('\n').filter(p => !/(\.test\.ts|\.browser\.test\.ts)$/.test(p)).filter(p => !/(^|\/)(__screenshots__|browser-traces|\.vitest-attachments|evidence|node_modules)(\/|$)/.test(p)).filter(p => /\.(ts|tsx|js|mjs|cjs)$/.test(p)||/(^|\/)(package\.json|pnpm-lock\.yaml|tsconfig.*\.json)$/.test(p)).filter(p => /^(src|qualification|scripts)\//.test(p)||/(^|\/)(package\.json|pnpm-lock\.yaml|vite\.config\.(ts|mjs)|tsconfig.*\.json)$/.test(p));
+const manifest = sourceFiles.map(relative=> { const b=readFileSync(resolve(root,relative)); return {relative, bytes:b.length, sha256:sha(b)}; });
+const binding = {sourceRevision:git('rev-parse','HEAD'),workingTree:git('status','--porcelain'),sourceManifest:manifest,node:process.version,versions:process.versions,nativePin:JSON.parse(readFileSync(resolve(root,'package.json'))).dependencies['@automerge/automerge'],heapSizeLimitBytes:getHeapStatistics().heap_size_limit,execArgv:process.execArgv,argv:process.argv,worker:{path:fileURLToPath(import.meta.url),sha256:sha(readFileSync(fileURLToPath(import.meta.url)))}};
+writeFileSync(`${prefix}.manifest.json`,JSON.stringify(binding,null,2),{flag:'wx'});
+writeFileSync(`${prefix}.jsonl`,'',{flag:'wx'});
+const log = (phase,extras={}) => appendFileSync(`${prefix}.jsonl`,JSON.stringify({phase,elapsedMs:performance.now(),memory:process.memoryUsage(),peakRssKiB:process.resourceUsage().maxRSS,...extras})+'\n');
+const uid = n => 'd1000000-0000-4000-8000-'+n.toString(16).padStart(12,'0');
+const { createServer } = await import(pathToFileURL(resolve(root,'node_modules/vite/dist/node/index.js')).href);
+const server = await createServer({configFile:false,root,appType:'custom',optimizeDeps:{noDiscovery:true,include:[]},server:{middlewareMode:true,hmr:false},logLevel:'error'});
+try {
+ const [CM,D] = await Promise.all([server.ssrLoadModule('/qualification/step3/immutableRuns/automergeCarrier.ts'),server.ssrLoadModule('/src/domain/index.ts')]);
+ const rootId=D.parseBlockId(uid(1)),target=D.parseInlineContentId(uid(2)),origin={kind:'human',id:'o0'};
+ const cmp=(a,b)=>a<b?-1:a>b?1:0;
+ const factory=CM.createAutomergeImmutableRunCarrierFactory({encode:x=>x,decode:x=>x},{compare:cmp,comparePrimary:cmp},{purePositionDecoder:true});
+ function check(c){const p=c.snapshot().payloads.get(target);if(p?.kind!=='text'||p.text!=='a'.repeat(1024)||p.spans.some(s=>s.origin.kind!=='human'||s.origin.id!=='o0')||p.spans.map(s=>s.text).join('')!==p.text)throw Error('independent text/Origin mismatch');}
+ // Read only the already accepted activation; never call native.activate().
+ function counts(c){const a=c.activation,p=a.protocol,tags={};for(const e of a.entries)tags[e.record[3]]=(tags[e.record[3]]||0)+1;return {records:a.entries.length,recordTags:tags,protocolOwnKeys:Object.keys(p),carrierEntryCount:c.entries.size,sourceIndexes:c.sourceIndexes.size,providerClass:a.provider.constructor.name};}
+ function sample(phase,extra={}){if(!global.gc)throw Error('--expose-gc required');global.gc();global.gc();log(phase,{postExplicitGC:true,...extra});}
+ function snap(phase){const path=`${prefix}-${phase}.heapsnapshot`;if(existsSync(path))throw Error('snapshot exists');log('snapshot-start',{snapshotPhase:phase,path});writeHeapSnapshot(path);log('snapshot-end',{snapshotPhase:phase,path});}
+ if(mode==='build'){
+   const t=performance.now();let boot=factory.create(rootId);
+   boot.applyChange({context:{actorId:'seed',effectId:'seed'},placements:[],inlineContents:[{inlineContentId:target,blockId:rootId}],payloads:[{kind:'replace-text',inlineContentId:target,mediaType:'text/plain',text:'a'.repeat(1024),origin}]});
+   let receipt=boot.readOrdinaryTextRange(target,0,0).revision;
+   for(let i=0;i<history;i++){receipt=boot.applyOrdinaryChange({context:{actorId:'history',effectId:String(i)},payloads:[i%2===0?{kind:'insert-text',inlineContentId:target,offset:1,text:'h',origin}:{kind:'delete-text',inlineContentId:target,start:1,end:2}]},receipt);}
+   check(boot);const bytes=boot.encode();writeFileSync(fixture,bytes,{flag:'wx'});
+   writeFileSync(metadata,JSON.stringify({history,bytes:bytes.length,sha256:sha(bytes),rootId,target,expected:{text:'a'.repeat(1024),origin},buildCommand:process.argv,binding,setupMs:performance.now()-t},null,2),{flag:'wx'});
+   log('fixture-complete',{history,fixture,bytes:bytes.length,sha256:sha(bytes),setupMs:performance.now()-t,semanticsVerified:true});
+ }else{
+   const meta=JSON.parse(readFileSync(metadata)),bytes=readFileSync(fixture);
+   if(sha(bytes)!==meta.sha256||JSON.stringify(meta.binding.sourceManifest)!==JSON.stringify(manifest)||meta.binding.nativePin!==binding.nativePin)throw Error('fixture source/bytes mismatch');
+   sample('baseline',{history,fixture,fixtureSha256:meta.sha256});
+   // Global roots have explicit, inspectable lifetimes; no logger captures a carrier.
+   let t=performance.now();globalThis.diagnosticCarrierA=factory.load(bytes);check(globalThis.diagnosticCarrierA);
+   sample('one',{loadMs:performance.now()-t,counts:counts(globalThis.diagnosticCarrierA),semanticsVerified:true});snap('one');
+   if(mode==='overlap'){
+     t=performance.now();globalThis.diagnosticCarrierB=factory.load(bytes);check(globalThis.diagnosticCarrierA);check(globalThis.diagnosticCarrierB);
+     sample('two',{loadMs:performance.now()-t,countsA:counts(globalThis.diagnosticCarrierA),countsB:counts(globalThis.diagnosticCarrierB),semanticsVerified:true});snap('two');
+     globalThis.diagnosticCarrierA=undefined;
+     await new Promise(r=>setImmediate(r));check(globalThis.diagnosticCarrierB);
+     sample('released-A',{semanticsVerified:true});snap('released-A');
+     globalThis.diagnosticCarrierB=undefined;
+   }else globalThis.diagnosticCarrierA=undefined;
+   await new Promise(r=>setImmediate(r));sample('released-all');
+   log('diagnostic-complete',{mode,history});
+ }
+}finally{await server.close();}

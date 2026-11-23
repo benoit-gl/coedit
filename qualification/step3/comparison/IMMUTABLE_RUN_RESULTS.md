@@ -168,3 +168,33 @@ native allocation measurement; the fatal error identifies JavaScript heap exhaus
 This source-bound failure leaves the lifecycle sequence unfinished despite the completed initial load and
 verified warm edits. It does not by itself determine the full mandatory eligibility disposition or carrier
 selection, and it supplies no evidence about implementations that differ from its recorded source manifest.
+
+## Bounded scratch heap attribution
+
+The [diagnostic report](evidence/immutable-runs/heap-attribution/REPORT.md),
+[attribution data](evidence/immutable-runs/heap-attribution/attribution.json) and
+[artifact manifest](evidence/immutable-runs/heap-attribution/manifest.json) record separate history-100 and
+history-500 fixture builders, fresh load-only workers and fresh two-carrier workers at clean source revision
+`7926007230e6a7244ad76596bf67bf5334bbaaeb`. Per-run manifests bind complete source hashes, worker hash,
+Node v24.19.0 and the default 2,348,810,240-byte V8 heap limit. All text/Origin checks passed.
+These scratch workers used explicit GC and heap snapshots; they are not lifecycle qualification runs or clean timings.
+
+At history 500, one carrier dominated 74,463,576 retained JavaScript bytes. Its decoded command-change map,
+materialized native records subtree and namespace-depth map respectively dominated 26,872,048, 25,779,944 and
+9,511,672 bytes: disjoint descendants comprising about 83.5% of that carrier total. The fixture's 3511 records
+expanded into 104,314 namespace object IDs and 108,797 decoded operations retained in 501 command changes.
+The native wrapper and provider share one document, while activation and provider share the protocol;
+parent totals and shared references must not be counted twice. Native/WASM memory is outside this attribution.
+
+History-500 overlap heapUsed after explicit GC was 110,762,768 bytes with one carrier and 184,178,896 with two.
+Releasing A reduced it to 110,078,216; releasing both reduced it to 33,583,472. Snapshots confirmed two then
+one carrier/provider/protocol/source-index graphs, preserving B's object ID. This demonstrates collection in
+this bounded topology, not absence of leaks on other lifecycle paths. Snapshot overhead affects RSS and timings.
+
+The executed worker omitted its `nativePin` JSON property because it read `dependencies` while Automerge is
+in `devDependencies`. Package and lockfile hashes were already bound; the explicitly separate
+[version supplement](evidence/immutable-runs/heap-attribution/runtime-binding-supplement.json) records declared
+and installed version 3.4.1 without rewriting the original manifests. Executed script bytes are preserved with the evidence.
+This diagnostic identifies concrete memory contributors but omits the full warm/capture/restore/merge sequence.
+It does not identify the exact failing operation or root cause of the preserved 5000 failure, establish scaling to
+5000, complete the outstanding lifecycle characterization or change mandatory eligibility/carrier selection.

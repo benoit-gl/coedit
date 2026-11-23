@@ -1,0 +1,45 @@
+// Strong-edge dominators (Lengauer-Tarjan), excluding V8 weak edges.
+// Report V8 self sizes; WASM linear-memory capacity is not JS retained size.
+import { readFileSync, writeFileSync } from 'node:fs';
+const path=process.argv[2],out=process.argv[3];
+const s=JSON.parse(readFileSync(path,'utf8')),meta=s.snapshot.meta,N=s.nodes,E=s.edges,S=s.strings;
+const nf=meta.node_fields.length,ef=meta.edge_fields.length,nt=meta.node_types[0],et=meta.edge_types[0];
+const n=N.length/nf, ec=N.length/nf, starts=new Uint32Array(n+1), dfs=new Uint32Array(n),vertex=new Uint32Array(n+1),parent=new Uint32Array(n+1);
+const edgeCount=meta.node_fields.indexOf('edge_count'),sizeIndex=meta.node_fields.indexOf('self_size'),nameIndex=meta.node_fields.indexOf('name'),idIndex=meta.node_fields.indexOf('id');
+for(let i=0;i<n;i++)starts[i+1]=starts[i]+N[i*nf+edgeCount]*ef;
+const weak=et.indexOf('weak');let count=1;dfs[0]=1;vertex[1]=0;
+const stack=[0],cursor=[starts[0]];
+while(stack.length){const top=stack.length-1,u=stack[top],end=starts[u+1];let e=cursor[top];if(e>=end){stack.pop();cursor.pop();continue;}cursor[top]+=ef;if(E[e]===weak)continue;const v=E[e+2]/nf;if(!dfs[v]){dfs[v]=++count;vertex[count]=v;parent[count]=dfs[u];stack.push(v);cursor.push(starts[v]);}}
+// Predecessors in DFS-number space.
+const predCounts=new Uint32Array(count+2);
+for(let u=0;u<n;u++)if(dfs[u])for(let e=starts[u];e<starts[u+1];e+=ef)if(E[e]!==weak&&dfs[E[e+2]/nf])predCounts[dfs[E[e+2]/nf]]++;
+const predStarts=new Uint32Array(count+2);for(let i=1;i<=count;i++)predStarts[i+1]=predStarts[i]+predCounts[i];
+const pred=new Uint32Array(predStarts[count+1]),pc=predStarts.slice();
+for(let u=0;u<n;u++)if(dfs[u])for(let e=starts[u];e<starts[u+1];e+=ef)if(E[e]!==weak&&dfs[E[e+2]/nf])pred[pc[dfs[E[e+2]/nf]]++]=dfs[u];
+const semi=new Uint32Array(count+1),label=new Uint32Array(count+1),ancestor=new Uint32Array(count+1),idom=new Uint32Array(count+1),bucket=new Uint32Array(count+1),next=new Uint32Array(count+1);
+for(let i=1;i<=count;i++)semi[i]=label[i]=i;
+function evaluate(v){if(!ancestor[v])return label[v];const chain=[];let x=v;while(ancestor[ancestor[x]]){chain.push(x);x=ancestor[x];}for(let j=chain.length-1;j>=0;j--){x=chain[j];if(semi[label[ancestor[x]]]<semi[label[x]])label[x]=label[ancestor[x]];ancestor[x]=ancestor[ancestor[x]];}return label[v];}
+for(let w=count;w>=2;w--){for(let j=predStarts[w];j<predStarts[w+1];j++){const u=evaluate(pred[j]);if(semi[u]<semi[w])semi[w]=semi[u];}next[w]=bucket[semi[w]];bucket[semi[w]]=w;ancestor[w]=parent[w];let v=bucket[parent[w]];while(v){const u=evaluate(v);idom[v]=semi[u]<semi[v]?u:parent[w];v=next[v];}bucket[parent[w]]=0;}
+for(let w=2;w<=count;w++)if(idom[w]!==semi[w])idom[w]=idom[idom[w]];
+const retained=new Float64Array(count+1);for(let i=1;i<=count;i++)retained[i]=N[vertex[i]*nf+sizeIndex];for(let i=count;i>=2;i--)retained[idom[i]]+=retained[i];
+const describe=u=>({index:u,id:N[u*nf+idIndex],name:S[N[u*nf+nameIndex]],type:nt[N[u*nf]],selfBytes:N[u*nf+sizeIndex],retainedBytes:retained[dfs[u]]||0});
+function edges(u){const a=[];for(let e=starts[u];e<starts[u+1];e+=ef){const v=E[e+2]/nf,t=et[E[e]],name=(t==='element'||t==='hidden')?E[e+1]:S[E[e+1]];a.push({edgeType:t,edgeName:name,...describe(v),immediatelyDominated:idom[dfs[v]]===dfs[u]});}return a;}
+const names=new Set(['AutomergeImmutableRunCarrier','AutomergeImmutableRunDocument','NativeProvider','ImmutableRunProtocolV1','RootClosure','ImmutableRunSourceIndex','WarmNativeView']);
+const objects=[],histogram={};for(let u=0;u<n;u++){const name=S[N[u*nf+nameIndex]],type=nt[N[u*nf]];if(type==='object'&&names.has(name)){histogram[name]=(histogram[name]||0)+1;if(name!=='RootClosure'&&name!=='ImmutableRunSourceIndex')objects.push({...describe(u),edges:edges(u)});}}
+const top=[];for(let u=0;u<n;u++){if(retained[dfs[u]]>500000)top.push(describe(u));}top.sort((a,b)=>b.retainedBytes-a.retainedBytes);
+const child=new Uint32Array(count+1),sibling=new Uint32Array(count+1);for(let i=2;i<=count;i++){sibling[i]=child[idom[i]];child[idom[i]]=i;}
+function detail(u){const q=[dfs[u]],groups={},large=[],metrics={decodedChanges:0,decodedOperations:0,mapBackingEdges:0,closureBitArrays:0,closureBitArraySelfBytes:0};let shallow=0;
+ while(q.length){const d=q.pop(),v=vertex[d],type=nt[N[v*nf]],name=S[N[v*nf+nameIndex]],bytes=N[v*nf+sizeIndex],key=type+':'+name;shallow+=bytes;const g=groups[key]??(groups[key]={name,type,count:0,selfBytes:0});g.count++;g.selfBytes+=bytes;if(bytes>100000)large.push(describe(v));
+  if(type==='object'&&name==='Object'){let ops=-1,hasHash=false;for(let e=starts[v];e<starts[v+1];e+=ef){if(et[E[e]]==='property'&&S[E[e+1]]==='ops')ops=E[e+2]/nf;if(et[E[e]]==='property'&&S[E[e+1]]==='hash')hasHash=true;}if(ops>=0&&hasHash){metrics.decodedChanges++;for(let e=starts[ops];e<starts[ops+1];e+=ef)if(et[E[e]]==='element')metrics.decodedOperations++;}}
+  if(type==='object'&&name==='RootClosure')for(let e=starts[v];e<starts[v+1];e+=ef)if(et[E[e]]==='property'&&S[E[e+1]]==='bits'){metrics.closureBitArrays++;metrics.closureBitArraySelfBytes+=N[E[e+2]+sizeIndex];}
+  for(let d2=child[d];d2;d2=sibling[d2])q.push(d2);
+ }
+ return {owner:describe(u),metrics,sumSelfBytes:shallow,groups:Object.values(groups).sort((a,b)=>b.selfBytes-a.selfBytes).slice(0,25),large};
+}
+const details=[];for(const o of objects)if(o.name==='AutomergeImmutableRunCarrier'||o.name==='NativeProvider'||o.name==='ImmutableRunProtocolV1'){details.push(detail(o.index));for(const e of o.edges)if(e.immediatelyDominated&&e.retainedBytes>100000)details.push({...detail(e.index),via:o.name+'.'+e.edgeName});}
+const sharedDocuments=[];for(const o of objects)if(o.name==='NativeProvider'){const d=o.edges.find(e=>e.edgeName==='document');if(d&&!sharedDocuments.some(x=>x.owner.index===d.index))sharedDocuments.push({...detail(d.index),edges:edges(d.index)});}
+const mapTables=[];for(const o of objects)for(const e of o.edges)if(e.name==='Map'){const table=edges(e.index).find(x=>x.edgeName==='table');if(table){const contents=edges(table.index),byType={};for(const c of contents)byType[c.type]=(byType[c.type]||0)+1;mapTables.push({owner:o.name,via:e.edgeName,mapIndex:e.index,backingTable:table,tableEdgeCounts:byType});}}
+const verification=[];if(process.argv.includes('--verify')){const targets=objects.filter(o=>o.name==='AutomergeImmutableRunCarrier'||o.name==='NativeProvider').flatMap(o=>[o,...o.edges.filter(e=>e.edgeName==='#commandChanges'||e.edgeName==='#recordDepths')]);for(const target of targets){const visited=new Uint8Array(n),work=new Uint32Array(n);let len=1,sum=0;work[0]=0;visited[0]=1;while(len){const u=work[--len];sum+=N[u*nf+sizeIndex];for(let e=starts[u];e<starts[u+1];e+=ef){const v=E[e+2]/nf;if(E[e]!==weak&&v!==target.index&&!visited[v]){visited[v]=1;work[len++]=v;}}}const lost=retained[1]-sum,expected=retained[dfs[target.index]];verification.push({index:target.index,name:target.edgeName??target.name,dominatorRetainedBytes:expected,deletionLostBytes:lost,passed:lost===expected});if(lost!==expected)throw Error('Dominator verification failed');}}
+const result={snapshot:path,method:'Lengauer-Tarjan dominators rooted at snapshot node 0; all edges except weak; V8 self sizes summed without double counting. Ephemeron treatment follows strong edges exported by V8. Native/WASM memory not attributed as JS heap.',nodes:n,strongReachable:count,edges:E.length/ef,totalStrongSelfBytes:retained[1],histogram,objects,details,sharedDocuments,mapTables,verification,top:top.slice(0,80)};
+writeFileSync(out,JSON.stringify(result,null,2),{flag:'wx'});
+console.log(JSON.stringify({snapshot:path,nodes:n,strongReachable:count,histogram,carriers:objects.filter(o=>o.name==='AutomergeImmutableRunCarrier').map(o=>({retainedBytes:o.retainedBytes,id:o.id})),providers:objects.filter(o=>o.name==='NativeProvider').map(o=>({retainedBytes:o.retainedBytes,id:o.id,fields:o.edges.filter(e=>e.retainedBytes>100000).map(e=>({edgeName:e.edgeName,name:e.name,retainedBytes:e.retainedBytes,immediatelyDominated:e.immediatelyDominated}))}))}));

@@ -1,0 +1,265 @@
+{
+  "kind": "scratch-heap-attribution",
+  "qualificationComplete": false,
+  "units": "bytes unless stated",
+  "method": "V8 exported strong-edge dominators, excluding weak edges; native/WASM allocation excluded",
+  "sourceRevision": "7926007230e6a7244ad76596bf67bf5334bbaaeb",
+  "isolatedLoad": {
+    "100": {
+      "originalAnalysis": "load-100-one.verified.json",
+      "carrierRetainedBytes": 15650368,
+      "providerRetainedBytes": 7890456,
+      "commandChangesRetainedBytes": 5529728,
+      "recordDepthsRetainedBytes": 2123536,
+      "nativeRecordsRetainedBytes": 5308032,
+      "nativeDocumentRetainedBytes": 5327704,
+      "protocolRetainedBytes": 1159384,
+      "sourceIndexMapRetainedBytes": 205240,
+      "closureMapRetainedBytes": 200976,
+      "decodedChanges": 101,
+      "decodedOperations": 22418,
+      "namespaceObjectIds": 21535,
+      "semanticRoots": 102,
+      "verification": [
+        {
+          "index": 7985,
+          "name": "AutomergeImmutableRunCarrier",
+          "dominatorRetainedBytes": 15650368,
+          "deletionLostBytes": 15650368,
+          "passed": true
+        },
+        {
+          "index": 591013,
+          "name": "NativeProvider",
+          "dominatorRetainedBytes": 7890456,
+          "deletionLostBytes": 7890456,
+          "passed": true
+        },
+        {
+          "index": 584845,
+          "name": "#commandChanges",
+          "dominatorRetainedBytes": 5529728,
+          "deletionLostBytes": 5529728,
+          "passed": true
+        },
+        {
+          "index": 402418,
+          "name": "#recordDepths",
+          "dominatorRetainedBytes": 2123536,
+          "deletionLostBytes": 2123536,
+          "passed": true
+        }
+      ]
+    },
+    "500": {
+      "originalAnalysis": "load-500-one.analysis.json",
+      "carrierRetainedBytes": 74463576,
+      "providerRetainedBytes": 37472792,
+      "commandChangesRetainedBytes": 26872048,
+      "recordDepthsRetainedBytes": 9511672,
+      "nativeRecordsRetainedBytes": 25779944,
+      "nativeDocumentRetainedBytes": 25810320,
+      "protocolRetainedBytes": 5681280,
+      "sourceIndexMapRetainedBytes": 322864,
+      "closureMapRetainedBytes": 984584,
+      "decodedChanges": 501,
+      "decodedOperations": 108797,
+      "namespaceObjectIds": 104314,
+      "semanticRoots": 502,
+      "verification": []
+    }
+  },
+  "overlap": {
+    "100": {
+      "two": {
+        "objectCounts": {
+          "AutomergeImmutableRunCarrier": 2,
+          "RootClosure": 204,
+          "WarmNativeView": 2,
+          "ImmutableRunSourceIndex": 2,
+          "AutomergeImmutableRunDocument": 2,
+          "NativeProvider": 2,
+          "ImmutableRunProtocolV1": 2
+        },
+        "carriers": [
+          {
+            "snapshotObjectId": 1299583,
+            "retainedBytes": 15478592
+          },
+          {
+            "snapshotObjectId": 15971,
+            "retainedBytes": 15480600
+          }
+        ],
+        "verification": []
+      },
+      "released-A": {
+        "objectCounts": {
+          "AutomergeImmutableRunDocument": 1,
+          "AutomergeImmutableRunCarrier": 1,
+          "WarmNativeView": 1,
+          "ImmutableRunProtocolV1": 1,
+          "NativeProvider": 1,
+          "ImmutableRunSourceIndex": 1,
+          "RootClosure": 102
+        },
+        "carriers": [
+          {
+            "snapshotObjectId": 1299583,
+            "retainedBytes": 15655808
+          }
+        ],
+        "verification": []
+      }
+    },
+    "500": {
+      "two": {
+        "objectCounts": {
+          "AutomergeImmutableRunCarrier": 2,
+          "RootClosure": 1004,
+          "ImmutableRunProtocolV1": 2,
+          "AutomergeImmutableRunDocument": 2,
+          "ImmutableRunSourceIndex": 2,
+          "NativeProvider": 2,
+          "WarmNativeView": 2
+        },
+        "carriers": [
+          {
+            "snapshotObjectId": 3138535,
+            "retainedBytes": 74113360
+          },
+          {
+            "snapshotObjectId": 15971,
+            "retainedBytes": 74113416
+          }
+        ],
+        "verification": [
+          {
+            "index": 7985,
+            "name": "AutomergeImmutableRunCarrier",
+            "dominatorRetainedBytes": 74113360,
+            "deletionLostBytes": 74113360,
+            "passed": true
+          },
+          {
+            "index": 403785,
+            "name": "AutomergeImmutableRunCarrier",
+            "dominatorRetainedBytes": 74113416,
+            "deletionLostBytes": 74113416,
+            "passed": true
+          },
+          {
+            "index": 1481807,
+            "name": "NativeProvider",
+            "dominatorRetainedBytes": 37464744,
+            "deletionLostBytes": 37464744,
+            "passed": true
+          },
+          {
+            "index": 1218712,
+            "name": "#commandChanges",
+            "dominatorRetainedBytes": 26866088,
+            "deletionLostBytes": 26866088,
+            "passed": true
+          },
+          {
+            "index": 465101,
+            "name": "#recordDepths",
+            "dominatorRetainedBytes": 9511672,
+            "deletionLostBytes": 9511672,
+            "passed": true
+          },
+          {
+            "index": 2437964,
+            "name": "NativeProvider",
+            "dominatorRetainedBytes": 37464744,
+            "deletionLostBytes": 37464744,
+            "passed": true
+          },
+          {
+            "index": 2453673,
+            "name": "#commandChanges",
+            "dominatorRetainedBytes": 26866088,
+            "deletionLostBytes": 26866088,
+            "passed": true
+          },
+          {
+            "index": 2453675,
+            "name": "#recordDepths",
+            "dominatorRetainedBytes": 9511672,
+            "deletionLostBytes": 9511672,
+            "passed": true
+          }
+        ]
+      },
+      "released-A": {
+        "objectCounts": {
+          "AutomergeImmutableRunDocument": 1,
+          "ImmutableRunProtocolV1": 1,
+          "RootClosure": 502,
+          "NativeProvider": 1,
+          "AutomergeImmutableRunCarrier": 1,
+          "WarmNativeView": 1,
+          "ImmutableRunSourceIndex": 1
+        },
+        "carriers": [
+          {
+            "snapshotObjectId": 3138535,
+            "retainedBytes": 74465288
+          }
+        ],
+        "verification": []
+      }
+    }
+  },
+  "snapshots": [
+    {
+      "file": "load-100-one.heapsnapshot",
+      "bytes": 48738882,
+      "sha256": "7bfb6309421a0417a5fa411f9280461d5ab77f1c10d608bd5b3a6acc86b40e07",
+      "location": "scratch only: /workspace/work/merge10-implementation/heap-attribution"
+    },
+    {
+      "file": "load-500-one.heapsnapshot",
+      "bytes": 113222945,
+      "sha256": "6b3c7a8d34bd8d89fdc0682eb4ad9d94098c4231f6d95bcca37491c32f0d3421",
+      "location": "scratch only: /workspace/work/merge10-implementation/heap-attribution"
+    },
+    {
+      "file": "overlap-100-one.heapsnapshot",
+      "bytes": 48649273,
+      "sha256": "a0bcf99b36d572da4df221ec7a75e7a37f4b5245c294e8f3faa95123c10e8973",
+      "location": "scratch only: /workspace/work/merge10-implementation/heap-attribution"
+    },
+    {
+      "file": "overlap-100-released-A.heapsnapshot",
+      "bytes": 49735349,
+      "sha256": "4b2b66d919b9f3d9728b7c4f7765fbbc5c0eccbf9d038edfeb85a313a929d4dd",
+      "location": "scratch only: /workspace/work/merge10-implementation/heap-attribution"
+    },
+    {
+      "file": "overlap-100-two.heapsnapshot",
+      "bytes": 63980771,
+      "sha256": "6508b644e589eb323dc98314ec784669c30ce52a9b4e306cde4694950ea1d699",
+      "location": "scratch only: /workspace/work/merge10-implementation/heap-attribution"
+    },
+    {
+      "file": "overlap-500-one.heapsnapshot",
+      "bytes": 112788118,
+      "sha256": "94690b7fb1e8beef3659c7cc169bd07d6cee75dce4957e81ba341e4e0ce9d730",
+      "location": "scratch only: /workspace/work/merge10-implementation/heap-attribution"
+    },
+    {
+      "file": "overlap-500-released-A.heapsnapshot",
+      "bytes": 113252814,
+      "sha256": "7777a2465f68584903ff83a60ce900f61d8842fb5140312e7a1c0f442edf9cf7",
+      "location": "scratch only: /workspace/work/merge10-implementation/heap-attribution"
+    },
+    {
+      "file": "overlap-500-two.heapsnapshot",
+      "bytes": 184354365,
+      "sha256": "75367f4242cfd1bf18afe91eebf662e4fb93666ccc24481b3530b7a6661b48fb",
+      "location": "scratch only: /workspace/work/merge10-implementation/heap-attribution"
+    }
+  ]
+}
