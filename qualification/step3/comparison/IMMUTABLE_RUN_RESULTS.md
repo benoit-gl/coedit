@@ -147,3 +147,24 @@ not a measurement of native allocation or whole-machine memory exhaustion.
 These records characterize the identified historical source and retain its actual failure. They do not
 establish the later optimized implementation's behavior, satisfy the unfinished lifecycle characterization
 or change the remaining eligibility and carrier-selection obligations.
+
+## Later source-bound 5,000-command JavaScript heap failure
+
+The [partial journal](evidence/immutable-runs/history-5000-4f0c259-heap-oom.jsonl) and
+[fatal-error log](evidence/immutable-runs/history-5000-4f0c259-heap-oom.log) preserve the subsequent
+5,000-command run at source revision `4f0c25992a05fe79140924cf5c35ecc61e8ace61`.
+The journal records a clean working tree and a 98-entry source manifest; those hashes identify the measured
+implementation. The journal is preserved unchanged; the fatal log has only trailing line whitespace removed.
+The process exited with status 134 after setup, initial load and warm edits, with a fatal JavaScript heap
+out-of-memory error. The last checkpoint is warm, with `semanticsVerified: true`; there is no lifecycle result
+or final `complete: true` row, and the exact failing lifecycle operation is not identified. This run failed.
+
+Setup took 179.04 seconds and produced 6,714,418 encoded bytes. Initial load took 401.74 seconds
+(about 6.7 minutes), with approximately 2.50 GB process RSS afterward. Five-sample bare and incremental-editor
+warm medians were 100.96 ms and 36.23 ms. The run shared CPU resources with other work, so these observations
+are not controlled timing comparisons with earlier runs. RSS is process-wide, not a measured peak or an isolated
+native allocation measurement; the fatal error identifies JavaScript heap exhaustion.
+
+This source-bound failure leaves the lifecycle sequence unfinished despite the completed initial load and
+verified warm edits. It does not by itself determine the full mandatory eligibility disposition or carrier
+selection, and it supplies no evidence about implementations that differ from its recorded source manifest.
