@@ -1,0 +1,48 @@
+// Genuine carrier commands; one final public encoding, then verified grouping.
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {runtime,extractRecords} from './runtime.mjs';
+const output=process.argv[2];if(!output)throw Error('Exclusive output required.');
+const r=await runtime(), sha=x=>createHash('sha256').update(x).digest('hex');
+try {
+  const {createAutomergeImmutableRunCarrierFactory}=await r.server.ssrLoadModule('/qualification/step3/immutableRuns/automergeCarrier.ts');
+  const {parseBlockId,parseInlineContentId}=await r.server.ssrLoadModule('/src/domain/index.ts');
+  const id=n=>`d1000000-0000-4000-8000-${n.toString(16).padStart(12,'0')}`;
+  const root=parseBlockId(id(1)),target=parseInlineContentId(id(2)),compare=(a,b)=>a<b?-1:a>b?1:0;
+  const factory=createAutomergeImmutableRunCarrierFactory({encode:v=>v,decode:v=>v},{compare,comparePrimary:compare},{purePositionDecoder:true});
+  const carrier=factory.create(root),origin={kind:'human',id:'o0'},actorId='packed-author';
+  carrier.applyChange({inlineContents:[{inlineContentId:target,blockId:root}],payloads:[{kind:'replace-text',inlineContentId:target,mediaType:'text/plain',text:'a'.repeat(1024),origin}],context:{actorId,effectId:'seed'}});
+  let revision=carrier.readOrdinaryTextRange(target,0,0).revision;
+  for(let i=0;i<500;i++) {
+    revision=carrier.applyOrdinaryChange({payloads:[i%2===0?{kind:'insert-text',inlineContentId:target,offset:1,text:'x',origin}:{kind:'delete-text',inlineContentId:target,start:1,end:2}],context:{actorId,effectId:`edit-${i}`}},revision);
+    if((i+1)%50===0)console.log(JSON.stringify({phase:'authored',edits:i+1,memory:process.memoryUsage()}));
+  }
+  const finalPayload=carrier.snapshot().payloads.get(target);
+  assert.equal(finalPayload.text,'a'.repeat(1024));assert.deepEqual(finalPayload.spans,[{text:'a'.repeat(1024),origin}]);
+  const original=carrier.encode();fs.writeFileSync(output+'.original.am',original,{flag:'wx'});
+  const all=extractRecords(r.A,r.record,original);
+  const protocol=r.Protocol.validate(all),generation=all.find(e=>e.record[3]==='generation').ref;
+  const manifestByEffect=new Map(all.filter(e=>e.record[3]==='manifest').map(e=>[JSON.stringify(e.record[7]),e]));
+  const labels=['genesis','seed',...Array.from({length:500},(_,i)=>`edit-${i}`)],grouped=new Set(),groups=[];
+  for(const label of labels) {
+    const manifest=label==='genesis'?all.find(e=>e.record[3]==='manifest'&&e.record[10][0]==='genesis'):manifestByEffect.get(JSON.stringify([actorId,label]));
+    assert.ok(manifest);const members=all.filter(e=>e.record[8]===manifest.record[2]);
+    assert.ok(members.some(e=>e.key===manifest.key));
+    const body=manifest.record[10];
+    if(label!=='genesis') {
+      const refs=[body[2],body[3],...(body[4]?[body[4]]:[]),...body[5].flatMap(row=>row[2])];
+      assert.deepEqual(members.filter(e=>e.record[3]!=='manifest').map(e=>JSON.stringify(e.ref)).sort(),refs.map(ref=>JSON.stringify(ref)).sort());
+      for(const member of members)assert.deepEqual(member.record[7],[actorId,label]);
+    }
+    for(const member of members){assert.ok(!grouped.has(member.record[2]));grouped.add(member.record[2]);}
+    const edit=label.startsWith('edit-')?Number(label.slice(5)):null;
+    const text=edit!==null&&edit%2===0?'a'+'x'+'a'.repeat(1023):'a'.repeat(1024);
+    if(label!=='genesis') {const projection=protocol.projectGeneration(manifest.ref,generation);assert.equal(projection.text,text);assert.deepEqual(projection.spans,[{text,origin}]);}
+    groups.push({label,keys:members.map(e=>e.key),root:manifest.ref,generation:label==='genesis'?null:generation,expected:label==='genesis'?null:{text,spans:[{text,origin}]}});
+  }
+  assert.equal(grouped.size,all.length);
+  const fixture={schema:'merge10-packed-history-v1',edits:500,groups,logicalRecords:all.length,semanticSha256:sha(all.map(e=>e.key).sort().join('\n')),originalEncodedSha256:sha(original),workload:{initialUnits:1024,unit:'UTF-16 ASCII',insert:'x',offset:1,delete:[1,2],origin,actorId,uuidPolicy:'fresh genuine native-carrier UUIDs; shared exact fixture across storage controls'},scope:'real carrier canonical histories replayed into storage primitives; no packed full-carrier provenance adapter'};
+  fs.writeFileSync(output,JSON.stringify(fixture)+'\n',{flag:'wx'});
+  console.log(JSON.stringify({complete:true,edits:500,groups:groups.length,records:all.length,semanticSha256:fixture.semanticSha256}));
+} finally {await r.server.close();}

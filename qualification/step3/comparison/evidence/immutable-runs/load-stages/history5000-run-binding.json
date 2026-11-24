@@ -1,0 +1,27 @@
+{
+  "checkedAtUTC": "2026-11-23T21:20:15.941891+00:00",
+  "baseRevision": "4e0857f1619cd4b32e515a458455fb6434f147fb",
+  "instrumentedWorkingTree": " M qualification/step3/immutableRuns/automergeCarrier.ts\n M qualification/step3/immutableRuns/nativeDocument.ts\n?? node_modules\n?? qualification/step3/immutableRuns/loadStageDiagnostic.ts\n",
+  "headerSourceFiles": 99,
+  "headerMatchesBoundedSourceManifest": true,
+  "harnessSha256": "f2bdb3fb9494b19d1cd0f198dff6ba3339e348abf09b1a54405b124334db8d4c",
+  "harnessBytesVerified": true,
+  "originalWorkingTreeAtLaunch": "",
+  "execArgv": [],
+  "heapOverride": false,
+  "forcedGC": false,
+  "heapSnapshot": false,
+  "case": [
+    {
+      "name": "same-gap-history-5000",
+      "text": 1024,
+      "blocks": 0,
+      "unrelatedText": 0,
+      "opaque": 0,
+      "origins": 1,
+      "boundaries": 1,
+      "history": 5000
+    }
+  ],
+  "command": "COEDIT_LOAD_STAGES=history5000-stages.jsonl node stage-harness.mjs --root source --case same-gap-history-5000 --out history5000-main.jsonl --phase-trace history5000-phase.jsonl --note <bound header runNote>"
+}

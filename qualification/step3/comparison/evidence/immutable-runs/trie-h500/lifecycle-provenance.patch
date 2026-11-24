@@ -1,0 +1,68 @@
+--- /workspace/work/merge10-implementation/step3-immutable-runs-phase-trace.mjs
++++ /workspace/work/merge10-implementation/trie-prototype/h500-v1/lifecycle.mjs
+@@ -3,6 +3,7 @@
+  * observations run separately; results are experimental, never acceptance limits.
+  */
+ import { createHash } from "node:crypto";
++import { bind } from "./binding.mjs";
+ import { appendFile, mkdir, readFile, stat, writeFile } from "node:fs/promises";
+ import { existsSync, openSync, writeSync, closeSync } from "node:fs";
+ import { getHeapStatistics } from "node:v8";
+@@ -92,39 +93,8 @@
+     createHash("sha256")
+       .update(await readFile(p))
+       .digest("hex");
+-const files = execFileSync(
+-  "git",
+-  ["-C", root, "ls-files", "--cached", "--others", "--exclude-standard"],
+-  { encoding: "utf8" },
+-)
+-  .split("\n")
+-  .filter(Boolean)
+-  .filter((p) => !/(\.test\.ts|\.browser\.test\.ts)$/.test(p))
+-  .filter(
+-    (p) =>
+-      !/(^|\/)(__screenshots__|browser-traces|\.vitest-attachments|evidence|node_modules)(\/|$)/.test(
+-        p,
+-      ),
+-  )
+-  .filter(
+-    (p) =>
+-      /\.(ts|tsx|js|mjs|cjs)$/.test(p) ||
+-      /(^|\/)(package\.json|pnpm-lock\.yaml|tsconfig.*\.json)$/.test(p),
+-  )
+-  .filter(
+-    (p) =>
+-      /^(src|qualification|scripts)\//.test(p) ||
+-      /(^|\/)(package\.json|pnpm-lock\.yaml|vite\.config\.(ts|mjs)|tsconfig.*\.json)$/.test(
+-        p,
+-      ),
+-  );
+-const sourceManifest = await Promise.all(
+-  files.map(async (relative) => ({
+-    relative,
+-    bytes: (await stat(resolve(root, relative))).size,
+-    sha256: await sha(resolve(root, relative)),
+-  })),
+-);
++const prototypeBinding = bind(root);
++const sourceManifest = prototypeBinding.sourceManifest;
+ const pkg = JSON.parse(await readFile(resolve(root, "package.json"), "utf8"));
+ const env = {
+   os: process.platform,
+@@ -347,12 +317,9 @@
+     kind: "header",
+     complete: false,
+     sourceManifest,
+-    sourceRevision: execFileSync("git", ["-C", root, "rev-parse", "HEAD"], {
+-      encoding: "utf8",
+-    }).trim(),
+-    workingTree: execFileSync("git", ["-C", root, "status", "--porcelain"], {
+-      encoding: "utf8",
+-    }),
++    sourceRevision: prototypeBinding.sourceRevision,
++    workingTree: "isolated scratch copy; see verified prototypeBinding",
++    prototypeBinding,
+     harness: {
+       path: fileURLToPath(import.meta.url),
+       sha256: await sha(fileURLToPath(import.meta.url)),

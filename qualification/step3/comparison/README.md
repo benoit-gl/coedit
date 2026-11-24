@@ -30,6 +30,12 @@ The [unit 10 assessment](MERGE_10_DESIGN_ASSESSMENT.md) preserves those countere
 path, its additional sequence/index responsibilities and required evidence. Its design and implementation are separate
 PRs; the design itself neither passes ordinary-edit eligibility nor selects a production carrier or Range service.
 
+The new [immutable-run profile](IMMUTABLE_RUN_PROFILE.md) describes the separate public-API layout,
+its reproducible headless runner, source-bound JavaScript work observations and lifecycle intervals.
+The [current results](IMMUTABLE_RUN_RESULTS.md) distinguish completed observations from remaining qualification.
+Run `npm run step3:immutable-runs -- --small --out PATH.jsonl` for a bounded smoke run.
+These records preserve the old failures and do not select a carrier or close unit 11's final comparison.
+
 The preliminary paired measurement runner's method and input profile are in `profile.json`.
 The `npm run step3:measure` command records paired Yjs/Automerge and
 structural allocator samples, medians, nearest-rank p95, encoded growth, CPU and memory

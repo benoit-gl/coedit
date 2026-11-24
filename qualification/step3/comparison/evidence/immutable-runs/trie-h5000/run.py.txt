@@ -1,0 +1,27 @@
+import subprocess,time,json,pathlib,os,hashlib
+base=pathlib.Path(__file__).resolve().parent
+root=base.parent/'chunk2'
+prefix=base/'chunk2-lifecycle'
+cmd=['node',str(base/'lifecycle.mjs'),'--root',str(root),'--case','same-gap-history-5000','--out',str(prefix)+'.jsonl','--phase-trace',str(prefix)+'.phases.jsonl','--note','isolated hex2 full-carrier H5000 exact lifecycle; verified byte manifests; default heap; no forced GC; unchanged H500 lifecycle harness']
+with open(base/'supervisor.jsonl','x',buffering=1) as journal, open(str(prefix)+'.stdout.log','xb') as out, open(str(prefix)+'.stderr.log','xb') as err, open(str(prefix)+'.rss-samples.jsonl','x',buffering=1) as samples:
+ record={'event':'start','variant':'chunk2','mode':'lifecycle','command':cmd,'cwd':str(root),'utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'NODE_OPTIONS':os.environ.get('NODE_OPTIONS'),'timeoutSeconds':None,'workloadBound':'fixed original same-gap-history-5000 lifecycle, 3 warmups and 5 samples per original mode'}
+ journal.write(json.dumps(record)+'\n'); print(json.dumps(record),flush=True)
+ start=time.monotonic(); peak=0; last_message=start
+ p=subprocess.Popen(cmd,cwd=root,stdout=out,stderr=err,start_new_session=True)
+ journal.write(json.dumps({'event':'child-start','pid':p.pid,'supervisorPid':os.getpid()})+'\n')
+ while p.poll() is None:
+  elapsed=time.monotonic()-start
+  try:
+   vals={k:int(v.strip().split()[0]) for k,v in (ln.split(':',1) for ln in pathlib.Path(f'/proc/{p.pid}/status').read_text().splitlines() if ln.startswith(('VmRSS:','VmHWM:','VmSize:')))}
+   peak=max(peak,vals.get('VmRSS',0));samples.write(json.dumps({'elapsedSeconds':elapsed,'memoryKiB':vals})+'\n')
+  except FileNotFoundError: pass
+  if time.monotonic()-last_message>30:
+   phasepath=pathlib.Path(str(prefix)+'.phases.jsonl')
+   lines=phasepath.read_text().splitlines() if phasepath.exists() else []
+   lastphase=json.loads(lines[-1]) if lines else None
+   status={'event':'running','elapsedSeconds':elapsed,'sampledPeakRssKiB':peak,'lastPhase':lastphase}
+   journal.write(json.dumps(status)+'\n');print(json.dumps(status),flush=True);last_message=time.monotonic()
+  time.sleep(.05)
+ rc=p.wait()
+ record={'event':'end','variant':'chunk2','mode':'lifecycle','returncode':rc,'timedOut':False,'elapsedSeconds':time.monotonic()-start,'sampledPeakRssKiB':peak,'utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())}
+ journal.write(json.dumps(record)+'\n');print(json.dumps(record),flush=True)

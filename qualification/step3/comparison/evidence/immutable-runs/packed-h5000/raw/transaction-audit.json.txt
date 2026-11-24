@@ -1,0 +1,12 @@
+{
+  "complete": true,
+  "groupsAudited": 5002,
+  "nativeChanges": 5003,
+  "nativeOps": 5005,
+  "physicalUnits": 5002,
+  "makeMaps": 1,
+  "lastCommandOps": 1,
+  "recordedNativeHeadsChecked": 5002,
+  "commandHashSha256": "d3a87377cf92d26044d276824e333b84438ad9ceb8244657d15f134d388b975a",
+  "encodedSha256": "29fae2ae922c8dcb0207f88698237108eb95438c48a02d872c9e97be4fb18b44"
+}

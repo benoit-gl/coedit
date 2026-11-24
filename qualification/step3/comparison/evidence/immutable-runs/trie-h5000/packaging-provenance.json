@@ -1,0 +1,150 @@
+{
+  "schema": "merge10-trie-h5000-packaging-v1",
+  "note": "Archived executable/summary .txt suffixes avoid formatter rewriting executed evidence. Only trailing whitespace normalization is permitted; original and packaged hashes are recorded. No binaries or snapshots included.",
+  "files": [
+    {
+      "path": "original-artifacts-manifest.json",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/h5000-v1/artifacts-manifest.json",
+      "originalSha256": "1bc2c89a16e8243446dd8f51387415e83d0dde77a9d1cb9dad0ecb79d963165f",
+      "normalization": "none; byte-identical",
+      "bytes": 1923,
+      "sha256": "1bc2c89a16e8243446dd8f51387415e83d0dde77a9d1cb9dad0ecb79d963165f"
+    },
+    {
+      "path": "binding.mjs.txt",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/h5000-v1/binding.mjs",
+      "originalSha256": "e1a30336134052dab059dcba47c05f3982a2d46a00d4d2c1e88e943f66d6adf1",
+      "normalization": "none; byte-identical",
+      "bytes": 1336,
+      "sha256": "e1a30336134052dab059dcba47c05f3982a2d46a00d4d2c1e88e943f66d6adf1"
+    },
+    {
+      "path": "chunk2-lifecycle.jsonl",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/h5000-v1/chunk2-lifecycle.jsonl",
+      "originalSha256": "2ecf915a3ca9dcfa0259c5b4a9635525ca4d4ff7a9730f11b86bf67d1eda9c13",
+      "normalization": "none; byte-identical",
+      "bytes": 45346,
+      "sha256": "2ecf915a3ca9dcfa0259c5b4a9635525ca4d4ff7a9730f11b86bf67d1eda9c13"
+    },
+    {
+      "path": "chunk2-lifecycle.phases.jsonl",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/h5000-v1/chunk2-lifecycle.phases.jsonl",
+      "originalSha256": "1740a79e7115f8348712f35c75229e55096baf63d05a51e68f5ef1a8c78b72da",
+      "normalization": "none; byte-identical",
+      "bytes": 7873,
+      "sha256": "1740a79e7115f8348712f35c75229e55096baf63d05a51e68f5ef1a8c78b72da"
+    },
+    {
+      "path": "chunk2-lifecycle.rss-samples.jsonl.gz.b64",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/h5000-v1/chunk2-lifecycle.rss-samples.jsonl",
+      "originalSha256": "0c460d23fa6ffe05a80c6b62e62a95a557a04538c2f910e6bfa8bbfa4c08d0ea",
+      "normalization": "gzip mtime=0 then base64; decodes byte-for-byte to original",
+      "bytes": 384652,
+      "sha256": "5117cec2167ce262598f0fc42484339e50c10e22ed06f0dc9df048897d28caa4"
+    },
+    {
+      "path": "chunk2-lifecycle.stderr.log",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/h5000-v1/chunk2-lifecycle.stderr.log",
+      "originalSha256": "7cbe9eb2becbcc08ff0a5ef4fbb3887f5542ef19170775f5cb311694cad617b2",
+      "normalization": "trailing line whitespace removed only",
+      "bytes": 851,
+      "sha256": "767501c3210d8d30f5e73c9cd4dc874526fc06d6847f9051a8ce6f0142e2e062"
+    },
+    {
+      "path": "chunk2-lifecycle.stdout.log",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/h5000-v1/chunk2-lifecycle.stdout.log",
+      "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "normalization": "none; byte-identical",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "finalize.py.txt",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/h5000-v1/finalize.py",
+      "originalSha256": "cf42b4f6a5c3b748d8a72b31f2c703cb66726f46cff5c98f7f5936cc3b0dd4f0",
+      "normalization": "none; byte-identical",
+      "bytes": 4256,
+      "sha256": "cf42b4f6a5c3b748d8a72b31f2c703cb66726f46cff5c98f7f5936cc3b0dd4f0"
+    },
+    {
+      "path": "lifecycle.mjs.txt",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/h5000-v1/lifecycle.mjs",
+      "originalSha256": "25384a467289d6d76c8620c8fba44023e599c3f6db5c8475dcb69d0c7cc61785",
+      "normalization": "none; byte-identical",
+      "bytes": 22210,
+      "sha256": "25384a467289d6d76c8620c8fba44023e599c3f6db5c8475dcb69d0c7cc61785"
+    },
+    {
+      "path": "run.py.txt",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/h5000-v1/run.py",
+      "originalSha256": "359138b1a67f2120f5fde09cd0816ddb22caa613b4bdaa5d316ba5aca829727b",
+      "normalization": "none; byte-identical",
+      "bytes": 2469,
+      "sha256": "359138b1a67f2120f5fde09cd0816ddb22caa613b4bdaa5d316ba5aca829727b"
+    },
+    {
+      "path": "summary.json.txt",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/h5000-v1/summary.json",
+      "originalSha256": "579def374cbbb1a04b27cac8f16e309b589e07bbfff35bb9c4f094689f351219",
+      "normalization": "none; byte-identical",
+      "bytes": 4643,
+      "sha256": "579def374cbbb1a04b27cac8f16e309b589e07bbfff35bb9c4f094689f351219"
+    },
+    {
+      "path": "supervisor.jsonl",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/h5000-v1/supervisor.jsonl",
+      "originalSha256": "89c682771a14d88e6dc6c4fc08a5c5c21a091686fbf2987082da65b21374557d",
+      "normalization": "none; byte-identical",
+      "bytes": 18151,
+      "sha256": "89c682771a14d88e6dc6c4fc08a5c5c21a091686fbf2987082da65b21374557d"
+    },
+    {
+      "path": "chunk2-manifest.json",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/chunk2-manifest.json",
+      "originalSha256": "8fff3f255eb3e6c378f70451f26d80159379515f8859248211501f2e9f8b0fa1",
+      "normalization": "none; byte-identical",
+      "bytes": 18494,
+      "sha256": "8fff3f255eb3e6c378f70451f26d80159379515f8859248211501f2e9f8b0fa1"
+    },
+    {
+      "path": "source-binding.json",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/source-binding.json",
+      "originalSha256": "215ffaac166ba724cd7bed78ae469f196e7783a40a729a6f71e08b29a8fc7f7c",
+      "normalization": "none; byte-identical",
+      "bytes": 29191,
+      "sha256": "215ffaac166ba724cd7bed78ae469f196e7783a40a729a6f71e08b29a8fc7f7c"
+    },
+    {
+      "path": "prototype.patch",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/prototype.patch",
+      "originalSha256": "202b700c08477b7248571d054b974398b31d11656a189d9012c533dded0b84a6",
+      "normalization": "trailing line whitespace removed only",
+      "bytes": 8670,
+      "sha256": "06c1895148f20141a7eb7401154cb8d7828d64853ef0718595df3a4083750f76"
+    },
+    {
+      "path": "nativeDocument.ts.txt",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/chunk2/qualification/step3/immutableRuns/nativeDocument.ts",
+      "originalSha256": "28282f853b2c72bfe8de0230975026c5e0da6f6971f5834f4e386a8235e5d5ba",
+      "normalization": "none; byte-identical",
+      "bytes": 69414,
+      "sha256": "28282f853b2c72bfe8de0230975026c5e0da6f6971f5834f4e386a8235e5d5ba"
+    },
+    {
+      "path": "nativeRecordStore.ts.txt",
+      "originalPath": "/workspace/work/merge10-implementation/trie-prototype/chunk2/qualification/step3/immutableRuns/nativeRecordStore.ts",
+      "originalSha256": "058babe70c434d331fb99202c3ab33a024504ca9f66a81c0a5e0071d025bfea9",
+      "normalization": "none; byte-identical",
+      "bytes": 7130,
+      "sha256": "058babe70c434d331fb99202c3ab33a024504ca9f66a81c0a5e0071d025bfea9"
+    }
+  ],
+  "omittedOriginalArtifacts": [
+    {
+      "path": "/workspace/work/merge10-implementation/trie-prototype/h5000-v1/__pycache__/run.cpython-312.pyc",
+      "bytes": 5603,
+      "sha256": "6d12c2e708c9dc1561f8d7da128018d6b35106602f287252b4e5969fb129b3e9",
+      "reason": "compiled Python cache; no binary evidence packaged"
+    }
+  ]
+}

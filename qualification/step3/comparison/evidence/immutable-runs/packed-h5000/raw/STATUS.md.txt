@@ -1,0 +1,44 @@
+# H5000 authorized packed-only experiment
+
+Status: source/packed workers prepared and syntax checked; launch authorized by parent, heavy slot exclusive.
+
+Runtime source is the unchanged 64-file snapshot bound to revision `7618ee8939f305260a3d2a54b30a482093826fe4`. Candidate imports `post-review-fix/packed-store.mjs` via its fixed runtime. Binding covers 102 exact source/native/input/harness files; binding SHA256 `4b795cee2447965b39406c1630064ff48d6e2f24c7f2f251af4ba7c1d120796a`.
+
+Exact supervisor command, cwd this directory:
+
+```sh
+python3 -u /workspace/work/merge10-packed-prototype/h5000-v1/run.py
+```
+
+Exact sequential worker commands, cwd `/workspace/work/merge10-packed-prototype/source`:
+
+```sh
+PACK_PHASE_FILE=source.phases.jsonl node /workspace/work/merge10-packed-prototype/h5000-v1/build-source.mjs
+PACK_PHASE_FILE=packed.phases.jsonl node --expose-gc /workspace/work/merge10-packed-prototype/h5000-v1/measure-packed.mjs
+```
+
+No NODE_OPTIONS, no heap increase, no elapsed timeout. Expected default heap 2,348,810,240 bytes. Source continuation uses no explicit GC. Packed worker's explicit GC is limited to labelled process-memory checkpoints and release before same-process reload; no application peak-memory or fresh-load-memory claim follows.
+
+Source continuation loads exact preserved original H500 encoding and extends edit-500..edit-4999 using the real unchanged source carrier. Existing 502 H500 groups and their IDs/Refs stay the prefix. Diagnostic source-native publication wrapper delegates unchanged real publication/index replay and captures exact prepared entries; tape rows are journaled only after enclosing carrier success and text/Origin checks. Each group is verified against manifest members, batch/effect, unique IDs and preceding root. Full original encoding, source heads and canonical-index comparison are retained. Loaded continuation has fresh native author/source replica IDs; all resulting identities are preserved exactly.
+
+Packed phase streams the tape and keeps one immutable unit per original command. It retains every native command change/head; verifies physical Refs and sampled historical native views; independently decodes every native change against exact tape groups; verifies reopen and exact keys/Refs; finally runs independent protocol-reference validation and all 5,001 historical root text/Origin projections. Each phase writes synchronous durable checkpoints. Full-reference validation may exhaust default heap, in which case earlier storage successes are partial evidence only.
+
+Planning estimate remains 3–20 minutes, not a timeout. Supervisor samples process RSS approximately every 100 ms and reports progress every 30 s. Failed/aborted source generation prevents packed launch; no synthetic fallback or retry is authorized. Source/packed fatal stderr and partial phase/tape/sample journals will be retained. No full packed-carrier provenance/lifecycle or production eligibility claim.
+
+Launch started: supervisor unified exec session `43176`; first source worker PID `359728`. Exact UTC timestamps/PIDs are in `supervisor.jsonl`. Run active; no result claimed.
+
+Source stage completed successfully: 5,002 command groups / 35,011 canonical records, genuine 4,500-command continuation; original exact H500 prefix preserved. Source worker exit 0 after 176.631 s; externally sampled peak RSS 1,305,724 KiB. Original full source encoded bytes 6,734,779; saved with SHA256 `2e9cfd62d7b4a6f870a59dec5d0d367b46950b7ef185b30cc24c732b613e6a15`. All continuation public text/Origin, manifest membership, preceding-root and final canonical-index checks passed. This is fixture-generation success, not full lifecycle qualification.
+
+Packed worker PID `360700` started afterward. Physical Ref reads have passed for all 35,011 records; historical native-view/audit/reopen/reference phases remain pending at this checkpoint. No full packed result claimed yet.
+
+Packed build/save/physical reads/historical views/decoded transaction audit/reopen all passed. Audit: 5,003 native changes, 5,005 operations, 5,002 units, one map; last command one operation. Build post-GC heapUsed 100,069,464 B (delta 83,374,680 B), RSS 378,249,216 B (delta 262,635,520 B). Streaming tape and audit-map lifetime differ from H500, so no scaling ratio is claimed. Reference validation entered at 04:31:00Z; final historical projections pending at this checkpoint. Storage checkpoint is partial, not whole-run semantic completion.
+
+## Terminal workload result and supervision recovery
+
+Packed workload completed successfully at `2026-11-24T04:35:26.152Z`: `packed-summary.json` and final synchronous phase have `complete:true, semanticsVerified:true`; all 5,001 historical root text/Origin projections pass. Exact records 35,011, command groups/physical units 5,002, native changes 5,003, native operations 5,005, maps one, final command one operation. Encoded bytes 3,178,096, SHA256 `29fae2ae922c8dcb0207f88698237108eb95438c48a02d872c9e97be4fb18b44`.
+
+The original supervisor unexpectedly stopped writing after its packed elapsed-180.3549-second progress row at `04:33:22.691Z`. Its PID359723 was later found zombie under PID1, with raw wait status0; the exact cause is not established. Unified exec session43176 later returned “Unknown process id”. This is **not evidence of a workload timeout, heap failure or semantic failure**, and no elapsed timeout is implemented in the recorded supervisor. Do not infer a cause from the journal gap.
+
+Packed child PID360700 continued running orphaned; stdout and synchronous phase journals continued uninterrupted. On inspection it was actively computing historical projections at 4500/5001. Recovery monitor PID362226 was launched without signalling/restarting/changing the child; when that monitor attached at `04:35:54.970Z`, the child had already exited. Its `/proc` zombie raw wait status0 confirms exit0; full semantic summary was present. The recovery journal records this evidence and limitation separately. Recovery did not sample a live packed worker and cannot reconstruct missing RSS data.
+
+Consequently the original external packed RSS journal is a **partial interval only**. Its sampled maximum is not a complete run peak; final child phase counters are process samples, not a replacement for the missing external interval. Source supervisor sampling/exit records are complete. Workload completion and observed exit0 are established; original supervision completion and full packed peak-RSS are not. No worker was killed/retried, no heap increase or short timeout was introduced, and no active heavy worker remains. Original supervisor/sample journals remain unmodified.

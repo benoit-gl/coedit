@@ -1,0 +1,30 @@
+// Independent public decoded-history audit, without importing the candidate.
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import * as A from '/workspace/coedit/node_modules/@automerge/automerge/dist/mjs/entrypoints/fullfat_node.js';
+const base='/workspace/work/merge10-packed-prototype',fixture=JSON.parse(fs.readFileSync(base+'/history500.json','utf8'));
+const sha=x=>createHash('sha256').update(x).digest('hex'),results=[];
+for(const variant of ['trie','unit1','commandPack']) {
+  const bytes=new Uint8Array(fs.readFileSync(`${base}/${variant}-h500.am`));
+  const raw=A.load(bytes),changes=A.getAllChanges(raw).map(c=>A.decodeChange(c));
+  assert.equal(changes.length,503);const expectedGroups=fixture.groups.map(g=>g.keys.slice().sort());
+  let records=0;
+  for(let i=0;i<expectedGroups.length;i++) {
+    const change=changes[i+1];let keys;
+    if(variant==='trie')keys=change.ops.filter(op=>op.action==='set'&&op.value===true).map(op=>op.key).sort();
+    else keys=change.ops.flatMap(op=>{
+      assert.equal(op.action,'set');assert.deepEqual(op.pred,[]);assert.ok(Array.isArray(op.value));
+      const scalar=new Uint8Array(op.value);assert.equal(sha(scalar),op.key);
+      return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(scalar)).map(record=>{
+        const canonical=JSON.stringify(record);return sha(canonical)+':'+canonical;
+      });
+    }).sort();
+    assert.deepEqual(keys,expectedGroups[i]);records+=keys.length;
+    assert.deepEqual(change.deps,[changes[i].hash]);
+  }
+  assert.equal(records,fixture.logicalRecords);
+  results.push({variant,pass:true,logicalRecords:records,retainedCommandChanges:502,bootstrapChanges:1,exactCommandGroupsVerified:expectedGroups.length,commandHashSha256:sha(changes.slice(1).map(c=>c.hash).join('\n')),encodedSha256:sha(bytes)});
+}
+fs.writeFileSync(base+'/transaction-audit-h500.json',JSON.stringify({complete:true,results},null,2)+'\n',{flag:'wx'});
+console.log(JSON.stringify({complete:true,variants:results.length,exactCommandGroupsPerVariant:502}));

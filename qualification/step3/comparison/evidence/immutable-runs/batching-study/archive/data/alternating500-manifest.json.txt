@@ -1,0 +1,38 @@
+{
+  "schema": "matched-batch500-v1",
+  "started": "2026-11-24T04:22:00.247Z",
+  "dataset": "alternating500",
+  "logicalEdits": 500,
+  "insertions": 250,
+  "deletions": 250,
+  "insertedChars": 250,
+  "deletedChars": 250,
+  "repetitions": 3,
+  "traceSha256": "b1ebffdf08ecd1c9d65dbb904c29ea3ca9a73ccecfa6b930d75b79e206a4aa72",
+  "sourceHashes": {
+    "/workspace/work/merge10-batch-study/run500.mjs": "fe15fb3425cd52de515a5d93a78c401671b3e53ea32c0fccf42f89d3dbb49045",
+    "/workspace/coedit/node_modules/@automerge/automerge/package.json": "d0019f8ca4995a0dc22563d4229b9f0dd3666921b363bc3e86a5e6d4839d1220",
+    "/workspace/coedit/node_modules/@automerge/automerge/dist/cjs/automerge_wasm_bg.wasm": "304ea6e230898ed66af3c29ac554a36c15bbe03f5c8816b5310fddb88f7f5d78",
+    "/workspace/coedit/node_modules/@automerge/automerge/dist/cjs/automerge_wasm_bg_base64.js": "7dc57381a5d531af6ac8d946a5250a447bfe37a416311c5e87458df147cb4f3f",
+    "/workspace/coedit/node_modules/@automerge/automerge/dist/cjs/fullfat_base64.cjs": "03eeb9e7b43466af81cf97ee4e38413d2346b947264d1be22e5842a3ad20df22",
+    "/workspace/coedit/node_modules/@automerge/automerge/dist/cjs/fullfat_node.cjs": "8d3411958688befd5758842f118f1099a5650dc9e38b263a3cfea5a116685f00",
+    "/workspace/coedit/node_modules/@automerge/automerge/dist/cjs/iife.cjs": "8ac1a7e0911c323e2a68128f6bd2287b3fe427d88599566da185a76462b5e5ea",
+    "/workspace/coedit/node_modules/@automerge/automerge/dist/cjs/slim.cjs": "ee753c2dc2df280c5fb1fe55d83d5309ccfcf6470089a90e7e5fd4d5b606b9f8",
+    "/workspace/coedit/qualification/step3/immutableRuns/nativeDocument.ts": "22c269b3cdf45a797b1356a55a4ad5da141d395c4beed879283b69ec999c9c43"
+  },
+  "automerge": "3.4.1",
+  "node": "v24.19.0",
+  "v8": "13.6.233.17-node.51",
+  "execArgv": [],
+  "nodeOptions": null,
+  "host": {
+    "platform": "linux",
+    "release": "6.18.57",
+    "arch": "x64",
+    "cpu": "INTEL(R) XEON(R) PLATINUM 8573C",
+    "logicalCpus": 3,
+    "totalMemBytes": 10452459520
+  },
+  "scope": "raw native mechanics; no full-carrier, Origin, undo, capture or concurrent correctness validation",
+  "timing": "untraced performance.now sum of native sender A.change calls and receiver A.applyChanges calls only; batch preparation/checks/encoding/load excluded; no batch wait time"
+}

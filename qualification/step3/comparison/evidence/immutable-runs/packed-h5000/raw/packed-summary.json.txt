@@ -1,0 +1,45 @@
+{
+  "complete": true,
+  "edits": 5000,
+  "groups": 5002,
+  "logicalRecords": 35011,
+  "buildMs": 10650.100427,
+  "baseline": {
+    "rss": 115613696,
+    "heapTotal": 52482048,
+    "heapUsed": 16694784,
+    "external": 8785008,
+    "arrayBuffers": 570435
+  },
+  "retained": {
+    "rss": 378249216,
+    "heapTotal": 236195840,
+    "heapUsed": 100069464,
+    "external": 63828179,
+    "arrayBuffers": 32171367
+  },
+  "heapUsedDelta": 83374680,
+  "rssDelta": 262635520,
+  "semanticSha256": "3a6e8370342d3925c57e3adbc7f51c4568c2e637d1f6c8f81c122595e8dd72ba",
+  "scope": "packed record primitive only; exact genuine original command tape and full historical reference projections; no full-carrier packed provenance/lifecycle or production eligibility claim",
+  "semanticsVerified": true,
+  "encodedBytes": 3178096,
+  "encodedSha256": "29fae2ae922c8dcb0207f88698237108eb95438c48a02d872c9e97be4fb18b44",
+  "audit": {
+    "complete": true,
+    "groupsAudited": 5002,
+    "nativeChanges": 5003,
+    "nativeOps": 5005,
+    "physicalUnits": 5002,
+    "makeMaps": 1,
+    "lastCommandOps": 1,
+    "recordedNativeHeadsChecked": 5002,
+    "commandHashSha256": "d3a87377cf92d26044d276824e333b84438ad9ceb8244657d15f134d388b975a",
+    "encodedSha256": "29fae2ae922c8dcb0207f88698237108eb95438c48a02d872c9e97be4fb18b44"
+  },
+  "historicalRootsChecked": 5001,
+  "bindingSha256": "4b795cee2447965b39406c1630064ff48d6e2f24c7f2f251af4ba7c1d120796a",
+  "tapeSha256": "aed6c7d63c52c0d4e500b3d83cb00f65faf80014bec184e847ec581cf8349491",
+  "sourceEncodedSha256": "2e9cfd62d7b4a6f870a59dec5d0d367b46950b7ef185b30cc24c732b613e6a15",
+  "sameProcessReopenVerified": true
+}

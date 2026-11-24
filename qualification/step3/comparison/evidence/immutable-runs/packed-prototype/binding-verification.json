@@ -1,0 +1,39 @@
+{
+  "pass": true,
+  "historicalManifests": [
+    {
+      "manifest": "artifacts-manifest.json",
+      "entriesChecked": 120,
+      "pass": true
+    },
+    {
+      "manifest": "source-binding.json",
+      "entriesChecked": 64,
+      "pass": true
+    },
+    {
+      "manifest": "v1-harness-manifest.json",
+      "entriesChecked": 5,
+      "pass": true
+    },
+    {
+      "manifest": "post-review-fix/manifest.json",
+      "entriesChecked": 6,
+      "pass": true
+    }
+  ],
+  "h500WorkerRowsChecked": 3,
+  "inputCanonicalCommitmentsAndUniqueUUIDsChecked": [
+    {
+      "input": "/workspace/work/merge10-packed-prototype/history16.json",
+      "records": 122,
+      "pass": true
+    },
+    {
+      "input": "/workspace/work/merge10-packed-prototype/history500.json",
+      "records": 3511,
+      "pass": true
+    }
+  ],
+  "nativeRuntimeEntriesChecked": 30
+}

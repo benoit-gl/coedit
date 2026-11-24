@@ -1,0 +1,53 @@
+{
+  "complete": true,
+  "sampled": [
+    {
+      "index": 0,
+      "heads": [
+        "5a328c183b3366e5908ab27495f994e3d91762d0efbd71c0bc16679e3b599fdd"
+      ],
+      "records": 1,
+      "semanticSha256": "836088d80a58f0fdcbb5f08475f1d52549b86f5356f2caf02dc56cbe985a2735"
+    },
+    {
+      "index": 1,
+      "heads": [
+        "bb3a1a43a731c4122d6fb442e83fabe9579bc70e83472b0ffac2508ebf6c221a"
+      ],
+      "records": 11,
+      "semanticSha256": "02d51abafeb740d13d9e7d7a67f329009e5e4ba132b72accdf72d78d4fae7e5b"
+    },
+    {
+      "index": 2,
+      "heads": [
+        "02f7a1f687e34f037fa4926ad3e7907f6ebf4a20e1c60adfabebaa700f5ef4d9"
+      ],
+      "records": 18,
+      "semanticSha256": "c688ff831a6846d890cb7e952775da4f0c5508cbaad539195cac74e88a0f1059"
+    },
+    {
+      "index": 501,
+      "heads": [
+        "8a5f17883dec8e08858a39624f713e8a1d5a73d6bfe02f74086cb38f197b224b"
+      ],
+      "records": 3511,
+      "semanticSha256": "234827865c404f1ba7451d29aedec6bdb262a5eb6b074ba125f7f3ca6498ebd7"
+    },
+    {
+      "index": 2501,
+      "heads": [
+        "cbf8806aed425c9d248df38544374c32407518adfc1e8bc21f61f547a7f8db4c"
+      ],
+      "records": 17511,
+      "semanticSha256": "365abde3faedbcb8312297c2a9865cd3833fa74e7bdf3f8a09bb74d5ab029087"
+    },
+    {
+      "index": 5001,
+      "heads": [
+        "ef17e5149fd8626fe7da6c9915ac80095bf19102e62bdbba38dae9a5ef0dbbe5"
+      ],
+      "records": 35011,
+      "semanticSha256": "3a6e8370342d3925c57e3adbc7f51c4568c2e637d1f6c8f81c122595e8dd72ba"
+    }
+  ]
+}

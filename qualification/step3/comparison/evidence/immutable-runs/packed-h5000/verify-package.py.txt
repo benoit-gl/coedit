@@ -1,0 +1,138 @@
+"""Offline package integrity/recorded-result checks; no native semantic rerun."""
+import hashlib
+import json
+import pathlib
+
+root = pathlib.Path(__file__).resolve().parent
+
+
+def read(name):
+    return json.loads((root / name).read_text())
+
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def journal(name):
+    return [json.loads(line) for line in (root / name).read_text().splitlines()]
+
+
+manifest = read('package-manifest.json')
+paths = [row['path'] for row in manifest['files']]
+assert len(paths) == len(set(paths)), 'duplicate manifest paths'
+assert set(paths) == {
+    str(path.relative_to(root)) for path in root.rglob('*')
+    if path.is_file() and path.name != 'package-manifest.json'
+}, 'manifest coverage'
+for row in manifest['files']:
+    path = root / row['path']
+    assert path.resolve().is_relative_to(root), row['path']
+    assert path.stat().st_size == row['bytes'] and sha(path) == row['sha256'], row['path']
+
+mapping = read('archive-map.json')['entries']
+assert len(mapping) == 35
+assert len({row['archivePath'] for row in mapping}) == len(mapping)
+by_original = {row['originalPath']: row for row in mapping}
+for row in mapping:
+    path = root / row['archivePath']
+    assert path.stat().st_size == row['bytes'] and sha(path) == row['sha256'], row['archivePath']
+
+binding = read('bindings/binding.json.txt')
+bound = {row['path']: row['sha256'] for row in binding['files']}
+assert len(bound) == len(binding['files']) == 102
+assert binding['sourceRevision'] == '7618ee8939f305260a3d2a54b30a482093826fe4'
+assert binding['automergeVersion'] == '3.4.1'
+for path, digest in bound.items():
+    if path in by_original:
+        assert by_original[path]['sha256'] == digest, path
+source_binding = read('bindings/source-binding.json.txt')
+assert source_binding['revision'] == binding['sourceRevision']
+assert len(source_binding['sources']) == 64
+for row in source_binding['sources']:
+    assert bound['/workspace/work/merge10-packed-prototype/source/' + row['path']] == row['sha256']
+native_binding = read('bindings/native-runtime-binding.json.txt')
+assert native_binding['automergeVersion'] == '3.4.1'
+assert len(native_binding['files']) == 30
+for row in native_binding['files']:
+    assert any(path.endswith('/@automerge/automerge/' + row['path']) and digest == row['sha256']
+               for path, digest in bound.items()), row['path']
+
+inputs = read('inputs-manifest.json')
+omitted = {row['path']: row for row in inputs['omitted']}
+artifacts = read('raw/artifacts-manifest.json.txt')['files']
+for row in artifacts:
+    original = '/workspace/work/merge10-packed-prototype/h5000-v1/' + row['path']
+    counterpart = by_original.get(original, omitted.get(original))
+    assert counterpart is not None, row['path']
+    assert all(counterpart[key] == row[key] for key in ['bytes', 'sha256']), row['path']
+
+source = read('raw/source-summary.json.txt')
+packed = read('raw/packed-summary.json.txt')
+final = read('raw/final-summary.json.txt')
+checkpoint = read('raw/packed-build-checkpoint.json.txt')
+audit = read('raw/transaction-audit.json.txt')
+assert source['complete'] and packed['complete'] and packed['semanticsVerified']
+assert packed['sameProcessReopenVerified']
+assert source['logicalRecords'] == packed['logicalRecords'] == inputs['logicalRecords'] == 35011
+assert source['groups'] == packed['groups'] == inputs['commandGroups'] == 5002
+assert source['edits'] == packed['edits'] == inputs['edits'] == 5000
+assert source['semanticSha256'] == packed['semanticSha256'] == inputs['semanticSha256']
+assert packed['historicalRootsChecked'] == 5001 and packed['encodedBytes'] == 3178096
+assert packed['audit'] == audit and audit['complete']
+assert audit['groupsAudited'] == audit['physicalUnits'] == audit['recordedNativeHeadsChecked'] == 5002
+assert audit['nativeChanges'] == 5003 and audit['nativeOps'] == 5005
+assert audit['makeMaps'] == audit['lastCommandOps'] == 1
+assert packed['heapUsedDelta'] == 83374680 and packed['rssDelta'] == 262635520
+assert packed['retained']['heapUsed'] == 100069464 and packed['retained']['rss'] == 378249216
+for key in ['groups', 'logicalRecords', 'baseline', 'retained', 'heapUsedDelta', 'rssDelta', 'semanticSha256']:
+    assert checkpoint[key] == packed[key], key
+assert not checkpoint['complete']
+binding_sha = sha(root / 'bindings/binding.json.txt')
+assert source['bindingSha256'] == packed['bindingSha256'] == final['bindingSha256'] == binding_sha
+assert final['sourceSummary'] == source and final['packedSummary'] == packed
+assert final['complete'] and final['workloadComplete']
+assert not final['originalSupervisionComplete'] and not final['packedPeakRssComplete']
+for path, row in omitted.items():
+    if path in bound:
+        assert bound[path] == row['sha256']
+prefix = '/workspace/work/merge10-packed-prototype/h5000-v1/'
+assert source['tapeSha256'] == packed['tapeSha256'] == omitted[prefix + 'commands.jsonl']['sha256']
+assert source['sourceEncodedSha256'] == packed['sourceEncodedSha256'] == omitted[prefix + 'source-original.am']['sha256']
+assert packed['encodedSha256'] == audit['encodedSha256'] == omitted[prefix + 'packed.am']['sha256']
+
+supervisor = journal('raw/supervisor.jsonl.txt')
+assert supervisor[-1] == final['originalSupervisorLastRecord']
+assert supervisor[-1]['phase'] == 'packed-progress'
+recovery = journal('raw/recovery-monitor.jsonl.txt')
+assert recovery[-1] == final['recoveryLastRecord']
+assert recovery[-1]['exitCode'] == 0 and recovery[-1]['rawWaitStatus'] == 0
+assert recovery[-1]['workloadSummaryComplete'] and recovery[-1]['semanticsVerified']
+assert recovery[-1]['sampledPeakRssKiB'] == 0
+for stage, count, peak in [('source', 1654, 1305724), ('packed', 1790, 1117072)]:
+    phases = journal(f'raw/{stage}.phases.jsonl.txt')
+    assert all(row['heapLimit'] == 2348810240 for row in phases)
+    assert phases[-1] == final['stages'][stage]['lastPhase'] and phases[-1]['complete']
+    assert (root / f'raw/{stage}.stdout.log.txt').read_bytes() == (root / f'raw/{stage}.phases.jsonl.txt').read_bytes()
+    assert (root / f'raw/{stage}.stderr.log.txt').stat().st_size == 0
+    rows = journal(f'raw/{stage}.rss-samples.jsonl.txt')
+    assert len(rows) == count and max(row.get('VmRSSKiB', 0) for row in rows) == peak
+    assert final['stages'][stage]['rssSamples'] == count
+    assert final['stages'][stage]['sampledPeakRssKiB'] == peak
+phases = journal('raw/packed.phases.jsonl.txt')
+for name, key, value in [('physical-ref-checks', 'refs', 35011),
+                         ('packed-reopen', 'physicalRefsChecked', 35011),
+                         ('historical-root-projections', 'historicalRootsChecked', 5001)]:
+    assert any(row['stage'] == name and row['status'] == 'end' and row[key] == value for row in phases), name
+sampled = read('raw/sampled-historical-views.json.txt')
+assert sampled['complete'] and [row['index'] for row in sampled['sampled']] == [0, 1, 2, 501, 2501, 5001]
+assert sampled['sampled'][-1]['semanticSha256'] == packed['semanticSha256']
+verification = read('binding-verification.json')
+assert verification['bindingSha256'] == binding_sha and verification['archiveCopies'] == len(mapping)
+assert verification['sourceAndRuntimeBindingFilesReverified'] == final['bindingFilesReverified'] == 102
+assert verification['historicalH500ManifestFilesUnchanged'] == final['historicalH500ManifestFilesUnchanged'] == 120
+assert verification['sourceSummarySha256'] == sha(root / 'raw/source-summary.json.txt')
+assert verification['packedSummarySha256'] == sha(root / 'raw/packed-summary.json.txt')
+print(json.dumps({'pass': True, 'manifestFiles': len(paths), 'byteExactArchives': len(mapping),
+                  'workloadComplete': True, 'originalSupervisionComplete': False,
+                  'packedPeakRssComplete': False, 'semanticWorkloadRerun': False}))

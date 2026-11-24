@@ -1,0 +1,138 @@
+{
+  "kind": "scratch-heap-attribution-evidence",
+  "sourceRevision": "7926007230e6a7244ad76596bf67bf5334bbaaeb",
+  "qualificationComplete": false,
+  "sourceBinding": "Per-run manifests contain full measured source manifests and executed worker SHA256. Native pin omission is addressed only by separate runtime-binding-supplement.json.",
+  "artifactNotes": "Scripts preserved byte-for-byte with .txt suffix. Copied JSON receives whitespace formatting only, verified by parsed equality. JSONL unchanged. Binary fixtures and snapshots remain scratch; snapshot hashes are in attribution.json.",
+  "artifacts": [
+    {
+      "path": "REPORT.md",
+      "bytes": 4571,
+      "sha256": "4240232309ab9f9062305fb003d23838d82199beccd3544899bb5b973339dbf0"
+    },
+    {
+      "path": "analyze-snapshot.mjs.txt",
+      "bytes": 8021,
+      "sha256": "16556766fd130dda0656e863c02d479f32e29e97de93b132056e083845fe18de",
+      "scratchOriginalSha256": "16556766fd130dda0656e863c02d479f32e29e97de93b132056e083845fe18de",
+      "normalization": "none"
+    },
+    {
+      "path": "attribution.json",
+      "bytes": 8360,
+      "sha256": "eae5255e5974e73c7d057df174e031a85b4b8bd62152d6454567def3463e3175"
+    },
+    {
+      "path": "build-100.jsonl",
+      "bytes": 422,
+      "sha256": "7d35d9307f251975bfd50ac07a92f2aea952b43b895bcc7193b3c8955daf87d4",
+      "scratchOriginalSha256": "7d35d9307f251975bfd50ac07a92f2aea952b43b895bcc7193b3c8955daf87d4",
+      "normalization": "none"
+    },
+    {
+      "path": "build-100.manifest.json",
+      "bytes": 18867,
+      "sha256": "ffa01a2ed475ce97c9c2fbd17bade72373bd242e9f2dd4c6c2ea86c1944823a7",
+      "scratchOriginalSha256": "27df4867e9b7dcee7a043ba9d1c8d28fa5ebefb0a40cdf04cc07015b6c00907d",
+      "normalization": "JSON whitespace only, parsed equality verified"
+    },
+    {
+      "path": "build-500.jsonl",
+      "bytes": 424,
+      "sha256": "fbfedbc348ebc0b3c5d3e110c89091547806c1887f0299beb78afd7f0bfba2dd",
+      "scratchOriginalSha256": "fbfedbc348ebc0b3c5d3e110c89091547806c1887f0299beb78afd7f0bfba2dd",
+      "normalization": "none"
+    },
+    {
+      "path": "build-500.manifest.json",
+      "bytes": 18867,
+      "sha256": "f31d0c7148d46f8bf25a4372c5c0017da235b1762839b22e63064acb30c3f04f",
+      "scratchOriginalSha256": "28e992de0c7ebdee3ac0c9036e43bea66ed12045ca2794d856eea52b43c76f64",
+      "normalization": "JSON whitespace only, parsed equality verified"
+    },
+    {
+      "path": "fixture-100.bin.json",
+      "bytes": 21617,
+      "sha256": "de91efe6e2efea48e1b266248a7ae81745e5074505d87d5ab37381e8994f5157",
+      "scratchOriginalSha256": "0011dec99ca5204769f514f88826b98a531692a136d7a5f57167989b888a8712",
+      "normalization": "JSON whitespace only, parsed equality verified"
+    },
+    {
+      "path": "fixture-500.bin.json",
+      "bytes": 21617,
+      "sha256": "f8df04de800dc987d3cf8cefb3a68802da6fb7de80f2b8fe0ab37299475fa742",
+      "scratchOriginalSha256": "c8cb399dfef0eed26001fe3d0584ec33b26235b4862c14f810402a1f7516de9e",
+      "normalization": "JSON whitespace only, parsed equality verified"
+    },
+    {
+      "path": "fixture-worker.mjs.txt",
+      "bytes": 6920,
+      "sha256": "cbc7fb89807881c43fcc7ac01355fd73435c721a9690ec6585fc773de7816bb4",
+      "scratchOriginalSha256": "cbc7fb89807881c43fcc7ac01355fd73435c721a9690ec6585fc773de7816bb4",
+      "normalization": "none"
+    },
+    {
+      "path": "load-100.jsonl",
+      "bytes": 1868,
+      "sha256": "1d78bd51ee9c5b7d1c04f4ad5b6df331ebf55fcee617ae2ece0a5318e0f7ec43",
+      "scratchOriginalSha256": "1d78bd51ee9c5b7d1c04f4ad5b6df331ebf55fcee617ae2ece0a5318e0f7ec43",
+      "normalization": "none"
+    },
+    {
+      "path": "load-100.manifest.json",
+      "bytes": 18865,
+      "sha256": "ae0c2d33ad43e85e4b2fb93580f9cebdbc48af7e44301478203e2df316599367",
+      "scratchOriginalSha256": "b16de6e9c9abbda4384b3602c92b3ceada9336a4d855e954f2031376fcb50440",
+      "normalization": "JSON whitespace only, parsed equality verified"
+    },
+    {
+      "path": "load-500.jsonl",
+      "bytes": 1894,
+      "sha256": "325f2e1e1b015bea73f7c177b673c3499500fe8add32067796291d9ee0f75677",
+      "scratchOriginalSha256": "325f2e1e1b015bea73f7c177b673c3499500fe8add32067796291d9ee0f75677",
+      "normalization": "none"
+    },
+    {
+      "path": "load-500.manifest.json",
+      "bytes": 18865,
+      "sha256": "7b46d18556dd3b8f21eada88ca038ae6ad0402cbaf4688000daf6da46d619b83",
+      "scratchOriginalSha256": "638c859ce7ad45ccb963b241e5dd67ab99e547e84dd1afd3902c90e77a96d838",
+      "normalization": "JSON whitespace only, parsed equality verified"
+    },
+    {
+      "path": "overlap-100.jsonl",
+      "bytes": 4073,
+      "sha256": "56cee847f0de24858ad3462c565e5373c281a15b9e05023a5759f5d952fa1b7a",
+      "scratchOriginalSha256": "56cee847f0de24858ad3462c565e5373c281a15b9e05023a5759f5d952fa1b7a",
+      "normalization": "none"
+    },
+    {
+      "path": "overlap-100.manifest.json",
+      "bytes": 18871,
+      "sha256": "1bcd2f3915efca02ea6c515bc8bd33a8ba74c912e9074645439a5059d5ef6ae9",
+      "scratchOriginalSha256": "0fb8f7c76a4bdf319f98b2c794437f26e35c93680eabf6d328b718c3280975e8",
+      "normalization": "JSON whitespace only, parsed equality verified"
+    },
+    {
+      "path": "overlap-500.jsonl",
+      "bytes": 4116,
+      "sha256": "979ca07063c16a886ddd8a6251f91f1564d9d37600c9993dab1083530a38a5d0",
+      "scratchOriginalSha256": "979ca07063c16a886ddd8a6251f91f1564d9d37600c9993dab1083530a38a5d0",
+      "normalization": "none"
+    },
+    {
+      "path": "overlap-500.manifest.json",
+      "bytes": 18871,
+      "sha256": "47ada3f022ee1cb3da11b0c8df7e8a972359247837ba356f2d7f063c1198b9b3",
+      "scratchOriginalSha256": "3f2ed4ebd4eec36da1e3c72d23d7238265f88ad0d13babf4b18f173d28cb7626",
+      "normalization": "JSON whitespace only, parsed equality verified"
+    },
+    {
+      "path": "runtime-binding-supplement.json",
+      "bytes": 662,
+      "sha256": "6c42358235be02cc1d857386f0a055a15cc67a2d7128191257b718921515faaa",
+      "scratchOriginalSha256": "6c42358235be02cc1d857386f0a055a15cc67a2d7128191257b718921515faaa",
+      "normalization": "none"
+    }
+  ]
+}

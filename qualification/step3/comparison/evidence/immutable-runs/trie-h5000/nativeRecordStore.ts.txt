@@ -1,0 +1,188 @@
+import * as A from "@automerge/automerge";
+import { decodeRecordKeyV1 } from "./record.js";
+import type { CanonicalRecordEntry } from "./record.js";
+
+interface NativeState extends Record<string, unknown> {
+  layout: string;
+  lineage: string;
+  records: Record<string, unknown>;
+}
+const LAYOUT = "step3-immutable-runs-native-primitive-hex2-prototype-v1";
+
+function map(value: unknown): Record<string, unknown> {
+  if (value === null || typeof value !== "object" || Array.isArray(value))
+    throw new TypeError("Immutable record prefix must be a native map.");
+  // The native boundary validates each field when consumed, not by trusting a POJO type.
+  return value as Record<string, unknown>;
+}
+function digits(id: string): string {
+  return id.replaceAll("-", "");
+}
+
+function collect(doc: A.Doc<NativeState>): Map<string, CanonicalRecordEntry> {
+  if (
+    doc.layout !== LAYOUT ||
+    typeof doc.lineage !== "string" ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(
+      doc.lineage,
+    ) ||
+    Object.keys(doc).sort().join(",") !== "layout,lineage,records"
+  )
+    throw new TypeError(
+      "Immutable native primitive layout/lineage is invalid.",
+    );
+  const result = new Map<string, CanonicalRecordEntry>();
+  const seen = new Set<string>();
+  const before = A.getHeads(doc);
+  const unchanged = A.change(doc, (draft) => {
+    const pending: { value: unknown; path: string }[] = [
+      { value: draft.records, path: "" },
+    ];
+    while (pending.length > 0) {
+      const { value, path } = pending.pop()!;
+      const node = map(value);
+      const objectId = A.getObjectId(node);
+      if (typeof objectId !== "string")
+        throw new TypeError("Record prefix lacks native map identity.");
+      if (seen.has(objectId)) continue;
+      seen.add(objectId);
+      for (const key of Object.keys(node)) {
+        const alternatives = A.getConflicts(node, key);
+        const values =
+          alternatives === undefined
+            ? [node[key]]
+            : Object.values(alternatives);
+        if (path.length < 32) {
+          if (!/^[0-9a-f]{2}$/.test(key))
+            throw new TypeError("Invalid record prefix key.");
+          for (const child of values)
+            pending.push({ value: child, path: path + key });
+        } else {
+          for (const marker of values) {
+            const entry = decodeRecordKeyV1(key, marker);
+            if (digits(entry.record[2]) !== path)
+              throw new TypeError("Record UUID differs from native path.");
+            const previous = result.get(entry.record[2]);
+            if (
+              previous !== undefined &&
+              previous.canonical !== entry.canonical
+            )
+              throw new TypeError(
+                "Immutable record UUID has conflicting bodies.",
+              );
+            result.set(entry.record[2], entry);
+          }
+        }
+      }
+    }
+  });
+  if (
+    unchanged !== doc ||
+    JSON.stringify(before) !== JSON.stringify(A.getHeads(doc))
+  )
+    throw new Error("Read-only native conflict traversal changed state.");
+  return result;
+}
+
+/**
+ * Qualification-native storage primitive, deliberately not an activated document carrier.
+ *
+ * @remarks
+ * This private layout admits canonical records without claiming complete manifest,
+ * Ref, source-domain or command semantics. It exists to reject unsuitable native
+ * storage before integrating the full protocol. Normal keyed appends never scan
+ * the namespace; cold inspection/merge performs recursive conflict union. All
+ * mutation uses supported Automerge APIs. It is not a product file encoding.
+ */
+export class AutomergeRecordPrimitive {
+  private constructor(
+    private document: A.Doc<NativeState>,
+    private accepted: Map<string, CanonicalRecordEntry>,
+  ) {}
+
+  /** Creates an empty private primitive with a fresh bootstrap lineage. */
+  public static create(): AutomergeRecordPrimitive {
+    return new AutomergeRecordPrimitive(
+      A.from<NativeState>({
+        layout: LAYOUT,
+        lineage: crypto.randomUUID(),
+        records: {},
+      }),
+      new Map(),
+    );
+  }
+
+  /** Validates a complete primitive encoding; creates a fresh native author. */
+  public static load(encoded: Uint8Array): AutomergeRecordPrimitive {
+    let document = A.load<NativeState>(encoded);
+    const records = collect(document);
+    if (A.getHeads(document).length > 1) document = A.emptyChange(document);
+    return new AutomergeRecordPrimitive(document, records);
+  }
+
+  /** Number of canonical identities, without enumerating native history. */
+  public get size(): number {
+    return this.accepted.size;
+  }
+
+  /** Returns detached canonical entries for explicit inspection; not ordinary publication. */
+  public entries(): readonly CanonicalRecordEntry[] {
+    return [...this.accepted.values()];
+  }
+
+  /**
+   * Appends one prepared set atomically, rejecting UUID reuse before native mutation.
+   * Equal duplicates are idempotent; no native object or caller callback escapes.
+   */
+  public append(entries: readonly CanonicalRecordEntry[]): void {
+    const added = new Map<string, CanonicalRecordEntry>();
+    for (const supplied of entries) {
+      const entry = decodeRecordKeyV1(supplied.key, true);
+      const previous =
+        added.get(entry.record[2]) ?? this.accepted.get(entry.record[2]);
+      if (previous !== undefined) {
+        if (previous.canonical !== entry.canonical)
+          throw new TypeError("Conflicting immutable record UUID.");
+      } else added.set(entry.record[2], entry);
+    }
+    if (added.size === 0) return;
+    const next = A.change(this.document, (draft) => {
+      for (const entry of added.values()) {
+        let node: Record<string, unknown> = draft.records;
+        for (const digit of digits(entry.record[2]).match(/../g)!) {
+          if (node[digit] === undefined) node[digit] = {};
+          // Assignment's RHS is a detached POJO; always re-read the native proxy.
+          node = map(node[digit]);
+        }
+        node[entry.key] = true;
+      }
+    });
+    this.document = next;
+    for (const [id, entry] of added) this.accepted.set(id, entry);
+  }
+
+  /** Encodes complete native primitive state for reopen/fork/merge diagnostics. */
+  public encode(): Uint8Array {
+    return A.save(this.document);
+  }
+
+  /**
+   * Stages complete same-lineage state and adopts only validated monotone conflict union.
+   * Native head joining and all enumeration are explicit transition work.
+   */
+  public mergeEncoded(encoded: Uint8Array): void {
+    const remote = A.load<NativeState>(encoded);
+    collect(remote);
+    if (remote.lineage !== this.document.lineage)
+      throw new TypeError("Different native primitive lineage.");
+    let staged = A.merge(A.clone(this.document), remote);
+    const records = collect(staged);
+    for (const [id, previous] of this.accepted) {
+      if (records.get(id)?.canonical !== previous.canonical)
+        throw new TypeError("Merge removed or changed an accepted record.");
+    }
+    if (A.getHeads(staged).length > 1) staged = A.emptyChange(staged);
+    this.document = staged;
+    this.accepted = records;
+  }
+}

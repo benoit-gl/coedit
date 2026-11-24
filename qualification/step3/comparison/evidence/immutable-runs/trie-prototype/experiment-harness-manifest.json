@@ -1,0 +1,47 @@
+[
+  {
+    "path": "compare-worker.mjs",
+    "bytes": 5763,
+    "sha256": "070b84252a8e64ce323308f5a0555d222acb1b4741a4a63c92dc29e6f5c0b10b"
+  },
+  {
+    "path": "trace-runner.mjs",
+    "bytes": 1110,
+    "sha256": "5b3561d38826e0f205202d529df0d88aa5be74da1a4b0813f93ec03efb215e10"
+  },
+  {
+    "path": "trace-worker-v2.mjs",
+    "bytes": 3064,
+    "sha256": "0e952f98944dd60e0ae5f09e4b4105f8af3cd5ed4552bdc4945d4f367d7a814f"
+  },
+  {
+    "path": "trace-runner-v2.mjs",
+    "bytes": 1103,
+    "sha256": "d994d172a19f3030e2d6aa0fdf231b52cd95e7a355d8cdd13d9f746f22d1eb41"
+  },
+  {
+    "path": "run-comparisons.py",
+    "bytes": 904,
+    "sha256": "e94c1fc9d0d6da09cc496ebda83d234831533dc07d9e815d4e87620f4e43ca52"
+  },
+  {
+    "path": "run-traces.py",
+    "bytes": 1276,
+    "sha256": "b860023abb4d5007dbe91d84694d1036a2b9d7b0065dcb558bb1161dbcde19d1"
+  },
+  {
+    "path": "run-traces-v2.py",
+    "bytes": 1279,
+    "sha256": "a138bff8b729febebbe1e1a1b78f6bd89dd74e52c55fa645c62d1a920dc39576"
+  },
+  {
+    "path": "prototype.patch",
+    "bytes": 8673,
+    "sha256": "202b700c08477b7248571d054b974398b31d11656a189d9012c533dded0b84a6"
+  },
+  {
+    "path": "/workspace/coedit/scripts/step3-native-trace-counter.mjs",
+    "bytes": 2678,
+    "sha256": "90c16ff115816bacc1b6af8fcf40b50e1646fe9bcafd1a12c4cfbda47eadbb67"
+  }
+]

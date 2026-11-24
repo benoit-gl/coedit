@@ -1,0 +1,73 @@
+// Real original-carrier continuation. Reflection captures delegated publication;
+// it does not replace any source preparation, publication or index replay.
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {runtime} from '../post-review-fix/runtime.mjs';
+import {base,out,sha,bind,phase,expected} from './common.mjs';
+const bindingSha256=bind();phase('runtime','start',{bindingSha256});
+const r=await runtime(),actorId='packed-author',origin={kind:'human',id:'o0'};
+let native,originalPublish;
+try {
+  const {createAutomergeImmutableRunCarrierFactory}=await r.server.ssrLoadModule('/qualification/step3/immutableRuns/automergeCarrier.ts');
+  const {parseInlineContentId}=await r.server.ssrLoadModule('/src/domain/index.ts');
+  const compare=(a,b)=>a<b?-1:a>b?1:0;
+  const factory=createAutomergeImmutableRunCarrierFactory({encode:v=>v,decode:v=>v},{compare,comparePrimary:compare},{purePositionDecoder:true});
+  const prefix=JSON.parse(fs.readFileSync(base+'/history500.json','utf8'));
+  assert.equal(prefix.edits,500);const originalBytes=new Uint8Array(fs.readFileSync(base+'/history500.json.original.am'));
+  assert.equal(sha(originalBytes),prefix.originalEncodedSha256);
+  const target=parseInlineContentId('d1000000-0000-4000-8000-000000000002');
+  phase('source-load-H500-prefix','start');let carrier=factory.load(originalBytes);
+  const initial=carrier.snapshot().payloads.get(target);assert.equal(initial.text,expected('seed').text);assert.deepEqual(initial.spans,expected('seed').spans);
+  native=Reflect.get(carrier,'native');assert.ok(native&&typeof native.publish==='function');
+  phase('source-load-H500-prefix','end',{prefixRecords:prefix.logicalRecords,prefixGroups:prefix.groups.length,sourceHeads:native.heads()});
+  const tape=out+'/commands.jsonl';fs.writeFileSync(tape,'',{flag:'wx'});
+  const seen=new Map();let previousRoot=null,groupCount=0;
+  function writeGroup(label,entries,root,generation,sourceHeads=null) {
+    const manifest=entries.find(e=>e.record[3]==='manifest');assert.ok(manifest);assert.deepEqual(manifest.ref,root);
+    assert.equal(manifest.record[8],manifest.record[2]);
+    for(const entry of entries) {
+      assert.equal(entry.record[8],manifest.record[2]);assert.ok(!seen.has(entry.record[2]));seen.set(entry.record[2],entry.key);
+      if(label!=='genesis')assert.deepEqual(entry.record[7],[actorId,label]);
+    }
+    if(label!=='genesis') {
+      const body=manifest.record[10],refs=[body[2],body[3],...(body[4]?[body[4]]:[]),...body[5].flatMap(row=>row[2])];
+      assert.deepEqual(body[1],previousRoot);
+      assert.deepEqual(entries.filter(e=>e.record[3]!=='manifest').map(e=>JSON.stringify(e.ref)).sort(),refs.map(ref=>JSON.stringify(ref)).sort());
+    }
+    previousRoot=root;const exp=expected(label);
+    const row={index:groupCount++,label,keys:entries.map(e=>e.key),root,generation,sourceHeads,expected:exp?{length:exp.length,textSha256:exp.textSha256,origin}:null};
+    fs.appendFileSync(tape,JSON.stringify(row)+'\n');
+  }
+  phase('prefix-tape','start');
+  for(const group of prefix.groups)writeGroup(group.label,group.keys.map(k=>r.record.decodeRecordKeyV1(k,true)),group.root,group.generation);
+  assert.equal(seen.size,prefix.logicalRecords);phase('prefix-tape','end',{groups:groupCount,records:seen.size});
+  let captured;
+  originalPublish=native.publish;
+  native.publish=function(command) {
+    assert.equal(captured,undefined);originalPublish.call(this,command);captured=command;
+  };
+  let revision=carrier.readOrdinaryTextRange(target,0,0).revision;
+  const generation=prefix.groups[1].generation;
+  phase('source-continuation','start',{fromEdit:500,toEdit:4999});
+  for(let i=500;i<5000;i++) {
+    captured=undefined;
+    revision=carrier.applyOrdinaryChange({payloads:[i%2===0?{kind:'insert-text',inlineContentId:target,offset:1,text:'x',origin}:{kind:'delete-text',inlineContentId:target,start:1,end:2}],context:{actorId,effectId:`edit-${i}`}},revision);
+    assert.ok(captured);const exp=expected(`edit-${i}`),read=carrier.readOrdinaryTextRange(target,0,exp.length);
+    assert.equal(read.length,exp.length);assert.equal(read.spans.map(span=>span.text).join(''),exp.text);assert.deepEqual(read.spans,exp.spans);
+    writeGroup(`edit-${i}`,captured.entries,captured.manifest.ref,generation,native.heads());captured=undefined;
+    if((i+1)%100===0)phase('source-continuation','progress',{edits:i+1,groups:groupCount,records:seen.size});
+  }
+  native.publish=originalPublish;originalPublish=undefined;
+  phase('source-continuation','end',{edits:5000,groups:groupCount,records:seen.size});
+  phase('source-final-checks','start');
+  const final=carrier.snapshot().payloads.get(target);assert.equal(final.text,expected('seed').text);assert.deepEqual(final.spans,expected('seed').spans);
+  const index=Reflect.get(native,'canonicalByUuid');assert.equal(index.size,seen.size);
+  for(const [id,key] of seen)assert.equal(index.get(id),key.slice(65));
+  assert.equal(groupCount,5002);assert.equal(seen.size,35011);
+  phase('source-final-checks','end',{groups:groupCount,records:seen.size,canonicalIndexChecked:true});
+  phase('source-save','start');const encoded=carrier.encode();fs.writeFileSync(out+'/source-original.am',encoded,{flag:'wx'});
+  phase('source-save','end',{encodedBytes:encoded.length,encodedSha256:sha(encoded)});
+  const summary={complete:true,edits:5000,groups:groupCount,logicalRecords:seen.size,semanticSha256:sha([...seen.values()].sort().join('\n')),tapeSha256:sha(fs.readFileSync(tape)),sourceEncodedBytes:encoded.length,sourceEncodedSha256:sha(encoded),prefixOriginalSha256:sha(originalBytes),bindingSha256,sourceHeads:native.heads(),scope:'genuine source-carrier continuation and exact committed command tape; no full lifecycle/packed carrier eligibility claim'};
+  fs.writeFileSync(out+'/source-summary.json',JSON.stringify(summary,null,2)+'\n',{flag:'wx'});phase('source','complete',summary);
+} catch(error) {phase('source','error',{error:String(error),stack:error.stack});throw error;}
+finally {if(native&&originalPublish)native.publish=originalPublish;await r.server.close();}

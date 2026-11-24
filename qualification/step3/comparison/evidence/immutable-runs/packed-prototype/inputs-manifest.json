@@ -1,0 +1,138 @@
+{
+  "schema": "packed-evidence-inputs-v1",
+  "inputs": [
+    {
+      "originalPath": "/workspace/work/merge10-packed-prototype/history16.json",
+      "originalBytes": 83136,
+      "originalSha256": "f5ea2dc2cea48c95be3af85cc7a8ff12ba39d5db7ad7b4b7fa7668e424debf1e",
+      "gzipBytes": 12238,
+      "gzipSha256": "383dea83d965302ea531d3a0f22abd9272e0a6d6efe534a58b4af2e05a8e2825",
+      "partsInOrder": ["inputs/history16.json.gz.b64"],
+      "edits": 16,
+      "commandGroups": 18,
+      "logicalRecords": 122,
+      "semanticSha256": "9c2528e48bde78022e0c9fceb11f1ebced77281daf020d5bbe980b6a4290021e",
+      "recordKinds": {
+        "context": 17,
+        "envelope": 17,
+        "erase": 8,
+        "generation": 1,
+        "live": 35,
+        "manifest": 18,
+        "payload-effect-v2": 17,
+        "run": 9
+      },
+      "groupRecordCounts": {
+        "1": 1,
+        "7": 16,
+        "9": 1
+      },
+      "workload": "exact real carrier records replayed into storage primitives; native metadata and command authorization are not implemented by packed primitive"
+    },
+    {
+      "originalPath": "/workspace/work/merge10-packed-prototype/history500.json",
+      "originalBytes": 3176765,
+      "originalSha256": "254b540c0cba548e60ec8519dd5bb2bb1f1e4e91f1cdb4285c59642183429525",
+      "gzipBytes": 323254,
+      "gzipSha256": "57a37203146e01a25ad12b03abdc919c780fc11729f50475561770b3cc2ff82c",
+      "partsInOrder": [
+        "inputs/history500.json.gz.b64.part01",
+        "inputs/history500.json.gz.b64.part02"
+      ],
+      "edits": 500,
+      "commandGroups": 502,
+      "logicalRecords": 3511,
+      "semanticSha256": "234827865c404f1ba7451d29aedec6bdb262a5eb6b074ba125f7f3ca6498ebd7",
+      "recordKinds": {
+        "context": 501,
+        "envelope": 501,
+        "erase": 250,
+        "generation": 1,
+        "live": 1003,
+        "manifest": 502,
+        "payload-effect-v2": 501,
+        "run": 252
+      },
+      "groupRecordCounts": {
+        "1": 1,
+        "7": 500,
+        "10": 1
+      },
+      "workload": {
+        "initialUnits": 1024,
+        "unit": "UTF-16 ASCII",
+        "insert": "x",
+        "offset": 1,
+        "delete": [1, 2],
+        "origin": {
+          "kind": "human",
+          "id": "o0"
+        },
+        "actorId": "packed-author",
+        "uuidPolicy": "fresh genuine native-carrier UUIDs; shared exact fixture across storage controls"
+      }
+    }
+  ],
+  "omittedNativeBinaries": [
+    {
+      "originalPath": "/workspace/work/merge10-packed-prototype/commandPack-h16.am",
+      "bytes": 11320,
+      "sha256": "d7e7eebda002624f4e1338676e03fb0fb8b11a0147f153ac34f881359ea57709",
+      "reason": "Omitted native binary; exact input tape and executed worker/builder text retained."
+    },
+    {
+      "originalPath": "/workspace/work/merge10-packed-prototype/commandPack-h4.am",
+      "bytes": 4074,
+      "sha256": "e7856e491fdc538d90d0a10a652920959bbaae7b072003a69a66c9461621d89e",
+      "reason": "Omitted native binary; exact input tape and executed worker/builder text retained."
+    },
+    {
+      "originalPath": "/workspace/work/merge10-packed-prototype/commandPack-h500.am",
+      "bytes": 316327,
+      "sha256": "c76cc7e2fed82c95f5b438fc21a15048b1bb0622e046a143384ba99bf04fc4d4",
+      "reason": "Omitted native binary; exact input tape and executed worker/builder text retained."
+    },
+    {
+      "originalPath": "/workspace/work/merge10-packed-prototype/history500.json.original.am",
+      "bytes": 680992,
+      "sha256": "5ea09d2ae0cfd411f8e7cd818626af3f335a4fac79e559e2b59ccd9e774b46c2",
+      "reason": "Omitted native binary; exact input tape and executed worker/builder text retained."
+    },
+    {
+      "originalPath": "/workspace/work/merge10-packed-prototype/trie-h16.am",
+      "bytes": 22989,
+      "sha256": "79fe98865e443332eef8ffd9f95a9ab3971f4b1602f77a6ed4203dfa619efb71",
+      "reason": "Omitted native binary; exact input tape and executed worker/builder text retained."
+    },
+    {
+      "originalPath": "/workspace/work/merge10-packed-prototype/trie-h4.am",
+      "bytes": 8016,
+      "sha256": "14bc6846b35604e3cbc20a9f131d024331f3ff1b9ac1dab93ef514515942ebf8",
+      "reason": "Omitted native binary; exact input tape and executed worker/builder text retained."
+    },
+    {
+      "originalPath": "/workspace/work/merge10-packed-prototype/trie-h500.am",
+      "bytes": 648404,
+      "sha256": "60afc8cf6c0785c13dbb471e38e7244ab7d029a805ce4cdd7570581fd56d342c",
+      "reason": "Omitted native binary; exact input tape and executed worker/builder text retained."
+    },
+    {
+      "originalPath": "/workspace/work/merge10-packed-prototype/unit1-h16.am",
+      "bytes": 15699,
+      "sha256": "787cf21304abbf9e12bb18985247f76ee236df405faa6e8b857787fc927f63fc",
+      "reason": "Omitted native binary; exact input tape and executed worker/builder text retained."
+    },
+    {
+      "originalPath": "/workspace/work/merge10-packed-prototype/unit1-h4.am",
+      "bytes": 5248,
+      "sha256": "826cd96f7e82e75d26f98da8ceab8208bfbe09bc8e078ae879a20b30fe85ccb3",
+      "reason": "Omitted native binary; exact input tape and executed worker/builder text retained."
+    },
+    {
+      "originalPath": "/workspace/work/merge10-packed-prototype/unit1-h500.am",
+      "bytes": 584576,
+      "sha256": "31d25151dfb791228c71564d98b2a13632c30e69eaf8327e404fcb3bea8d8fd3",
+      "reason": "Omitted native binary; exact input tape and executed worker/builder text retained."
+    }
+  ]
+}

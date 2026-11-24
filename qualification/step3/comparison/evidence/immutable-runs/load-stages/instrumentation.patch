@@ -1,0 +1,112 @@
+diff --git a/qualification/step3/immutableRuns/automergeCarrier.ts b/qualification/step3/immutableRuns/automergeCarrier.ts
+index e6bdb64..0f27f0b 100644
+--- a/qualification/step3/immutableRuns/automergeCarrier.ts
++++ b/qualification/step3/immutableRuns/automergeCarrier.ts
+@@ -1,3 +1,4 @@
++import { loadStep } from "./loadStageDiagnostic.js";
+ import {
+   decodeStructuralPlacement,
+   type StructuralPlacement,
+@@ -119,13 +120,13 @@ class AutomergeImmutableRunCarrier<
+     private readonly positionCodec: StructuralPositionCodec<Position>,
+     private readonly options: IntegratedCarrierQualificationOptions,
+   ) {
+-    this.activation = native.activate();
+-    const cold = this.activation.provider.view(this.activation.root);
+-    this.view = new WarmNativeView(cold, this.activation.entries);
++    this.activation = loadStep("carrier-activation", () => native.activate());
++    const cold = loadStep("carrier-selected-view", () => this.activation.provider.view(this.activation.root));
++    this.view = loadStep("carrier-warm-view", () => new WarmNativeView(cold, this.activation.entries));
+     for (const entry of this.activation.entries)
+       this.entries.set(encodeRefValue(entry.ref), entry);
+     this.replicaUuid = native.freshReplicaUuid();
+-    this.rebuildSelectedIndexes();
++    loadStep("carrier-selected-indexes", () => this.rebuildSelectedIndexes());
+   }
+
+   /** Applies one attributed or explicitly synthetic qualification command. */
+diff --git a/qualification/step3/immutableRuns/nativeDocument.ts b/qualification/step3/immutableRuns/nativeDocument.ts
+index 760023a..3fc23e5 100644
+--- a/qualification/step3/immutableRuns/nativeDocument.ts
++++ b/qualification/step3/immutableRuns/nativeDocument.ts
+@@ -1,3 +1,4 @@
++import { loadMark, loadStep } from "./loadStageDiagnostic.js";
+ import * as A from "@automerge/automerge";
+
+ import {
+@@ -184,10 +185,11 @@ export class AutomergeImmutableRunDocument {
+   /** Loads bytes without accepting them until cold activation succeeds. */
+   public static load(encoded: Uint8Array): AutomergeImmutableRunDocument {
+     const result = new AutomergeImmutableRunDocument(
+-      A.load<NativeState>(encoded),
++      loadStep("native-A.load", () => A.load<NativeState>(encoded)),
+     );
+-    result.rebuildUuidIndex(result.activate().entries);
+-    result.ensureOneNativeHead();
++    const loadedActivation = loadStep("native-activate", () => result.activate());
++    loadStep("native-uuid-index", () => result.rebuildUuidIndex(loadedActivation.entries));
++    loadStep("native-head-join", () => result.ensureOneNativeHead());
+     return result;
+   }
+
+@@ -365,9 +367,10 @@ export class AutomergeImmutableRunDocument {
+   public activate(): ImmutableRunNativeActivationV1 {
+     if (this.activation !== undefined) return this.activation;
+     assertHeader(this.document);
+-    const namespace = collectRecordNamespace(this.document);
+-    const entries = Object.freeze([...namespace.records.values()]);
+-    const protocol = ImmutableRunProtocolV1.validate(entries);
++    const namespace = loadStep("namespace-collection", () => collectRecordNamespace(this.document));
++    loadMark("counts", "namespace-collection", { records: namespace.records.size, objectDepths: namespace.objectDepths.size });
++    const entries = loadStep("entries-array", () => Object.freeze([...namespace.records.values()]));
++    const protocol = loadStep("protocol-validation", () => ImmutableRunProtocolV1.validate(entries));
+     validateIdentityFacts(
+       entries,
+       readCell(this.document.rootBlock, "Root Block"),
+@@ -382,15 +385,15 @@ export class AutomergeImmutableRunDocument {
+       throw new TypeError(
+         "Native document is not at one exact readiness root.",
+       );
+-    const provider = new NativeProvider(
++    const provider = loadStep("provider-construction", () => new NativeProvider(
+       this.document,
+       entries,
+       protocol,
+       namespace.objectDepths,
+-    );
++    ));
+     // Semantic outputs must be checked before a staged load/merge can become
+     // the accepted native document, including writes hidden by later winners.
+-    validateImmutableRunCommandsV1(protocol, provider);
++    loadStep("semantic-command-validation", () => validateImmutableRunCommandsV1(protocol, provider));
+     this.activation = Object.freeze({ root, entries, protocol, provider });
+     this.activeRunSourceUnits = protocol.runSourceUnits;
+     return this.activation;
+@@ -491,8 +494,10 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
+     >();
+     const labels = new Map<string, readonly RecordRef[]>();
+     const captureTokens = new Set<string>();
+-    for (const bytes of A.getAllChanges(document)) {
++    let diagnosticChanges = 0;
++    for (const bytes of loadStep("provider-get-all-changes", () => A.getAllChanges(document))) {
+       const change = A.decodeChange(bytes);
++      if (++diagnosticChanges % 500 === 0) loadMark("progress", "provider-construction", { changes: diagnosticChanges });
+       rejectHeaderMutation(change, labels.size === 0);
+       const { metadata, dependencyMetadata } = this.projectMetadata(
+         change,
+@@ -603,6 +608,7 @@ class NativeProvider implements ImmutableRunColdViewProviderV1 {
+         );
+       this.#rootMetadata.set(encodeRef(nextLabels[0]!), metadata);
+     }
++    loadMark("counts", "provider-construction", { changes: diagnosticChanges, rootMetadata: this.#rootMetadata.size, metadataByChange: this.#metadataByChange.size, commandProvenance: this.#commandProvenance.size });
+     const authored = new Set([
+       ...this.#commandProvenance.keys(),
+       encodeRef(protocol.genesisRoot),
+@@ -1402,6 +1408,7 @@ function collectRecordNamespace(document: A.Doc<NativeState>): {
+         continue;
+       }
+       objectDepths.set(objectId, current.path.length);
++      if (objectDepths.size % 10000 === 0) loadMark("progress", "namespace-collection", { objectDepths: objectDepths.size, records: result.size, pending: pending.length });
+       for (const key of Object.keys(node)) {
+         const conflicts = A.getConflicts(node, key);
+         const alternatives =

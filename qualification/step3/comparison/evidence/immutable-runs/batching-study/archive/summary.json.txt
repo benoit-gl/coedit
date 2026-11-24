@@ -1,0 +1,254 @@
+[
+  {
+    "dataset": "alternating500",
+    "layout": "native-text",
+    "transactionBatch": 1,
+    "nativeChanges": 500,
+    "senderMedianUsPerLogicalEdit": 67.96763000001374,
+    "senderRangeUsPerLogicalEdit": [
+      67.44800199993188,
+      458.92750600000227
+    ],
+    "changesBytesPerLogicalEdit": [
+      136.828,
+      136.828,
+      136.828
+    ],
+    "savedBytes": [
+      9927,
+      9927,
+      9927
+    ]
+  },
+  {
+    "dataset": "alternating500",
+    "layout": "native-text",
+    "transactionBatch": 5,
+    "nativeChanges": 100,
+    "senderMedianUsPerLogicalEdit": 43.46582400002808,
+    "senderRangeUsPerLogicalEdit": [
+      31.213712000026135,
+      1231.2329239999965
+    ],
+    "changesBytesPerLogicalEdit": [
+      62.814,
+      62.814,
+      62.814
+    ],
+    "savedBytes": [
+      9847,
+      9847,
+      9847
+    ]
+  },
+  {
+    "dataset": "alternating500",
+    "layout": "native-text",
+    "transactionBatch": 20,
+    "nativeChanges": 25,
+    "senderMedianUsPerLogicalEdit": 20.660132000004523,
+    "senderRangeUsPerLogicalEdit": [
+      16.251216000004206,
+      400.7907439999981
+    ],
+    "changesBytesPerLogicalEdit": [
+      47.512,
+      47.512,
+      47.512
+    ],
+    "savedBytes": [
+      9772,
+      9772,
+      9772
+    ]
+  },
+  {
+    "dataset": "alternating500",
+    "layout": "custom-marker-trie-shape",
+    "transactionBatch": 1,
+    "nativeChanges": 500,
+    "senderMedianUsPerLogicalEdit": 4147.446481999956,
+    "senderRangeUsPerLogicalEdit": [
+      3804.559648000155,
+      8665.122121999984
+    ],
+    "changesBytesPerLogicalEdit": [
+      565.298,
+      565.298,
+      565.298
+    ],
+    "savedBytes": [
+      73834,
+      73834,
+      73834
+    ]
+  },
+  {
+    "dataset": "alternating500",
+    "layout": "custom-marker-trie-shape",
+    "transactionBatch": 5,
+    "nativeChanges": 100,
+    "senderMedianUsPerLogicalEdit": 3529.715382000024,
+    "senderRangeUsPerLogicalEdit": [
+      3335.2861679999696,
+      4012.8194419999786
+    ],
+    "changesBytesPerLogicalEdit": [
+      491.972,
+      491.972,
+      491.972
+    ],
+    "savedBytes": [
+      73756,
+      73756,
+      73756
+    ]
+  },
+  {
+    "dataset": "alternating500",
+    "layout": "custom-marker-trie-shape",
+    "transactionBatch": 20,
+    "nativeChanges": 25,
+    "senderMedianUsPerLogicalEdit": 3452.8566119999887,
+    "senderRangeUsPerLogicalEdit": [
+      3399.828717999997,
+      3911.979060000013
+    ],
+    "changesBytesPerLogicalEdit": [
+      477.702,
+      477.702,
+      477.702
+    ],
+    "savedBytes": [
+      73543,
+      73543,
+      73543
+    ]
+  },
+  {
+    "dataset": "public500",
+    "layout": "native-text",
+    "transactionBatch": 1,
+    "nativeChanges": 500,
+    "senderMedianUsPerLogicalEdit": 70.02806599985342,
+    "senderRangeUsPerLogicalEdit": [
+      61.20256599999266,
+      325.04789800000077
+    ],
+    "changesBytesPerLogicalEdit": [
+      134.512,
+      134.512,
+      134.512
+    ],
+    "savedBytes": [
+      10065,
+      10065,
+      10065
+    ]
+  },
+  {
+    "dataset": "public500",
+    "layout": "native-text",
+    "transactionBatch": 5,
+    "nativeChanges": 100,
+    "senderMedianUsPerLogicalEdit": 38.609022000047844,
+    "senderRangeUsPerLogicalEdit": [
+      30.872959999891464,
+      111.92959600000131
+    ],
+    "changesBytesPerLogicalEdit": [
+      56.582,
+      56.582,
+      56.582
+    ],
+    "savedBytes": [
+      10002,
+      10002,
+      10002
+    ]
+  },
+  {
+    "dataset": "public500",
+    "layout": "native-text",
+    "transactionBatch": 20,
+    "nativeChanges": 25,
+    "senderMedianUsPerLogicalEdit": 32.70256599998538,
+    "senderRangeUsPerLogicalEdit": [
+      20.16557000001194,
+      54.63230600000271
+    ],
+    "changesBytesPerLogicalEdit": [
+      41.388,
+      41.388,
+      41.388
+    ],
+    "savedBytes": [
+      9909,
+      9909,
+      9909
+    ]
+  },
+  {
+    "dataset": "public500",
+    "layout": "custom-marker-trie-shape",
+    "transactionBatch": 1,
+    "nativeChanges": 500,
+    "senderMedianUsPerLogicalEdit": 3572.1339039999875,
+    "senderRangeUsPerLogicalEdit": [
+      3549.797248000039,
+      4282.373871999997
+    ],
+    "changesBytesPerLogicalEdit": [
+      567.766,
+      567.766,
+      567.766
+    ],
+    "savedBytes": [
+      75634,
+      75634,
+      75634
+    ]
+  },
+  {
+    "dataset": "public500",
+    "layout": "custom-marker-trie-shape",
+    "transactionBatch": 5,
+    "nativeChanges": 100,
+    "senderMedianUsPerLogicalEdit": 3615.1024899999757,
+    "senderRangeUsPerLogicalEdit": [
+      3261.2216679999838,
+      3675.9369519999764
+    ],
+    "changesBytesPerLogicalEdit": [
+      494.41,
+      494.41,
+      494.41
+    ],
+    "savedBytes": [
+      75559,
+      75559,
+      75559
+    ]
+  },
+  {
+    "dataset": "public500",
+    "layout": "custom-marker-trie-shape",
+    "transactionBatch": 20,
+    "nativeChanges": 25,
+    "senderMedianUsPerLogicalEdit": 3209.9527019999805,
+    "senderRangeUsPerLogicalEdit": [
+      3100.434036000006,
+      3418.125263999995
+    ],
+    "changesBytesPerLogicalEdit": [
+      480.184,
+      480.184,
+      480.184
+    ],
+    "savedBytes": [
+      75339,
+      75339,
+      75339
+    ]
+  }
+]

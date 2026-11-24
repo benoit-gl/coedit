@@ -1,0 +1,14 @@
+import {spawn} from 'node:child_process';
+import {createInterface} from 'node:readline';
+import fs from 'node:fs';
+import {createTraceCounter} from '/workspace/coedit/scripts/step3-native-trace-counter.mjs';
+const [variant,shape,size,mode='calls']=process.argv.slice(2);
+if(!['calls','memory'].includes(mode))throw Error('bad trace mode');
+const worker='/workspace/work/merge10-implementation/trie-prototype/trace-worker-v2.mjs';
+const flags=['--expose-gc','--liftoff-only',mode==='calls'?'--trace-wasm':'--trace-wasm-memory'];
+const p=spawn(process.execPath,[...flags,worker,variant,shape,size],{stdio:['ignore','pipe','pipe']});
+const c=createTraceCounter();let stderr='';p.stderr.on('data',b=>stderr+=b);
+const lines=createInterface({input:p.stdout,crlfDelay:Infinity});lines.on('line',l=>c.consume(l));
+const exitCode=await new Promise(r=>p.on('close',r));
+if(exitCode!==0){process.stderr.write(stderr);throw Error(`worker exit ${exitCode}`);}
+console.log(JSON.stringify({variant,shape,size:Number(size),mode,flags,exitCode,counter:c.finish(),worker:JSON.parse(stderr.trim().split('\n').at(-1))}));

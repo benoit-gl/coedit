@@ -1,0 +1,36 @@
+{
+  "scope": "post-H500 measurement robustness/test fixes; original evidence unchanged",
+  "measuredOriginalStoreSha256": "da2afb50b8e590525a4480af77a39a92597d9e5b6e4444dffcc5cb88a2aa4e28",
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "b4f13efb873e5b12fca4d94d473bd4e26aedaf7b7b0165c6b97243de215cab79",
+      "bytes": 1880
+    },
+    {
+      "path": "correctness.mjs",
+      "sha256": "d0a01d401077ebb6cee19004c20ca6dcdc2f861d3269c3645512d8a664dcd726",
+      "bytes": 7070
+    },
+    {
+      "path": "correctness16-with-extractor.json",
+      "sha256": "a6930c6cdc0f9e9c2a4b3cf4ca4e7e0db7ae7549dec0260caac76c06a6562693",
+      "bytes": 1603
+    },
+    {
+      "path": "correctness16.json",
+      "sha256": "015ac6102aa245fc00c26a86e25abb59c0f5159d5acc654ae6678253368e3f62",
+      "bytes": 1482
+    },
+    {
+      "path": "packed-store.mjs",
+      "sha256": "98a2d214cffa7b49a627b4e2ca9005956ecf198bfbfb7705f03699a277a38d50",
+      "bytes": 7963
+    },
+    {
+      "path": "runtime.mjs",
+      "sha256": "56c6f12ff08434540174f0aba2f2855d3f189309d1dea072fb257f27f3c0cc4b",
+      "bytes": 1888
+    }
+  ]
+}

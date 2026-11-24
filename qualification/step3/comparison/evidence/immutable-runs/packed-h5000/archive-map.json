@@ -1,0 +1,250 @@
+{
+  "schema": "packed-h5000-exact-text-archive-v1",
+  "entries": [
+    {
+      "archivePath": "raw/source-summary.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/source-summary.json",
+      "bytes": 794,
+      "sha256": "cab58e0185c6ab33a48c284c4948581cb00f0bf8bf56f14ef566b26789e3a69e",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/packed-summary.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/packed-summary.json",
+      "bytes": 1641,
+      "sha256": "8f41f63c012ddde29a2a50eb60551166edb5ac8d1fe8dba8467739a4d38f3b4f",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/packed-build-checkpoint.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/packed-build-checkpoint.json",
+      "bytes": 712,
+      "sha256": "65b232618a3afab1dfeb885ac29bededfe15c9173e094dfa5c3bd7ab4300f4f4",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/transaction-audit.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/transaction-audit.json",
+      "bytes": 375,
+      "sha256": "dfe7d1e777fa8b770f24d54cdd9738a61290b748a0d6e53511412dd05c3b2812",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/sampled-historical-views.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/sampled-historical-views.json",
+      "bytes": 1521,
+      "sha256": "791bfa1afcd2a5268bae7e35e000166cebc9926c9d041caac2d322b8ad24c415",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/final-summary.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/final-summary.json",
+      "bytes": 7720,
+      "sha256": "1902927edf251158b9711cb06e289e019e3b9c65cb48f3d4cea97419ec06ae41",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/source.phases.jsonl.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/source.phases.jsonl",
+      "bytes": 17298,
+      "sha256": "76caee042f89d9dbc2bcc44d47187be1ec366be9bfa1549ea45487b87045c083",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/packed.phases.jsonl.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/packed.phases.jsonl",
+      "bytes": 12595,
+      "sha256": "5ae5c6ceca8233e82a6b786962c6e673e4769f43e2c10d2657ff35edb3d56965",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/source.stdout.log.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/source.stdout.log",
+      "bytes": 17298,
+      "sha256": "76caee042f89d9dbc2bcc44d47187be1ec366be9bfa1549ea45487b87045c083",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/packed.stdout.log.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/packed.stdout.log",
+      "bytes": 12595,
+      "sha256": "5ae5c6ceca8233e82a6b786962c6e673e4769f43e2c10d2657ff35edb3d56965",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/source.stderr.log.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/source.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/packed.stderr.log.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/packed.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/supervisor.jsonl.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/supervisor.jsonl",
+      "bytes": 2311,
+      "sha256": "5741eff2b5651590d46d63074864c7c692a54237d3db3647b40c671024ff14d7",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/source.rss-samples.jsonl.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/source.rss-samples.jsonl",
+      "bytes": 168531,
+      "sha256": "2b8a4b95ef06e93117d9b3012aa81560cf29a45e75b08e8351b2f5966173a3f4",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/packed.rss-samples.jsonl.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/packed.rss-samples.jsonl",
+      "bytes": 182769,
+      "sha256": "c645517d6038621317d53edc27e02fdcd60631316a7dcfaf880e633731557ed9",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/recovery-monitor.jsonl.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/recovery-monitor.jsonl",
+      "bytes": 751,
+      "sha256": "3c3d7f1093998e7bc24ef8a72338f1e2a8f10eb96a745e24a58144191c9d7837",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/recovery-launch.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/recovery-launch.json",
+      "bytes": 203,
+      "sha256": "9db769bdef4d1d153cce1b7555d41905c771f6ec1929015f73e9169a530dff52",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/recovery-monitor.stdout.log.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/recovery-monitor.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/recovery-monitor.stderr.log.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/recovery-monitor.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/STATUS.md.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/STATUS.md",
+      "bytes": 6660,
+      "sha256": "e537ab0634af47c11e29605ef70e6b2ab30f7e06b1ddda458839d834071e079a",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "raw/artifacts-manifest.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/artifacts-manifest.json",
+      "bytes": 4663,
+      "sha256": "8a3409f7cb72070dc93924857376abdc91b84380e03b9edc43e78f7c9b122922",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "harness/build-source.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/build-source.mjs",
+      "bytes": 6095,
+      "sha256": "68d3006e632ef0b29f03b255f2b1cc304f2a36720fc301068dce40e61dcd88be",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "harness/measure-packed.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/measure-packed.mjs",
+      "bytes": 7266,
+      "sha256": "c1466ee1442ce5e2302bf5c8e97a9f772e4b7f01cdbaa39e370e47226430f1f0",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "harness/common.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/common.mjs",
+      "bytes": 1437,
+      "sha256": "d3e2ca20654a2f5838acb1bba5d45af094c691f7f5350b84468446e1e2df91b2",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "harness/run.py.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/run.py",
+      "bytes": 2703,
+      "sha256": "e4f99a899dd02cd2240b7e398d67087043f7690e88a8f42f1c88c2caef2fc938",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "harness/recover-monitor.py.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/recover-monitor.py",
+      "bytes": 2571,
+      "sha256": "194674236d1c88eaf7656639580568806fd04023f6882f121fbc9af2a417f1e5",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "harness/finalize.py.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/finalize.py",
+      "bytes": 4229,
+      "sha256": "0c37ae0a225be8230488d501c074eb61754b435adbe6f54f43034b73f076f54c",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "candidate/packed-store.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/post-review-fix/packed-store.mjs",
+      "bytes": 7963,
+      "sha256": "98a2d214cffa7b49a627b4e2ca9005956ecf198bfbfb7705f03699a277a38d50",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "candidate/runtime.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/post-review-fix/runtime.mjs",
+      "bytes": 1888,
+      "sha256": "56c6f12ff08434540174f0aba2f2855d3f189309d1dea072fb257f27f3c0cc4b",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "candidate/manifest.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/post-review-fix/manifest.json",
+      "bytes": 1120,
+      "sha256": "6538267b80c81f60eea4a29846b7a2766cb4e7bf010ee85a7d9ae08b8cb60345",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "candidate/README.md.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/post-review-fix/README.md",
+      "bytes": 1880,
+      "sha256": "b4f13efb873e5b12fca4d94d473bd4e26aedaf7b7b0165c6b97243de215cab79",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "candidate/correctness16-with-extractor.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/post-review-fix/correctness16-with-extractor.json",
+      "bytes": 1603,
+      "sha256": "a6930c6cdc0f9e9c2a4b3cf4ca4e7e0db7ae7549dec0260caac76c06a6562693",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "bindings/binding.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/h5000-v1/binding.json",
+      "bytes": 20940,
+      "sha256": "4b795cee2447965b39406c1630064ff48d6e2f24c7f2f251af4ba7c1d120796a",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "bindings/source-binding.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/source-binding.json",
+      "bytes": 10233,
+      "sha256": "98581a340826a72367144b44e1eea581f070d9d279a37558ed63af9357ac72eb",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    },
+    {
+      "archivePath": "bindings/native-runtime-binding.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/native-runtime-binding.json",
+      "bytes": 4572,
+      "sha256": "ebee8f2f15e2912d82981881c95e1ade0caa8270041afd7aaa4dfb918a802aac",
+      "copy": "byte-identical; .txt suffix prevents formatter execution"
+    }
+  ]
+}

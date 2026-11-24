@@ -1,0 +1,329 @@
+{
+  "note": "Files mapped here are byte-exact copies; .txt suffix prevents formatter mutation or execution. Gzip/base64 inputs and derived summaries are separately manifested.",
+  "files": [
+    {
+      "path": "measured/README.md.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/README.md",
+      "bytes": 6425,
+      "sha256": "8d4895d8808f13feebba410c189d4bb0749c33171bd68efd88ed2b724e4d9343"
+    },
+    {
+      "path": "measured/artifacts-manifest.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/artifacts-manifest.json",
+      "bytes": 20542,
+      "sha256": "67af2ead6ea6bc17bc30fb4deeafc98d8e08a1ee2491d4d003b9931909e20f6c"
+    },
+    {
+      "path": "measured/build-fixture.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/build-fixture.mjs",
+      "bytes": 3188,
+      "sha256": "15c73460dc03d460ef8fb5139f49f3338c780f98c4d8eb0cba4216a61e0302c5"
+    },
+    {
+      "path": "measured/build-history500.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/build-history500.log",
+      "bytes": 1587,
+      "sha256": "3f9c40bc4521a7f649c49c32964e5101f4976fd08c03c567287eaac0739bd489"
+    },
+    {
+      "path": "measured/build-history500.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/build-history500.mjs",
+      "bytes": 4513,
+      "sha256": "8a94d18cc3052e7b6e6da23f1e03b9284087055c4e81c18fe1de4707351457a3"
+    },
+    {
+      "path": "measured/build-history500.stderr.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/build-history500.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "measured/commandPack-h16-build.stderr.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/commandPack-h16-build.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "measured/commandPack-h16-load.stderr.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/commandPack-h16-load.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "measured/commandPack-h4-build.stderr.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/commandPack-h4-build.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "measured/commandPack-h4-load.stderr.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/commandPack-h4-load.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "measured/commandPack-h500.stderr.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/commandPack-h500.stderr.log",
+      "bytes": 1953,
+      "sha256": "d67d367012b67b10609b1ce38b4893fc738236bfb76e3d43fca9a9b969fa36fc"
+    },
+    {
+      "path": "measured/commandPack-h500.stdout.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/commandPack-h500.stdout.log",
+      "bytes": 12107,
+      "sha256": "96adcef0bf73d5c1955a1ba0ea5889dc10d9ad602c3f7bccbeba7e71a7a246d4"
+    },
+    {
+      "path": "measured/correctness.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/correctness.mjs",
+      "bytes": 5717,
+      "sha256": "36ff3c130c823bb902396856b62cc986bea88a4cb73b23471306206474ac23ca"
+    },
+    {
+      "path": "measured/correctness16-v2.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/correctness16-v2.json",
+      "bytes": 1353,
+      "sha256": "695f701a2fd208a0dce94a95e2df39c89b54a673e7bb1730a432f64590f558df"
+    },
+    {
+      "path": "measured/correctness16.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/correctness16.json",
+      "bytes": 1353,
+      "sha256": "695f701a2fd208a0dce94a95e2df39c89b54a673e7bb1730a432f64590f558df"
+    },
+    {
+      "path": "measured/measure-worker.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/measure-worker.mjs",
+      "bytes": 3250,
+      "sha256": "7514b9ec30e660a83a0ec91887c2b36125df791f7c2848f903c4e3c60d350238"
+    },
+    {
+      "path": "measured/measure500-worker.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/measure500-worker.mjs",
+      "bytes": 4710,
+      "sha256": "a54f762dfaccad64bc1fe82a2a9a88ff0d3a5d5267a39c1f9beb7e8d45b7fdab"
+    },
+    {
+      "path": "measured/measurements-h500.jsonl",
+      "originalPath": "/workspace/work/merge10-packed-prototype/measurements-h500.jsonl",
+      "bytes": 39287,
+      "sha256": "af36ee2893a53bd3c86aed4319cc36e95b97df0faa304c9fbb414bc4de283a53"
+    },
+    {
+      "path": "measured/measurements.jsonl",
+      "originalPath": "/workspace/work/merge10-packed-prototype/measurements.jsonl",
+      "bytes": 17044,
+      "sha256": "0830c46ebbd76978699faab4d78f04bedc0bd2344c6076b9853c28d2aaff31ee"
+    },
+    {
+      "path": "measured/native-runtime-binding.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/native-runtime-binding.json",
+      "bytes": 4572,
+      "sha256": "ebee8f2f15e2912d82981881c95e1ade0caa8270041afd7aaa4dfb918a802aac"
+    },
+    {
+      "path": "measured/packed-store.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/packed-store.mjs",
+      "bytes": 7812,
+      "sha256": "da2afb50b8e590525a4480af77a39a92597d9e5b6e4444dffcc5cb88a2aa4e28"
+    },
+    {
+      "path": "measured/run-h500.py.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/run-h500.py",
+      "bytes": 1210,
+      "sha256": "8958d008454f9500063db05f55e06c697d8b2d8e547b4d900b0ac9ec300a18cf"
+    },
+    {
+      "path": "measured/run-measurements.py.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/run-measurements.py",
+      "bytes": 937,
+      "sha256": "77cbc725293b10e505107e65db1479544df42ddca623f8aa71cd327b5fa75a43"
+    },
+    {
+      "path": "measured/runtime.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/runtime.mjs",
+      "bytes": 1666,
+      "sha256": "2a1068c197848954439075f1ddd7a339510f0a1cc7ef6aa4708b83b525dd0b98"
+    },
+    {
+      "path": "measured/source-binding.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/source-binding.json",
+      "bytes": 10233,
+      "sha256": "98581a340826a72367144b44e1eea581f070d9d279a37558ed63af9357ac72eb"
+    },
+    {
+      "path": "measured/transaction-audit-h500.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/transaction-audit-h500.json",
+      "bytes": 1190,
+      "sha256": "c627820a3692d399cb4d7ea87bac66027176a8505dd8579e578c83d8083ee5a6"
+    },
+    {
+      "path": "measured/trie-h16-build.stderr.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/trie-h16-build.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "measured/trie-h16-load.stderr.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/trie-h16-load.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "measured/trie-h4-build.stderr.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/trie-h4-build.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "measured/trie-h4-load.stderr.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/trie-h4-load.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "measured/trie-h500.stderr.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/trie-h500.stderr.log",
+      "bytes": 1891,
+      "sha256": "8a9be4b2fef4ab152bd429f212b7151e22b154e7e64a959f67f1fe48da2e07bd"
+    },
+    {
+      "path": "measured/trie-h500.stdout.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/trie-h500.stdout.log",
+      "bytes": 11029,
+      "sha256": "50e3d3f73a261a552d892192a7a6dbb1edb513e2a20236c303c99f95236a6fca"
+    },
+    {
+      "path": "measured/unit1-h16-build.stderr.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/unit1-h16-build.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "measured/unit1-h16-load.stderr.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/unit1-h16-load.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "measured/unit1-h4-build.stderr.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/unit1-h4-build.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "measured/unit1-h4-load.stderr.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/unit1-h4-load.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "measured/unit1-h500.stderr.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/unit1-h500.stderr.log",
+      "bytes": 1923,
+      "sha256": "096c5046bc9790469b6c0814a5643bdb51cfc830c08e1c37c754ff5cb79ef31b"
+    },
+    {
+      "path": "measured/unit1-h500.stdout.log",
+      "originalPath": "/workspace/work/merge10-packed-prototype/unit1-h500.stdout.log",
+      "bytes": 12003,
+      "sha256": "4d32e6625de0e3727d76c1e8d6ebb9eebce146b3cea76bed5058ae7d2a4ee908"
+    },
+    {
+      "path": "measured/v1-harness-manifest.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/v1-harness-manifest.json",
+      "bytes": 790,
+      "sha256": "6919b800e0e3104e8a5e6a505d38a126f26f39be69454fb9a15e3983c3a3054b"
+    },
+    {
+      "path": "measured/verify500-transactions.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/verify500-transactions.mjs",
+      "bytes": 2079,
+      "sha256": "fa47e1cab82d53e9bc836bde9b0062377c07d9ab7a1923ce1be8651d37142b8a"
+    },
+    {
+      "path": "v1/build-fixture.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/v1/build-fixture.mjs",
+      "bytes": 3188,
+      "sha256": "15c73460dc03d460ef8fb5139f49f3338c780f98c4d8eb0cba4216a61e0302c5"
+    },
+    {
+      "path": "v1/correctness.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/v1/correctness.mjs",
+      "bytes": 5717,
+      "sha256": "36ff3c130c823bb902396856b62cc986bea88a4cb73b23471306206474ac23ca"
+    },
+    {
+      "path": "v1/measure-worker.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/v1/measure-worker.mjs",
+      "bytes": 3250,
+      "sha256": "7514b9ec30e660a83a0ec91887c2b36125df791f7c2848f903c4e3c60d350238"
+    },
+    {
+      "path": "v1/packed-store.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/v1/packed-store.mjs",
+      "bytes": 7586,
+      "sha256": "c69efe9a5140e1ae8de5d9015a52321846ace15aae8852685bb1e3978d007bc1"
+    },
+    {
+      "path": "v1/runtime.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/v1/runtime.mjs",
+      "bytes": 1666,
+      "sha256": "2a1068c197848954439075f1ddd7a339510f0a1cc7ef6aa4708b83b525dd0b98"
+    },
+    {
+      "path": "post-review-fix/README.md.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/post-review-fix/README.md",
+      "bytes": 1880,
+      "sha256": "b4f13efb873e5b12fca4d94d473bd4e26aedaf7b7b0165c6b97243de215cab79"
+    },
+    {
+      "path": "post-review-fix/correctness.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/post-review-fix/correctness.mjs",
+      "bytes": 7070,
+      "sha256": "d0a01d401077ebb6cee19004c20ca6dcdc2f861d3269c3645512d8a664dcd726"
+    },
+    {
+      "path": "post-review-fix/correctness16-with-extractor.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/post-review-fix/correctness16-with-extractor.json",
+      "bytes": 1603,
+      "sha256": "a6930c6cdc0f9e9c2a4b3cf4ca4e7e0db7ae7549dec0260caac76c06a6562693"
+    },
+    {
+      "path": "post-review-fix/correctness16.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/post-review-fix/correctness16.json",
+      "bytes": 1482,
+      "sha256": "015ac6102aa245fc00c26a86e25abb59c0f5159d5acc654ae6678253368e3f62"
+    },
+    {
+      "path": "post-review-fix/manifest.json.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/post-review-fix/manifest.json",
+      "bytes": 1120,
+      "sha256": "6538267b80c81f60eea4a29846b7a2766cb4e7bf010ee85a7d9ae08b8cb60345"
+    },
+    {
+      "path": "post-review-fix/packed-store.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/post-review-fix/packed-store.mjs",
+      "bytes": 7963,
+      "sha256": "98a2d214cffa7b49a627b4e2ca9005956ecf198bfbfb7705f03699a277a38d50"
+    },
+    {
+      "path": "post-review-fix/runtime.mjs.txt",
+      "originalPath": "/workspace/work/merge10-packed-prototype/post-review-fix/runtime.mjs",
+      "bytes": 1888,
+      "sha256": "56c6f12ff08434540174f0aba2f2855d3f189309d1dea072fb257f27f3c0cc4b"
+    },
+    {
+      "path": "review/independent-review.md.txt",
+      "originalPath": "/workspace/work/merge10-implementation/packed-independent-review.md",
+      "bytes": 9501,
+      "sha256": "e89b8a7039ee1a0d5c78c3624cde069019574888d36eee6fdfc684473f8534e6"
+    },
+    {
+      "path": "review/original-handoff.md.txt",
+      "originalPath": "/workspace/work/merge10-implementation/packed-prototype-handoff.md",
+      "bytes": 11279,
+      "sha256": "b26fbfb29232df71f8a8c7aac0da4c44ae214bb1d7d76c2a35fe8839dd180d8a"
+    }
+  ]
+}

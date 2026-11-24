@@ -1,0 +1,17 @@
+# Public editing trace attribution and acquisition
+
+Source: Automerge contributors, Martin Kleppmann and Alastair R. Beresford, `automerge/automerge-perf`, https://github.com/automerge/automerge-perf . The README attributes the editing trace to writing *A Conflict-Free Replicated JSON Datatype*, https://doi.org/10.1109/TPDS.2017.2697382 . All trace material is offered by that repository under Creative Commons Attribution 4.0 International, https://creativecommons.org/licenses/by/4.0/ . The full license and upstream README are retained alongside this notice. No warranties; see LICENSE and the upstream README's discussion of paper versus trace rights.
+
+Pinned source commit: `da212e984c777d31ee7d888f82637288aa4c61d3`.
+
+Trace URL: https://raw.githubusercontent.com/automerge/automerge-perf/da212e984c777d31ee7d888f82637288aa4c61d3/edit-by-index/editing-trace.js
+
+Acquired 2026-11-24. GitHub connector repository/commit/tree/README/license reads succeeded, but its raw-file fetch rejected the 4.58 MB trace as too large/unsupported. A direct HTTPS curl read to the same pinned public raw URL succeeded. No repository or remote content was changed.
+
+Original trace file bytes: 4,579,942. SHA-256: `23116070719243e2950c310006dd50b3d80744be7542a86c62e7d5c2ed7326d0`.
+
+Upstream README describes 259,778 one-character insert/delete tuples with cursor movements omitted and original concurrent editing flattened into a single linear order. ABOUT-DATA.md shows a terminal `[0,0]` sentinel. This source should not be called a retained concurrent-user trace or a corpus preserving original undo/capture boundaries.
+
+Local adaptation in `public500-v1/trace.json`: first 500 original splice tuples (zero-based indexes 0–499), replayed from empty text. Adds deterministic local logical IDs, sequence numbers, a synthetic single actor, synthetic Origin labels and synthetic undo/episode boundaries every 100 edits; retains all source positions and characters. These additional metadata are experimental controls, not facts about original author identity, edit timing, user intent, provenance or history. The prefix is not the final complete paper and has its own expected result. No full-trace native replay was attempted.
+
+The local runner parses the upstream edit array as JSON and never executes the downloaded JavaScript. The runner and result manifests record slice trace hashes and full selected installed CJS binding hashes. Local README/LICENSE files were retained via GitHub text fetch; their local byte hashes, rather than hypothetical raw HTTP byte identity, are recorded in manifests.

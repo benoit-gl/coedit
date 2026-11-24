@@ -1,0 +1,75 @@
+// Scratch bounded storage-layout experiment; not a qualification runner.
+import fs from 'node:fs';
+import { createHash } from 'node:crypto';
+import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { performance } from 'node:perf_hooks';
+import { getHeapStatistics } from 'node:v8';
+const [variant, shape, sizeText, mode = 'build', fixture] = process.argv.slice(2);
+const size = Number(sizeText), base = '/workspace/work/merge10-implementation/trie-prototype';
+if (!['old','chunk2'].includes(variant) || !['uniform','same-byte','tail'].includes(shape) || !Number.isInteger(size) || size < 0 || size > 512 || !['build','load','trace'].includes(mode)) throw Error('invalid bounded args');
+const root = resolve(base,variant), width = variant === 'old' ? 1 : 2;
+const sha = x => createHash('sha256').update(x).digest('hex');
+const workerSha256 = sha(fs.readFileSync(new URL(import.meta.url)));
+if (mode === 'trace') {
+  const h = Reflect.get(process.stdout,'_handle');
+  if (typeof h?.setBlocking !== 'function') throw Error('trace requires blocking stdout');
+  h.setBlocking(true);
+}
+const { createServer } = await import(pathToFileURL(resolve(root,'node_modules/vite/dist/node/index.js')));
+const server = await createServer({configFile:false,root,appType:'custom',optimizeDeps:{noDiscovery:true,include:[]},server:{middlewareMode:true,hmr:false},logLevel:'error'});
+try {
+const [{AutomergeRecordPrimitive:P},{commitRecordV1},A] = await Promise.all([
+  server.ssrLoadModule('/qualification/step3/immutableRuns/nativeRecordStore.ts'),
+  server.ssrLoadModule('/qualification/step3/immutableRuns/record.ts'),
+  import(pathToFileURL(resolve(root,'node_modules/@automerge/automerge/dist/mjs/entrypoints/fullfat_node.js'))),
+]);
+const uuid = n => {
+ let h = sha(`coedit-trie-prototype-v1:${n}`).slice(0,32);
+ if (shape === 'same-byte') h = 'c1'+h.slice(2);
+ if (shape === 'tail') h = 'c10000000000400080000000'+n.toString(16).padStart(8,'0');
+ h = h.slice(0,12)+'4'+h.slice(13,16)+'8'+h.slice(17);
+ return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20)}`;
+};
+const entry = n => commitRecordV1(['coedit-step3-record',1,uuid(n),'live',['block','c1000000-0000-4000-8000-000000000001'],null,null,['actor','effect'],'c1000000-0000-4000-8000-000000000002',['payload',0,n],[]]);
+const records = Array.from({length:size},(_,i)=>entry(i+100)), target=entry(size+100);
+const expectedKeys = records.map(e=>e.key).sort();
+const gc = () => {if (!global.gc) throw Error('--expose-gc required'); global.gc();global.gc();};
+const sample = () => ({...process.memoryUsage(),maxRssKiB:process.resourceUsage().maxRSS});
+gc(); const baseline=sample(); let store, encoded, buildMs, loadMs;
+if (mode === 'load') {
+ encoded = new Uint8Array(fs.readFileSync(fixture));
+ const t=performance.now();store=P.load(encoded);loadMs=performance.now()-t;
+} else {
+ const t=performance.now();store=P.create();store.append(records);buildMs=performance.now()-t;
+ encoded=store.encode();
+ if (mode === 'build' && fixture) fs.writeFileSync(fixture,encoded,{flag:'wx'});
+}
+if (JSON.stringify(store.entries().map(e=>e.key).sort()) !== JSON.stringify(expectedKeys)) throw Error('exact canonical entries mismatch');
+gc();const retained=sample();
+if (mode === 'load') {
+ console.log(JSON.stringify({variant,shape,size,mode,width,workerSha256,baseline,retained,loadMs,encodedBytes:encoded.length,encodedSha256:sha(encoded),semanticKeySha256:sha(expectedKeys.join('\n')),heapLimit:getHeapStatistics().heap_size_limit,node:process.version}));
+} else {
+ let t=performance.now();
+ if(mode==='trace')fs.writeSync(1,`TRACE_BEGIN trie-${variant}-${shape}-${size}\n`);
+ store.append([target]);
+ if(mode==='trace')fs.writeSync(1,`TRACE_END trie-${variant}-${shape}-${size}\n`);
+ const appendMs=performance.now()-t;
+ const afterBytes=store.encode();
+ // Native public API diagnostics are outside insertion timing/trace and GC sample.
+ const rawBefore=A.load(encoded),rawAfter=A.load(afterBytes);
+ const changes=A.getChanges(rawBefore,rawAfter).map(c=>A.decodeChange(c));
+ const appendOps=changes.flatMap(c=>c.ops);
+ const allOps=A.getAllChanges(rawAfter).flatMap(c=>A.decodeChange(c).ops);
+ const count=(ops,action)=>ops.filter(op=>op.action===action).length;
+ let prefixMaps=0,maxWidth=0,rootWidth=Object.keys(rawAfter.records).length;
+ A.change(rawAfter,d=>{const todo=[{node:d.records,depth:0}];while(todo.length){const {node,depth}=todo.pop();prefixMaps++;const keys=Object.keys(node);maxWidth=Math.max(maxWidth,keys.length);if(depth<32)for(const key of keys){const cs=A.getConflicts(node,key),vs=cs===undefined?[node[key]]:Object.values(cs);for(const child of vs)todo.push({node:child,depth:depth+key.length});}}});
+ if(store.size!==size+1)throw Error('target missing');
+ // Warm keyed lookup is a public Automerge read through the exact UUID path.
+ const chunks=uuid(size+100).replaceAll('-','').match(width===1?/./g:/../g);
+ const lookup=()=>{let n=rawAfter.records;for(const key of chunks)n=n[key];if(n[target.key]!==true)throw Error('point lookup missing');};
+ t=performance.now();for(let i=0;i<1000;i++)lookup();const lookup1000Ms=performance.now()-t;
+ const result={variant,shape,size,mode,width,workerSha256,node:process.version,heapLimit:getHeapStatistics().heap_size_limit,buildMs,appendMs,baseline,retained,encodedBytes:encoded.length,encodedSha256:sha(encoded),semanticKeySha256:sha(expectedKeys.join('\n')),afterEncodedBytes:afterBytes.length,appendOps:appendOps.length,appendMakeMaps:count(appendOps,'makeMap'),allOps:allOps.length,allMakeMaps:count(allOps,'makeMap'),prefixMaps,rootWidth,maxWidth,lookup1000Ms,semanticsVerified:true};
+ (mode==='trace'?console.error:console.log)(JSON.stringify(result));
+}
+} finally {await server.close();}

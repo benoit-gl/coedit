@@ -1,0 +1,24 @@
+import fs from 'node:fs';
+import {createHash} from 'node:crypto';
+import {getHeapStatistics} from 'node:v8';
+export const base='/workspace/work/merge10-packed-prototype';
+export const out=base+'/h5000-v1';
+export const sha=x=>createHash('sha256').update(x).digest('hex');
+export function bind() {
+  const binding=JSON.parse(fs.readFileSync(out+'/binding.json','utf8'));
+  for(const row of binding.files)if(sha(fs.readFileSync(row.path))!==row.sha256)throw Error('Binding mismatch: '+row.path);
+  if(process.env.NODE_OPTIONS)throw Error('Expected no NODE_OPTIONS; refusing changed heap/runtime flags.');
+  if(getHeapStatistics().heap_size_limit!==2348810240)throw Error('Unexpected default heap limit.');
+  return sha(fs.readFileSync(out+'/binding.json'));
+}
+export function phase(stage,status,details={}) {
+  const row={at:new Date().toISOString(),pid:process.pid,stage,status,complete:false,heapLimit:getHeapStatistics().heap_size_limit,memory:process.memoryUsage(),...details};
+  fs.appendFileSync(out+'/'+process.env.PACK_PHASE_FILE,JSON.stringify(row)+'\n');
+  process.stdout.write(JSON.stringify(row)+'\n');
+}
+export function expected(label) {
+  if(label==='genesis')return null;
+  const index=label.startsWith('edit-')?Number(label.slice(5)):null;
+  const text=index!==null&&index%2===0?'ax'+'a'.repeat(1023):'a'.repeat(1024);
+  return {text,length:text.length,textSha256:sha(text),spans:[{text,origin:{kind:'human',id:'o0'}}]};
+}

@@ -1,0 +1,283 @@
+{
+  "kind": "native-text diagnostic controls; no full application eligibility claim",
+  "originalScratchDirectory": "/workspace/work/merge10-native-controls",
+  "measurementManifest": "manifest.json.txt",
+  "postRunBindingVerification": "post-run-binding-verification.json.txt",
+  "originalScriptsUseMjsFilenames": true,
+  "rawJsonAndScriptsPreservedWithTxtSuffix": true,
+  "excludedEncodedBinaries": [
+    {
+      "name": "automerge-alternating-500.bin",
+      "bytes": 236,
+      "sha256": "2f9f82d2d58ae9b304c22995541aa0f705a048b0c277eb7394c837d20a897ba1"
+    },
+    {
+      "name": "automerge-alternating-5000.bin",
+      "bytes": 245,
+      "sha256": "ec4b593f348bc5e1b59dacb9599aab86e9c8dc87408f2b0147a5aa89d39960ff"
+    },
+    {
+      "name": "automerge-typing-500.bin",
+      "bytes": 249,
+      "sha256": "d256efe87810e8088211841603630c84a3b7b8c14b01e960e155be0f75af5230"
+    },
+    {
+      "name": "automerge-typing-5000.bin",
+      "bytes": 288,
+      "sha256": "363d75979024399e1df35f07b79d689754bd1247e348d81cd5080d8cc66bfb77"
+    },
+    {
+      "name": "yjs-alternating-500.bin",
+      "bytes": 1055,
+      "sha256": "6b89181d73eed478523830b5e885e152d7db75625a248ecf838b8de0b9fa8c90"
+    },
+    {
+      "name": "yjs-alternating-5000.bin",
+      "bytes": 1055,
+      "sha256": "a21780754b70180c5a791e4cf4a169aa1a533b3d10ca8e24d6a613299b716949"
+    },
+    {
+      "name": "yjs-typing-500.bin",
+      "bytes": 1549,
+      "sha256": "05e1ed18282aafcb9d998de9c1d181c1d1ea6f9d98fa7c983ae9c8f304322455"
+    },
+    {
+      "name": "yjs-typing-5000.bin",
+      "bytes": 6049,
+      "sha256": "bd3995dacd78a564573057e4423b6e33d4b4034e7f8946fa5cb58d320d376fa9"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "REPORT.md",
+      "bytes": 8230,
+      "sha256": "75efec1391b1b2bd077771a0b577bce7896b8704352e18a39aac08202d485f8d",
+      "originalPath": null,
+      "copy": "new diagnostic report"
+    },
+    {
+      "path": "automerge-alternating-500.json.txt",
+      "bytes": 15230,
+      "sha256": "2dd2f43ac7edfc2ce14478d626f2491f7b6000b5a2ea703c7cd5b5ed9ccd7b33",
+      "originalPath": "/workspace/work/merge10-native-controls/results/automerge-alternating-500.json",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "automerge-alternating-500.log",
+      "bytes": 2496,
+      "sha256": "e4f041a92d481bfb14eee2399b4db2f7682922b66b2d21127b6b2d4e83cc183f",
+      "originalPath": "/workspace/work/merge10-native-controls/results/automerge-alternating-500.log",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "automerge-alternating-500.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalPath": "/workspace/work/merge10-native-controls/results/automerge-alternating-500.stderr",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "automerge-alternating-5000.json.txt",
+      "bytes": 127887,
+      "sha256": "695aca066ac28af223798ea6a5ada46be27b8a8d8b786d1236a5fce4485992f4",
+      "originalPath": "/workspace/work/merge10-native-controls/results/automerge-alternating-5000.json",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "automerge-alternating-5000.log",
+      "bytes": 4721,
+      "sha256": "af4c1fdccf25ecd1945c602636fd5f848b4f38c8fb680e0fed670a106a74f503",
+      "originalPath": "/workspace/work/merge10-native-controls/results/automerge-alternating-5000.log",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "automerge-alternating-5000.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalPath": "/workspace/work/merge10-native-controls/results/automerge-alternating-5000.stderr",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "automerge-history-verification.json.txt",
+      "bytes": 8052,
+      "sha256": "2813adfc208069d26567ae5d427d681f7f58286975a4bd755e941d68b3702023",
+      "originalPath": "/workspace/work/merge10-native-controls/results/automerge-history-verification.json",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "automerge-history-verification.log",
+      "bytes": 5759,
+      "sha256": "74fcf57d18fba0b8bebf5846d7c5c193ac7c648c99bb39db8e9a6c7b27e81456",
+      "originalPath": "/workspace/work/merge10-native-controls/results/automerge-history-verification.log",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "automerge-history-verification.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalPath": "/workspace/work/merge10-native-controls/results/automerge-history-verification.stderr",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "automerge-typing-500.json.txt",
+      "bytes": 15159,
+      "sha256": "2816fb5c7c160b6411caa7505c2a65bc35a9cf9a6010ed2e1347237ab71aeaf7",
+      "originalPath": "/workspace/work/merge10-native-controls/results/automerge-typing-500.json",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "automerge-typing-500.log",
+      "bytes": 2509,
+      "sha256": "4f6c9cf3f0c2f3b4ddd95681239855967c13ab6e7fd0377b7dbbb73a7a37f14b",
+      "originalPath": "/workspace/work/merge10-native-controls/results/automerge-typing-500.log",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "automerge-typing-500.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalPath": "/workspace/work/merge10-native-controls/results/automerge-typing-500.stderr",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "automerge-typing-5000.json.txt",
+      "bytes": 127416,
+      "sha256": "f50e5545acd3024d67abe3cfb8e369d413f430e7a0f96224a7c385ca359dedf7",
+      "originalPath": "/workspace/work/merge10-native-controls/results/automerge-typing-5000.json",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "automerge-typing-5000.log",
+      "bytes": 4650,
+      "sha256": "1bac6709d5ed6fefe8f7a2f1a127a8bebc3c8138a8ada1f20dc9e829ce1474fd",
+      "originalPath": "/workspace/work/merge10-native-controls/results/automerge-typing-5000.log",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "automerge-typing-5000.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalPath": "/workspace/work/merge10-native-controls/results/automerge-typing-5000.stderr",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "manifest.json.txt",
+      "bytes": 196325,
+      "sha256": "84b14f122b5c437cac9b3219e41e45bffb8974027d4c551637a58bc779c6be02",
+      "originalPath": "/workspace/work/merge10-native-controls/results/manifest.json",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "post-run-binding-verification.json.txt",
+      "bytes": 1029,
+      "sha256": "ee7b96088bd42de29e3fb04dec43c60bb7fe764019d00bbb612db4a738b2db7c",
+      "originalPath": "/workspace/work/merge10-native-controls/results/post-run-binding-verification.json",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "runner.mjs.txt",
+      "bytes": 3507,
+      "sha256": "ef01d74287e86b9abdccc9436856c4089d409c30b3e6c572410d45213b961e3a",
+      "originalPath": "/workspace/work/merge10-native-controls/runner.mjs",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "verify-automerge-history.mjs.txt",
+      "bytes": 2860,
+      "sha256": "26a86809b585990f9b0f7044858e153d48e6bdc6df2e2620d57fa4250a9a9dd5",
+      "originalPath": "/workspace/work/merge10-native-controls/verify-automerge-history.mjs",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "worker.mjs.txt",
+      "bytes": 7353,
+      "sha256": "374f0dfdbb19c4e931788f683606c5ff16027acded744426f6ef6181143f3424",
+      "originalPath": "/workspace/work/merge10-native-controls/worker.mjs",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "yjs-alternating-500.json.txt",
+      "bytes": 15762,
+      "sha256": "5a7ad591603013e2d3b9c716e630b38e335172875d75c2f1bd3e5d8cd161daf3",
+      "originalPath": "/workspace/work/merge10-native-controls/results/yjs-alternating-500.json",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "yjs-alternating-500.log",
+      "bytes": 2501,
+      "sha256": "83fa72cd35052809c34ee4d42d69ea4d20719fefb5cbad8dc31da651e5afdbbf",
+      "originalPath": "/workspace/work/merge10-native-controls/results/yjs-alternating-500.log",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "yjs-alternating-500.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalPath": "/workspace/work/merge10-native-controls/results/yjs-alternating-500.stderr",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "yjs-alternating-5000.json.txt",
+      "bytes": 134140,
+      "sha256": "34c8cb9652aaced9b5cfcfcc68dca1bbb0281cd3a28d5d55244cc31aad5e362d",
+      "originalPath": "/workspace/work/merge10-native-controls/results/yjs-alternating-5000.json",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "yjs-alternating-5000.log",
+      "bytes": 4671,
+      "sha256": "9b0c942d62596f2988b0fc162fc1ac4d1e44e73397ec7dd34626c117852f254c",
+      "originalPath": "/workspace/work/merge10-native-controls/results/yjs-alternating-5000.log",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "yjs-alternating-5000.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalPath": "/workspace/work/merge10-native-controls/results/yjs-alternating-5000.stderr",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "yjs-typing-500.json.txt",
+      "bytes": 15716,
+      "sha256": "fcd16d5234de8900a451d95d7c189c7c6b31d861f981b856454c5676ed5ca18b",
+      "originalPath": "/workspace/work/merge10-native-controls/results/yjs-typing-500.json",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "yjs-typing-500.log",
+      "bytes": 2517,
+      "sha256": "5a2947725abc75aafefccffd9858ba3b9124081b36d1a12f5f0f5eebb5dde4f5",
+      "originalPath": "/workspace/work/merge10-native-controls/results/yjs-typing-500.log",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "yjs-typing-500.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalPath": "/workspace/work/merge10-native-controls/results/yjs-typing-500.stderr",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "yjs-typing-5000.json.txt",
+      "bytes": 134361,
+      "sha256": "293319f8a8b1b881b9f997275855c94cce7d9e00824e3f174664a59172b671d9",
+      "originalPath": "/workspace/work/merge10-native-controls/results/yjs-typing-5000.json",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "yjs-typing-5000.log",
+      "bytes": 4629,
+      "sha256": "8314d241d79266875e52a06a73f3f7d6f11a14836fec8390c9cff0e9c7c38c65",
+      "originalPath": "/workspace/work/merge10-native-controls/results/yjs-typing-5000.log",
+      "copy": "exact bytes"
+    },
+    {
+      "path": "yjs-typing-5000.stderr.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "originalPath": "/workspace/work/merge10-native-controls/results/yjs-typing-5000.stderr",
+      "copy": "exact bytes"
+    }
+  ]
+}

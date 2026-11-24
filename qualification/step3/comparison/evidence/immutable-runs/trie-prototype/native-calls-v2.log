@@ -1,0 +1,12 @@
+{"start": 1795468627.508356, "command": ["node", "/workspace/work/merge10-implementation/trie-prototype/trace-runner-v2.mjs", "old", "uniform", "16", "calls"]}
+{"exitCode": 0, "end": 1795468634.0038755}
+{"start": 1795468634.0043437, "command": ["node", "/workspace/work/merge10-implementation/trie-prototype/trace-runner-v2.mjs", "chunk2", "uniform", "16", "calls"]}
+{"exitCode": 0, "end": 1795468637.9660242}
+{"start": 1795468637.9677672, "command": ["node", "/workspace/work/merge10-implementation/trie-prototype/trace-runner-v2.mjs", "old", "uniform", "256", "calls"]}
+{"exitCode": 0, "end": 1795468674.446747}
+{"start": 1795468674.4472253, "command": ["node", "/workspace/work/merge10-implementation/trie-prototype/trace-runner-v2.mjs", "chunk2", "uniform", "256", "calls"]}
+{"exitCode": 0, "end": 1795468703.5596406}
+{"start": 1795468703.5601978, "command": ["node", "/workspace/work/merge10-implementation/trie-prototype/old/scripts/step3-native-publication.mjs", "--mode", "calls", "--sizes", "4", "--out", "/workspace/work/merge10-implementation/trie-prototype/full-publication-old-v1", "--note", "isolated hex2 prototype bounded source-bound diagnostic"]}
+{"exitCode": 0, "end": 1795468743.7410512}
+{"start": 1795468743.7416596, "command": ["node", "/workspace/work/merge10-implementation/trie-prototype/chunk2/scripts/step3-native-publication.mjs", "--mode", "calls", "--sizes", "4", "--out", "/workspace/work/merge10-implementation/trie-prototype/full-publication-chunk2-v1", "--note", "isolated hex2 prototype bounded source-bound diagnostic"]}
+{"exitCode": 0, "end": 1795468763.1862297}

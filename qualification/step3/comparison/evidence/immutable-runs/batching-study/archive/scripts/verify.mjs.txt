@@ -1,0 +1,33 @@
+/** Offline integrity and deterministic fixture/result verification; no native workload or network. */
+import assert from 'node:assert/strict';
+import {readFileSync,statSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {dirname,resolve} from 'node:path';
+import {fileURLToPath} from 'node:url';
+const base=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+const sha=x=>createHash('sha256').update(x).digest('hex');
+const load=name=>JSON.parse(readFileSync(`${base}/${name}`));
+const inventory=load('package-manifest.json');
+for(const item of inventory.files){const bytes=readFileSync(`${base}/${item.path}`);assert.equal(bytes.length,item.bytes,item.path);assert.equal(sha(bytes),item.sha256,item.path);assert(bytes.length<400000,item.path);}
+const prefix=load('source/editing-trace-prefix500.json');assert.equal(prefix.length,500);
+const provenance=load('source/provenance.json');assert.equal(sha(readFileSync(`${base}/source/editing-trace-prefix500.json`)),provenance.slice.sha256);
+for(const dataset of ['alternating500','public500']){
+ const trace=load(`data/${dataset}-trace.json`),result=load(`data/${dataset}-results.json`),manifest=load(`data/${dataset}-manifest.json`);
+ assert.deepEqual(result.manifest,manifest);assert.equal(result.complete,true);assert.equal(result.rows.length,54);
+ assert.equal(sha(readFileSync(`${base}/data/${dataset}-trace.json`)),manifest.traceSha256);
+ assert.equal(manifest.sourceHashes['/workspace/work/merge10-batch-study/run500.mjs'],sha(readFileSync(`${base}/scripts/run500.mjs`)));
+ const raw=dataset==='public500'?prefix:Array.from({length:500},(_,i)=>i%2===0?[2,0,String.fromCharCode(97+(i/2)%26)]:[2,1]);
+ let text=dataset==='public500'?'':'seed';const expectedEdits=raw.map(([position,remove,...chars],i)=>{
+   assert(position>=0&&position+remove<=text.length);const insert=chars.join('');
+   text=text.slice(0,position)+insert+text.slice(position+remove);
+   return {sequence:i+1,id:sha(`${dataset}:${i+1}`).slice(0,32),actor:'synthetic-single-actor',origin:['human',`synthetic-origin-${Math.floor(i/100)}`],position,remove,insert,undoGroup:`synthetic-group-${Math.floor(i/100)}`,boundaryBefore:i>0&&i%100===0?'synthetic-episode-boundary':null};
+ });
+ assert.deepEqual(trace.edits,expectedEdits);assert.equal(trace.expected,text);assert.equal(manifest.insertions,raw.filter(t=>t.length>2).length);assert.equal(manifest.deletions,raw.filter(t=>t[1]>0).length);
+ for(let repetition=0;repetition<3;repetition++)for(const layout of ['native-text','custom-marker-trie-shape'])for(const transactionBatch of [1,5,20]){
+   const rs=result.rows.filter(r=>r.repetition===repetition&&r.layout===layout&&r.transactionBatch===transactionBatch);assert.equal(rs.length,3);
+   assert.deepEqual(rs.map(r=>r.transportBatch),[1,5,20]);assert.equal(new Set(rs.map(r=>r.changeListDigest)).size,1);assert.equal(new Set(rs.map(r=>r.headDigest)).size,1);assert.equal(new Set(rs.map(r=>r.senderNativeMs)).size,1);
+   for(const r of rs){assert.equal(r.logicalEdits,500);assert.equal(r.nativeChanges,500/transactionBatch);assert.equal(r.correctness,true);assert.equal(r.normalFactoryValidated,false);assert.equal(r.envelopeBytes,r.changesBytes+4*r.nativeChanges+4*r.envelopes);assert.equal(r.changesBytesPerLogicalEdit,r.changesBytes/500);assert.equal(r.envelopeBytesPerLogicalEdit,r.envelopeBytes/500);assert.equal(r.senderNativeUsPerLogicalEdit,r.senderNativeMs*1000/500);assert.equal(r.receiverNativeUsPerLogicalEdit,r.receiverNativeMs*1000/500);}
+ }
+ console.log(`${dataset}: 500 reconstructed edits, stable fixture/worker hashes, 54 complete raw rows, consistent units and sender identity across transport groups`);
+}
+console.log(`Verified ${inventory.files.length} lossless local files; no network, native replay or full-source availability required. Full source hash provenance is recorded but cannot be recomputed from prefix alone.`);

@@ -1,0 +1,25 @@
+{
+  "repository": "https://github.com/automerge/automerge-perf",
+  "commit": "da212e984c777d31ee7d888f82637288aa4c61d3",
+  "path": "edit-by-index/editing-trace.js",
+  "url": "https://raw.githubusercontent.com/automerge/automerge-perf/da212e984c777d31ee7d888f82637288aa4c61d3/edit-by-index/editing-trace.js",
+  "gitBlobSha1": "aadf32adf98fc4ef318dbf6a8e7aeddb9dbf1030",
+  "sourceBytes": 4579942,
+  "sourceSha256": "23116070719243e2950c310006dd50b3d80744be7542a86c62e7d5c2ed7326d0",
+  "license": "CC-BY-4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "attribution": "Automerge contributors; Martin Kleppmann and Alastair R. Beresford; A Conflict-Free Replicated JSON Datatype, doi:10.1109/TPDS.2017.2697382",
+  "acquiredDate": "2026-11-24",
+  "acquisition": "GitHub connector metadata/documents; bounded direct HTTPS raw download after connector large-file rejection",
+  "slice": {
+    "startInclusive": 0,
+    "endExclusive": 500,
+    "initialText": "",
+    "insertions": 487,
+    "deletions": 13,
+    "expectedLength": 474,
+    "sha256": "55d92ff3adadc9ace222a9ce38ca4648710f27f4fb2cfa26d71dea20850efd5d"
+  },
+  "modifications": "Extracted first500 original tuples; full source JS omitted. Local data fixtures add synthetic IDs, actor, Origin and undo/episode boundaries. Original concurrency already flattened; no timing/cursor/undo/capture data inferred.",
+  "fullSourceHashCanBeVerifiedOffline": false
+}

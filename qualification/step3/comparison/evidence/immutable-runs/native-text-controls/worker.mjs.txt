@@ -1,0 +1,139 @@
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
+import { performance } from 'node:perf_hooks';
+import v8 from 'node:v8';
+
+const [engine, scenario, countArgument, outputPrefix] = process.argv.slice(2);
+const count = Number(countArgument);
+assert(['automerge', 'yjs'].includes(engine));
+assert(['alternating', 'typing'].includes(scenario));
+assert(Number.isInteger(count) && count >= 0);
+assert(outputPrefix);
+assert(!process.execArgv.some(value => /max.old.space|expose.gc/.test(value)));
+assert(!/max.old.space|expose.gc/.test(process.env.NODE_OPTIONS ?? ''));
+const hash = value => createHash('sha256').update(value).digest('hex');
+const memory = () => ({ ...process.memoryUsage(), maxRssKiB: process.resourceUsage().maxRSS });
+const seed = 'a'.repeat(1024);
+const typed = Array.from({ length: count }, (_, i) => String.fromCharCode(97 + i % 26)).join('');
+const expected = scenario === 'alternating'
+  ? count % 2 ? `ax${seed.slice(1)}` : seed
+  : `a${typed}${seed.slice(1)}`;
+const started = performance.now();
+let api;
+if (engine === 'automerge') {
+  const A = await import('/workspace/coedit/node_modules/@automerge/automerge/dist/mjs/entrypoints/fullfat_node.js');
+  let actorCounter = 1;
+  const actor = () => (actorCounter++).toString(16).padStart(32, '0');
+  api = {
+    create: () => A.init({ actor: actor() }),
+    seed: doc => A.change(doc, { time: 0 }, draft => { draft.text = seed; }),
+    edit: (doc, index, remove, text) => A.change(doc, { time: 0 }, draft => A.splice(draft, ['text'], index, remove, text)),
+    text: doc => doc.text,
+    save: doc => A.save(doc),
+    load: bytes => A.load(bytes, { actor: actor() }),
+    fork: doc => A.clone(doc, { actor: actor() }),
+    merge: (left, right) => A.merge(left, right),
+    version: '3.4.1',
+    configuration: { nativeText: 'root.text string edited through Automerge.splice', changeTime: 0 },
+  };
+} else {
+  const Y = await import('/workspace/coedit/node_modules/yjs/dist/yjs.mjs');
+  let clientCounter = 1;
+  const create = () => { const doc = new Y.Doc(); doc.clientID = clientCounter++; return doc; };
+  const edit = (doc, index, remove, text) => {
+    doc.transact(() => {
+      const value = doc.getText('text');
+      if (remove) value.delete(index, remove);
+      if (text) value.insert(index, text);
+    });
+    return doc;
+  };
+  const load = bytes => { const doc = create(); Y.applyUpdate(doc, bytes); return doc; };
+  api = {
+    create,
+    seed: doc => edit(doc, 0, 0, seed),
+    edit,
+    text: doc => doc.getText('text').toString(),
+    save: doc => Y.encodeStateAsUpdate(doc),
+    load,
+    fork: doc => load(Y.encodeStateAsUpdate(doc)),
+    merge: (left, right) => { Y.applyUpdate(left, Y.encodeStateAsUpdate(right)); return left; },
+    version: '13.6.32',
+    configuration: { nativeText: 'doc.getText(text)', gc: true, encoding: 'Y.encodeStateAsUpdate v1' },
+  };
+}
+const importMs = performance.now() - started;
+const baselineMemory = memory();
+let doc = api.create();
+const seedStarted = performance.now();
+doc = api.seed(doc);
+const seedMs = performance.now() - seedStarted;
+assert.equal(api.text(doc), seed);
+const seededMemory = memory();
+const samples = [];
+const editStarted = performance.now();
+for (let i = 0; i < count; i++) {
+  const start = performance.now();
+  doc = scenario === 'alternating'
+    ? api.edit(doc, 1, i % 2 ? 1 : 0, i % 2 ? '' : 'x')
+    : api.edit(doc, 1 + i, 0, typed[i]);
+  samples.push(performance.now() - start);
+  if ((i + 1) % 500 === 0) console.log(JSON.stringify({ phase: 'progress', engine, scenario, count, edits: i + 1, elapsedMs: performance.now() - editStarted, memory: memory() }));
+}
+const editMs = performance.now() - editStarted;
+const editedMemory = memory();
+assert.equal(api.text(doc), expected);
+const saveStarted = performance.now();
+const bytes = api.save(doc);
+const saveMs = performance.now() - saveStarted;
+const savedMemory = memory();
+writeFileSync(`${outputPrefix}.bin`, bytes);
+const loadStarted = performance.now();
+const reopened = api.load(bytes);
+const loadMs = performance.now() - loadStarted;
+assert.equal(api.text(reopened), expected);
+const loadedMemory = memory();
+
+// Two independently identified replicas edit the same gap concurrently. Merge
+// both directions, then propagate one following edit and round-trip again.
+const mergeStarted = performance.now();
+let left = api.fork(reopened);
+let right = api.fork(reopened);
+left = api.edit(left, 1, 0, 'L');
+right = api.edit(right, 1, 0, 'R');
+assert.equal(api.text(left), `${expected[0]}L${expected.slice(1)}`);
+assert.equal(api.text(right), `${expected[0]}R${expected.slice(1)}`);
+let forward = api.merge(api.fork(left), right);
+let reverse = api.merge(api.fork(right), left);
+const merged = api.text(forward);
+assert.equal(api.text(reverse), merged);
+assert([`${expected[0]}LR${expected.slice(1)}`, `${expected[0]}RL${expected.slice(1)}`].includes(merged));
+forward = api.edit(forward, 3, 0, 'F');
+reverse = api.merge(reverse, forward);
+forward = api.merge(forward, reverse);
+const following = `${merged.slice(0, 3)}F${merged.slice(3)}`;
+assert.equal(api.text(forward), following);
+assert.equal(api.text(reverse), following);
+const mergedBytes = api.save(forward);
+assert.equal(api.text(api.load(mergedBytes)), following);
+const mergeCheckMs = performance.now() - mergeStarted;
+const verifiedMemory = memory();
+const sorted = [...samples].sort((a, b) => a - b);
+const percentile = fraction => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * fraction))] ?? 0;
+const result = {
+  engine, version: api.version, scenario, count, seedLength: seed.length,
+  seedTextSha256: hash(seed), finalLength: expected.length, finalTextSha256: hash(expected),
+  operations: scenario === 'alternating' ? "insert 'x' at offset 1; delete [1,2), repeated" : 'insert one cyclic lowercase ASCII character at offset 1+i per edit',
+  transactions: { seed: 1, measuredEdits: count, onePerEdit: true, applicationSnapshotsRetained: false },
+  configuration: api.configuration,
+  runtime: { node: process.version, v8: process.versions.v8, platform: process.platform, arch: process.arch, execArgv: process.execArgv, nodeOptions: process.env.NODE_OPTIONS ?? null, v8HeapSizeLimitBytes: v8.getHeapStatistics().heap_size_limit },
+  timingsMs: { import: importMs, seed: seedMs, edits: editMs, editMedian: percentile(0.5), editP95: percentile(0.95), editMax: sorted.at(-1) ?? 0, first50: samples.slice(0, 50).reduce((a, b) => a + b, 0), last50: samples.slice(-50).reduce((a, b) => a + b, 0), save: saveMs, load: loadMs, concurrencyAndFollowingCheck: mergeCheckMs },
+  memory: { baseline: baselineMemory, seeded: seededMemory, edited: editedMemory, saved: savedMemory, loadedWithOriginalRetained: loadedMemory, verifiedWithForksRetained: verifiedMemory },
+  encodedBytes: bytes.length, encodedSha256: hash(bytes),
+  checks: { exactFinalText: true, exactReloadedText: true, concurrentSameGapMergeConvergence: true, mergedOrder: merged.slice(1, 3), followingEditConvergence: true, exactFollowingReloadedText: true },
+  mergedEncodedBytes: mergedBytes.length, mergedTextSha256: hash(following),
+  editSamplesMs: samples,
+};
+writeFileSync(`${outputPrefix}.json`, `${JSON.stringify(result, null, 2)}\n`);
+console.log(JSON.stringify({ phase: 'complete', ...result, editSamplesMs: undefined }));

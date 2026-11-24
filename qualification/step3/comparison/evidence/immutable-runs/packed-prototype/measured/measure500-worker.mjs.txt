@@ -1,0 +1,50 @@
+// Three sequential independent layout workers. Load verification is same-process.
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {performance} from 'node:perf_hooks';
+import {getHeapStatistics} from 'node:v8';
+import {runtime} from './runtime.mjs';
+const [variant,fixturePath,out]=process.argv.slice(2);
+if(!['trie','unit1','commandPack'].includes(variant)||!out||!global.gc)throw Error('Invalid H500 arguments.');
+const fixture=JSON.parse(fs.readFileSync(fixturePath,'utf8'));assert.equal(fixture.edits,500);
+const r=await runtime(),sha=x=>createHash('sha256').update(x).digest('hex');
+const gc=()=>{global.gc();global.gc();};const sample=()=>({...process.memoryUsage(),maxRssKiB:process.resourceUsage().maxRSS});
+try {
+  const groups=fixture.groups.map(g=>g.keys.map(k=>r.record.decodeRecordKeyV1(k,true))),all=groups.flat(),expected=all.map(e=>e.key).sort();
+  const Class=variant==='trie'?r.Trie:r.Packed,width=variant==='unit1'?1:64;
+  gc();const baseline=sample(),receipts=[],appendSamples=[];let store=Class.create(width);
+  const start=performance.now();
+  for(let i=0;i<groups.length;i++) {
+    const t=performance.now();store.append(groups[i]);appendSamples.push(performance.now()-t);
+    const heads=variant==='trie'?null:store.heads();if(heads)receipts.push(heads);
+    if((i+1)%50===0)console.error(JSON.stringify({phase:'progress',variant,groups:i+1,elapsedMs:performance.now()-start,memory:process.memoryUsage()}));
+  }
+  const buildMs=performance.now()-start;gc();const retained=sample();
+  assert.deepEqual(store.entries().map(e=>e.key).sort(),expected);
+  const encoded=store.encode();fs.writeFileSync(out,encoded,{flag:'wx'});
+  console.log(JSON.stringify({phase:'built',variant,encodedBytes:encoded.length,buildMs,baseline,retained}));
+  const raw=r.A.load(encoded),changes=r.A.getAllChanges(raw).map(c=>r.A.decodeChange(c)),ops=changes.flatMap(c=>c.ops);
+  assert.equal(changes.length,groups.length+1);
+  const hashes=new Set(changes.map(c=>c.hash));for(const heads of receipts)for(const head of heads)assert.ok(hashes.has(head));
+  const lastOps=changes.at(-1).ops;
+  const physicalUnits=variant==='trie'?expected.length:Object.keys(raw.units).length;
+  // Verify real scalar reads through unit/slot, with exact logical Refs.
+  if(variant!=='trie')for(const entry of all)assert.equal(store.resolve(entry.ref).canonical,entry.canonical);
+  const sampledHistoricalViews=[];
+  if(variant!=='trie')for(const index of [0,1,2,251,501]) {
+    const actual=store.historicalEntries(receipts[index]).map(e=>e.key).sort(),prefix=groups.slice(0,index+1).flat().map(e=>e.key).sort();
+    assert.deepEqual(actual,prefix);sampledHistoricalViews.push({index,heads:receipts[index],records:actual.length,semanticSha256:sha(actual.join('\n'))});
+  }
+  // Independent protocol reference checks all logical command histories after reopen.
+  store=undefined;gc();const loadStart=performance.now();const reopened=Class.load(encoded,width),sameProcessReloadMs=performance.now()-loadStart;
+  assert.deepEqual(reopened.entries().map(e=>e.key).sort(),expected);
+  const protocol=r.Protocol.validateReference(reopened.entries());
+  let historicalRootsChecked=0;
+  for(const group of fixture.groups)if(group.generation) {
+    const projection=protocol.projectGeneration(group.root,group.generation);
+    assert.equal(projection.text,group.expected.text);assert.deepEqual(projection.spans,group.expected.spans);historicalRootsChecked++;
+  }
+  const result={schema:'merge10-packed-h500-diagnostic-v1',phase:'complete',complete:true,variant,edits:500,groups:groups.length,logicalRecords:all.length,semanticSha256:sha(expected.join('\n')),encodedBytes:encoded.length,encodedSha256:sha(encoded),changes:changes.length,nativeOps:ops.length,makeMaps:ops.filter(op=>op.action==='makeMap').length,physicalUnits,lastCommandOps:lastOps.length,lastCommandMakeMaps:lastOps.filter(op=>op.action==='makeMap').length,buildMs,sameProcessReloadMs,baseline,retained,heapUsedDelta:retained.heapUsed-baseline.heapUsed,rssDelta:retained.rss-baseline.rss,historicalRootsChecked,recordedNativeHeadsChecked:receipts.length,sampledHistoricalViews,appendSamples,node:process.version,heapLimit:getHeapStatistics().heap_size_limit,fixtureSha256:sha(fs.readFileSync(fixturePath)),workerSha256:sha(fs.readFileSync(new URL(import.meta.url))),packedStoreSha256:sha(fs.readFileSync(new URL('./packed-store.mjs',import.meta.url))),scope:'storage primitives; three single-sample processes; post-GC build memory, same-process reload verification; no fresh-load memory or full native command provenance claim'};
+  console.log(JSON.stringify(result));
+} finally {await r.server.close();}

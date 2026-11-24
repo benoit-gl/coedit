@@ -1,0 +1,36 @@
+import subprocess,time,json,pathlib,hashlib,os
+base=pathlib.Path(__file__).resolve().parent
+roots=base.parent
+journal=open(base/'supervisor.jsonl','x',buffering=1)
+for variant in ['old','chunk2']:
+ root=roots/variant
+ fixture=base/(variant+'-fixture-500.bin')
+ for mode in ['build','overlap','lifecycle']:
+  prefix=base/(variant+'-'+mode)
+  if mode=='lifecycle':
+   cmd=['node',str(base/'lifecycle.mjs'),'--root',str(root),'--case','same-gap-history-500','--out',str(prefix)+'.jsonl','--phase-trace',str(prefix)+'.phases.jsonl','--note','isolated old/hex2 full-carrier H500 exact lifecycle; verified byte manifests; default heap; no forced GC']
+  else:
+   cmd=['node','--expose-gc',str(base/'fixture-worker.mjs'),'--root',str(root),'--mode',mode,'--history','500','--fixture',str(fixture),'--prefix',str(prefix)]
+  journal.write(json.dumps({'event':'start','variant':variant,'mode':mode,'command':cmd,'cwd':str(root),'utc':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'timeoutSeconds':600})+'\n')
+  print('START',variant,mode,flush=True)
+  start=time.monotonic();peak=0;last_message=start;timedout=False
+  with open(str(prefix)+'.stdout.log','xb') as out,open(str(prefix)+'.stderr.log','xb') as err,open(str(prefix)+'.rss-samples.jsonl','x',buffering=1) as samples:
+   p=subprocess.Popen(cmd,cwd=root,stdout=out,stderr=err,start_new_session=True)
+   while p.poll() is None:
+    elapsed=time.monotonic()-start
+    try:
+     vals={k:int(v.strip().split()[0]) for k,v in (ln.split(':',1) for ln in pathlib.Path(f'/proc/{p.pid}/status').read_text().splitlines() if ln.startswith(('VmRSS:','VmHWM:','VmSize:')))}
+     peak=max(peak,vals.get('VmRSS',0));samples.write(json.dumps({'elapsedSeconds':elapsed,'memoryKiB':vals})+'\n')
+    except FileNotFoundError:pass
+    if elapsed>600:
+     import signal
+     timedout=True;os.killpg(p.pid,signal.SIGTERM);p.wait(timeout=10);break
+    if time.monotonic()-last_message>20:
+     print('RUNNING',variant,mode,round(elapsed,1),'seconds',peak,'peakRSSKiB',flush=True);last_message=time.monotonic()
+    time.sleep(.05)
+   rc=p.wait()
+  record={'event':'end','variant':variant,'mode':mode,'returncode':rc,'timedOut':timedout,'elapsedSeconds':time.monotonic()-start,'sampledPeakRssKiB':peak}
+  journal.write(json.dumps(record)+'\n');print('END',json.dumps(record),flush=True)
+  if rc!=0 and mode=='build':
+   print('Fixture failed; dependent overlap skipped',flush=True);break
+journal.close()

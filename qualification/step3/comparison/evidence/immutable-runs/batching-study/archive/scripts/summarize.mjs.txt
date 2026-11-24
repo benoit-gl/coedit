@@ -1,0 +1,28 @@
+import {readFileSync,writeFileSync} from 'node:fs';
+import assert from 'node:assert/strict';
+const root='/workspace/work/merge10-batch-study';
+const med=a=>[...a].sort((x,y)=>x-y)[Math.floor(a.length/2)];
+const range=a=>`${Math.min(...a).toFixed(2)}–${Math.max(...a).toFixed(2)}`;
+const summary=[];
+let md='# Matched raw Automerge batching observations\n\nEach row uses 500 original logical edits. Sender transaction grouping and receiver transport aggregation have distinct units; every timing is divided by 500, never by the number of commits/packets. Sender timing is reused across transport conditions and counts as only three independent repetitions. No full-carrier, Origin, undo, capture or concurrency correctness is claimed.\n';
+for(const dataset of ['alternating500','public500']){
+  const result=JSON.parse(readFileSync(`${root}/${dataset}-v1/results.json`));assert(result.complete);assert.equal(result.rows.length,54);assert(result.rows.every(r=>r.correctness&&!r.normalFactoryValidated));
+  // Transport conditions within one sender run must have identical native changes.
+  for(let rep=0;rep<3;rep++)for(const layout of ['native-text','custom-marker-trie-shape'])for(const tx of [1,5,20]){
+    const rs=result.rows.filter(r=>r.repetition===rep&&r.layout===layout&&r.transactionBatch===tx);assert.equal(new Set(rs.map(r=>r.changeListDigest)).size,1);assert.equal(new Set(rs.map(r=>r.headDigest)).size,1);assert.equal(new Set(rs.map(r=>r.senderNativeMs)).size,1);
+  }
+  md+=`\n## ${dataset}\n\n${result.manifest.insertions} insertions and ${result.manifest.deletions} deletions; boundaries every 100 logical edits; three rotated condition repetitions.\n\n| Layout | Logical edits/change | Changes | Sender median µs/edit | Sender range µs/edit | Raw change bytes/edit | Saved bytes |\n| --- | ---: | ---: | ---: | --- | ---: | ---: |\n`;
+  for(const layout of ['native-text','custom-marker-trie-shape'])for(const tx of [1,5,20]){
+    const rs=result.rows.filter(r=>r.layout===layout&&r.transactionBatch===tx&&r.transportBatch===1);
+    const xs=rs.map(r=>r.senderNativeUsPerLogicalEdit);
+    const row={dataset,layout,transactionBatch:tx,nativeChanges:rs[0].nativeChanges,senderMedianUsPerLogicalEdit:med(xs),senderRangeUsPerLogicalEdit:[Math.min(...xs),Math.max(...xs)],changesBytesPerLogicalEdit:rs.map(r=>r.changesBytesPerLogicalEdit),savedBytes:rs.map(r=>r.savedBytes)};summary.push(row);
+    md+=`| ${layout} | ${tx} | ${rs[0].nativeChanges} | ${med(xs).toFixed(2)} | ${range(xs)} | ${rs[0].changesBytesPerLogicalEdit.toFixed(2)} | ${rs[0].savedBytes} |\n`;
+  }
+  md+='\nTransport-only comparison holds one logical edit per native change:\n\n| Layout | Native changes/envelope | Envelopes | Actual logical edits/envelope min–max | Framed bytes/edit | Receiver median µs/edit | Receiver range µs/edit |\n| --- | ---: | ---: | --- | ---: | ---: | --- |\n';
+  for(const layout of ['native-text','custom-marker-trie-shape'])for(const packet of [1,5,20]){
+    const rs=result.rows.filter(r=>r.layout===layout&&r.transactionBatch===1&&r.transportBatch===packet),xs=rs.map(r=>r.receiverNativeUsPerLogicalEdit),r=rs[0];
+    md+=`| ${layout} | ${packet} | ${r.envelopes} | ${r.packetLogicalEditsMin}–${r.packetLogicalEditsMax} | ${r.envelopeBytesPerLogicalEdit.toFixed(2)} | ${med(xs).toFixed(2)} | ${range(xs)} |\n`;
+  }
+}
+md+='\nThese are small in-process observations with only three samples and substantial warm-up/order variation. They do not establish a performance guarantee or growth bound. The one-marker-per-edit custom shape is much simpler than the production command graph and does not store equivalent attribution semantics to native text; cross-layout timings measure these explicitly different storage mechanics. No event waiting, UI, network, Automerge sync, batch serialization, derived-index replay, final encoding, or admission validation is inside timed intervals. Native receiver apply includes native application only; separate checks occur after episode boundaries. Framing is modeled as 4 bytes per packet plus 4 bytes per change, without compression. Check raw rows for the full 3×3 transaction/transport cross, packet sizes, digests and source manifests.\n';
+writeFileSync(`${root}/summary.json`,JSON.stringify(summary,null,2)+'\n');writeFileSync(`${root}/SUMMARY.md`,md);console.log(md);

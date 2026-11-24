@@ -1,0 +1,25 @@
+{
+  "scope": "exact H4/H16 harness source at measurement; source snapshot shared via original absolute root",
+  "files": [
+    {
+      "path": "v1/build-fixture.mjs",
+      "sha256": "15c73460dc03d460ef8fb5139f49f3338c780f98c4d8eb0cba4216a61e0302c5"
+    },
+    {
+      "path": "v1/correctness.mjs",
+      "sha256": "36ff3c130c823bb902396856b62cc986bea88a4cb73b23471306206474ac23ca"
+    },
+    {
+      "path": "v1/measure-worker.mjs",
+      "sha256": "7514b9ec30e660a83a0ec91887c2b36125df791f7c2848f903c4e3c60d350238"
+    },
+    {
+      "path": "v1/packed-store.mjs",
+      "sha256": "c69efe9a5140e1ae8de5d9015a52321846ace15aae8852685bb1e3978d007bc1"
+    },
+    {
+      "path": "v1/runtime.mjs",
+      "sha256": "2a1068c197848954439075f1ddd7a339510f0a1cc7ef6aa4708b83b525dd0b98"
+    }
+  ]
+}

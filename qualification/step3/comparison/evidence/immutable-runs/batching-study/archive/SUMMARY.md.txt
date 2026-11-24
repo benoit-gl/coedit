@@ -1,0 +1,53 @@
+# Matched raw Automerge batching observations
+
+Each row uses 500 original logical edits. Sender transaction grouping and receiver transport aggregation have distinct units; every timing is divided by 500, never by the number of commits/packets. Sender timing is reused across transport conditions and counts as only three independent repetitions. No full-carrier, Origin, undo, capture or concurrency correctness is claimed.
+
+## alternating500
+
+250 insertions and 250 deletions; boundaries every 100 logical edits; three rotated condition repetitions.
+
+| Layout | Logical edits/change | Changes | Sender median µs/edit | Sender range µs/edit | Raw change bytes/edit | Saved bytes |
+| --- | ---: | ---: | ---: | --- | ---: | ---: |
+| native-text | 1 | 500 | 67.97 | 67.45–458.93 | 136.83 | 9927 |
+| native-text | 5 | 100 | 43.47 | 31.21–1231.23 | 62.81 | 9847 |
+| native-text | 20 | 25 | 20.66 | 16.25–400.79 | 47.51 | 9772 |
+| custom-marker-trie-shape | 1 | 500 | 4147.45 | 3804.56–8665.12 | 565.30 | 73834 |
+| custom-marker-trie-shape | 5 | 100 | 3529.72 | 3335.29–4012.82 | 491.97 | 73756 |
+| custom-marker-trie-shape | 20 | 25 | 3452.86 | 3399.83–3911.98 | 477.70 | 73543 |
+
+Transport-only comparison holds one logical edit per native change:
+
+| Layout | Native changes/envelope | Envelopes | Actual logical edits/envelope min–max | Framed bytes/edit | Receiver median µs/edit | Receiver range µs/edit |
+| --- | ---: | ---: | --- | ---: | ---: | --- |
+| native-text | 1 | 500 | 1–1 | 144.83 | 103.02 | 96.80–706.69 |
+| native-text | 5 | 100 | 5–5 | 141.63 | 45.38 | 39.38–344.65 |
+| native-text | 20 | 25 | 20–20 | 141.03 | 32.15 | 14.81–188.84 |
+| custom-marker-trie-shape | 1 | 500 | 1–1 | 573.30 | 2308.54 | 2260.31–2917.82 |
+| custom-marker-trie-shape | 5 | 100 | 5–5 | 570.10 | 1955.02 | 1891.66–2798.48 |
+| custom-marker-trie-shape | 20 | 25 | 20–20 | 569.50 | 2138.75 | 1902.21–2310.01 |
+
+## public500
+
+487 insertions and 13 deletions; boundaries every 100 logical edits; three rotated condition repetitions.
+
+| Layout | Logical edits/change | Changes | Sender median µs/edit | Sender range µs/edit | Raw change bytes/edit | Saved bytes |
+| --- | ---: | ---: | ---: | --- | ---: | ---: |
+| native-text | 1 | 500 | 70.03 | 61.20–325.05 | 134.51 | 10065 |
+| native-text | 5 | 100 | 38.61 | 30.87–111.93 | 56.58 | 10002 |
+| native-text | 20 | 25 | 32.70 | 20.17–54.63 | 41.39 | 9909 |
+| custom-marker-trie-shape | 1 | 500 | 3572.13 | 3549.80–4282.37 | 567.77 | 75634 |
+| custom-marker-trie-shape | 5 | 100 | 3615.10 | 3261.22–3675.94 | 494.41 | 75559 |
+| custom-marker-trie-shape | 20 | 25 | 3209.95 | 3100.43–3418.13 | 480.18 | 75339 |
+
+Transport-only comparison holds one logical edit per native change:
+
+| Layout | Native changes/envelope | Envelopes | Actual logical edits/envelope min–max | Framed bytes/edit | Receiver median µs/edit | Receiver range µs/edit |
+| --- | ---: | ---: | --- | ---: | ---: | --- |
+| native-text | 1 | 500 | 1–1 | 142.51 | 167.89 | 143.70–510.45 |
+| native-text | 5 | 100 | 5–5 | 139.31 | 51.01 | 41.63–84.97 |
+| native-text | 20 | 25 | 20–20 | 138.71 | 19.52 | 17.73–49.52 |
+| custom-marker-trie-shape | 1 | 500 | 1–1 | 575.77 | 2201.61 | 2189.06–2553.10 |
+| custom-marker-trie-shape | 5 | 100 | 5–5 | 572.57 | 1862.07 | 1778.09–2737.56 |
+| custom-marker-trie-shape | 20 | 25 | 20–20 | 571.97 | 1781.14 | 1709.39–1852.91 |
+
+These are small in-process observations with only three samples and substantial warm-up/order variation. They do not establish a performance guarantee or growth bound. The one-marker-per-edit custom shape is much simpler than the production command graph and does not store equivalent attribution semantics to native text; cross-layout timings measure these explicitly different storage mechanics. No event waiting, UI, network, Automerge sync, batch serialization, derived-index replay, final encoding, or admission validation is inside timed intervals. Native receiver apply includes native application only; separate checks occur after episode boundaries. Framing is modeled as 4 bytes per packet plus 4 bytes per change, without compression. Check raw rows for the full 3×3 transaction/transport cross, packet sizes, digests and source manifests.

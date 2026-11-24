@@ -1,0 +1,38 @@
+"""Read-only evidence verification. Run with Python 3; no native runtime required."""
+from pathlib import Path
+import base64
+import collections
+import gzip
+import hashlib
+import json
+
+root = Path(__file__).resolve().parent
+
+def digest(data):
+    return hashlib.sha256(data).hexdigest()
+
+manifest = json.loads((root / 'package-manifest.json').read_text())
+for row in manifest['files']:
+    data = (root / row['path']).read_bytes()
+    assert len(data) == row['bytes'], row['path']
+    assert digest(data) == row['sha256'], row['path']
+for row in json.loads((root / 'archive-map.json').read_text())['files']:
+    assert digest((root / row['path']).read_bytes()) == row['sha256']
+for row in json.loads((root / 'inputs-manifest.json').read_text())['inputs']:
+    encoded = b''.join((root / part).read_bytes() for part in row['partsInOrder'])
+    compressed = base64.b64decode(encoded)
+    assert len(compressed) == row['gzipBytes']
+    assert digest(compressed) == row['gzipSha256']
+    data = gzip.decompress(compressed)
+    assert len(data) == row['originalBytes']
+    assert digest(data) == row['originalSha256']
+    tape = json.loads(data)
+    keys = [key for group in tape['groups'] for key in group['keys']]
+    records = [json.loads(key[65:]) for key in keys]
+    assert len(tape['groups']) == row['commandGroups']
+    assert len(keys) == len(set(keys)) == len({record[2] for record in records}) == row['logicalRecords']
+    assert digest('\n'.join(sorted(keys)).encode()) == row['semanticSha256']
+    assert dict(collections.Counter(record[3] for record in records)) == row['recordKinds']
+    for key in keys:
+        assert key[:64] == digest(key[65:].encode())
+print('PASS: package files, byte-exact archives, both tapes, UUID uniqueness, counts and commitments')

@@ -1,0 +1,26 @@
+"""Restore exact archived paths and run the original offline verifier; no native workload."""
+import base64
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+import sys
+
+base = Path(__file__).resolve().parent
+manifest = json.loads((base / "archive-manifest.json").read_text())
+output = Path(sys.argv[1]).resolve()
+output.mkdir(exist_ok=False)
+for entry in manifest["files"]:
+    data = (base / entry["archivePath"]).read_bytes()
+    if entry.get("encoding") == "base64":
+        assert len(data) == entry["archiveBytes"], entry["archivePath"]
+        assert hashlib.sha256(data).hexdigest() == entry["archiveSha256"], entry["archivePath"]
+        data = base64.b64decode(b"".join(data.splitlines()), validate=True)
+    assert len(data) == entry["bytes"], entry["archivePath"]
+    assert hashlib.sha256(data).hexdigest() == entry["sha256"], entry["archivePath"]
+    target = output / entry["originalPath"]
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(data)
+assert hashlib.sha256((output / "package-manifest.json").read_bytes()).hexdigest() == manifest["packageManifestSha256"]
+subprocess.run(["node", str(output / "scripts" / "verify.mjs")], check=True)
+print("Restored and verified exact package:", output)

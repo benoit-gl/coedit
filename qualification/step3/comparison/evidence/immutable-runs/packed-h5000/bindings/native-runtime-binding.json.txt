@@ -1,0 +1,125 @@
+{
+  "automergeVersion": "3.4.1",
+  "files": [
+    {
+      "path": "dist/mjs/apply_patches.js",
+      "sha256": "737e8419c77bdeaa298ad608d4e40563e20015b7fbd43383ccfc00e0badd80ef"
+    },
+    {
+      "path": "dist/mjs/conflicts.js",
+      "sha256": "92067475eb403dd099958a1d4564362433fcfd7c281d0abc1c7b350d22f06a97"
+    },
+    {
+      "path": "dist/mjs/constants.js",
+      "sha256": "2a1f5000d710b65e357cd1a6b6f2be4163e1dec30489f1bd158e896d6d50ce11"
+    },
+    {
+      "path": "dist/mjs/counter.js",
+      "sha256": "7dbe2d7340452719ef75fafd3a67ee182dea13a18fbbbe9239bb84b480de2b38"
+    },
+    {
+      "path": "dist/mjs/entrypoints/fullfat_base64.js",
+      "sha256": "3d2ae23c838f98045a67bf79a41dc49a49ce1b2874eeba41f56701920c270004"
+    },
+    {
+      "path": "dist/mjs/entrypoints/fullfat_bundler.js",
+      "sha256": "30e125fe386ef2be4510ee5f57b67c71862bf88825f27caffa93b1a3e8af80d2"
+    },
+    {
+      "path": "dist/mjs/entrypoints/fullfat_node.js",
+      "sha256": "6979f64f2fd8dfd062b10f660cb19660d3929d71a94bbe4de15100c598087f98"
+    },
+    {
+      "path": "dist/mjs/entrypoints/fullfat_workerd.js",
+      "sha256": "23200a0d30c89061d2ac742e1a53b04a458fc537037add72ef878ae457e3e35c"
+    },
+    {
+      "path": "dist/mjs/entrypoints/iife.js",
+      "sha256": "bfa3e7bac5e03de85d075b3e9fd69c7d35edcdd7ed749fb6b9ae3019224ab494"
+    },
+    {
+      "path": "dist/mjs/entrypoints/slim.js",
+      "sha256": "33b1627f740228fd33b9a6f407467e93840f3df93b7f1f40585d113fa387c66e"
+    },
+    {
+      "path": "dist/mjs/generated/release-info.js",
+      "sha256": "c9fadad98d837e3ebd17dcef08f9daa5a1cb3b95645fefe86c9bbb6df9667040"
+    },
+    {
+      "path": "dist/mjs/immutable_string.js",
+      "sha256": "31b093b618397ca888e07daf3fe35a03a12f51d13c44cf537f47085da84d6872"
+    },
+    {
+      "path": "dist/mjs/implementation.js",
+      "sha256": "fe51b31b91adbe91f4ab3fa6497bddc369ce695b6e19e4f20a42a39b44b00913"
+    },
+    {
+      "path": "dist/mjs/index.js",
+      "sha256": "bbf867656824cbcdcdfc32df7c2bfe18f7a1f1a149d65f14361100469def2a0b"
+    },
+    {
+      "path": "dist/mjs/internal_state.js",
+      "sha256": "f93cc20838a9da602e4b5a2c0a76735884c4888aae6230ab02b7535849c59666"
+    },
+    {
+      "path": "dist/mjs/low_level.js",
+      "sha256": "81069cb1a4a3b9646c15bf48cfc98720e5b3e5ad94ead456ea572248fd525bb0"
+    },
+    {
+      "path": "dist/mjs/numbers.js",
+      "sha256": "991ca03a219f23f8e2b4d598c9acf40ec708b66c63fd8edd5527a5c1bb79aa2b"
+    },
+    {
+      "path": "dist/mjs/proxies.js",
+      "sha256": "dac67615cdb9d5770d10c6de12db86890cd6134e48b0c684bfbf4b50aad30d41"
+    },
+    {
+      "path": "dist/mjs/types.js",
+      "sha256": "9b649695d8fc4e3d38a6bcf9f1977f2cca9d5ed4579311d3e5aebe36aaacc202"
+    },
+    {
+      "path": "dist/mjs/wasm_bindgen_output/bundler/automerge_wasm.js",
+      "sha256": "09f83c41c16464242dcbbf5595c811790e18b0bb6aab387623faefaf1f13ee33"
+    },
+    {
+      "path": "dist/mjs/wasm_bindgen_output/bundler/automerge_wasm_bg.js",
+      "sha256": "32fe4ab39d0a40cb09a0d2212fd94487652103ff4f318c590c118fc9becc78c6"
+    },
+    {
+      "path": "dist/mjs/wasm_bindgen_output/bundler/automerge_wasm_bg.wasm",
+      "sha256": "304ea6e230898ed66af3c29ac554a36c15bbe03f5c8816b5310fddb88f7f5d78"
+    },
+    {
+      "path": "dist/mjs/wasm_bindgen_output/nodejs/automerge_wasm.js",
+      "sha256": "4f01484dcdb785b2b5df1d9fef2252007587b0474ec221f80f4a4c8f9bd21bfa"
+    },
+    {
+      "path": "dist/mjs/wasm_bindgen_output/nodejs/automerge_wasm_bg.wasm",
+      "sha256": "304ea6e230898ed66af3c29ac554a36c15bbe03f5c8816b5310fddb88f7f5d78"
+    },
+    {
+      "path": "dist/mjs/wasm_bindgen_output/web/automerge_wasm.js",
+      "sha256": "578b15bcf88438c75b7d7be2c880c0fccccc9c38bfd4c6645dd607658e222aa7"
+    },
+    {
+      "path": "dist/mjs/wasm_bindgen_output/web/automerge_wasm_bg.wasm",
+      "sha256": "304ea6e230898ed66af3c29ac554a36c15bbe03f5c8816b5310fddb88f7f5d78"
+    },
+    {
+      "path": "dist/mjs/wasm_bindgen_output/web/automerge_wasm_bg_base64.js",
+      "sha256": "5afd4385cd3e852dad6a1bd925ea9c924197f1c7cf3d1f9486d24bb22e4b2922"
+    },
+    {
+      "path": "dist/mjs/wasm_bindgen_output/web/index.js",
+      "sha256": "f90e7a62a0a51e108e4b6dd6169cd934b727277e0df2e721af7dd846e312a725"
+    },
+    {
+      "path": "dist/mjs/wasm_bindgen_output/workerd/automerge_wasm.js",
+      "sha256": "578b15bcf88438c75b7d7be2c880c0fccccc9c38bfd4c6645dd607658e222aa7"
+    },
+    {
+      "path": "dist/mjs/wasm_bindgen_output/workerd/automerge_wasm_bg.wasm",
+      "sha256": "304ea6e230898ed66af3c29ac554a36c15bbe03f5c8816b5310fddb88f7f5d78"
+    }
+  ]
+}

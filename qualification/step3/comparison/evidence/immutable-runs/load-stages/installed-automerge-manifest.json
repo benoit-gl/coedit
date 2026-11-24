@@ -1,0 +1,205 @@
+{
+  "packageRoot": "/workspace/coedit/node_modules/.pnpm/@automerge+automerge@3.4.1/node_modules/@automerge/automerge",
+  "files": [
+    {
+      "relative": "dist/automerge.wasm",
+      "bytes": 3571259,
+      "sha256": "304ea6e230898ed66af3c29ac554a36c15bbe03f5c8816b5310fddb88f7f5d78"
+    },
+    {
+      "relative": "dist/cjs/automerge_wasm_bg.wasm",
+      "bytes": 3571259,
+      "sha256": "304ea6e230898ed66af3c29ac554a36c15bbe03f5c8816b5310fddb88f7f5d78"
+    },
+    {
+      "relative": "dist/cjs/automerge_wasm_bg_base64.js",
+      "bytes": 4761725,
+      "sha256": "7dc57381a5d531af6ac8d946a5250a447bfe37a416311c5e87458df147cb4f3f"
+    },
+    {
+      "relative": "dist/cjs/fullfat_base64.cjs",
+      "bytes": 4896562,
+      "sha256": "03eeb9e7b43466af81cf97ee4e38413d2346b947264d1be22e5842a3ad20df22"
+    },
+    {
+      "relative": "dist/cjs/fullfat_node.cjs",
+      "bytes": 210492,
+      "sha256": "8d3411958688befd5758842f118f1099a5650dc9e38b263a3cfea5a116685f00"
+    },
+    {
+      "relative": "dist/cjs/iife.cjs",
+      "bytes": 4894516,
+      "sha256": "8ac1a7e0911c323e2a68128f6bd2287b3fe427d88599566da185a76462b5e5ea"
+    },
+    {
+      "relative": "dist/cjs/slim.cjs",
+      "bytes": 133853,
+      "sha256": "ee753c2dc2df280c5fb1fe55d83d5309ccfcf6470089a90e7e5fd4d5b606b9f8"
+    },
+    {
+      "relative": "dist/iife/iife.js",
+      "bytes": 4904084,
+      "sha256": "1c9ad671ee868dd72964b828a1baddda3a2d738343f04a5f72f16aeaa0f42e2e"
+    },
+    {
+      "relative": "dist/mjs/apply_patches.js",
+      "bytes": 6951,
+      "sha256": "737e8419c77bdeaa298ad608d4e40563e20015b7fbd43383ccfc00e0badd80ef"
+    },
+    {
+      "relative": "dist/mjs/conflicts.js",
+      "bytes": 4216,
+      "sha256": "92067475eb403dd099958a1d4564362433fcfd7c281d0abc1c7b350d22f06a97"
+    },
+    {
+      "relative": "dist/mjs/constants.js",
+      "bytes": 842,
+      "sha256": "2a1f5000d710b65e357cd1a6b6f2be4163e1dec30489f1bd158e896d6d50ce11"
+    },
+    {
+      "relative": "dist/mjs/counter.js",
+      "bytes": 3536,
+      "sha256": "7dbe2d7340452719ef75fafd3a67ee182dea13a18fbbbe9239bb84b480de2b38"
+    },
+    {
+      "relative": "dist/mjs/entrypoints/fullfat_base64.js",
+      "bytes": 144,
+      "sha256": "3d2ae23c838f98045a67bf79a41dc49a49ce1b2874eeba41f56701920c270004"
+    },
+    {
+      "relative": "dist/mjs/entrypoints/fullfat_bundler.js",
+      "bytes": 157,
+      "sha256": "30e125fe386ef2be4510ee5f57b67c71862bf88825f27caffa93b1a3e8af80d2"
+    },
+    {
+      "relative": "dist/mjs/entrypoints/fullfat_node.js",
+      "bytes": 157,
+      "sha256": "6979f64f2fd8dfd062b10f660cb19660d3929d71a94bbe4de15100c598087f98"
+    },
+    {
+      "relative": "dist/mjs/entrypoints/fullfat_workerd.js",
+      "bytes": 307,
+      "sha256": "23200a0d30c89061d2ac742e1a53b04a458fc537037add72ef878ae457e3e35c"
+    },
+    {
+      "relative": "dist/mjs/entrypoints/iife.js",
+      "bytes": 236,
+      "sha256": "bfa3e7bac5e03de85d075b3e9fd69c7d35edcdd7ed749fb6b9ae3019224ab494"
+    },
+    {
+      "relative": "dist/mjs/entrypoints/slim.js",
+      "bytes": 29,
+      "sha256": "33b1627f740228fd33b9a6f407467e93840f3df93b7f1f40585d113fa387c66e"
+    },
+    {
+      "relative": "dist/mjs/generated/release-info.js",
+      "bytes": 142,
+      "sha256": "c9fadad98d837e3ebd17dcef08f9daa5a1cb3b95645fefe86c9bbb6df9667040"
+    },
+    {
+      "relative": "dist/mjs/immutable_string.js",
+      "bytes": 487,
+      "sha256": "31b093b618397ca888e07daf3fe35a03a12f51d13c44cf537f47085da84d6872"
+    },
+    {
+      "relative": "dist/mjs/implementation.js",
+      "bytes": 53386,
+      "sha256": "fe51b31b91adbe91f4ab3fa6497bddc369ce695b6e19e4f20a42a39b44b00913"
+    },
+    {
+      "relative": "dist/mjs/index.js",
+      "bytes": 7729,
+      "sha256": "bbf867656824cbcdcdfc32df7c2bfe18f7a1f1a149d65f14361100469def2a0b"
+    },
+    {
+      "relative": "dist/mjs/internal_state.js",
+      "bytes": 835,
+      "sha256": "f93cc20838a9da602e4b5a2c0a76735884c4888aae6230ab02b7535849c59666"
+    },
+    {
+      "relative": "dist/mjs/low_level.js",
+      "bytes": 3393,
+      "sha256": "81069cb1a4a3b9646c15bf48cfc98720e5b3e5ad94ead456ea572248fd525bb0"
+    },
+    {
+      "relative": "dist/mjs/numbers.js",
+      "bytes": 1188,
+      "sha256": "991ca03a219f23f8e2b4d598c9acf40ec708b66c63fd8edd5527a5c1bb79aa2b"
+    },
+    {
+      "relative": "dist/mjs/proxies.js",
+      "bytes": 27174,
+      "sha256": "dac67615cdb9d5770d10c6de12db86890cd6134e48b0c684bfbf4b50aad30d41"
+    },
+    {
+      "relative": "dist/mjs/types.js",
+      "bytes": 148,
+      "sha256": "9b649695d8fc4e3d38a6bcf9f1977f2cca9d5ed4579311d3e5aebe36aaacc202"
+    },
+    {
+      "relative": "dist/mjs/wasm_bindgen_output/bundler/automerge_wasm.js",
+      "bytes": 469,
+      "sha256": "09f83c41c16464242dcbbf5595c811790e18b0bb6aab387623faefaf1f13ee33"
+    },
+    {
+      "relative": "dist/mjs/wasm_bindgen_output/bundler/automerge_wasm_bg.js",
+      "bytes": 69652,
+      "sha256": "32fe4ab39d0a40cb09a0d2212fd94487652103ff4f318c590c118fc9becc78c6"
+    },
+    {
+      "relative": "dist/mjs/wasm_bindgen_output/bundler/automerge_wasm_bg.wasm",
+      "bytes": 3571259,
+      "sha256": "304ea6e230898ed66af3c29ac554a36c15bbe03f5c8816b5310fddb88f7f5d78"
+    },
+    {
+      "relative": "dist/mjs/wasm_bindgen_output/nodejs/automerge_wasm.cjs",
+      "bytes": 73621,
+      "sha256": "59b6a9c32ab707e3317b127ce99c1359e01d59b29a7a6e38213ad34d2207f4a7"
+    },
+    {
+      "relative": "dist/mjs/wasm_bindgen_output/nodejs/automerge_wasm.js",
+      "bytes": 72805,
+      "sha256": "4f01484dcdb785b2b5df1d9fef2252007587b0474ec221f80f4a4c8f9bd21bfa"
+    },
+    {
+      "relative": "dist/mjs/wasm_bindgen_output/nodejs/automerge_wasm_bg.wasm",
+      "bytes": 3571259,
+      "sha256": "304ea6e230898ed66af3c29ac554a36c15bbe03f5c8816b5310fddb88f7f5d78"
+    },
+    {
+      "relative": "dist/mjs/wasm_bindgen_output/web/automerge_wasm.js",
+      "bytes": 75588,
+      "sha256": "578b15bcf88438c75b7d7be2c880c0fccccc9c38bfd4c6645dd607658e222aa7"
+    },
+    {
+      "relative": "dist/mjs/wasm_bindgen_output/web/automerge_wasm_bg.wasm",
+      "bytes": 3571259,
+      "sha256": "304ea6e230898ed66af3c29ac554a36c15bbe03f5c8816b5310fddb88f7f5d78"
+    },
+    {
+      "relative": "dist/mjs/wasm_bindgen_output/web/automerge_wasm_bg_base64.js",
+      "bytes": 4761717,
+      "sha256": "5afd4385cd3e852dad6a1bd925ea9c924197f1c7cf3d1f9486d24bb22e4b2922"
+    },
+    {
+      "relative": "dist/mjs/wasm_bindgen_output/web/index.js",
+      "bytes": 282,
+      "sha256": "f90e7a62a0a51e108e4b6dd6169cd934b727277e0df2e721af7dd846e312a725"
+    },
+    {
+      "relative": "dist/mjs/wasm_bindgen_output/workerd/automerge_wasm.js",
+      "bytes": 75588,
+      "sha256": "578b15bcf88438c75b7d7be2c880c0fccccc9c38bfd4c6645dd607658e222aa7"
+    },
+    {
+      "relative": "dist/mjs/wasm_bindgen_output/workerd/automerge_wasm_bg.wasm",
+      "bytes": 3571259,
+      "sha256": "304ea6e230898ed66af3c29ac554a36c15bbe03f5c8816b5310fddb88f7f5d78"
+    },
+    {
+      "relative": "package.json",
+      "bytes": 3229,
+      "sha256": "d0019f8ca4995a0dc22563d4229b9f0dd3666921b363bc3e86a5e6d4839d1220"
+    }
+  ]
+}

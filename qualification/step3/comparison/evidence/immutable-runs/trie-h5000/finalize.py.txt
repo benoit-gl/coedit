@@ -1,0 +1,49 @@
+import pathlib,json,hashlib
+base=pathlib.Path(__file__).resolve().parent
+readrows=lambda name:[json.loads(l) for l in (base/name).read_text().splitlines()]
+supervisor=readrows('supervisor.jsonl'); result=supervisor[-1]
+rows=readrows('chunk2-lifecycle.jsonl'); phases=readrows('chunk2-lifecycle.phases.jsonl'); samples=readrows('chunk2-lifecycle.rss-samples.jsonl')
+header=next(r for r in rows if r['kind']=='header'); setup=next(r for r in rows if r['kind']=='setup'); warm=next(r for r in rows if r['kind']=='warm')
+starts={}; completed=[]
+for phase in phases:
+ if phase['event']=='start':starts[phase['phase']]=phase
+ elif phase['event']=='end':
+  starts.pop(phase['phase'],None);completed.append(phase['phase'])
+stderr=(base/'chunk2-lifecycle.stderr.log').read_text()
+assert result['event']=='end' and result['returncode']==-6 and result['timedOut']==False
+assert 'JavaScript heap out of memory' in stderr
+assert list(starts)==['merge'] and phases[-1]['phase']=='merge' and phases[-1]['event']=='start'
+assert not any(r.get('complete') for r in rows)
+assert warm['semanticsVerified'] is True
+assert header['configuration']['cases'][0]['history']==5000
+assert header['prototypeBinding']['root']==str(base.parent/'chunk2')
+for name in ['binding.mjs','lifecycle.mjs']:
+ assert (base/name).read_bytes()==(base.parent/'h500-v1'/name).read_bytes()
+manifest=header['prototypeBinding']['runtimeManifest']
+summary={
+ 'status':'failed-original-full-lifecycle-merge-v8-heap-oom',
+ 'complete':False,'semanticsVerifiedForFullLifecycle':False,
+ 'workload':'original same-gap-history-5000 full lifecycle; unchanged H500 lifecycle/binding bytes',
+ 'runtimeRoot':header['prototypeBinding']['root'],
+ 'sourceRevision':header['sourceRevision'],'sourceBindingKind':header['prototypeBinding']['sourceBindingKind'],
+ 'runtimeManifestSha256':header['prototypeBinding']['manifestSha256'],
+ 'sourceEntries':len(manifest['sources']),'nativeJavaScriptEntries':len(manifest['nativeJavaScript']),'nativeWasm':manifest['nativeWasm'],
+ 'postRunBindVerification':'passed: exact root, all 89 runtime source entries, all 28 native JavaScript entries and native WASM reverified after process exited',
+ 'supervisorStart':supervisor[0],'supervisorResult':result,
+ 'heapSizeLimitBytes':phases[0]['heapSizeLimitBytes'],
+ 'sampleCount':len(samples),'sampledPeakRssKiB':max(s['memoryKiB'].get('VmRSS',0) for s in samples),'sampledPeakVmHwmKiB':max(s['memoryKiB'].get('VmHWM',0) for s in samples),
+ 'setup':setup,'warmSemanticsVerified':warm['semanticsVerified'],
+ 'observedAdditionalCommands':[{'mode':p['mode'],'nativeActivate':p['observation']['counters']['nativeActivate'],'publicSnapshot':p['observation']['counters']['publicSnapshot']} for p in warm['profiles']],
+ 'completedPhases':completed,'unfinishedPhaseStarts':list(starts.values()),
+ 'pendingSemantics':['merge completion and post-merge text/Origin oracle','following editor activation and two edits/checks','retained captured material check','original case and final completion records'],
+ 'fatalEvidence':'FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory',
+ 'interpretation':'This one scratch hex2 H5000 run does not complete the full original lifecycle under the default heap. It passed earlier checkpoints but aborted during inbound merge. No production readiness or general memory/latency claim; no old-layout H5000 comparison.',
+ 'limitations':['one exploratory random-native-identity/key-shape run','RSS samples can miss brief peaks','no forced GC; process RSS includes native/external memory','no heap limit increase, retry, lifetime topology change or source/runtime patch'],
+}
+(base/'summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+artifactrows=[]
+for p in sorted(base.rglob('*')):
+ if p.is_file() and p.name!='artifacts-manifest.json':
+  data=p.read_bytes();artifactrows.append({'path':str(p.relative_to(base)),'bytes':len(data),'sha256':hashlib.sha256(data).hexdigest()})
+(base/'artifacts-manifest.json').write_text(json.dumps({'schema':'scratch-h5000-artifacts-v1','files':artifactrows},indent=2)+'\n')
+print(json.dumps({k:summary[k] for k in ['status','supervisorResult','sampleCount','sampledPeakRssKiB','sampledPeakVmHwmKiB','completedPhases']}))

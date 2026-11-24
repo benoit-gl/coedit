@@ -1,0 +1,189 @@
+{
+  "finalizedAt": "2026-11-24T04:37:47.179123+00:00",
+  "complete": true,
+  "workloadComplete": true,
+  "originalSupervisionComplete": false,
+  "originalSupervisorLastRecord": {
+    "at": "2026-11-24T04:33:22.691058+00:00",
+    "phase": "packed-progress",
+    "elapsedSeconds": 180.35490596000454,
+    "peakRssKiB": 1117072
+  },
+  "recoveryLastRecord": {
+    "at": "2026-11-24T04:35:54.970626+00:00",
+    "phase": "worker-zombie",
+    "rawWaitStatus": 0,
+    "exitStatusKnown": true,
+    "exitCode": 0,
+    "elapsedSeconds": 0.00015426499885506928,
+    "sampledPeakRssKiB": 0,
+    "workloadSummaryComplete": true,
+    "semanticsVerified": true
+  },
+  "packedPeakRssComplete": false,
+  "monitoringLimitation": "Original supervisor/sample journal stopped unexpectedly; cause unestablished. Recovery observed worker already zombie with raw wait status 0. Synchronous child phases/stdout and successful summary continued through completion; late RSS sampling gap prevents complete peak-RSS claim.",
+  "bindingSha256": "4b795cee2447965b39406c1630064ff48d6e2f24c7f2f251af4ba7c1d120796a",
+  "bindingFilesReverified": 102,
+  "historicalH500ManifestFilesUnchanged": 120,
+  "stages": {
+    "source": {
+      "lastPhase": {
+        "at": "2026-11-24T04:30:22.129Z",
+        "pid": 359728,
+        "stage": "source",
+        "status": "complete",
+        "complete": true,
+        "heapLimit": 2348810240,
+        "memory": {
+          "rss": 1336639488,
+          "heapTotal": 1041375232,
+          "heapUsed": 891459992,
+          "external": 298960040,
+          "arrayBuffers": 30518564
+        },
+        "edits": 5000,
+        "groups": 5002,
+        "logicalRecords": 35011,
+        "semanticSha256": "3a6e8370342d3925c57e3adbc7f51c4568c2e637d1f6c8f81c122595e8dd72ba",
+        "tapeSha256": "aed6c7d63c52c0d4e500b3d83cb00f65faf80014bec184e847ec581cf8349491",
+        "sourceEncodedBytes": 6734779,
+        "sourceEncodedSha256": "2e9cfd62d7b4a6f870a59dec5d0d367b46950b7ef185b30cc24c732b613e6a15",
+        "prefixOriginalSha256": "5ea09d2ae0cfd411f8e7cd818626af3f335a4fac79e559e2b59ccd9e774b46c2",
+        "bindingSha256": "4b795cee2447965b39406c1630064ff48d6e2f24c7f2f251af4ba7c1d120796a",
+        "sourceHeads": [
+          "6bd6b55ba2046a29894ca2b689d36c5942de6095ec64b3e78968409bdec563b2"
+        ],
+        "scope": "genuine source-carrier continuation and exact committed command tape; no full lifecycle/packed carrier eligibility claim"
+      },
+      "unmatchedStarts": [],
+      "sampledPeakRssKiB": 1305724,
+      "rssSamples": 1654,
+      "stderrBytes": 0
+    },
+    "packed": {
+      "lastPhase": {
+        "at": "2026-11-24T04:35:26.152Z",
+        "pid": 360700,
+        "stage": "packed",
+        "status": "complete",
+        "complete": true,
+        "heapLimit": 2348810240,
+        "memory": {
+          "rss": 1137213440,
+          "heapTotal": 654905344,
+          "heapUsed": 521679664,
+          "external": 143225063,
+          "arrayBuffers": 23136830
+        },
+        "edits": 5000,
+        "groups": 5002,
+        "logicalRecords": 35011,
+        "buildMs": 10650.100427,
+        "baseline": {
+          "rss": 115613696,
+          "heapTotal": 52482048,
+          "heapUsed": 16694784,
+          "external": 8785008,
+          "arrayBuffers": 570435
+        },
+        "retained": {
+          "rss": 378249216,
+          "heapTotal": 236195840,
+          "heapUsed": 100069464,
+          "external": 63828179,
+          "arrayBuffers": 32171367
+        },
+        "heapUsedDelta": 83374680,
+        "rssDelta": 262635520,
+        "semanticSha256": "3a6e8370342d3925c57e3adbc7f51c4568c2e637d1f6c8f81c122595e8dd72ba",
+        "scope": "packed record primitive only; exact genuine original command tape and full historical reference projections; no full-carrier packed provenance/lifecycle or production eligibility claim",
+        "semanticsVerified": true,
+        "encodedBytes": 3178096,
+        "encodedSha256": "29fae2ae922c8dcb0207f88698237108eb95438c48a02d872c9e97be4fb18b44",
+        "audit": {
+          "complete": true,
+          "groupsAudited": 5002,
+          "nativeChanges": 5003,
+          "nativeOps": 5005,
+          "physicalUnits": 5002,
+          "makeMaps": 1,
+          "lastCommandOps": 1,
+          "recordedNativeHeadsChecked": 5002,
+          "commandHashSha256": "d3a87377cf92d26044d276824e333b84438ad9ceb8244657d15f134d388b975a",
+          "encodedSha256": "29fae2ae922c8dcb0207f88698237108eb95438c48a02d872c9e97be4fb18b44"
+        },
+        "historicalRootsChecked": 5001,
+        "bindingSha256": "4b795cee2447965b39406c1630064ff48d6e2f24c7f2f251af4ba7c1d120796a",
+        "tapeSha256": "aed6c7d63c52c0d4e500b3d83cb00f65faf80014bec184e847ec581cf8349491",
+        "sourceEncodedSha256": "2e9cfd62d7b4a6f870a59dec5d0d367b46950b7ef185b30cc24c732b613e6a15",
+        "sameProcessReopenVerified": true
+      },
+      "unmatchedStarts": [],
+      "sampledPeakRssKiB": 1117072,
+      "rssSamples": 1790,
+      "stderrBytes": 0
+    }
+  },
+  "sourceSummary": {
+    "complete": true,
+    "edits": 5000,
+    "groups": 5002,
+    "logicalRecords": 35011,
+    "semanticSha256": "3a6e8370342d3925c57e3adbc7f51c4568c2e637d1f6c8f81c122595e8dd72ba",
+    "tapeSha256": "aed6c7d63c52c0d4e500b3d83cb00f65faf80014bec184e847ec581cf8349491",
+    "sourceEncodedBytes": 6734779,
+    "sourceEncodedSha256": "2e9cfd62d7b4a6f870a59dec5d0d367b46950b7ef185b30cc24c732b613e6a15",
+    "prefixOriginalSha256": "5ea09d2ae0cfd411f8e7cd818626af3f335a4fac79e559e2b59ccd9e774b46c2",
+    "bindingSha256": "4b795cee2447965b39406c1630064ff48d6e2f24c7f2f251af4ba7c1d120796a",
+    "sourceHeads": [
+      "6bd6b55ba2046a29894ca2b689d36c5942de6095ec64b3e78968409bdec563b2"
+    ],
+    "scope": "genuine source-carrier continuation and exact committed command tape; no full lifecycle/packed carrier eligibility claim"
+  },
+  "packedSummary": {
+    "complete": true,
+    "edits": 5000,
+    "groups": 5002,
+    "logicalRecords": 35011,
+    "buildMs": 10650.100427,
+    "baseline": {
+      "rss": 115613696,
+      "heapTotal": 52482048,
+      "heapUsed": 16694784,
+      "external": 8785008,
+      "arrayBuffers": 570435
+    },
+    "retained": {
+      "rss": 378249216,
+      "heapTotal": 236195840,
+      "heapUsed": 100069464,
+      "external": 63828179,
+      "arrayBuffers": 32171367
+    },
+    "heapUsedDelta": 83374680,
+    "rssDelta": 262635520,
+    "semanticSha256": "3a6e8370342d3925c57e3adbc7f51c4568c2e637d1f6c8f81c122595e8dd72ba",
+    "scope": "packed record primitive only; exact genuine original command tape and full historical reference projections; no full-carrier packed provenance/lifecycle or production eligibility claim",
+    "semanticsVerified": true,
+    "encodedBytes": 3178096,
+    "encodedSha256": "29fae2ae922c8dcb0207f88698237108eb95438c48a02d872c9e97be4fb18b44",
+    "audit": {
+      "complete": true,
+      "groupsAudited": 5002,
+      "nativeChanges": 5003,
+      "nativeOps": 5005,
+      "physicalUnits": 5002,
+      "makeMaps": 1,
+      "lastCommandOps": 1,
+      "recordedNativeHeadsChecked": 5002,
+      "commandHashSha256": "d3a87377cf92d26044d276824e333b84438ad9ceb8244657d15f134d388b975a",
+      "encodedSha256": "29fae2ae922c8dcb0207f88698237108eb95438c48a02d872c9e97be4fb18b44"
+    },
+    "historicalRootsChecked": 5001,
+    "bindingSha256": "4b795cee2447965b39406c1630064ff48d6e2f24c7f2f251af4ba7c1d120796a",
+    "tapeSha256": "aed6c7d63c52c0d4e500b3d83cb00f65faf80014bec184e847ec581cf8349491",
+    "sourceEncodedSha256": "2e9cfd62d7b4a6f870a59dec5d0d367b46950b7ef185b30cc24c732b613e6a15",
+    "sameProcessReopenVerified": true
+  },
+  "scope": "source-continuation plus packed storage primitive; no full-carrier packed provenance/lifecycle or production eligibility claim"
+}

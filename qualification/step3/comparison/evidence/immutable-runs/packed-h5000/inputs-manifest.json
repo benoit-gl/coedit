@@ -1,0 +1,46 @@
+{
+  "schema": "packed-h5000-inputs-v1",
+  "omitted": [
+    {
+      "path": "/workspace/work/merge10-packed-prototype/h5000-v1/commands.jsonl",
+      "role": "Exact original H5000 logical command tape; omitted large input",
+      "bytes": 22230356,
+      "sha256": "aed6c7d63c52c0d4e500b3d83cb00f65faf80014bec184e847ec581cf8349491"
+    },
+    {
+      "path": "/workspace/work/merge10-packed-prototype/h5000-v1/source-original.am",
+      "role": "Complete original source carrier H5000 encoding",
+      "bytes": 6734779,
+      "sha256": "2e9cfd62d7b4a6f870a59dec5d0d367b46950b7ef185b30cc24c732b613e6a15"
+    },
+    {
+      "path": "/workspace/work/merge10-packed-prototype/h5000-v1/packed.am",
+      "role": "Complete packed primitive H5000 encoding",
+      "bytes": 3178096,
+      "sha256": "29fae2ae922c8dcb0207f88698237108eb95438c48a02d872c9e97be4fb18b44"
+    },
+    {
+      "path": "/workspace/work/merge10-packed-prototype/history500.json.original.am",
+      "role": "Original exact H500 source continuation prefix",
+      "bytes": 680992,
+      "sha256": "5ea09d2ae0cfd411f8e7cd818626af3f335a4fac79e559e2b59ccd9e774b46c2"
+    },
+    {
+      "path": "/workspace/work/merge10-packed-prototype/history500.json",
+      "role": "Exact H500 detached prefix tape; available compressed in sibling packed-prototype package",
+      "bytes": 3176765,
+      "sha256": "254b540c0cba548e60ec8519dd5bb2bb1f1e4e91f1cdb4285c59642183429525"
+    }
+  ],
+  "logicalRecords": 35011,
+  "commandGroups": 5002,
+  "edits": 5000,
+  "semanticSha256": "3a6e8370342d3925c57e3adbc7f51c4568c2e637d1f6c8f81c122595e8dd72ba",
+  "semanticHashDefinition": "SHA256 over sorted exact canonical record keys joined by newline without final newline",
+  "originalH500PrefixGroups": 502,
+  "originalH500PrefixEdits": 500,
+  "newRealContinuationEdits": 4500,
+  "recordUuidPolicy": "Original H500 record IDs/Refs unchanged; real continuation freshly authors native/replica/logical identities and preserves them exactly",
+  "exactReplayLimitation": "Exact H5000 tape/native bytes are retained only at the listed scratch paths and are not included here. Hashes establish identity, not reconstruction. Workload regeneration authors fresh identities and needs new source/input binding.",
+  "sourceSourceRevision": "7618ee8939f305260a3d2a54b30a482093826fe4"
+}

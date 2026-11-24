@@ -269,6 +269,15 @@ export interface ProseMirrorClipboardOptions {
     reference: string,
     spans: readonly QualificationTextSpan[],
   ) => boolean;
+  /**
+   * Optional stricter paste-derivation resolver. A false result omits the copy
+   * claim while independently catalog-validated private Origin stays valid.
+   * Defaults to the copy-admission resolver above.
+   */
+  readonly isRetainedSourceFragment?: (
+    reference: string,
+    spans: readonly QualificationTextSpan[],
+  ) => boolean;
 }
 
 /** Mounted transient ProseMirror adapter with an explicit cleanup operation. */
@@ -753,7 +762,8 @@ export function mountProseMirrorEditor<Position>(
             clipboard.originCatalog,
             options.pasteOrigin,
             clipboard.limits,
-            clipboard.isStableSourceFragment,
+            clipboard.isRetainedSourceFragment ??
+              clipboard.isStableSourceFragment,
           );
     const { from, to } = state.selection;
     if (from === to && decoded.text.length === 0) return true;
@@ -815,9 +825,17 @@ export function mountProseMirrorEditor<Position>(
 function sameBuffer(left: EditorTextBuffer, right: EditorTextBuffer): boolean {
   return (
     left.text === right.text &&
-    JSON.stringify(coalesceOrigins(left)) ===
-      JSON.stringify(coalesceOrigins(right))
+    JSON.stringify(originIdentity(left)) ===
+      JSON.stringify(originIdentity(right))
   );
+}
+
+function originIdentity(buffer: EditorTextBuffer) {
+  return coalesceOrigins(buffer).map((span) => ({
+    text: span.text,
+    id: span.origin.id,
+    kind: span.origin.kind,
+  }));
 }
 
 function pureInsertionFromTransaction(

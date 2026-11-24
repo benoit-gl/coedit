@@ -38,8 +38,10 @@ experiments and final qualification obligations remain open; failures and inconc
    pass the mandatory criterion. Qualify an exercised production-compatible path before the final comparison.
    The [assessment](MERGE_10_DESIGN_ASSESSMENT.md) preserves the native counterexamples and considered alternatives.
    The [representation design](ORDINARY_EDIT_REPRESENTATION_DESIGN.md) develops the selected public-API direction
-   without native-library changes or forks. Land its design/planning change before the separate implementation PR;
-   first qualify its native record primitives and sequence/index model, then integrate surviving carrier/layout pairs.
+   without native-library changes or forks. Its design/planning change landed in PR 54.
+   The separate implementation adds the immutable-run protocol, index and surviving Automerge qualification layout;
+   the [profile](IMMUTABLE_RUN_PROFILE.md) and [current results](IMMUTABLE_RUN_RESULTS.md) record its observations
+   and remaining evidence. Native qualification remains separate from shared-model correctness.
    These phases remain within unit 10; a design merge or a passing shared model does not establish native eligibility.
 4. After units 8-10 land, run and reconcile the unit 11 final comparison under one recorded profile, preserving raw
    evidence and a durable requirement-by-requirement record.

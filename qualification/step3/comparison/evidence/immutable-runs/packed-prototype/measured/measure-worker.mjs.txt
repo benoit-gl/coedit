@@ -1,0 +1,36 @@
+// Bounded storage-only process diagnostic; timings are single samples.
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {performance} from 'node:perf_hooks';
+import {getHeapStatistics} from 'node:v8';
+import {runtime} from './runtime.mjs';
+const [variant,mode,fixturePath,countText,out]=process.argv.slice(2), count=Number(countText);
+if(!['trie','unit1','commandPack'].includes(variant)||!['build','load'].includes(mode)||![4,16].includes(count)||!out||!global.gc) throw Error('Invalid bounded diagnostic args / missing explicit GC.');
+const fixture=JSON.parse(fs.readFileSync(fixturePath,'utf8')), r=await runtime();
+const sha=x=>createHash('sha256').update(x).digest('hex');
+const gc=()=>{global.gc();global.gc();};
+const sample=()=>({...process.memoryUsage(),maxRssKiB:process.resourceUsage().maxRSS});
+try {
+  const groups=fixture.groups.slice(0,count+2).map(g=>g.keys.map(k=>r.record.decodeRecordKeyV1(k,true)));
+  const expected=groups.flat().map(e=>e.key).sort();
+  const Class=variant==='trie'?r.Trie:r.Packed,width=variant==='unit1'?1:64;
+  let store, encoded, buildMs,loadMs,appendMs,beforeEncoded,appendOps;
+  if(mode==='load') encoded=new Uint8Array(fs.readFileSync(out));
+  gc();const baseline=sample();
+  if(mode==='build') {
+    const start=performance.now();store=Class.create(width);
+    for(const group of groups.slice(0,-1))store.append(group);
+    buildMs=performance.now()-start;beforeEncoded=store.encode();
+    const appendStart=performance.now();store.append(groups.at(-1));appendMs=performance.now()-appendStart;
+  } else {const start=performance.now();store=Class.load(encoded,width);loadMs=performance.now()-start;}
+  gc();const retained=sample();
+  assert.deepEqual(store.entries().map(e=>e.key).sort(),expected);
+  r.Protocol.validateReference(store.entries());
+  encoded=store.encode();
+  if(mode==='build')fs.writeFileSync(out,encoded,{flag:'wx'});
+  const raw=r.A.load(encoded),changes=r.A.getAllChanges(raw).map(c=>r.A.decodeChange(c)),ops=changes.flatMap(c=>c.ops);
+  if(mode==='build') {const beforeRaw=r.A.load(beforeEncoded);appendOps=r.A.getChanges(beforeRaw,raw).flatMap(c=>r.A.decodeChange(c).ops);}
+  const result={schema:'merge10-packed-bounded-diagnostic-v1',complete:true,variant,mode,edits:count,groups:groups.length,logicalRecords:expected.length,semanticSha256:sha(expected.join('\n')),encodedBytes:encoded.length,encodedSha256:sha(encoded),changes:changes.length,nativeOps:ops.length,makeMaps:ops.filter(op=>op.action==='makeMap').length,physicalUnits:variant==='trie'?expected.length:Object.keys(raw.units).length,appendOps:appendOps?.length,appendMakeMaps:appendOps?.filter(op=>op.action==='makeMap').length,buildMs,appendMs,loadMs,baseline,retained,heapUsedDelta:retained.heapUsed-baseline.heapUsed,rssDelta:retained.rss-baseline.rss,node:process.version,heapLimit:getHeapStatistics().heap_size_limit,workerSha256:sha(fs.readFileSync(new URL(import.meta.url))),fixtureSha256:sha(fs.readFileSync(fixturePath)),scope:'storage primitive; same exact canonical histories and command transaction boundaries; not full-carrier timing or provenance qualification'};
+  console.log(JSON.stringify(result));
+} finally {await r.server.close();}

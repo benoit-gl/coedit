@@ -1,0 +1,223 @@
+{
+  "sourceSha256": "26a86809b585990f9b0f7044858e153d48e6bdc6df2e2620d57fa4250a9a9dd5",
+  "runtime": {
+    "node": "v24.19.0",
+    "v8": "13.6.233.17-node.51",
+    "execArgv": [],
+    "nodeOptions": null
+  },
+  "results": [
+    {
+      "name": "automerge-alternating-500",
+      "encodedBytes": 236,
+      "encodedSha256": "2f9f82d2d58ae9b304c22995541aa0f705a048b0c277eb7394c837d20a897ba1",
+      "totalChanges": 501,
+      "sumOfIndividuallyEncodedChangeBytes": 54002,
+      "actorCount": 1,
+      "contiguousSequences": true,
+      "finalHeads": [
+        "151713223edc18efd6a99c07d3e52686e017582ff5ef40c3ae7ac7fe40022baa"
+      ],
+      "historicalChecks": [
+        {
+          "edits": 0,
+          "head": "f6decaf73374067191173ad570aefdc2ea9ce25387b5fd2f4cc8246fe389da0a",
+          "length": 1024,
+          "exactTextSha256": "2edc986847e209b4016e141a6dc8716d3207350f416969382d431539bf292e4a"
+        },
+        {
+          "edits": 1,
+          "head": "72af8a27d7a8da4cf92e6d6549c82432586fde9fe8e9115039ec8f772c42babb",
+          "length": 1025,
+          "exactTextSha256": "fbbe9ef150ac9014fdb65f2f8ead721bc4df2e552ed61689f42b15cc0bd3be5a"
+        },
+        {
+          "edits": 249,
+          "head": "3bf5bb80455b4f876d172a82f0a5961bbbf4287ad439a1e40167a81e115e20e7",
+          "length": 1025,
+          "exactTextSha256": "fbbe9ef150ac9014fdb65f2f8ead721bc4df2e552ed61689f42b15cc0bd3be5a"
+        },
+        {
+          "edits": 499,
+          "head": "38760699cf949853df8f149f4d56ee4db441ab5520afd76c18b2ec2a8d3635f4",
+          "length": 1025,
+          "exactTextSha256": "fbbe9ef150ac9014fdb65f2f8ead721bc4df2e552ed61689f42b15cc0bd3be5a"
+        },
+        {
+          "edits": 500,
+          "head": "151713223edc18efd6a99c07d3e52686e017582ff5ef40c3ae7ac7fe40022baa",
+          "length": 1024,
+          "exactTextSha256": "2edc986847e209b4016e141a6dc8716d3207350f416969382d431539bf292e4a"
+        }
+      ],
+      "verificationMs": 114.923913,
+      "memory": {
+        "rss": 63479808,
+        "heapTotal": 16248832,
+        "heapUsed": 8305680,
+        "external": 4781300,
+        "arrayBuffers": 336818
+      },
+      "maxRssKiB": 62268
+    },
+    {
+      "name": "automerge-alternating-5000",
+      "encodedBytes": 245,
+      "encodedSha256": "ec4b593f348bc5e1b59dacb9599aab86e9c8dc87408f2b0147a5aa89d39960ff",
+      "totalChanges": 5001,
+      "sumOfIndividuallyEncodedChangeBytes": 531002,
+      "actorCount": 1,
+      "contiguousSequences": true,
+      "finalHeads": [
+        "61b1ae1ddb9fcb1a7d4fab4bb3e6bf283dbd2744bd8972537cfdd97dba906b91"
+      ],
+      "historicalChecks": [
+        {
+          "edits": 0,
+          "head": "f6decaf73374067191173ad570aefdc2ea9ce25387b5fd2f4cc8246fe389da0a",
+          "length": 1024,
+          "exactTextSha256": "2edc986847e209b4016e141a6dc8716d3207350f416969382d431539bf292e4a"
+        },
+        {
+          "edits": 1,
+          "head": "72af8a27d7a8da4cf92e6d6549c82432586fde9fe8e9115039ec8f772c42babb",
+          "length": 1025,
+          "exactTextSha256": "fbbe9ef150ac9014fdb65f2f8ead721bc4df2e552ed61689f42b15cc0bd3be5a"
+        },
+        {
+          "edits": 2499,
+          "head": "e715596e5ad80fced2a5a142bfa082c86b83b8069083bdaedf3b0243cbf2ab46",
+          "length": 1025,
+          "exactTextSha256": "fbbe9ef150ac9014fdb65f2f8ead721bc4df2e552ed61689f42b15cc0bd3be5a"
+        },
+        {
+          "edits": 4999,
+          "head": "c97a8aef36480abe05a21af840137a020b1f268bd7dd4483b088f4a2422292b4",
+          "length": 1025,
+          "exactTextSha256": "fbbe9ef150ac9014fdb65f2f8ead721bc4df2e552ed61689f42b15cc0bd3be5a"
+        },
+        {
+          "edits": 5000,
+          "head": "61b1ae1ddb9fcb1a7d4fab4bb3e6bf283dbd2744bd8972537cfdd97dba906b91",
+          "length": 1024,
+          "exactTextSha256": "2edc986847e209b4016e141a6dc8716d3207350f416969382d431539bf292e4a"
+        }
+      ],
+      "verificationMs": 320.63946999999996,
+      "memory": {
+        "rss": 92053504,
+        "heapTotal": 29356032,
+        "heapUsed": 15535448,
+        "external": 10304576,
+        "arrayBuffers": 748246
+      },
+      "maxRssKiB": 89896
+    },
+    {
+      "name": "automerge-typing-500",
+      "encodedBytes": 249,
+      "encodedSha256": "d256efe87810e8088211841603630c84a3b7b8c14b01e960e155be0f75af5230",
+      "totalChanges": 501,
+      "sumOfIndividuallyEncodedChangeBytes": 53001,
+      "actorCount": 1,
+      "contiguousSequences": true,
+      "finalHeads": [
+        "7f935e3e28de2976824bdc8e14fe3801af0b5f64e0667a6e8496a4f4d4eb5325"
+      ],
+      "historicalChecks": [
+        {
+          "edits": 0,
+          "head": "f6decaf73374067191173ad570aefdc2ea9ce25387b5fd2f4cc8246fe389da0a",
+          "length": 1024,
+          "exactTextSha256": "2edc986847e209b4016e141a6dc8716d3207350f416969382d431539bf292e4a"
+        },
+        {
+          "edits": 1,
+          "head": "daf34b928b4998ee623eff268d869f9f25aeea73e2b300561e1ac01795408005",
+          "length": 1025,
+          "exactTextSha256": "4a82297889eb505cf6b5cbdf69977afab4632d6557539782f657bd7dc78091a5"
+        },
+        {
+          "edits": 249,
+          "head": "8690a3d65d94311aa1fb3381178aef5c40777e1d709733b13a62fe9482158532",
+          "length": 1273,
+          "exactTextSha256": "819e6975f8d4bbafb7f3cf847473af976d44d1c3b7dd0c23e44eabf0baae22a1"
+        },
+        {
+          "edits": 499,
+          "head": "de7bd083bd6c71263e1d653127ff5355a4a046721b2206ded51cc392e3d272a8",
+          "length": 1523,
+          "exactTextSha256": "686bd65b04d16d12f56d39a796aae11d03c97212abab4f9147449fba354b5680"
+        },
+        {
+          "edits": 500,
+          "head": "7f935e3e28de2976824bdc8e14fe3801af0b5f64e0667a6e8496a4f4d4eb5325",
+          "length": 1524,
+          "exactTextSha256": "4ad8088b9e6a988f8f534e930d48bdee4105e0372969aab7a95cad6fb717c502"
+        }
+      ],
+      "verificationMs": 18.481160000000045,
+      "memory": {
+        "rss": 92839936,
+        "heapTotal": 30142464,
+        "heapUsed": 14961528,
+        "external": 10357577,
+        "arrayBuffers": 801247
+      },
+      "maxRssKiB": 90664
+    },
+    {
+      "name": "automerge-typing-5000",
+      "encodedBytes": 288,
+      "encodedSha256": "363d75979024399e1df35f07b79d689754bd1247e348d81cd5080d8cc66bfb77",
+      "totalChanges": 5001,
+      "sumOfIndividuallyEncodedChangeBytes": 521001,
+      "actorCount": 1,
+      "contiguousSequences": true,
+      "finalHeads": [
+        "c482f1d30cdeb2049863400c6b7d0c631e616a623d3770ca1e8c5cc5f20e431e"
+      ],
+      "historicalChecks": [
+        {
+          "edits": 0,
+          "head": "f6decaf73374067191173ad570aefdc2ea9ce25387b5fd2f4cc8246fe389da0a",
+          "length": 1024,
+          "exactTextSha256": "2edc986847e209b4016e141a6dc8716d3207350f416969382d431539bf292e4a"
+        },
+        {
+          "edits": 1,
+          "head": "daf34b928b4998ee623eff268d869f9f25aeea73e2b300561e1ac01795408005",
+          "length": 1025,
+          "exactTextSha256": "4a82297889eb505cf6b5cbdf69977afab4632d6557539782f657bd7dc78091a5"
+        },
+        {
+          "edits": 2499,
+          "head": "cd870b39b34c5852dc7dc7c04034993dea14d48b240f12cb68a571c0ebcf9537",
+          "length": 3523,
+          "exactTextSha256": "d6f704d7526704f3a6f114219ccbd8e9557cdde455af2423dfd8d817fb9cd28b"
+        },
+        {
+          "edits": 4999,
+          "head": "f12cf2dd9d9ef54a38062f57d0d71c45013575cd4ba434ee4bb4370e46e125a2",
+          "length": 6023,
+          "exactTextSha256": "045c2431eeb3cefbb1190cf02ac9cb2ad3a49a89870acc26af8f99227d7559d8"
+        },
+        {
+          "edits": 5000,
+          "head": "c482f1d30cdeb2049863400c6b7d0c631e616a623d3770ca1e8c5cc5f20e431e",
+          "length": 6024,
+          "exactTextSha256": "caf06cc1242cf0ca9bf3d19099bf39653828d3f1bde6f05129d09e8aa04821d1"
+        }
+      ],
+      "verificationMs": 201.18846999999994,
+      "memory": {
+        "rss": 116039680,
+        "heapTotal": 51638272,
+        "heapUsed": 20601064,
+        "external": 12398441,
+        "arrayBuffers": 1269247
+      },
+      "maxRssKiB": 113320
+    }
+  ]
+}

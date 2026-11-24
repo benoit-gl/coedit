@@ -1,0 +1,15 @@
+{"at": "2026-11-24T04:27:25.704131+00:00", "phase": "start", "supervisorPid": 359723, "nodeOptions": null, "defaultHeapExpected": 2348810240, "noElapsedTimeout": true}
+{"at": "2026-11-24T04:27:25.705403+00:00", "phase": "source-start", "pid": 359728, "command": ["node", "/workspace/work/merge10-packed-prototype/h5000-v1/build-source.mjs"], "cwd": "/workspace/work/merge10-packed-prototype/source", "phaseFile": "source.phases.jsonl"}
+{"at": "2026-11-24T04:27:55.730781+00:00", "phase": "source-progress", "elapsedSeconds": 30.02628611397813, "peakRssKiB": 515864}
+{"at": "2026-11-24T04:28:25.763723+00:00", "phase": "source-progress", "elapsedSeconds": 60.05919455498224, "peakRssKiB": 610976}
+{"at": "2026-11-24T04:28:55.808184+00:00", "phase": "source-progress", "elapsedSeconds": 90.10369011099101, "peakRssKiB": 809248}
+{"at": "2026-11-24T04:29:25.839744+00:00", "phase": "source-progress", "elapsedSeconds": 120.13524858598248, "peakRssKiB": 932228}
+{"at": "2026-11-24T04:29:55.854770+00:00", "phase": "source-progress", "elapsedSeconds": 150.1502759049763, "peakRssKiB": 1123684}
+{"at": "2026-11-24T04:30:22.335640+00:00", "phase": "source-exit", "returnCode": 0, "elapsedSeconds": 176.63117778097512, "sampledPeakRssKiB": 1305724}
+{"at": "2026-11-24T04:30:22.337461+00:00", "phase": "packed-start", "pid": 360700, "command": ["node", "--expose-gc", "/workspace/work/merge10-packed-prototype/h5000-v1/measure-packed.mjs"], "cwd": "/workspace/work/merge10-packed-prototype/source", "phaseFile": "packed.phases.jsonl"}
+{"at": "2026-11-24T04:30:52.436225+00:00", "phase": "packed-progress", "elapsedSeconds": 30.100057657022262, "peakRssKiB": 862204}
+{"at": "2026-11-24T04:31:22.515634+00:00", "phase": "packed-progress", "elapsedSeconds": 60.17951473299763, "peakRssKiB": 898344}
+{"at": "2026-11-24T04:31:52.611110+00:00", "phase": "packed-progress", "elapsedSeconds": 90.27495043101953, "peakRssKiB": 952384}
+{"at": "2026-11-24T04:32:22.624124+00:00", "phase": "packed-progress", "elapsedSeconds": 120.28797872600262, "peakRssKiB": 1005980}
+{"at": "2026-11-24T04:32:52.660936+00:00", "phase": "packed-progress", "elapsedSeconds": 150.3247870769992, "peakRssKiB": 1062692}
+{"at": "2026-11-24T04:33:22.691058+00:00", "phase": "packed-progress", "elapsedSeconds": 180.35490596000454, "peakRssKiB": 1117072}

@@ -1,0 +1,79 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {runtime} from './runtime.mjs';
+const fixture=JSON.parse(fs.readFileSync(process.argv[2],'utf8'));
+const r=await runtime(), results=[];
+const groups=fixture.groups.map(g=>g.keys.map(k=>r.record.decodeRecordKeyV1(k,true)));
+const all=groups.flat(), keys=entries=>entries.map(e=>e.key).sort();
+function test(name,fn) {fn();results.push({name,pass:true});}
+function altered(entry) {const record=structuredClone(entry.record);record[7]=['hostile','equivocated'];return r.record.commitRecordV1(record);}
+try {
+  for(const width of [1,64]) test(`exact identity/ref/effect/origin + all command histories, width ${width}`,()=>{
+    const store=r.Packed.create(width), receipts=[], prefixes=[];let expected=[];
+    for(const entries of groups) {store.append(entries);expected.push(...entries);receipts.push(store.heads());prefixes.push(keys(expected));}
+    assert.deepEqual(keys(store.entries()),keys(all));
+    assert.equal(r.A.getAllChanges(r.A.load(store.encode())).length,groups.length+1);
+    const reopened=r.Packed.load(store.encode(),width);
+    for(const entry of all) {assert.equal(reopened.resolve(entry.ref).canonical,entry.canonical);assert.ok(reopened.locations.has(entry.record[2]));}
+    assert.throws(()=>reopened.resolve([all[0].record[2],'0'.repeat(64)]));
+    const protocol=r.Protocol.validateReference(reopened.entries());
+    fixture.groups.forEach((group,i)=>{
+      assert.deepEqual(keys(reopened.historicalEntries(receipts[i])),prefixes[i]);
+      if(group.generation) {
+        const projection=protocol.projectGeneration(group.root,group.generation);
+        assert.equal(projection.text,group.expected.text);assert.deepEqual(projection.spans,group.expected.spans);
+      }
+    });
+    // Distinct Origin and erased run facts remain observable at retained roots.
+    assert.ok(new Set(all.filter(e=>e.record[3]==='run').map(e=>JSON.stringify(e.record[10][2]))).size>2);
+  });
+  test('equal duplicate is idempotent and conflicting append is atomic',()=>{
+    const s=r.Packed.create();s.append(groups[1]);const before=s.encode();
+    s.append(groups[1]);assert.deepEqual(s.encode(),before);
+    assert.throws(()=>s.append([groups[2][0],altered(groups[1][0])]),/Conflicting/);assert.deepEqual(s.encode(),before);
+  });
+  test('concurrent disjoint and identical units converge and reopen',()=>{
+    const seed=r.Packed.create();seed.append(groups[0]);const bytes=seed.encode();
+    const left=r.Packed.load(bytes),right=r.Packed.load(bytes);left.append(groups[1]);right.append(groups[1]);right.append(groups[2]);
+    const leftBytes=left.encode();left.mergeEncoded(right.encode());right.mergeEncoded(leftBytes);
+    assert.deepEqual(keys(left.entries()),keys(right.entries()));assert.deepEqual(keys(r.Packed.load(left.encode()).entries()),keys(groups.slice(0,3).flat()));
+    const raw=r.A.load(left.encode());assert.ok(Object.keys(raw.units).some(key=>Object.keys(r.A.getConflicts(raw.units,key)??{}).length===2));
+  });
+  test('conflicting logical UUID in separately valid units rejects merge atomically',()=>{
+    const seed=r.Packed.create(),bytes=seed.encode();const left=r.Packed.load(bytes),right=r.Packed.load(bytes);
+    left.append(groups[1]);right.append([altered(groups[1][0])]);const before=left.encode();
+    assert.throws(()=>left.mergeEncoded(right.encode()),/Conflicting/);assert.deepEqual(left.encode(),before);
+  });
+  for(const action of ['delete','replace-identical','wrong-hash','metadata','replace-map','malformed-conflict']) test(`reject native ${action} on cold load and atomic merge`,()=>{
+    const s=r.Packed.create();s.append(groups[1]);const before=s.encode();let raw=r.A.load(before);
+    const key=Object.keys(raw.units)[0];
+    if(action==='malformed-conflict') {
+      let remote=r.A.load(r.Packed.create().encode());
+      // Same bootstrap needed for a real losing/winning scalar conflict.
+      const empty=r.Packed.create(),baseline=empty.encode();
+      const good=r.Packed.load(baseline);good.append(groups[1]);remote=r.A.load(baseline);
+      remote=r.A.change(remote,d=>{d.units[Object.keys(r.A.load(good.encode()).units)[0]]=false;});
+      const merged=r.A.merge(r.A.clone(r.A.load(good.encode())),remote);
+      assert.throws(()=>r.Packed.load(r.A.save(merged)));return;
+    }
+    raw=r.A.change(raw,d=>{
+      if(action==='delete') delete d.units[key];
+      if(action==='replace-identical') d.units[key]=new Uint8Array(d.units[key]);
+      if(action==='wrong-hash') d.units[key]=new Uint8Array([91,93]);
+      if(action==='metadata') d.lineage=new r.A.ImmutableString('00000000-0000-4000-8000-000000000000');
+      if(action==='replace-map') d.units={};
+    });
+    const bad=r.A.save(raw);
+    if(action==='replace-identical' && JSON.stringify(r.A.getHeads(raw))===JSON.stringify(r.A.getHeads(r.A.load(before)))) {
+      // Public Automerge elides an identical scalar assignment entirely.
+      assert.deepEqual(keys(r.Packed.load(bad).entries()),keys(groups[1]));return;
+    }
+    assert.throws(()=>r.Packed.load(bad),undefined,action);assert.throws(()=>s.mergeEncoded(bad),undefined,action);assert.deepEqual(s.encode(),before);
+  });
+  test('foreign lineage and layout rejected',()=>{
+    const s=r.Packed.create();assert.throws(()=>s.mergeEncoded(r.Packed.create().encode()),/lineage/);
+    let raw=r.A.load(s.encode());raw=r.A.change(raw,d=>{d.layout=new r.A.ImmutableString('old-layout');});assert.throws(()=>r.Packed.load(r.A.save(raw)));
+  });
+  fs.writeFileSync(process.argv[3],JSON.stringify({complete:true,tests:results.length,results},null,2)+'\n',{flag:'wx'});
+  console.log(JSON.stringify({complete:true,tests:results.length}));
+} finally {await r.server.close();}

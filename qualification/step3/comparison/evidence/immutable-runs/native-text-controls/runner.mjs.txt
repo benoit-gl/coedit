@@ -1,0 +1,60 @@
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { spawnSync } from 'node:child_process';
+import { readFileSync, writeFileSync, readdirSync, statSync, realpathSync, mkdirSync } from 'node:fs';
+import { cpus, totalmem } from 'node:os';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = dirname(fileURLToPath(import.meta.url));
+const output = join(root, process.argv[2] ?? 'results');
+mkdirSync(output, { recursive: true });
+const hash = value => createHash('sha256').update(value).digest('hex');
+function packageManifest(location) {
+  const path = realpathSync(location);
+  const files = [];
+  const walk = relative => {
+    for (const name of readdirSync(join(path, relative)).sort()) {
+      if (name === 'node_modules') continue;
+      const next = join(relative, name);
+      const full = join(path, next);
+      if (statSync(full).isDirectory()) walk(next);
+      else files.push({ path: next, bytes: statSync(full).size, sha256: hash(readFileSync(full)) });
+    }
+  };
+  walk('');
+  const pkg = JSON.parse(readFileSync(join(path, 'package.json')));
+  return { package: pkg.name, version: pkg.version, realpath: path, treeSha256: hash(JSON.stringify(files)), files };
+}
+const manifest = {
+  createdAt: new Date().toISOString(), cwd: root,
+  runtime: { executable: process.execPath, executableSha256: hash(readFileSync(process.execPath)), versions: process.versions, execArgv: process.execArgv, nodeOptions: process.env.NODE_OPTIONS ?? null },
+  host: { totalMemoryBytes: totalmem(), logicalCpuCount: cpus().length, cpuModel: cpus()[0]?.model },
+  source: ['worker.mjs', 'runner.mjs'].map(path => ({ path, sha256: hash(readFileSync(join(root, path))) })),
+  lockfile: { path: '/workspace/coedit/pnpm-lock.yaml', sha256: hash(readFileSync('/workspace/coedit/pnpm-lock.yaml')) },
+  packages: ['@automerge/automerge', 'yjs', 'lib0'].map(name => packageManifest(`/workspace/coedit/node_modules/${name}`)),
+  runs: [],
+};
+writeFileSync(join(output, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+const counts = process.argv.includes('--smoke') ? [10] : [500, 5000];
+for (const scenario of ['alternating', 'typing']) {
+  for (const count of counts) {
+    for (const engine of ['automerge', 'yjs']) {
+      const name = `${engine}-${scenario}-${count}`;
+      const prefix = join(output, name);
+      console.log(`Starting ${name}`);
+      const run = spawnSync(process.execPath, [join(root, 'worker.mjs'), engine, scenario, String(count), prefix], { cwd: root, encoding: 'utf8', maxBuffer: 16 * 1024 * 1024 });
+      writeFileSync(`${prefix}.log`, run.stdout ?? '');
+      writeFileSync(`${prefix}.stderr`, run.stderr ?? '');
+      const entry = { name, status: run.status, signal: run.signal, error: run.error?.message ?? null, command: [process.execPath, join(root, 'worker.mjs'), engine, scenario, String(count), prefix] };
+      if (run.status === 0) {
+        const result = JSON.parse(readFileSync(`${prefix}.json`));
+        Object.assign(entry, { resultSha256: hash(readFileSync(`${prefix}.json`)), encodedSha256: hash(readFileSync(`${prefix}.bin`)), encodedBytes: result.encodedBytes, timingsMs: result.timingsMs, checks: result.checks });
+      }
+      manifest.runs.push(entry);
+      writeFileSync(join(output, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
+      console.log(JSON.stringify(entry));
+      assert.equal(run.status, 0, `${name} failed: ${run.stderr}`);
+    }
+  }
+}

@@ -1,0 +1,14 @@
+import {readFileSync,realpathSync} from 'node:fs';
+import {resolve,dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {createHash} from 'node:crypto';
+export const base=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+export const sha=x=>createHash('sha256').update(x).digest('hex');
+export function bind(root){
+ const variant=root===resolve(base,'old')?'old':root===resolve(base,'chunk2')?'chunk2':null;
+ if(!variant)throw Error('Only exact isolated prototype roots permitted: '+root);
+ const manifest=JSON.parse(readFileSync(resolve(base,variant+'-manifest.json')));
+ const nativeRoot=realpathSync(resolve(root,'node_modules/@automerge/automerge'));
+ for(const [dir,rows] of [[root,manifest.sources],[nativeRoot,[...manifest.nativeJavaScript,manifest.nativeWasm]]])for(const r of rows){if(sha(readFileSync(resolve(dir,r.path)))!==r.sha256)throw Error('Manifest mismatch '+resolve(dir,r.path));}
+ return {variant,root,nativeRoot,sourceRevision:manifest.sourceRevision,sourceManifest:manifest.sources.map(r=>({relative:r.path,bytes:readFileSync(resolve(root,r.path)).length,sha256:r.sha256})),runtimeManifest:manifest,manifestSha256:sha(readFileSync(resolve(base,variant+'-manifest.json'))),sourceBindingKind:'isolated-scratch-copy; original Git revision plus verified source and native byte manifests'};
+}
