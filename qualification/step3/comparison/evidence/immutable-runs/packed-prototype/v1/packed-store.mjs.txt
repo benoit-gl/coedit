@@ -1,0 +1,138 @@
+// Scratch storage primitive. It does not implement nativeDocument provenance.
+import { createHash, randomUUID } from 'node:crypto';
+const digest = bytes => createHash('sha256').update(bytes).digest('hex');
+const encoder = new TextEncoder();
+const decoder = new TextDecoder('utf-8', { fatal: true });
+export const LAYOUT = 'step3-packed-byte-units-prototype-v1';
+export function packedStoreClass(A, { commitRecordV1, decodeRecordKeyV1 }) {
+  function encodePack(entries) {
+    return encoder.encode('[' + entries.map(e => e.canonical).join(',') + ']');
+  }
+  function decodePack(key, bytes) {
+    if (!(bytes instanceof Uint8Array) || !/^[0-9a-f]{64}$/.test(key) || digest(bytes) !== key)
+      throw new TypeError('Invalid packed unit commitment or byte scalar.');
+    const canonical = decoder.decode(bytes), records = JSON.parse(canonical);
+    if (!Array.isArray(records) || records.length === 0 || records.length > 64)
+      throw new TypeError('Packed unit count outside bounded grammar.');
+    const entries = records.map(commitRecordV1);
+    if (decoder.decode(encodePack(entries)) !== canonical)
+      throw new TypeError('Packed unit has noncanonical content.');
+    const ids = entries.map(e => e.record[2]);
+    if (new Set(ids).size !== ids.length || ids.some((id, i) => i && ids[i - 1] >= id))
+      throw new TypeError('Packed unit UUIDs must be unique and sorted.');
+    return entries;
+  }
+  function collect(doc) {
+    if (Object.keys(doc).sort().join(',') !== 'layout,lineage,units' ||
+        String(doc.layout) !== LAYOUT || !/^[0-9a-f-]{36}$/.test(String(doc.lineage)))
+      throw new TypeError('Invalid packed layout/lineage.');
+    const accepted = new Map(), locations = new Map();
+    const before = JSON.stringify(A.getHeads(doc));
+    const read = draft => {
+      if (!A.getObjectId(draft.units) || Array.isArray(draft.units)) throw new TypeError('Missing native units map.');
+      for (const key of Object.keys(draft.units)) {
+        const alternatives = A.getConflicts(draft.units, key);
+        const values = alternatives === undefined ? [draft.units[key]] : Object.values(alternatives);
+        for (const bytes of values) {
+          const entries = decodePack(key, bytes);
+          entries.forEach((entry, slot) => {
+            const previous = accepted.get(entry.record[2]);
+            if (previous && previous.canonical !== entry.canonical) throw new TypeError('Conflicting immutable record UUID bodies.');
+            accepted.set(entry.record[2], entry);
+            locations.set(entry.record[2], Object.freeze({ unit: key, slot }));
+          });
+        }
+      }
+    };
+    read(doc);
+    if (JSON.stringify(A.getHeads(doc)) !== before) throw Error('Conflict read mutated state.');
+    return { accepted, locations };
+  }
+  // Public decoded native history is inspected only on explicit load/merge.
+  // Reject replacement/deletion even when its eventual winner looks valid.
+  function validateHistory(doc) {
+    let unitsId, bootstrap;
+    for (const bytes of A.getAllChanges(doc)) {
+      const change = A.decodeChange(bytes);
+      const roots = change.ops.filter(op => op.obj === '_root');
+      if (roots.length) {
+        if (bootstrap || change.deps.length || change.ops.length !== 3 || roots.length !== 3)
+          throw new TypeError('Packed history rewrites bootstrap metadata.');
+        bootstrap = change;
+        for (const [i, op] of change.ops.entries()) {
+          if (op.pred.length || op.insert) throw new TypeError('Invalid bootstrap operation.');
+          if (op.key === 'units' && op.action === 'makeMap') unitsId = `${change.startOp + i}@${change.actor}`;
+          else if (op.key === 'layout' && op.action === 'set' && op.value === LAYOUT) {}
+          else if (op.key === 'lineage' && op.action === 'set' && op.value === String(doc.lineage)) {}
+          else throw new TypeError('Invalid bootstrap operation.');
+        }
+        if (!unitsId) throw new TypeError('Missing units bootstrap.');
+      } else for (const op of change.ops) {
+        if (!unitsId || op.obj !== unitsId || op.action !== 'set' || op.pred.length || op.insert || !Array.isArray(op.value))
+          throw new TypeError('Packed history mutates or deletes immutable units.');
+        decodePack(op.key, new Uint8Array(op.value));
+      }
+    }
+    if (!bootstrap) throw new TypeError('Missing bootstrap history.');
+  }
+  return class PackedRecordPrimitive {
+    constructor(doc, accepted = new Map(), locations = new Map(), width = 64) {
+      this.document = doc; this.accepted = accepted; this.locations = locations; this.width = width;
+    }
+    static create(width = 64) {
+      if (![1, 64].includes(width)) throw Error('Bounded width must be 1 or 64.');
+      return new this(A.from({layout: new A.ImmutableString(LAYOUT), lineage: new A.ImmutableString(randomUUID()), units: {}}), new Map(), new Map(), width);
+    }
+    static load(encoded, width = 64) {
+      const doc = A.load(encoded); validateHistory(doc); const state = collect(doc);
+      return new this(doc, state.accepted, state.locations, width);
+    }
+    get size() { return this.accepted.size; }
+    entries() { return [...this.accepted.values()]; }
+    resolve(ref) {
+      const entry = this.accepted.get(ref[0]);
+      if (!entry || entry.commitment !== ref[1]) throw new TypeError('Missing exact record Ref.');
+      return entry;
+    }
+    // One call remains one transaction. Never delay a command to fill a unit.
+    append(supplied) {
+      const added = new Map();
+      for (const value of supplied) {
+        const entry = decodeRecordKeyV1(value.key, true), id = entry.record[2];
+        const previous = added.get(id) ?? this.accepted.get(id);
+        if (previous && previous.canonical !== entry.canonical) throw new TypeError('Conflicting immutable record UUID.');
+        if (!previous) added.set(id, entry);
+      }
+      const entries = [...added.values()].sort((a,b) => a.record[2].localeCompare(b.record[2]));
+      if (!entries.length) return;
+      const packs = [];
+      for (let start = 0; start < entries.length; start += this.width) {
+        const members = entries.slice(start, start + this.width), bytes = encodePack(members);
+        packs.push({key: digest(bytes), bytes, members});
+      }
+      const next = A.change(this.document, draft => {
+        for (const pack of packs) {
+          if (draft.units[pack.key] !== undefined) throw Error('Unexpected packed hash collision.');
+          draft.units[pack.key] = pack.bytes;
+        }
+      });
+      this.document = next;
+      for (const pack of packs) pack.members.forEach((entry, slot) => {
+        this.accepted.set(entry.record[2], entry);
+        this.locations.set(entry.record[2], Object.freeze({unit: pack.key, slot}));
+      });
+    }
+    encode() { return A.save(this.document); }
+    heads() { return A.getHeads(this.document); }
+    historicalEntries(heads) { return [...collect(A.view(this.document, heads)).accepted.values()]; }
+    mergeEncoded(encoded) {
+      const remote = A.load(encoded); validateHistory(remote); collect(remote);
+      if (String(remote.lineage) !== String(this.document.lineage)) throw new TypeError('Foreign packed lineage.');
+      const staged = A.merge(A.clone(this.document), remote); validateHistory(staged);
+      const state = collect(staged);
+      for (const [id, previous] of this.accepted)
+        if (state.accepted.get(id)?.canonical !== previous.canonical) throw new TypeError('Merge removed accepted record.');
+      this.document = staged; this.accepted = state.accepted; this.locations = state.locations;
+    }
+  };
+}

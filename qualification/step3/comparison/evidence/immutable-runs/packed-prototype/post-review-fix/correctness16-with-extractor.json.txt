@@ -1,0 +1,62 @@
+{
+  "complete": true,
+  "tests": 14,
+  "results": [
+    {
+      "name": "exact identity/ref/effect/origin + all command histories, width 1",
+      "pass": true
+    },
+    {
+      "name": "exact identity/ref/effect/origin + all command histories, width 64",
+      "pass": true
+    },
+    {
+      "name": "equal duplicate is idempotent and conflicting append is atomic",
+      "pass": true
+    },
+    {
+      "name": "concurrent disjoint and identical units converge and reopen",
+      "pass": true
+    },
+    {
+      "name": "conflicting logical UUID in separately valid units rejects merge atomically",
+      "pass": true
+    },
+    {
+      "name": "reject native delete on cold load and atomic merge",
+      "pass": true
+    },
+    {
+      "name": "identical native scalar reassignment is an accepted no-op",
+      "pass": true
+    },
+    {
+      "name": "reject native wrong-hash on cold load and atomic merge",
+      "pass": true
+    },
+    {
+      "name": "reject native metadata on cold load and atomic merge",
+      "pass": true
+    },
+    {
+      "name": "reject native replace-map on cold load and atomic merge",
+      "pass": true
+    },
+    {
+      "name": "reject native malformed-conflict on cold load and atomic merge",
+      "pass": true
+    },
+    {
+      "name": "foreign lineage and layout rejected",
+      "pass": true
+    },
+    {
+      "name": "invalid width rejects synchronously at create/load/constructor and defensive append",
+      "pass": true
+    },
+    {
+      "name": "source extraction refuses unequal canonical bodies for one logical UUID",
+      "pass": true
+    }
+  ]
+}

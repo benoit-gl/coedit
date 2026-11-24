@@ -1,0 +1,35 @@
+{
+  "complete": true,
+  "results": [
+    {
+      "variant": "trie",
+      "pass": true,
+      "logicalRecords": 3511,
+      "retainedCommandChanges": 502,
+      "bootstrapChanges": 1,
+      "exactCommandGroupsVerified": 502,
+      "commandHashSha256": "3fa2185baf3e15c33d3bb08bff60be6c6735394a26c044a5f18902544ad72992",
+      "encodedSha256": "60afc8cf6c0785c13dbb471e38e7244ab7d029a805ce4cdd7570581fd56d342c"
+    },
+    {
+      "variant": "unit1",
+      "pass": true,
+      "logicalRecords": 3511,
+      "retainedCommandChanges": 502,
+      "bootstrapChanges": 1,
+      "exactCommandGroupsVerified": 502,
+      "commandHashSha256": "4cef08ea33f0aea05f60b44d542e6dab8adedc7871fac2fbc2030165426e804b",
+      "encodedSha256": "31d25151dfb791228c71564d98b2a13632c30e69eaf8327e404fcb3bea8d8fd3"
+    },
+    {
+      "variant": "commandPack",
+      "pass": true,
+      "logicalRecords": 3511,
+      "retainedCommandChanges": 502,
+      "bootstrapChanges": 1,
+      "exactCommandGroupsVerified": 502,
+      "commandHashSha256": "59a3ec78470693e96beed2c07d598dd2602905e64871db685dce0be863ad9475",
+      "encodedSha256": "c76cc7e2fed82c95f5b438fc21a15048b1bb0622e046a143384ba99bf04fc4d4"
+    }
+  ]
+}

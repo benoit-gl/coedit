@@ -1,0 +1,63 @@
+# Packed immutable record prototype — in progress
+
+Scratch experiment only: `/workspace/work/merge10-packed-prototype`. No tracked repository edits or remote actions. No production eligibility claim.
+
+Intent: retain distinct logical record IDs, effect IDs, origin records and historical references while storing multiple immutable records in each physical unit. Compare against the same event history with one physical record per unit. Retain all history; do not claim this preserves separate per-edit transaction guarantees when batching writes.
+
+Initial scope: bounded microprototype using the installed public Automerge carrier APIs and a stable logical-ID-to-packed-slot reader. Inspect existing Step 3 record contracts and conflict behavior before choosing exact encoding. Test immutable append, save/load, historical views, references and concurrent publication/conflicts. Heavy runs will be coordinated with the parent first.
+
+Status: design inspection started; implementation and measurements pending.
+
+## Implemented bounded design and first correctness checkpoint
+
+Source snapshot in `merge10-packed-prototype/source/` is bound to repository revision `7618ee8939f305260a3d2a54b30a482093826fe4` by `source-binding.json` (64 files; installed Automerge 3.4.1 Node WASM hash included). Tracked repo is untouched.
+
+`packed-store.mjs` uses one bootstrap native `units` map and public Automerge `Uint8Array` scalar values. Unit keys are SHA256 of canonical UTF-8 JSON arrays of existing canonical record tuples. UUID sorting gives deterministic slots. Each exact original canonical tuple, record UUID, Ref commitment, effect pair, batch, origin, source anchor and manifest reference is preserved. Refs continue to identify logical records, never a physical unit or slot. Logical-ID-to-unit/slot locations are a disposable cold-derived cache; no extra native locator records are claimed free.
+
+One append call remains one native transaction. Primary candidate packs only records that already belong to that call (one semantic command), capped at 64 records/unit; it does not defer an edit to fill a future pack. A width-one scalar-unit control isolates packing from removal of the 32-level UUID trie; the original primitive is the third comparison. Multiple edits do not share mutable open packs. Separate per-edit native changes/heads are retained, but this is not a full carrier implementation or proof of native command authorization.
+
+Cold load/merge inspects every scalar conflict alternative and supported public `getAllChanges`/`decodeChange` history. It rejects deletion, replacement with predecessors, malformed bytes/commitments, metadata/map replacement, conflicting logical UUID bodies and foreign lineage. Public Automerge elides assignment of exactly identical bytes as a no-op; that no-op is accepted. This validator concerns the supplied history, not cryptographic author authenticity or reconstruction detection. No history is dropped by this implementation.
+
+Real fixture: `history16.json`, 16 alternating Unicode insert/delete edits after a seed, 18 command groups including genesis, 122 exact records. Original carrier snapshots and independent protocol reference validation agree at each capture. All 12 correctness cases currently pass (`correctness16.json`): width-one/packed exact refs and all retained native heads, old-root text/Origin projections after final reload, concurrent disjoint/identical scalar units with actual conflicts, equivocation atomicity, malformed conflicts, deletes/rewrites and metadata/layout/lineage failures. No existing full-carrier provenance tests were adapted or claimed to pass for a packed carrier.
+
+Bounded measurements have started sequentially after parent granted the measurement slot: 4 and 16 edits, original trie / scalar-unit-per-record / one-command-pack, separate build and fresh-load workers, default heap limit, explicit GC. Results pending.
+
+## Completed matched ASCII H500 extension
+
+Parent requested extension to 1024-unit ASCII seed `a`×1024 and 500 separate alternating insert `x` at 1/delete [1,2] commands, fixed human Origin `o0`, stable actor/effect IDs. `build-history500.mjs` generated genuine current-carrier records successfully: 502 groups including genesis and seed; 3,511 exact logical records; final text and Origin exact. Original complete carrier `.am` is preserved. Only one final public carrier encoding was extracted. Group membership is explicitly verified against each original authored manifest's member Ref set, batch/effect IDs, and unique exhaustive record coverage. Fresh native/logical UUIDs differ from other runs, while all three storage controls share the exact same fixture. Full logical semantic-key SHA256: `234827865c404f1ba7451d29aedec6bdb262a5eb6b074ba125f7f3ca6498ebd7`.
+
+Three sequential default-heap workers completed successfully. All retain **503 native changes** (primitive bootstrap plus 502 original command groups), with exact canonical entry equality and independent protocol reference checks of all **501 historical non-genesis root text/Origin projections after reopen**. Packed controls also physically resolve every exact Ref via derived unit/slot lookup, verify all 502 saved native-head receipts remain in history, and check exact record prefix contents in five historical native views. `verify500-transactions.mjs` independently imports only public Automerge APIs and audits every group in all controls: original exact records remain together in their own separate linear native change. Its complete proof summary is `transaction-audit-h500.json`.
+
+| H500 storage primitive | Original trie | One byte scalar / record | One immutable command pack |
+| --- | ---: | ---: | ---: |
+| Logical records | 3,511 | 3,511 | 3,511 |
+| Physical record units | 3,511 | 3,511 | 502 |
+| Native changes | 503 | 503 | 503 |
+| Native operations | 107,924 | 3,514 | 505 |
+| Native maps created | 104,335 | 1 | 1 |
+| Last command native operations | 212 | 7 | 1 |
+| Encoded bytes | 648,404 | 584,576 | 316,327 |
+| Post-GC build heapUsed delta (B) | 87,441,800 | 8,756,864 | 6,041,824 |
+| Post-GC build RSS delta (B) | 201,711,616 | 60,420,096 | 53,010,432 |
+
+This separates the hierarchy effect from packing. Relative to the same flat scalar-per-record control, packing cuts physical units from 3,511 to 502, command append operations from 7 to 1 in the last command and encoding from 584,576 to 316,327 bytes. It does not remove any logical command or history. Post-GC process heap delta falls by about 31%; process memory deltas are not retained-allocation attribution or an application memory estimate.
+
+Every H500 worker uses Node v24.19.0, Automerge 3.4.1 and unchanged default heap limit 2,348,810,240 bytes. Measurements are single samples. The original trie worker briefly overlapped the small final correctness rerun; latency conclusions are not claimed. Build/reopen times and append samples are diagnostic only. Memory samples precede encoding and independent verification allocations and include accepted primitive caches over an already-loaded detached fixture. Packed controls additionally retain native-head receipts. Same-process reload verification passes; **fresh-process H500 load-memory evidence was not run**. No H500 resource failures occurred.
+
+Final `correctness16-v2.json`: 12 cases pass after adding physical unit/slot Ref reads; original H4/H16 measurement implementation was saved exactly under `v1/` and bound by `v1-harness-manifest.json`. Current H500 source is separately bound in each completed worker row. All commands, progress logs, fixture, source snapshot, complete original-carrier and layout encodings and result rows are preserved in the scratch directory; there are no partial H500 results being presented as completion.
+
+## Interpretation and remaining boundary
+
+The prototype demonstrates that distinct logical records and command/effect/Origin/history semantics can remain explicit while multiple records share an immutable physical scalar. Its saved per-command changes refute a need to flatten edits or truncate history to obtain these bounded primitive savings.
+
+It does **not** implement the complete native document carrier, native closed-command provenance, semantic-root/descriptor/ownership publication, retained carrier capture-token adapter, restoration/migration, or full existing native qualification tests. Native history validation rejects unsupported mutations in supplied history but is not authentication of authors or reconstructed history. Logical Refs stay separate from physical locations; lookup needs a derived cold-built cache. Cold load scans all units/history and flat native map width grows with history. A 64-record cap does not bound bytes per pack. Complete-carrier load overlap, flat-map scaling, adversarial carrier provenance and larger-history lifecycle behavior remain separate work. No production eligibility or overall application latency/memory conclusion is justified.
+
+Final local README: `/workspace/work/merge10-packed-prototype/README.md`. Measurement slot released after all three workers and independent transaction audit. No tracked repository files, Git state, heap limit or remote were changed.
+
+## Post-measurement independent-review fixes
+
+Review found a real robustness defect outside measured inputs: historical `Packed.load(encoded, width)` did not check width, so width zero/negative could reach a non-advancing append loop. H500/H16 always supplied 1 or 64. Corrected candidate, runtime and focused tests are in the **new** `merge10-packed-prototype/post-review-fix/` directory. The original measured `packed-store.mjs`, every original H500 artifact and all 120 files bound by the historical artifact manifest were rehashed and remain byte-identical. No H500 performance/memory result is reassigned to the corrected code.
+
+Fixed candidate validates width in shared constructor, create/load, and defensive append entry. Nine invalid width values now reject synchronously at all four boundaries. The malformed-conflict case now executes both cold-load rejection and merge rejection with exact accepted-state preservation; identical-byte native reassignment is accurately named as an accepted no-op. Copied source extraction now rejects unequal canonical bodies sharing a UUID, with an adversarial test. Final focused result: **14 cases pass**, plus syntax checks. Exact command and new hashes: `post-review-fix/README.md`, `post-review-fix/manifest.json`. This is post-measurement correctness work, not a new benchmark.
+
+H5000 remains **not launched**, pending parent slot grant. The exact feasibility proposal and planning-time estimate are durably recorded at `merge10-packed-prototype/h5000-plan/PLAN.md`. It proposes genuine public-carrier continuation of the preserved H500 encoding so all existing original command IDs/Refs remain the prefix, a detached original-command tape from delegated real publication, then a separate fixed-candidate packed-only worker at unchanged default heap. Source construction and full historical protocol-reference validation may fail at default heap; preserve explicit phase completeness rather than claim a full pass. Estimated total 3–20 minutes is planning context, not a timeout. No H5000 runtime or fixture generation has run.

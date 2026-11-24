@@ -1,0 +1,10 @@
+{"phase":"progress","variant":"unit1","groups":50,"elapsedMs":116.24902000000009,"memory":{"rss":139919360,"heapTotal":61657088,"heapUsed":34718528,"external":9888054,"arrayBuffers":1212641}}
+{"phase":"progress","variant":"unit1","groups":100,"elapsedMs":230.64664300000004,"memory":{"rss":144617472,"heapTotal":61657088,"heapUsed":30982040,"external":10244632,"arrayBuffers":1307075}}
+{"phase":"progress","variant":"unit1","groups":150,"elapsedMs":322.82117800000015,"memory":{"rss":145797120,"heapTotal":62705664,"heapUsed":30707792,"external":10907556,"arrayBuffers":1576783}}
+{"phase":"progress","variant":"unit1","groups":200,"elapsedMs":423.20918099999994,"memory":{"rss":148549632,"heapTotal":96784384,"heapUsed":30186832,"external":11445596,"arrayBuffers":1852679}}
+{"phase":"progress","variant":"unit1","groups":250,"elapsedMs":526.4576440000001,"memory":{"rss":152219648,"heapTotal":97046528,"heapUsed":47902936,"external":12479212,"arrayBuffers":2493079}}
+{"phase":"progress","variant":"unit1","groups":300,"elapsedMs":629.6293620000001,"memory":{"rss":167686144,"heapTotal":98357248,"heapUsed":34674192,"external":12769910,"arrayBuffers":2521633}}
+{"phase":"progress","variant":"unit1","groups":350,"elapsedMs":793.134331,"memory":{"rss":177647616,"heapTotal":98357248,"heapUsed":56775720,"external":13737990,"arrayBuffers":3162033}}
+{"phase":"progress","variant":"unit1","groups":400,"elapsedMs":937.3113060000001,"memory":{"rss":187871232,"heapTotal":101412864,"heapUsed":48356576,"external":14283431,"arrayBuffers":3314258}}
+{"phase":"progress","variant":"unit1","groups":450,"elapsedMs":1093.4105220000001,"memory":{"rss":200585216,"heapTotal":111710208,"heapUsed":75889304,"external":15251511,"arrayBuffers":3954658}}
+{"phase":"progress","variant":"unit1","groups":500,"elapsedMs":1243.325975,"memory":{"rss":199966720,"heapTotal":111075328,"heapUsed":59571888,"external":15587772,"arrayBuffers":4028775}}

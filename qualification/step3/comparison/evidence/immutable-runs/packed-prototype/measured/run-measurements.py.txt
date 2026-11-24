@@ -1,0 +1,14 @@
+import pathlib, subprocess, json
+base=pathlib.Path('/workspace/work/merge10-packed-prototype')
+with (base/'measurements.jsonl').open('x') as journal:
+ for edits in [4,16]:
+  for variant in ['trie','unit1','commandPack']:
+   output=base/f'{variant}-h{edits}.am'
+   for mode in ['build','load']:
+    command=['node','--expose-gc',str(base/'measure-worker.mjs'),variant,mode,str(base/'history16.json'),str(edits),str(output)]
+    result=subprocess.run(command,text=True,capture_output=True)
+    (base/f'{variant}-h{edits}-{mode}.stderr.log').write_text(result.stderr)
+    if result.returncode: raise RuntimeError(f'{command}: {result.stderr}')
+    row=json.loads(result.stdout);row['command']=command
+    journal.write(json.dumps(row)+'\n');journal.flush()
+    print(json.dumps({k:row.get(k) for k in ['variant','mode','edits','logicalRecords','physicalUnits','changes','nativeOps','encodedBytes','appendOps','heapUsedDelta']}),flush=True)

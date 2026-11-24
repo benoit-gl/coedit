@@ -354,8 +354,9 @@ The [H5000 report](evidence/immutable-runs/trie-h5000/REPORT.md),
 [fatal log](evidence/immutable-runs/trie-h5000/chunk2-lifecycle.stderr.log) preserve the isolated two-digit candidate's
 original full H5000 lifecycle at historical source `4e0857f1619cd4b32e515a458455fb6434f147fb` plus its scratch patch.
 Its 89 runtime-source entries, 28 installed native JavaScript entries and Node-bound WASM match the H500 candidate;
-all hashes were verified before and after the run. Exact scripts, source/native manifests and the complete compressed RSS journal and raw supervisor
-journal are retained in the [package manifest](evidence/immutable-runs/trie-h5000/manifest.json), without binaries.
+all hashes were verified before and after the run. Exact scripts, source/native manifests and the complete compressed
+RSS journal and raw supervisor journal are retained in the
+[package manifest](evidence/immutable-runs/trie-h5000/manifest.json), without binaries.
 The candidate remains unapplied to runtime source and uses incompatible private layout markers.
 
 Setup, initial load, verified warm edits, lifecycle reload, capture/materialize/restore and peer load/edit/save
@@ -396,3 +397,30 @@ Neither native control implements immutable command records, full Origin/provena
 placements, source indexes, capture/materialize/restore or complete History/editor semantics. The controls
 characterize these smaller text workloads; they do not resolve the carrier memory gap, establish eligibility,
 complete its failed lifecycle or change carrier selection.
+
+## Packed-record storage-only H16/H500 checkpoint
+
+The [packed prototype report](evidence/immutable-runs/packed-prototype/REPORT.md) and
+[package manifest](evidence/immutable-runs/packed-prototype/package-manifest.json) preserve measured scripts,
+raw journals, exact compressed detached input tapes, source/native bindings, independent review and transaction audit.
+All three H500 controls replay the same exact 3,511 records in 502 original command groups.
+Each retains 503 native changes including primitive bootstrap, with all 501 non-genesis historical text/Origin
+projections verified after reopen. The independent audit checks every command's exact separate native change.
+The original full carrier has 502 native changes because its genesis shares bootstrap.
+
+Trie / scalar-per-record / command-pack observed 3,511 / 3,511 / 502 physical units,
+107,924 / 3,514 / 505 native operations and 648,404 / 584,576 / 316,327 encoded bytes.
+Post-GC build heapUsed deltas were 87,441,800 / 8,756,864 / 6,041,824 bytes.
+These are single fixed-order Node samples, with the already-decoded input tape in the baseline and caches included;
+packed controls also retain head receipts. The trie briefly overlapped a small correctness rerun.
+They establish neither retained-allocation attribution nor controlled latency or application memory improvement.
+H500 has build-retention memory and same-process reopen verification; fresh-process H500 load-memory evidence is absent.
+Earlier H4/H16 fresh-load observations bind separately archived v1 code and a smaller Unicode fixture.
+
+The independent review identified an invalid-width load robustness defect outside measured widths 1/64,
+an unchecked hostile-source UUID overwrite and overstated historical hostile-case labels.
+Separately archived post-measurement fixes and 14 passing focused cases address these;
+no measured performance/memory result is assigned to the fixed code.
+Full-carrier command/provenance validation, publication/capture/restore integration and existing carrier qualification
+remain absent. Cold history scans, flat-map scaling and larger-history lifecycle costs remain open.
+This is a bounded storage representation result with no production eligibility or carrier-selection claim.

@@ -1,0 +1,40 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import { runtime, extractRecords } from './runtime.mjs';
+const count=Number(process.argv[2]??16), output=process.argv[3];
+if (!Number.isInteger(count)||count<2||count>32||!output) throw Error('Bounded fixture requires 2..32 edits and exclusive output.');
+const r=await runtime();
+try {
+  const {createAutomergeImmutableRunCarrierFactory}=await r.server.ssrLoadModule('/qualification/step3/immutableRuns/automergeCarrier.ts');
+  const {parseBlockId,parseInlineContentId}=await r.server.ssrLoadModule('/src/domain/index.ts');
+  const id=n=>`d1000000-0000-4000-8000-${n.toString(16).padStart(12,'0')}`;
+  const root=parseBlockId(id(1)), target=parseInlineContentId(id(2)), compare=(a,b)=>a<b?-1:a>b?1:0;
+  const factory=createAutomergeImmutableRunCarrierFactory({encode:v=>v,decode:v=>v},{compare,comparePrimary:compare},{purePositionDecoder:true});
+  const carrier=factory.create(root), groups=[], seen=new Set();
+  function capture(label) {
+    const entries=extractRecords(r.A,r.record,carrier.encode());
+    const added=entries.filter(e=>!seen.has(e.record[2]));
+    added.forEach(e=>seen.add(e.record[2]));
+    r.Protocol.validateReference(entries);
+    const protocol=r.Protocol.validate(entries);
+    const rootRef=protocol.maximalRoots[0];
+    const generation=entries.find(e=>e.record[3]==='generation')?.ref;
+    const projection=generation?protocol.projectGeneration(rootRef,generation):null;
+    const payload=carrier.snapshot().payloads.get(target);
+    if (payload) {assert.equal(payload.text,projection.text);assert.deepEqual(payload.spans,projection.spans);}
+    groups.push({label,keys:added.map(e=>e.key),root:rootRef,generation,expected:projection?{text:projection.text,spans:projection.spans}:null});
+  }
+  capture('genesis');
+  carrier.applyChange({inlineContents:[{inlineContentId:target,blockId:root}],payloads:[{kind:'replace-text',inlineContentId:target,mediaType:'text/plain',text:'A😀B',origin:{kind:'human',id:'seed-origin'}}],context:{actorId:'packed-author',effectId:'seed'}});
+  capture('seed');
+  let revision=carrier.readOrdinaryTextRange(target,0,0).revision;
+  for(let i=0;i<count;i++) {
+    revision=carrier.applyOrdinaryChange({payloads:[i%2===0?{kind:'insert-text',inlineContentId:target,offset:1,text:'λ',origin:{kind:'human',id:`insert-origin-${i}`}}:{kind:'delete-text',inlineContentId:target,start:1,end:2}],context:{actorId:'packed-author',effectId:`edit-${i}`}},revision);
+    capture(`edit-${i}`);
+  }
+  const all=groups.flatMap(g=>g.keys).sort(), sha=x=>createHash('sha256').update(x).digest('hex');
+  const fixture={schema:'merge10-packed-history-v1',edits:count,groups,logicalRecords:all.length,semanticSha256:sha(all.join('\n')),scope:'exact real carrier records replayed into storage primitives; native metadata and command authorization are not implemented by packed primitive'};
+  fs.writeFileSync(output,JSON.stringify(fixture,null,2)+'\n',{flag:'wx'});
+  console.log(JSON.stringify({complete:true,edits:count,groups:groups.length,records:all.length,semanticSha256:fixture.semanticSha256}));
+} finally {await r.server.close();}
