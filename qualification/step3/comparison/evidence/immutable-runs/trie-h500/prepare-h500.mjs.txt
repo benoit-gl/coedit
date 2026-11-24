@@ -1,0 +1,31 @@
+// Packaging-only preparation wrapper; does not launch measurements.
+import fs from "node:fs";
+import { resolve } from "node:path";
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { tmpdir } from "node:os";
+const args = process.argv.slice(2);
+const option = (name) => {
+  const index = args.indexOf(name);
+  if (index < 0 || !args[index + 1]) throw new Error(`${name} is required`);
+  return resolve(args[index + 1]);
+};
+const repository = option("--repository");
+const evidence = option("--evidence");
+const output = option("--output");
+const prototypeEvidence = resolve(evidence, "../trie-prototype");
+const temporary = fs.mkdtempSync(resolve(tmpdir(), "prepare-h500-"));
+try {
+  const script = resolve(temporary, "reproduce.mjs");
+  fs.copyFileSync(resolve(prototypeEvidence, "reproduce.mjs.txt"), script);
+  execFileSync(process.execPath, [script, "--repository", repository, "--evidence", prototypeEvidence, "--output", output], { stdio: "inherit" });
+} finally {
+  fs.rmSync(temporary, { recursive: true, force: true });
+}
+for (const variant of ["old", "chunk2"]) fs.copyFileSync(resolve(evidence, `${variant}-manifest.json`), resolve(output, `${variant}-manifest.json`));
+const destination = resolve(output, "h500-v1");
+fs.mkdirSync(destination);
+const files = ["binding.mjs", "fixture-worker.mjs", "lifecycle.mjs", "run.py", "summarize.py"];
+for (const file of files) fs.copyFileSync(resolve(evidence, `${file}.txt`), resolve(destination, file));
+fs.writeFileSync(resolve(destination, "preparation-manifest.json"), JSON.stringify({ note: "Preparation only; no measurements launched", node: process.version, argv: process.argv, files: files.map((path) => ({ path, sha256: createHash("sha256").update(fs.readFileSync(resolve(destination, path))).digest("hex") })) }, null, 2) + "\n");
+console.log(`Prepared source-bound H500 workers in ${destination}; measurements were not launched.`);

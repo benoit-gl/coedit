@@ -1,0 +1,23 @@
+import pathlib,json,hashlib
+b=pathlib.Path(__file__).resolve().parent
+rows=lambda p:[json.loads(x) for x in p.read_text().splitlines()]
+supervisor=rows(b/'supervisor.jsonl'); out={'supervisor':supervisor,'variants':{}}
+for v in ['old','chunk2']:
+ d={};out['variants'][v]=d
+ meta=json.loads((b/f'{v}-fixture-500.bin.json').read_text());d['fixture']={k:meta[k] for k in ['history','bytes','sha256','rootId','target','expected','setupMs']}
+ overlap=rows(b/f'{v}-overlap.jsonl');d['overlap']=overlap
+ baseline=next(x for x in overlap if x['phase']=='baseline')['memory']
+ d['postGCHeapUsedDeltaBytes']={r['phase']:r['memory']['heapUsed']-baseline['heapUsed'] for r in overlap if r.get('postExplicitGC')}
+ life=rows(b/f'{v}-lifecycle.jsonl');phase=rows(b/f'{v}-lifecycle.phases.jsonl')
+ d['lifecycle']={'complete':life[-1],'case':next((r for r in life if r['kind']=='case'),None),'lastPhase':phase[-1],'maximumPhaseRssKiB':max(r['peakRssKiB'] for r in phase)}
+ d['heapSizeLimitBytes']=json.loads((b/f'{v}-overlap.manifest.json').read_text())['heapSizeLimitBytes']
+ d['allProcessesExitedZero']=all(r['returncode']==0 and not r['timedOut'] for r in supervisor if r['event']=='end' and r['variant']==v)
+old,candidate=(out['variants'][x] for x in ['old','chunk2'])
+keys=['history','rootId','target','expected']
+assert all(old['fixture'][k]==candidate['fixture'][k] for k in keys)
+assert all(d['lifecycle']['complete']=={'kind':'complete','complete':True,'semanticsVerified':True} for d in [old,candidate])
+assert len([r for r in supervisor if r['event']=='end'])==6
+assert all(d['allProcessesExitedZero'] for d in [old,candidate])
+out['identicalSemanticFixtureFields']=keys
+(b/'summary.json').write_text(json.dumps(out,indent=2)+'\n')
+print(json.dumps({v:{'bytes':d['fixture']['bytes'],'heapLimit':d['heapSizeLimitBytes'],'postGCHeapUsedDeltaBytes':d['postGCHeapUsedDeltaBytes'],'lifecycleComplete':d['lifecycle']['complete'],'lifecycleMaximumPhaseRssKiB':d['lifecycle']['maximumPhaseRssKiB']} for v,d in out['variants'].items()},indent=2))

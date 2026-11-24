@@ -319,3 +319,29 @@ No explicit GC, heap override or snapshots were used.
 The existing setup/first-carrier state remains live during second load,
 so the samples cannot isolate individual carrier or namespace-map sizes.
 This diagnostic does not resolve H5000 completion, larger-history scaling, mandatory eligibility or carrier selection.
+
+## Full-carrier scratch two-digit trie H500 comparison
+
+The [H500 report](evidence/immutable-runs/trie-h500/REPORT.md) and
+[package manifest](evidence/immutable-runs/trie-h500/manifest.json) preserve a separate old/two-digit full-carrier
+comparison at historical source `4e0857f1619cd4b32e515a458455fb6434f147fb`.
+All six sequential workers exited 0. Both exact existing lifecycle sequences complete with verified text/Origin,
+capture/materialize/restore, peer load/edit/merge, following edits and retained captured-material checks.
+Source/native hashes were verified before and after measurement; the prototype remains unapplied to runtime source.
+
+At the same 1024-unit text and 500 alternating same-gap commands, both fixtures contain 3511 canonical records.
+Fresh-load baseline-adjusted post-GC heapUsed was 43,359,088 B old versus 38,338,608 B two-digit (11.58% lower);
+two-carrier overlap was 80,638,808 versus 71,836,488 B (10.92% lower). Independent checks passed for both live
+carriers and for B after releasing A; released-all heapUsed returned near baseline.
+Sampled overlap peak RSS was 447,728 versus 367,472 KiB; exact-lifecycle peak RSS was 973,972 versus 806,924 KiB.
+The former includes module setup and both loads; the latter includes fixture construction and the original lifecycle
+overlap topology. These are process diagnostics, not native allocation or retained-size attribution.
+Load/overlap workers use explicit GC; exact lifecycle workers do not. Both use the default 2,348,810,240-byte heap limit.
+
+Public IDs, command contexts, text/Origins and semantic workload match, but separately generated record UUIDs,
+native actors and lineage mean trie keys and encoded bytes differ. Each cell is one observation in fixed old-first order;
+cache/JIT state, diagnostic writes and absence of repeats prevent controlled timing claims or a general memory guarantee.
+This completes bounded H500 full-carrier load/merge/lifecycle follow-up for the scratch layout, while concurrent-prefix
+creation, larger histories, compatibility and other qualification dimensions remain separate.
+The preserved H5000 failures, concentrated-tail adverse case, mandatory eligibility and carrier-selection obligations
+remain unchanged. Raw journals, phase/RSS samples, source hashes and exact executed script text are packaged without binaries.

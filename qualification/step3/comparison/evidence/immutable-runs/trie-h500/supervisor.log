@@ -1,0 +1,19 @@
+START old build
+END {"event": "end", "variant": "old", "mode": "build", "returncode": 0, "timedOut": false, "elapsedSeconds": 16.808788914000615, "sampledPeakRssKiB": 349384}
+START old overlap
+RUNNING old overlap 20.0 seconds 243604 peakRSSKiB
+RUNNING old overlap 40.1 seconds 407052 peakRSSKiB
+END {"event": "end", "variant": "old", "mode": "overlap", "returncode": 0, "timedOut": false, "elapsedSeconds": 43.072536109990324, "sampledPeakRssKiB": 447728}
+START old lifecycle
+RUNNING old lifecycle 20.0 seconds 424164 peakRSSKiB
+RUNNING old lifecycle 40.0 seconds 771816 peakRSSKiB
+RUNNING old lifecycle 60.1 seconds 828100 peakRSSKiB
+RUNNING old lifecycle 80.1 seconds 828100 peakRSSKiB
+END {"event": "end", "variant": "old", "mode": "lifecycle", "returncode": 0, "timedOut": false, "elapsedSeconds": 99.08151876900229, "sampledPeakRssKiB": 973972}
+START chunk2 build
+END {"event": "end", "variant": "chunk2", "mode": "build", "returncode": 0, "timedOut": false, "elapsedSeconds": 9.901051034001284, "sampledPeakRssKiB": 323948}
+START chunk2 overlap
+END {"event": "end", "variant": "chunk2", "mode": "overlap", "returncode": 0, "timedOut": false, "elapsedSeconds": 10.4116256289999, "sampledPeakRssKiB": 367472}
+START chunk2 lifecycle
+RUNNING chunk2 lifecycle 20.0 seconds 488244 peakRSSKiB
+END {"event": "end", "variant": "chunk2", "mode": "lifecycle", "returncode": 0, "timedOut": false, "elapsedSeconds": 40.06245287199272, "sampledPeakRssKiB": 806924}

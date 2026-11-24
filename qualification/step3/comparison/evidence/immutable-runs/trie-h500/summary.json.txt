@@ -1,0 +1,878 @@
+{
+  "supervisor": [
+    {
+      "event": "start",
+      "variant": "old",
+      "mode": "build",
+      "command": [
+        "node",
+        "--expose-gc",
+        "/workspace/work/merge10-implementation/trie-prototype/h500-v1/fixture-worker.mjs",
+        "--root",
+        "/workspace/work/merge10-implementation/trie-prototype/old",
+        "--mode",
+        "build",
+        "--history",
+        "500",
+        "--fixture",
+        "/workspace/work/merge10-implementation/trie-prototype/h500-v1/old-fixture-500.bin",
+        "--prefix",
+        "/workspace/work/merge10-implementation/trie-prototype/h500-v1/old-build"
+      ],
+      "cwd": "/workspace/work/merge10-implementation/trie-prototype/old",
+      "utc": "2026-11-23T21:42:56Z",
+      "timeoutSeconds": 600
+    },
+    {
+      "event": "end",
+      "variant": "old",
+      "mode": "build",
+      "returncode": 0,
+      "timedOut": false,
+      "elapsedSeconds": 16.808788914000615,
+      "sampledPeakRssKiB": 349384
+    },
+    {
+      "event": "start",
+      "variant": "old",
+      "mode": "overlap",
+      "command": [
+        "node",
+        "--expose-gc",
+        "/workspace/work/merge10-implementation/trie-prototype/h500-v1/fixture-worker.mjs",
+        "--root",
+        "/workspace/work/merge10-implementation/trie-prototype/old",
+        "--mode",
+        "overlap",
+        "--history",
+        "500",
+        "--fixture",
+        "/workspace/work/merge10-implementation/trie-prototype/h500-v1/old-fixture-500.bin",
+        "--prefix",
+        "/workspace/work/merge10-implementation/trie-prototype/h500-v1/old-overlap"
+      ],
+      "cwd": "/workspace/work/merge10-implementation/trie-prototype/old",
+      "utc": "2026-11-23T21:43:13Z",
+      "timeoutSeconds": 600
+    },
+    {
+      "event": "end",
+      "variant": "old",
+      "mode": "overlap",
+      "returncode": 0,
+      "timedOut": false,
+      "elapsedSeconds": 43.072536109990324,
+      "sampledPeakRssKiB": 447728
+    },
+    {
+      "event": "start",
+      "variant": "old",
+      "mode": "lifecycle",
+      "command": [
+        "node",
+        "/workspace/work/merge10-implementation/trie-prototype/h500-v1/lifecycle.mjs",
+        "--root",
+        "/workspace/work/merge10-implementation/trie-prototype/old",
+        "--case",
+        "same-gap-history-500",
+        "--out",
+        "/workspace/work/merge10-implementation/trie-prototype/h500-v1/old-lifecycle.jsonl",
+        "--phase-trace",
+        "/workspace/work/merge10-implementation/trie-prototype/h500-v1/old-lifecycle.phases.jsonl",
+        "--note",
+        "isolated old/hex2 full-carrier H500 exact lifecycle; verified byte manifests; default heap; no forced GC"
+      ],
+      "cwd": "/workspace/work/merge10-implementation/trie-prototype/old",
+      "utc": "2026-11-23T21:43:56Z",
+      "timeoutSeconds": 600
+    },
+    {
+      "event": "end",
+      "variant": "old",
+      "mode": "lifecycle",
+      "returncode": 0,
+      "timedOut": false,
+      "elapsedSeconds": 99.08151876900229,
+      "sampledPeakRssKiB": 973972
+    },
+    {
+      "event": "start",
+      "variant": "chunk2",
+      "mode": "build",
+      "command": [
+        "node",
+        "--expose-gc",
+        "/workspace/work/merge10-implementation/trie-prototype/h500-v1/fixture-worker.mjs",
+        "--root",
+        "/workspace/work/merge10-implementation/trie-prototype/chunk2",
+        "--mode",
+        "build",
+        "--history",
+        "500",
+        "--fixture",
+        "/workspace/work/merge10-implementation/trie-prototype/h500-v1/chunk2-fixture-500.bin",
+        "--prefix",
+        "/workspace/work/merge10-implementation/trie-prototype/h500-v1/chunk2-build"
+      ],
+      "cwd": "/workspace/work/merge10-implementation/trie-prototype/chunk2",
+      "utc": "2026-11-23T21:45:35Z",
+      "timeoutSeconds": 600
+    },
+    {
+      "event": "end",
+      "variant": "chunk2",
+      "mode": "build",
+      "returncode": 0,
+      "timedOut": false,
+      "elapsedSeconds": 9.901051034001284,
+      "sampledPeakRssKiB": 323948
+    },
+    {
+      "event": "start",
+      "variant": "chunk2",
+      "mode": "overlap",
+      "command": [
+        "node",
+        "--expose-gc",
+        "/workspace/work/merge10-implementation/trie-prototype/h500-v1/fixture-worker.mjs",
+        "--root",
+        "/workspace/work/merge10-implementation/trie-prototype/chunk2",
+        "--mode",
+        "overlap",
+        "--history",
+        "500",
+        "--fixture",
+        "/workspace/work/merge10-implementation/trie-prototype/h500-v1/chunk2-fixture-500.bin",
+        "--prefix",
+        "/workspace/work/merge10-implementation/trie-prototype/h500-v1/chunk2-overlap"
+      ],
+      "cwd": "/workspace/work/merge10-implementation/trie-prototype/chunk2",
+      "utc": "2026-11-23T21:45:45Z",
+      "timeoutSeconds": 600
+    },
+    {
+      "event": "end",
+      "variant": "chunk2",
+      "mode": "overlap",
+      "returncode": 0,
+      "timedOut": false,
+      "elapsedSeconds": 10.4116256289999,
+      "sampledPeakRssKiB": 367472
+    },
+    {
+      "event": "start",
+      "variant": "chunk2",
+      "mode": "lifecycle",
+      "command": [
+        "node",
+        "/workspace/work/merge10-implementation/trie-prototype/h500-v1/lifecycle.mjs",
+        "--root",
+        "/workspace/work/merge10-implementation/trie-prototype/chunk2",
+        "--case",
+        "same-gap-history-500",
+        "--out",
+        "/workspace/work/merge10-implementation/trie-prototype/h500-v1/chunk2-lifecycle.jsonl",
+        "--phase-trace",
+        "/workspace/work/merge10-implementation/trie-prototype/h500-v1/chunk2-lifecycle.phases.jsonl",
+        "--note",
+        "isolated old/hex2 full-carrier H500 exact lifecycle; verified byte manifests; default heap; no forced GC"
+      ],
+      "cwd": "/workspace/work/merge10-implementation/trie-prototype/chunk2",
+      "utc": "2026-11-23T21:45:55Z",
+      "timeoutSeconds": 600
+    },
+    {
+      "event": "end",
+      "variant": "chunk2",
+      "mode": "lifecycle",
+      "returncode": 0,
+      "timedOut": false,
+      "elapsedSeconds": 40.06245287199272,
+      "sampledPeakRssKiB": 806924
+    }
+  ],
+  "variants": {
+    "old": {
+      "fixture": {
+        "history": 500,
+        "bytes": 679533,
+        "sha256": "da896ee775ab43fa762845302ed8fab71c68dfc9c07013e422cc7ac23867d108",
+        "rootId": "d1000000-0000-4000-8000-000000000001",
+        "target": "d1000000-0000-4000-8000-000000000002",
+        "expected": {
+          "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "origin": {
+            "kind": "human",
+            "id": "o0"
+          }
+        },
+        "setupMs": 15497.646805999999
+      },
+      "overlap": [
+        {
+          "phase": "baseline",
+          "elapsedMs": 7293.647122,
+          "memory": {
+            "rss": 139096064,
+            "heapTotal": 90746880,
+            "heapUsed": 19859760,
+            "external": 10117597,
+            "arrayBuffers": 1486454
+          },
+          "peakRssKiB": 136436,
+          "postExplicitGC": true,
+          "history": 500,
+          "fixture": "/workspace/work/merge10-implementation/trie-prototype/h500-v1/old-fixture-500.bin",
+          "fixtureSha256": "da896ee775ab43fa762845302ed8fab71c68dfc9c07013e422cc7ac23867d108"
+        },
+        {
+          "phase": "load-A-start",
+          "elapsedMs": 7294.10095,
+          "memory": {
+            "rss": 139096064,
+            "heapTotal": 90746880,
+            "heapUsed": 19895144,
+            "external": 10117637,
+            "arrayBuffers": 1486454
+          },
+          "peakRssKiB": 136436
+        },
+        {
+          "phase": "one",
+          "elapsedMs": 36601.944595,
+          "memory": {
+            "rss": 382128128,
+            "heapTotal": 201637888,
+            "heapUsed": 63218848,
+            "external": 35875333,
+            "arrayBuffers": 1486454
+          },
+          "peakRssKiB": 376508,
+          "postExplicitGC": true,
+          "loadMs": 29228.320433999997,
+          "counts": {
+            "records": 3511,
+            "recordTags": {
+              "manifest": 502,
+              "erase": 250,
+              "live": 1003,
+              "envelope": 501,
+              "payload-effect-v2": 501,
+              "context": 501,
+              "run": 252,
+              "generation": 1
+            },
+            "protocolOwnKeys": [],
+            "carrierEntryCount": 3511,
+            "sourceIndexes": 1,
+            "providerClass": "NativeProvider"
+          },
+          "semanticsVerified": true
+        },
+        {
+          "phase": "load-B-start",
+          "elapsedMs": 36602.254246,
+          "memory": {
+            "rss": 382128128,
+            "heapTotal": 201637888,
+            "heapUsed": 63251440,
+            "external": 35875333,
+            "arrayBuffers": 1486454
+          },
+          "peakRssKiB": 376508
+        },
+        {
+          "phase": "two",
+          "elapsedMs": 42709.492514,
+          "memory": {
+            "rss": 452591616,
+            "heapTotal": 236765184,
+            "heapUsed": 100498568,
+            "external": 47933957,
+            "arrayBuffers": 1486454
+          },
+          "peakRssKiB": 447484,
+          "postExplicitGC": true,
+          "loadMs": 5937.397423000002,
+          "countsA": {
+            "records": 3511,
+            "recordTags": {
+              "manifest": 502,
+              "erase": 250,
+              "live": 1003,
+              "envelope": 501,
+              "payload-effect-v2": 501,
+              "context": 501,
+              "run": 252,
+              "generation": 1
+            },
+            "protocolOwnKeys": [],
+            "carrierEntryCount": 3511,
+            "sourceIndexes": 1,
+            "providerClass": "NativeProvider"
+          },
+          "countsB": {
+            "records": 3511,
+            "recordTags": {
+              "manifest": 502,
+              "erase": 250,
+              "live": 1003,
+              "envelope": 501,
+              "payload-effect-v2": 501,
+              "context": 501,
+              "run": 252,
+              "generation": 1
+            },
+            "protocolOwnKeys": [],
+            "carrierEntryCount": 3511,
+            "sourceIndexes": 1,
+            "providerClass": "NativeProvider"
+          },
+          "semanticsVerified": true
+        },
+        {
+          "phase": "released-A",
+          "elapsedMs": 42888.427306,
+          "memory": {
+            "rss": 452591616,
+            "heapTotal": 201113600,
+            "heapUsed": 63386856,
+            "external": 47692053,
+            "arrayBuffers": 1486454
+          },
+          "peakRssKiB": 447484,
+          "postExplicitGC": true,
+          "semanticsVerified": true
+        },
+        {
+          "phase": "released-all",
+          "elapsedMs": 42952.430519,
+          "memory": {
+            "rss": 452591616,
+            "heapTotal": 161529856,
+            "heapUsed": 23783032,
+            "external": 47692053,
+            "arrayBuffers": 1486454
+          },
+          "peakRssKiB": 447484,
+          "postExplicitGC": true
+        },
+        {
+          "phase": "diagnostic-complete",
+          "elapsedMs": 42952.852011,
+          "memory": {
+            "rss": 452591616,
+            "heapTotal": 161529856,
+            "heapUsed": 23817720,
+            "external": 47692053,
+            "arrayBuffers": 1486454
+          },
+          "peakRssKiB": 447484,
+          "mode": "overlap",
+          "history": 500
+        }
+      ],
+      "postGCHeapUsedDeltaBytes": {
+        "baseline": 0,
+        "one": 43359088,
+        "two": 80638808,
+        "released-A": 43527096,
+        "released-all": 3923272
+      },
+      "lifecycle": {
+        "complete": {
+          "kind": "complete",
+          "complete": true,
+          "semanticsVerified": true
+        },
+        "case": {
+          "kind": "case",
+          "complete": false,
+          "shape": {
+            "name": "same-gap-history-500",
+            "text": 1024,
+            "blocks": 0,
+            "unrelatedText": 0,
+            "opaque": 0,
+            "origins": 1,
+            "boundaries": 1,
+            "history": 500
+          },
+          "runSourceUnits": 512,
+          "initialLoadMs": 8016.955321999998,
+          "profiles": [
+            {
+              "mode": "bare-canonical",
+              "rawMs": [
+                26.590259000000515,
+                25.463579000002937,
+                26.951716999999917,
+                32.10589600000094,
+                31.05432899999869
+              ],
+              "medianMs": 26.951716999999917,
+              "p95Ms": 32.10589600000094,
+              "observation": {
+                "label": "additional-post-warm-edit",
+                "counters": {
+                  "jsonStringifyCalls": 79,
+                  "jsonOutputUnits": 16441,
+                  "indexPathVisits": 114,
+                  "indexRangeReturnedUnits": 2,
+                  "indexReadCalls": 1,
+                  "encoderInputUnits": 6066,
+                  "encoderOutputUnits": 6066,
+                  "indexLeafAllocations": 1,
+                  "indexBuildCalls": 1,
+                  "indexLargestBuildRange": 1,
+                  "objectKeysWidth": 58,
+                  "assignSourceWidths": 1112,
+                  "objectValuesWidth": 1,
+                  "nativeActivate": 0,
+                  "protocolProjectGeneration": 0,
+                  "publicSnapshot": 0,
+                  "targetFullProjection": 0,
+                  "effectInspection": 0,
+                  "coldRecovery": 0,
+                  "positionDecoder": 0
+                }
+              },
+              "priorWarmCommands": 3
+            },
+            {
+              "mode": "incremental-editor",
+              "editorActivationMs": 1.3621769999990647,
+              "rawMs": [
+                31.050139999999374,
+                32.33966499999951,
+                29.404735000000073,
+                25.842602999997325,
+                29.042169000000285
+              ],
+              "medianMs": 29.404735000000073,
+              "p95Ms": 32.33966499999951,
+              "observation": {
+                "label": "additional-post-warm-edit",
+                "counters": {
+                  "indexPathVisits": 107,
+                  "indexRangeReturnedUnits": 2,
+                  "indexReadCalls": 2,
+                  "jsonStringifyCalls": 79,
+                  "jsonOutputUnits": 16601,
+                  "encoderInputUnits": 6102,
+                  "encoderOutputUnits": 6102,
+                  "indexLeafAllocations": 1,
+                  "indexBuildCalls": 1,
+                  "indexLargestBuildRange": 1,
+                  "objectKeysWidth": 58,
+                  "assignSourceWidths": 1123,
+                  "objectValuesWidth": 1,
+                  "nativeActivate": 0,
+                  "protocolProjectGeneration": 0,
+                  "publicSnapshot": 0,
+                  "targetFullProjection": 0,
+                  "effectInspection": 0,
+                  "coldRecovery": 0,
+                  "positionDecoder": 0
+                }
+              },
+              "priorWarmCommands": 12
+            }
+          ],
+          "lifecycle": {
+            "saveMs": 71.97315399999934,
+            "loadMs": 7665.1782859999985,
+            "captureMs": 21.290869999997085,
+            "materializeMs": 0.37048199999844655,
+            "restoreMs": 85.10959000000003,
+            "mergeMs": 57500.811517999995,
+            "following": [
+              {
+                "label": "first-after-transition",
+                "ms": 38.98186800000258
+              },
+              {
+                "label": "following-edit",
+                "ms": 25.57255699999223
+              }
+            ],
+            "encodedBytes": 704242,
+            "memory": {
+              "rss": 996990976,
+              "heapTotal": 816664576,
+              "heapUsed": 737541688,
+              "external": 74825596,
+              "arrayBuffers": 10859762
+            },
+            "samples": 1
+          },
+          "semanticsVerified": true
+        },
+        "lastPhase": {
+          "kind": "phase-trace",
+          "complete": false,
+          "sequence": 41,
+          "event": "checkpoint",
+          "phase": "all-cases-emitted",
+          "elapsedMs": 98900.025375,
+          "memory": {
+            "rss": 996990976,
+            "heapTotal": 816926720,
+            "heapUsed": 681153032,
+            "external": 74814140,
+            "arrayBuffers": 10848306
+          },
+          "heapSizeLimitBytes": 2348810240,
+          "peakRssKiB": 973624
+        },
+        "maximumPhaseRssKiB": 973624
+      },
+      "heapSizeLimitBytes": 2348810240,
+      "allProcessesExitedZero": true
+    },
+    "chunk2": {
+      "fixture": {
+        "history": 500,
+        "bytes": 540304,
+        "sha256": "35af7e390e5b78f4720941b43640cb7699c5c08f65003f56708f78d2e5425495",
+        "rootId": "d1000000-0000-4000-8000-000000000001",
+        "target": "d1000000-0000-4000-8000-000000000002",
+        "expected": {
+          "text": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "origin": {
+            "kind": "human",
+            "id": "o0"
+          }
+        },
+        "setupMs": 8869.802481
+      },
+      "overlap": [
+        {
+          "phase": "baseline",
+          "elapsedMs": 972.634548,
+          "memory": {
+            "rss": 145211392,
+            "heapTotal": 56147968,
+            "heapUsed": 19860376,
+            "external": 9979894,
+            "arrayBuffers": 1347231
+          },
+          "peakRssKiB": 142732,
+          "postExplicitGC": true,
+          "history": 500,
+          "fixture": "/workspace/work/merge10-implementation/trie-prototype/h500-v1/chunk2-fixture-500.bin",
+          "fixtureSha256": "35af7e390e5b78f4720941b43640cb7699c5c08f65003f56708f78d2e5425495"
+        },
+        {
+          "phase": "load-A-start",
+          "elapsedMs": 973.048592,
+          "memory": {
+            "rss": 145211392,
+            "heapTotal": 56147968,
+            "heapUsed": 19895768,
+            "external": 9979934,
+            "arrayBuffers": 1347231
+          },
+          "peakRssKiB": 142732
+        },
+        {
+          "phase": "one",
+          "elapsedMs": 5855.194271,
+          "memory": {
+            "rss": 339791872,
+            "heapTotal": 193777664,
+            "heapUsed": 58198984,
+            "external": 27676702,
+            "arrayBuffers": 1347231
+          },
+          "peakRssKiB": 333744,
+          "postExplicitGC": true,
+          "loadMs": 4797.127085,
+          "counts": {
+            "records": 3511,
+            "recordTags": {
+              "manifest": 502,
+              "live": 1003,
+              "payload-effect-v2": 501,
+              "envelope": 501,
+              "context": 501,
+              "run": 252,
+              "erase": 250,
+              "generation": 1
+            },
+            "protocolOwnKeys": [],
+            "carrierEntryCount": 3511,
+            "sourceIndexes": 1,
+            "providerClass": "NativeProvider"
+          },
+          "semanticsVerified": true
+        },
+        {
+          "phase": "load-B-start",
+          "elapsedMs": 5855.762801,
+          "memory": {
+            "rss": 339791872,
+            "heapTotal": 193777664,
+            "heapUsed": 58234936,
+            "external": 27676702,
+            "arrayBuffers": 1347231
+          },
+          "peakRssKiB": 333744
+        },
+        {
+          "phase": "two",
+          "elapsedMs": 10159.030795,
+          "memory": {
+            "rss": 374366208,
+            "heapTotal": 228380672,
+            "heapUsed": 91696864,
+            "external": 32002078,
+            "arrayBuffers": 1347231
+          },
+          "peakRssKiB": 367268,
+          "postExplicitGC": true,
+          "loadMs": 4199.620242,
+          "countsA": {
+            "records": 3511,
+            "recordTags": {
+              "manifest": 502,
+              "live": 1003,
+              "payload-effect-v2": 501,
+              "envelope": 501,
+              "context": 501,
+              "run": 252,
+              "erase": 250,
+              "generation": 1
+            },
+            "protocolOwnKeys": [],
+            "carrierEntryCount": 3511,
+            "sourceIndexes": 1,
+            "providerClass": "NativeProvider"
+          },
+          "countsB": {
+            "records": 3511,
+            "recordTags": {
+              "manifest": 502,
+              "live": 1003,
+              "payload-effect-v2": 501,
+              "envelope": 501,
+              "context": 501,
+              "run": 252,
+              "erase": 250,
+              "generation": 1
+            },
+            "protocolOwnKeys": [],
+            "carrierEntryCount": 3511,
+            "sourceIndexes": 1,
+            "providerClass": "NativeProvider"
+          },
+          "semanticsVerified": true
+        },
+        {
+          "phase": "released-A",
+          "elapsedMs": 10260.06745,
+          "memory": {
+            "rss": 374366208,
+            "heapTotal": 195612672,
+            "heapUsed": 58450400,
+            "external": 31758654,
+            "arrayBuffers": 1347231
+          },
+          "peakRssKiB": 367268,
+          "postExplicitGC": true,
+          "semanticsVerified": true
+        },
+        {
+          "phase": "released-all",
+          "elapsedMs": 10322.525132,
+          "memory": {
+            "rss": 374366208,
+            "heapTotal": 159698944,
+            "heapUsed": 22628080,
+            "external": 31758654,
+            "arrayBuffers": 1347231
+          },
+          "peakRssKiB": 367268,
+          "postExplicitGC": true
+        },
+        {
+          "phase": "diagnostic-complete",
+          "elapsedMs": 10323.103122,
+          "memory": {
+            "rss": 374366208,
+            "heapTotal": 159698944,
+            "heapUsed": 22662648,
+            "external": 31758654,
+            "arrayBuffers": 1347231
+          },
+          "peakRssKiB": 367268,
+          "mode": "overlap",
+          "history": 500
+        }
+      ],
+      "postGCHeapUsedDeltaBytes": {
+        "baseline": 0,
+        "one": 38338608,
+        "two": 71836488,
+        "released-A": 38590024,
+        "released-all": 2767704
+      },
+      "lifecycle": {
+        "complete": {
+          "kind": "complete",
+          "complete": true,
+          "semanticsVerified": true
+        },
+        "case": {
+          "kind": "case",
+          "complete": false,
+          "shape": {
+            "name": "same-gap-history-500",
+            "text": 1024,
+            "blocks": 0,
+            "unrelatedText": 0,
+            "opaque": 0,
+            "origins": 1,
+            "boundaries": 1,
+            "history": 500
+          },
+          "runSourceUnits": 512,
+          "initialLoadMs": 4848.433941000001,
+          "profiles": [
+            {
+              "mode": "bare-canonical",
+              "rawMs": [
+                45.61477600000035,
+                14.958107000000382,
+                17.823585000000094,
+                16.518701999999394,
+                15.976661999999124
+              ],
+              "medianMs": 16.518701999999394,
+              "p95Ms": 45.61477600000035,
+              "observation": {
+                "label": "additional-post-warm-edit",
+                "counters": {
+                  "jsonStringifyCalls": 79,
+                  "jsonOutputUnits": 16441,
+                  "indexPathVisits": 114,
+                  "indexRangeReturnedUnits": 2,
+                  "indexReadCalls": 1,
+                  "encoderInputUnits": 6066,
+                  "encoderOutputUnits": 6066,
+                  "indexLeafAllocations": 1,
+                  "indexBuildCalls": 1,
+                  "indexLargestBuildRange": 1,
+                  "objectKeysWidth": 58,
+                  "assignSourceWidths": 836,
+                  "objectValuesWidth": 1,
+                  "nativeActivate": 0,
+                  "protocolProjectGeneration": 0,
+                  "publicSnapshot": 0,
+                  "targetFullProjection": 0,
+                  "effectInspection": 0,
+                  "coldRecovery": 0,
+                  "positionDecoder": 0
+                }
+              },
+              "priorWarmCommands": 3
+            },
+            {
+              "mode": "incremental-editor",
+              "editorActivationMs": 1.3174920000001293,
+              "rawMs": [
+                11.866875000001528,
+                17.520203000000038,
+                14.355679000000237,
+                15.965462999998635,
+                16.24237499999981
+              ],
+              "medianMs": 15.965462999998635,
+              "p95Ms": 17.520203000000038,
+              "observation": {
+                "label": "additional-post-warm-edit",
+                "counters": {
+                  "indexPathVisits": 107,
+                  "indexRangeReturnedUnits": 2,
+                  "indexReadCalls": 2,
+                  "jsonStringifyCalls": 79,
+                  "jsonOutputUnits": 16601,
+                  "encoderInputUnits": 6102,
+                  "encoderOutputUnits": 6102,
+                  "indexLeafAllocations": 1,
+                  "indexBuildCalls": 1,
+                  "indexLargestBuildRange": 1,
+                  "objectKeysWidth": 58,
+                  "assignSourceWidths": 837,
+                  "objectValuesWidth": 1,
+                  "nativeActivate": 0,
+                  "protocolProjectGeneration": 0,
+                  "publicSnapshot": 0,
+                  "targetFullProjection": 0,
+                  "effectInspection": 0,
+                  "coldRecovery": 0,
+                  "positionDecoder": 0
+                }
+              },
+              "priorWarmCommands": 12
+            }
+          ],
+          "lifecycle": {
+            "saveMs": 56.69537300000047,
+            "loadMs": 5033.227245999999,
+            "captureMs": 23.91790299999775,
+            "materializeMs": 0.3426279999985127,
+            "restoreMs": 45.1697090000016,
+            "mergeMs": 15804.028734,
+            "following": [
+              {
+                "label": "first-after-transition",
+                "ms": 16.500050999995437
+              },
+              {
+                "label": "following-edit",
+                "ms": 11.940370999996958
+              }
+            ],
+            "encodedBytes": 560211,
+            "memory": {
+              "rss": 826077184,
+              "heapTotal": 671477760,
+              "heapUsed": 586265472,
+              "external": 64157298,
+              "arrayBuffers": 17296360
+            },
+            "samples": 1
+          },
+          "semanticsVerified": true
+        },
+        "lastPhase": {
+          "kind": "phase-trace",
+          "complete": false,
+          "sequence": 41,
+          "event": "checkpoint",
+          "phase": "all-cases-emitted",
+          "elapsedMs": 39854.929557,
+          "memory": {
+            "rss": 826077184,
+            "heapTotal": 671477760,
+            "heapUsed": 586298168,
+            "external": 64158782,
+            "arrayBuffers": 17297844
+          },
+          "heapSizeLimitBytes": 2348810240,
+          "peakRssKiB": 806716
+        },
+        "maximumPhaseRssKiB": 806716
+      },
+      "heapSizeLimitBytes": 2348810240,
+      "allProcessesExitedZero": true
+    }
+  },
+  "identicalSemanticFixtureFields": [
+    "history",
+    "rootId",
+    "target",
+    "expected"
+  ]
+}

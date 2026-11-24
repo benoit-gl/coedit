@@ -1,0 +1,65 @@
+from pathlib import Path
+import json,hashlib
+base=Path(__file__).resolve().parent
+s=json.loads((base/'summary.json').read_text());a=s['variants']['old'];b=s['variants']['chunk2']
+mem=lambda d,phase:next(r for r in d['overlap'] if r['phase']==phase)
+ends={(r['variant'],r['mode']):r for r in s['supervisor'] if r['event']=='end'}
+p=base.parent.parent/'trie-h500-handoff.md'
+text=p.read_text().replace('Status: running sequential bounded workers; final results pending.', 'Status: complete — all six sequential workers exited 0, no timeout/failure, both exact lifecycle journals end with `complete:true, semanticsVerified:true`. Measurement slot released.')
+text=text.replace('Neither `/workspace/coedit` nor the PR/remote is changed or used as the runtime source.','Neither `/workspace/coedit` application source nor the PR/remote is changed or used as the runtime source. Both variants intentionally share the pinned installed dependency via their existing node_modules symlinks: Automerge resolves to `/workspace/coedit/node_modules/.pnpm/@automerge+automerge@3.4.1/node_modules/@automerge/automerge`. That shared installed dependency was byte-verified; Vite application modules resolve under each explicit scratch root.')
+text+='''
+
+## Completed results
+
+Both fixtures contain 3511 canonical records, one selected source index and identical record-tag counts (502 manifests, 250 erases, 1003 live, 501 envelopes, 501 payload effects, 501 contexts, 252 runs, one generation). The H500 commands leave exact 1024 `a` units with Origin `{kind:"human",id:"o0"}`. Public root/target IDs, expected text/Origin and H500 match across variants; each fixture is separately hash checked before loading.
+
+| Post-explicit-GC heapUsed (bytes) | Old one-digit | Hex2 candidate |
+| --- | ---: | ---: |
+'''
+for phase in ['baseline','one','two','released-A','released-all']:
+ text+=f"| {phase} | {mem(a,phase)['memory']['heapUsed']:,} | {mem(b,phase)['memory']['heapUsed']:,} |\n"
+text+='\n| Resource (one exploratory sample) | Old one-digit | Hex2 candidate |\n| --- | ---: | ---: |\n'
+for label,x,y in [
+ ('Fixture encoded bytes',a['fixture']['bytes'],b['fixture']['bytes']),
+ ('Baseline-adjusted heapUsed, A live (bytes)',a['postGCHeapUsedDeltaBytes']['one'],b['postGCHeapUsedDeltaBytes']['one']),
+ ('Baseline-adjusted heapUsed, A+B live (bytes)',a['postGCHeapUsedDeltaBytes']['two'],b['postGCHeapUsedDeltaBytes']['two']),
+ ('Fresh overlap worker sampled peak RSS (KiB)',ends['old','overlap']['sampledPeakRssKiB'],ends['chunk2','overlap']['sampledPeakRssKiB']),
+ ('Exact lifecycle sampled peak RSS (KiB)',ends['old','lifecycle']['sampledPeakRssKiB'],ends['chunk2','lifecycle']['sampledPeakRssKiB']),
+ ('Default V8 heap limit (bytes)',a['heapSizeLimitBytes'],b['heapSizeLimitBytes'])]:text+=f'| {label} | {x:,} | {y:,} |\n'
+percent=lambda x,y:100*(1-y/x)
+text+=f'''
+In this pair, candidate baseline-adjusted post-GC heapUsed is {percent(a['postGCHeapUsedDeltaBytes']['one'],b['postGCHeapUsedDeltaBytes']['one']):.2f}% lower for one carrier and {percent(a['postGCHeapUsedDeltaBytes']['two'],b['postGCHeapUsedDeltaBytes']['two']):.2f}% lower for two. Sampled overlap peak RSS is {percent(ends['old','overlap']['sampledPeakRssKiB'],ends['chunk2','overlap']['sampledPeakRssKiB']):.2f}% lower; exact lifecycle peak RSS is {percent(ends['old','lifecycle']['sampledPeakRssKiB'],ends['chunk2','lifecycle']['sampledPeakRssKiB']):.2f}% lower. Fixture encoding is {percent(a['fixture']['bytes'],b['fixture']['bytes']):.2f}% smaller. These are process diagnostics, not object-retained-size attribution or a general memory guarantee.
+
+Both A and B were independently checked after second load; B was checked again after releasing A. Post-GC heapUsed returns near its one-carrier level after A release and near baseline after releasing both. This supports collection in the bounded topology without claiming all native/RSS memory is returned. ArrayBuffers is part of external memory; do not sum those counters.
+
+## Exact lifecycle and provenance verification
+
+All original bare-canonical and incremental-editor warm commands, separate post-warm observations, save, lifecycle reload, capture, materialize, restore, peer reload/edit, inbound merge, two following editor edits and retained captured material checks passed for both variants. Both phase journals end at `all-cases-emitted`; no entered phase remains incomplete. The observed extra warm commands report zero native activation and zero public snapshot calls in both variants. The profile's final `complete:true` was emitted only after original semantic checks. No lifecycle GC hook or altered lifetime topology was added.
+
+Full lifecycle process elapsed time old→candidate was {ends['old','lifecycle']['elapsedSeconds']:.2f}→{ends['chunk2','lifecycle']['elapsedSeconds']:.2f} s; single measured inbound-merge intervals were {a['lifecycle']['case']['lifecycle']['mergeMs']/1000:.2f}→{b['lifecycle']['case']['lifecycle']['mergeMs']/1000:.2f} s. These are diagnostic observations only: old-first ordering, random native identities/key shapes, source/module setup, cache/JIT state and phase writes are uncontrolled; no latency/speedup claim follows.
+'''
+text+='''
+Pre-run checks passed `node --check` for binding, fixture and lifecycle scripts. Final read-only `bind()` rechecked all 89 runtime source entries, 28 native JavaScript entries and native WASM for each variant after measurements. Both native versions are 3.4.1 with WASM SHA256 `304ea6e230898ed66af3c29ac554a36c15bbe03f5c8816b5310fddb88f7f5d78`. Variant manifests still differ only at `nativeDocument.ts` and `nativeRecordStore.ts`. Summary assertions checked six successful exits, both original completion records and identical public fixture expectations. All six stderr logs are empty.
+
+## Durable artifacts and limits
+
+- `h500-v1/supervisor.jsonl` and `.log`: exact commands, cwd, timestamps, bounds, return codes and sampled process peaks.
+- `h500-v1/{old,chunk2}-fixture-500.bin{,.json}`: variant-bound fresh fixtures, expected public material, hashes and source manifests.
+- `h500-v1/{old,chunk2}-overlap.jsonl` and `.manifest.json`: explicit-GC counters and exact load/release semantic checkpoints.
+- `h500-v1/{old,chunk2}-lifecycle.jsonl` and `.phases.jsonl`: original complete profile semantics and phase boundaries; no forced GC.
+- `h500-v1/*.rss-samples.jsonl`: external approximately 50 ms `/proc` samples, which can miss brief peaks; per-phase `peakRssKiB` additionally preserves the process lifetime OS counter. Overlap peaks include Vite/module setup and two load calls; lifecycle peaks include fixture construction plus the original multiple-carrier topology.
+- `h500-v1/summary.json`, `summarize.py`, `finalize.py`, `binding.mjs`, `fixture-worker.mjs`, `lifecycle.mjs`, `lifecycle-provenance.patch`, `run.py`, and `artifacts-manifest.json`: summarized values, reviewable harness/provenance adaptation and hashes.
+
+This establishes bounded full-carrier H500 lifecycle completion and exploratory process-memory comparison for the two scratch layouts. It does not establish H5000 behavior, migration/old-format compatibility, concurrency/fan-in qualification, scientific uncertainty, general latency improvement or production readiness. No larger history, snapshots, runtime patches, native backend modifications, heap increase, repository changes or remote operations were performed. No further heavy work is active.
+'''
+p.write_text(text)
+manifests=[json.loads((base.parent/f'{v}-manifest.json').read_text()) for v in ['old','chunk2']]
+ms=[{r['path']:r['sha256'] for r in m['sources']} for m in manifests]
+diffs=[k for k in ms[0] if ms[0][k]!=ms[1][k]]
+assert len(diffs)==2 and {Path(x).name for x in diffs}=={'nativeDocument.ts','nativeRecordStore.ts'}
+rows=[]
+for f in sorted(base.iterdir()):
+ if f.is_file() and f.name!='artifacts-manifest.json':rows.append({'path':f.name,'bytes':f.stat().st_size,'sha256':hashlib.sha256(f.read_bytes()).hexdigest()})
+rows.append({'path':'../../trie-h500-handoff.md','bytes':p.stat().st_size,'sha256':hashlib.sha256(p.read_bytes()).hexdigest()})
+(base/'artifacts-manifest.json').write_text(json.dumps({'schema':'trie-h500-artifacts-v1','files':rows,'sourceDifferences':diffs},indent=2)+'\n')
+print('Final handoff written; artifact entries:',len(rows))
