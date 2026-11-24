@@ -1,0 +1,12 @@
+{
+  "scope": "Packaging-only hash/summary checks; no workload rerun",
+  "sourceAndRuntimeBindingFilesReverified": 102,
+  "historicalH500ManifestFilesUnchanged": 120,
+  "bindingSha256": "4b795cee2447965b39406c1630064ff48d6e2f24c7f2f251af4ba7c1d120796a",
+  "workloadComplete": true,
+  "originalSupervisionComplete": false,
+  "packedPeakRssComplete": false,
+  "sourceSummarySha256": "cab58e0185c6ab33a48c284c4948581cb00f0bf8bf56f14ef566b26789e3a69e",
+  "packedSummarySha256": "8f41f63c012ddde29a2a50eb60551166edb5ac8d1fe8dba8467739a4d38f3b4f",
+  "archiveCopies": 35
+}

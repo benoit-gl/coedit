@@ -1,0 +1,25 @@
+{
+  "complete": false,
+  "edits": 5000,
+  "groups": 5002,
+  "logicalRecords": 35011,
+  "buildMs": 10650.100427,
+  "baseline": {
+    "rss": 115613696,
+    "heapTotal": 52482048,
+    "heapUsed": 16694784,
+    "external": 8785008,
+    "arrayBuffers": 570435
+  },
+  "retained": {
+    "rss": 378249216,
+    "heapTotal": 236195840,
+    "heapUsed": 100069464,
+    "external": 63828179,
+    "arrayBuffers": 32171367
+  },
+  "heapUsedDelta": 83374680,
+  "rssDelta": 262635520,
+  "semanticSha256": "3a6e8370342d3925c57e3adbc7f51c4568c2e637d1f6c8f81c122595e8dd72ba",
+  "scope": "packed-only post-GC build retention includes command metadata, head receipts and detached logical-key audit map; no full-carrier memory claim"
+}

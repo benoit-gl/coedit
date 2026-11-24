@@ -1,0 +1,32 @@
+import { createServer } from '/workspace/coedit/node_modules/vite/dist/node/index.js';
+import * as A from '/workspace/coedit/node_modules/@automerge/automerge/dist/mjs/entrypoints/fullfat_node.js';
+import { packedStoreClass } from './packed-store.mjs';
+export async function runtime() {
+  const root = '/workspace/work/merge10-packed-prototype/source';
+  const server = await createServer({configFile:false, root, appType:'custom', optimizeDeps:{noDiscovery:true,include:[]},server:{middlewareMode:true,hmr:false}, logLevel:'error'});
+  const record = await server.ssrLoadModule('/qualification/step3/immutableRuns/record.ts');
+  const { ImmutableRunProtocolV1: Protocol } = await server.ssrLoadModule('/qualification/step3/immutableRuns/protocol.ts');
+  const { AutomergeRecordPrimitive: Trie } = await server.ssrLoadModule('/qualification/step3/immutableRuns/nativeRecordStore.ts');
+  return { server, A, record, Protocol, Trie, Packed:packedStoreClass(A,record) };
+}
+export function extractRecords(A, record, encoded) {
+  const doc = A.load(encoded), result = new Map();
+  A.change(doc, draft => {
+    const pending = [{node:draft.records, depth:0}];
+    while (pending.length) {
+      const {node,depth} = pending.pop();
+      for (const key of Object.keys(node)) {
+        const conflicts = A.getConflicts(node,key), values=conflicts===undefined?[node[key]]:Object.values(conflicts);
+        for (const value of values) {
+          if(depth===32) {
+            const entry=record.decodeRecordKeyV1(key,value), previous=result.get(entry.record[2]);
+            if(previous && previous.canonical!==entry.canonical)throw new TypeError('Source extraction found conflicting immutable UUID bodies.');
+            result.set(entry.record[2],entry);
+          }
+          else pending.push({node:value,depth:depth+key.length});
+        }
+      }
+    }
+  });
+  return [...result.values()];
+}

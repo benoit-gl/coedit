@@ -1,0 +1,264 @@
+{
+  "schema": "merge10-packed-source-v1",
+  "revision": "7618ee8939f305260a3d2a54b30a482093826fe4",
+  "sources": [
+    {
+      "path": "package.json",
+      "sha256": "a30ccfd72e14319751a8bcbca8fb2d701673b1f8a6c3e4125152bbf5fa420570"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "f5f85cff13daac6bccd8744a6c584166c25cfa2aa944ede68ad0101ce3a7ac94"
+    },
+    {
+      "path": "qualification/step3/comparison/allocatorStress.ts",
+      "sha256": "995a47964486a6c69793fdc4fe1eed2642851451ce78002e1b0b66f4540b0672"
+    },
+    {
+      "path": "qualification/step3/comparison/clipboardMeasurements.ts",
+      "sha256": "58a27d4d921da2261538bf269892313fded3a64a03ee5b0527681acfaa7a21f3"
+    },
+    {
+      "path": "qualification/step3/comparison/extendedMeasurements.ts",
+      "sha256": "995aa5ff1725b2b396738f4f1d37f5024e32c32844391fa72d42907d8a97c4b3"
+    },
+    {
+      "path": "qualification/step3/comparison/historyLifecycle.ts",
+      "sha256": "24e11fdd58671bf0ed172d2d977a5fd85e4e18a7a3b55e722c078b68058fd590"
+    },
+    {
+      "path": "qualification/step3/comparison/immutableRecordWork.ts",
+      "sha256": "932b7640ec2d2d296cddd5a19d7c381d8a9ceb79729c0be04dbdb329c11a064c"
+    },
+    {
+      "path": "qualification/step3/comparison/nativeOrdinaryWork.ts",
+      "sha256": "37ddc0e99dfc9aa74b5a0f0866a06535bd3c7a9745d17fffba74867af57885d4"
+    },
+    {
+      "path": "qualification/step3/comparison/ordinaryEditComparison.ts",
+      "sha256": "d6b71f9161f72530655ec70d7277d10dcc96a0c2bba31fc71a8303106305fc1a"
+    },
+    {
+      "path": "qualification/step3/comparison/ordinaryEditLifecycle.ts",
+      "sha256": "c353abd12bcb5d543e4ed3a1c4621e8b19e798210269b7400ef0ba62bdfeeaf0"
+    },
+    {
+      "path": "qualification/step3/comparison/rangeQualification.ts",
+      "sha256": "b36d03732ef970643bd34106dca33da8ba6e254e9cf52a15c760f8ab33adf5b2"
+    },
+    {
+      "path": "qualification/step3/comparison/snapshotComparison.ts",
+      "sha256": "3a9ef7cdf561835226b3717f28d3090ae21cd219a7e35e8f433b6bccf857102a"
+    },
+    {
+      "path": "qualification/step3/comparison/structuralStress.ts",
+      "sha256": "f8be2d553871a0978a122e3889c975560c9f3a7388b0204b1d43e537ba88c034"
+    },
+    {
+      "path": "qualification/step3/comparison/yjsTextPreflightComparison.ts",
+      "sha256": "15ed72d1ae15f56624ed3c2b45efa9bd8b5d1f77ad47e23b30c5ae037e4ba7e6"
+    },
+    {
+      "path": "qualification/step3/editor/clipboard.ts",
+      "sha256": "5dd6657e1a220ff04256ee3eae9906ba0c36a722cf16e289998a7292c4686844"
+    },
+    {
+      "path": "qualification/step3/editor/incrementalEditor.ts",
+      "sha256": "73112ed505cd806daa678bf83935e4ad3b0673f766724b71ddd135db009acbdc"
+    },
+    {
+      "path": "qualification/step3/editor/incrementalProsemirror.ts",
+      "sha256": "252eb4c27af740a42f2fdc1875fd30c8b3dc8839bd60c3add7c7c85f3a2cc317"
+    },
+    {
+      "path": "qualification/step3/editor/prosemirrorAdapter.ts",
+      "sha256": "a2b3334c4ed8d2603c2ae39c220681314293459db6bcf0eb7f530db8270a73f7"
+    },
+    {
+      "path": "qualification/step3/editor/semanticText.ts",
+      "sha256": "12cc2e357ea3c7b426e790598d762f870f29248ae6f0b2858477ad3d5b5b854a"
+    },
+    {
+      "path": "qualification/step3/immutableRuns/automergeCarrier.ts",
+      "sha256": "220391c8606a13e0271d2609c014be5bf096904f17ae014a6aa90369ea8dd110"
+    },
+    {
+      "path": "qualification/step3/immutableRuns/commands.ts",
+      "sha256": "1d3fcf55feab6e93130b46cdce44fa32cfa4ee93865122991c6a010d2000273c"
+    },
+    {
+      "path": "qualification/step3/immutableRuns/nativeDocument.ts",
+      "sha256": "22c269b3cdf45a797b1356a55a4ad5da141d395c4beed879283b69ec999c9c43"
+    },
+    {
+      "path": "qualification/step3/immutableRuns/nativeRecordStore.ts",
+      "sha256": "236fc8fbea19f26673bb412979a4c5583a61f6d8735bf850b935af32bac452c6"
+    },
+    {
+      "path": "qualification/step3/immutableRuns/protocol.ts",
+      "sha256": "07ccae723d979dfb3b5ed9d8de2bb9a45002a8f9c5f32fdb9e06156913f0a61e"
+    },
+    {
+      "path": "qualification/step3/immutableRuns/record.ts",
+      "sha256": "65e519f89a324abb50c1ca8700f760368b513edd8aca2bafdf9a4b26ffafdd78"
+    },
+    {
+      "path": "qualification/step3/immutableRuns/sourceIndex.ts",
+      "sha256": "01b9c16719e5fccb54985f0999b75cf7a9b41b25571a020600c99c89c3130ee3"
+    },
+    {
+      "path": "qualification/step3/integrated/automergeIntegratedDocumentCarrier.ts",
+      "sha256": "e924a10190c561bec49308688694ac7ce53bfa1adb1c45b776a13847cdcb884d"
+    },
+    {
+      "path": "qualification/step3/integrated/carrier.ts",
+      "sha256": "f995d2e703876a6206afc2369fd2a8852243a6c565304f5333c3909680c4fc61"
+    },
+    {
+      "path": "qualification/step3/integrated/effectContext.ts",
+      "sha256": "328cf711f93fa4f265454bcd164ea449c81596a48bafaa91bcfeaef49acedcd1"
+    },
+    {
+      "path": "qualification/step3/integrated/effectEnvelope.ts",
+      "sha256": "27c6636221c2a8400b551ffd4e48c9327d30cf9e7a302c51b9c665e9f07205f1"
+    },
+    {
+      "path": "qualification/step3/integrated/historicalState.ts",
+      "sha256": "4515675757114bde236e7e8a5a13f06c9f0c269a6aee94be822341c85bea2d69"
+    },
+    {
+      "path": "qualification/step3/integrated/indexedOrdinary.ts",
+      "sha256": "659123a2bd5799dab07fb0d0847518ae54e522c361813e259e7bc2b0eb7fc2ac"
+    },
+    {
+      "path": "qualification/step3/integrated/indexedText.ts",
+      "sha256": "f98f7714bb45b10c550aa9f84cde033477aa48b4be7b921200039e4407a7ba28"
+    },
+    {
+      "path": "qualification/step3/integrated/ordinaryEdit.ts",
+      "sha256": "e8442a0fe60dfa4f1b3a869e03aa8517fb4a426f67e3a9a98000015e15f7c5bd"
+    },
+    {
+      "path": "qualification/step3/integrated/rangeProbe.ts",
+      "sha256": "f1f29f228886e2314beef63e154dd12b2f492e5fdb6e69bce072e74d041a849b"
+    },
+    {
+      "path": "qualification/step3/integrated/rangeScaling.ts",
+      "sha256": "147084a9539ca5547c6b43e84b8819599d49d08afde363a6667f95c5f9e5932c"
+    },
+    {
+      "path": "qualification/step3/integrated/replacementEvidence.ts",
+      "sha256": "714cf361553ab41724844de9db79083e68cc58e593ab277225d639a533f804cf"
+    },
+    {
+      "path": "qualification/step3/integrated/workCounters.ts",
+      "sha256": "7b515c2ad3c41542fd12339f47f4c1fc8ff506a0d0bdca3cbe35132f4ca7cd1c"
+    },
+    {
+      "path": "qualification/step3/integrated/yjsIntegratedDocumentCarrier.ts",
+      "sha256": "4b34f3cac6e940223aa1e675ad288c22422e3c345d14d398d98e97c9ea0424e3"
+    },
+    {
+      "path": "qualification/step3/payload/automergePayloadCarrier.ts",
+      "sha256": "e0b845028b95c1235986127b6efeef1893d0377e3cdce203dc765011df20bd8a"
+    },
+    {
+      "path": "qualification/step3/payload/carrier.ts",
+      "sha256": "71dfa538797440d8c65a721785cd1a09f99afb31f9e733015a98ec85167b256a"
+    },
+    {
+      "path": "qualification/step3/payload/rawMediaBoundary.ts",
+      "sha256": "a81dcaf881d15028ea9a5dfee54b72f46a666da6c16fe00b0ed8eeec23bc29cb"
+    },
+    {
+      "path": "qualification/step3/payload/yjsPayloadCarrier.ts",
+      "sha256": "1ddfdce497b07b0e4fa2aa52a03f0487e0b298f8ed116b92f22af208320acdc0"
+    },
+    {
+      "path": "qualification/step3/structure/automergeStructuralCarrier.ts",
+      "sha256": "a9227f9b98a792f6336c5e5b67b7e5d7635eb84786e61e229467a7c81865c1be"
+    },
+    {
+      "path": "qualification/step3/structure/carrier.ts",
+      "sha256": "bf7bdb6e433c3656ec3c2c401ec4d7dc3741cfdcba0fe2e44c41ce0c181b5f98"
+    },
+    {
+      "path": "qualification/step3/structure/fractionalIndexPosition.ts",
+      "sha256": "4a2e1662be5afbd0c5822ccae4713137e6fcda8789ce788c6dc498fc72f0d04c"
+    },
+    {
+      "path": "qualification/step3/structure/fuguePosition.ts",
+      "sha256": "2db6a0fb02c82aa446b2eea48439758fd9d26a60ca5f73d13ab9fda5a4ca6baf"
+    },
+    {
+      "path": "qualification/step3/structure/localDensePosition.ts",
+      "sha256": "a667fb0cf370a4d58531b1658fa98db2db273ef58bae13ce199d0e14a2385441"
+    },
+    {
+      "path": "qualification/step3/structure/yjsStructuralCarrier.ts",
+      "sha256": "ff05713e0a6527318c75944c2f5ccc69a92bdb7ab167606137ed2a6e925ac397"
+    },
+    {
+      "path": "src/App.tsx",
+      "sha256": "4ab6a5f9bd169c5b0352c2f029696f5c96d1b42dfde8017b60d3be6972df2fd5"
+    },
+    {
+      "path": "src/appInfo.ts",
+      "sha256": "d966b62e4d7ab6efb2afbd4f7a57c9ddd8f7d96acbd0f3173a1f42ae85b0893f"
+    },
+    {
+      "path": "src/application/idAllocator.ts",
+      "sha256": "8f49d471202c39e93dd0919223dcdfa1ba2af3c4ab5ccbbe099ff3a67e5872cf"
+    },
+    {
+      "path": "src/carrier/index.ts",
+      "sha256": "e2044550524bbe7d403737de6d1dca830b72a1340c25f53c97f4a89417365ca6"
+    },
+    {
+      "path": "src/carrier/position.ts",
+      "sha256": "ad864a57e5d46ee997bcf1a1809853ed2f1862fac068628bfada59749fbd8172"
+    },
+    {
+      "path": "src/carrier/positionNormalization.ts",
+      "sha256": "3fa4e0bb3ef8b1b9928db5aa6201c8d30998d7437f96ea06e48cff6b413a4e35"
+    },
+    {
+      "path": "src/carrier/structuralCarrier.ts",
+      "sha256": "e2569e0164ffa74e403609ec99f36381d3dc3541bc0fb776ae6d76c94da80020"
+    },
+    {
+      "path": "src/carrier/structuralOperationPlacement.ts",
+      "sha256": "3660af5be8d16298f9ac767b30ba3dcf78b7b24e0354fe1e3e74ddd9447d4408"
+    },
+    {
+      "path": "src/domain/ids.ts",
+      "sha256": "5664d895e562054ba93d4196be21a6a7ff40c2f762b5df9678c0041e1d449b7b"
+    },
+    {
+      "path": "src/domain/index.ts",
+      "sha256": "e0babc0c0f8e1ad6da153ea08a1c4620bee72575301b3e9e3ba36562abc3dfaa"
+    },
+    {
+      "path": "src/domain/model.ts",
+      "sha256": "7e9331bde56830cac53129c8317925cfd3918456375f386f047628ba94bdb176"
+    },
+    {
+      "path": "src/domain/structural.ts",
+      "sha256": "b440ea7f14368d696283c907b1cd68493eb4277ee8be7037ed4a64fd3f128219"
+    },
+    {
+      "path": "src/domain/tags.ts",
+      "sha256": "635edb92ea0c121f37069bd9352d092339fe8ba683462ee14752e0be3038a310"
+    },
+    {
+      "path": "src/main.tsx",
+      "sha256": "75c3256e6f6eb7c3404645bb8bde63e9e43d7be04e2f12ab035805953bf754e5"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "789d9c716371ab66d62a2faddd2b4a8388d80f853e34e399fd80ee55b4aa5b14"
+    }
+  ],
+  "automergeVersion": "3.4.1",
+  "nodeWasmSha256": "304ea6e230898ed66af3c29ac554a36c15bbe03f5c8816b5310fddb88f7f5d78"
+}

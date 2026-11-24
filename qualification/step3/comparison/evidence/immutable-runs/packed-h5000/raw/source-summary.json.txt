@@ -1,0 +1,16 @@
+{
+  "complete": true,
+  "edits": 5000,
+  "groups": 5002,
+  "logicalRecords": 35011,
+  "semanticSha256": "3a6e8370342d3925c57e3adbc7f51c4568c2e637d1f6c8f81c122595e8dd72ba",
+  "tapeSha256": "aed6c7d63c52c0d4e500b3d83cb00f65faf80014bec184e847ec581cf8349491",
+  "sourceEncodedBytes": 6734779,
+  "sourceEncodedSha256": "2e9cfd62d7b4a6f870a59dec5d0d367b46950b7ef185b30cc24c732b613e6a15",
+  "prefixOriginalSha256": "5ea09d2ae0cfd411f8e7cd818626af3f335a4fac79e559e2b59ccd9e774b46c2",
+  "bindingSha256": "4b795cee2447965b39406c1630064ff48d6e2f24c7f2f251af4ba7c1d120796a",
+  "sourceHeads": [
+    "6bd6b55ba2046a29894ca2b689d36c5942de6095ec64b3e78968409bdec563b2"
+  ],
+  "scope": "genuine source-carrier continuation and exact committed command tape; no full lifecycle/packed carrier eligibility claim"
+}

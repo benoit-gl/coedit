@@ -1,0 +1,43 @@
+import pathlib,json,hashlib,datetime
+base=pathlib.Path('/workspace/work/merge10-packed-prototype');out=base/'h5000-v1'
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+binding=json.loads((out/'binding.json').read_text())
+for row in binding['files']:
+ assert sha(pathlib.Path(row['path']))==row['sha256'],row['path']
+old=json.loads((base/'artifacts-manifest.json').read_text())
+for row in old['files']:assert sha(base/row['path'])==row['sha256'],row['path']
+supervisor=[json.loads(line) for line in (out/'supervisor.jsonl').read_text().splitlines()]
+supervision_complete=supervisor[-1]['phase']=='complete'
+recovery_path=out/'recovery-monitor.jsonl'
+recovery=[json.loads(line) for line in recovery_path.read_text().splitlines()] if recovery_path.exists() else []
+if not supervision_complete:
+ assert recovery and recovery[-1]['phase']=='worker-zombie' and recovery[-1]['exitCode']==0,'No recovered successful worker termination'
+stages={}
+for stage in ['source','packed']:
+ path=out/(stage+'.phases.jsonl')
+ if not path.exists():continue
+ phases=[json.loads(line) for line in path.read_text().splitlines()]
+ assert all(row['heapLimit']==2348810240 for row in phases)
+ active={}
+ for row in phases:
+  if row['stage']=='runtime':continue
+  if row['status']=='start':active[row['stage']]=row
+  elif row['status']=='end':active.pop(row['stage'],None)
+ samples=[json.loads(line) for line in (out/(stage+'.rss-samples.jsonl')).read_text().splitlines()]
+ stages[stage]={'lastPhase':phases[-1] if phases else None,'unmatchedStarts':list(active),'sampledPeakRssKiB':max((row.get('VmRSSKiB',0) for row in samples),default=0),'rssSamples':len(samples),'stderrBytes':(out/(stage+'.stderr.log')).stat().st_size}
+source=json.loads((out/'source-summary.json').read_text()) if (out/'source-summary.json').exists() else None
+packed=json.loads((out/'packed-summary.json').read_text()) if (out/'packed-summary.json').exists() else None
+complete=bool(source and packed and source.get('complete') and packed.get('complete') and packed.get('semanticsVerified') and (supervision_complete or recovery[-1].get('exitCode')==0))
+if complete:
+ assert source['complete'] and packed['complete'] and packed['semanticsVerified']
+ assert source['logicalRecords']==packed['logicalRecords']==35011
+ assert source['groups']==packed['groups']==5002
+ assert source['semanticSha256']==packed['semanticSha256']
+ assert packed['historicalRootsChecked']==5001
+ assert packed['audit']['groupsAudited']==5002 and packed['audit']['nativeChanges']==5003
+ assert all(not row['unmatchedStarts'] for row in stages.values())
+summary={'finalizedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'complete':complete,'workloadComplete':complete,'originalSupervisionComplete':supervision_complete,'originalSupervisorLastRecord':supervisor[-1],'recoveryLastRecord':recovery[-1] if recovery else None,'packedPeakRssComplete':False if not supervision_complete else True,'monitoringLimitation':'Original supervisor/sample journal stopped unexpectedly; cause unestablished. Recovery observed worker already zombie with raw wait status 0. Synchronous child phases/stdout and successful summary continued through completion; late RSS sampling gap prevents complete peak-RSS claim.' if not supervision_complete else None,'bindingSha256':sha(out/'binding.json'),'bindingFilesReverified':len(binding['files']),'historicalH500ManifestFilesUnchanged':len(old['files']),'stages':stages,'sourceSummary':source,'packedSummary':packed,'scope':'source-continuation plus packed storage primitive; no full-carrier packed provenance/lifecycle or production eligibility claim'}
+(out/'final-summary.json').write_text(json.dumps(summary,indent=2)+'\n')
+files=[{'path':str(p.relative_to(out)),'bytes':p.stat().st_size,'sha256':sha(p)} for p in sorted(out.iterdir()) if p.is_file() and p.name!='artifacts-manifest.json']
+(out/'artifacts-manifest.json').write_text(json.dumps({'schema':'merge10-packed-h5000-artifacts-v1','files':files},indent=2)+'\n')
+print(json.dumps({'complete':complete,'stages':{key:{k:value[k] for k in ['unmatchedStarts','sampledPeakRssKiB','rssSamples']} for key,value in stages.items()},'historicalH500FilesUnchanged':len(old['files']),'artifactFiles':len(files)}))

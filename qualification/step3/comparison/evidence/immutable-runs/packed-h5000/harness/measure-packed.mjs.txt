@@ -1,0 +1,79 @@
+// Packed-only primitive evidence, deliberately separate from full source setup.
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+import {createInterface} from 'node:readline';
+import {runtime} from '../post-review-fix/runtime.mjs';
+import {out,sha,bind,phase,expected} from './common.mjs';
+const bindingSha256=bind();if(!global.gc)throw Error('Explicit GC required for labelled memory checkpoints.');
+const source=JSON.parse(fs.readFileSync(out+'/source-summary.json','utf8'));assert.equal(source.complete,true);
+assert.equal(sha(fs.readFileSync(out+'/commands.jsonl')),source.tapeSha256);
+const r=await runtime(),gc=()=>{global.gc();global.gc();};
+async function* tape() {
+  const input=fs.createReadStream(out+'/commands.jsonl');
+  for await(const line of createInterface({input,crlfDelay:Infinity}))yield JSON.parse(line);
+}
+try {
+  gc();const baseline=process.memoryUsage();phase('packed-build','start',{baseline,bindingSha256});
+  let store=r.Packed.create(64),groups=[],receipts=[],keysByUuid=new Map();
+  const start=performance.now();
+  for await(const group of tape()) {
+    assert.equal(group.index,groups.length);
+    const entries=group.keys.map(key=>r.record.decodeRecordKeyV1(key,true));
+    for(const entry of entries) {assert.ok(!keysByUuid.has(entry.record[2]));keysByUuid.set(entry.record[2],entry.key);}
+    store.append(entries);receipts.push(store.heads());
+    groups.push({index:group.index,label:group.label,root:group.root,generation:group.generation,expected:group.expected,recordCount:entries.length});
+    if(groups.length%500===0)phase('packed-build','progress',{groups:groups.length,records:store.size});
+  }
+  const buildMs=performance.now()-start;gc();const retained=process.memoryUsage();
+  assert.equal(groups.length,source.groups);assert.equal(store.size,source.logicalRecords);
+  const semanticSha256=sha([...keysByUuid.values()].sort().join('\n'));assert.equal(semanticSha256,source.semanticSha256);
+  const build={complete:false,edits:5000,groups:groups.length,logicalRecords:store.size,buildMs,baseline,retained,heapUsedDelta:retained.heapUsed-baseline.heapUsed,rssDelta:retained.rss-baseline.rss,semanticSha256,scope:'packed-only post-GC build retention includes command metadata, head receipts and detached logical-key audit map; no full-carrier memory claim'};
+  fs.writeFileSync(out+'/packed-build-checkpoint.json',JSON.stringify(build,null,2)+'\n',{flag:'wx'});phase('packed-build','end',build);
+  phase('packed-save','start');const encoded=store.encode();fs.writeFileSync(out+'/packed.am',encoded,{flag:'wx'});
+  phase('packed-save','end',{encodedBytes:encoded.length,encodedSha256:sha(encoded)});
+  phase('physical-ref-checks','start');
+  for(const entry of store.entries())assert.equal(store.resolve(entry.ref).canonical,entry.canonical);
+  phase('physical-ref-checks','end',{refs:store.size});
+  phase('historical-heads','start');
+  const sampled=[];for(const index of [0,1,2,501,2501,5001]) {
+    const actual=store.historicalEntries(receipts[index]).map(e=>e.key).sort();
+    const prefix=[];for await(const group of tape()) {if(group.index>index)break;prefix.push(...group.keys);}
+    assert.deepEqual(actual,prefix.sort());sampled.push({index,heads:receipts[index],records:actual.length,semanticSha256:sha(actual.join('\n'))});
+  }
+  fs.writeFileSync(out+'/sampled-historical-views.json',JSON.stringify({complete:true,sampled},null,2)+'\n',{flag:'wx'});phase('historical-heads','end',{sampledViews:sampled.length,recordedReceipts:receipts.length});
+  phase('decoded-transaction-audit','start');
+  // The temporary raw reader is explicitly released before reopen verification.
+  let raw=r.A.load(encoded),changes=r.A.getAllChanges(raw).map(c=>r.A.decodeChange(c));
+  assert.equal(changes.length,5003);const hashes=new Set(changes.map(c=>c.hash));for(const heads of receipts)for(const head of heads)assert.ok(hashes.has(head));
+  let totalOps=changes[0].ops.length,groupsAudited=0;
+  for await(const group of tape()) {
+    const change=changes[group.index+1];assert.deepEqual(change.deps,[changes[group.index].hash]);
+    const actual=change.ops.flatMap(op=>{
+      assert.equal(op.action,'set');assert.deepEqual(op.pred,[]);assert.ok(Array.isArray(op.value));
+      const scalar=new Uint8Array(op.value);assert.equal(sha(scalar),op.key);
+      return JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(scalar)).map(record=>r.record.commitRecordV1(record).key);
+    }).sort();assert.deepEqual(actual,group.keys.slice().sort());totalOps+=change.ops.length;groupsAudited++;
+  }
+  const audit={complete:true,groupsAudited,nativeChanges:changes.length,nativeOps:totalOps,physicalUnits:Object.keys(raw.units).length,makeMaps:changes.flatMap(c=>c.ops).filter(op=>op.action==='makeMap').length,lastCommandOps:changes.at(-1).ops.length,recordedNativeHeadsChecked:receipts.length,commandHashSha256:sha(changes.slice(1).map(c=>c.hash).join('\n')),encodedSha256:sha(encoded)};
+  fs.writeFileSync(out+'/transaction-audit.json',JSON.stringify(audit,null,2)+'\n',{flag:'wx'});phase('decoded-transaction-audit','end',audit);
+  raw=undefined;changes=undefined;receipts=undefined;store=undefined;keysByUuid=undefined;gc();
+  phase('packed-reopen','start');const reopened=r.Packed.load(encoded,64);
+  assert.equal(reopened.size,source.logicalRecords);assert.equal(sha(reopened.entries().map(e=>e.key).sort().join('\n')),source.semanticSha256);
+  for(const entry of reopened.entries())assert.equal(reopened.resolve(entry.ref).canonical,entry.canonical);
+  phase('packed-reopen','end',{exactRecords:reopened.size,physicalRefsChecked:reopened.size});
+  // Independent reference model is intentionally its own final phase: it can
+  // retain large closures and fail without erasing prior storage checkpoints.
+  phase('protocol-reference-validation','start');
+  const protocol=r.Protocol.validateReference(reopened.entries());
+  phase('protocol-reference-validation','end',{records:protocol.canonicalEntries.length});
+  phase('historical-root-projections','start');let historicalRootsChecked=0;
+  for(const group of groups)if(group.generation) {
+    const projection=protocol.projectGeneration(group.root,group.generation),exp=expected(group.label);
+    assert.equal(projection.text,exp.text);assert.deepEqual(projection.spans,exp.spans);historicalRootsChecked++;
+    if(historicalRootsChecked%500===0)phase('historical-root-projections','progress',{historicalRootsChecked});
+  }
+  assert.equal(historicalRootsChecked,5001);phase('historical-root-projections','end',{historicalRootsChecked});
+  const summary={...build,complete:true,semanticsVerified:true,encodedBytes:encoded.length,encodedSha256:sha(encoded),audit,historicalRootsChecked,bindingSha256,tapeSha256:source.tapeSha256,sourceEncodedSha256:source.sourceEncodedSha256,sameProcessReopenVerified:true,scope:'packed record primitive only; exact genuine original command tape and full historical reference projections; no full-carrier packed provenance/lifecycle or production eligibility claim'};
+  fs.writeFileSync(out+'/packed-summary.json',JSON.stringify(summary,null,2)+'\n',{flag:'wx'});phase('packed','complete',summary);
+} catch(error) {phase('packed','error',{error:String(error),stack:error.stack});throw error;}
+finally {await r.server.close();}

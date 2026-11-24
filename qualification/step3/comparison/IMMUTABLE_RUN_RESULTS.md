@@ -454,3 +454,31 @@ Production use must preserve actor/Origin, remote-causal, history/undo, IME, cap
 boundaries. The existing carrier rejects multiple semantic roots per native change, and neither scratch shape
 validates its provenance, source indexes, full Origin, undo or capture contract. This changes no lifecycle failure,
 mandatory eligibility, production readiness or carrier selection.
+
+## Fixed packed-record storage-only H5000 completion
+
+The [H5000 report](evidence/immutable-runs/packed-h5000/REPORT.md),
+[completed summary](evidence/immutable-runs/packed-h5000/raw/packed-summary.json.txt) and
+[package manifest](evidence/immutable-runs/packed-h5000/package-manifest.json) preserve a separate packed-only
+run of the post-review fixed candidate at source `7618ee8939f305260a3d2a54b30a482093826fe4`.
+Genuine public-carrier continuation preserves the original H500 command identities as an exact prefix and
+extends the same 1024-ASCII alternating history through 5000 individual edits, with human Origin `o0`.
+The exact tape is verified against each source manifest's members, batch/effect, preceding root and final canonical index.
+
+The primitive completed at the unchanged 2,348,810,240-byte heap limit: 35,011 exact logical records,
+5,002 command groups/physical units, 5,003 native changes, 5,005 operations, one native map and 3,178,096 encoded bytes.
+Every exact Ref passes physical reads before/after reopen; sampled historical native views, all head receipts,
+the independent per-command decoded-history audit and all 5,001 historical text/Origin root projections pass.
+No original commands were combined or history truncated. Final child summary records complete verified semantics.
+
+Build post-GC heapUsed was 100,069,464 bytes (delta 83,374,680), and RSS was 378,249,216 bytes
+(delta 262,635,520). This streaming harness charges tape-derived metadata/audit state after baseline,
+whereas H500 preloaded its tape; no H500/H5000 memory scaling ratio or fresh-load memory follows.
+The original supervisor journal stopped unexpectedly during packed verification; its cause is unestablished.
+Child phase/stdout journals continued through success, and a recovery monitor observed zombie raw wait status 0.
+The preserved packed RSS samples cover only a partial interval; **no complete packed peak-RSS is claimed**.
+Large tapes/native encodings are omitted from the compact package with hashes and explicit exact-replay limitations.
+
+This is one packed storage observation, without matched H5000 trie/scalar controls or a complete packed carrier.
+Full native command provenance/publication, capture/restore/merge lifecycle and application overlap are unqualified.
+It does not resolve the separate full-carrier H5000 failures, establish production eligibility or change carrier selection.

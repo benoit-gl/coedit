@@ -1,0 +1,1 @@
+{"monitorPid": 362226, "command": ["python3", "-u", "/workspace/work/merge10-packed-prototype/h5000-v1/recover-monitor.py"], "cwd": "/workspace/work/merge10-packed-prototype/h5000-v1", "detached": true}

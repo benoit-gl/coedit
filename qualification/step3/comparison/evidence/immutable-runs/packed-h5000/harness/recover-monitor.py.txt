@@ -1,0 +1,36 @@
+import pathlib,json,time,datetime,os
+out=pathlib.Path('/workspace/work/merge10-packed-prototype/h5000-v1');pid=360700
+def now():return datetime.datetime.now(datetime.timezone.utc).isoformat()
+def proc_stat(target):
+ p=pathlib.Path(f'/proc/{target}/stat')
+ if not p.exists():return None
+ fields=p.read_text().rpartition(') ')[2].split()
+ return {'state':fields[0],'ppid':int(fields[1]),'startTicks':int(fields[19]),'rawWaitStatus':int(fields[49])}
+def write(path,row):
+ with path.open('a') as f:f.write(json.dumps(row)+'\n')
+journal=out/'recovery-monitor.jsonl';samples=out/'recovery-rss-samples.jsonl'
+if journal.exists():raise RuntimeError('Recovery journal already exists')
+initial=proc_stat(pid);original_supervisor=proc_stat(359723)
+write(journal,{'at':now(),'phase':'recovery-start','monitorPid':os.getpid(),'workerPid':pid,'workerStat':initial,'originalSupervisorPid':359723,'originalSupervisorStat':original_supervisor,'limitation':'monitor cannot waitpid an orphan; use /proc zombie raw wait status if observed, otherwise exit status unknown; original sampling journal gap preserved'})
+started=time.monotonic();last=started;peak=0;terminal=None
+while True:
+ stat=proc_stat(pid)
+ if stat is None:
+  terminal={'phase':'worker-no-longer-present','rawWaitStatus':None,'exitStatusKnown':False};break
+ if initial and stat['startTicks']!=initial['startTicks']:
+  terminal={'phase':'worker-pid-reused','exitStatusKnown':False};break
+ if stat['state']=='Z':
+  raw=stat['rawWaitStatus'];terminal={'phase':'worker-zombie','rawWaitStatus':raw,'exitStatusKnown':True,'exitCode':os.waitstatus_to_exitcode(raw)};break
+ fields={}
+ try:
+  for line in pathlib.Path(f'/proc/{pid}/status').read_text().splitlines():
+   key,_,value=line.partition(':')
+   if key in ['VmRSS','VmHWM','VmSize']:fields[key+'KiB']=int(value.strip().split()[0])
+ except FileNotFoundError:continue
+ peak=max(peak,fields.get('VmRSSKiB',0));write(samples,{'at':now(),'recoveryElapsedSeconds':time.monotonic()-started,**fields})
+ current=time.monotonic()
+ if current-last>=30:
+  write(journal,{'at':now(),'phase':'recovery-progress','elapsedSeconds':current-started,'sampledPeakRssKiB':peak,'workerStat':stat});last=current
+ time.sleep(.1)
+summary_path=out/'packed-summary.json';summary=json.loads(summary_path.read_text()) if summary_path.exists() else None
+write(journal,{'at':now(),**terminal,'elapsedSeconds':time.monotonic()-started,'sampledPeakRssKiB':peak,'workloadSummaryComplete':summary.get('complete') if summary else None,'semanticsVerified':summary.get('semanticsVerified') if summary else None})

@@ -1,0 +1,42 @@
+import pathlib,subprocess,time,json,os,datetime
+base=pathlib.Path('/workspace/work/merge10-packed-prototype')
+out=base/'h5000-v1'
+def now():return datetime.datetime.now(datetime.timezone.utc).isoformat()
+def append(path,row):
+ with path.open('a') as f:f.write(json.dumps(row)+'\n')
+journal=out/'supervisor.jsonl'
+if journal.exists():raise RuntimeError('Exclusive H5000 supervisor journal already exists')
+append(journal,{'at':now(),'phase':'start','supervisorPid':os.getpid(),'nodeOptions':os.environ.get('NODE_OPTIONS'),'defaultHeapExpected':2348810240,'noElapsedTimeout':True})
+for stage,script,flags in [('source','build-source.mjs',[]),('packed','measure-packed.mjs',['--expose-gc'])]:
+ command=['node',*flags,str(out/script)]
+ env=os.environ.copy();env['PACK_PHASE_FILE']=stage+'.phases.jsonl'
+ start=time.monotonic();last_progress=start
+ with (out/(stage+'.stdout.log')).open('x') as stdout,(out/(stage+'.stderr.log')).open('x') as stderr:
+  child=subprocess.Popen(command,cwd=base/'source',env=env,stdout=stdout,stderr=stderr)
+  append(journal,{'at':now(),'phase':stage+'-start','pid':child.pid,'command':command,'cwd':str(base/'source'),'phaseFile':env['PACK_PHASE_FILE']})
+  print(json.dumps({'phase':stage+'-start','pid':child.pid,'command':command}),flush=True)
+  peak=0
+  with (out/(stage+'.rss-samples.jsonl')).open('x') as samples:
+   while child.poll() is None:
+    try:
+     fields={}
+     for line in pathlib.Path(f'/proc/{child.pid}/status').read_text().splitlines():
+      key,_,value=line.partition(':')
+      if key in ['VmRSS','VmHWM','VmSize']:fields[key+'KiB']=int(value.strip().split()[0])
+     peak=max(peak,fields.get('VmRSSKiB',0))
+     samples.write(json.dumps({'elapsedSeconds':time.monotonic()-start,**fields})+'\n');samples.flush()
+    except FileNotFoundError:pass
+    current=time.monotonic()
+    if current-last_progress>=30:
+     row={'at':now(),'phase':stage+'-progress','elapsedSeconds':current-start,'peakRssKiB':peak}
+     append(journal,row);print(json.dumps(row),flush=True);last_progress=current
+    time.sleep(.1)
+  code=child.wait()
+ row={'at':now(),'phase':stage+'-exit','returnCode':code,'elapsedSeconds':time.monotonic()-start,'sampledPeakRssKiB':peak}
+ append(journal,row);print(json.dumps(row),flush=True)
+ if code:
+  append(journal,{'at':now(),'phase':'failed','failedStage':stage,'complete':False,'returnCode':code})
+  raise SystemExit(1)
+ summary=json.loads((out/(stage+'-summary.json')).read_text())
+ if summary.get('complete') is not True:raise RuntimeError('Missing complete '+stage+' summary')
+append(journal,{'at':now(),'phase':'complete','complete':True,'scope':'source tape + packed storage primitive only; not complete carrier eligibility'})
