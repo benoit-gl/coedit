@@ -372,3 +372,27 @@ This one run reached a later phase than the prior old-layout lifecycle-load fail
 instrumentation and random native identities/key shapes differ; no matched H5000 performance comparison follows.
 The candidate still failed the full default-heap H5000 lifecycle. This does not identify a merge root cause,
 resolve other qualification dimensions, establish production readiness or change mandatory eligibility/carrier selection.
+
+## Native text diagnostic controls
+
+The [native text report](evidence/immutable-runs/native-text-controls/REPORT.md) and
+[package manifest](evidence/immutable-runs/native-text-controls/package-manifest.json) preserve eight fresh-process
+Automerge 3.4.1 native-text and Yjs 13.6.32 `Y.Text` controls, including exact scripts, complete native/package bindings,
+raw results/logs, process memory and independent saved-byte Automerge history checks. Each starts with 1024 ASCII
+characters and applies 500 or 5000 edits in separate native changes/transactions, either alternating same-gap
+insert/delete or consecutive one-character typing. Every case passed exact text, reload, concurrent same-gap
+merge convergence in both directions, a following edit and another save/load check.
+
+At 5000 alternating edits, Automerge observed 567.80 ms total edits, 40.07 ms load and 245 encoded bytes;
+Y.Text observed 43.30 ms, 1.63 ms and 1055 bytes. Post-edit process RSS / JS heapUsed were
+73.12 / 7.03 MiB and 57.73 / 12.89 MiB respectively. The separate Automerge verifier recovered 5001 changes
+from the 245-byte file and reconstructed exact historical pre-delete text. The single-actor, constant-time,
+low-entropy fixture is highly compressible; those byte sizes do not predict application command storage.
+
+These are single Node observations with default heap and no explicit GC, taken sequentially in a different
+resource window from the historical carrier runs. The native load/fork/merge lifetime topology differs from the
+full carrier lifecycle, and Yjs default `gc: true` does not preserve equivalent historical deleted content.
+Neither native control implements immutable command records, full Origin/provenance validation, structural
+placements, source indexes, capture/materialize/restore or complete History/editor semantics. The controls
+characterize these smaller text workloads; they do not resolve the carrier memory gap, establish eligibility,
+complete its failed lifecycle or change carrier selection.

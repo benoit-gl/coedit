@@ -1,0 +1,31 @@
+{
+  "verifiedAt": "2026-11-24T04:12:57.116822+00:00",
+  "measurementManifestSha256": "84b14f122b5c437cac9b3219e41e45bffb8974027d4c551637a58bc779c6be02",
+  "packages": [
+    {
+      "package": "@automerge/automerge",
+      "version": "3.4.1",
+      "treeSha256": "fcc484de4a9d54487ab5ae704e1880aaeb34f326fe9f4c62c52bd7573796f9a8",
+      "fileCount": 56,
+      "allFileHashesAndSizesMatch": true,
+      "exactPackageFileSetMatches": true
+    },
+    {
+      "package": "yjs",
+      "version": "13.6.32",
+      "treeSha256": "0ef04de566a34518b954b12c65c94c2e7c7950785b0917fec4b3073f17af8ae8",
+      "fileCount": 135,
+      "allFileHashesAndSizesMatch": true,
+      "exactPackageFileSetMatches": true
+    },
+    {
+      "package": "lib0",
+      "version": "0.2.117",
+      "treeSha256": "e21b566722aba4d5da9a874a5dd6f91d0e2623a09e67ec39033fed62946e48a0",
+      "fileCount": 849,
+      "allFileHashesAndSizesMatch": true,
+      "exactPackageFileSetMatches": true
+    }
+  ],
+  "runtimeExecutableLockfileAndMeasuredSourcesMatch": true
+}

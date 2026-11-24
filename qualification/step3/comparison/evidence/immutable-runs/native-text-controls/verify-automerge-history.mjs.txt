@@ -1,0 +1,43 @@
+import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { performance } from 'node:perf_hooks';
+import * as A from '/workspace/coedit/node_modules/@automerge/automerge/dist/mjs/entrypoints/fullfat_node.js';
+
+const root = dirname(fileURLToPath(import.meta.url));
+const output = join(root, 'results');
+const hash = value => createHash('sha256').update(value).digest('hex');
+const seed = 'a'.repeat(1024);
+const results = [];
+for (const scenario of ['alternating', 'typing']) {
+  for (const count of [500, 5000]) {
+    const name = `automerge-${scenario}-${count}`;
+    const encoded = readFileSync(join(output, `${name}.bin`));
+    const recorded = JSON.parse(readFileSync(join(output, `${name}.json`)));
+    assert.equal(hash(encoded), recorded.encodedSha256);
+    const started = performance.now();
+    const doc = A.load(encoded, { actor: '000000000000000000000000000000ff' });
+    const changes = A.getAllChanges(doc);
+    assert.equal(changes.length, count + 1);
+    const decoded = changes.map(change => A.decodeChange(change));
+    assert.equal(new Set(decoded.map(change => change.actor)).size, 1);
+    assert.deepEqual(decoded.map(change => change.seq), Array.from({ length: count + 1 }, (_, i) => i + 1));
+    const historicalChecks = [];
+    for (const edits of [...new Set([0, 1, Math.floor(count / 2) - 1, count - 1, count])]) {
+      const head = decoded[edits].hash;
+      const expected = scenario === 'alternating'
+        ? edits % 2 ? `ax${seed.slice(1)}` : seed
+        : `a${Array.from({ length: edits }, (_, i) => String.fromCharCode(97 + i % 26)).join('')}${seed.slice(1)}`;
+      const historical = A.view(doc, [head]);
+      assert.equal(historical.text, expected);
+      historicalChecks.push({ edits, head, length: historical.text.length, exactTextSha256: hash(historical.text) });
+    }
+    assert.equal(hash(doc.text), recorded.finalTextSha256);
+    const result = { name, encodedBytes: encoded.length, encodedSha256: hash(encoded), totalChanges: changes.length, sumOfIndividuallyEncodedChangeBytes: changes.reduce((total, change) => total + change.length, 0), actorCount: 1, contiguousSequences: true, finalHeads: A.getHeads(doc), historicalChecks, verificationMs: performance.now() - started, memory: process.memoryUsage(), maxRssKiB: process.resourceUsage().maxRSS };
+    results.push(result);
+    console.log(JSON.stringify(result));
+  }
+}
+writeFileSync(join(output, 'automerge-history-verification.json'), `${JSON.stringify({ sourceSha256: hash(readFileSync(fileURLToPath(import.meta.url))), runtime: { node: process.version, v8: process.versions.v8, execArgv: process.execArgv, nodeOptions: process.env.NODE_OPTIONS ?? null }, results }, null, 2)}\n`);
