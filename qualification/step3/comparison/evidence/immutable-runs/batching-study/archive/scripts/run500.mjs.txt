@@ -1,0 +1,96 @@
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+import {readFileSync,writeFileSync,readdirSync,mkdirSync} from 'node:fs';
+import {createRequire} from 'node:module';
+import {cpus,totalmem,platform,release,arch} from 'node:os';
+import {performance} from 'node:perf_hooks';
+const root='/workspace/work/merge10-batch-study';
+const require=createRequire('/workspace/coedit/package.json');
+const A=require('@automerge/automerge');
+const sha=x=>createHash('sha256').update(x).digest('hex');
+const dataset=process.argv[2];
+assert(['alternating500','public500'].includes(dataset));
+const out=`${root}/${dataset}-v1`;
+mkdirSync(out); // Refuse to overwrite an earlier journal.
+let initial='seed',raw;
+const publicPath=`${root}/public-source/editing-trace.js`;
+if(dataset==='alternating500') raw=Array.from({length:500},(_,i)=>i%2===0?[2,0,String.fromCharCode(97+(i/2)%26)]:[2,1]);
+else {
+  initial='';
+  const source=readFileSync(publicPath,'utf8');
+  const start=source.indexOf('['), end=source.indexOf('\n];',start)+2;
+  const all=JSON.parse(source.slice(start,end));
+  assert.equal(all.length,259778);
+  raw=all.slice(0,500);
+}
+let expected=initial;
+const checkpoints=new Map();
+const edits=raw.map((tuple,i)=>{
+  const [position,remove,...chars]=tuple;
+  assert(Number.isInteger(position)&&position>=0&&position<=expected.length);
+  assert.equal(position+remove<=expected.length,true);
+  const insert=chars.join('');
+  assert([...insert].every(c=>c.charCodeAt(0)<128));
+  const edit={sequence:i+1,id:sha(`${dataset}:${i+1}`).slice(0,32),actor:'synthetic-single-actor',origin:['human',`synthetic-origin-${Math.floor(i/100)}`],position,remove,insert,undoGroup:`synthetic-group-${Math.floor(i/100)}`,boundaryBefore:i>0&&i%100===0?'synthetic-episode-boundary':null};
+  expected=expected.slice(0,position)+insert+expected.slice(position+remove);
+  if((i+1)%100===0) checkpoints.set(i+1,expected);
+  return edit;
+});
+const trace={schema:'matched-batch-logical-trace-v2',dataset,initial,edits,expected,sourcePositions:dataset==='public500'?'original tuples 0..499; first prefix from empty document':'exact 500 alternating insert/delete at offset 2',boundaries:'synthetic every 100 logical edits and end; no source history grouping inferred',originalHumanTrace:dataset==='public500',originalConcurrencyPreserved:false};
+writeFileSync(`${out}/trace.json`,JSON.stringify(trace,null,2)+'\n');
+function files(path){return readdirSync(path,{withFileTypes:true}).flatMap(e=>e.isDirectory()?files(`${path}/${e.name}`):[`${path}/${e.name}`]);}
+const nativeRoot='/workspace/coedit/node_modules/@automerge/automerge';
+const sources=[new URL(import.meta.url).pathname,`${nativeRoot}/package.json`,...files(`${nativeRoot}/dist/cjs`),'/workspace/coedit/qualification/step3/immutableRuns/nativeDocument.ts',...(dataset==='public500'?[publicPath,`${root}/public-source/README.md`,`${root}/public-source/LICENSE`]:[])];
+const sourceHashes=Object.fromEntries(sources.map(path=>[path,sha(readFileSync(path))]));
+const manifest={schema:'matched-batch500-v1',started:new Date().toISOString(),dataset,logicalEdits:edits.length,insertions:edits.filter(e=>e.insert.length).length,deletions:edits.filter(e=>e.remove).length,insertedChars:edits.reduce((n,e)=>n+e.insert.length,0),deletedChars:edits.reduce((n,e)=>n+e.remove,0),repetitions:3,traceSha256:sha(readFileSync(`${out}/trace.json`)),sourceHashes,automerge:JSON.parse(readFileSync(`${nativeRoot}/package.json`)).version,node:process.version,v8:process.versions.v8,execArgv:process.execArgv,nodeOptions:process.env.NODE_OPTIONS??null,host:{platform:platform(),release:release(),arch:arch(),cpu:cpus()[0].model,logicalCpus:cpus().length,totalMemBytes:totalmem()},scope:'raw native mechanics; no full-carrier, Origin, undo, capture or concurrent correctness validation',timing:'untraced performance.now sum of native sender A.change calls and receiver A.applyChanges calls only; batch preparation/checks/encoding/load excluded; no batch wait time'};
+const prepared=edits.map(e=>({edit:e,key:JSON.stringify(['scratch-record',2,e])}));
+const chunks=(items,count)=>{const result=[];for(const item of items){if(!result.length||result.at(-1).length===count||item.edit.boundaryBefore)result.push([]);result.at(-1).push(item);}return result;};
+function addMarker(d,e,key){let node=d.records;for(const digit of e.id){if(node[digit]===undefined)node[digit]={};node=node[digit];}node[key]=true;d.semanticRoot={[e.id]:true};}
+function material(doc,layout,count){if(layout==='native-text')return doc.text;const found=[];function visit(node,depth){for(const [key,value]of Object.entries(node)){if(depth===32){assert.equal(value,true);found.push(JSON.parse(key)[2]);}else visit(value,depth+1);}}visit(doc.records,0);found.sort((a,b)=>a.sequence-b.sequence);assert.deepEqual(found,edits.slice(0,count));let text=initial;for(const e of found)text=text.slice(0,e.position)+e.insert+text.slice(e.position+e.remove);return text;}
+function check(doc,layout,count){const observed=material(doc,layout,count);assert.equal(observed,count===500?expected:checkpoints.get(count));}
+function checkIds(doc){const ids=A.getAllChanges(doc).slice(1).flatMap(c=>JSON.parse(A.decodeChange(c).message).ids);assert.deepEqual(ids,edits.map(e=>e.id));}
+const conditions=['native-text','custom-marker-trie-shape'].flatMap(layout=>[1,5,20].map(transactionBatch=>({layout,transactionBatch})));
+// Warm up only 40 native insert/delete calls, unrelated to all measured docs.
+let warm=A.from({text:'seed'},{actor:'dd'});for(let i=0;i<40;i++)warm=A.change(warm,d=>A.splice(d,['text'],2,i%2?1:0,i%2?'':'x'));A.free(warm);
+const rows=[];
+writeFileSync(`${out}/manifest.json`,JSON.stringify(manifest,null,2)+'\n');
+for(let repetition=0;repetition<3;repetition++)for(const condition of [...conditions.slice(repetition*2),...conditions.slice(0,repetition*2)]){
+  const {layout,transactionBatch}=condition;
+  const genesis=A.from(layout==='native-text'?{text:initial}:{records:{},semanticRoot:{genesis:true}},{actor:'aa'});
+  const seed=A.save(genesis);
+  let sender=A.load(seed,{actor:'bb'});
+  const commits=chunks(prepared,transactionBatch);
+  const commands=commits.map(group=>({group,message:JSON.stringify({ids:group.map(p=>p.edit.id)})}));
+  let senderMs=0;
+  for(const {group,message}of commands){
+    const started=performance.now();
+    sender=A.change(sender,{time:0,message},draft=>{for(const {edit,key}of group){if(layout==='native-text')A.splice(draft,['text'],edit.position,edit.remove,edit.insert);else addMarker(draft,edit,key);}});
+    senderMs+=performance.now()-started;
+    const count=group.at(-1).edit.sequence;
+    if(count%100===0)check(sender,layout,count);
+  }
+  checkIds(sender);
+  const changes=A.getChanges(genesis,sender);
+  assert.equal(changes.length,commits.length);
+  const changesBytes=changes.reduce((sum,c)=>sum+c.byteLength,0);
+  const savedBytes=A.save(sender).byteLength;
+  const headDigest=sha(JSON.stringify(A.getHeads(sender)));
+  const changeListDigest=sha(Buffer.concat(changes));
+  for(const transportBatch of [1,5,20]){
+    let receiver=A.load(seed,{actor:'cc'}),receiverMs=0;
+    const packets=[];
+    for(let start=0;start<changes.length;){const packet=[];do{packet.push(start++);}while(start<changes.length&&packet.length<transportBatch&&!commits[start][0].edit.boundaryBefore);packets.push(packet);}
+    let envelopeBytes=0;
+    const packetLogicalEdits=[];
+    for(const indexes of packets){const payload=indexes.map(i=>changes[i]);envelopeBytes+=4+payload.reduce((sum,c)=>sum+4+c.byteLength,0);packetLogicalEdits.push(indexes.reduce((sum,i)=>sum+commits[i].length,0));const started=performance.now();[receiver]=A.applyChanges(receiver,payload);receiverMs+=performance.now()-started;const count=commits[indexes.at(-1)].at(-1).edit.sequence;if(count%100===0)check(receiver,layout,count);}
+    check(receiver,layout,500);checkIds(receiver);assert.deepEqual(A.getHeads(receiver),A.getHeads(sender));
+    const reload=A.load(A.save(receiver));check(reload,layout,500);checkIds(reload);A.free(reload);A.free(receiver);
+    rows.push({repetition,layout,transactionBatch,transportBatch,transactionUnit:'logical edits per native change',transportUnit:'native changes per envelope',logicalEdits:500,nativeChanges:changes.length,changesBytes,changesBytesPerLogicalEdit:changesBytes/500,savedBytes,envelopes:packets.length,envelopeBytes,envelopeBytesPerLogicalEdit:envelopeBytes/500,packetLogicalEditsMin:Math.min(...packetLogicalEdits),packetLogicalEditsMax:Math.max(...packetLogicalEdits),senderNativeMs:senderMs,senderNativeUsPerLogicalEdit:senderMs*1000/500,receiverNativeMs:receiverMs,receiverNativeUsPerLogicalEdit:receiverMs*1000/500,headDigest,changeListDigest,correctness:true,normalFactoryValidated:false});
+    writeFileSync(`${out}/results.json`,JSON.stringify({manifest,rows,complete:false},null,2)+'\n');
+  }
+  A.free(sender);A.free(genesis);
+  console.log(JSON.stringify({dataset,repetition,layout,transactionBatch,senderNativeMs:senderMs,rows:rows.length}));
+}
+for(const [path,hash]of Object.entries(sourceHashes))assert.equal(sha(readFileSync(path)),hash,'source mutated during run');
+writeFileSync(`${out}/results.json`,JSON.stringify({manifest,rows,complete:true},null,2)+'\n');
+console.log(JSON.stringify({dataset,complete:true,rows:rows.length,out}));

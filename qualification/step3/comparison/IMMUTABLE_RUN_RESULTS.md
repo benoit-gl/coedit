@@ -424,3 +424,33 @@ no measured performance/memory result is assigned to the fixed code.
 Full-carrier command/provenance validation, publication/capture/restore integration and existing carrier qualification
 remain absent. Cold history scans, flat-map scaling and larger-history lifecycle costs remain open.
 This is a bounded storage representation result with no production eligibility or carrier-selection claim.
+
+## Raw transaction and transport batching checkpoint
+
+The [batching report](evidence/immutable-runs/batching-study/REPORT.md) and
+[lossless archive manifest](evidence/immutable-runs/batching-study/archive-manifest.json) retain exact scripts,
+108 raw rows, source/native bindings, offline fixture reconstruction and public-trace license/provenance.
+Two 500-logical-edit workloads ran three rotated repetitions: 250 alternating insertion/deletion pairs and
+487 insertions/13 deletions from a pinned public authorship-derived prefix. Native text and a simplified
+one-marker-per-edit trie each used transaction sizes 1/5/20 logical edits and transport sizes 1/5/20 native changes.
+Synthetic episode boundaries every 100 edits and final flush apply in every condition; all logical IDs,
+boundary/final text, native heads and save/load replay checks passed. No full-carrier admission was attempted.
+
+Sender median μs/logical edit at transaction sizes 1/5/20 were 67.97/43.47/20.66 native and
+4147.45/3529.72/3452.86 marker-trie for alternating, and 70.03/38.61/32.70 native and
+3572.13/3615.10/3209.95 marker-trie for the public prefix. Sender changes decreased 500/100/25;
+transport aggregation preserved each sender change and dependency while changing receiver call/visibility granularity.
+Every timing/byte denominator is the same 500 logical edits, and repeated sender rows are not independent samples.
+Only three repetitions and large warm-up/order variation prevent stable latency conclusions; the custom public
+transaction-5 median exceeded transaction-1. Timed native calls exclude preparation, checks, load/save, admission,
+derived replay, UI, network/sync and waiting to fill a batch. Cross-layout semantics differ.
+
+The public prefix credits Automerge contributors and Martin Kleppmann/Alastair R. Beresford, under
+[CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/), from `automerge/automerge-perf` commit
+`da212e984c777d31ee7d888f82637288aa4c61d3`; the report preserves exact source URL/hash and full attribution/license.
+Original concurrency was already flattened; local actor/Origin/history/boundary metadata is synthetic.
+Transaction grouping removes intermediate heads and changes atomicity/undo units; logical coalescing is separate.
+Production use must preserve actor/Origin, remote-causal, history/undo, IME, capture and required structural/clipboard
+boundaries. The existing carrier rejects multiple semantic roots per native change, and neither scratch shape
+validates its provenance, source indexes, full Origin, undo or capture contract. This changes no lifecycle failure,
+mandatory eligibility, production readiness or carrier selection.

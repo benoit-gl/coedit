@@ -1,0 +1,7012 @@
+{
+  "schema": "matched-batch-logical-trace-v2",
+  "dataset": "public500",
+  "initial": "",
+  "edits": [
+    {
+      "sequence": 1,
+      "id": "317c447dd62ec713336e2f74a26672cd",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 0,
+      "remove": 0,
+      "insert": "\\",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 2,
+      "id": "aaca9a600c2b3614fe477eb32b1f7374",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 1,
+      "remove": 0,
+      "insert": "d",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 3,
+      "id": "497c11a27dda945f0a0ebe3af735664a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 2,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 4,
+      "id": "c924042c9ee0b669e145d0d5657cbf2f",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 3,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 5,
+      "id": "fd32495ed9c9bc71d44a7cb59773c2de",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 4,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 6,
+      "id": "ff3c93a6d52beb9ef4cc238018d16687",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 5,
+      "remove": 0,
+      "insert": "m",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 7,
+      "id": "f1ad1244d80c650e128d8e2d59b7e750",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 6,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 8,
+      "id": "76160195d08e163433fdb08468a08386",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 7,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 9,
+      "id": "57850cc04bb1b63b977652f2483036fa",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 8,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 10,
+      "id": "46b749e723007cd3ddf95b15788be1d0",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 9,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 11,
+      "id": "af64e8182dfc49badafae0995ca32b33",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 10,
+      "remove": 0,
+      "insert": "l",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 12,
+      "id": "85acf3c79f999c4156b2e56f977694f5",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 11,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 13,
+      "id": "e8b085b1d73a44a0717ed1089ced4bb8",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 12,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 14,
+      "id": "88da1326de19b0b439e1756a942262b7",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 13,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 15,
+      "id": "aa2c7aec811f474557408017ddaf65d3",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 14,
+      "remove": 0,
+      "insert": "[",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 16,
+      "id": "288a82bfa048c35b0de6a119d5e623bb",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 15,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 17,
+      "id": "b1328d6a6ce303bce8105b0cf44289a3",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 16,
+      "remove": 0,
+      "insert": "4",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 18,
+      "id": "b40eea6cf78369434c612a673036ad48",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 17,
+      "remove": 0,
+      "insert": "p",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 19,
+      "id": "a1f8313137d1b140cb57d98de094416e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 18,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 20,
+      "id": "031e6af18bdac422e44cfa5dc07ef5ad",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 19,
+      "remove": 0,
+      "insert": "p",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 21,
+      "id": "9001e6b7a733af6c2e2f876800e2093c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 20,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 22,
+      "id": "2e7546ba90afbfdc5fc3fa01b6d8964e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 21,
+      "remove": 0,
+      "insert": "r",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 23,
+      "id": "5f59b6b8a0ddc2039dc8d76430ea3f1d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 22,
+      "remove": 0,
+      "insert": ",",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 24,
+      "id": "1a07b899fbd3ddccf227669578a9b213",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 23,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 25,
+      "id": "a0bb6d0ae5d3d043db52a64ab04dcbba",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 24,
+      "remove": 0,
+      "insert": "w",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 26,
+      "id": "31b971af0e48a2d589b056e506da05fb",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 25,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 27,
+      "id": "0f62f34312fdcb35fcc061e25fa6e6e6",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 26,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 28,
+      "id": "53433ae146d1a5a81e045380b83dc462",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 27,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 29,
+      "id": "9486c4c50922929f12330f0d89039709",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 28,
+      "remove": 0,
+      "insert": "l",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 30,
+      "id": "4d8c1cf643154d04b573900874d7d671",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 29,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 31,
+      "id": "85bd3264a7381c89823196889959a241",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 30,
+      "remove": 0,
+      "insert": "m",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 32,
+      "id": "c81efb071b626194c671365adc42aee8",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 31,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 33,
+      "id": "e99700904e6f177743cdad05750e3872",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 32,
+      "remove": 0,
+      "insert": ",",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 34,
+      "id": "e8a90fe9bf052a14c983a6b6075572b6",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 33,
+      "remove": 0,
+      "insert": "1",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 35,
+      "id": "70462657403e8f1cdc4850b0570e349b",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 34,
+      "remove": 0,
+      "insert": "0",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 36,
+      "id": "976c473a226b13ff5a46595618543270",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 35,
+      "remove": 0,
+      "insert": "p",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 37,
+      "id": "9ba8a4f854ac492bba4af8e3f67f0771",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 36,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 38,
+      "id": "ac7374e2f173063e1362e72a56057504",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 37,
+      "remove": 0,
+      "insert": "]",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 39,
+      "id": "4f107f9d09a3f735161e7a7e6dac2e0b",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 38,
+      "remove": 0,
+      "insert": "{",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 40,
+      "id": "b0fd9f00e5dc9a134928b1516852f476",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 39,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 41,
+      "id": "a796939de967302f6db210a4b3bd2c37",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 40,
+      "remove": 0,
+      "insert": "r",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 42,
+      "id": "13315053ba7c11f77783fe275f76f6a9",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 41,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 43,
+      "id": "4bae8dc320f7f9fc4a9f0d404bb47c3d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 42,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 44,
+      "id": "169289b3ef010c173f3053d30e548051",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 43,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 45,
+      "id": "1fe74a0dc0cb8e33ca1c2d1a6725da96",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 44,
+      "remove": 0,
+      "insert": "l",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 46,
+      "id": "298ed8f4050624ac522e8ca7fa909086",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 45,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 47,
+      "id": "3ee68b66fefee8341b75ae13b624f341",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 46,
+      "remove": 0,
+      "insert": "}",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 48,
+      "id": "0eca2c6e237d18731e7b8a1953e9fee8",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 47,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 49,
+      "id": "106703fc6e34e49e5aa5e5b2b9b6653f",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 48,
+      "remove": 0,
+      "insert": "\\",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 50,
+      "id": "2afae51242da70ad31bfc5b7cb7baeab",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 49,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 51,
+      "id": "acb0feb3e4094da9d6bffbb100d33a29",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 50,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 52,
+      "id": "ddcf56b6c030b69a562315876059d940",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 51,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 53,
+      "id": "5e72e95e382177696497e257d27d45fe",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 52,
+      "remove": 0,
+      "insert": "p",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 54,
+      "id": "ce58dec475d44fdbbbf0edf7c12721e8",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 53,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 55,
+      "id": "dce80824dd4eda495b64927ca1d93036",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 54,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 56,
+      "id": "bd21c50b20d59d37060310172ea0b645",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 55,
+      "remove": 0,
+      "insert": "k",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 57,
+      "id": "7d6e50430454c4855e29e9384fc0d633",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 56,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 58,
+      "id": "6a61c4fa9690a5b213b1a0e761f088ba",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 57,
+      "remove": 0,
+      "insert": "g",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 59,
+      "id": "14cf88991da3b729c9ebc727bbfe1440",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 58,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 60,
+      "id": "c4cb82e8acfbb0f1efb6b9338cd08b70",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 59,
+      "remove": 0,
+      "insert": "{",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 61,
+      "id": "367386f94b7c6d2ba8555bbdcee2d850",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 59,
+      "remove": 1,
+      "insert": "",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 62,
+      "id": "6c766a843f0abcd9073942fe01ceea03",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 59,
+      "remove": 0,
+      "insert": "[",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 63,
+      "id": "d5ce8b84b6b48dddc83750fc01048a4a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 60,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 64,
+      "id": "7a755154595643a4c26695a436760060",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 61,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 65,
+      "id": "ef2eedf9aa9b866e6fdce28c1990d6e1",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 62,
+      "remove": 0,
+      "insert": "f",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 66,
+      "id": "24d50de067c9ad4892601a0e10b09882",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 63,
+      "remove": 0,
+      "insert": "8",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 67,
+      "id": "a68480e121d2542d4b731cd911f3cc7f",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 64,
+      "remove": 0,
+      "insert": "]",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 68,
+      "id": "d0287026dff24cc754caec1d91261a3e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 65,
+      "remove": 0,
+      "insert": "{",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 69,
+      "id": "4f93c4dcd72490313ea9a0502aec3ecc",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 66,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 70,
+      "id": "4dac2b44330bb5cd7cf6776c467389a7",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 67,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 71,
+      "id": "004a3b1fedcde14ec5f54bf5eb8dbeb7",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 68,
+      "remove": 0,
+      "insert": "p",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 72,
+      "id": "89e925e7e39aed9ea07a85c7444bc47c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 69,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 73,
+      "id": "d988409d41db1181660df8c0fff05710",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 70,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 74,
+      "id": "cd277ea4b42acb9222fac661cbd6c283",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 71,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 75,
+      "id": "2d96916d66fb09f27a0156e28a805134",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 72,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 76,
+      "id": "d308c1cfc9e6c2c2710b2657ad4b5518",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 73,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 77,
+      "id": "03baef50fdf5abfe7558adf036affd5f",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 74,
+      "remove": 0,
+      "insert": "}",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 78,
+      "id": "992d254058be80e54a270650dc42398c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 75,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 79,
+      "id": "396855d23c5963286b378808d9d4d546",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 76,
+      "remove": 0,
+      "insert": "\\",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 80,
+      "id": "1fbe2e40e481e3cf207e2bd2c786a960",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 77,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 81,
+      "id": "3fae53cd4e335a73b339d551a6aa079d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 78,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 82,
+      "id": "9258f4af981bcfb71e55a3f1165747cd",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 79,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 83,
+      "id": "b945390b291dc43d0b6e8c0fc5164696",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 80,
+      "remove": 0,
+      "insert": "p",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 84,
+      "id": "1a965702a003b753a399fd9060da4e6c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 81,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 85,
+      "id": "6d894634bfc7e66f8d7b9981d706180c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 82,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 86,
+      "id": "40666fbc019cc3a190f9bf59cfa92b05",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 83,
+      "remove": 0,
+      "insert": "k",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 87,
+      "id": "e2e7fe7c095b80f0d4da2966740713ca",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 84,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 88,
+      "id": "50bd080dd8a36043a0e14a61413def64",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 85,
+      "remove": 0,
+      "insert": "g",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 89,
+      "id": "b0ae9e4243f92738be7ed67e1d9ba94c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 86,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 90,
+      "id": "ab8a0e9651553953a20264eb013677f7",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 87,
+      "remove": 0,
+      "insert": "{",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 91,
+      "id": "08805dca8d3e2c4e849aba4d7da86faf",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 88,
+      "remove": 0,
+      "insert": "m",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 92,
+      "id": "f974acbf0ca7c56dd39cead75c058726",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 89,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 93,
+      "id": "ed8e3c66808696cb96783867ebd73876",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 90,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 94,
+      "id": "c3e59c21e0c010e1441644df11927e03",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 91,
+      "remove": 0,
+      "insert": "h",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 95,
+      "id": "2e9827fc84eb2ab2588f1b37dee9a35a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 92,
+      "remove": 0,
+      "insert": "p",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 96,
+      "id": "adcff5fb71863fd0bcc6e990ae479721",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 93,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 97,
+      "id": "6619e70826030ec3f7502ab395df5062",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 94,
+      "remove": 0,
+      "insert": "m",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 98,
+      "id": "e9ecba4da073723920e707e3ea0ac466",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 95,
+      "remove": 0,
+      "insert": "x",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 99,
+      "id": "a1112412295d6a9b88c39d6a8a0839f7",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 96,
+      "remove": 0,
+      "insert": "}",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 100,
+      "id": "c64a6069378c3760cbd18d6e1d185042",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-0"
+      ],
+      "position": 97,
+      "remove": 0,
+      "insert": " ",
+      "undoGroup": "synthetic-group-0",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 101,
+      "id": "79925c6f79c7a9b052e6ba1edb946305",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 98,
+      "remove": 0,
+      "insert": "%",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": "synthetic-episode-boundary"
+    },
+    {
+      "sequence": 102,
+      "id": "0f36fc92cb7550f04a0f3f645456446f",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 99,
+      "remove": 0,
+      "insert": " ",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 103,
+      "id": "0be66a96f3a600b2179b78a2ae2b4bc5",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 100,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 104,
+      "id": "7373e624bb986a834f69a88464b1e361",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 101,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 105,
+      "id": "d869e7efe3ebcdbc503607345a36aa3c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 102,
+      "remove": 0,
+      "insert": "m",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 106,
+      "id": "b6511cd62cc67435f493c92307e7e902",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 103,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 107,
+      "id": "50129ca9235f8d9747c50cea0951fa60",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 104,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 108,
+      "id": "2331b670e9ebc69a11ce335d3646a0d3",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 105,
+      "remove": 0,
+      "insert": " ",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 109,
+      "id": "2005cbd754164bd647557798aafc9129",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 106,
+      "remove": 0,
+      "insert": "r",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 110,
+      "id": "6f793bd6c145f23c8c65215f85cc11c9",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 107,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 111,
+      "id": "fd2ba18c74a8da83ab8ff6787dd42aaf",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 108,
+      "remove": 0,
+      "insert": "m",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 112,
+      "id": "95e387bf67de85fb1ae2b3245db01381",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 109,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 113,
+      "id": "9f8db833858c230bdb9acf222b30d4fd",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 110,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 114,
+      "id": "ab54c5b7ba78770bef3aa7ff28100376",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 111,
+      "remove": 0,
+      "insert": ",",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 115,
+      "id": "6dbf39d41dc7634681c6fd2823c96f84",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 112,
+      "remove": 0,
+      "insert": " ",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 116,
+      "id": "a6b292cf81173436d06adf2bf1efee96",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 113,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 117,
+      "id": "41f106680d8f18c760ee66c79b040121",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 114,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 118,
+      "id": "e82fafa1add6a32f8e98bf23c1e4a25e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 115,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 119,
+      "id": "f9ea464a900af66a332482393b29c20b",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 116,
+      "remove": 0,
+      "insert": "l",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 120,
+      "id": "e35735c3b0b2b768d467d3e120b627d6",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 117,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 121,
+      "id": "c66be094d806089578e2fc08365e867b",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 118,
+      "remove": 0,
+      "insert": "d",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 122,
+      "id": "21c7648e90d76fc8f69ec591a507b6e5",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 119,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 123,
+      "id": "ce48490de3703ff7103681c02939c78d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 120,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 124,
+      "id": "c14895254784f4fc26ac4bcaa05c6123",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 121,
+      "remove": 0,
+      "insert": "g",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 125,
+      "id": "76495eff76ec8d22d99b1e46e77c171c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 122,
+      "remove": 0,
+      "insert": " ",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 126,
+      "id": "bf2ce2d395c1db5a0ca9c138b7f926ae",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 123,
+      "remove": 0,
+      "insert": "m",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 127,
+      "id": "110bdd2fc89f5ee9dc0c5a9023582c6c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 124,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 128,
+      "id": "3e9fa9be0de9bf6fa27b1db558a1dea7",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 125,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 129,
+      "id": "46f6be4f427b28465a68d18d1350a430",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 126,
+      "remove": 0,
+      "insert": "h",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 130,
+      "id": "8fd35043b6b0d395ea552cbed9c13fb7",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 127,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 131,
+      "id": "3fd75dbf0485b295b572cdc6c7b8786e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 128,
+      "remove": 0,
+      "insert": "\\",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 132,
+      "id": "834f03e110db03a46771c46f2a792b4a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 129,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 133,
+      "id": "dd3f1edbf01138c975d815d23fa0c086",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 130,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 134,
+      "id": "11b70a9d83b3b2ec481e3208239284ef",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 131,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 135,
+      "id": "25f899eb7e6212b44d06692d1399e55d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 132,
+      "remove": 0,
+      "insert": "p",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 136,
+      "id": "10c222570addf045778103b6122ab1bc",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 133,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 137,
+      "id": "ed747cb759005fc8bf0358650f984535",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 134,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 138,
+      "id": "deb655a8afbd69131d0c2f44678f2b91",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 135,
+      "remove": 0,
+      "insert": "k",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 139,
+      "id": "cfd6d02c8ae00bbb9ff069ce4596dedc",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 136,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 140,
+      "id": "ae7d7cb868d2fffa88b0d6341553921f",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 137,
+      "remove": 0,
+      "insert": "g",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 141,
+      "id": "a85a00b50f8ffb4fbdd1157e4e00955d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 138,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 142,
+      "id": "8174cd7208c24c9fa1c95f65f9187dd4",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 139,
+      "remove": 0,
+      "insert": "[",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 143,
+      "id": "423ad737c77674b0a1862b390c637035",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 140,
+      "remove": 0,
+      "insert": "h",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 144,
+      "id": "4cafba8477d561607129659eed25df19",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 141,
+      "remove": 0,
+      "insert": "y",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 145,
+      "id": "b80379b1254991dd96ed3beb98dab6af",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 142,
+      "remove": 0,
+      "insert": "p",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 146,
+      "id": "c5fb5b41bc4c78868550bd97d9f611e1",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 143,
+      "remove": 0,
+      "insert": "h",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 147,
+      "id": "5875171575dc58b719fa477a5b85ea5a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 144,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 148,
+      "id": "e511cdabc4bf9febca7028a96495fe2c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 145,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 149,
+      "id": "ce683620372ea71ababbab1a6383dce8",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 146,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 150,
+      "id": "b7c5077d1bc8a4797d143678a4e83727",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 147,
+      "remove": 0,
+      "insert": "]",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 151,
+      "id": "0373cc2cfe05a2539d593824f42d3b86",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 148,
+      "remove": 0,
+      "insert": "{",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 152,
+      "id": "cb8ae04b7cfa047a77a0fc8db5251ad7",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 149,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 153,
+      "id": "3e9ff1a1c7df856d5ec48142046a6626",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 150,
+      "remove": 0,
+      "insert": "r",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 154,
+      "id": "a114870238aa0ed1d012403ff553a622",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 151,
+      "remove": 0,
+      "insert": "l",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 155,
+      "id": "df011c0cc5d2f2483792e7b189e7e181",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 152,
+      "remove": 0,
+      "insert": "}",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 156,
+      "id": "bdc36e7ed48bb3b1640b5328de18e8a8",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 153,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 157,
+      "id": "5a44d6d1f8bfdc2c56e2d285abff9a82",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 154,
+      "remove": 0,
+      "insert": "\\",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 158,
+      "id": "ff77d7d4a5aeca4c4d01555b59ac9ac6",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 155,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 159,
+      "id": "56ff0945c707f5ac9cf2ae7a4ed8bd0e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 156,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 160,
+      "id": "0600ae49f4b0698f252828bec9708b7d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 157,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 161,
+      "id": "d340f9d558359eafe467fed6f384e2f8",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 158,
+      "remove": 0,
+      "insert": "p",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 162,
+      "id": "6c45e3535bec4b8a6346352951fc9a8d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 159,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 163,
+      "id": "bccfaea229070407661b61b9b5225915",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 160,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 164,
+      "id": "7a2796441cced58da36c935b9ab40977",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 161,
+      "remove": 0,
+      "insert": "k",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 165,
+      "id": "d8f22b688d24f024fe6d81a460433e14",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 162,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 166,
+      "id": "8a25792a9bcc8a2ea072a5efe838db32",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 163,
+      "remove": 0,
+      "insert": "g",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 167,
+      "id": "76b879513dcd171cf421f918981056dc",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 164,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 168,
+      "id": "da87d04c8858d0ca1aa2e89a90f2b749",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 165,
+      "remove": 0,
+      "insert": "{",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 169,
+      "id": "ff9a8e0b239d7e14eda67a82a2f206f8",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 166,
+      "remove": 0,
+      "insert": "d",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 170,
+      "id": "09328f0d75ffbe207ece398452bbaa73",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 167,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 171,
+      "id": "1dff036e6d4229efea7df7a6669a4c50",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 168,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 172,
+      "id": "d3a867eb32d2094641e6303b784142c9",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 169,
+      "remove": 0,
+      "insert": "}",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 173,
+      "id": "9d0e469cfbf2db3f21ab70feea87ba3a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 170,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 174,
+      "id": "483e4c0a5947384c79da0474404f418a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 171,
+      "remove": 0,
+      "insert": "\\",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 175,
+      "id": "3e584c416c77fea9c5cd5967afa2da8c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 172,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 176,
+      "id": "866578653fa3c7e6bb17efb70e04c7f5",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 173,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 177,
+      "id": "c6652f965c07bb8c5dd800f781c64e93",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 174,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 178,
+      "id": "f7f170f6296dc61fcc6c8a3770f0b2b1",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 175,
+      "remove": 0,
+      "insert": "p",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 179,
+      "id": "f6d1761e03517c6b7f3b1187de3aa8fb",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 176,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 180,
+      "id": "023ecebf3a93d6b0154d1b8dd96031d5",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 177,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 181,
+      "id": "8a30cb6eb4fbd9f76aa2fd8e0fc96b37",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 178,
+      "remove": 0,
+      "insert": "k",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 182,
+      "id": "b7118e0b4190657d26f8128e673c003c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 179,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 183,
+      "id": "9e379b69aa3912f39963b7ffbe91a47f",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 180,
+      "remove": 0,
+      "insert": "g",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 184,
+      "id": "558fb8bb1fe13aa030ea32db5ff13b98",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 181,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 185,
+      "id": "44d17309581567c5ca3a33140f7f7848",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 182,
+      "remove": 0,
+      "insert": "{",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 186,
+      "id": "36b130aa3ee70246a6a05ff43c96ac1c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 183,
+      "remove": 0,
+      "insert": "h",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 187,
+      "id": "8c7a75a7f9449b1abddcee922139406e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 184,
+      "remove": 0,
+      "insert": "y",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 188,
+      "id": "35cb5ea3a3f388854c00b786ad5cbbd7",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 185,
+      "remove": 0,
+      "insert": "p",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 189,
+      "id": "72d5d19de95003640592bfc3f9a9921e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 186,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 190,
+      "id": "02bdfc4327554b5513178e3d49585a9c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 187,
+      "remove": 0,
+      "insert": "r",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 191,
+      "id": "da5bf21a0978abb768347c0f15bd805d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 188,
+      "remove": 0,
+      "insert": "r",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 192,
+      "id": "5768f728194d5dea4e8402a802ec8261",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 189,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 193,
+      "id": "ca52ef51ceb6f48d7232f41d56b535cd",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 190,
+      "remove": 0,
+      "insert": "f",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 194,
+      "id": "860e242e168254c7f6188b65a26f5c1a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 191,
+      "remove": 0,
+      "insert": "}",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 195,
+      "id": "8ba8959b64be7191fdb27d48faa1cb7a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 192,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 196,
+      "id": "0166738235fa55320ce0d132f4cbf321",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 193,
+      "remove": 0,
+      "insert": "\\",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 197,
+      "id": "ad377955922e1e70bd292a4febfbf9e1",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 194,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 198,
+      "id": "84a392e525360118751561f4a387eede",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 195,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 199,
+      "id": "5e8d07a6cef4f35f8d8bc39bb9b12a9b",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 196,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 200,
+      "id": "888be483d7506877b107125c8d938220",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-1"
+      ],
+      "position": 197,
+      "remove": 0,
+      "insert": "p",
+      "undoGroup": "synthetic-group-1",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 201,
+      "id": "61bc858c288aeea284e1f95dfc28bc45",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 198,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": "synthetic-episode-boundary"
+    },
+    {
+      "sequence": 202,
+      "id": "55405da033c6b98f87f658d8cf3c4111",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 199,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 203,
+      "id": "3b9b32015abd6858e1693f07f73cbd7a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 200,
+      "remove": 0,
+      "insert": "k",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 204,
+      "id": "d91956d1244f1ca49b75aa15cc1dd456",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 201,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 205,
+      "id": "f967390fcae27740facc2ae1f5e2ebfe",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 202,
+      "remove": 0,
+      "insert": "g",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 206,
+      "id": "97c7b3e4c2bee0a2d8ed86b1d02be9aa",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 203,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 207,
+      "id": "6294ef89200f4762600e6514b01020c0",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 204,
+      "remove": 0,
+      "insert": "[",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 208,
+      "id": "3d9e69cd986a3ee86607eaf024b025f0",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 205,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 209,
+      "id": "b5e6e69807e39394632b48d126cf3313",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 206,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 210,
+      "id": "41c4f6a806d45d1f4cd11f7b13cdd6b1",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 207,
+      "remove": 0,
+      "insert": "m",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 211,
+      "id": "836b471a22d189714989fb11c5947564",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 208,
+      "remove": 0,
+      "insert": "b",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 212,
+      "id": "3721602b8abf3b755424e680f84dc583",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 209,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 213,
+      "id": "acc34c5ebc847e849d10a56739f4269a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 210,
+      "remove": 0,
+      "insert": "r",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 214,
+      "id": "028e5a4b5090c0a072b91eafc9e455b4",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 211,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 215,
+      "id": "91bb0e73ad01f22de83ff2adfe6c3b36",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 212,
+      "remove": 0,
+      "insert": ",",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 216,
+      "id": "d2874352e516e44bb967ce692eb9510d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 213,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 217,
+      "id": "63cf13639f1170b91194309d28ec96a7",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 214,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 218,
+      "id": "d0e8cfcbed8bfcd74115df92f87bfea2",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 215,
+      "remove": 0,
+      "insert": "r",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 219,
+      "id": "d6bde4ccf9c39724d012b6f209801c23",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 216,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 220,
+      "id": "c926f60f805e26b0f41925cd05346365",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 217,
+      "remove": 0,
+      "insert": "]",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 221,
+      "id": "10d24eaf946d941ac6d2a899d32d91d9",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 218,
+      "remove": 0,
+      "insert": "{",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 222,
+      "id": "4dd73b1f235741cdda03a3e093c37eec",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 219,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 223,
+      "id": "2c2e8dbba6dff6b55597226bd09d87f7",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 220,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 224,
+      "id": "9b44946f3e0d94aa1922e49accc24b96",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 221,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 225,
+      "id": "dfe6c2dde3232845c682d7c3cd35bc95",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 222,
+      "remove": 0,
+      "insert": "b",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 226,
+      "id": "1ac6b991b9823705e271f225f91ac57a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 223,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 227,
+      "id": "9528be01079cdf170436d2e22c19ae7a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 224,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 228,
+      "id": "2e42433e8d252ad8f095f3d3c20697e7",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 224,
+      "remove": 1,
+      "insert": "",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 229,
+      "id": "8132e55d5b32332bb5d086c423f75e5a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 224,
+      "remove": 0,
+      "insert": "b",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 230,
+      "id": "5c9d408c5d29be164c83e80a239b38a0",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 225,
+      "remove": 0,
+      "insert": "}",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 231,
+      "id": "615f92ce738a4d01f571eb190b7da6cc",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 226,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 232,
+      "id": "7eb78697ed9185ed55bf114b42448515",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 227,
+      "remove": 0,
+      "insert": "\\",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 233,
+      "id": "719e6dc56595b1e865f99436fcdf4217",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 228,
+      "remove": 0,
+      "insert": "h",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 234,
+      "id": "c3609df51a26304bcbe626b7a42982e9",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 229,
+      "remove": 0,
+      "insert": "y",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 235,
+      "id": "ea414860ffac74362da1ac6febc94ef3",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 230,
+      "remove": 0,
+      "insert": "p",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 236,
+      "id": "77c585131f23db0d217df1f1ffe50d03",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 231,
+      "remove": 0,
+      "insert": "h",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 237,
+      "id": "17b06b6552b61b9ad8130cdb6705c93e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 232,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 238,
+      "id": "4228541c23c1acf7d738754ef5deac52",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 233,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 239,
+      "id": "482bd286fd0f826dc821504bb92e191f",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 234,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 240,
+      "id": "42ac3e053f1c57f6b8923b451e7a489e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 235,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 241,
+      "id": "1594e73f5b0cbed6bbd0fb1d634f7aea",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 236,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 242,
+      "id": "47e9246b55e7049d1fe6e92e4036350f",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 237,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 243,
+      "id": "ea02971083702ab9f23eb3055b4c0243",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 238,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 244,
+      "id": "b0819a216de6adb33d57cbff4d14edc5",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 239,
+      "remove": 0,
+      "insert": "{",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 245,
+      "id": "5186703d5cc1e77692b023280946db87",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 240,
+      "remove": 0,
+      "insert": "d",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 246,
+      "id": "0348c7cd186629568d6fc10d57cec891",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 241,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 247,
+      "id": "d8cdb5a2a0a091bbb7304755986e6aba",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 242,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 248,
+      "id": "f78d9d320e93b0e3afa41f371df3dfed",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 243,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 249,
+      "id": "2c4f4c5e1eb38ac2c2efe37f4aa47a67",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 243,
+      "remove": 1,
+      "insert": "",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 250,
+      "id": "24a31b6922dd00bd230835ac49302e81",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 242,
+      "remove": 1,
+      "insert": "",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 251,
+      "id": "756dc6ecc9494a3fc47aba2c379e9b9b",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 242,
+      "remove": 0,
+      "insert": "-",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 252,
+      "id": "3bf7b4ac5d5f94277d5a2be01c387322",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 243,
+      "remove": 0,
+      "insert": "d",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 253,
+      "id": "b5e112c1c84d8734fbf792ace6c474ad",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 243,
+      "remove": 1,
+      "insert": "",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 254,
+      "id": "d17de7c50f4867d96b8cf15719d5d316",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 243,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 255,
+      "id": "06e248aae7e6edea406e35c14918c6de",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 244,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 256,
+      "id": "08a551e6ee2f85fe5533c76f69974e83",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 245,
+      "remove": 0,
+      "insert": "-",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 257,
+      "id": "87f2395adea0302f4256e840c05fb92c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 246,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 258,
+      "id": "46123899bde6c83d8d8690e2943cd79a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 247,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 259,
+      "id": "717fe36ea3b6a6d43c95fdc7bca7b4b8",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 248,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 260,
+      "id": "6d7be0c35ee388e4f9f74ed96acf49b9",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 249,
+      "remove": 0,
+      "insert": "-",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 261,
+      "id": "b942b2ed8d91ac6553fca7a9cd3a39d9",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 250,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 262,
+      "id": "be4fdf0ff66a7239813eee9f688d840e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 251,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 263,
+      "id": "faf14771bb91d236b55dbf6391c15601",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 252,
+      "remove": 0,
+      "insert": "r",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 264,
+      "id": "e1b59b50c2b7adb23706837875c4ce48",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 253,
+      "remove": 0,
+      "insert": " ",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 265,
+      "id": "73dd18a6a3edc760fd1f8091a080ce02",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 254,
+      "remove": 0,
+      "insert": "d",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 266,
+      "id": "5489a01d548716c10a6f690ac98bbe09",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 255,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 267,
+      "id": "1abe160b9a502eeff126822f08768284",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 256,
+      "remove": 0,
+      "insert": "-",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 268,
+      "id": "f9c2b373e55772694231363e0e3a2f9d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 257,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 269,
+      "id": "ad1ebe2f89409e0c4da9f9ca9e9ad280",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 258,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 270,
+      "id": "8f1ac0cfe9b57586517b7c1b106bb3ae",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 259,
+      "remove": 0,
+      "insert": "-",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 271,
+      "id": "25f42a56245d261a87256b93a2e9733b",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 260,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 272,
+      "id": "08935f71c30e771a4c45591e998c6d22",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 261,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 273,
+      "id": "c0f0e5a0c139c6ba7c012f6e95ba8365",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 262,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 274,
+      "id": "6a09734cb701acf91adc1ff1e4ee8bd2",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 263,
+      "remove": 0,
+      "insert": "-",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 275,
+      "id": "fff804ed684007c5e136bc56eb3512c6",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 264,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 276,
+      "id": "5ff942855412836a23621c25e07cc2e7",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 265,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 277,
+      "id": "3b31ae6930cc33e0064f582ed86ff87d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 266,
+      "remove": 0,
+      "insert": "r",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 278,
+      "id": "e70388916f606f24cd11f89ebd47377f",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 267,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 279,
+      "id": "60e0b7abe2bb7370783ffc88af31c3b7",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 268,
+      "remove": 0,
+      "insert": "}",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 280,
+      "id": "e4b91d75e2657cbb885230e5b571dfa9",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 269,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 281,
+      "id": "ddf7a0a291c8c0bccda84e026a6d6fec",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 270,
+      "remove": 0,
+      "insert": "\\",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 282,
+      "id": "a06300295aa2ff82d2b7822adfb45a23",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 271,
+      "remove": 0,
+      "insert": "f",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 283,
+      "id": "020e0a0894e8e6c041b48d3f4a8840e5",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 272,
+      "remove": 0,
+      "insert": "r",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 284,
+      "id": "4f7e1cfd5ec35d0e019a34f86f477694",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 273,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 285,
+      "id": "4fbddaf27e7fc7b138bff97f8fc8ca1c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 274,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 286,
+      "id": "c273cf4d63461ffd0b65f09cc4ba02e1",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 275,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 287,
+      "id": "72a3fa5032cc866dee5a5eb803e5da50",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 276,
+      "remove": 0,
+      "insert": "h",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 288,
+      "id": "6572c7b9598194b1cf4e225db81e8a7d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 277,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 289,
+      "id": "076cc593cc94b3d23892dcc5964d531f",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 278,
+      "remove": 0,
+      "insert": "p",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 290,
+      "id": "b59810dc5767cbbaff64c5a22e9b677d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 279,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 291,
+      "id": "ab453310f61a4c06588ebb3d880800cd",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 280,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 292,
+      "id": "691ef7bf9c28681d975ad2f5da2def63",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 281,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 293,
+      "id": "181a3a7408e40abe92e88beeed0d9239",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 282,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 294,
+      "id": "2f72cb8331714136d1070dd1ef1e013a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 283,
+      "remove": 0,
+      "insert": "g",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 295,
+      "id": "e16080530f32f53ac3bb752da079c8ed",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 284,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 296,
+      "id": "4de09f976db6728aedf0abe763217b2b",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 285,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 297,
+      "id": "2c612186b4ab1313503c91d8a102430d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 286,
+      "remove": 0,
+      "insert": "\\",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 298,
+      "id": "4baf1b079f51ca6092d3210bc85fd380",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 287,
+      "remove": 0,
+      "insert": "b",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 299,
+      "id": "4570dabc7b8ac2f5e502c560af73953e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 288,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 300,
+      "id": "fcc304b9493187190425e8e6a83a316b",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-2"
+      ],
+      "position": 289,
+      "remove": 0,
+      "insert": "g",
+      "undoGroup": "synthetic-group-2",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 301,
+      "id": "4a0090b85b045d3e422e8b0302c008e4",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 290,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": "synthetic-episode-boundary"
+    },
+    {
+      "sequence": 302,
+      "id": "9b26177a74d8788cdd8f6994f2a7b923",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 291,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 303,
+      "id": "0ab39cc507bff2f4b646f3442a7cfc08",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 292,
+      "remove": 0,
+      "insert": "{",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 304,
+      "id": "cd8c950cd67c67de2bbaedbacd803f7a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 293,
+      "remove": 0,
+      "insert": "d",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 305,
+      "id": "592ff132b01a8d95c31dbd0f69e04474",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 294,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 306,
+      "id": "ca465b6f9bf9156e3d71b7e3fc2c5d65",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 295,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 307,
+      "id": "ad4dd34290e4a09175722a9079c7a69c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 296,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 308,
+      "id": "6effc20a8e784ae0a887eb0a9a713ed9",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 297,
+      "remove": 0,
+      "insert": "m",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 309,
+      "id": "cf85676a4a659eb7cb303542f58f2dfc",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 298,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 310,
+      "id": "d767ce7b9d3837df1a2ac3038aa629d6",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 299,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 311,
+      "id": "aeff8015b78b00524113ee4336235ef7",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 300,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 312,
+      "id": "5679a96fa9565728d7bb1b0e74113067",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 301,
+      "remove": 0,
+      "insert": "}",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 313,
+      "id": "4c256a7d9b89a061837e1c7ed32c37ca",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 302,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 314,
+      "id": "fb8db63c2854d4c718a05937cd2ec6a5",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 303,
+      "remove": 0,
+      "insert": "\\",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 315,
+      "id": "26b72da2b205e0d869fdae3bcb80ff1c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 304,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 316,
+      "id": "9531ef9bacb3a48ef5dca8954814a306",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 305,
+      "remove": 0,
+      "insert": "l",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 317,
+      "id": "4f3b73734f99660b8fc9dc192cc7c2be",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 306,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 318,
+      "id": "a6323ef48473464a89865cd76782be87",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 307,
+      "remove": 0,
+      "insert": "p",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 319,
+      "id": "41b20fba09837db179692aad39d40dcf",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 308,
+      "remove": 0,
+      "insert": "p",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 320,
+      "id": "cded8a815cdf64e02dcc4e73927d39d4",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 309,
+      "remove": 0,
+      "insert": "y",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 321,
+      "id": "345d429372207dea8d1f136edc2a4f99",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 310,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 322,
+      "id": "1a153aead72b9a59179506c51caf32b8",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 311,
+      "remove": 0,
+      "insert": "\\",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 323,
+      "id": "9790133ed408ac298b33fe1cc7b9c14d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 312,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 324,
+      "id": "1ad8ccf9f7da2f94491591355dee14b8",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 313,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 325,
+      "id": "4a62c04d046f2c5cedc275cec384f2ef",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 314,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 326,
+      "id": "c7107bbb571f0e999094a028a1fd6ef6",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 315,
+      "remove": 0,
+      "insert": "l",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 327,
+      "id": "e7be18e919524e733e309d949ecba162",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 316,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 328,
+      "id": "b6de189838023c6064872951eaf7769e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 317,
+      "remove": 0,
+      "insert": "{",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 329,
+      "id": "b7de78f3266116589d351b61a7149b78",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 318,
+      "remove": 0,
+      "insert": "C",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 330,
+      "id": "72aa1bb6b79c52758d97086b6b5be2ff",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 319,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 331,
+      "id": "7bcf3eb5351dd270d81cf4f586f96c1b",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 320,
+      "remove": 0,
+      "insert": "m",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 332,
+      "id": "1c019fac4282912208fae280c70549a0",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 321,
+      "remove": 0,
+      "insert": "p",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 333,
+      "id": "e3a714c0ed2fa047efd83b4eacf04558",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 322,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 334,
+      "id": "635adb0c8c252e7a3c82cc4984cb3a2e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 323,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 335,
+      "id": "5d5fb0e083c96da56864f5ec408c8760",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 324,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 336,
+      "id": "c1c41cf3c9aca56c1ff81e70714dcae2",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 325,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 337,
+      "id": "4a86c4313a49c6c174dc9bd33bb78cc3",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 326,
+      "remove": 0,
+      "insert": "g",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 338,
+      "id": "0a06c26754b542469928c87443109bb6",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 327,
+      "remove": 0,
+      "insert": " ",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 339,
+      "id": "82155a33ca5583b5bc687e41c3b5161d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 328,
+      "remove": 0,
+      "insert": "D",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 340,
+      "id": "77502762279200900399e5751884cf04",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 329,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 341,
+      "id": "9681b8f8a58ceea38368b3fda2620ff7",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 330,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 342,
+      "id": "ffe9678c74b787f60663a4772bb38d64",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 331,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 343,
+      "id": "59010ec4507538d533dac4ff8af08faf",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 332,
+      "remove": 0,
+      "insert": " ",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 344,
+      "id": "e21189ff452db8035979036b9a5b94c6",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 333,
+      "remove": 0,
+      "insert": "S",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 345,
+      "id": "2deb78532da9144200b0860e03d1c5d7",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 334,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 346,
+      "id": "051bacea956217087f10083e5a57cff1",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 335,
+      "remove": 0,
+      "insert": "r",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 347,
+      "id": "527d8d88cf10eca9cdd555a8d482f898",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 336,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 348,
+      "id": "6dd5b9e5da950c22d75f18b680415ce8",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 337,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 349,
+      "id": "381b5ff1379cf0651332bfb595569a29",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 338,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 350,
+      "id": "8ebd5efa8749f1f020ebb323676d695f",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 339,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 351,
+      "id": "56d5a5b854349fc2ac134c27b5c92c98",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 340,
+      "remove": 0,
+      "insert": "r",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 352,
+      "id": "aacea591bf2a08bbaa7f1542ac7f015f",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 341,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 353,
+      "id": "94b85bc6a3d3ca75fc63841d9c15868a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 342,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 354,
+      "id": "023aaa36c561f92d86f4910a37ad0a34",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 343,
+      "remove": 0,
+      "insert": " ",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 355,
+      "id": "e7fdb1766a731750c85b59758bdbeb8a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 344,
+      "remove": 0,
+      "insert": "f",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 356,
+      "id": "72aefa70a777a8cf973b64409ac50335",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 345,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 357,
+      "id": "07b6918c45d3c3b7404de86595addcfb",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 346,
+      "remove": 0,
+      "insert": "r",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 358,
+      "id": "7befa92376e8a8e4b14c43e47459f4e9",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 347,
+      "remove": 0,
+      "insert": " ",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 359,
+      "id": "5b8e904b422664e5babf258deef3ebcd",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 348,
+      "remove": 0,
+      "insert": "C",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 360,
+      "id": "e5b84b3abfe8791b84f68156bd238013",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 349,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 361,
+      "id": "31246e076aeacd62437b205456e9db63",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 350,
+      "remove": 0,
+      "insert": "l",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 362,
+      "id": "59083a703d1181f6eecdb5754c734e72",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 351,
+      "remove": 0,
+      "insert": "l",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 363,
+      "id": "42575bbc826a3e714ede893096ce00cd",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 352,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 364,
+      "id": "5970b19963d4302a2c3888f634439c05",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 353,
+      "remove": 0,
+      "insert": "b",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 365,
+      "id": "42a7d694eb6690af6142ffcaf0b03438",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 354,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 366,
+      "id": "0dde12c5c420f25b89999edd5b6e3621",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 355,
+      "remove": 0,
+      "insert": "r",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 367,
+      "id": "e5b15687133160ca92646d90f08b52c9",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 356,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 368,
+      "id": "8cb44c6ae2ad47c6e9e1b4fbfe3f085f",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 357,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 369,
+      "id": "2c2b625356694e0e633872dd564278f6",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 358,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 370,
+      "id": "f2f34a9030f40948e31ed91c6a7f6729",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 359,
+      "remove": 0,
+      "insert": "v",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 371,
+      "id": "b4b7692649406951d073854944cb3ba4",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 360,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 372,
+      "id": "8f5c86f15293d286fd2388ab6b6f17b6",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 361,
+      "remove": 0,
+      "insert": " ",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 373,
+      "id": "b8077f785d827b6cd10f32ba009e5b4b",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 362,
+      "remove": 0,
+      "insert": "D",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 374,
+      "id": "de9eab454de712d99ceeb35064e62338",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 363,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 375,
+      "id": "e5b8dbdda0e6810a5c14fee574dcfe0a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 364,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 376,
+      "id": "9811accff0de6e0be05866e6c770a474",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 365,
+      "remove": 0,
+      "insert": "m",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 377,
+      "id": "a59be865d24208f5cb1299e39bf7d4a9",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 366,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 378,
+      "id": "44f5597b536101edaab2be94eda7bfc8",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 367,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 379,
+      "id": "312a3d5852ebb8aa5dd4bd20a00ea3a1",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 368,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 380,
+      "id": "2a06fb89c525c1fdb2a766b149a479c8",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 368,
+      "remove": 1,
+      "insert": "",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 381,
+      "id": "ade86c512b532d2793a8825d81825e01",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 367,
+      "remove": 1,
+      "insert": "",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 382,
+      "id": "e1a770afe0162b349bb6fcae4459ee4f",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 366,
+      "remove": 1,
+      "insert": "",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 383,
+      "id": "71bdd647eba0abf16d796a848f8bfccc",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 365,
+      "remove": 1,
+      "insert": "",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 384,
+      "id": "1bcd8f7128f80680f2cb709af36d6608",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 364,
+      "remove": 1,
+      "insert": "",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 385,
+      "id": "050bf34ce9a3306ec2e7bac0d01e910d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 364,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 386,
+      "id": "f9fd24e715cd7a4a8e659809b53503d0",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 365,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 387,
+      "id": "7ffd7fe9101ecfa75f6132ee60529bac",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 366,
+      "remove": 0,
+      "insert": "m",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 388,
+      "id": "2ec25a4f0bdd4dbb12eaeab340f66ee1",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 367,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 389,
+      "id": "846dde74adefa7661afccb0e729a14e2",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 368,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 390,
+      "id": "2bd0ed9f72322c2b966f895435ccd1de",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 369,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 391,
+      "id": "588b35c64091f8e383fa54a6afc7cdc3",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 370,
+      "remove": 0,
+      "insert": " ",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 392,
+      "id": "4046e362bec8c170f0c27ce077cf4e57",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 371,
+      "remove": 0,
+      "insert": "E",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 393,
+      "id": "63fbf29372d184073b5638552a30fab0",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 372,
+      "remove": 0,
+      "insert": "d",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 394,
+      "id": "48b1544e32bf686a413e5537586683dc",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 373,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 395,
+      "id": "ae07f11820b44a425ae16cb6410b734c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 374,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 396,
+      "id": "7a6eef03be39fea9dc59fdd1f88d2ce2",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 375,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 397,
+      "id": "21e236f13667ef29153d9e33ae81dd77",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 376,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 398,
+      "id": "945c16e06792e27fe250ddbb11d3dcde",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 377,
+      "remove": 0,
+      "insert": "g",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 399,
+      "id": "8740419c6a2ce8e6cca5bf738794e14d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 378,
+      "remove": 0,
+      "insert": "}",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 400,
+      "id": "468cbcc92873f18e34e0aba15b5c771a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-3"
+      ],
+      "position": 379,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-3",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 401,
+      "id": "0f39193cc1b298e2813d0b59f964e4c3",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 380,
+      "remove": 0,
+      "insert": "\\",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": "synthetic-episode-boundary"
+    },
+    {
+      "sequence": 402,
+      "id": "2ccacf347b1af90d7700b6fecae42a5a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 381,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 403,
+      "id": "681632fef58a6e0113ebe2031136fded",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 382,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 404,
+      "id": "429e692195fbe1fcfc10cd97c8042fcd",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 383,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 405,
+      "id": "6964d82eb9467fa4b871ed4597939984",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 384,
+      "remove": 0,
+      "insert": "h",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 406,
+      "id": "8408aa6d8f4cf0d8eac6cb1dd700c174",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 385,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 407,
+      "id": "4ae95950dc02442c6f3d642b8deb9741",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 386,
+      "remove": 0,
+      "insert": "r",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 408,
+      "id": "6a7f0118f7958cb2a243a51a22731a97",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 387,
+      "remove": 0,
+      "insert": "{",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 409,
+      "id": "45315863794f329f71c10a0d6c3b9dd0",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 388,
+      "remove": 0,
+      "insert": "}",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 410,
+      "id": "fb65285c136b9cd91b5acfc116e20bf3",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 389,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 411,
+      "id": "3424751704e971f9896d2939b97ee557",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 390,
+      "remove": 0,
+      "insert": "\\",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 412,
+      "id": "9b64e0812dbb7304d0c2d64039f173dd",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 391,
+      "remove": 0,
+      "insert": "m",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 413,
+      "id": "a46dfe039e8c380081ce1443269c492c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 392,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 414,
+      "id": "91a7710fc304b6a26005dd9d83d2047d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 393,
+      "remove": 0,
+      "insert": "k",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 415,
+      "id": "426cc0fb646971d17f93f1825dbf26b1",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 394,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 416,
+      "id": "f4244b883a4712055dabab1cf2d94a8c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 395,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 417,
+      "id": "040de686b774ef137035693d12940369",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 396,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 418,
+      "id": "7878c4d23ace092565267bbba6120916",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 397,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 419,
+      "id": "507ee941473bb46a2c290858d775efcf",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 398,
+      "remove": 0,
+      "insert": "l",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 420,
+      "id": "65865dd659f28206c2e6ef41c620441e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 399,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 421,
+      "id": "19e7f1cbd2ed4366ad96cb6b5f7ee952",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 400,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 422,
+      "id": "128c7e77e83e96b264442bd1b64c13d4",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 401,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 423,
+      "id": "ba8e52902ad46a96f9635ee07af6658e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 402,
+      "remove": 0,
+      "insert": "\\",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 424,
+      "id": "f09a3f8625e1a811ea76843971184951",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 403,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 425,
+      "id": "b9c2ef84b2c7ca6932f41640f005d246",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 404,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 426,
+      "id": "4c8ed1b3e616ffda9e0dc0b7d5092a1e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 405,
+      "remove": 0,
+      "insert": "b",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 427,
+      "id": "b1125bac9ad9d161b19b8bfe5a07a25c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 406,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 428,
+      "id": "e4981d903c4136150812034ab0c4c0b5",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 407,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 429,
+      "id": "7345f2127a60a65eeb5603e39ee20ac4",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 408,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 430,
+      "id": "c1adb2bc088156b2cc3fea22a2bafa2b",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 409,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 431,
+      "id": "e00726a47d9ef2836737b4c7d093b91a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 410,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 432,
+      "id": "de0cde6c6861e2a3bc8ef4d2a07bd946",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 411,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 433,
+      "id": "e6ec65b4ca5e06fc0f03e2ed55502f58",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 412,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 434,
+      "id": "9bd3b605f662057aa12600eab8bae3cf",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 413,
+      "remove": 0,
+      "insert": "*",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 435,
+      "id": "cf90d913a3d877dba3b452d4953ae01e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 414,
+      "remove": 0,
+      "insert": "{",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 436,
+      "id": "76882a4ac66d3e5f01c0dad897d8aef9",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 415,
+      "remove": 0,
+      "insert": "A",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 437,
+      "id": "47a09b4e7ecf601e28674da3b26b9067",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 416,
+      "remove": 0,
+      "insert": "b",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 438,
+      "id": "b55109ad27938e3c0fa3db53fa5a2292",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 417,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 439,
+      "id": "2719e1b58c54fcecda9fb8f66dfce5aa",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 418,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 440,
+      "id": "eb380a0fd74f30b9a40cf9e16dfac13d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 419,
+      "remove": 0,
+      "insert": "r",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 441,
+      "id": "ae8dab0bd699f7501ae1d97868724285",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 420,
+      "remove": 0,
+      "insert": "a",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 442,
+      "id": "39a8685d95150d5b9b5f228f45e6f85f",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 421,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 443,
+      "id": "0ecf5a0203543ac2d7673eafff99c251",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 422,
+      "remove": 0,
+      "insert": "g",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 444,
+      "id": "e7bafae4f07c420d74372d692f656889",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 423,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 445,
+      "id": "b4e0e78312060657bdc6e108ef0e0df9",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 424,
+      "remove": 0,
+      "insert": "}",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 446,
+      "id": "adf8ea8c908efb32c1567c57b97b935a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 424,
+      "remove": 1,
+      "insert": "",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 447,
+      "id": "a56719398278b45aea94902367de8c85",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 423,
+      "remove": 1,
+      "insert": "",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 448,
+      "id": "37ce1b64f85440c039fd7e13aa950447",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 422,
+      "remove": 1,
+      "insert": "",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 449,
+      "id": "721f5369780909cd30f107269771a283",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 422,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 450,
+      "id": "33271591af41c5578aefa68a05529bd5",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 423,
+      "remove": 0,
+      "insert": "}",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 451,
+      "id": "a3c089420f89c19a3e47227738ba4639",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 424,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 452,
+      "id": "6248903100f6aeee64920933518acb24",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 425,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 453,
+      "id": "67b628fef77f282ea32be45886293895",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 426,
+      "remove": 0,
+      "insert": "\\",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 454,
+      "id": "48b55dc0239e961cd9a2c07f43cdd500",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 427,
+      "remove": 0,
+      "insert": "s",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 455,
+      "id": "31741180322323bcaa4c7ffa2c08cc67",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 428,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 456,
+      "id": "326bcf1b760b20135f52144229944853",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 429,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 457,
+      "id": "c7b764db42cdeb3ea0616da1d3398a20",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 430,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 458,
+      "id": "0898115f9d7f699e67315da902819662",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 431,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 459,
+      "id": "0c6e02deceebb765ec87b781235cb987",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 432,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 460,
+      "id": "95d9d0f2651942c905cfb83fbf68a307",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 433,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 461,
+      "id": "8cde9f626d37e270f4f29d0b2cb5aacf",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 434,
+      "remove": 0,
+      "insert": "{",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 462,
+      "id": "2f8efe96565124aeb88a51325ee41871",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 435,
+      "remove": 0,
+      "insert": "I",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 463,
+      "id": "d2f79efadaac99f7bbfeaf037c21a04c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 436,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 464,
+      "id": "49bbe49aee79c22cc52ae30e43b5bdc6",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 437,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 465,
+      "id": "70231e9bd2dffa65708a2eed4315cb3d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 438,
+      "remove": 0,
+      "insert": "r",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 466,
+      "id": "b9e7a7859e6e611359243ef1f878f256",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 439,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 467,
+      "id": "0f5cbe6d839a7d8fdfab4552427f83b9",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 440,
+      "remove": 0,
+      "insert": "d",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 468,
+      "id": "a191c1a475936c80c0a5f54ee35ecfae",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 441,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 469,
+      "id": "5fa74577b3932393cea98f41decacfc3",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 442,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 470,
+      "id": "7a6e0422c99c60940abeebc85a693b3d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 443,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 471,
+      "id": "e53b512e0da9f5c95788db0bf2e6d0d7",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 444,
+      "remove": 0,
+      "insert": "i",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 472,
+      "id": "fbc311e29d58d44512fa7256cc4f5c4c",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 445,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 473,
+      "id": "eb7fa2f68907f2e4f2b2ce86550b5710",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 446,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 474,
+      "id": "6542ee8ca5900d29898a62c54f6e09b5",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 447,
+      "remove": 0,
+      "insert": "}",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 475,
+      "id": "050b07b60dd44d38f34a8f0064e74992",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 448,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 476,
+      "id": "f73aa8ade3fe13ad8bbac364c1bd7a12",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 449,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 477,
+      "id": "2a72af413bc95b9156644c101d0ad18d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 450,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 478,
+      "id": "77c1c92e0e91c5dc3971f4095a9d4e42",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 451,
+      "remove": 0,
+      "insert": "\\",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 479,
+      "id": "36cdc74c6ea4d7bc4e8ce58264fed292",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 452,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 480,
+      "id": "5acea034124217ded59affafc028da13",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 453,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 481,
+      "id": "2f07e0a06db0826c03366bec8eb350e4",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 454,
+      "remove": 0,
+      "insert": "d",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 482,
+      "id": "a84a16c96dca9da0129e2c27b308b2ad",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 455,
+      "remove": 0,
+      "insert": "{",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 483,
+      "id": "255d9310f9402f0727f7511b2e2a58b4",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 456,
+      "remove": 0,
+      "insert": "d",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 484,
+      "id": "9096609818c2d795022ea6e9512eaefb",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 457,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 485,
+      "id": "e477822b49feaf3ddaba033fc430c14d",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 458,
+      "remove": 0,
+      "insert": "c",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 486,
+      "id": "2a5b27ceb4dc06b5cb9f118266c57634",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 459,
+      "remove": 0,
+      "insert": "u",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 487,
+      "id": "d2d2742aee055a74ce69cb718702f7a6",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 460,
+      "remove": 0,
+      "insert": "m",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 488,
+      "id": "a5e71eb0bbe4cdf5d1f321f4fa14d8a0",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 461,
+      "remove": 0,
+      "insert": "e",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 489,
+      "id": "43238e1e722b05b387f9024395d65531",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 462,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 490,
+      "id": "0a0ac28fdcb041295ac9f0c052a7632a",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 463,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 491,
+      "id": "5a6c2a5b3692712555b575c13201cb11",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 464,
+      "remove": 0,
+      "insert": "}",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 492,
+      "id": "42ecfee9d5ddc351629fecf9522c370e",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 465,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 493,
+      "id": "f43f4076d78173341031dbcb5eac8ca3",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 450,
+      "remove": 0,
+      "insert": "\n",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 494,
+      "id": "299808b0c06bb7fd0999d77876fcedac",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 451,
+      "remove": 0,
+      "insert": "{",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 495,
+      "id": "36b6e99a2253f0437d57bb851be582bf",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 452,
+      "remove": 0,
+      "insert": "\\",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 496,
+      "id": "2f448e2c6d6fb33bd1f1256459e46265",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 453,
+      "remove": 0,
+      "insert": "f",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 497,
+      "id": "7d49dbef880b6fd04f3ab42d4635fcf6",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 454,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 498,
+      "id": "2f8e44329f2c34d425e6f85e923ff8b2",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 455,
+      "remove": 0,
+      "insert": "o",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 499,
+      "id": "2999b8560fe87642879ebb5068bc0c90",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 456,
+      "remove": 0,
+      "insert": "t",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    },
+    {
+      "sequence": 500,
+      "id": "776a5012c2a5402cd03d500be08d0540",
+      "actor": "synthetic-single-actor",
+      "origin": [
+        "human",
+        "synthetic-origin-4"
+      ],
+      "position": 457,
+      "remove": 0,
+      "insert": "n",
+      "undoGroup": "synthetic-group-4",
+      "boundaryBefore": null
+    }
+  ],
+  "expected": "\\documentclass[a4paper,twocolumn,10pt]{article}\n\\usepackage[utf8]{inputenc}\n\\usepackage{mathptmx} % times roman, including math\n\\usepackage[hyphens]{url}\n\\usepackage{doi}\n\\usepackage{hyperref}\n\\usepackage[numbers,sort]{natbib}\n\\hyphenation{da-ta-cen-ter da-ta-cen-ters}\n\\frenchspacing\n\n\\begin{document}\n\\sloppy\n\\title{Composing Data Structures for Collaborative Document Editing}\n\\author{}\n\\maketitle\n\n\\subsection*{Abstract}\n\n\\section{Introduction}\n\n\n{\\footn\n\\end{document}\n",
+  "sourcePositions": "original tuples 0..499; first prefix from empty document",
+  "boundaries": "synthetic every 100 logical edits and end; no source history grouping inferred",
+  "originalHumanTrace": true,
+  "originalConcurrencyPreserved": false
+}

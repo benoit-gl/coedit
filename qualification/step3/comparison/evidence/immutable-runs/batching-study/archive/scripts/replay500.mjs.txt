@@ -1,0 +1,25 @@
+/** Optional fresh native rerun from the packaged prefix; not used for original observations. */
+import {readFileSync,writeFileSync,mkdirSync,copyFileSync} from 'node:fs';
+import {resolve,dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {spawnSync} from 'node:child_process';
+import assert from 'node:assert/strict';
+const base=resolve(dirname(fileURLToPath(import.meta.url)),'..');
+const [dataset,coeditArgument,outputArgument]=process.argv.slice(2);
+assert(['alternating500','public500'].includes(dataset),'dataset must be alternating500 or public500');
+assert(coeditArgument&&outputArgument,'usage: node scripts/replay500.mjs DATASET /path/to/coedit /fresh/output/root');
+const coedit=resolve(coeditArgument),output=resolve(outputArgument);
+mkdirSync(output); // Exclusive; an existing directory is not overwritten.
+mkdirSync(`${output}/public-source`);
+const prefix=JSON.parse(readFileSync(`${base}/source/editing-trace-prefix500.json`));
+writeFileSync(`${output}/public-source/editing-trace.js`,`const edits = ${JSON.stringify(prefix,null,2)};\n`);
+for(const name of ['README.md','LICENSE'])copyFileSync(`${base}/source/${name}`,`${output}/public-source/${name}`);
+let runner=readFileSync(`${base}/scripts/run500.mjs`,'utf8');
+assert(runner.includes("const root='/workspace/work/merge10-batch-study';"));
+runner=runner.replace("const root='/workspace/work/merge10-batch-study';",`const root=${JSON.stringify(output)};`)
+  .replaceAll('/workspace/coedit',coedit)
+  .replace('assert.equal(all.length,259778);','assert.equal(all.length,500);')
+  .replace("const out=`${root}/${dataset}-v1`;","const out=`${root}/${dataset}-bounded-rerun-v1`;");
+writeFileSync(`${output}/derived-run500.mjs`,runner);
+const done=spawnSync(process.execPath,[`${output}/derived-run500.mjs`,dataset],{stdio:'inherit'});
+process.exit(done.status??1);
