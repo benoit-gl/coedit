@@ -345,3 +345,30 @@ This completes bounded H500 full-carrier load/merge/lifecycle follow-up for the 
 creation, larger histories, compatibility and other qualification dimensions remain separate.
 The preserved H5000 failures, concentrated-tail adverse case, mandatory eligibility and carrier-selection obligations
 remain unchanged. Raw journals, phase/RSS samples, source hashes and exact executed script text are packaged without binaries.
+
+## Scratch two-digit trie H5000 merge heap failure
+
+The [H5000 report](evidence/immutable-runs/trie-h5000/REPORT.md),
+[partial main journal](evidence/immutable-runs/trie-h5000/chunk2-lifecycle.jsonl),
+[phase sidecar](evidence/immutable-runs/trie-h5000/chunk2-lifecycle.phases.jsonl) and
+[fatal log](evidence/immutable-runs/trie-h5000/chunk2-lifecycle.stderr.log) preserve the isolated two-digit candidate's
+original full H5000 lifecycle at historical source `4e0857f1619cd4b32e515a458455fb6434f147fb` plus its scratch patch.
+Its 89 runtime-source entries, 28 installed native JavaScript entries and Node-bound WASM match the H500 candidate;
+all hashes were verified before and after the run. Exact scripts, source/native manifests and the complete compressed RSS journal and raw supervisor
+journal are retained in the [package manifest](evidence/immutable-runs/trie-h5000/manifest.json), without binaries.
+The candidate remains unapplied to runtime source and uses incompatible private layout markers.
+
+Setup, initial load, verified warm edits, lifecycle reload, capture/materialize/restore and peer load/edit/save
+completed. Node then aborted during the original inbound merge with fatal JavaScript heap OOM and return code
+`-6` (SIGABRT), after 1,240.32 s, without timeout. The last synchronous sidecar entry is sequence 25, `start merge`;
+there is no merge end, lifecycle result or final `complete: true`. Post-merge oracle, following edits and retained
+captured-material checks were not reached. Earlier successful checks do not establish full-lifecycle semantics.
+
+The default V8 heap limit remained 2,348,810,240 bytes, with no explicit GC, heap increase, snapshot prepass or
+changed lifetime topology. The external sampler observed peak RSS 2,703,156 KiB across 19,926 samples;
+brief peaks can be missed and process RSS is not isolated native allocation or retained-size attribution.
+Setup encoded 5,410,213 bytes. Merge-entry heapUsed was 1,784,669,768 bytes, an entry counter rather than abort-time size.
+This one run reached a later phase than the prior old-layout lifecycle-load failures, but source/layout,
+instrumentation and random native identities/key shapes differ; no matched H5000 performance comparison follows.
+The candidate still failed the full default-heap H5000 lifecycle. This does not identify a merge root cause,
+resolve other qualification dimensions, establish production readiness or change mandatory eligibility/carrier selection.

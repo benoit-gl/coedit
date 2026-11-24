@@ -1,0 +1,65 @@
+{
+  "schema": "scratch-h5000-artifacts-v1",
+  "files": [
+    {
+      "path": "__pycache__/run.cpython-312.pyc",
+      "bytes": 5603,
+      "sha256": "6d12c2e708c9dc1561f8d7da128018d6b35106602f287252b4e5969fb129b3e9"
+    },
+    {
+      "path": "binding.mjs",
+      "bytes": 1336,
+      "sha256": "e1a30336134052dab059dcba47c05f3982a2d46a00d4d2c1e88e943f66d6adf1"
+    },
+    {
+      "path": "chunk2-lifecycle.jsonl",
+      "bytes": 45346,
+      "sha256": "2ecf915a3ca9dcfa0259c5b4a9635525ca4d4ff7a9730f11b86bf67d1eda9c13"
+    },
+    {
+      "path": "chunk2-lifecycle.phases.jsonl",
+      "bytes": 7873,
+      "sha256": "1740a79e7115f8348712f35c75229e55096baf63d05a51e68f5ef1a8c78b72da"
+    },
+    {
+      "path": "chunk2-lifecycle.rss-samples.jsonl",
+      "bytes": 2175503,
+      "sha256": "0c460d23fa6ffe05a80c6b62e62a95a557a04538c2f910e6bfa8bbfa4c08d0ea"
+    },
+    {
+      "path": "chunk2-lifecycle.stderr.log",
+      "bytes": 852,
+      "sha256": "7cbe9eb2becbcc08ff0a5ef4fbb3887f5542ef19170775f5cb311694cad617b2"
+    },
+    {
+      "path": "chunk2-lifecycle.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "finalize.py",
+      "bytes": 4256,
+      "sha256": "cf42b4f6a5c3b748d8a72b31f2c703cb66726f46cff5c98f7f5936cc3b0dd4f0"
+    },
+    {
+      "path": "lifecycle.mjs",
+      "bytes": 22210,
+      "sha256": "25384a467289d6d76c8620c8fba44023e599c3f6db5c8475dcb69d0c7cc61785"
+    },
+    {
+      "path": "run.py",
+      "bytes": 2469,
+      "sha256": "359138b1a67f2120f5fde09cd0816ddb22caa613b4bdaa5d316ba5aca829727b"
+    },
+    {
+      "path": "summary.json",
+      "bytes": 4643,
+      "sha256": "579def374cbbb1a04b27cac8f16e309b589e07bbfff35bb9c4f094689f351219"
+    },
+    {
+      "path": "supervisor.jsonl",
+      "bytes": 18151,
+      "sha256": "89c682771a14d88e6dc6c4fc08a5c5c21a091686fbf2987082da65b21374557d"
+    }
+  ]
+}

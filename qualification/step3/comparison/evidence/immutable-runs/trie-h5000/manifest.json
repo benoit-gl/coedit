@@ -1,0 +1,104 @@
+{
+  "schema": "merge10-trie-h5000-evidence-package-v1",
+  "sourceRevision": "4e0857f1619cd4b32e515a458455fb6434f147fb",
+  "complete": false,
+  "semanticsVerifiedForFullLifecycle": false,
+  "note": "Manifest excludes itself. Exact archived script/source/summary bytes use .txt suffixes. Original hashes and any trailing-whitespace-only normalization are in packaging-provenance.json. No binaries or snapshots packaged. RSS journal uses lossless gzip/base64; decode to original bytes.",
+  "files": [
+    {
+      "path": "REPORT.md",
+      "bytes": 9070,
+      "sha256": "6fac98883ca8610dadf0a5ad6b5d63cbe3a7f52a676846b94b9e1e1cc65f0438"
+    },
+    {
+      "path": "binding.mjs.txt",
+      "bytes": 1336,
+      "sha256": "e1a30336134052dab059dcba47c05f3982a2d46a00d4d2c1e88e943f66d6adf1"
+    },
+    {
+      "path": "chunk2-lifecycle.jsonl",
+      "bytes": 45346,
+      "sha256": "2ecf915a3ca9dcfa0259c5b4a9635525ca4d4ff7a9730f11b86bf67d1eda9c13"
+    },
+    {
+      "path": "chunk2-lifecycle.phases.jsonl",
+      "bytes": 7873,
+      "sha256": "1740a79e7115f8348712f35c75229e55096baf63d05a51e68f5ef1a8c78b72da"
+    },
+    {
+      "path": "chunk2-lifecycle.rss-samples.jsonl.gz.b64",
+      "bytes": 384652,
+      "sha256": "5117cec2167ce262598f0fc42484339e50c10e22ed06f0dc9df048897d28caa4"
+    },
+    {
+      "path": "chunk2-lifecycle.stderr.log",
+      "bytes": 851,
+      "sha256": "767501c3210d8d30f5e73c9cd4dc874526fc06d6847f9051a8ce6f0142e2e062"
+    },
+    {
+      "path": "chunk2-lifecycle.stdout.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "chunk2-manifest.json",
+      "bytes": 18494,
+      "sha256": "8fff3f255eb3e6c378f70451f26d80159379515f8859248211501f2e9f8b0fa1"
+    },
+    {
+      "path": "finalize.py.txt",
+      "bytes": 4256,
+      "sha256": "cf42b4f6a5c3b748d8a72b31f2c703cb66726f46cff5c98f7f5936cc3b0dd4f0"
+    },
+    {
+      "path": "lifecycle.mjs.txt",
+      "bytes": 22210,
+      "sha256": "25384a467289d6d76c8620c8fba44023e599c3f6db5c8475dcb69d0c7cc61785"
+    },
+    {
+      "path": "nativeDocument.ts.txt",
+      "bytes": 69414,
+      "sha256": "28282f853b2c72bfe8de0230975026c5e0da6f6971f5834f4e386a8235e5d5ba"
+    },
+    {
+      "path": "nativeRecordStore.ts.txt",
+      "bytes": 7130,
+      "sha256": "058babe70c434d331fb99202c3ab33a024504ca9f66a81c0a5e0071d025bfea9"
+    },
+    {
+      "path": "original-artifacts-manifest.json",
+      "bytes": 1923,
+      "sha256": "1bc2c89a16e8243446dd8f51387415e83d0dde77a9d1cb9dad0ecb79d963165f"
+    },
+    {
+      "path": "packaging-provenance.json",
+      "bytes": 7606,
+      "sha256": "59f99ad55b684a910b2def2e48c9a954117010d07b584957fdf67e60239ee2eb"
+    },
+    {
+      "path": "prototype.patch",
+      "bytes": 8670,
+      "sha256": "06c1895148f20141a7eb7401154cb8d7828d64853ef0718595df3a4083750f76"
+    },
+    {
+      "path": "run.py.txt",
+      "bytes": 2469,
+      "sha256": "359138b1a67f2120f5fde09cd0816ddb22caa613b4bdaa5d316ba5aca829727b"
+    },
+    {
+      "path": "source-binding.json",
+      "bytes": 29191,
+      "sha256": "215ffaac166ba724cd7bed78ae469f196e7783a40a729a6f71e08b29a8fc7f7c"
+    },
+    {
+      "path": "summary.json.txt",
+      "bytes": 4643,
+      "sha256": "579def374cbbb1a04b27cac8f16e309b589e07bbfff35bb9c4f094689f351219"
+    },
+    {
+      "path": "supervisor.jsonl",
+      "bytes": 18151,
+      "sha256": "89c682771a14d88e6dc6c4fc08a5c5c21a091686fbf2987082da65b21374557d"
+    }
+  ]
+}

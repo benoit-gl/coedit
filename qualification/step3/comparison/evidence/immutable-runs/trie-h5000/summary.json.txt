@@ -1,0 +1,129 @@
+{
+  "status": "failed-original-full-lifecycle-merge-v8-heap-oom",
+  "complete": false,
+  "semanticsVerifiedForFullLifecycle": false,
+  "workload": "original same-gap-history-5000 full lifecycle; unchanged H500 lifecycle/binding bytes",
+  "runtimeRoot": "/workspace/work/merge10-implementation/trie-prototype/chunk2",
+  "sourceRevision": "4e0857f1619cd4b32e515a458455fb6434f147fb",
+  "sourceBindingKind": "isolated-scratch-copy; original Git revision plus verified source and native byte manifests",
+  "runtimeManifestSha256": "8fff3f255eb3e6c378f70451f26d80159379515f8859248211501f2e9f8b0fa1",
+  "sourceEntries": 89,
+  "nativeJavaScriptEntries": 28,
+  "nativeWasm": {
+    "path": "dist/mjs/wasm_bindgen_output/nodejs/automerge_wasm_bg.wasm",
+    "sha256": "304ea6e230898ed66af3c29ac554a36c15bbe03f5c8816b5310fddb88f7f5d78"
+  },
+  "postRunBindVerification": "passed: exact root, all 89 runtime source entries, all 28 native JavaScript entries and native WASM reverified after process exited",
+  "supervisorStart": {
+    "event": "start",
+    "variant": "chunk2",
+    "mode": "lifecycle",
+    "command": [
+      "node",
+      "/workspace/work/merge10-implementation/trie-prototype/h5000-v1/lifecycle.mjs",
+      "--root",
+      "/workspace/work/merge10-implementation/trie-prototype/chunk2",
+      "--case",
+      "same-gap-history-5000",
+      "--out",
+      "/workspace/work/merge10-implementation/trie-prototype/h5000-v1/chunk2-lifecycle.jsonl",
+      "--phase-trace",
+      "/workspace/work/merge10-implementation/trie-prototype/h5000-v1/chunk2-lifecycle.phases.jsonl",
+      "--note",
+      "isolated hex2 full-carrier H5000 exact lifecycle; verified byte manifests; default heap; no forced GC; unchanged H500 lifecycle harness"
+    ],
+    "cwd": "/workspace/work/merge10-implementation/trie-prototype/chunk2",
+    "utc": "2026-11-23T21:50:36Z",
+    "NODE_OPTIONS": null,
+    "timeoutSeconds": null,
+    "workloadBound": "fixed original same-gap-history-5000 lifecycle, 3 warmups and 5 samples per original mode"
+  },
+  "supervisorResult": {
+    "event": "end",
+    "variant": "chunk2",
+    "mode": "lifecycle",
+    "returncode": -6,
+    "timedOut": false,
+    "elapsedSeconds": 1240.3165491950058,
+    "sampledPeakRssKiB": 2703156,
+    "utc": "2026-11-23T22:11:16Z"
+  },
+  "heapSizeLimitBytes": 2348810240,
+  "sampleCount": 19926,
+  "sampledPeakRssKiB": 2703156,
+  "sampledPeakVmHwmKiB": 2703904,
+  "setup": {
+    "kind": "setup",
+    "complete": false,
+    "case": "same-gap-history-5000",
+    "setupMs": 77541.369406,
+    "encodedBytes": 5410213,
+    "memory": {
+      "rss": 1080356864,
+      "heapTotal": 842821632,
+      "heapUsed": 694817256,
+      "external": 237227553,
+      "arrayBuffers": 6217140
+    }
+  },
+  "warmSemanticsVerified": true,
+  "observedAdditionalCommands": [
+    {
+      "mode": "bare-canonical",
+      "nativeActivate": 0,
+      "publicSnapshot": 0
+    },
+    {
+      "mode": "incremental-editor",
+      "nativeActivate": 0,
+      "publicSnapshot": 0
+    }
+  ],
+  "completedPhases": [
+    "initial-load",
+    "save",
+    "lifecycle-load",
+    "check-after-lifecycle-load",
+    "capture",
+    "materialize",
+    "restore",
+    "check-after-restore",
+    "peer-save",
+    "peer-load-with-save",
+    "peer-edit",
+    "peer-save-after-edit"
+  ],
+  "unfinishedPhaseStarts": [
+    {
+      "kind": "phase-trace",
+      "complete": false,
+      "sequence": 25,
+      "event": "start",
+      "phase": "merge",
+      "elapsedMs": 1153824.810022,
+      "memory": {
+        "rss": 2476179456,
+        "heapTotal": 1931235328,
+        "heapUsed": 1784669768,
+        "external": 407946168,
+        "arrayBuffers": 31970083
+      },
+      "heapSizeLimitBytes": 2348810240,
+      "peakRssKiB": 2583460
+    }
+  ],
+  "pendingSemantics": [
+    "merge completion and post-merge text/Origin oracle",
+    "following editor activation and two edits/checks",
+    "retained captured material check",
+    "original case and final completion records"
+  ],
+  "fatalEvidence": "FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory",
+  "interpretation": "This one scratch hex2 H5000 run does not complete the full original lifecycle under the default heap. It passed earlier checkpoints but aborted during inbound merge. No production readiness or general memory/latency claim; no old-layout H5000 comparison.",
+  "limitations": [
+    "one exploratory random-native-identity/key-shape run",
+    "RSS samples can miss brief peaks",
+    "no forced GC; process RSS includes native/external memory",
+    "no heap limit increase, retry, lifetime topology change or source/runtime patch"
+  ]
+}
